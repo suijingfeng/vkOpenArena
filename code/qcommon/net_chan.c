@@ -67,6 +67,7 @@ static const char *netsrcString[2] =
 
 void Netchan_Init( int port )
 {
+    Com_Printf("  Netchan_Init(). \n");
 	port &= 0xffff;
 	showpackets = Cvar_Get ("showpackets", "0", CVAR_TEMP );
 	showdrop = Cvar_Get ("showdrop", "0", CVAR_TEMP );

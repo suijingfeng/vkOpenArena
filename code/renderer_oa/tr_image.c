@@ -896,7 +896,7 @@ static void R_LoadImage(const char *name, unsigned char **pic, int *width, int *
 R_FindImageFileIfItsThere
 leilei Finds the given image and does not load it.
 ==============
-*/
+
 static image_t	*R_FindImageFileIfItsThere( const char *name, imgType_t type, imgFlags_t flags )
 {
 	image_t	*image;
@@ -945,7 +945,7 @@ static image_t	*R_FindImageFileIfItsThere( const char *name, imgType_t type, img
 	ismaptexture = 0;
 	return image;
 }
-
+*/
 
 /*
 ================
@@ -1479,6 +1479,7 @@ void R_InitSkins( void )
 	skin->surfaces[0]->shader = tr.defaultShader;
 }
 
+
 void R_InitImages(void)
 {
 	memset(hashTable, 0, sizeof(hashTable));
@@ -1492,7 +1493,6 @@ void R_InitImages(void)
     r_greyscale = ri.Cvar_Get("r_greyscale", "0", CVAR_ARCHIVE | CVAR_LATCH);
 	ri.Cvar_CheckRange(r_greyscale, 0, 1, qfalse);
    
-
     R_SetColorMappings();
 
 	// create default texture and white texture

@@ -1070,6 +1070,8 @@ void CL_ShutdownUI( void )
 
 void CL_InitUI( void )
 {
+    Com_Printf("======== CL_InitUI() started. ========\n");
+
 	// load the dll or bytecode
 	vmInterpret_t interpret = Cvar_VariableValue("vm_ui");
 	if(cl_connectedToPureServer)
@@ -1106,7 +1108,7 @@ void CL_InitUI( void )
 		VM_Call( uivm, UI_INIT, (clc.state >= CA_AUTHORIZING && clc.state < CA_ACTIVE) );
 	}
     
-    Com_Printf("-------- CL_InitUI() finished. --------\n");
+    Com_Printf("======== CL_InitUI() finished. ========\n");
 }
 
 #ifndef STANDALONE

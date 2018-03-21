@@ -5273,8 +5273,6 @@ static void CreateExternalShaders( void )
 
 
 	tr.sunShader = R_FindShader( "sun", LIGHTMAP_NONE, qtrue );
-
-    
 }
 
 

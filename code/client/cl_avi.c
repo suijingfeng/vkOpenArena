@@ -416,9 +416,7 @@ CL_CheckFileSize
 */
 static qboolean CL_CheckFileSize( int bytesToAdd )
 {
-  unsigned int newFileSize;
-
-  newFileSize =
+  unsigned int newFileSize =
     afd.fileSize +                // Current file size
     bytesToAdd +                  // What we want to add
     ( afd.numIndices * 16 ) +     // The index
@@ -429,7 +427,7 @@ static qboolean CL_CheckFileSize( int bytesToAdd )
   if( newFileSize > INT_MAX )
   {
     // Close the current file...
-    CL_CloseAVI( );
+    CL_CloseAVI_f( );
 
     // ...And open a new one
     CL_OpenAVIForWriting( va( "%s_", afd.fileName ) );
@@ -575,7 +573,7 @@ CL_CloseAVI
 Closes the AVI file and writes an index chunk
 ===============
 */
-qboolean CL_CloseAVI( void )
+void CL_CloseAVI_f( void )
 {
   int indexRemainder;
   int indexSize = afd.numIndices * 16;
@@ -583,7 +581,7 @@ qboolean CL_CloseAVI( void )
 
   // AVI file isn't open
   if( !afd.fileOpen )
-    return qfalse;
+    return;
 
   afd.fileOpen = qfalse;
 
@@ -600,7 +598,7 @@ qboolean CL_CloseAVI( void )
           &afd.idxF, qtrue ) ) <= 0 )
   {
     FS_FCloseFile( afd.f );
-    return qfalse;
+    return;
   }
 
   indexRemainder = indexSize;
@@ -638,8 +636,6 @@ qboolean CL_CloseAVI( void )
   FS_FCloseFile( afd.f );
 
   Com_Printf( "Wrote %d:%d frames to %s\n", afd.numVideoFrames, afd.numAudioFrames, afd.fileName );
-
-  return qtrue;
 }
 
 /*

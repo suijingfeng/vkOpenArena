@@ -58,12 +58,13 @@ static cvar_t* r_stencilbits;
 static cvar_t* r_depthbits;
 static cvar_t* r_colorbits;
 
-cvar_t* r_ext_compressed_textures;
 static cvar_t* r_ext_multitexture;
 static cvar_t* r_ext_compiled_vertex_array;
+
+
 cvar_t* r_ext_texture_filter_anisotropic;
 cvar_t* r_ext_max_anisotropy;
-
+cvar_t* r_ext_compressed_textures;
 cvar_t	*r_drawBuffer;
 SDL_Window *SDL_window = NULL;
 
@@ -690,7 +691,6 @@ static qboolean GLimp_StartDriverAndSetMode(qboolean fullscreen, qboolean nobord
 
 
 
-
 static void GLimp_InitExtensions( void )
 {
 	ri.Printf( PRINT_ALL, "\n...Initializing OpenGL extensions\n" );
@@ -962,7 +962,7 @@ success:
     // initialize extensions
 	GLimp_InitExtensions();
 
-	ri.Printf( PRINT_ALL, "MODE: %s, %d x %d, refresh rate: %dhz\n", fsstrings[r_fullscreen->integer == 1], glConfig.vidWidth, glConfig.vidHeight, glConfig.refresh_rate);
+	ri.Printf( PRINT_ALL, " MODE: %s, %d x %d, refresh rate: %dhz\n", fsstrings[r_fullscreen->integer == 1], glConfig.vidWidth, glConfig.vidHeight, glConfig.refresh_rate);
 
 
 	// This depends on SDL_INIT_VIDEO, hence having it here

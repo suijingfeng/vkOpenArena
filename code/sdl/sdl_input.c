@@ -39,7 +39,6 @@ static int in_eventTime = 0;
 static qboolean mouseAvailable = qfalse;
 static qboolean mouseActive = qfalse;
 
-static cvar_t *in_mouse = NULL;
 static cvar_t *in_keyboardDebug = NULL;
 
 static SDL_Window *SDL_window = NULL; 
@@ -558,8 +557,6 @@ void IN_Frame(void)
 
 void IN_Init(void* windowData)
 {
-	int appState;
-
 	if( !SDL_WasInit( SDL_INIT_VIDEO ) )
 	{
 		Com_Error( ERR_FATAL, "IN_Init called before SDL_Init( SDL_INIT_VIDEO )" );
@@ -571,14 +568,14 @@ void IN_Init(void* windowData)
 	in_keyboardDebug = Cvar_Get("in_keyboardDebug", "0", CVAR_ARCHIVE);
 
 	// mouse variables
-	in_mouse = Cvar_Get( "in_mouse", "1", CVAR_ARCHIVE );
+	cvar_t *in_mouse = Cvar_Get( "in_mouse", "1", CVAR_ARCHIVE );
 
 	SDL_StartTextInput( );
 
 	mouseAvailable = ( in_mouse->value != 0 );
 	IN_DeactivateMouse( );
 
-	appState = SDL_GetWindowFlags( windowData );
+	int appState = SDL_GetWindowFlags( windowData );
 	Cvar_SetValue( "com_unfocused",	!( appState & SDL_WINDOW_INPUT_FOCUS ) );
 	Cvar_SetValue( "com_minimized", appState & SDL_WINDOW_MINIMIZED );
 

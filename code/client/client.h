@@ -352,8 +352,8 @@ extern	qboolean	cl_oldGameSet;
 
 //=============================================================================
 
-extern	vm_t	*cgvm;	// interface to cgame dll or vm
-extern	vm_t	*uivm;	// interface to ui dll or vm
+extern	vm_t* cgvm;	// interface to cgame dll or vm
+extern	vm_t* uivm;	// interface to ui dll or vm
 extern	refexport_t	re;		// interface to refresh .dll
 
 
@@ -615,7 +615,7 @@ qboolean CL_OpenAVIForWriting(const char *filename);
 void CL_TakeVideoFrame(void);
 void CL_WriteAVIVideoFrame(const unsigned char *imageBuffer, int size);
 void CL_WriteAVIAudioFrame(const unsigned char *pcmBuffer, int size);
-qboolean CL_CloseAVI(void);
+void CL_CloseAVI_f(void);
 qboolean CL_VideoRecording(void);
 
 //

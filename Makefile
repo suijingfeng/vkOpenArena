@@ -30,7 +30,7 @@ ifndef BUILD_MISSIONPACK
   BUILD_MISSIONPACK= 0
 endif
 ifndef BUILD_RENDERER_OPENGL2
-  BUILD_RENDERER_OPENGL2=0
+  BUILD_RENDERER_OPENGL2=1
 endif
 
 BASEGAME=baseoa
@@ -2163,7 +2163,11 @@ $(B)/renderergl2/glsl/%.o: $(B)/renderergl2/glsl/%.c
 $(B)/renderergl2/%.o: $(RGL2DIR)/%.c
 	$(DO_REF_CC)
 
+$(B)/renderergl2/%.o: $(CMDIR)/%.c
+	$(DO_REF_CC)
 
+$(B)/renderergl2/%.o: $(SDLDIR)/%.c
+	$(DO_REF_CC)
 
 
 $(B)/ded/%.o: $(CMDIR)/%.c

@@ -921,16 +921,6 @@ void CL_InitInput( void )
 	Cmd_AddCommand ("-button8", IN_Button8Up);
 	Cmd_AddCommand ("+button9", IN_Button9Down);
 	Cmd_AddCommand ("-button9", IN_Button9Up);
-	Cmd_AddCommand ("+button10", IN_Button10Down);
-	Cmd_AddCommand ("-button10", IN_Button10Up);
-	Cmd_AddCommand ("+button11", IN_Button11Down);
-	Cmd_AddCommand ("-button11", IN_Button11Up);
-	Cmd_AddCommand ("+button12", IN_Button12Down);
-	Cmd_AddCommand ("-button12", IN_Button12Up);
-	Cmd_AddCommand ("+button13", IN_Button13Down);
-	Cmd_AddCommand ("-button13", IN_Button13Up);
-	Cmd_AddCommand ("+button14", IN_Button14Down);
-	Cmd_AddCommand ("-button14", IN_Button14Up);
 	Cmd_AddCommand ("+mlook", IN_MLookDown);
 	Cmd_AddCommand ("-mlook", IN_MLookUp);
 
@@ -998,16 +988,6 @@ void CL_ShutdownInput(void)
 	Cmd_RemoveCommand("-button8");
 	Cmd_RemoveCommand("+button9");
 	Cmd_RemoveCommand("-button9");
-	Cmd_RemoveCommand("+button10");
-	Cmd_RemoveCommand("-button10");
-	Cmd_RemoveCommand("+button11");
-	Cmd_RemoveCommand("-button11");
-	Cmd_RemoveCommand("+button12");
-	Cmd_RemoveCommand("-button12");
-	Cmd_RemoveCommand("+button13");
-	Cmd_RemoveCommand("-button13");
-	Cmd_RemoveCommand("+button14");
-	Cmd_RemoveCommand("-button14");
 	Cmd_RemoveCommand("+mlook");
 	Cmd_RemoveCommand("-mlook");
 

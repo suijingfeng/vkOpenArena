@@ -23,6 +23,7 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
 #include "client.h"
 
+
 int g_console_field_width = 78;
 #define	NUM_CON_TIMES   4
 #define	CON_TEXTSIZE    32768
@@ -838,7 +839,7 @@ void Con_Bottom( void ) {
 }
 
 
-void Con_Close( void )
+void Con_Close(void)
 {
 	if ( !com_cl_running->integer )
 		return;

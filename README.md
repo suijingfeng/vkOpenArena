@@ -62,8 +62,7 @@ $ ./openarena.x86_64 +set cl_renderer openarena1
 # If you are having trouble with OA's renderer, this is a safe alternative.
 $ ./openarena.x86_64 +set cl_renderer opengl1
 
-# Enable renderergl2 which is now in upstream
-# It doesn't work with OpenArena yet
+# Enable renderergl2 
 $ ./openarena.x86_64 +set cl_renderer opengl2
 ```
 

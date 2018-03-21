@@ -356,9 +356,11 @@ void Sys_Print( const char *msg )
 {
 #if defined( _WIN32 ) && defined( USE_CONSOLE_WINDOW )
 	Conbuf_AppendText(msg);		// leilei - console restoration
+#else
+    Sys_AnsiColorPrint( msg );
 #endif
-	CON_LogWrite( msg );
-	CON_Print( msg );
+//	CON_LogWrite( msg );
+//	CON_Print( msg );
 }
 
 /*
@@ -446,7 +448,7 @@ void *Sys_LoadDll(const char *name, qboolean useSystemLib)
 	void *dllhandle;
 	
 	if(useSystemLib)
-		Com_Printf("Trying to load \"%s\"...\n", name);
+		Com_Printf(" Trying to load \"%s\"...\n", name);
 	
 	if(!useSystemLib || !(dllhandle = Sys_LoadLibrary(name)))
 	{
@@ -456,7 +458,7 @@ void *Sys_LoadDll(const char *name, qboolean useSystemLib)
 		if(!*topDir)
 			topDir = ".";
 
-		Com_Printf("Trying to load \"%s\" from \"%s\"...\n", name, topDir);
+		Com_Printf(" Trying to load \"%s\" from \"%s\"...\n", name, topDir);
 		Com_sprintf(libPath, sizeof(libPath), "%s%c%s", topDir, PATH_SEP, name);
 
 		if(!(dllhandle = Sys_LoadLibrary(libPath)))

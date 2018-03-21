@@ -745,7 +745,7 @@ typedef struct zonedebug_s {
 typedef struct memblock_s {
 	int		size;           // including the header and possibly tiny fragments
 	int     tag;            // a tag of 0 is a free block
-	struct memblock_s       *next, *prev;
+	struct memblock_s   *next, *prev;
 	int     id;        		// should be ZONEID
 #ifdef ZONE_DEBUG
 	zonedebug_t d;
@@ -806,14 +806,13 @@ int Z_AvailableMemory( void ) {
 }
 
 
-void Z_Free( void* ptr )
+void Z_Free(void* ptr)
 {
-	memzone_t *zone;
-	
-	if (!ptr) {
-		Com_Error( ERR_DROP, "Z_Free: NULL pointer" );
-	}
 
+	if (!ptr)
+		Com_Error( ERR_DROP, "Z_Free: NULL pointer" );
+
+	memzone_t *zone;
 	memblock_t* block = (memblock_t *) ( (char *)ptr - sizeof(memblock_t));
 	
     if (block->id != ZONEID)
@@ -2829,7 +2828,7 @@ void Com_Init(char *commandLine )
 		pipefile = FS_FCreateOpenPipeFile( com_pipefile->string );
 	}
 
-	Com_Printf("\n-------- Common Initialization Complete --------\n");
+	Com_Printf("================ Com_Init() finished. ================\n");
 }
 
 /*

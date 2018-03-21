@@ -37,7 +37,7 @@ const static float s_flipMatrix[16] =
 	0, 0, 0, 1
 };
 
-
+/*
 static void GL_BindMultitexture( image_t *image0, GLuint env0, image_t *image1, GLuint env1 )
 {
 	int	texnum0 = image0->texnum;
@@ -63,6 +63,7 @@ static void GL_BindMultitexture( image_t *image0, GLuint env0, image_t *image1, 
 		qglBindTexture( GL_TEXTURE_2D, texnum0 );
 	}
 }
+*/
 
 /*
 ================
@@ -1110,9 +1111,9 @@ void RB_ShowImages( void )
 	int		i;
 	image_t	*image;
 	float	x, y, w, h;
-	int		start, end;
 
-	if ( !backEnd.projection2D ) {
+    if ( !backEnd.projection2D )
+    {
 		RB_SetGL2D();
 	}
 
@@ -1120,7 +1121,7 @@ void RB_ShowImages( void )
 
 	qglFinish();
 
-	start = ri.Milliseconds();
+	int start = ri.Milliseconds();
 
 	for( i=0 ; i<tr.numImages ; i++ )
     {
@@ -1152,7 +1153,7 @@ void RB_ShowImages( void )
 
 	qglFinish();
 
-	end = ri.Milliseconds();
+	int end = ri.Milliseconds();
 	ri.Printf( PRINT_ALL, "%i msec to draw all images\n", end - start );
 }
 

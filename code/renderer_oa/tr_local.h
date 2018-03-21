@@ -45,20 +45,6 @@ extern glconfig_t glConfig;
 #define LIGHTMAP_NONE       -1
 
 
-
-
-float R_NoiseGet4f( float x, float y, float z, float t );
-void  R_NoiseInit( void );
-
-
-
-
-// font stuff
-void R_InitFreeType( void );
-void R_DoneFreeType( void );
-void RE_RegisterFont(const char *fontName, int pointSize, fontInfo_t *font);
-
-
 // 14 bits, can't be increased without changing bit packing for drawsurfs, see QSORT_SHADERNUM_SHIFT
 #define SHADERNUM_BITS      14
 #define MAX_SHADERS         (1<<SHADERNUM_BITS)
@@ -836,15 +822,15 @@ typedef struct {
 	int			lightGridBounds[3];
 
 
-	byte		*lightGridData;
+	unsigned char* lightGridData;
 
 
 
 	int			numClusters;
 	int			clusterBytes;
-	const byte	*vis;			// may be passed in by CM_LoadMap to save space
+	const unsigned char* vis;			// may be passed in by CM_LoadMap to save space
 
-	byte		*novis;			// clusterBytes of 0xff
+	unsigned char* novis;			// clusterBytes of 0xff
 
 	char		*entityString;
 	char		*entityParsePoint;
@@ -1252,10 +1238,6 @@ extern cvar_t	*r_modelshader;	// Leilei - new model shading
 
 
 extern cvar_t	*r_ntsc;	// Leilei - ntsc
-
-
-extern cvar_t	*r_retroAA;	// Leilei - old console anti aliasing
-
 extern cvar_t	*r_suggestiveThemes;	// Leilei - mature content
 
 
@@ -1268,8 +1250,6 @@ extern	cvar_t	*r_iconmip;	// leilei - icon mip - picmip for 2d icons
 extern	cvar_t	*r_iconBits;	// leilei - icon color depth for 2d icons
 
 extern	cvar_t	*r_lightmapBits;	// leilei - lightmap color depth
-
-extern	cvar_t	*r_texdump;	// leilei - texture dumping
 
 extern  cvar_t	*r_detailTextureScale;		// leilei - scale tweak the detail textures, 0 doesn't tweak at all.
 extern  cvar_t	*r_detailTextureLayers;		// leilei - add in more smaller detail texture layers, expensive!
@@ -1773,6 +1753,16 @@ void	RB_CalcNormal( unsigned char *colors ); // leilei - normal hack
 
 
 /////////////////////////// rendercommon.h //////////////////////////////
+
+//tr_noise
+float R_NoiseGet4f( float x, float y, float z, float t );
+void  R_NoiseInit( void );
+
+
+//tr_font
+void R_InitFreeType( void );
+void R_DoneFreeType( void );
+void RE_RegisterFont(const char *fontName, int pointSize, fontInfo_t *font);
 
 //tr_image_jpg.c
 void RE_SaveJPG(char * filename, int quality, int image_width, int image_height, unsigned char *image_buffer, int padding);

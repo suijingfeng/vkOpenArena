@@ -131,44 +131,40 @@ R_SetupEntityLightingGrid
 =================
 */
 
-static void R_SetupEntityLightingGrid( trRefEntity_t *ent ) {
+static void R_SetupEntityLightingGrid( trRefEntity_t *ent )
+{
 	vec3_t	lightOrigin;
 	int		pos[3];
 	int		i, j;
-	byte	*gridData;
+	unsigned char* gridData;
 	float	frac[3];
 	int		gridStep[3];
 	vec3_t	direction;
 	float	totalFactor;
 
-
-
-
-	if ( ent->e.renderfx & RF_LIGHTING_ORIGIN ) {
+	if ( ent->e.renderfx & RF_LIGHTING_ORIGIN )
+    {
 		// seperate lightOrigins are needed so an object that is
 		// sinking into the ground can still be lit, and so
 		// multi-part models can be lit identically
 		VectorCopy( ent->e.lightingOrigin, lightOrigin );
-	} else {
+	} 
+    else
+    {
 		VectorCopy( ent->e.origin, lightOrigin );
 	}
 
 	VectorSubtract( lightOrigin, tr.world->lightGridOrigin, lightOrigin );
-	for ( i = 0 ; i < 3 ; i++ ) {
-		float	v;
-
-
-		v = lightOrigin[i]*tr.world->lightGridInverseSize[i];
+	for ( i = 0 ; i < 3 ; i++ )
+    {
+		float v = lightOrigin[i]*tr.world->lightGridInverseSize[i];
 		pos[i] = floor( v );
 		frac[i] = v - pos[i];
 		if ( pos[i] < 0 ) {
 			pos[i] = 0;
 		} else if ( pos[i] >= tr.world->lightGridBounds[i] - 1 ) {
 			pos[i] = tr.world->lightGridBounds[i] - 1;
-		}
-
-
-		
+		}	
 	}
 
 	VectorClear( ent->ambientLight );
@@ -182,21 +178,22 @@ static void R_SetupEntityLightingGrid( trRefEntity_t *ent ) {
 	gridStep[0] = 8;
 	gridStep[1] = 8 * tr.world->lightGridBounds[0];
 	gridStep[2] = 8 * tr.world->lightGridBounds[0] * tr.world->lightGridBounds[1];
-	gridData = tr.world->lightGridData + pos[0] * gridStep[0]
-		+ pos[1] * gridStep[1] + pos[2] * gridStep[2];
+	gridData = tr.world->lightGridData + pos[0] * gridStep[0] + pos[1] * gridStep[1] + pos[2] * gridStep[2];
 
 	totalFactor = 0;
-	for ( i = 0 ; i < 8 ; i++ ) {
+	for ( i = 0 ; i < 8 ; i++ )
+    {
 		float	factor;
-		byte	*data;
+		unsigned char* data = gridData;
 		int		lat, lng;
 		vec3_t	normal;
 		#if idppc
 		float d0, d1, d2, d3, d4, d5;
 		#endif
 		factor = 1.0;
-		data = gridData;
-		for ( j = 0 ; j < 3 ; j++ ) {
+	
+        for ( j = 0 ; j < 3 ; j++ )
+        {
 			if ( i & (1<<j) ) {
 				factor *= frac[j];
 				data += gridStep[j];
@@ -205,11 +202,13 @@ static void R_SetupEntityLightingGrid( trRefEntity_t *ent ) {
 			}
 		}
 
-		if ( !(data[0]+data[1]+data[2]) ) {
+		if ( !(data[0]+data[1]+data[2]) )
+        {
 			continue;	// ignore samples in walls
 		}
 		totalFactor += factor;
-		#if idppc
+		
+        #if idppc
 		d0 = data[0]; d1 = data[1]; d2 = data[2];
 		d3 = data[3]; d4 = data[4]; d5 = data[5];
 

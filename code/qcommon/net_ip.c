@@ -1576,6 +1576,8 @@ void NET_Config( qboolean enableNetworking )
 
 void NET_Init( void )
 {
+	Com_Printf(" -------- NET_Init() -------- \n" );
+
 #ifdef _WIN32
 	int	r = WSAStartup( MAKEWORD( 1, 1 ), &winsockdata );
 	if( r ) {

@@ -498,7 +498,7 @@ VM_Create
 If image ends in .qvm it will be interpreted, otherwise it will attempt to load as a system dll
 ================
 */
-vm_t *VM_Create(const char *module, intptr_t (*systemCalls)(intptr_t *), vmInterpret_t interpret )
+vm_t* VM_Create(const char *module, intptr_t (*systemCalls)(intptr_t *), vmInterpret_t interpret )
 {
 	struct vm_s *vm;
 	vmHeader_t *header;
@@ -557,7 +557,7 @@ vm_t *VM_Create(const char *module, intptr_t (*systemCalls)(intptr_t *), vmInter
 		}
 		else if(retval == VMI_COMPILED)
 		{
-            Com_Printf("\n -------- Try loading QVM file %s --------\n", filename);
+            Com_Printf("\n -------- Try loading QVM file --------\n");
 			vm->searchPath = startSearch;
 			if((header = VM_LoadQVM(vm, qtrue, qfalse)))
 				break;
@@ -612,7 +612,7 @@ vm_t *VM_Create(const char *module, intptr_t (*systemCalls)(intptr_t *), vmInter
 	vm->programStack = vm->dataMask + 1;
 	vm->stackBottom = vm->programStack - PROGRAM_STACK_SIZE;
 
-	Com_Printf(" VM_Create %s finished, loaded in %d bytes on the hunk. \n\n", module, remaining - Hunk_MemoryRemaining());
+	Com_Printf(" VM_Create: Creating %s finished, loaded in %d bytes on the hunk. \n\n", module, remaining - Hunk_MemoryRemaining());
 
 	return vm;
 }
@@ -922,6 +922,7 @@ void VM_BlockCopy(unsigned int dest, unsigned int src, size_t n)
 
 void VM_Init( void )
 {
+	Com_Printf(" VM_Init(). \n");
 	Cvar_Get( "vm_cgame", "2", CVAR_ARCHIVE );	// !@# SHIP WITH SET TO 2
 	Cvar_Get( "vm_game", "2", CVAR_ARCHIVE );	// !@# SHIP WITH SET TO 2
 	Cvar_Get( "vm_ui", "2", CVAR_ARCHIVE );		// !@# SHIP WITH SET TO 2

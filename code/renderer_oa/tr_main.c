@@ -1109,12 +1109,15 @@ void R_LocalPointToWorld (vec3_t local, vec3_t world)
 }
 
 
+/*
 static void R_WorldToLocal(vec3_t world, vec3_t local)
 {
 	local[0] = DotProduct(world, tr.or.axis[0]);
 	local[1] = DotProduct(world, tr.or.axis[1]);
 	local[2] = DotProduct(world, tr.or.axis[2]);
 }
+*/
+
 
 /*
 ==========================

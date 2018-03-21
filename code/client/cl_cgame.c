@@ -35,6 +35,7 @@ extern qboolean loadCamera(const char *name);
 extern void startCamera(int time);
 extern qboolean getCameraInfo(int time, vec3_t *origin, vec3_t *angles);
 
+
 void CL_GetGameState( gameState_t *gs )
 {
 	*gs = cl.gameState;
@@ -689,25 +690,25 @@ intptr_t CL_CgameSystemCalls( intptr_t *args ) {
 CL_InitCGame: Should only be called by CL_StartHunkUsers
 ====================
 */
-void CL_InitCGame( void )
+void CL_InitCGame(void)
 {
-	const char	*info;
-	const char	*mapname;
-	int			t1, t2;
-	vmInterpret_t interpret;
 
-	t1 = Sys_Milliseconds();
+	int t1 = Sys_Milliseconds();
+    int t2;
+
+    Com_Printf("\n======== CL_InitCGame() ========\n");
+
 
 	// put away the console
 	Con_Close();
 
 	// find the current mapname
-	info = cl.gameState.stringData + cl.gameState.stringOffsets[ CS_SERVERINFO ];
-	mapname = Info_ValueForKey( info, "mapname" );
+	const char* info = cl.gameState.stringData + cl.gameState.stringOffsets[ CS_SERVERINFO ];
+	const char* mapname = Info_ValueForKey( info, "mapname" );
 	Com_sprintf( cl.mapname, sizeof( cl.mapname ), "maps/%s.bsp", mapname );
 
 	// load the dll or bytecode
-	interpret = Cvar_VariableValue("vm_cgame");
+	vmInterpret_t interpret = Cvar_VariableValue("vm_cgame");
 	if(cl_connectedToPureServer)
 	{
 		// if sv_pure is set we only allow qvms to be loaded
@@ -736,7 +737,7 @@ void CL_InitCGame( void )
 
 	t2 = Sys_Milliseconds();
 
-	Com_Printf( "CL_InitCGame: %5.2f seconds\n", (t2-t1)/1000.0 );
+	Com_Printf(" CL_InitCGame: %5.2f seconds\n", (t2-t1)/1000.0 );
 
 	// have the renderer touch all its images, so they are present
 	// on the card even if the driver does deferred loading
@@ -749,6 +750,8 @@ void CL_InitCGame( void )
 
 	// clear anything that got printed
 	Con_ClearNotify ();
+
+   Com_Printf("\n======== CL_InitCGame() finished. ========\n");
 }
 
 

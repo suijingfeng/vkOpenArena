@@ -265,6 +265,7 @@ CON_Init: Initialize the console input (tty mode if possible)
 */
 void CON_Init( void )
 {
+    Com_Printf("-------- CON_Init() --------\n");
 	struct termios tc;
 
 	// If the process is backgrounded (running non interactively)
@@ -313,8 +314,6 @@ void CON_Init( void )
 	ttycon_on = qtrue;
 	ttycon_hide = 1; // Mark as hidden, so prompt is shown in CON_Show
 	CON_Show();
-
-    Com_Printf("CON_Init() finished. \n\n");
 }
 
 /*

@@ -1357,9 +1357,6 @@ void RE_Shutdown( qboolean destroyWindow )
 
 void R_Init(void)
 {
-	int i;
-	unsigned char *ptr;
-
 	ri.Printf( PRINT_ALL, "-------- R_Init --------\n" );
 
 	// clear all our internal state
@@ -1376,6 +1373,7 @@ void R_Init(void)
 	memset( tess.constantColor255, 255, sizeof( tess.constantColor255 ) );
 
 	// init function tables
+    int i;
 	for( i = 0; i < FUNCTABLE_SIZE; i++ )
     {
 		tr.sinTable[i] = sin( 2*M_PI*i / ( ( float ) ( FUNCTABLE_SIZE - 1 ) ) );
@@ -1405,7 +1403,8 @@ void R_Init(void)
 	if (max_polyverts < MAX_POLYVERTS)
 		max_polyverts = MAX_POLYVERTS;
 
-	ptr = ri.Hunk_Alloc( sizeof( *backEndData ) + sizeof(srfPoly_t) * max_polys + sizeof(polyVert_t) * max_polyverts, h_low);
+	unsigned char *ptr = ri.Hunk_Alloc(sizeof( *backEndData ) + sizeof(srfPoly_t) * max_polys + sizeof(polyVert_t) * max_polyverts, h_low);
+
 	backEndData = (backEndData_t *) ptr;
 	backEndData->polys = (srfPoly_t *) ((char *) ptr + sizeof( *backEndData ));
 	backEndData->polyVerts = (polyVert_t *) ((char *) ptr + sizeof( *backEndData ) + sizeof(srfPoly_t) * max_polys);

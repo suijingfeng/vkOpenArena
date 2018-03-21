@@ -133,13 +133,13 @@ void Cbuf_ExecuteText(int exec_when, const char *text)
         case EXEC_NOW:
             if (text && strlen(text) > 0)
             {
-                Com_DPrintf(S_COLOR_YELLOW "EXEC_NOW %s\n", text);
+                Com_Printf(S_COLOR_YELLOW "EXEC_NOW %s\n", text);
                 Cmd_ExecuteString(text);
             }
             else
             {
                 Cbuf_Execute();
-                Com_DPrintf(S_COLOR_YELLOW "EXEC_NOW %s\n", cmd_text.data);
+                Com_Printf(S_COLOR_YELLOW "EXEC_NOW %s\n", cmd_text.data);
             } break;
         case EXEC_INSERT:
             Cbuf_InsertText(text);
@@ -647,27 +647,29 @@ void Cmd_SetCommandCompletionFunc(const char *command, completionFunc_t complete
 	}
 }
 
-/*
-============
-Cmd_RemoveCommand
-============
-*/
-void	Cmd_RemoveCommand( const char *cmd_name ) {
-	cmd_function_t	*cmd, **back;
 
-	back = &cmd_functions;
-	while( 1 ) {
+void Cmd_RemoveCommand( const char *cmd_name )
+{
+	cmd_function_t* cmd;
+    cmd_function_t** back= &cmd_functions;
+	
+    while( 1 )
+    {
 		cmd = *back;
-		if ( !cmd ) {
+		if ( !cmd )
+        {
 			// command wasn't active
 			return;
 		}
-		if ( !strcmp( cmd_name, cmd->name ) ) {
+
+		if ( !strcmp( cmd_name, cmd->name ) )
+        {
 			*back = cmd->next;
-			if (cmd->name) {
+			if (cmd->name)
+            {
 				Z_Free(cmd->name);
 			}
-			Z_Free (cmd);
+			Z_Free(cmd);
 			return;
 		}
 		back = &cmd->next;

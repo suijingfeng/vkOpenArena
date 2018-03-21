@@ -120,7 +120,7 @@ cvar_t *cl_consoleHeight;
 clientActive_t		cl;
 clientConnection_t	clc;
 clientStatic_t		cls;
-vm_t				*cgvm;
+vm_t* cgvm;
 
 char				cl_reconnectArgs[MAX_OSPATH];
 char				cl_oldGame[MAX_QPATH];
@@ -1202,7 +1202,7 @@ CL_ShutdownAll
 void CL_ShutdownAll(qboolean shutdownRef)
 {
 	if(CL_VideoRecording())
-		CL_CloseAVI();
+		CL_CloseAVI_f();
 
 	if(clc.demorecording)
 		CL_StopRecord_f();
@@ -1455,7 +1455,7 @@ void CL_Disconnect( qboolean showMainMenu )
     {
 		// Finish rendering current frame
 		SCR_UpdateScreen( );
-		CL_CloseAVI( );
+		CL_CloseAVI_f();
 	}
 
 	CL_UpdateGUID( NULL, 0 );
@@ -1917,7 +1917,7 @@ void CL_Vid_Restart_f( void )
 
 	// Settings may have changed so stop recording now
 	if( CL_VideoRecording( ) ) {
-		CL_CloseAVI( );
+		CL_CloseAVI_f();
 	}
 
 	if(clc.demorecording)
@@ -2986,8 +2986,7 @@ void CL_Frame ( int msec )
 			Q_strncpyz( mapName, COM_SkipPath( cl.mapname ), sizeof( cl.mapname ) );
 			COM_StripExtension(mapName, mapName, sizeof(mapName));
 
-			Cbuf_ExecuteText( EXEC_NOW,
-					va( "record %s-%s-%s", nowString, serverName, mapName ) );
+			Cbuf_ExecuteText( EXEC_NOW, va( "record %s-%s-%s", nowString, serverName, mapName ) );
 		}
 		else if( clc.state != CA_ACTIVE && clc.demorecording ) {
 			// Recording, but not CA_ACTIVE, so stop recording
@@ -3085,65 +3084,89 @@ void CL_ShutdownRef( void )
 }
 
 
-extern int vresWidth;
-extern int vresHeight;
+
+//===========================================================================================
+
+
+static void CL_SetModel_f( void )
+{
+	char name[256];
+	char* arg = Cmd_Argv( 1 );
+	
+    if (arg[0])
+    {
+		Cvar_Set( "model", arg );
+		Cvar_Set( "headmodel", arg );
+	}
+    else
+    {
+		Cvar_VariableStringBuffer( "model", name, sizeof(name) );
+		Com_Printf("model is set to %s\n", name);
+	}
+}
 
 
 /*
-============================
-CL_StartHunkUsers
+===============
+CL_Video_f
 
-After the server has cleared the hunk, these will need to be restarted
-This is the only place that any of these functions are called from
-============================
+video
+video [filename]
+===============
 */
-void CL_StartHunkUsers( qboolean rendererOnly )
+static void CL_Video_f( void )
 {
-	if (!com_cl_running || !com_cl_running->integer) {
-		return;
-	}
+  char  filename[ MAX_OSPATH ];
+  int   i, last;
 
-	if( !cls.rendererStarted )
+  if( !clc.demoplaying )
+  {
+    Com_Printf( "The video command can only be used when playing back demos\n" );
+    return;
+  }
+
+  if( Cmd_Argc( ) == 2 )
+  {
+    // explicit filename
+    Com_sprintf( filename, MAX_OSPATH, "videos/%s.avi", Cmd_Argv( 1 ) );
+  }
+  else
+  {
+    // scan for a free filename
+    for( i = 0; i <= 9999; i++ )
     {
-		cls.rendererStarted = qtrue;
-		
-        //CL_InitRenderer(), this sets up the renderer and calls R_Init
-        re.BeginRegistration( &cls.glconfig );
+      int a, b, c, d;
 
-        // load character sets
-        cls.charSetShader = re.RegisterShader( "gfx/2d/bigchars" );
-        cls.whiteShader = re.RegisterShader( "white" );
-        cls.consoleShader = re.RegisterShader( "console" ); 
-        
-        g_console_field_width = cls.glconfig.vidWidth / SMALLCHAR_WIDTH - 2;
-        g_consoleField.widthInChars = g_console_field_width;
-	}
+      last = i;
 
-	if( rendererOnly )
-		return;
+      a = last / 1000;
+      last -= a * 1000;
+      b = last / 100;
+      last -= b * 100;
+      c = last / 10;
+      last -= c * 10;
+      d = last;
 
-	if( !cls.soundStarted )
+      Com_sprintf( filename, MAX_OSPATH, "videos/video%d%d%d%d.avi", a, b, c, d );
+
+      if( !FS_FileExists( filename ) )
+        break; // file doesn't exist
+    }
+
+    if( i > 9999 )
     {
-		cls.soundStarted = qtrue;
-		S_Init();
-	}
+      Com_Printf( S_COLOR_RED "ERROR: no free file names to create video\n" );
+      return;
+    }
+  }
 
-	if( !cls.soundRegistered )
-    {
-		cls.soundRegistered = qtrue;
-		S_BeginRegistration();
-	}
-
-	if( com_dedicated->integer )
-		return;
-
-
-	if ( !cls.uiStarted )
-    {
-		cls.uiStarted = qtrue;
-		CL_InitUI();
-	}
+  CL_OpenAVIForWriting( filename );
 }
+
+
+//===========================================================================================
+
+
 
 
 void *CL_RefMalloc( int size )
@@ -3169,11 +3192,11 @@ void CL_InitRef(void)
     
 #endif
 
-	Com_Printf(" Initializing Renderer. \n");
+	Com_Printf(" CL_InitRef(). \n");
 
 #ifdef USE_RENDERER_DLOPEN
 
-    Com_Printf("\n-------- USE_RENDERER_DLOPEN --------\n");
+    Com_Printf(" RENDERER DLOPEN USED. \n");
 
 	cl_renderer = Cvar_Get("cl_renderer", "openarena", CVAR_ARCHIVE | CVAR_LATCH);
 
@@ -3272,96 +3295,67 @@ void CL_InitRef(void)
 
 
 
-//===========================================================================================
-
-
-void CL_SetModel_f( void )
-{
-	char name[256];
-	char* arg = Cmd_Argv( 1 );
-	
-    if (arg[0])
-    {
-		Cvar_Set( "model", arg );
-		Cvar_Set( "headmodel", arg );
-	}
-    else
-    {
-		Cvar_VariableStringBuffer( "model", name, sizeof(name) );
-		Com_Printf("model is set to %s\n", name);
-	}
-}
-
-
-//===========================================================================================
-
-
 /*
-===============
-CL_Video_f
+============================
+CL_StartHunkUsers
 
-video
-video [filename]
-===============
+After the server has cleared the hunk, these will need to be restarted
+This is the only place that any of these functions are called from
+============================
 */
-void CL_Video_f( void )
+void CL_StartHunkUsers( qboolean rendererOnly )
 {
-  char  filename[ MAX_OSPATH ];
-  int   i, last;
+	if (!com_cl_running || !com_cl_running->integer) {
+		return;
+	}
 
-  if( !clc.demoplaying )
-  {
-    Com_Printf( "The video command can only be used when playing back demos\n" );
-    return;
-  }
-
-  if( Cmd_Argc( ) == 2 )
-  {
-    // explicit filename
-    Com_sprintf( filename, MAX_OSPATH, "videos/%s.avi", Cmd_Argv( 1 ) );
-  }
-  else
-  {
-    // scan for a free filename
-    for( i = 0; i <= 9999; i++ )
+	if( !cls.rendererStarted )
     {
-      int a, b, c, d;
+		cls.rendererStarted = qtrue;
+		
+        //CL_InitRenderer(), this sets up the renderer and calls R_Init
+        re.BeginRegistration( &cls.glconfig );
 
-      last = i;
+        // load character sets
+        cls.charSetShader = re.RegisterShader( "gfx/2d/bigchars" );
+        cls.whiteShader = re.RegisterShader( "white" );
+        cls.consoleShader = re.RegisterShader( "console" ); 
+        
+        g_console_field_width = cls.glconfig.vidWidth / SMALLCHAR_WIDTH - 2;
+        g_consoleField.widthInChars = g_console_field_width;
+	}
 
-      a = last / 1000;
-      last -= a * 1000;
-      b = last / 100;
-      last -= b * 100;
-      c = last / 10;
-      last -= c * 10;
-      d = last;
+	if( rendererOnly )
+		return;
 
-      Com_sprintf( filename, MAX_OSPATH, "videos/video%d%d%d%d.avi", a, b, c, d );
-
-      if( !FS_FileExists( filename ) )
-        break; // file doesn't exist
-    }
-
-    if( i > 9999 )
+	if( !cls.soundStarted )
     {
-      Com_Printf( S_COLOR_RED "ERROR: no free file names to create video\n" );
-      return;
-    }
-  }
+		cls.soundStarted = qtrue;
+		S_Init();
+	}
 
-  CL_OpenAVIForWriting( filename );
+	if( !cls.soundRegistered )
+    {
+		cls.soundRegistered = qtrue;
+		S_BeginRegistration();
+	}
+
+	if( com_dedicated->integer )
+		return;
+
+
+	if ( !cls.uiStarted )
+    {
+		cls.uiStarted = qtrue;
+		CL_InitUI();
+	}
+
+    Com_Printf("========= CL_StartHunkUsers() finished. ========\n"); 
 }
 
-/*
-===============
-CL_StopVideo_f
-===============
-*/
-void CL_StopVideo_f( void )
-{
-  CL_CloseAVI( );
-}
+
+
+
 
 /*
 ===============
@@ -3371,11 +3365,9 @@ If one does not, try to generate it by filling it with 2048 bytes of random data
 */
 static void CL_GenerateQKey(void)
 {
-	int len = 0;
 	unsigned char buff[ QKEY_SIZE ];
-	fileHandle_t f;
-
-	len = FS_SV_FOpenFileRead( QKEY_FILE, &f );
+    fileHandle_t f;
+	int len = FS_SV_FOpenFileRead( QKEY_FILE, &f );
 	FS_FCloseFile( f );
 	if( len == QKEY_SIZE ) {
 		Com_Printf(" QKEY found.\n" );
@@ -3453,7 +3445,7 @@ void CL_Sayto_f( void ) {
 
 void CL_Init( void )
 {
-	Com_Printf( "\n-------- Client Initialization --------\n" );
+	Com_Printf( "\n======== Client Initialization ========\n" );
 
 	Con_Init();
 
@@ -3547,7 +3539,7 @@ void CL_Init( void )
 
 	cl_motdString = Cvar_Get( "cl_motdString", "", CVAR_ROM );
 
-	Cvar_Get( "cl_maxPing", "800", CVAR_ARCHIVE );
+	Cvar_Get( "cl_maxPing", "400", CVAR_ARCHIVE );
 
 	cl_lanForcePackets = Cvar_Get ("cl_lanForcePackets", "1", CVAR_ARCHIVE);
 
@@ -3558,7 +3550,7 @@ void CL_Init( void )
 
 	cl_consoleType = Cvar_Get( "cl_consoleType", "0", CVAR_ARCHIVE );
 	cl_consoleColor[0] = Cvar_Get( "cl_consoleColorRed", "1", CVAR_ARCHIVE );
-	cl_consoleColor[1] = Cvar_Get( "cl_consoleColorGreen", "0", CVAR_ARCHIVE );
+	cl_consoleColor[1] = Cvar_Get( "cl_consoleColorGreen", "1", CVAR_ARCHIVE );
 	cl_consoleColor[2] = Cvar_Get( "cl_consoleColorBlue", "0", CVAR_ARCHIVE );
 	cl_consoleColor[3] = Cvar_Get( "cl_consoleColorAlpha", "0.8", CVAR_ARCHIVE );
 
@@ -3635,7 +3627,7 @@ void CL_Init( void )
 	Cmd_AddCommand ("fs_referencedList", CL_ReferencedPK3List_f );
 	Cmd_AddCommand ("model", CL_SetModel_f );
 	Cmd_AddCommand ("video", CL_Video_f );
-	Cmd_AddCommand ("stopvideo", CL_StopVideo_f );
+	Cmd_AddCommand ("stopvideo", CL_CloseAVI_f );
 	if( !com_dedicated->integer ) {
 		Cmd_AddCommand ("sayto", CL_Sayto_f );
 		Cmd_SetCommandCompletionFunc( "sayto", CL_CompletePlayerName );
@@ -3652,7 +3644,7 @@ void CL_Init( void )
 	Cvar_Get( "cl_guid", "", CVAR_USERINFO | CVAR_ROM );
 	CL_UpdateGUID( NULL, 0 );
 
-	Com_Printf("-------- Client Initialization Complete --------\n\n");
+	Com_Printf("\n======== Client Initialization Complete ========\n\n");
 }
 
 
@@ -3717,9 +3709,12 @@ void CL_Shutdown(char *finalmsg, qboolean disconnect, qboolean quit)
 
 }
 
-static void CL_SetServerInfo(serverInfo_t *server, const char *info, int ping) {
-	if (server) {
-		if (info) {
+static void CL_SetServerInfo(serverInfo_t *server, const char *info, int ping)
+{
+	if (server)
+    {
+		if (info)
+        {
 			server->clients = atoi(Info_ValueForKey(info, "clients"));
 			Q_strncpyz(server->hostName,Info_ValueForKey(info, "hostname"), MAX_NAME_LENGTH);
 			Q_strncpyz(server->mapName, Info_ValueForKey(info, "mapname"), MAX_NAME_LENGTH);
@@ -3737,7 +3732,8 @@ static void CL_SetServerInfo(serverInfo_t *server, const char *info, int ping) {
 	}
 }
 
-static void CL_SetServerInfoByAddress(netadr_t from, const char *info, int ping) {
+static void CL_SetServerInfoByAddress(netadr_t from, const char *info, int ping)
+{
 	int i;
 
 	for (i = 0; i < MAX_OTHER_SERVERS; i++) {

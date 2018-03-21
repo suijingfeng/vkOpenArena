@@ -24,18 +24,18 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
 extern	backEndData_t *backEndData;	// the second one may not be allocated
 
-static int	r_firstSceneDrawSurf;
+static int	r_firstSceneDrawSurf = 0;
 
-static int	r_numdlights;
-static int	r_firstSceneDlight;
+static int	r_numdlights = 0;
+static int	r_firstSceneDlight = 0;
 
-static int	r_numentities;
-static int	r_firstSceneEntity;
+static int	r_numentities = 0;
+static int	r_firstSceneEntity = 0;
 
-static int	r_numpolys;
-static int	r_firstScenePoly;
+static int	r_numpolys = 0;
+static int	r_firstScenePoly = 0;
 
-static int	r_numpolyverts;
+static int	r_numpolyverts = 0;
 
 
 void R_InitNextFrame( void )
@@ -43,16 +43,12 @@ void R_InitNextFrame( void )
 	backEndData->commands.used = 0;
 
 	r_firstSceneDrawSurf = 0;
-
 	r_numdlights = 0;
 	r_firstSceneDlight = 0;
-
 	r_numentities = 0;
 	r_firstSceneEntity = 0;
-
 	r_numpolys = 0;
 	r_firstScenePoly = 0;
-
 	r_numpolyverts = 0;
 }
 
