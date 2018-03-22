@@ -45,6 +45,13 @@ if you don't want to use the shader system.
 
 extern	shaderCommands_t	tess;
 
+
+static cvar_t* r_railWidth;
+static cvar_t* r_railCoreWidth;
+static cvar_t* r_railSegmentLength;
+
+
+
 #define RB_CHECKOVERFLOW(v,i)   if (tess.numVertexes + (v) >= SHADER_MAX_VERTEXES || tess.numIndexes + (i) >= SHADER_MAX_INDEXES ) {RB_CheckOverflow(v,i);}
 
 
@@ -346,13 +353,9 @@ static void DoRailDiscs( int numSegs, const vec3_t start, const vec3_t dir, cons
 
 static void RB_SurfaceRailRings( void )
 {
+	vec3_t start, end, vec, right, up;
 
-    int			numSegs;
-	vec3_t		vec;
-	vec3_t		right, up;
-	vec3_t		start, end;
-
-	refEntity_t *e = &backEnd.currentEntity->e;
+	refEntity_t* e = &backEnd.currentEntity->e;
 
 	VectorCopy( e->oldorigin, start );
 	VectorCopy( e->origin, end );
@@ -361,7 +364,9 @@ static void RB_SurfaceRailRings( void )
 	VectorSubtract( end, start, vec );
 	int len = VectorNormalize( vec );
 	MakeNormalVectors( vec, right, up );
-	numSegs = ( len ) / r_railSegmentLength->value;
+
+
+	int numSegs = ( len ) / r_railSegmentLength->value;
 	if ( numSegs <= 0 )
 		numSegs = 1;
 
@@ -403,23 +408,22 @@ static void RB_SurfaceRailCore( void )
 /*
 ** RB_SurfaceLightningBolt
 */
-static void RB_SurfaceLightningBolt( void ) {
-	refEntity_t *e;
-	int			len;
+static void RB_SurfaceLightningBolt( void )
+{
 	vec3_t		right;
 	vec3_t		vec;
 	vec3_t		start, end;
 	vec3_t		v1, v2;
 	int			i;
 
-	e = &backEnd.currentEntity->e;
+	refEntity_t *e = &backEnd.currentEntity->e;
 
 	VectorCopy( e->oldorigin, end );
 	VectorCopy( e->origin, start );
 
 	// compute variables
 	VectorSubtract( end, start, vec );
-	len = VectorNormalize( vec );
+	int len = VectorNormalize( vec );
 
 	// compute side vector
 	VectorSubtract( start, backEnd.viewParms.or.origin, v1 );
@@ -1318,6 +1322,9 @@ void (*rb_surfaceTable[SF_NUM_SURFACE_TYPES])( void *) =
 	(void(*)(void*))RB_SurfaceEntity,		// SF_ENTITY
 };
 
-
-
-
+void R_InitSurface(void)
+{
+	r_railWidth = ri.Cvar_Get( "r_railWidth", "16", CVAR_ARCHIVE );
+	r_railCoreWidth = ri.Cvar_Get( "r_railCoreWidth", "6", CVAR_ARCHIVE );
+	r_railSegmentLength = ri.Cvar_Get( "r_railSegmentLength", "64", CVAR_ARCHIVE );
+}

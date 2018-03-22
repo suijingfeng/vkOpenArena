@@ -37,9 +37,6 @@ glstate_t	glState;
 cvar_t  *com_altivec;
 #endif
 
-cvar_t	*r_railWidth;
-cvar_t	*r_railCoreWidth;
-cvar_t	*r_railSegmentLength;
 
 cvar_t	*r_ignoreFastPath;
 
@@ -50,7 +47,6 @@ cvar_t	*r_detailTextures;
 cvar_t	*r_detailTextureScale;
 cvar_t	*r_detailTextureLayers;
 
-
 cvar_t	*r_znear;
 cvar_t	*r_zproj;
 
@@ -59,9 +55,9 @@ cvar_t	*r_skipBackEnd;
 cvar_t	*r_measureOverdraw;
 
 cvar_t	*r_inGameVideo;
-cvar_t	*r_fastsky;
+
 cvar_t	*r_drawSun;
-cvar_t	*r_dynamiclight;
+
 cvar_t	*r_dlightBacks;
 
 cvar_t	*r_lodbias;
@@ -76,9 +72,6 @@ cvar_t	*r_novis;
 cvar_t	*r_nocull;
 cvar_t	*r_facePlaneCull;
 cvar_t	*r_showcluster;
-// cvar_t	*r_nocurves;
-
-
 
 cvar_t	*r_ignoreGLErrors;
 cvar_t	*r_logFile;
@@ -97,7 +90,7 @@ cvar_t	*r_colorMipLevels;
 cvar_t	*r_picmip;
 cvar_t	*r_iconmip;
 cvar_t	*r_iconBits;
-cvar_t	*r_lightmapBits;
+
 cvar_t	*r_showtris;
 cvar_t	*r_showsky;
 cvar_t	*r_shownormals;
@@ -138,32 +131,11 @@ int		max_polys;
 cvar_t	*r_maxpolyverts;
 int		max_polyverts;
 
-// tcpp
-cvar_t	*r_lensReflectionBrightness;
-
-// leilei
-
-cvar_t	*r_flareSun;		// type of flare to use for the sun
-cvar_t	*r_flareDelay;		// time delay for medium quality flare testing
-
 cvar_t	*r_specMode;
 
-cvar_t	*r_flaresDlightShrink;
-cvar_t	*r_flaresDlightFade;
-cvar_t	*r_flaresDlightOpacity;
-cvar_t	*r_flaresDlightScale;
+
+
 cvar_t	*r_modelshader;		// Leilei
-
-cvar_t	*r_ntsc;		// Leilei - ntsc / composite signals
-
-cvar_t	*r_retroAA;		// Leilei - old console AA
-cvar_t	*r_anime;		// Leilei - anime filter
-cvar_t	*r_palletize;		// Leilei - palletization
-cvar_t	*r_leidebug;		// Leilei - debug
-cvar_t	*r_leidebugeye;		// Leilei - eye debug
-
-cvar_t	*r_suggestiveThemes;		// leilei - mature content control
-
 
 
 typedef struct vidmode_s {
@@ -931,19 +903,17 @@ static void R_Register( void )
 	ri.Cvar_CheckRange( r_znear, 0.001f, 200, qfalse );
 	r_zproj = ri.Cvar_Get( "r_zproj", "64", CVAR_ARCHIVE );
 	r_ignoreGLErrors = ri.Cvar_Get( "r_ignoreGLErrors", "1", CVAR_ARCHIVE );
-	r_fastsky = ri.Cvar_Get( "r_fastsky", "0", CVAR_ARCHIVE );
+
 	r_inGameVideo = ri.Cvar_Get( "r_inGameVideo", "1", CVAR_ARCHIVE );
 	r_drawSun = ri.Cvar_Get( "r_drawSun", "0", CVAR_ARCHIVE );
-	r_dynamiclight = ri.Cvar_Get( "r_dynamiclight", "1", CVAR_ARCHIVE );
+
 	r_dlightBacks = ri.Cvar_Get( "r_dlightBacks", "1", CVAR_ARCHIVE );
 	r_finish = ri.Cvar_Get ("r_finish", "0", CVAR_ARCHIVE);
 	r_textureMode = ri.Cvar_Get( "r_textureMode", "GL_LINEAR_MIPMAP_NEAREST", CVAR_ARCHIVE | CVAR_LATCH );
 	r_gamma = ri.Cvar_Get( "r_gamma", "1", CVAR_ARCHIVE );
 	r_facePlaneCull = ri.Cvar_Get ("r_facePlaneCull", "1", CVAR_ARCHIVE );
 
-	r_railWidth = ri.Cvar_Get( "r_railWidth", "16", CVAR_ARCHIVE );
-	r_railCoreWidth = ri.Cvar_Get( "r_railCoreWidth", "6", CVAR_ARCHIVE );
-	r_railSegmentLength = ri.Cvar_Get( "r_railSegmentLength", "32", CVAR_ARCHIVE );
+
 
 	r_primitives = ri.Cvar_Get( "r_primitives", "0", CVAR_ARCHIVE );
 
@@ -1000,39 +970,16 @@ static void R_Register( void )
 
 
 	r_specMode = ri.Cvar_Get( "r_specMode", "1" , CVAR_ARCHIVE );
-	//r_waveMode = ri.Cvar_Get( "r_waveMode", "0" , CVAR_ARCHIVE );
-
-	r_lensReflectionBrightness = ri.Cvar_Get( "r_lensReflectionBrightness", "0.5" , CVAR_ARCHIVE);
-
-
-	r_flaresDlightShrink = ri.Cvar_Get( "r_flaresDlightShrink", "1" , CVAR_ARCHIVE );	// dynamic light flares shrinking when close (reducing muzzleflash blindness)
-	r_flaresDlightFade = ri.Cvar_Get( "r_flaresDlightFade", "0" , CVAR_ARCHIVE | CVAR_CHEAT );	// dynamic light flares fading (workaround clipping bug)
-	r_flaresDlightOpacity = ri.Cvar_Get( "r_flaresDlightOpacity", "0.5" , CVAR_ARCHIVE );	// dynamic light flares (workaround poor visibility)
-	r_flaresDlightScale = ri.Cvar_Get( "r_flaresDlightScale", "0.7" , CVAR_ARCHIVE );	// dynamic light flares (workaround poor visibility)
-	r_flareSun = ri.Cvar_Get( "r_flareSun", "0" , CVAR_ARCHIVE);	// it's 0 because mappers expect 0.
-	r_flareDelay = ri.Cvar_Get( "r_flareDelay", "100" , CVAR_CHEAT);	// update delay for flare pixel read checking.
-
 
 
 	r_modelshader = ri.Cvar_Get( "r_modelshader", "0" , CVAR_ARCHIVE | CVAR_LATCH);		// leilei - load and use special shaders for lightDiffuse models
 	r_detailTextureScale = ri.Cvar_Get( "r_detailtextureScale", "0", CVAR_ARCHIVE | CVAR_LATCH ); // leilei - adjust scale of detail textures
 	r_detailTextureLayers = ri.Cvar_Get( "r_detailtextureLayers", "0", CVAR_ARCHIVE | CVAR_LATCH ); // leilei - add more detail layers
 
-	r_ntsc = ri.Cvar_Get( "r_ntsc", "0" , CVAR_ARCHIVE | CVAR_LATCH);			// leilei - ntsc filter
-
-	r_retroAA = ri.Cvar_Get( "r_retroAA", "0" , CVAR_ARCHIVE | CVAR_LATCH);
-
-	r_suggestiveThemes = ri.Cvar_Get( "r_suggestiveThemes", "1" , CVAR_ARCHIVE | CVAR_LATCH);
-
-	r_anime = ri.Cvar_Get( "r_anime", "0" , CVAR_ARCHIVE | CVAR_LATCH);
-	r_palletize = ri.Cvar_Get( "r_palletize", "0" , CVAR_ARCHIVE | CVAR_LATCH);
-	r_leidebug = ri.Cvar_Get( "r_leidebug", "0" , CVAR_CHEAT);
-	r_leidebugeye = ri.Cvar_Get( "r_leidebugeye", "0" , CVAR_CHEAT);
-
 	r_iconmip = ri.Cvar_Get ("r_iconmip", "0", CVAR_ARCHIVE | CVAR_LATCH );		// leilei - icon mip
 	r_iconBits = ri.Cvar_Get ("r_iconBits", "0", CVAR_ARCHIVE | CVAR_LATCH );	// leilei - icon bits
 
-	r_lightmapBits = ri.Cvar_Get ("r_lightmapBits", "0", CVAR_ARCHIVE | CVAR_LATCH );	// leilei - lightmap color bits
+
 
 
 	// make sure all the commands added here are also
@@ -1418,11 +1365,13 @@ void R_Init(void)
     R_InitSkins();
 	R_ModelInit();
 	R_InitFlares();
-
-	R_InitFreeType();
-
+    R_InitCloudAndSky();
+    R_InitSurface();
+    R_InitScene();
     R_InitDLight();
 	
+	R_InitFreeType();
+
     int err = qglGetError();
 	if ( err != GL_NO_ERROR )
 		ri.Printf( PRINT_ALL, "glGetError() = 0x%x\n", err);

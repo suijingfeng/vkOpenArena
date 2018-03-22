@@ -28,6 +28,11 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
 extern	shaderCommands_t	tess;
 
+cvar_t* r_fastsky;
+
+
+////////////////////////////
+
 
 static float s_cloudTexCoords[6][SKY_SUBDIVISIONS+1][SKY_SUBDIVISIONS+1][2];
 static float s_cloudTexP[6][SKY_SUBDIVISIONS+1][SKY_SUBDIVISIONS+1];
@@ -799,7 +804,7 @@ Other things could be stuck in here, like birds in the sky, etc
 */
 void RB_StageIteratorSky( void )
 {
-	if ( r_fastsky->integer )
+	if( r_fastsky->integer )
     {
 		return;
 	}

@@ -1131,15 +1131,8 @@ extern trGlobals_t	tr;
 // cvars
 //
 
-extern cvar_t	*r_flareSun;
-extern cvar_t	*r_flareDelay;
-
 // coefficient for the flare intensity falloff function.
 
-
-extern cvar_t	*r_railWidth;
-extern cvar_t	*r_railCoreWidth;
-extern cvar_t	*r_railSegmentLength;
 
 extern cvar_t	*r_ignore;				// used for debugging anything
 extern cvar_t	*r_verbose;				// used for verbose debug spew
@@ -1160,9 +1153,7 @@ extern cvar_t	*r_primitives;			// "0" = based on compiled vertex array existance
 										// "-1" = no drawing
 
 extern cvar_t	*r_inGameVideo;				// controls whether in game video should be draw
-extern cvar_t	*r_fastsky;				
 extern cvar_t	*r_drawSun;				// controls drawing of sun quad
-extern cvar_t	*r_dynamiclight;		// dynamic lights enabled/disabled
 extern cvar_t	*r_dlightBacks;			// dlight non-facing surfaces for continuity
 
 extern	cvar_t	*r_norefresh;			// bypasses the ref rendering
@@ -1224,32 +1215,13 @@ extern	cvar_t	*r_printShaders;
 
 extern cvar_t	*r_marksOnTriangleMeshes;
 
-extern	cvar_t	*r_lensReflectionBrightness;
 
 extern	cvar_t	*r_specMode;		
 
-extern	cvar_t	*r_flaresDlightShrink;
-extern	cvar_t	*r_flaresDlightFade;
-extern	cvar_t	*r_flaresDlightOpacity;
-extern	cvar_t	*r_flaresDlightScale;
-
-
 extern cvar_t	*r_modelshader;	// Leilei - new model shading
-
-
-extern cvar_t	*r_ntsc;	// Leilei - ntsc
-extern cvar_t	*r_suggestiveThemes;	// Leilei - mature content
-
-
-extern cvar_t	*r_anime;	// Leilei - anime filter
-//extern cvar_t	*r_palletize;	// Leilei - anime filter
-extern cvar_t	*r_leidebug;	// Leilei - debug only!
-extern cvar_t	*r_leidebugeye;	// Leilei - debug only!
 
 extern	cvar_t	*r_iconmip;	// leilei - icon mip - picmip for 2d icons
 extern	cvar_t	*r_iconBits;	// leilei - icon color depth for 2d icons
-
-extern	cvar_t	*r_lightmapBits;	// leilei - lightmap color depth
 
 extern  cvar_t	*r_detailTextureScale;		// leilei - scale tweak the detail textures, 0 doesn't tweak at all.
 extern  cvar_t	*r_detailTextureLayers;		// leilei - add in more smaller detail texture layers, expensive!
@@ -1561,6 +1533,7 @@ void RB_EndSurface(void);
 //////////////////////////// tr_sky.c /////////////////////////////////
 void R_BuildCloudData( shaderCommands_t *shader );
 void R_InitSkyTexCoords( float cloudLayerHeight );
+void R_InitCloudAndSky(void);
 
 void RB_DrawSun( void );
 void RB_StageIteratorSky( void );
@@ -1583,7 +1556,7 @@ void R_InitFlares( void );
 //////////////////////////// tr_scene /////////////////////////////////
 //  SCENE GENERATION
 
-void R_InitNextFrame( void );
+void R_InitScene( void );
 
 void RE_ClearScene( void );
 void RE_AddRefEntityToScene( const refEntity_t *ent );
@@ -1604,6 +1577,8 @@ void RE_RenderScene( const refdef_t *fd );
 
 
 //////////////////////////// tr_surface //////////////////////////////
+
+void R_InitSurface(void);
 void RB_AddQuadStamp( vec3_t origin, vec3_t left, vec3_t up, byte *color );
 void RB_AddQuadStampExt( vec3_t origin, vec3_t left, vec3_t up, byte *color, float s1, float t1, float s2, float t2 );
 void RB_CheckOverflow( int verts, int indexes );

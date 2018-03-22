@@ -24,6 +24,8 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #include "tr_local.h"
 
 
+
+
 ///////// globals ///////////
 
 trGlobals_t	tr;
@@ -32,6 +34,7 @@ refimport_t	ri;
 
 shaderCommands_t tess;
 
+extern cvar_t* r_fastsky;
 
 
 //////// statics ///////////
@@ -684,12 +687,13 @@ static void R_RadixSort( drawSurf_t *source, int size )
 #endif //Q3_LITTLE_ENDIAN
 }
 
+
+
 /*
 ========================
 R_MirrorViewBySurface: Returns qtrue if another view has been rendered
 ========================
 */
-
 static qboolean R_MirrorViewBySurface (drawSurf_t *drawSurf, int entityNum)
 {
 	vec4_t			clipDest[128];
@@ -701,7 +705,8 @@ static qboolean R_MirrorViewBySurface (drawSurf_t *drawSurf, int entityNum)
 		return qfalse;
 	}
 
-	if ( r_noportals->integer || (r_fastsky->integer == 1) ) {
+	if ( r_noportals->integer || (r_fastsky->integer == 1) )
+    {
 		return qfalse;
 	}
 

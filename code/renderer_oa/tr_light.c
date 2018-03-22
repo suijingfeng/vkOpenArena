@@ -254,8 +254,6 @@ static void R_SetupEntityLightingGrid( trRefEntity_t *ent )
 	VectorScale( ent->directedLight, r_directedScale->value, ent->directedLight );
 
 	VectorNormalize2( direction, ent->lightDir );
-
-	
 }
 
 

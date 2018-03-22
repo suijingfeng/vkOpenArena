@@ -192,125 +192,6 @@ static qhandle_t R_RegisterIQM(const char *name, model_t *mod)
 }
 
 
-static qhandle_t RE_RegisterModelReal( const char *name )
-{
-	model_t		*mod;
-	qhandle_t	hModel;
-	qboolean	orgNameFailed = qfalse;
-	int			orgLoader = -1;
-	int			i;
-	char		localName[ MAX_QPATH ];
-	const char	*ext;
-	char		altName[ MAX_QPATH ];
-
-
-
-	if ( !name || !name[0] ) {
-		ri.Printf( PRINT_ALL, "RE_RegisterModel: NULL name\n" );
-		return 0;
-	}
-
-	if ( strlen( name ) >= MAX_QPATH ) {
-		ri.Printf( PRINT_ALL, "Model name exceeds MAX_QPATH\n" );
-		return 0;
-	}
-
-	//
-	// search the currently loaded models
-	//
-	for ( hModel = 1 ; hModel < tr.numModels; hModel++ ) {
-		mod = tr.models[hModel];
-		if ( !strcmp( mod->name, name ) ) {
-			if( mod->type == MOD_BAD ) {
-				return 0;
-			}
-			return hModel;
-		}
-	}
-
-	// allocate a new model_t
-
-	if ( ( mod = R_AllocModel() ) == NULL )
-    {
-		ri.Printf( PRINT_WARNING, "RE_RegisterModel: R_AllocModel() failed for '%s'\n", name);
-		return 0;
-	}
-
-	// only set the name after the model has been successfully loaded
-	Q_strncpyz( mod->name, name, sizeof( mod->name ) );
-
-	R_IssuePendingRenderCommands();
-
-	mod->type = MOD_BAD;
-	mod->numLods = 0;
-
-	//
-	// load the files
-	//
-	Q_strncpyz( localName, name, MAX_QPATH );
-
-	ext = COM_GetExtension( localName );
-
-	if( *ext )
-	{
-		// Look for the correct loader and use it
-		for( i = 0; i < numModelLoaders; i++ )
-		{
-			if( !Q_stricmp( ext, modelLoaders[ i ].ext ) )
-			{
-				// Load
-				hModel = modelLoaders[ i ].ModelLoader( localName, mod );
-				break;
-			}
-		}
-
-		// A loader was found
-		if( i < numModelLoaders )
-		{
-			if( !hModel )
-			{
-				// Loader failed, most likely because the file isn't there;
-				// try again without the extension
-				orgNameFailed = qtrue;
-				orgLoader = i;
-				COM_StripExtension( name, localName, MAX_QPATH );
-			}
-			else
-			{
-				// Something loaded
-				return mod->index;
-			}
-		}
-	}
-
-	// Try and find a suitable match using all
-	// the model formats supported
-	for( i = 0; i < numModelLoaders; i++ )
-	{
-		if (i == orgLoader)
-			continue;
-
-		Com_sprintf( altName, sizeof (altName), "%s.%s", localName, modelLoaders[ i ].ext );
-
-		// Load
-		hModel = modelLoaders[ i ].ModelLoader( altName, mod );
-
-		if( hModel )
-		{
-			if( orgNameFailed )
-			{
-				ri.Printf( PRINT_DEVELOPER, "WARNING: %s not present, using %s instead\n",
-						name, altName );
-			}
-
-			break;
-		}
-	}
-
-	return hModel;
-}
-
-
 static qboolean R_LoadMD3(model_t *mod, int lod, void *buffer, const char *mod_name )
 {
 	int					i, j;
@@ -1020,14 +901,6 @@ model_t *R_AllocModel( void )
 	return mod;
 }
 
-/*
-====================
-RE_RegisterModel: Loads in a model for the given name
-
-Zero will be returned if the model fails to load.
-An entry will be retained for failed models as an optimization to prevent disk rescanning if they are asked for again.
-====================
-*/
 
 
 void R_Modellist_f( void )
@@ -1055,43 +928,132 @@ void R_Modellist_f( void )
 
 
 //=============================================================================
-// leilei - wrapper function to get alternate models loaded
+/*
+====================
+RE_RegisterModel: Loads in a model for the given name
 
+Zero will be returned if the model fails to load.
+An entry will be retained for failed models as an optimization to prevent disk rescanning if they are asked for again.
+====================
+*/
 qhandle_t RE_RegisterModel( const char *name )
 {
-	if (!Q_strncmp( name, "models/player", 13))
-    {
-        if (r_suggestiveThemes->integer == 0)
-        {			// safe models that will ship, much needed option of modesty
-            qhandle_t  eh;
-            char	narm[ MAX_QPATH ];
-            COM_StripExtension( name, narm, MAX_QPATH );
+	model_t		*mod;
+	qhandle_t	hModel;
+	qboolean	orgNameFailed = qfalse;
+	int			orgLoader = -1;
+	int			i;
+	char		localName[ MAX_QPATH ];
+	char		altName[ MAX_QPATH ];
 
-            eh = RE_RegisterModelReal( va("%s_safe", narm) );
-            if (!eh)	
-                eh = RE_RegisterModelReal( name );
-                    // TODO: Free the previous _safe qhandle 
-            return eh;
-        }
-        else if (r_suggestiveThemes->integer > 1)
-        {		// lewd models, won't ship, but adding support anyway so normal 
-                                    // models aren't replaced with lewd
-            qhandle_t  eh;
-            char	narm[ MAX_QPATH ];
-            COM_StripExtension( name, narm, MAX_QPATH );
 
-            eh = RE_RegisterModelReal( va("%s_lewd", narm) );
-            if (!eh)	
-                eh = RE_RegisterModelReal( name );
-                    // TODO: Free the previous _lewd qhandle 
-            return eh;
-        }
-        else
-            return RE_RegisterModelReal( name );
+
+	if ( !name || !name[0] ) {
+		ri.Printf( PRINT_ALL, "RE_RegisterModel: NULL name\n" );
+		return 0;
 	}
-	else
-	    return RE_RegisterModelReal( name );	// OK!!!
+
+	if ( strlen( name ) >= MAX_QPATH ) {
+		ri.Printf( PRINT_ALL, "Model name exceeds MAX_QPATH\n" );
+		return 0;
+	}
+
+	//
+	// search the currently loaded models
+	//
+	for ( hModel = 1 ; hModel < tr.numModels; hModel++ )
+    {
+		mod = tr.models[hModel];
+		if ( !strcmp( mod->name, name ) ) {
+			if( mod->type == MOD_BAD ) {
+				return 0;
+			}
+			return hModel;
+		}
+	}
+
+	// allocate a new model_t
+
+	if ( ( mod = R_AllocModel() ) == NULL )
+    {
+		ri.Printf( PRINT_WARNING, "RE_RegisterModel: R_AllocModel() failed for '%s'\n", name);
+		return 0;
+	}
+
+	// only set the name after the model has been successfully loaded
+	Q_strncpyz( mod->name, name, sizeof( mod->name ) );
+
+	R_IssuePendingRenderCommands();
+
+	mod->type = MOD_BAD;
+	mod->numLods = 0;
+
+	//
+	// load the files
+	//
+	Q_strncpyz( localName, name, MAX_QPATH );
+
+	const char* ext = COM_GetExtension( localName );
+
+	if( *ext )
+	{
+		// Look for the correct loader and use it
+		for( i = 0; i < numModelLoaders; i++ )
+		{
+			if( !Q_stricmp( ext, modelLoaders[ i ].ext ) )
+			{
+				// Load
+				hModel = modelLoaders[ i ].ModelLoader( localName, mod );
+				break;
+			}
+		}
+
+		// A loader was found
+		if( i < numModelLoaders )
+		{
+			if( !hModel )
+			{
+				// Loader failed, most likely because the file isn't there;
+				// try again without the extension
+				orgNameFailed = qtrue;
+				orgLoader = i;
+				COM_StripExtension( name, localName, MAX_QPATH );
+			}
+			else
+			{
+				// Something loaded
+				return mod->index;
+			}
+		}
+	}
+
+	// Try and find a suitable match using all
+	// the model formats supported
+	for( i = 0; i < numModelLoaders; i++ )
+	{
+		if (i == orgLoader)
+			continue;
+
+		Com_sprintf( altName, sizeof (altName), "%s.%s", localName, modelLoaders[ i ].ext );
+
+		// Load
+		hModel = modelLoaders[ i ].ModelLoader( altName, mod );
+
+		if( hModel )
+		{
+			if( orgNameFailed )
+			{
+				ri.Printf( PRINT_DEVELOPER, "WARNING: %s not present, using %s instead\n",
+						name, altName );
+			}
+
+			break;
+		}
+	}
+
+	return hModel;
 }
+
 
 
 int R_LerpTag( orientation_t *tag, qhandle_t handle, int startFrame, int endFrame, float frac, const char *tagName )

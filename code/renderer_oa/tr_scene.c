@@ -38,6 +38,8 @@ static int	r_firstScenePoly = 0;
 static int	r_numpolyverts = 0;
 
 
+static cvar_t* r_dynamiclight;
+
 void R_InitNextFrame( void )
 {
 	backEndData->commands.used = 0;
@@ -209,9 +211,8 @@ RE_AddDynamicLightToScene
 
 =====================
 */
-void RE_AddDynamicLightToScene( const vec3_t org, float intensity, float r, float g, float b, int additive ) {
-	dlight_t	*dl;
-
+void RE_AddDynamicLightToScene( const vec3_t org, float intensity, float r, float g, float b, int additive )
+{
 	if ( !tr.registered ) {
 		return;
 	}
@@ -222,7 +223,7 @@ void RE_AddDynamicLightToScene( const vec3_t org, float intensity, float r, floa
 		return;
 	}
 
-	dl = &backEndData->dlights[r_numdlights++];
+	dlight_t* dl = &backEndData->dlights[r_numdlights++];
 	VectorCopy (org, dl->origin);
 	dl->radius = intensity;
 	dl->color[0] = r;
@@ -262,7 +263,7 @@ Rendering a scene may require multiple views to be rendered to handle mirrors,
 */
 void RE_RenderScene( const refdef_t *fd )
 {
-	viewParms_t		parms;
+	viewParms_t	parms;
 
 	if ( !tr.registered ) {
 		return;
@@ -410,4 +411,10 @@ void RE_RenderScene( const refdef_t *fd )
 	r_firstScenePoly = r_numpolys;
 
 	tr.frontEndMsec += ri.Milliseconds() - startTime;
+}
+
+
+void R_InitScene( void )
+{
+    r_dynamiclight = ri.Cvar_Get( "r_dynamiclight", "1", CVAR_ARCHIVE );
 }

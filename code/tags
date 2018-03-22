@@ -2446,7 +2446,7 @@ CL_CheckUserinfo	client/cl_main.c	/^void CL_CheckUserinfo( void ) {$/;"	f
 CL_ClearMemory	client/cl_main.c	/^void CL_ClearMemory(qboolean shutdownRef)$/;"	f
 CL_ClearPing	client/cl_main.c	/^void CL_ClearPing( int n )$/;"	f
 CL_Clientinfo_f	client/cl_main.c	/^void CL_Clientinfo_f( void ) {$/;"	f
-CL_CloseAVI_f	client/cl_avi.c	/^qboolean CL_CloseAVI_f( void )$/;"	f
+CL_CloseAVI_f	client/cl_avi.c	/^void CL_CloseAVI_f( void )$/;"	f
 CL_CmdButtons	client/cl_input.c	/^void CL_CmdButtons( usercmd_t *cmd )$/;"	f
 CL_CompleteDemoName	client/cl_main.c	/^static void CL_CompleteDemoName( char *args, int argNum )$/;"	f	file:
 CL_CompletePlayerName	client/cl_main.c	/^static void CL_CompletePlayerName( char *args, int argNum )$/;"	f	file:
@@ -2499,7 +2499,7 @@ CL_GetUserCmd	client/cl_cgame.c	/^qboolean CL_GetUserCmd( int cmdNumber, usercmd
 CL_GlobalServers_f	client/cl_main.c	/^void CL_GlobalServers_f( void ) {$/;"	f
 CL_Init	client/cl_main.c	/^void CL_Init( void )$/;"	f
 CL_Init	null/null_client.c	/^void CL_Init( void ) {$/;"	f
-CL_InitCGame	client/cl_cgame.c	/^void CL_InitCGame( void )$/;"	f
+CL_InitCGame	client/cl_cgame.c	/^void CL_InitCGame(void)$/;"	f
 CL_InitDownloads	client/cl_main.c	/^void CL_InitDownloads(void)$/;"	f
 CL_InitInput	client/cl_input.c	/^void CL_InitInput( void )$/;"	f
 CL_InitKeyCommands	client/cl_keys.c	/^void CL_InitKeyCommands( void )$/;"	f
@@ -2570,8 +2570,8 @@ CL_ServerStatus_f	client/cl_main.c	/^void CL_ServerStatus_f(void) {$/;"	f
 CL_ServersResponsePacket	client/cl_main.c	/^void CL_ServersResponsePacket( const netadr_t* from, msg_t *msg, qboolean extended ) {$/;"	f
 CL_SetCGameTime	client/cl_cgame.c	/^void CL_SetCGameTime( void ) {$/;"	f
 CL_SetModel_f	client/cl_main.c	/^static void CL_SetModel_f( void )$/;"	f	file:
-CL_SetServerInfo	client/cl_main.c	/^static void CL_SetServerInfo(serverInfo_t *server, const char *info, int ping) {$/;"	f	file:
-CL_SetServerInfoByAddress	client/cl_main.c	/^static void CL_SetServerInfoByAddress(netadr_t from, const char *info, int ping) {$/;"	f	file:
+CL_SetServerInfo	client/cl_main.c	/^static void CL_SetServerInfo(serverInfo_t *server, const char *info, int ping)$/;"	f	file:
+CL_SetServerInfoByAddress	client/cl_main.c	/^static void CL_SetServerInfoByAddress(netadr_t from, const char *info, int ping)$/;"	f	file:
 CL_SetUserCmdValue	client/cl_cgame.c	/^void CL_SetUserCmdValue( int userCmdValue, float sensitivityScale ) {$/;"	f
 CL_ShouldIgnoreVoipSender	client/cl_parse.c	/^qboolean CL_ShouldIgnoreVoipSender(int sender)$/;"	f	file:
 CL_ShowIP_f	client/cl_main.c	/^void CL_ShowIP_f(void) {$/;"	f
@@ -2821,7 +2821,7 @@ CON_Shutdown	sys/con_passive.c	/^void CON_Shutdown( void )$/;"	f
 CON_Shutdown	sys/con_tty.c	/^void CON_Shutdown(void)$/;"	f
 CON_Shutdown	sys/con_win32.c	/^void CON_Shutdown( void )$/;"	f
 CON_SigCont	sys/con_tty.c	/^void CON_SigCont(int signum)$/;"	f
-CON_TEXTSIZE	client/cl_console.c	28;"	d	file:
+CON_TEXTSIZE	client/cl_console.c	29;"	d	file:
 CON_WindowsColorPrint	sys/con_win32.c	/^void CON_WindowsColorPrint( const char *msg )$/;"	f
 COPYSAMPLE	renderergl2/tr_image.c	1242;"	d	file:
 COPYSAMPLE	renderergl2/tr_image.c	534;"	d	file:
@@ -2929,13 +2929,13 @@ CULLINFO_BOX	renderergl2/tr_local.h	1086;"	d
 CULLINFO_NONE	renderergl2/tr_local.h	1085;"	d
 CULLINFO_PLANE	renderergl2/tr_local.h	1088;"	d
 CULLINFO_SPHERE	renderergl2/tr_local.h	1087;"	d
-CULL_CLIP	renderer_oa/tr_local.h	1447;"	d
+CULL_CLIP	renderer_oa/tr_local.h	1436;"	d
 CULL_CLIP	renderergl1/tr_local.h	1140;"	d
 CULL_CLIP	renderergl2/tr_local.h	1873;"	d
-CULL_IN	renderer_oa/tr_local.h	1446;"	d
+CULL_IN	renderer_oa/tr_local.h	1435;"	d
 CULL_IN	renderergl1/tr_local.h	1139;"	d
 CULL_IN	renderergl2/tr_local.h	1872;"	d
-CULL_OUT	renderer_oa/tr_local.h	1448;"	d
+CULL_OUT	renderer_oa/tr_local.h	1437;"	d
 CULL_OUT	renderergl1/tr_local.h	1141;"	d
 CULL_OUT	renderergl2/tr_local.h	1874;"	d
 CURSOR_ARROW	ui/ui_shared.h	70;"	d
@@ -3081,7 +3081,7 @@ Cmd_LevelShot_f	game/g_cmds.c	/^void Cmd_LevelShot_f(gentity_t *ent)$/;"	f
 Cmd_List_f	qcommon/cmd.c	/^void Cmd_List_f(void)$/;"	f
 Cmd_Noclip_f	game/g_cmds.c	/^void Cmd_Noclip_f( gentity_t *ent ) {$/;"	f
 Cmd_Notarget_f	game/g_cmds.c	/^void Cmd_Notarget_f( gentity_t *ent ) {$/;"	f
-Cmd_RemoveCommand	qcommon/cmd.c	/^void	Cmd_RemoveCommand( const char *cmd_name ) {$/;"	f
+Cmd_RemoveCommand	qcommon/cmd.c	/^void Cmd_RemoveCommand( const char *cmd_name )$/;"	f
 Cmd_RemoveCommand	sdl/tr_public.h	/^	void	(*Cmd_RemoveCommand)( const char *name );$/;"	m	struct:__anon10
 Cmd_RemoveCommandSafe	qcommon/cmd.c	/^void Cmd_RemoveCommandSafe( const char *cmd_name )$/;"	f
 Cmd_Say_f	game/g_cmds.c	/^static void Cmd_Say_f( gentity_t *ent, int mode, qboolean arg0 ) {$/;"	f	file:
@@ -3125,7 +3125,7 @@ Com_Clamp	qcommon/q_shared.c	/^float Com_Clamp( float min, float max, float valu
 Com_Crash_f	qcommon/common.c	/^static void Com_Crash_f( void )$/;"	f	file:
 Com_DPrintf	qcommon/common.c	/^void QDECL Com_DPrintf( const char *fmt, ...)$/;"	f
 Com_DetectSSE	qcommon/common.c	/^static void Com_DetectSSE(void)$/;"	f	file:
-Com_DetectSSE	qcommon/common.c	2573;"	d	file:
+Com_DetectSSE	qcommon/common.c	2572;"	d	file:
 Com_EndRedirect	qcommon/common.c	/^void Com_EndRedirect (void)$/;"	f
 Com_Error	cgame/cg_main.c	/^void QDECL Com_Error( int level, const char *error, ... ) {$/;"	f
 Com_Error	game/g_main.c	/^void QDECL Com_Error ( int level, const char *error, ... )$/;"	f
@@ -3230,7 +3230,7 @@ Con_Bottom	client/cl_console.c	/^void Con_Bottom( void ) {$/;"	f
 Con_CheckResize	client/cl_console.c	/^void Con_CheckResize (void)$/;"	f
 Con_ClearNotify	client/cl_console.c	/^void Con_ClearNotify( void )$/;"	f
 Con_Clear_f	client/cl_console.c	/^void Con_Clear_f (void) {$/;"	f
-Con_Close	client/cl_console.c	/^void Con_Close( void )$/;"	f
+Con_Close	client/cl_console.c	/^void Con_Close(void)$/;"	f
 Con_DrawConsole	client/cl_console.c	/^void Con_DrawConsole( void ) {$/;"	f
 Con_DrawInput	client/cl_console.c	/^void Con_DrawInput (void)$/;"	f
 Con_DrawNotify	client/cl_console.c	/^void Con_DrawNotify (void)$/;"	f
@@ -3383,13 +3383,13 @@ DDSPF_YUV	renderergl2/tr_image_dds.c	66;"	d	file:
 DEAD_VIEWHEIGHT	game/bg_public.h	52;"	d
 DEBUGNAME	cgame/cg_event.c	521;"	d	file:
 DEBUGSTR	qcommon/vm_interpreted.c	314;"	d	file:
-DEFAULT_BASEDIR	sys/sys_main.c	546;"	d	file:
 DEFAULT_BASEDIR	sys/sys_main.c	548;"	d	file:
+DEFAULT_BASEDIR	sys/sys_main.c	550;"	d	file:
 DEFAULT_BLUETEAM_NAME	cgame/cg_local.h	92;"	d
 DEFAULT_CHARACTER	botlib/be_ai_char.c	53;"	d	file:
 DEFAULT_CIN_HEIGHT	client/cl_cin.c	41;"	d	file:
 DEFAULT_CIN_WIDTH	client/cl_cin.c	40;"	d	file:
-DEFAULT_CONSOLE_WIDTH	client/cl_console.c	58;"	d	file:
+DEFAULT_CONSOLE_WIDTH	client/cl_console.c	59;"	d	file:
 DEFAULT_CURL_LIB	client/cl_curl.h	38;"	d
 DEFAULT_CURL_LIB	client/cl_curl.h	41;"	d
 DEFAULT_CURL_LIB	client/cl_curl.h	43;"	d
@@ -4553,12 +4553,12 @@ GLE	renderergl2/tr_extensions.c	65;"	d	file:
 GLE	renderergl2/tr_extensions.c	68;"	d	file:
 GLE	sdl/qgl.h	308;"	d
 GLE	sdl/qgl.h	319;"	d
-GLE	sdl/sdl_glimp.c	140;"	d	file:
-GLE	sdl/sdl_glimp.c	191;"	d	file:
-GLE	sdl/sdl_glimp.c	205;"	d	file:
-GLE	sdl/sdl_glimp.c	217;"	d	file:
-GLE	sdl/sdl_glimp.c	81;"	d	file:
-GLE	sdl/sdl_glimp.c	86;"	d	file:
+GLE	sdl/sdl_glimp.c	141;"	d	file:
+GLE	sdl/sdl_glimp.c	192;"	d	file:
+GLE	sdl/sdl_glimp.c	206;"	d	file:
+GLE	sdl/sdl_glimp.c	218;"	d	file:
+GLE	sdl/sdl_glimp.c	82;"	d	file:
+GLE	sdl/sdl_glimp.c	87;"	d	file:
 GLHW_GENERIC	sdl/tr_types.h	/^	GLHW_GENERIC,			\/\/ where everthing works the way it should$/;"	e	enum:__anon7
 GLOBALRANKINGS_LETTERS	q3_ui/ui_specifyleague.c	41;"	d	file:
 GLOBALRANKINGS_LOGO	q3_ui/ui_specifyleague.c	40;"	d	file:
@@ -4594,90 +4594,90 @@ GLSL_ShutdownGPUShaders	renderergl2/tr_glsl.c	/^void GLSL_ShutdownGPUShaders(voi
 GLSL_VEC2	renderergl2/tr_local.h	/^	GLSL_VEC2,$/;"	e	enum:__anon526
 GLSL_VEC3	renderergl2/tr_local.h	/^	GLSL_VEC3,$/;"	e	enum:__anon526
 GLSL_VEC4	renderergl2/tr_local.h	/^	GLSL_VEC4,$/;"	e	enum:__anon526
-GLS_ATEST_BITS	renderer_oa/tr_local.h	1698;"	d
+GLS_ATEST_BITS	renderer_oa/tr_local.h	1688;"	d
 GLS_ATEST_BITS	renderergl1/tr_local.h	1204;"	d
 GLS_ATEST_BITS	renderergl2/tr_local.h	1932;"	d
-GLS_ATEST_GE_80	renderer_oa/tr_local.h	1697;"	d
+GLS_ATEST_GE_80	renderer_oa/tr_local.h	1687;"	d
 GLS_ATEST_GE_80	renderergl1/tr_local.h	1203;"	d
 GLS_ATEST_GE_80	renderergl2/tr_local.h	1931;"	d
-GLS_ATEST_GT_0	renderer_oa/tr_local.h	1695;"	d
+GLS_ATEST_GT_0	renderer_oa/tr_local.h	1685;"	d
 GLS_ATEST_GT_0	renderergl1/tr_local.h	1201;"	d
 GLS_ATEST_GT_0	renderergl2/tr_local.h	1929;"	d
-GLS_ATEST_LT_80	renderer_oa/tr_local.h	1696;"	d
+GLS_ATEST_LT_80	renderer_oa/tr_local.h	1686;"	d
 GLS_ATEST_LT_80	renderergl1/tr_local.h	1202;"	d
 GLS_ATEST_LT_80	renderergl2/tr_local.h	1930;"	d
-GLS_DEFAULT	renderer_oa/tr_local.h	1700;"	d
+GLS_DEFAULT	renderer_oa/tr_local.h	1690;"	d
 GLS_DEFAULT	renderergl1/tr_local.h	1206;"	d
 GLS_DEFAULT	renderergl2/tr_local.h	1934;"	d
 GLS_DEPTHFUNC_BITS	renderergl2/tr_local.h	1927;"	d
-GLS_DEPTHFUNC_EQUAL	renderer_oa/tr_local.h	1693;"	d
+GLS_DEPTHFUNC_EQUAL	renderer_oa/tr_local.h	1683;"	d
 GLS_DEPTHFUNC_EQUAL	renderergl1/tr_local.h	1199;"	d
 GLS_DEPTHFUNC_EQUAL	renderergl2/tr_local.h	1925;"	d
 GLS_DEPTHFUNC_GREATER	renderergl2/tr_local.h	1926;"	d
-GLS_DEPTHMASK_TRUE	renderer_oa/tr_local.h	1688;"	d
+GLS_DEPTHMASK_TRUE	renderer_oa/tr_local.h	1678;"	d
 GLS_DEPTHMASK_TRUE	renderergl1/tr_local.h	1194;"	d
 GLS_DEPTHMASK_TRUE	renderergl2/tr_local.h	1920;"	d
-GLS_DEPTHTEST_DISABLE	renderer_oa/tr_local.h	1692;"	d
+GLS_DEPTHTEST_DISABLE	renderer_oa/tr_local.h	1682;"	d
 GLS_DEPTHTEST_DISABLE	renderergl1/tr_local.h	1198;"	d
 GLS_DEPTHTEST_DISABLE	renderergl2/tr_local.h	1924;"	d
-GLS_DSTBLEND_BITS	renderer_oa/tr_local.h	1686;"	d
+GLS_DSTBLEND_BITS	renderer_oa/tr_local.h	1676;"	d
 GLS_DSTBLEND_BITS	renderergl1/tr_local.h	1192;"	d
 GLS_DSTBLEND_BITS	renderergl2/tr_local.h	1918;"	d
-GLS_DSTBLEND_DST_ALPHA	renderer_oa/tr_local.h	1684;"	d
+GLS_DSTBLEND_DST_ALPHA	renderer_oa/tr_local.h	1674;"	d
 GLS_DSTBLEND_DST_ALPHA	renderergl1/tr_local.h	1190;"	d
 GLS_DSTBLEND_DST_ALPHA	renderergl2/tr_local.h	1916;"	d
-GLS_DSTBLEND_ONE	renderer_oa/tr_local.h	1679;"	d
+GLS_DSTBLEND_ONE	renderer_oa/tr_local.h	1669;"	d
 GLS_DSTBLEND_ONE	renderergl1/tr_local.h	1185;"	d
 GLS_DSTBLEND_ONE	renderergl2/tr_local.h	1911;"	d
-GLS_DSTBLEND_ONE_MINUS_DST_ALPHA	renderer_oa/tr_local.h	1685;"	d
+GLS_DSTBLEND_ONE_MINUS_DST_ALPHA	renderer_oa/tr_local.h	1675;"	d
 GLS_DSTBLEND_ONE_MINUS_DST_ALPHA	renderergl1/tr_local.h	1191;"	d
 GLS_DSTBLEND_ONE_MINUS_DST_ALPHA	renderergl2/tr_local.h	1917;"	d
-GLS_DSTBLEND_ONE_MINUS_SRC_ALPHA	renderer_oa/tr_local.h	1683;"	d
+GLS_DSTBLEND_ONE_MINUS_SRC_ALPHA	renderer_oa/tr_local.h	1673;"	d
 GLS_DSTBLEND_ONE_MINUS_SRC_ALPHA	renderergl1/tr_local.h	1189;"	d
 GLS_DSTBLEND_ONE_MINUS_SRC_ALPHA	renderergl2/tr_local.h	1915;"	d
-GLS_DSTBLEND_ONE_MINUS_SRC_COLOR	renderer_oa/tr_local.h	1681;"	d
+GLS_DSTBLEND_ONE_MINUS_SRC_COLOR	renderer_oa/tr_local.h	1671;"	d
 GLS_DSTBLEND_ONE_MINUS_SRC_COLOR	renderergl1/tr_local.h	1187;"	d
 GLS_DSTBLEND_ONE_MINUS_SRC_COLOR	renderergl2/tr_local.h	1913;"	d
-GLS_DSTBLEND_SRC_ALPHA	renderer_oa/tr_local.h	1682;"	d
+GLS_DSTBLEND_SRC_ALPHA	renderer_oa/tr_local.h	1672;"	d
 GLS_DSTBLEND_SRC_ALPHA	renderergl1/tr_local.h	1188;"	d
 GLS_DSTBLEND_SRC_ALPHA	renderergl2/tr_local.h	1914;"	d
-GLS_DSTBLEND_SRC_COLOR	renderer_oa/tr_local.h	1680;"	d
+GLS_DSTBLEND_SRC_COLOR	renderer_oa/tr_local.h	1670;"	d
 GLS_DSTBLEND_SRC_COLOR	renderergl1/tr_local.h	1186;"	d
 GLS_DSTBLEND_SRC_COLOR	renderergl2/tr_local.h	1912;"	d
-GLS_DSTBLEND_ZERO	renderer_oa/tr_local.h	1678;"	d
+GLS_DSTBLEND_ZERO	renderer_oa/tr_local.h	1668;"	d
 GLS_DSTBLEND_ZERO	renderergl1/tr_local.h	1184;"	d
 GLS_DSTBLEND_ZERO	renderergl2/tr_local.h	1910;"	d
-GLS_POLYMODE_LINE	renderer_oa/tr_local.h	1690;"	d
+GLS_POLYMODE_LINE	renderer_oa/tr_local.h	1680;"	d
 GLS_POLYMODE_LINE	renderergl1/tr_local.h	1196;"	d
 GLS_POLYMODE_LINE	renderergl2/tr_local.h	1922;"	d
-GLS_SRCBLEND_ALPHA_SATURATE	renderer_oa/tr_local.h	1675;"	d
+GLS_SRCBLEND_ALPHA_SATURATE	renderer_oa/tr_local.h	1665;"	d
 GLS_SRCBLEND_ALPHA_SATURATE	renderergl1/tr_local.h	1181;"	d
 GLS_SRCBLEND_ALPHA_SATURATE	renderergl2/tr_local.h	1907;"	d
-GLS_SRCBLEND_BITS	renderer_oa/tr_local.h	1676;"	d
+GLS_SRCBLEND_BITS	renderer_oa/tr_local.h	1666;"	d
 GLS_SRCBLEND_BITS	renderergl1/tr_local.h	1182;"	d
 GLS_SRCBLEND_BITS	renderergl2/tr_local.h	1908;"	d
-GLS_SRCBLEND_DST_ALPHA	renderer_oa/tr_local.h	1673;"	d
+GLS_SRCBLEND_DST_ALPHA	renderer_oa/tr_local.h	1663;"	d
 GLS_SRCBLEND_DST_ALPHA	renderergl1/tr_local.h	1179;"	d
 GLS_SRCBLEND_DST_ALPHA	renderergl2/tr_local.h	1905;"	d
-GLS_SRCBLEND_DST_COLOR	renderer_oa/tr_local.h	1669;"	d
+GLS_SRCBLEND_DST_COLOR	renderer_oa/tr_local.h	1659;"	d
 GLS_SRCBLEND_DST_COLOR	renderergl1/tr_local.h	1175;"	d
 GLS_SRCBLEND_DST_COLOR	renderergl2/tr_local.h	1901;"	d
-GLS_SRCBLEND_ONE	renderer_oa/tr_local.h	1668;"	d
+GLS_SRCBLEND_ONE	renderer_oa/tr_local.h	1658;"	d
 GLS_SRCBLEND_ONE	renderergl1/tr_local.h	1174;"	d
 GLS_SRCBLEND_ONE	renderergl2/tr_local.h	1900;"	d
-GLS_SRCBLEND_ONE_MINUS_DST_ALPHA	renderer_oa/tr_local.h	1674;"	d
+GLS_SRCBLEND_ONE_MINUS_DST_ALPHA	renderer_oa/tr_local.h	1664;"	d
 GLS_SRCBLEND_ONE_MINUS_DST_ALPHA	renderergl1/tr_local.h	1180;"	d
 GLS_SRCBLEND_ONE_MINUS_DST_ALPHA	renderergl2/tr_local.h	1906;"	d
-GLS_SRCBLEND_ONE_MINUS_DST_COLOR	renderer_oa/tr_local.h	1670;"	d
+GLS_SRCBLEND_ONE_MINUS_DST_COLOR	renderer_oa/tr_local.h	1660;"	d
 GLS_SRCBLEND_ONE_MINUS_DST_COLOR	renderergl1/tr_local.h	1176;"	d
 GLS_SRCBLEND_ONE_MINUS_DST_COLOR	renderergl2/tr_local.h	1902;"	d
-GLS_SRCBLEND_ONE_MINUS_SRC_ALPHA	renderer_oa/tr_local.h	1672;"	d
+GLS_SRCBLEND_ONE_MINUS_SRC_ALPHA	renderer_oa/tr_local.h	1662;"	d
 GLS_SRCBLEND_ONE_MINUS_SRC_ALPHA	renderergl1/tr_local.h	1178;"	d
 GLS_SRCBLEND_ONE_MINUS_SRC_ALPHA	renderergl2/tr_local.h	1904;"	d
-GLS_SRCBLEND_SRC_ALPHA	renderer_oa/tr_local.h	1671;"	d
+GLS_SRCBLEND_SRC_ALPHA	renderer_oa/tr_local.h	1661;"	d
 GLS_SRCBLEND_SRC_ALPHA	renderergl1/tr_local.h	1177;"	d
 GLS_SRCBLEND_SRC_ALPHA	renderergl2/tr_local.h	1903;"	d
-GLS_SRCBLEND_ZERO	renderer_oa/tr_local.h	1667;"	d
+GLS_SRCBLEND_ZERO	renderer_oa/tr_local.h	1657;"	d
 GLS_SRCBLEND_ZERO	renderergl1/tr_local.h	1173;"	d
 GLS_SRCBLEND_ZERO	renderergl2/tr_local.h	1899;"	d
 GLYPHS_PER_FONT	qcommon/q_shared.h	1266;"	d
@@ -5170,9 +5170,9 @@ HSVtoRGB	renderer_oa/tr_bsp.c	/^static void HSVtoRGB( float h, float s, float v,
 HSVtoRGB	renderergl1/tr_bsp.c	/^static void HSVtoRGB( float h, float s, float v, float rgb[3] )$/;"	f	file:
 HSVtoRGB	renderergl2/tr_bsp.c	/^static void HSVtoRGB( float h, float s, float v, float rgb[3] )$/;"	f	file:
 HUNK_DEBUG	qcommon/q_shared.h	308;"	d
-HUNK_FREE_MAGIC	qcommon/common.c	1208;"	d	file:
+HUNK_FREE_MAGIC	qcommon/common.c	1207;"	d	file:
 HUNK_ID	botlib/l_memory.c	42;"	d	file:
-HUNK_MAGIC	qcommon/common.c	1207;"	d	file:
+HUNK_MAGIC	qcommon/common.c	1206;"	d	file:
 HalfToFloat	renderergl2/tr_extramath.c	/^float HalfToFloat(uint16_t in)$/;"	f
 Height	renderer_oa/tr_image_png.c	/^	uint32_t Height;$/;"	m	struct:PNG_Chunk_IHDR	file:
 Height	renderergl1/tr_image_png.c	/^	uint32_t Height;$/;"	m	struct:PNG_Chunk_IHDR	file:
@@ -6525,7 +6525,7 @@ MASK_ALL	game/bg_public.h	662;"	d
 MASK_DEADSOLID	game/bg_public.h	665;"	d
 MASK_OPAQUE	game/bg_public.h	667;"	d
 MASK_PLAYERSOLID	game/bg_public.h	664;"	d
-MASK_QUEUED_EVENTS	qcommon/common.c	1897;"	d	file:
+MASK_QUEUED_EVENTS	qcommon/common.c	1896;"	d	file:
 MASK_REG	qcommon/vm_x86.c	195;"	d	file:
 MASK_SHOT	game/bg_public.h	668;"	d
 MASK_SOLID	botlib/be_aas_entity.c	46;"	d	file:
@@ -6568,7 +6568,7 @@ MAX_CHATSIZE	cgame/cg_servercmds.c	497;"	d	file:
 MAX_CHATTYPE_NAME	botlib/be_ai_chat.h	33;"	d
 MAX_CLIENTS	qcommon/q_shared.h	1010;"	d
 MAX_CLIP_PLANES	game/bg_slidemove.c	44;"	d	file:
-MAX_CLIP_VERTS	renderer_oa/tr_sky.c	152;"	d	file:
+MAX_CLIP_VERTS	renderer_oa/tr_sky.c	157;"	d	file:
 MAX_CLIP_VERTS	renderergl1/tr_sky.c	144;"	d	file:
 MAX_CLIP_VERTS	renderergl2/tr_sky.c	144;"	d	file:
 MAX_CMD_BUFFER	qcommon/cmd.c	35;"	d	file:
@@ -6577,7 +6577,7 @@ MAX_COLOR_RANGES	ui/ui_shared.h	39;"	d
 MAX_COMMANDARGUMENTS	botlib/be_ea.c	42;"	d	file:
 MAX_CONFIGS	q3_ui/ui_loadconfig.c	44;"	d	file:
 MAX_CONFIGSTRINGS	qcommon/q_shared.h	1028;"	d
-MAX_CONSOLE_KEYS	sdl/sdl_input.c	75;"	d	file:
+MAX_CONSOLE_KEYS	sdl/sdl_input.c	74;"	d	file:
 MAX_CONSOLE_LINES	qcommon/common.c	379;"	d	file:
 MAX_CONSOLE_SAVE_BUFFER	client/cl_keys.c	1377;"	d	file:
 MAX_CUSTOM_SOUNDS	cgame/cg_local.h	305;"	d
@@ -6682,7 +6682,7 @@ MAX_LOCAL_ENTITIES	cgame/cg_localents.c	29;"	d	file:
 MAX_LOCATIONS	qcommon/q_shared.h	1011;"	d
 MAX_LOG	sys/con_log.c	27;"	d	file:
 MAX_LOGFILENAMESIZE	botlib/l_log.c	42;"	d	file:
-MAX_LOOPBACK	qcommon/net_chan.c	418;"	d	file:
+MAX_LOOPBACK	qcommon/net_chan.c	419;"	d	file:
 MAX_MAPCOLS	q3_ui/ui_startserver.c	51;"	d	file:
 MAX_MAPNAMELENGTH	q3_ui/ui_servers2.c	39;"	d	file:
 MAX_MAPNAMELENGTH	ui/ui_local.h	616;"	d
@@ -6755,7 +6755,7 @@ MAX_PARSE_ENTITIES	client/client.h	88;"	d
 MAX_PARTICLES	cgame/cg_particles.c	142;"	d	file:
 MAX_PARTICLES	cgame/cg_particles.c	144;"	d	file:
 MAX_PATCH_PLANES	qcommon/cm_patch.h	64;"	d
-MAX_PATCH_SIZE	renderer_oa/tr_local.h	1633;"	d
+MAX_PATCH_SIZE	renderer_oa/tr_local.h	1623;"	d
 MAX_PATCH_SIZE	renderergl1/tr_local.h	562;"	d
 MAX_PATCH_SIZE	renderergl2/tr_local.h	903;"	d
 MAX_PATCH_VERTS	qcommon/cm_load.c	479;"	d	file:
@@ -6770,10 +6770,10 @@ MAX_PINGREQUESTS	ui/ui_local.h	613;"	d
 MAX_PLAYERMODELS	q3_ui/ui_playermodel.c	57;"	d	file:
 MAX_PLAYERMODELS	ui/ui_local.h	635;"	d
 MAX_POINTS_ON_WINDING	qcommon/cm_polylib.h	31;"	d
-MAX_POLYS	renderer_oa/tr_local.h	1431;"	d
+MAX_POLYS	renderer_oa/tr_local.h	1420;"	d
 MAX_POLYS	renderergl1/tr_local.h	1625;"	d
 MAX_POLYS	renderergl2/tr_local.h	2442;"	d
-MAX_POLYVERTS	renderer_oa/tr_local.h	1432;"	d
+MAX_POLYVERTS	renderer_oa/tr_local.h	1421;"	d
 MAX_POLYVERTS	renderergl1/tr_local.h	1626;"	d
 MAX_POLYVERTS	renderergl2/tr_local.h	2443;"	d
 MAX_PORTALAREAS	botlib/be_aas_cluster.c	53;"	d	file:
@@ -6784,11 +6784,11 @@ MAX_PROGRAMS	renderer_oa/tr_local.h	839;"	d
 MAX_PROGRAM_OBJECTS	renderer_oa/tr_local.h	840;"	d
 MAX_PROXMINES	game/ai_main.h	90;"	d
 MAX_PS_EVENTS	qcommon/q_shared.h	1052;"	d
-MAX_PUSHED_EVENTS	qcommon/common.c	1856;"	d	file:
+MAX_PUSHED_EVENTS	qcommon/common.c	1855;"	d	file:
 MAX_QINT	qcommon/q_shared.h	210;"	d
 MAX_QPATH	qcommon/q_shared.h	236;"	d
 MAX_QPATH	qcommon/qfiles.h	43;"	d
-MAX_QUEUED_EVENTS	qcommon/common.c	1896;"	d	file:
+MAX_QUEUED_EVENTS	qcommon/common.c	1895;"	d	file:
 MAX_RAIL_HITS	game/g_weapon.c	442;"	d	file:
 MAX_RAW_SAMPLES	client/snd_local.h	192;"	d
 MAX_RAW_STREAMS	client/snd_local.h	193;"	d
@@ -6796,7 +6796,7 @@ MAX_RCON_MESSAGE	client/cl_main.c	1768;"	d	file:
 MAX_REACHABILITYPASSAREAS	botlib/be_aas_route.c	1145;"	d	file:
 MAX_REFENTITIES	sdl/tr_types.h	32;"	d
 MAX_RELIABLE_COMMANDS	qcommon/qcommon.h	137;"	d
-MAX_RENDER_COMMANDS	renderer_oa/tr_local.h	1494;"	d
+MAX_RENDER_COMMANDS	renderer_oa/tr_local.h	1483;"	d
 MAX_RENDER_COMMANDS	renderergl1/tr_local.h	1531;"	d
 MAX_RENDER_COMMANDS	renderergl2/tr_local.h	2324;"	d
 MAX_RENDER_STRINGS	sdl/tr_types.h	119;"	d
@@ -7065,10 +7065,10 @@ MIN	client/libmumblelink.c	46;"	d	file:
 MIN	qcommon/q_shared.h	676;"	d
 MIN	renderergl2/tr_extramath.h	92;"	d
 MINFRAGMENT	qcommon/common.c	736;"	d	file:
-MINSDL_MAJOR	sys/sys_main.c	587;"	d	file:
-MINSDL_MINOR	sys/sys_main.c	588;"	d	file:
-MINSDL_PATCH	sys/sys_main.c	589;"	d	file:
-MINSDL_VERSION	sys/sys_main.c	599;"	d	file:
+MINSDL_MAJOR	sys/sys_main.c	589;"	d	file:
+MINSDL_MINOR	sys/sys_main.c	590;"	d	file:
+MINSDL_PATCH	sys/sys_main.c	591;"	d	file:
+MINSDL_VERSION	sys/sys_main.c	601;"	d	file:
 MINSIZE	client/cl_cin.c	38;"	d	file:
 MINS_Z	game/bg_public.h	49;"	d
 MIN_COMHUNKMEGS	qcommon/common.c	40;"	d	file:
@@ -7572,10 +7572,10 @@ NUMBERVALUE	botlib/l_script.h	35;"	d
 NUMBER_OF_COLORS	qcommon/q_shared.h	386;"	d
 NUMBER_SIZE	cgame/cg_localents.c	716;"	d	file:
 NUMVERTEXNORMALS	qcommon/q_shared.h	354;"	d
-NUM_BEAM_SEGS	renderer_oa/tr_surface.c	183;"	d	file:
+NUM_BEAM_SEGS	renderer_oa/tr_surface.c	190;"	d	file:
 NUM_BEAM_SEGS	renderergl1/tr_surface.c	289;"	d	file:
 NUM_BEAM_SEGS	renderergl2/tr_surface.c	479;"	d	file:
-NUM_CON_TIMES	client/cl_console.c	27;"	d	file:
+NUM_CON_TIMES	client/cl_console.c	28;"	d	file:
 NUM_CROSSHAIRS	cgame/cg_local.h	77;"	d
 NUM_CROSSHAIRS	q3_ui/ui_preferences.c	55;"	d	file:
 NUM_CROSSHAIRS	ui/ui_shared.h	106;"	d
@@ -7635,7 +7635,7 @@ OGG_SAMPLEWIDTH	client/snd_codec_ogg.c	39;"	d	file:
 ON_EPSILON	botlib/be_aas_bspq3.c	47;"	d	file:
 ON_EPSILON	botlib/be_aas_sample.c	52;"	d	file:
 ON_EPSILON	qcommon/cm_polylib.h	44;"	d
-ON_EPSILON	renderer_oa/tr_sky.c	153;"	d	file:
+ON_EPSILON	renderer_oa/tr_sky.c	158;"	d	file:
 ON_EPSILON	renderergl1/tr_sky.c	143;"	d	file:
 ON_EPSILON	renderergl2/tr_sky.c	143;"	d	file:
 OP	qcommon/vm_powerpc_asm.c	540;"	d	file:
@@ -7771,7 +7771,7 @@ PATH_SEP	qcommon/q_platform.h	86;"	d
 PATROL_BACK	game/ai_main.h	79;"	d
 PATROL_LOOP	game/ai_main.h	77;"	d
 PATROL_REVERSE	game/ai_main.h	78;"	d
-PCM_BUFFER_SIZE	client/cl_avi.c	488;"	d	file:
+PCM_BUFFER_SIZE	client/cl_avi.c	486;"	d	file:
 PC_AddBuiltinDefines	botlib/l_precomp.c	/^void PC_AddBuiltinDefines(source_t *source)$/;"	f
 PC_AddDefine	botlib/l_precomp.c	/^int PC_AddDefine(source_t *source, char *string)$/;"	f
 PC_AddDefineToHash	botlib/l_precomp.c	/^void PC_AddDefineToHash(define_t *define, define_t **definehash)$/;"	f
@@ -8918,7 +8918,7 @@ RB_BeginSurface	renderergl1/tr_shade.c	/^void RB_BeginSurface( shader_t *shader,
 RB_BeginSurface	renderergl2/tr_shade.c	/^void RB_BeginSurface( shader_t *shader, int fogNum, int cubemapIndex ) {$/;"	f
 RB_BlurAxis	renderergl2/tr_postprocess.c	/^static void RB_BlurAxis(FBO_t *srcFbo, FBO_t *dstFbo, float strength, qboolean horizontal)$/;"	f	file:
 RB_BokehBlur	renderergl2/tr_postprocess.c	/^void RB_BokehBlur(FBO_t *src, ivec4_t srcBox, FBO_t *dst, ivec4_t dstBox, float blur)$/;"	f
-RB_CHECKOVERFLOW	renderer_oa/tr_surface.c	48;"	d	file:
+RB_CHECKOVERFLOW	renderer_oa/tr_surface.c	55;"	d	file:
 RB_CHECKOVERFLOW	renderergl1/tr_local.h	1306;"	d
 RB_CHECKOVERFLOW	renderergl2/tr_local.h	2055;"	d
 RB_CalcAlphaFromEntity	renderer_oa/tr_shade_calc.c	/^void RB_CalcAlphaFromEntity( unsigned char *dstColors )$/;"	f
@@ -9228,7 +9228,7 @@ REFENTITYNUM_MASK	sdl/tr_types.h	29;"	d
 REFENTITYNUM_WORLD	sdl/tr_types.h	33;"	d
 REF_API_VERSION	sdl/tr_public.h	27;"	d
 RESERVED_CONFIGSTRINGS	qcommon/q_shared.h	1035;"	d
-RESET_TIME	client/cl_cgame.c	793;"	d	file:
+RESET_TIME	client/cl_cgame.c	796;"	d	file:
 RESPAWN_AMMO	game/g_items.c	41;"	d	file:
 RESPAWN_ARMOR	game/g_items.c	39;"	d	file:
 RESPAWN_HEALTH	game/g_items.c	40;"	d	file:
@@ -9649,6 +9649,7 @@ R_InitSkins	renderergl2/tr_image.c	/^void	R_InitSkins( void ) {$/;"	f
 R_InitSkyTexCoords	renderer_oa/tr_sky.c	/^void R_InitSkyTexCoords( float heightCloud )$/;"	f
 R_InitSkyTexCoords	renderergl1/tr_sky.c	/^void R_InitSkyTexCoords( float heightCloud )$/;"	f
 R_InitSkyTexCoords	renderergl2/tr_sky.c	/^void R_InitSkyTexCoords( float heightCloud )$/;"	f
+R_InitSurface	renderer_oa/tr_surface.c	/^void R_InitSurface(void)$/;"	f
 R_InitVaos	renderergl2/tr_vbo.c	/^void R_InitVaos(void)$/;"	f
 R_IssuePendingRenderCommands	renderer_oa/tr_cmds.c	/^void R_IssuePendingRenderCommands( void )$/;"	f
 R_IssuePendingRenderCommands	renderergl1/tr_cmds.c	/^void R_IssuePendingRenderCommands( void ) {$/;"	f
@@ -9887,7 +9888,7 @@ R_SetParent	renderergl2/tr_bsp.c	/^static	void R_SetParent (mnode_t *node, mnode
 R_SetupEntityLighting	renderer_oa/tr_light.c	/^void R_SetupEntityLighting( const trRefdef_t *refdef, trRefEntity_t *ent )$/;"	f
 R_SetupEntityLighting	renderergl1/tr_light.c	/^void R_SetupEntityLighting( const trRefdef_t *refdef, trRefEntity_t *ent ) {$/;"	f
 R_SetupEntityLighting	renderergl2/tr_light.c	/^void R_SetupEntityLighting( const trRefdef_t *refdef, trRefEntity_t *ent ) {$/;"	f
-R_SetupEntityLightingGrid	renderer_oa/tr_light.c	/^static void R_SetupEntityLightingGrid( trRefEntity_t *ent ) {$/;"	f	file:
+R_SetupEntityLightingGrid	renderer_oa/tr_light.c	/^static void R_SetupEntityLightingGrid( trRefEntity_t *ent )$/;"	f	file:
 R_SetupEntityLightingGrid	renderergl1/tr_light.c	/^static void R_SetupEntityLightingGrid( trRefEntity_t *ent ) {$/;"	f	file:
 R_SetupEntityLightingGrid	renderergl2/tr_light.c	/^static void R_SetupEntityLightingGrid( trRefEntity_t *ent, world_t *world ) {$/;"	f	file:
 R_SetupFrustum	renderer_oa/tr_main.c	/^static void R_SetupFrustum(viewParms_t *dest, float xmin, float xmax, float ymax, float zProj, float stereoSep)$/;"	f	file:
@@ -10103,7 +10104,7 @@ SCR_DrawStringExt	client/cl_scrn.c	/^void SCR_DrawStringExt( int x, int y, float
 SCR_DrawVoipMeter	client/cl_scrn.c	/^void SCR_DrawVoipMeter( void ) {$/;"	f
 SCR_FillRect	client/cl_scrn.c	/^void SCR_FillRect( float x, float y, float width, float height, const float *color ) {$/;"	f
 SCR_GetBigStringWidth	client/cl_scrn.c	/^int	SCR_GetBigStringWidth( const char *str ) {$/;"	f
-SCR_Init	client/cl_scrn.c	/^void SCR_Init( void ) {$/;"	f
+SCR_Init	client/cl_scrn.c	/^void SCR_Init( void )$/;"	f
 SCR_RunCinematic	client/cl_cin.c	/^void SCR_RunCinematic (void)$/;"	f
 SCR_StopCinematic	client/cl_cin.c	/^void SCR_StopCinematic(void)$/;"	f
 SCR_Strlen	client/cl_scrn.c	/^static int SCR_Strlen( const char *str ) {$/;"	f	file:
@@ -10363,7 +10364,7 @@ SP_trigger_multiple	game/g_trigger.c	/^void SP_trigger_multiple( gentity_t *ent 
 SP_trigger_push	game/g_trigger.c	/^void SP_trigger_push( gentity_t *self ) {$/;"	f
 SP_trigger_teleport	game/g_trigger.c	/^void SP_trigger_teleport( gentity_t *self ) {$/;"	f
 SP_worldspawn	game/g_spawn.c	/^void SP_worldspawn( void ) {$/;"	f
-SQR	renderer_oa/tr_sky.c	621;"	d	file:
+SQR	renderer_oa/tr_sky.c	626;"	d	file:
 SQR	renderergl1/tr_sky.c	637;"	d	file:
 SQR	renderergl2/tr_sky.c	728;"	d	file:
 SQRTFAST	qcommon/q_shared.h	504;"	d
@@ -12333,7 +12334,7 @@ VM_Clear	qcommon/vm.c	/^void VM_Clear(void)$/;"	f
 VM_Compile	qcommon/vm_powerpc.c	/^VM_Compile( vm_t *vm, vmHeader_t *header )$/;"	f
 VM_Compile	qcommon/vm_x86.c	/^void VM_Compile(vm_t *vm, vmHeader_t *header)$/;"	f
 VM_CompileFunction	qcommon/vm_powerpc.c	/^VM_CompileFunction( source_instruction_t * const i_first )$/;"	f	file:
-VM_Create	qcommon/vm.c	/^vm_t *VM_Create(const char *module, intptr_t (*systemCalls)(intptr_t *), vmInterpret_t interpret )$/;"	f
+VM_Create	qcommon/vm.c	/^vm_t* VM_Create(const char *module, intptr_t (*systemCalls)(intptr_t *), vmInterpret_t interpret )$/;"	f
 VM_Data	qcommon/vm_powerpc.c	/^typedef struct VM_Data {$/;"	s	file:
 VM_Data_Offset	qcommon/vm_powerpc.c	332;"	d	file:
 VM_Data_Offset	qcommon/vm_powerpc.c	336;"	d	file:
@@ -12643,7 +12644,7 @@ Z_AvailableMemory	qcommon/common.c	/^int Z_AvailableMemory( void ) {$/;"	f
 Z_AvailableZoneMemory	qcommon/common.c	/^int Z_AvailableZoneMemory( memzone_t *zone ) {$/;"	f
 Z_CheckHeap	qcommon/common.c	/^static void Z_CheckHeap( void ) {$/;"	f	file:
 Z_ClearZone	qcommon/common.c	/^static void Z_ClearZone( memzone_t *zone, int size )$/;"	f	file:
-Z_Free	qcommon/common.c	/^void Z_Free( void* ptr )$/;"	f
+Z_Free	qcommon/common.c	/^void Z_Free(void* ptr)$/;"	f
 Z_FreeTags	qcommon/common.c	/^void Z_FreeTags( int tag ) {$/;"	f
 Z_LogHeap	qcommon/common.c	/^void Z_LogHeap( void ) {$/;"	f
 Z_LogZoneHeap	qcommon/common.c	/^void Z_LogZoneHeap( memzone_t *zone, char *name ) {$/;"	f
@@ -13977,7 +13978,7 @@ cgameStarted	client/client.h	/^	qboolean	cgameStarted;$/;"	m	struct:__anon401
 cgameUserCmdValue	client/client.h	/^	int			cgameUserCmdValue;	\/\/ current weapon to add to usercmd_t$/;"	m	struct:__anon397
 cgs	cgame/cg_main.c	/^cgs_t				cgs;$/;"	v
 cgs_t	cgame/cg_local.h	/^} cgs_t;$/;"	t	typeref:struct:__anon426
-cgvm	client/cl_main.c	/^vm_t				*cgvm;$/;"	v
+cgvm	client/cl_main.c	/^vm_t* cgvm;$/;"	v
 chain	game/g_local.h	/^	gentity_t	*chain;$/;"	m	struct:gentity_s
 chainsaw	q3_ui/ui_controls2.c	/^	menuaction_s		chainsaw;$/;"	m	struct:__anon28	file:
 challenge	client/client.h	/^	int			challenge;					\/\/ from the server to use for connecting$/;"	m	struct:__anon398
@@ -17137,7 +17138,6 @@ in_left	client/cl_input.c	/^kbutton_t	in_left, in_right, in_forward, in_back;$/;
 in_lookdown	client/cl_input.c	/^kbutton_t	in_lookup, in_lookdown, in_moveleft, in_moveright;$/;"	v
 in_lookup	client/cl_input.c	/^kbutton_t	in_lookup, in_lookdown, in_moveleft, in_moveright;$/;"	v
 in_mlooking	client/cl_input.c	/^qboolean	in_mlooking;$/;"	v
-in_mouse	sdl/sdl_input.c	/^static cvar_t *in_mouse = NULL;$/;"	v	file:
 in_moveleft	client/cl_input.c	/^kbutton_t	in_lookup, in_lookdown, in_moveleft, in_moveright;$/;"	v
 in_moveright	client/cl_input.c	/^kbutton_t	in_lookup, in_lookdown, in_moveleft, in_moveright;$/;"	v
 in_right	client/cl_input.c	/^kbutton_t	in_left, in_right, in_forward, in_back;$/;"	v
@@ -18702,7 +18702,7 @@ next	q3_ui/ui_startserver.c	/^	menubitmap_s		next;$/;"	m	struct:__anon49	file:
 next	q3_ui/ui_startserver.c	/^	menubitmap_s	next;$/;"	m	struct:__anon48	file:
 next	qcommon/cmd.c	/^	struct cmd_function_s	*next;$/;"	m	struct:cmd_function_s	typeref:struct:cmd_function_s::cmd_function_s	file:
 next	qcommon/common.c	/^	struct hunkblock_s *next;$/;"	m	struct:hunkblock_s	typeref:struct:hunkblock_s::hunkblock_s	file:
-next	qcommon/common.c	/^	struct memblock_s       *next, *prev;$/;"	m	struct:memblock_s	typeref:struct:memblock_s::memblock_s	file:
+next	qcommon/common.c	/^	struct memblock_s   *next, *prev;$/;"	m	struct:memblock_s	typeref:struct:memblock_s::memblock_s	file:
 next	qcommon/files.c	/^	struct	fileInPack_s*	next;		\/\/ next file in the hash$/;"	m	struct:fileInPack_s	typeref:struct:fileInPack_s::fileInPack_s	file:
 next	qcommon/files.c	/^	struct searchpath_s* next;$/;"	m	struct:searchpath_s	typeref:struct:searchpath_s::searchpath_s	file:
 next	qcommon/net_chan.c	/^        struct packetQueue_s *next;$/;"	m	struct:packetQueue_s	typeref:struct:packetQueue_s::packetQueue_s	file:
@@ -19903,7 +19903,7 @@ prev	botlib/l_precomp.c	/^	struct operator_s *prev, *next;$/;"	m	struct:operator
 prev	botlib/l_precomp.c	/^	struct value_s *prev, *next;$/;"	m	struct:value_s	typeref:struct:value_s::value_s	file:
 prev	cgame/cg_local.h	/^	struct localEntity_s	*prev, *next;$/;"	m	struct:localEntity_s	typeref:struct:localEntity_s::localEntity_s
 prev	game/ai_main.h	/^	struct		bot_waypoint_s *next, *prev;$/;"	m	struct:bot_waypoint_s	typeref:struct:bot_waypoint_s::
-prev	qcommon/common.c	/^	struct memblock_s       *next, *prev;$/;"	m	struct:memblock_s	typeref:struct:memblock_s::	file:
+prev	qcommon/common.c	/^	struct memblock_s   *next, *prev;$/;"	m	struct:memblock_s	typeref:struct:memblock_s::	file:
 prev	qcommon/q_shared.h	/^	cvar_t *prev;$/;"	m	struct:cvar_s
 prev	qcommon/qcommon.h	/^	struct	nodetype *next, *prev; \/* doubly-linked list *\/$/;"	m	struct:nodetype	typeref:struct:nodetype::
 prev	server/server.h	/^	leakyBucket_t *prev, *next;$/;"	m	struct:leakyBucket_s
@@ -20457,22 +20457,22 @@ r_externalGLSL	renderergl2/tr_init.c	/^cvar_t  *r_externalGLSL;$/;"	v
 r_facePlaneCull	renderer_oa/tr_init.c	/^cvar_t	*r_facePlaneCull;$/;"	v
 r_facePlaneCull	renderergl1/tr_init.c	/^cvar_t	*r_facePlaneCull;$/;"	v
 r_facePlaneCull	renderergl2/tr_init.c	/^cvar_t	*r_facePlaneCull;$/;"	v
-r_fastsky	renderer_oa/tr_init.c	/^cvar_t	*r_fastsky;$/;"	v
+r_fastsky	renderer_oa/tr_sky.c	/^cvar_t* r_fastsky;$/;"	v
 r_fastsky	renderergl1/tr_init.c	/^cvar_t	*r_fastsky;$/;"	v
 r_fastsky	renderergl2/tr_init.c	/^cvar_t	*r_fastsky;$/;"	v
 r_finish	renderer_oa/tr_init.c	/^cvar_t	*r_finish;$/;"	v
 r_finish	renderergl1/tr_init.c	/^cvar_t	*r_finish;$/;"	v
 r_finish	renderergl2/tr_init.c	/^cvar_t	*r_finish;$/;"	v
-r_firstSceneDlight	renderer_oa/tr_scene.c	/^static int	r_firstSceneDlight;$/;"	v	file:
+r_firstSceneDlight	renderer_oa/tr_scene.c	/^static int	r_firstSceneDlight = 0;$/;"	v	file:
 r_firstSceneDlight	renderergl1/tr_scene.c	/^int			r_firstSceneDlight;$/;"	v
 r_firstSceneDlight	renderergl2/tr_scene.c	/^int			r_firstSceneDlight;$/;"	v
-r_firstSceneDrawSurf	renderer_oa/tr_scene.c	/^static int	r_firstSceneDrawSurf;$/;"	v	file:
+r_firstSceneDrawSurf	renderer_oa/tr_scene.c	/^static int	r_firstSceneDrawSurf = 0;$/;"	v	file:
 r_firstSceneDrawSurf	renderergl1/tr_scene.c	/^int			r_firstSceneDrawSurf;$/;"	v
 r_firstSceneDrawSurf	renderergl2/tr_scene.c	/^int			r_firstSceneDrawSurf;$/;"	v
-r_firstSceneEntity	renderer_oa/tr_scene.c	/^static int	r_firstSceneEntity;$/;"	v	file:
+r_firstSceneEntity	renderer_oa/tr_scene.c	/^static int	r_firstSceneEntity = 0;$/;"	v	file:
 r_firstSceneEntity	renderergl1/tr_scene.c	/^int			r_firstSceneEntity;$/;"	v
 r_firstSceneEntity	renderergl2/tr_scene.c	/^int			r_firstSceneEntity;$/;"	v
-r_firstScenePoly	renderer_oa/tr_scene.c	/^static int	r_firstScenePoly;$/;"	v	file:
+r_firstScenePoly	renderer_oa/tr_scene.c	/^static int	r_firstScenePoly = 0;$/;"	v	file:
 r_firstScenePoly	renderergl1/tr_scene.c	/^int			r_firstScenePoly;$/;"	v
 r_firstScenePoly	renderergl2/tr_scene.c	/^int			r_firstScenePoly;$/;"	v
 r_flareCoeff	renderer_oa/tr_flares.c	/^static cvar_t* r_flareCoeff;$/;"	v	file:
@@ -20613,16 +20613,16 @@ r_novis	renderer_oa/tr_init.c	/^cvar_t	*r_novis;$/;"	v
 r_novis	renderergl1/tr_init.c	/^cvar_t	*r_novis;$/;"	v
 r_novis	renderergl2/tr_init.c	/^cvar_t	*r_novis;$/;"	v
 r_ntsc	renderer_oa/tr_init.c	/^cvar_t	*r_ntsc;		\/\/ Leilei - ntsc \/ composite signals$/;"	v
-r_numdlights	renderer_oa/tr_scene.c	/^static int	r_numdlights;$/;"	v	file:
+r_numdlights	renderer_oa/tr_scene.c	/^static int	r_numdlights = 0;$/;"	v	file:
 r_numdlights	renderergl1/tr_scene.c	/^int			r_numdlights;$/;"	v
 r_numdlights	renderergl2/tr_scene.c	/^int			r_numdlights;$/;"	v
-r_numentities	renderer_oa/tr_scene.c	/^static int	r_numentities;$/;"	v	file:
+r_numentities	renderer_oa/tr_scene.c	/^static int	r_numentities = 0;$/;"	v	file:
 r_numentities	renderergl1/tr_scene.c	/^int			r_numentities;$/;"	v
 r_numentities	renderergl2/tr_scene.c	/^int			r_numentities;$/;"	v
-r_numpolys	renderer_oa/tr_scene.c	/^static int	r_numpolys;$/;"	v	file:
+r_numpolys	renderer_oa/tr_scene.c	/^static int	r_numpolys = 0;$/;"	v	file:
 r_numpolys	renderergl1/tr_scene.c	/^int			r_numpolys;$/;"	v
 r_numpolys	renderergl2/tr_scene.c	/^int			r_numpolys;$/;"	v
-r_numpolyverts	renderer_oa/tr_scene.c	/^static int	r_numpolyverts;$/;"	v	file:
+r_numpolyverts	renderer_oa/tr_scene.c	/^static int	r_numpolyverts = 0;$/;"	v	file:
 r_numpolyverts	renderergl1/tr_scene.c	/^int			r_numpolyverts;$/;"	v
 r_numpolyverts	renderergl2/tr_scene.c	/^int			r_numpolyverts;$/;"	v
 r_offsetFactor	renderer_oa/tr_init.c	/^cvar_t	*r_offsetFactor;$/;"	v
@@ -20650,13 +20650,13 @@ r_printShaders	renderer_oa/tr_init.c	/^cvar_t	*r_printShaders;$/;"	v
 r_printShaders	renderergl1/tr_init.c	/^cvar_t	*r_printShaders;$/;"	v
 r_printShaders	renderergl2/tr_init.c	/^cvar_t	*r_printShaders;$/;"	v
 r_pshadowDist	renderergl2/tr_init.c	/^cvar_t  *r_pshadowDist;$/;"	v
-r_railCoreWidth	renderer_oa/tr_init.c	/^cvar_t	*r_railCoreWidth;$/;"	v
+r_railCoreWidth	renderer_oa/tr_surface.c	/^static cvar_t* r_railCoreWidth;$/;"	v	file:
 r_railCoreWidth	renderergl1/tr_init.c	/^cvar_t	*r_railCoreWidth;$/;"	v
 r_railCoreWidth	renderergl2/tr_init.c	/^cvar_t	*r_railCoreWidth;$/;"	v
-r_railSegmentLength	renderer_oa/tr_init.c	/^cvar_t	*r_railSegmentLength;$/;"	v
+r_railSegmentLength	renderer_oa/tr_surface.c	/^static cvar_t* r_railSegmentLength;$/;"	v	file:
 r_railSegmentLength	renderergl1/tr_init.c	/^cvar_t	*r_railSegmentLength;$/;"	v
 r_railSegmentLength	renderergl2/tr_init.c	/^cvar_t	*r_railSegmentLength;$/;"	v
-r_railWidth	renderer_oa/tr_init.c	/^cvar_t	*r_railWidth;$/;"	v
+r_railWidth	renderer_oa/tr_surface.c	/^static cvar_t* r_railWidth;$/;"	v	file:
 r_railWidth	renderergl1/tr_init.c	/^cvar_t	*r_railWidth;$/;"	v
 r_railWidth	renderergl2/tr_init.c	/^cvar_t	*r_railWidth;$/;"	v
 r_retroAA	renderer_oa/tr_init.c	/^cvar_t	*r_retroAA;		\/\/ Leilei - old console AA$/;"	v

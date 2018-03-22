@@ -806,41 +806,43 @@ ID_INLINE qboolean BoundsIntersectPoint(const vec3_t mins, const vec3_t maxs, co
 
 ID_INLINE vec_t VectorNormalize( vec3_t v )
 {
-	// NOTE: TTimo - Apple G4 altivec source uses double?
-	float length = v[0]*v[0] + v[1]*v[1] + v[2]*v[2];
+	float length = sqrt(v[0]*v[0] + v[1]*v[1] + v[2]*v[2]);
 
-	if ( length )
+	if ( length != 0)
     {
 		/* writing it this way allows gcc to recognize that rsqrt can be used */
-		float ilength = 1 / sqrt (length);
+		float invLen = 1 / length;
 		/* sqrt(length) = length * (1 / sqrt(length)) */
-		length *= ilength;
-		v[0] *= ilength;
-		v[1] *= ilength;
-		v[2] *= ilength;
+		v[0] *= invLen;
+		v[1] *= invLen;
+		v[2] *= invLen;
 	}
+    else
+    {
+        v[0] = v[1] = v[2] = 0;
+    }
 		
 	return length;
 }
 
+
 ID_INLINE vec_t VectorNormalize2( const vec3_t v, vec3_t out)
 {
-	float length = v[0]*v[0] + v[1]*v[1] + v[2]*v[2];
+	float length = sqrt(v[0]*v[0] + v[1]*v[1] + v[2]*v[2]);
 
-	if (length)
-	{
+	if(length != 0)
+    {
 		/* writing it this way allows gcc to recognize that rsqrt can be used */
-		float ilength = 1/(float)sqrt (length);
+		float invLen = 1 / length;
 		/* sqrt(length) = length * (1 / sqrt(length)) */
-		length *= ilength;
-		out[0] = v[0]*ilength;
-		out[1] = v[1]*ilength;
-		out[2] = v[2]*ilength;
+		out[0] = v[0] * invLen;
+		out[1] = v[1] * invLen;
+		out[2] = v[2] * invLen;
 	}
     else
     {
-		VectorClear( out );
-	}
+        out[0] = out[1] = out[2] = 0;
+    }
 		
 	return length;
 }
@@ -853,11 +855,6 @@ ID_INLINE void _VectorMA( const vec3_t veca, float scale, const vec3_t vecb, vec
 	vecc[2] = veca[2] + scale*vecb[2];
 }
 
-
-ID_INLINE vec_t _DotProduct( const vec3_t v1, const vec3_t v2 )
-{
-	return v1[0]*v2[0] + v1[1]*v2[1] + v1[2]*v2[2];
-}
 
 ID_INLINE void _VectorSubtract( const vec3_t veca, const vec3_t vecb, vec3_t out ) {
 	out[0] = veca[0]-vecb[0];

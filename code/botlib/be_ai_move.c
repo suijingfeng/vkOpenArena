@@ -1197,10 +1197,13 @@ int BotWalkInDirection(bot_movestate_t *ms, vec3_t dir, float speed, int type)
 		//
 		//AAS_DrawCross(move.endpos, 4, LINECOLOR_BLUE);
 		//the bot is blocked by something
-		if (VectorLength(tmpdir) < speed * ms->thinktime * 0.5) return qfalse;
+		if (VectorLength(tmpdir) < speed * ms->thinktime * 0.5)
+            return qfalse;
 		//perform the movement
-		if (type & MOVE_JUMP) EA_Jump(ms->client);
-		if (type & MOVE_CROUCH) EA_Crouch(ms->client);
+		if (type & MOVE_JUMP)
+            EA_Jump(ms->client);
+		if (type & MOVE_CROUCH)
+            EA_Crouch(ms->client);
 		EA_Move(ms->client, hordir, speed);
 		//movement was succesfull
 		return qtrue;

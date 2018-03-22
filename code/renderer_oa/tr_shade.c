@@ -224,8 +224,6 @@ SURFACE SHADERS
 
 =============================================================
 */
-
-
 static void R_BindAnimatedImage( textureBundle_t *bundle )
 {
 	int	index;
@@ -550,14 +548,13 @@ static void ProjectDlightTexture_altivec( void ) {
 #endif
 
 
-static void ProjectDlightTexture_scalar( void ) {
+static void ProjectDlightTexture_scalar( void )
+{
 	int		i, l;
 	vec3_t	origin;
-	float	*texCoords;
-	byte	*colors;
-	byte	clipBits[SHADER_MAX_VERTEXES];
+	unsigned char clipBits[SHADER_MAX_VERTEXES];
 	float	texCoordsArray[SHADER_MAX_VERTEXES][2];
-	byte	colorArray[SHADER_MAX_VERTEXES][4];
+	unsigned char colorArray[SHADER_MAX_VERTEXES][4];
 	unsigned	hitIndexes[SHADER_MAX_INDEXES];
 	int		numIndexes;
 	float	scale;
@@ -569,16 +566,17 @@ static void ProjectDlightTexture_scalar( void ) {
 		return;
 	}
 
-	for ( l = 0 ; l < backEnd.refdef.num_dlights ; l++ ) {
-		dlight_t	*dl;
-
-		if ( !( tess.dlightBits & ( 1 << l ) ) ) {
+	for ( l = 0 ; l < backEnd.refdef.num_dlights ; l++ )
+    {
+		if ( !( tess.dlightBits & ( 1 << l ) ) )
+        {
 			continue;	// this surface definately doesn't have any of this light
 		}
-		texCoords = texCoordsArray[0];
-		colors = colorArray[0];
+        
+		float* texCoords = texCoordsArray[0];
+		unsigned char* colors = colorArray[0];
 
-		dl = &backEnd.refdef.dlights[l];
+		dlight_t* dl = &backEnd.refdef.dlights[l];
 		VectorCopy( dl->transformed, origin );
 		radius = dl->radius;
 		scale = 1.0f / radius;
@@ -587,7 +585,8 @@ static void ProjectDlightTexture_scalar( void ) {
         floatColor[1] = dl->color[1] * 255.0f;
         floatColor[2] = dl->color[2] * 255.0f;
 
-		for ( i = 0 ; i < tess.numVertexes ; i++, texCoords += 2, colors += 4 ) {
+		for ( i = 0 ; i < tess.numVertexes ; i++, texCoords += 2, colors += 4 )
+        {
 			int		clip = 0;
 			vec3_t	dist;
 			
@@ -598,13 +597,12 @@ static void ProjectDlightTexture_scalar( void ) {
 			texCoords[0] = 0.5f + dist[0] * scale;
 			texCoords[1] = 0.5f + dist[1] * scale;
 
-			if( !r_dlightBacks->integer &&
-					// dist . tess.normal[i]
-					( dist[0] * tess.normal[i][0] +
-					dist[1] * tess.normal[i][1] +
-					dist[2] * tess.normal[i][2] ) < 0.0f ) {
+			if( !r_dlightBacks->integer && ( dist[0] * tess.normal[i][0] + dist[1] * tess.normal[i][1] + dist[2] * tess.normal[i][2] ) < 0.0f )
+            {
 				clip = 63;
-			} else {
+			}
+            else
+            {
 				if ( texCoords[0] < 0.0f ) {
 					clip |= 1;
 				} else if ( texCoords[0] > 1.0f ) {

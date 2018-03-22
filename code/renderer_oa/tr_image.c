@@ -34,6 +34,7 @@ static cvar_t* r_texturebits;
 static cvar_t* r_greyscale;
 static cvar_t* r_overBrightBits;
 
+
 #define FILE_HASH_SIZE		1024
 static image_t* hashTable[FILE_HASH_SIZE];
 
@@ -509,16 +510,6 @@ static void Upload32( unsigned *data, int width, int height, qboolean mipmap, qb
 	}
 
 
-	// leilei - icon picmip for certain 2d graphics elements that get wasted in lower resolutions, saving vram
-	// leilei - lightmap color bits, for saving vram/tex cache
-	if (lightMap)
-    {
-		if (r_lightmapBits->integer)
-        {
-			forceBits = r_lightmapBits->integer;
-			force32upload = 0;
-		}
-	}
 
 	// clamp to minimum size
 	if (scaled_width < 1)
@@ -573,25 +564,6 @@ static void Upload32( unsigned *data, int width, int height, qboolean mipmap, qb
 		else
 			internalFormat = GL_RGB;
 
-        // leilei - lightmap color bits, for saving vram/tex cache
-		if (r_lightmapBits->integer)
-        {
-			forceBits = r_lightmapBits->integer;
-			force32upload = 0;
-
-            if ( forceBits == 16)
-            {
-                internalFormat = GL_RGB5;
-            }
-            else if ( forceBits == 32)
-            {
-                internalFormat = GL_RGB8;
-            }
-            else
-            {
-                internalFormat = GL_RGB;
-            }
-		}
 	}
 	else
 	{
@@ -1492,7 +1464,7 @@ void R_InitImages(void)
     
     r_greyscale = ri.Cvar_Get("r_greyscale", "0", CVAR_ARCHIVE | CVAR_LATCH);
 	ri.Cvar_CheckRange(r_greyscale, 0, 1, qfalse);
-   
+  
     R_SetColorMappings();
 
 	// create default texture and white texture

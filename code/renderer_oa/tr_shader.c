@@ -4397,10 +4397,8 @@ TODO:	if r_detailTextures 2, try to move the detail texture before the lightmap 
 ===============
 */
 
-static int sugthem;
 
-
-shader_t *R_FindShaderReal( const char *name, int lightmapIndex, qboolean mipRawImage )
+shader_t *R_FindShader( const char *name, int lightmapIndex, qboolean mipRawImage )
 {
 	char strippedName[MAX_QPATH];
 	int	i;
@@ -4721,41 +4719,6 @@ shader_t *R_FindShaderReal( const char *name, int lightmapIndex, qboolean mipRaw
     }
 
 	return FinishShader();
-}
-
-// leilei - rather stupid way to do a cel wrapper to work for all textures
-shader_t *R_FindShader( const char *name, int lightmapIndex, qboolean mipRawImage )
-{
-	shader_t *ahsh;	
-
-	// load real shader first?
-	shader_t* sh = R_FindShaderReal(name, lightmapIndex, mipRawImage);
-	if (!Q_strncmp( name, "models/player", 13) )
-    {	// restrict to players; speedup
-		if (r_suggestiveThemes->integer < 1)	// find safe textures/shaders if available
-		{
-			sugthem = 1;
-			ahsh = R_FindShaderReal(va("%s_safe", name), lightmapIndex, mipRawImage);
-			if ( ahsh->defaultShader )
-			    return sh;
-			else
-                return ahsh;
-		}
-		else if (r_suggestiveThemes->integer > 1)	// find lewd textures/shaders if available
-		{
-			sugthem = 2;
-			ahsh = R_FindShaderReal(va("%s_lewd", name), lightmapIndex, mipRawImage);
-			if ( ahsh->defaultShader )
-		        return sh;
-			else
-			    return ahsh;
-		}
-		else	// if just normally suggestive or an otherwise normal shader, default
-		    return sh;
-	}
-	else
-        return sh;
-
 }
 
 

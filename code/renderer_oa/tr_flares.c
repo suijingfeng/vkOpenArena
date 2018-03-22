@@ -102,10 +102,9 @@ static flare_t		r_flareStructs[MAX_FLARES];
 static flare_t*     r_activeFlares;
 static flare_t*     r_inactiveFlares;
 
-static int flareCoeff;
-static float flaredsize;	// leilei - dirty flare fix for widescreens
 
 // light flares
+
 static cvar_t* r_flares;
 static cvar_t* r_flareMethod;	// method of flare intensity
 static cvar_t* r_flareCoeff;
@@ -114,7 +113,21 @@ static cvar_t* r_flareSize;
 static cvar_t* r_flareFade;
 
 static cvar_t* r_flaresDlight;
+static cvar_t* r_lensReflectionBrightness;
+static cvar_t* r_flaresDlightShrink;
 
+
+static cvar_t* r_flaresDlightFade;
+static cvar_t* r_flaresDlightOpacity;
+static cvar_t* r_flaresDlightScale;
+
+
+// leilei
+
+static cvar_t* r_flareSun;		// type of flare to use for the sun
+
+static int flareCoeff;
+static float flaredsize;	// leilei - dirty flare fix for widescreens
 
 /*
 ==================
@@ -297,6 +310,8 @@ void RB_AddDlightFlares( void )
 	}
 }
 
+
+
 /*
 ===============================================================================
 
@@ -305,113 +320,6 @@ FLARE BACK END
 ===============================================================================
 */
 
-
-
-
-
-/*
-==================
-RB_TestFlareFast
-
-faster simple one.
-==================
-*/
-
-//void CM_Trace( trace_t *results, const vec3_t start, const vec3_t end, vec3_t mins, vec3_t maxs,
-//               clipHandle_t model, const vec3_t origin, int brushmask, int capsule, sphere_t *sphere );
-/*  
-static void RB_TestFlareFast( flare_t *f, int dotrace )
-{
-	float			depth;
-	qboolean		visible;
-	float			fade;
-	float			screenZ;
-
-	backEnd.pc.c_flareTests++;
-
-
-	// doing a readpixels is as good as doing a glFinish(), so
-	// don't bother with another sync
-	glState.finishCalled = qfalse;
-	if (f->type == 2)
-        dotrace = 0; // sun cant trace
-	// leilei - do trace, then complain
-	
-    if (dotrace)
-    {
-		trace_t  yeah;
-		CM_Trace( &yeah, f->origin, backEnd.or.viewOrigin, NULL, NULL, 0, f->origin, 1, 0, NULL );
-		if (yeah.fraction < 1)
-        {
-			visible = 0;
-			return;
-		}
-		else
-        {
-			visible = 1;
-		}
-	}
-
-	// leilei - delay hack, to speed up the renderer
-
-	if (backEnd.refdef.time > f->delay)
-    {
-		// read back the z buffer contents
-
-		qglReadPixels( f->windowX, f->windowY, 1, 1, GL_DEPTH_COMPONENT, GL_FLOAT, &depth );
-		f->delay = backEnd.refdef.time + r_flareDelay->value;
-
-
-		screenZ = backEnd.viewParms.projectionMatrix[14] /
-		          ( ( 2*depth - 1 ) * backEnd.viewParms.projectionMatrix[11] - backEnd.viewParms.projectionMatrix[10] );
-
-		visible = ( -f->eyeZ - -screenZ ) < 24;
-
-		if ( visible )
-        {
-			if ( !f->visible )
-            {
-				f->visible = qtrue;
-				f->fadeTime = backEnd.refdef.time - 1;
-			}
-
-			fade = ( ( backEnd.refdef.time - f->fadeTime ) / 1000.0f ) * r_flareFade->value;
-		}
-		else
-        {
-			if ( f->visible ) {
-				f->visible = qfalse;
-				f->fadeTime = backEnd.refdef.time - 1;
-			}
-			fade = 1.0f - ( ( backEnd.refdef.time - f->fadeTime ) / 1000.0f ) * r_flareFade->value;
-		}
-
-		if ( fade < 0 ) {
-			fade = 0;
-		}
-        else if ( fade > 1 ) {
-			fade = 1;
-		}
-
-		f->drawIntensity = fade;
-
-	}
-	else
-	{
-        // leilei - continue drawing the flare from where we last checked
-		if (f->visible)
-			f->drawIntensity  = 1;
-		else
-			f->drawIntensity  = 0;
-	}
-
-}
-*/
-/*  
-==================
-RB_TestFlare
-==================
-*/
 static void RB_TestFlare( flare_t *f, int dotrace )
 {
 	float			depth;
@@ -1333,5 +1241,17 @@ void R_InitFlares( void )
 
     r_flareSize = ri.Cvar_Get("r_flareSize", "40", CVAR_CHEAT);
     r_flareFade = ri.Cvar_Get("r_flareFade", "7", CVAR_CHEAT);
- }
 
+    r_lensReflectionBrightness = ri.Cvar_Get( "r_lensReflectionBrightness", "0.5" , CVAR_ARCHIVE);
+
+
+    r_flaresDlightShrink = ri.Cvar_Get( "r_flaresDlightShrink", "1" , CVAR_ARCHIVE );	// dynamic light flares shrinking when close (reducing muzzleflash blindness)
+
+	r_flaresDlightFade = ri.Cvar_Get( "r_flaresDlightFade", "0" , CVAR_ARCHIVE | CVAR_CHEAT );	// dynamic light flares fading (workaround clipping bug)
+	r_flaresDlightOpacity = ri.Cvar_Get( "r_flaresDlightOpacity", "0.5" , CVAR_ARCHIVE );	// dynamic light flares (workaround poor visibility)
+	r_flaresDlightScale = ri.Cvar_Get( "r_flaresDlightScale", "0.7" , CVAR_ARCHIVE );	// dynamic light flares (workaround poor visibility)
+
+    
+	r_flareSun = ri.Cvar_Get( "r_flareSun", "0" , CVAR_ARCHIVE);	// it's 0 because mappers expect 0.
+
+}

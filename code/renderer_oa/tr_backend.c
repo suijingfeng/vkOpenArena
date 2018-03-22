@@ -23,6 +23,7 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #include "../sdl/sdl_glimp.h"
 
 extern shaderCommands_t tess;
+extern cvar_t* r_fastsky;
 
 
 backEndState_t	backEnd;
