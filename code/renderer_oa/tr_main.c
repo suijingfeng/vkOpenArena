@@ -35,7 +35,7 @@ refimport_t	ri;
 shaderCommands_t tess;
 
 extern cvar_t* r_fastsky;
-
+extern cvar_t* r_debugSurface;
 
 //////// statics ///////////
 
@@ -54,7 +54,7 @@ static surfaceType_t entitySurface = SF_ENTITY;
 
 
 
-inline void myGlMultMatrix(const float *a, const float *b, float *out )
+static void myGlMultMatrix(const float *a, const float *b, float *out )
 {
 	int	i, j;
 
@@ -120,9 +120,7 @@ static void R_RotateForViewer(void)
 	tr.viewParms.world = tr.or;
 }
 
-/*
-** SetFarClip
-*/
+
 static void R_SetFarClip( void )
 {
 	float farthestCornerDistance = 0;
@@ -639,11 +637,7 @@ DRAWSURF SORTING
 ==========================================================================================
 */
 
-/*
-===============
-R_Radix
-===============
-*/
+
 static ID_INLINE void R_Radix( int byte, int size, drawSurf_t *source, drawSurf_t *dest )
 {
   int count[ 256 ] = { 0 };
@@ -805,16 +799,13 @@ R_SpriteFogNum: See if a sprite is inside a fog volume
 */
 static int R_SpriteFogNum( trRefEntity_t *ent )
 {
-	int	i, j;
-	fog_t *fog;
-
 	if ( tr.refdef.rdflags & RDF_NOWORLDMODEL ) {
 		return 0;
 	}
-
+	int	i, j;
 	for ( i = 1 ; i < tr.world->numfogs ; i++ )
     {
-		fog = &tr.world->fogs[i];
+		fog_t *fog = &tr.world->fogs[i];
 		for ( j = 0 ; j < 3 ; j++ ) {
 			if ( ent->e.origin[j] - ent->e.radius >= fog->bounds[1][j] ) {
 				break;
@@ -862,58 +853,58 @@ static void R_AddEntitySurfaces (void)
 		// simple generated models, like sprites and beams, are not culled
 		switch ( ent->e.reType )
         {
-		case RT_PORTALSURFACE:
-			break;		// don't draw anything
-		case RT_SPRITE:
-		case RT_BEAM:
-		case RT_LIGHTNING:
-		case RT_RAIL_CORE:
-		case RT_RAIL_RINGS:
-			// self blood sprites, talk balloons, etc should not be drawn in the primary
-			// view.  We can't just do this check for all entities, because md3
-			// entities may still want to cast shadows from them
-			if ( (ent->e.renderfx & RF_THIRD_PERSON) && !tr.viewParms.isPortal) {
-				continue;
-			}
-			shader = R_GetShaderByHandle( ent->e.customShader );
-			R_AddDrawSurf( &entitySurface, shader, R_SpriteFogNum( ent ), 0 );
-			break;
+            case RT_PORTALSURFACE:
+                break;		// don't draw anything
+            case RT_SPRITE:
+            case RT_BEAM:
+            case RT_LIGHTNING:
+            case RT_RAIL_CORE:
+            case RT_RAIL_RINGS:
+                // self blood sprites, talk balloons, etc should not be drawn in the primary
+                // view.  We can't just do this check for all entities, because md3
+                // entities may still want to cast shadows from them
+                if ( (ent->e.renderfx & RF_THIRD_PERSON) && !tr.viewParms.isPortal) {
+                    continue;
+                }
+                shader = R_GetShaderByHandle( ent->e.customShader );
+                R_AddDrawSurf( &entitySurface, shader, R_SpriteFogNum( ent ), 0 );
+                break;
 
-		case RT_MODEL:
-			// we must set up parts of tr.or for model culling
-			R_RotateForEntity( ent, &tr.viewParms, &tr.or );
+            case RT_MODEL:
+                // we must set up parts of tr.or for model culling
+                R_RotateForEntity( ent, &tr.viewParms, &tr.or );
 
-			tr.currentModel = R_GetModelByHandle( ent->e.hModel );
-			if (!tr.currentModel) {
-				R_AddDrawSurf( &entitySurface, tr.defaultShader, 0, 0 );
-			} else {
-				switch ( tr.currentModel->type ) {
-				case MOD_MESH:
-					R_AddMD3Surfaces( ent );
-					break;
-				case MOD_MDR:
-					R_MDRAddAnimSurfaces( ent );
-					break;
-				case MOD_IQM:
-					R_AddIQMSurfaces( ent );
-					break;
-				case MOD_BRUSH:
-					R_AddBrushModelSurfaces( ent );
-					break;
-				case MOD_BAD:		// null model axis
-					if ( (ent->e.renderfx & RF_THIRD_PERSON) && !tr.viewParms.isPortal) {
-						break;
-					}
-					R_AddDrawSurf( &entitySurface, tr.defaultShader, 0, 0 );
-					break;
-				default:
-					ri.Error( ERR_DROP, "R_AddEntitySurfaces: Bad modeltype" );
-					break;
-				}
-			}
-			break;
-		default:
-			ri.Error( ERR_DROP, "R_AddEntitySurfaces: Bad reType" );
+                tr.currentModel = R_GetModelByHandle( ent->e.hModel );
+                if (!tr.currentModel) {
+                    R_AddDrawSurf( &entitySurface, tr.defaultShader, 0, 0 );
+                } else {
+                    switch ( tr.currentModel->type ) {
+                    case MOD_MESH:
+                        R_AddMD3Surfaces( ent );
+                        break;
+                    case MOD_MDR:
+                        R_MDRAddAnimSurfaces( ent );
+                        break;
+                    case MOD_IQM:
+                        R_AddIQMSurfaces( ent );
+                        break;
+                    case MOD_BRUSH:
+                        R_AddBrushModelSurfaces( ent );
+                        break;
+                    case MOD_BAD:		// null model axis
+                        if ( (ent->e.renderfx & RF_THIRD_PERSON) && !tr.viewParms.isPortal) {
+                            break;
+                        }
+                        R_AddDrawSurf( &entitySurface, tr.defaultShader, 0, 0 );
+                        break;
+                    default:
+                        ri.Error( ERR_DROP, "R_AddEntitySurfaces: Bad modeltype" );
+                        break;
+                    }
+                }
+                break;
+            default:
+                ri.Error( ERR_DROP, "R_AddEntitySurfaces: Bad reType" );
 		}
 	}
 
@@ -981,10 +972,6 @@ Visualization aid for movement clipping debugging
 */
 static void R_DebugGraphics( void ) 
 {
-	if ( !r_debugSurface->integer ) {
-		return;
-	}
-
 	R_IssuePendingRenderCommands();
 
 	GL_Bind( tr.whiteImage);
@@ -1000,17 +987,14 @@ static void R_DebugGraphics( void )
 
 void R_SetupProjection(viewParms_t *dest, float zProj, qboolean computeFrustum)
 {
-	float	xmin, xmax, ymin, ymax;
-	float	width, height;
+	float ymax = zProj * tan(dest->fovY * M_PI / 360.0f);
+	float ymin = -ymax;
 
-	ymax = zProj * tan(dest->fovY * M_PI / 360.0f);
-	ymin = -ymax;
+	float xmax = zProj * tan(dest->fovX * M_PI / 360.0f);
+	float xmin = -xmax;
 
-	xmax = zProj * tan(dest->fovX * M_PI / 360.0f);
-	xmin = -xmax;
-
-	width = xmax - xmin;
-	height = ymax - ymin;
+	float width = xmax - xmin;
+	float height = ymax - ymin;
 	
 	dest->projectionMatrix[0] = 2 * zProj / width;
 	dest->projectionMatrix[4] = 0;
@@ -1092,8 +1076,12 @@ void R_RenderView(viewParms_t *parms)
 
 	R_SortDrawSurfs( tr.refdef.drawSurfs + firstDrawSurf, tr.refdef.numDrawSurfs - firstDrawSurf );
 
-	// draw main system development information (surface outlines, etc)
-	R_DebugGraphics();
+
+    if ( r_debugSurface->integer )
+    {
+	    // draw main system development information (surface outlines, etc)
+    	R_DebugGraphics();
+	}
 }
 
 

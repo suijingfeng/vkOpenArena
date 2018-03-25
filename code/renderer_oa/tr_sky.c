@@ -30,7 +30,8 @@ extern	shaderCommands_t	tess;
 
 cvar_t* r_fastsky;
 
-
+// controls drawing of sun quad
+static cvar_t* r_drawSun;
 ////////////////////////////
 
 
@@ -675,9 +676,6 @@ void R_InitSkyTexCoords( float heightCloud )
 */
 void RB_DrawSun( void )
 {
-	vec3_t origin, vec1, vec2;
-	vec3_t temp;
-
 	if ( !backEnd.skyRenderedThisView )
     {
 		return;
@@ -694,13 +692,9 @@ void RB_DrawSun( void )
 	qglLoadMatrixf( backEnd.viewParms.world.modelMatrix );
 	qglTranslatef (backEnd.viewParms.or.origin[0], backEnd.viewParms.or.origin[1], backEnd.viewParms.or.origin[2]);
 
-	float dist = backEnd.viewParms.zFar / 1.75;		// div sqrt(3)
-	float size = dist * 0.4;
-
 
 	// leilei - SUN color
 	vec3_t coll;
-
 	coll[0]=tr.sunLight[0]/128;
 	coll[1]=tr.sunLight[1]/128;
 	coll[2]=tr.sunLight[2]/128;
@@ -714,9 +708,11 @@ void RB_DrawSun( void )
         coll[2] = 1;
 
 	// also, ajdust the size of the sun depending how bright it is.
-
+	float dist = backEnd.viewParms.zFar / 1.75;		// div sqrt(3)
+	float size = dist * 0.4;
 	size *= (coll[0] + coll[1] + coll[2] * 0.333) / 4;
-
+	vec3_t origin, vec1, vec2, temp;
+    
 	VectorScale( tr.sunDirection, dist, origin );
 	PerpendicularVector( vec1, tr.sunDirection );
 	CrossProduct( tr.sunDirection, vec1, vec2 );
@@ -858,5 +854,6 @@ void R_InitCloudAndSky(void)
 {
     // controls whether sky should be cleared or drawn
     r_fastsky = ri.Cvar_Get( "r_fastsky", "0", CVAR_ARCHIVE );
+    r_drawSun = ri.Cvar_Get( "r_drawSun", "0", CVAR_ARCHIVE );
 }
 

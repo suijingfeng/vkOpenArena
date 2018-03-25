@@ -552,7 +552,8 @@ void R_InitFreeType(void)
 }
 
 
-void R_DoneFreeType(void) {
+void R_DoneFreeType(void)
+{
 #ifdef BUILD_FREETYPE
 	if (ftLibrary) {
 		FT_Done_FreeType( ftLibrary );

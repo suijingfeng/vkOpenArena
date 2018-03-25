@@ -1345,19 +1345,13 @@ static void NET_GetLocalAddress( void ) {
 }
 #endif
 
-/*
-====================
-NET_OpenIP
-====================
-*/
-void NET_OpenIP( void ) {
-	int		i;
-	int		err;
-	int		port;
-	int		port6;
 
-	port = net_port->integer;
-	port6 = net_port6->integer;
+void NET_OpenIP( void )
+{
+	int	i, err;
+
+	int port = net_port->integer;
+	int port6 = net_port6->integer;
 
 	NET_GetLocalAddress();
 
@@ -1418,7 +1412,8 @@ void NET_OpenIP( void ) {
 NET_GetCvars
 ====================
 */
-static qboolean NET_GetCvars( void ) {
+static qboolean NET_GetCvars( void )
+{
 	int modified;
 
 #ifdef DEDICATED

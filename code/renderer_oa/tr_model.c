@@ -23,9 +23,6 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
 #include "tr_local.h"
 
-extern int ismaptexture; // leilei - for listing map textures
-
-
 
 typedef struct
 {
@@ -307,7 +304,6 @@ static qboolean R_LoadMD3(model_t *mod, int lod, void *buffer, const char *mod_n
         for ( j = 0 ; j < surf->numShaders ; j++, shader++ )
         {
             shader_t *sh;
-		    ismaptexture = 0;
             sh = R_FindShader( shader->name, LIGHTMAP_NONE, qtrue );
 			if ( sh->defaultShader ) {
 				shader->shaderIndex = 0;
@@ -479,7 +475,6 @@ static qboolean R_LoadMDR( model_t *mod, void *buffer, int filesize, const char 
 	mdrVertex_t			*v, *curv;
 	mdrWeight_t			*weight, *curweight;
 	mdrTag_t			*tag, *curtag;
-	int					size;
 	shader_t			*sh;
 
 	pinmodel = (mdrHeader_t *)buffer;
@@ -491,7 +486,7 @@ static qboolean R_LoadMDR( model_t *mod, void *buffer, int filesize, const char 
 		return qfalse;
 	}
 
-	size = LittleLong(pinmodel->ofsEnd);
+	int size = LittleLong(pinmodel->ofsEnd);
 	
 	if(size > filesize)
 	{
@@ -684,7 +679,6 @@ static qboolean R_LoadMDR( model_t *mod, void *buffer, int filesize, const char 
 			Q_strlwr( surf->name );
 
 			// register the shaders
-			ismaptexture = 0;
 			sh = R_FindShader(surf->shader, LIGHTMAP_NONE, qtrue);
 			if ( sh->defaultShader ) {
 				surf->shaderIndex = 0;

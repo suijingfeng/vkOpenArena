@@ -39,9 +39,6 @@ static cvar_t* r_overBrightBits;
 static image_t* hashTable[FILE_HASH_SIZE];
 
 
-extern int ismaptexture;
-
-
 
 /*
 ================
@@ -914,7 +911,6 @@ static image_t	*R_FindImageFileIfItsThere( const char *name, imgType_t type, img
 
 	image = R_CreateImage( ( char * ) name, pic, width, height, type, flags, 0 );
 	ri.Free( pic );
-	ismaptexture = 0;
 	return image;
 }
 */
@@ -1193,10 +1189,6 @@ image_t *R_CreateImage(const char *name, unsigned char* pic, int width, int heig
 		GL_SelectTexture( isLightmap );
 	}
 
-	// leilei - map texture listing hack
-
-	image->maptexture = ismaptexture;
-
 	long hash = generateHashValue(name);
 	image->next = hashTable[hash];
 	hashTable[hash] = image;
@@ -1274,22 +1266,12 @@ void R_ImageListMapOnly_f( void )
 	for ( i = 0; i < tr.numImages; i++ )
 	{
 		image_t *image = tr.images[i];
-		char *zipcommand = "zip -9";
-		char localName[ MAX_QPATH ];
 		int estSize = image->uploadHeight * image->uploadWidth;
 
 		
 		// mipmap adds about 50%
 		if (image->flags & IMGFLAG_MIPMAP)
 			estSize += estSize / 2;
-
-        
-        //if ( !strncmp( image->imgName, "textures", 8 ) ) {
-		if (image->maptexture)
-        {
-            COM_StripExtension( image->imgName, localName, MAX_QPATH );
-            ri.Printf(PRINT_ALL, "%s pak1-map-mapname.pk3 %s.*\n", zipcommand, localName);
-		}
 	}
 }
 
@@ -1306,10 +1288,9 @@ void R_ImageList_f( void )
 		image_t *image = tr.images[i];
 		char *format = "???? ";
 		char *sizeSuffix;
-		int estSize;
 		int displaySize;
 
-		estSize = image->uploadHeight * image->uploadWidth;
+		int estSize = image->uploadHeight * image->uploadWidth;
 
 		switch(image->internalFormat)
 		{
@@ -1591,8 +1572,6 @@ and for each vertex of transparent shaders in fog dynamically
 */
 float R_FogFactor( float s, float t )
 {
-	float	d;
-
 	s -= 1.0/512;
 	if ( s < 0 ) {
 		return 0;
@@ -1611,7 +1590,7 @@ float R_FogFactor( float s, float t )
 		s = 1.0;
 	}
 
-	d = tr.fogTable[ (int)(s * (FOG_TABLE_SIZE-1)) ];
+	float d = tr.fogTable[ (int)(s * (FOG_TABLE_SIZE-1)) ];
 
 	return d;
 }

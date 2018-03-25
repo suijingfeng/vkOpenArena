@@ -30,6 +30,12 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 // never calculate a range less than this to prevent huge light numbers
 
 
+
+
+static cvar_t* r_ambientScale;
+static cvar_t* r_directedScale;
+static cvar_t* r_debugLight;
+
 /*
 ===============
 R_TransformDlights
@@ -118,17 +124,6 @@ void R_DlightBmodel( bmodel_t *bmodel )
 LIGHT SAMPLING
 
 =============================================================================
-*/
-
-static cvar_t* r_ambientScale;
-static cvar_t* r_directedScale;
-static cvar_t* r_debugLight;
-
-/*
-=================
-R_SetupEntityLightingGrid
-
-=================
 */
 
 static void R_SetupEntityLightingGrid( trRefEntity_t *ent )

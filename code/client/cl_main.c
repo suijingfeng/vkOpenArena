@@ -566,8 +566,8 @@ CLIENT RELIABLE COMMAND COMMUNICATION
 ======================
 CL_AddReliableCommand
 
-The given command will be transmitted to the server, and is gauranteed to
-not have future usercmd_t executed before it is executed
+The given command will be transmitted to the server, 
+and is gauranteed to not have future usercmd_t executed before it is executed
 ======================
 */
 void CL_AddReliableCommand(const char *cmd, qboolean isDisconnectCmd)
@@ -578,8 +578,7 @@ void CL_AddReliableCommand(const char *cmd, qboolean isDisconnectCmd)
 	// we must drop the connection
 	// also leave one slot open for the disconnect command in this case.
 	
-	if ((isDisconnectCmd && unacknowledged > MAX_RELIABLE_COMMANDS) ||
-	    (!isDisconnectCmd && unacknowledged >= MAX_RELIABLE_COMMANDS))
+	if ((isDisconnectCmd && unacknowledged > MAX_RELIABLE_COMMANDS) || (!isDisconnectCmd && unacknowledged >= MAX_RELIABLE_COMMANDS))
 	{
 		if(com_errorEntered)
 			return;
@@ -587,8 +586,7 @@ void CL_AddReliableCommand(const char *cmd, qboolean isDisconnectCmd)
 			Com_Error(ERR_DROP, "Client command overflow");
 	}
 
-	Q_strncpyz(clc.reliableCommands[++clc.reliableSequence & (MAX_RELIABLE_COMMANDS - 1)],
-		   cmd, sizeof(*clc.reliableCommands));
+	Q_strncpyz(clc.reliableCommands[++clc.reliableSequence & (MAX_RELIABLE_COMMANDS - 1)], cmd, sizeof(*clc.reliableCommands));
 }
 
 /*
@@ -1175,8 +1173,9 @@ Called when a demo or cinematic finishes
 If the "nextdemo" cvar is set, that command will be issued
 ==================
 */
-void CL_NextDemo( void ) {
-	char	v[MAX_STRING_CHARS];
+void CL_NextDemo( void )
+{
+	char	v[MAX_STRING_CHARS] = {0};
 
 	Q_strncpyz( v, Cvar_VariableString ("nextdemo"), sizeof(v) );
 	v[MAX_STRING_CHARS-1] = 0;
@@ -1367,11 +1366,13 @@ void CL_Disconnect( qboolean showMainMenu )
 	// shutting down the client so enter full screen ui mode
 	Cvar_Set("r_uiFullScreen", "1");
 
-	if ( clc.demorecording ) {
+	if ( clc.demorecording )
+    {
 		CL_StopRecord_f ();
 	}
 
-	if (clc.download) {
+	if (clc.download)
+    {
 		FS_FCloseFile( clc.download );
 		clc.download = 0;
 	}
@@ -1879,18 +1880,17 @@ void CL_Rcon_f( void ) {
 	NET_SendPacket (NS_CLIENT, strlen(message)+1, message, to);
 }
 
-/*
-=================
-CL_SendPureChecksums
-=================
-*/
-void CL_SendPureChecksums( void ) {
+
+
+void CL_SendPureChecksums( void )
+{
 	char cMsg[MAX_INFO_VALUE];
 
 	// if we are pure we need to send back a command with our referenced pk3 checksums
 	Com_sprintf(cMsg, sizeof(cMsg), "cp %d %s", cl.serverId, FS_ReferencedPakPureChecksums());
 
 	CL_AddReliableCommand(cMsg, qfalse);
+
 }
 
 /*
@@ -1908,8 +1908,7 @@ CL_Vid_Restart_f
 
 Restart the video subsystem
 
-we also have to reload the UI and CGame because the renderer
-doesn't know what graphics to reload
+we also have to reload the UI and CGame because the renderer doesn't know what graphics to reload
 =================
 */
 void CL_Vid_Restart_f( void )
@@ -1967,7 +1966,7 @@ void CL_Vid_Restart_f( void )
 		CL_StartHunkUsers(qfalse);
 
 		// start the cgame if connected
-		if(clc.state > CA_CONNECTED && clc.state != CA_CINEMATIC)
+		if( (clc.state > CA_CONNECTED) && (clc.state != CA_CINEMATIC))
 		{
 			cls.cgameStarted = qtrue;
 			CL_InitCGame();

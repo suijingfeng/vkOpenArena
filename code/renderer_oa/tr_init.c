@@ -29,7 +29,6 @@ extern backEndData_t* backEndData;	// the second one may not be allocated
 
 
 glconfig_t  glConfig;
-
 glstate_t	glState;
 
 
@@ -43,31 +42,27 @@ cvar_t	*r_ignoreFastPath;
 cvar_t	*r_verbose;
 cvar_t	*r_ignore;
 
-cvar_t	*r_detailTextures;
-cvar_t	*r_detailTextureScale;
-cvar_t	*r_detailTextureLayers;
+
 
 cvar_t	*r_znear;
 cvar_t	*r_zproj;
 
 cvar_t	*r_skipBackEnd;
 
-cvar_t	*r_measureOverdraw;
-
 cvar_t	*r_inGameVideo;
 
-cvar_t	*r_drawSun;
 
-cvar_t	*r_dlightBacks;
+
+
 
 cvar_t	*r_lodbias;
-cvar_t	*r_lodscale;
+
 
 cvar_t	*r_norefresh;
 cvar_t	*r_drawentities;
 cvar_t	*r_drawworld;
 cvar_t	*r_speeds;
-cvar_t	*r_fullbright;
+
 cvar_t	*r_novis;
 cvar_t	*r_nocull;
 cvar_t	*r_facePlaneCull;
@@ -76,29 +71,28 @@ cvar_t	*r_showcluster;
 cvar_t	*r_ignoreGLErrors;
 cvar_t	*r_logFile;
 
-cvar_t	*r_primitives;
 
 
-cvar_t	*r_lightmap;
+cvar_t	*r_measureOverdraw;
+
 cvar_t	*r_uiFullScreen;
 cvar_t	*r_shadows;
 
 cvar_t	*r_nobind;
-cvar_t	*r_singleShader;
+
 cvar_t	*r_roundImagesDown;
 cvar_t	*r_colorMipLevels;
 cvar_t	*r_picmip;
 cvar_t	*r_iconmip;
 cvar_t	*r_iconBits;
 
-cvar_t	*r_showtris;
+//cvar_t	*r_showtris;
 cvar_t	*r_showsky;
-cvar_t	*r_shownormals;
+
 cvar_t	*r_finish;
 cvar_t	*r_clear;
-static cvar_t	*r_textureMode;
-cvar_t	*r_offsetFactor;
-cvar_t	*r_offsetUnits;
+static cvar_t* r_textureMode;
+
 cvar_t	*r_gamma;
 
 cvar_t	*r_lockpvs;
@@ -106,24 +100,24 @@ cvar_t	*r_noportals;
 cvar_t	*r_portalOnly;
 
 cvar_t	*r_subdivisions;
-cvar_t	*r_lodCurveError;
 
-cvar_t	*r_mapOverBrightBits;
+
+
 
 cvar_t	*r_debugSurface;
 cvar_t	*r_simpleMipMaps;
 
-cvar_t	*r_showImages;
 
 
-cvar_t	*r_debugLight;
-cvar_t	*r_debugSort;
-cvar_t	*r_printShaders;
+
+
+
+
 cvar_t	*r_saveFontData;
 
 cvar_t	*r_marksOnTriangleMeshes;
 
-cvar_t	*r_aviMotionJpegQuality;
+static cvar_t* r_aviMotionJpegQuality;
 cvar_t	*r_screenshotJpegQuality;
 
 cvar_t	*r_maxpolys;
@@ -131,7 +125,7 @@ int		max_polys;
 cvar_t	*r_maxpolyverts;
 int		max_polyverts;
 
-cvar_t	*r_specMode;
+
 
 
 
@@ -262,34 +256,6 @@ static void GfxInfo_f( void )
 	else
 		ri.Printf( PRINT_ALL, "GAMMA: software w/ %d overbright bits\n", tr.overbrightBits );
 
-	// rendering primitives
-	{
-		int	primitives;
-
-		// default is to use triangles if compiled vertex arrays are present
-		ri.Printf( PRINT_ALL, "rendering primitives: " );
-		primitives = r_primitives->integer;
-		if ( primitives == 0 ) {
-			if ( qglLockArraysEXT ) {
-				primitives = 2;
-			}
-			else {
-				primitives = 1;
-			}
-		}
-		if ( primitives == -1 ) {
-			ri.Printf( PRINT_ALL, "none\n" );
-		}
-		else if ( primitives == 2 ) {
-			ri.Printf( PRINT_ALL, "single glDrawElements\n" );
-		}
-		else if ( primitives == 1 ) {
-			ri.Printf( PRINT_ALL, "multiple glArrayElement\n" );
-		}
-		else if ( primitives == 3 ) {
-			ri.Printf( PRINT_ALL, "multiple glColor4ubv + glTexCoord2fv + glVertex3fv\n" );
-		}
-	}
 
 	ri.Printf( PRINT_ALL, "texturemode: %s\n", r_textureMode->string );
 	ri.Printf( PRINT_ALL, "picmip: %d\n", r_picmip->integer );
@@ -297,7 +263,6 @@ static void GfxInfo_f( void )
 	ri.Printf( PRINT_ALL, "compiled vertex arrays: %s\n", enablestrings[qglLockArraysEXT != 0 ] );
 	ri.Printf( PRINT_ALL, "texenv add: %s\n", enablestrings[glConfig.textureEnvAddAvailable != 0] );
 	ri.Printf( PRINT_ALL, "compressed textures: %s\n", enablestrings[glConfig.textureCompression!=TC_NONE] );
-//	ri.Printf( PRINT_ALL, "glsl programs: %s\n", enablestrings[vertexShaders] );
 
 	if ( r_finish->integer ) {
 		ri.Printf( PRINT_ALL, "Forcing glFinish\n" );
@@ -369,19 +334,16 @@ Return value must be freed with ri.Hunk_FreeTempMemory()
 
 static unsigned char *RB_ReadPixels(int x, int y, int width, int height, size_t *offset, int *padlen)
 {
-	byte *buffer, *bufstart;
-	int padwidth, linelen;
 	GLint packAlign;
-
 	qglGetIntegerv(GL_PACK_ALIGNMENT, &packAlign);
 
-	linelen = width * 3;
-	padwidth = PAD(linelen, packAlign);
+	int linelen = width * 3;
+	int padwidth = PAD(linelen, packAlign);
 
 	// Allocate a few more bytes so that we can choose an alignment we like
-	buffer = ri.Hunk_AllocateTempMemory(padwidth * height + *offset + packAlign - 1);
+	unsigned char* buffer = ri.Hunk_AllocateTempMemory(padwidth * height + *offset + packAlign - 1);
 
-	bufstart = PADP((intptr_t) buffer + *offset, packAlign);
+	unsigned char* bufstart = PADP((intptr_t) buffer + *offset, packAlign);
 	qglReadPixels(x, y, width, height, GL_RGB, GL_UNSIGNED_BYTE, bufstart);
 
 	*offset = bufstart - buffer;
@@ -464,20 +426,13 @@ static void RB_TakeScreenshot(int x, int y, int width, int height, char *fileNam
 	ri.Hunk_FreeTempMemory(allbuf);
 }
 
-/*
-==================
-RB_TakeScreenshotJPEG
-==================
-*/
 
 static void RB_TakeScreenshotJPEG(int x, int y, int width, int height, char *fileName)
 {
-	byte *buffer;
-	size_t offset = 0, memcount;
+	size_t offset = 0;
 	int padlen;
-
-	buffer = RB_ReadPixels(x, y, width, height, &offset, &padlen);
-	memcount = (width * 3 + padlen) * height;
+	unsigned char* buffer = RB_ReadPixels(x, y, width, height, &offset, &padlen);
+	size_t memcount = (width * 3 + padlen) * height;
 
 	// gamma correct
 	if(glConfig.deviceSupportsGamma)
@@ -524,20 +479,19 @@ static void R_TakeScreenshot( int x, int y, int width, int height, char *name, q
 
 static void R_ScreenshotFilename( int lastNumber, char *fileName )
 {
-	int		a,b,c,d;
-
-	if ( lastNumber < 0 || lastNumber > 9999 ) {
+	if ( lastNumber < 0 || lastNumber > 9999 )
+    {
 		Com_sprintf( fileName, MAX_OSPATH, "screenshots/shot9999.tga" );
 		return;
 	}
 
-	a = lastNumber / 1000;
+	int a = lastNumber / 1000;
 	lastNumber -= a*1000;
-	b = lastNumber / 100;
+	int b = lastNumber / 100;
 	lastNumber -= b*100;
-	c = lastNumber / 10;
+	int c = lastNumber / 10;
 	lastNumber -= c*10;
-	d = lastNumber;
+	int d = lastNumber;
 
 	Com_sprintf( fileName, MAX_OSPATH, "screenshots/shot%i%i%i%i.tga", a, b, c, d );
 }
@@ -545,20 +499,18 @@ static void R_ScreenshotFilename( int lastNumber, char *fileName )
 
 static void R_ScreenshotFilenameJPEG( int lastNumber, char *fileName )
 {
-	int	a,b,c,d;
-
 	if ( lastNumber < 0 || lastNumber > 9999 ) {
 		Com_sprintf( fileName, MAX_OSPATH, "screenshots/shot9999.jpg" );
 		return;
 	}
 
-	a = lastNumber / 1000;
+	int a = lastNumber / 1000;
 	lastNumber -= a*1000;
-	b = lastNumber / 100;
+	int b = lastNumber / 100;
 	lastNumber -= b*100;
-	c = lastNumber / 10;
+	int c = lastNumber / 10;
 	lastNumber -= c*10;
-	d = lastNumber;
+	int d = lastNumber;
 
 	Com_sprintf( fileName, MAX_OSPATH, "screenshots/shot%i%i%i%i.jpg", a, b, c, d );
 }
@@ -574,22 +526,20 @@ the menu system, sampled down from full screen distorted images
 static void R_LevelShot( void )
 {
 	char		checkname[MAX_OSPATH];
-	byte		*buffer;
-	byte		*source, *allsource;
-	byte		*src, *dst;
+	unsigned char* src;
+    unsigned char* dst;
 	size_t			offset = 0;
 	int			padlen;
 	int			x, y;
 	int			r, g, b;
-	float		xScale, yScale;
 	int			xx, yy;
 
 	Com_sprintf(checkname, sizeof(checkname), "levelshots/%s.tga", tr.world->baseName);
 
-	allsource = RB_ReadPixels(0, 0, glConfig.vidWidth, glConfig.vidHeight, &offset, &padlen);
-	source = allsource + offset;
+	unsigned char* allsource = RB_ReadPixels(0, 0, glConfig.vidWidth, glConfig.vidHeight, &offset, &padlen);
+	unsigned char* source = allsource + offset;
 
-	buffer = ri.Hunk_AllocateTempMemory(128 * 128*3 + 18);
+	unsigned char* buffer = ri.Hunk_AllocateTempMemory(128 * 128*3 + 18);
 	memset (buffer, 0, 18);
 	buffer[2] = 2;		// uncompressed type
 	buffer[12] = 128;
@@ -597,8 +547,8 @@ static void R_LevelShot( void )
 	buffer[16] = 24;	// pixel size
 
 	// resample from source
-	xScale = glConfig.vidWidth / 512.0f;
-	yScale = glConfig.vidHeight / 384.0f;
+	float xScale = glConfig.vidWidth / 512.0f;
+	float yScale = glConfig.vidHeight / 384.0f;
 	for ( y = 0 ; y < 128 ; y++ ) {
 		for ( x = 0 ; x < 128 ; x++ ) {
 			r = g = b = 0;
@@ -634,9 +584,9 @@ static void R_LevelShot( void )
 
 static void R_ScreenShotJPEG_f (void)
 {
-	char		checkname[MAX_OSPATH];
-	static	int	lastNumber = -1;
-	qboolean	silent;
+	char checkname[MAX_OSPATH];
+	static int	lastNumber = -1;
+	qboolean silent;
 
 	if ( !strcmp( ri.Cmd_Argv(1), "levelshot" ) ) {
 		R_LevelShot();
@@ -689,61 +639,50 @@ static void R_ScreenShotJPEG_f (void)
 
 //============================================================================
 
-/*
-==================
-RB_TakeVideoFrameCmd
-==================
-*/
 const void *RB_TakeVideoFrameCmd( const void *data )
 {
-	const videoFrameCommand_t	*cmd;
-	byte				*cBuf;
-	size_t				memcount, linelen;
-	int				padwidth, avipadwidth, padlen, avipadlen;
+	const videoFrameCommand_t* cmd = (const videoFrameCommand_t *)data;
 	GLint packAlign;
-
-	cmd = (const videoFrameCommand_t *)data;
-
 	qglGetIntegerv(GL_PACK_ALIGNMENT, &packAlign);
 
-	linelen = cmd->width * 3;
+	size_t linelen = cmd->width * 3;
 
 	// Alignment stuff for glReadPixels
-	padwidth = PAD(linelen, packAlign);
-	padlen = padwidth - linelen;
+	int padwidth = PAD(linelen, packAlign);
+	int padlen = padwidth - linelen;
 	// AVI line padding
-	avipadwidth = PAD(linelen, AVI_LINE_PADDING);
-	avipadlen = avipadwidth - linelen;
+	int avipadwidth = PAD(linelen, AVI_LINE_PADDING);
+	int avipadlen = avipadwidth - linelen;
 
-	cBuf = PADP(cmd->captureBuffer, packAlign);
+	unsigned char* cBuf = PADP(cmd->captureBuffer, packAlign);
 
-	qglReadPixels(0, 0, cmd->width, cmd->height, GL_RGB,
-	              GL_UNSIGNED_BYTE, cBuf);
+	qglReadPixels(0, 0, cmd->width, cmd->height, GL_RGB, GL_UNSIGNED_BYTE, cBuf);
 
-	memcount = padwidth * cmd->height;
+	size_t memcount = padwidth * cmd->height;
 
 	// gamma correct
 	if(glConfig.deviceSupportsGamma)
 		R_GammaCorrect(cBuf, memcount);
 
-	if(cmd->motionJpeg) {
-		memcount = RE_SaveJPGToBuffer(cmd->encodeBuffer, linelen * cmd->height,
-		                              r_aviMotionJpegQuality->integer,
-		                              cmd->width, cmd->height, cBuf, padlen);
+	if(cmd->motionJpeg)
+    {
+		memcount = RE_SaveJPGToBuffer(cmd->encodeBuffer, linelen * cmd->height, r_aviMotionJpegQuality->integer, cmd->width, cmd->height, cBuf, padlen);
 		ri.CL_WriteAVIVideoFrame(cmd->encodeBuffer, memcount);
 	}
-	else {
-		byte *lineend, *memend;
-		byte *srcptr, *destptr;
+	else
+    {
+		unsigned char* lineend;
 
-		srcptr = cBuf;
-		destptr = cmd->encodeBuffer;
-		memend = srcptr + memcount;
+		unsigned char* srcptr = cBuf;
+		unsigned char* destptr = cmd->encodeBuffer;
+		unsigned char* memend = srcptr + memcount;
 
 		// swap R and B and remove line paddings
-		while(srcptr < memend) {
+		while(srcptr < memend)
+        {
 			lineend = srcptr + linelen;
-			while(srcptr < lineend) {
+			while(srcptr < lineend)
+            {
 				*destptr++ = srcptr[2];
 				*destptr++ = srcptr[1];
 				*destptr++ = srcptr[0];
@@ -763,9 +702,6 @@ const void *RB_TakeVideoFrameCmd( const void *data )
 }
 
 //============================================================================
-
-
-
 
 
 /*
@@ -838,14 +774,11 @@ static void R_ScreenShot_f(void)
 
 static void R_SkinList_f( void )
 {
-	int	i, j;
-	skin_t *skin;
-
 	ri.Printf(PRINT_ALL, "------------------\n");
-
+	int	i, j;
 	for ( i = 0 ; i < tr.numSkins ; i++ )
     {
-		skin = tr.skins[i];
+		skin_t *skin = tr.skins[i];
 
 		ri.Printf( PRINT_ALL, "%3i:%s\n", i, skin->name );
 		for ( j = 0 ; j < skin->numSurfaces ; j++ )
@@ -873,30 +806,25 @@ static void R_Register( void )
 	// latched and archived variables
 	//
 
-
 	r_picmip = ri.Cvar_Get ("r_picmip", "1", CVAR_ARCHIVE | CVAR_LATCH );
 	r_roundImagesDown = ri.Cvar_Get ("r_roundImagesDown", "1", CVAR_ARCHIVE | CVAR_LATCH );
 	r_colorMipLevels = ri.Cvar_Get ("r_colorMipLevels", "0", CVAR_LATCH );
 	ri.Cvar_CheckRange( r_picmip, 0, 16, qtrue );
-	r_detailTextures = ri.Cvar_Get( "r_detailtextures", "1", CVAR_ARCHIVE | CVAR_LATCH );
+
 
 	r_simpleMipMaps = ri.Cvar_Get( "r_simpleMipMaps", "1", CVAR_ARCHIVE | CVAR_LATCH );
-	//r_uiFullScreen = ri.Cvar_Get( "r_uifullscreen", "0", 0);
 	r_subdivisions = ri.Cvar_Get ("r_subdivisions", "4", CVAR_ARCHIVE | CVAR_LATCH);
 	r_ignoreFastPath = ri.Cvar_Get( "r_ignoreFastPath", "1", CVAR_ARCHIVE | CVAR_LATCH );
 
 	//
 	// temporary latched variables that can only change over a restart
 	//
-	r_fullbright = ri.Cvar_Get ("r_fullbright", "0", CVAR_LATCH|CVAR_CHEAT );
-	r_mapOverBrightBits = ri.Cvar_Get ("r_mapOverBrightBits", "2", CVAR_LATCH );
 
-	r_singleShader = ri.Cvar_Get ("r_singleShader", "0", CVAR_CHEAT | CVAR_LATCH );
 
 	//
 	// archived variables that can change at any time
 	//
-	r_lodCurveError = ri.Cvar_Get( "r_lodCurveError", "250", CVAR_ARCHIVE|CVAR_CHEAT );
+
 	r_lodbias = ri.Cvar_Get( "r_lodbias", "0", CVAR_ARCHIVE );
 
 	r_znear = ri.Cvar_Get( "r_znear", "4", CVAR_CHEAT );
@@ -905,38 +833,28 @@ static void R_Register( void )
 	r_ignoreGLErrors = ri.Cvar_Get( "r_ignoreGLErrors", "1", CVAR_ARCHIVE );
 
 	r_inGameVideo = ri.Cvar_Get( "r_inGameVideo", "1", CVAR_ARCHIVE );
-	r_drawSun = ri.Cvar_Get( "r_drawSun", "0", CVAR_ARCHIVE );
 
-	r_dlightBacks = ri.Cvar_Get( "r_dlightBacks", "1", CVAR_ARCHIVE );
 	r_finish = ri.Cvar_Get ("r_finish", "0", CVAR_ARCHIVE);
 	r_textureMode = ri.Cvar_Get( "r_textureMode", "GL_LINEAR_MIPMAP_NEAREST", CVAR_ARCHIVE | CVAR_LATCH );
 	r_gamma = ri.Cvar_Get( "r_gamma", "1", CVAR_ARCHIVE );
 	r_facePlaneCull = ri.Cvar_Get ("r_facePlaneCull", "1", CVAR_ARCHIVE );
 
 
-
-	r_primitives = ri.Cvar_Get( "r_primitives", "0", CVAR_ARCHIVE );
-
-
 	//
 	// temporary variables that can change at any time
 	//
-	r_showImages = ri.Cvar_Get( "r_showImages", "0", CVAR_TEMP );
 
 
-	r_debugSort = ri.Cvar_Get( "r_debugSort", "0", CVAR_CHEAT );
-	r_printShaders = ri.Cvar_Get( "r_printShaders", "0", 0 );
 	r_saveFontData = ri.Cvar_Get( "r_saveFontData", "0", 0 );
 
-//	r_nocurves = ri.Cvar_Get ("r_nocurves", "0", CVAR_CHEAT );
 	r_drawworld = ri.Cvar_Get ("r_drawworld", "1", CVAR_CHEAT );
-	r_lightmap = ri.Cvar_Get ("r_lightmap", "0", 0 );
+
 	r_portalOnly = ri.Cvar_Get ("r_portalOnly", "0", CVAR_CHEAT );
 
 	r_skipBackEnd = ri.Cvar_Get ("r_skipBackEnd", "0", CVAR_CHEAT);
-
+    
+    // tr_backend.c tr_cmd.c
 	r_measureOverdraw = ri.Cvar_Get( "r_measureOverdraw", "0", CVAR_CHEAT );
-	r_lodscale = ri.Cvar_Get( "r_lodscale", "5", CVAR_CHEAT );
 	r_norefresh = ri.Cvar_Get ("r_norefresh", "0", CVAR_CHEAT);
 	r_drawentities = ri.Cvar_Get ("r_drawentities", "1", CVAR_CHEAT );
 	r_ignore = ri.Cvar_Get( "r_ignore", "1", CVAR_CHEAT );
@@ -948,12 +866,11 @@ static void R_Register( void )
 	r_logFile = ri.Cvar_Get( "r_logFile", "0", CVAR_CHEAT );
 	r_debugSurface = ri.Cvar_Get ("r_debugSurface", "0", CVAR_CHEAT);
 	r_nobind = ri.Cvar_Get ("r_nobind", "0", CVAR_CHEAT);
-	r_showtris = ri.Cvar_Get ("r_showtris", "0", CVAR_CHEAT);
+
 	r_showsky = ri.Cvar_Get ("r_showsky", "0", CVAR_CHEAT);
-	r_shownormals = ri.Cvar_Get ("r_shownormals", "0", CVAR_CHEAT);
+
 	r_clear = ri.Cvar_Get ("r_clear", "0", CVAR_CHEAT);
-	r_offsetFactor = ri.Cvar_Get( "r_offsetfactor", "-1", CVAR_CHEAT );
-	r_offsetUnits = ri.Cvar_Get( "r_offsetunits", "-2", CVAR_CHEAT );
+
 
 	r_lockpvs = ri.Cvar_Get ("r_lockpvs", "0", CVAR_CHEAT);
 	r_noportals = ri.Cvar_Get ("r_noportals", "0", CVAR_CHEAT);
@@ -969,17 +886,10 @@ static void R_Register( void )
 
 
 
-	r_specMode = ri.Cvar_Get( "r_specMode", "1" , CVAR_ARCHIVE );
-
-
 	r_modelshader = ri.Cvar_Get( "r_modelshader", "0" , CVAR_ARCHIVE | CVAR_LATCH);		// leilei - load and use special shaders for lightDiffuse models
-	r_detailTextureScale = ri.Cvar_Get( "r_detailtextureScale", "0", CVAR_ARCHIVE | CVAR_LATCH ); // leilei - adjust scale of detail textures
-	r_detailTextureLayers = ri.Cvar_Get( "r_detailtextureLayers", "0", CVAR_ARCHIVE | CVAR_LATCH ); // leilei - add more detail layers
 
 	r_iconmip = ri.Cvar_Get ("r_iconmip", "0", CVAR_ARCHIVE | CVAR_LATCH );		// leilei - icon mip
 	r_iconBits = ri.Cvar_Get ("r_iconBits", "0", CVAR_ARCHIVE | CVAR_LATCH );	// leilei - icon bits
-
-
 
 
 	// make sure all the commands added here are also
@@ -1112,8 +1022,8 @@ static char *CommaParse( char **data_p )
 static qhandle_t RE_RegisterSkin( const char *name )
 {
 	qhandle_t	hSkin;
-	skin_t		*skin;
-	skinSurface_t	*surf;
+	skin_t* skin;
+	skinSurface_t* surf;
 	union {
 		char *c;
 		void *v;
@@ -1155,7 +1065,8 @@ static qhandle_t RE_RegisterSkin( const char *name )
 		return 0;
 	}
 	tr.numSkins++;
-	skin = ri.Hunk_Alloc( sizeof( skin_t ), h_low );
+	
+    skin = ri.Hunk_Alloc( sizeof( skin_t ), h_low );
 	tr.skins[hSkin] = skin;
 	Q_strncpyz( skin->name, name, sizeof( skin->name ) );
 	skin->numSurfaces = 0;
@@ -1163,7 +1074,8 @@ static qhandle_t RE_RegisterSkin( const char *name )
 	R_IssuePendingRenderCommands();
 
 	// If not a .skin file, load as a single shader
-	if ( strcmp( name + strlen( name ) - 5, ".skin" ) ) {
+	if( strcmp( name + strlen( name ) - 5, ".skin" ) )
+    {
 		skin->numSurfaces = 1;
 		skin->surfaces[0] = ri.Hunk_Alloc( sizeof(skin->surfaces[0]), h_low );
 		skin->surfaces[0]->shader = R_FindShader( name, LIGHTMAP_NONE, qtrue );
@@ -1264,8 +1176,6 @@ static void R_DeleteTextures( void )
 
 void RE_Shutdown( qboolean destroyWindow )
 {
-	ri.Printf( PRINT_ALL, "RE_Shutdown( %i )\n", destroyWindow );
-
 	ri.Cmd_RemoveCommand("modellist");
 	ri.Cmd_RemoveCommand("screenshotJPEG");
 	ri.Cmd_RemoveCommand("screenshot");
@@ -1296,6 +1206,8 @@ void RE_Shutdown( qboolean destroyWindow )
 	}
 
 	tr.registered = qfalse;
+
+    ri.Printf( PRINT_ALL, "RE_Shutdown( %i )\n", destroyWindow );
 }
 
 
@@ -1359,17 +1271,20 @@ void R_Init(void)
 
 	InitOpenGL();
 
+	R_InitBSP();
 	R_InitImages();
-    R_InitShaders();
-	
+
     R_InitSkins();
 	R_ModelInit();
 	R_InitFlares();
     R_InitCloudAndSky();
     R_InitSurface();
     R_InitScene();
+    R_InitShade();
     R_InitDLight();
-	
+    R_InitBackend();
+    R_InitShaders();
+    R_InitAnimation();
 	R_InitFreeType();
 
     int err = qglGetError();

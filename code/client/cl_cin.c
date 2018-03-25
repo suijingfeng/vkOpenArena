@@ -1276,12 +1276,9 @@ static void RoQShutdown( void ) {
 	currentHandle = -1;
 }
 
-/*
-==================
-CIN_StopCinematic
-==================
-*/
-e_status CIN_StopCinematic(int handle) {
+
+e_status CIN_StopCinematic(int handle)
+{
 	
 	if (handle < 0 || handle>= MAX_VIDEO_HANDLES || cinTable[handle].status == FMV_EOF) return FMV_EOF;
 	currentHandle = handle;
@@ -1552,9 +1549,10 @@ void CIN_ResampleCinematic(int handle, int *buf2) {
 CIN_DrawCinematic
 ==================
 */
-void CIN_DrawCinematic (int handle) {
+void CIN_DrawCinematic (int handle)
+{
 	float	x, y, w, h;
-	byte	*buf;
+	unsigned char* buf;
 
 	if (handle < 0 || handle>= MAX_VIDEO_HANDLES || cinTable[handle].status == FMV_EOF) return;
 
@@ -1631,7 +1629,8 @@ void CL_PlayCinematic_f(void)
 }
 
 
-void SCR_DrawCinematic (void) {
+void SCR_DrawCinematic (void)
+{
 	if (CL_handle >= 0 && CL_handle < MAX_VIDEO_HANDLES) {
 		CIN_DrawCinematic(CL_handle);
 	}
@@ -1649,7 +1648,8 @@ void SCR_StopCinematic(void)
 	}
 }
 
-void CIN_UploadCinematic(int handle) {
+void CIN_UploadCinematic(int handle)
+{
 	if (handle >= 0 && handle < MAX_VIDEO_HANDLES) {
 		if (!cinTable[handle].buf) {
 			return;

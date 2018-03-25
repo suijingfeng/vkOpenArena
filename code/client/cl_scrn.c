@@ -33,44 +33,16 @@ cvar_t *cl_graphshift;
 
 /*
 ================
-SCR_DrawNamedPic
-
-Coordinates are 640*480 virtual values
-=================
-*/
-void SCR_DrawNamedPic( float x, float y, float width, float height, const char *picname )
-{
-	qhandle_t	hShader;
-
-	assert( width != 0 );
-
-	hShader = re.RegisterShader( picname );
-	SCR_AdjustFrom640( &x, &y, &width, &height );
-	re.DrawStretchPic( x, y, width, height, 0, 0, 1, 1, hShader );
-}
-
-
-/*
-================
 SCR_AdjustFrom640
 
 Adjusted for resolution and screen aspect ratio
 ================
 */
-void SCR_AdjustFrom640( float *x, float *y, float *w, float *h ) {
-	float	xscale;
-	float	yscale;
-
-#if 0
-		// adjust for wide screens
-		if ( cls.glconfig.vidWidth * 480 > cls.glconfig.vidHeight * 640 ) {
-			*x += 0.5 * ( cls.glconfig.vidWidth - ( cls.glconfig.vidHeight * 640 / 480 ) );
-		}
-#endif
-
+void SCR_AdjustFrom640( float *x, float *y, float *w, float *h )
+{
 	// scale for screen sizes
-	xscale = cls.glconfig.vidWidth / 640.0;
-	yscale = cls.glconfig.vidHeight / 480.0;
+	float xscale = cls.glconfig.vidWidth / 640.0;
+	float yscale = cls.glconfig.vidHeight / 480.0;
 	if ( x ) {
 		*x *= xscale;
 	}
@@ -85,6 +57,23 @@ void SCR_AdjustFrom640( float *x, float *y, float *w, float *h ) {
 	}
 }
 
+
+/*
+================
+SCR_DrawNamedPic
+
+Coordinates are 640*480 virtual values
+=================
+*/
+void SCR_DrawNamedPic( float x, float y, float width, float height, const char *picname )
+{
+	assert( width != 0 );
+
+	qhandle_t hShader = re.RegisterShader( picname );
+	SCR_AdjustFrom640( &x, &y, &width, &height );
+	re.DrawStretchPic( x, y, width, height, 0, 0, 1, 1, hShader );
+}
+
 /*
 ================
 SCR_FillRect
@@ -92,7 +81,8 @@ SCR_FillRect
 Coordinates are 640*480 virtual values
 =================
 */
-void SCR_FillRect( float x, float y, float width, float height, const float *color ) {
+void SCR_FillRect( float x, float y, float width, float height, const float *color )
+{
 	re.SetColor( color );
 
 	SCR_AdjustFrom640( &x, &y, &width, &height );
@@ -109,7 +99,8 @@ SCR_DrawPic
 Coordinates are 640*480 virtual values
 =================
 */
-void SCR_DrawPic( float x, float y, float width, float height, qhandle_t hShader ) {
+void SCR_DrawPic( float x, float y, float width, float height, qhandle_t hShader )
+{
 	SCR_AdjustFrom640( &x, &y, &width, &height );
 	re.DrawStretchPic( x, y, width, height, 0, 0, 1, 1, hShader );
 }
@@ -120,10 +111,10 @@ void SCR_DrawPic( float x, float y, float width, float height, qhandle_t hShader
 ** SCR_DrawChar
 ** chars are drawn at 640*480 virtual screen size
 */
-static void SCR_DrawChar( int x, int y, float size, int ch ) {
+static void SCR_DrawChar( int x, int y, float size, int ch )
+{
 	int row, col;
 	float frow, fcol;
-	float	ax, ay, aw, ah;
 
 	ch &= 255;
 
@@ -135,10 +126,10 @@ static void SCR_DrawChar( int x, int y, float size, int ch ) {
 		return;
 	}
 
-	ax = x;
-	ay = y;
-	aw = size;
-	ah = size;
+	float ax = x;
+	float ay = y;
+	float aw = size;
+	float ah = size;
 	SCR_AdjustFrom640( &ax, &ay, &aw, &ah );
 
 	row = ch>>4;
@@ -148,21 +139,15 @@ static void SCR_DrawChar( int x, int y, float size, int ch ) {
 	fcol = col*0.0625;
 	size = 0.0625;
 
-	re.DrawStretchPic( ax, ay, aw, ah,
-					   fcol, frow, 
-					   fcol + size, frow + size, 
-					   cls.charSetShader );
+	re.DrawStretchPic( ax, ay, aw, ah, fcol, frow, fcol + size, frow + size, cls.charSetShader );
 }
 
 /*
 ** SCR_DrawSmallChar
 ** small chars are drawn at native screen resolution
 */
-void SCR_DrawSmallChar( int x, int y, int ch ) {
-	int row, col;
-	float frow, fcol;
-	float size;
-
+void SCR_DrawSmallChar( int x, int y, int ch )
+{
 	ch &= 255;
 
 	if ( ch == ' ' ) {
@@ -173,17 +158,14 @@ void SCR_DrawSmallChar( int x, int y, int ch ) {
 		return;
 	}
 
-	row = ch>>4;
-	col = ch&15;
+	int row = ch>>4;
+	int col = ch&15;
 
-	frow = row*0.0625;
-	fcol = col*0.0625;
-	size = 0.0625;
+	float frow = row*0.0625;
+	float fcol = col*0.0625;
+	float size = 0.0625;
 
-	re.DrawStretchPic( x, y, SMALLCHAR_WIDTH, SMALLCHAR_HEIGHT,
-					   fcol, frow, 
-					   fcol + size, frow + size, 
-					   cls.charSetShader );
+	re.DrawStretchPic( x, y, SMALLCHAR_WIDTH, SMALLCHAR_HEIGHT, fcol, frow, fcol + size, frow + size, cls.charSetShader );
 }
 
 
@@ -199,16 +181,15 @@ Coordinates are at 640 by 480 virtual resolution
 void SCR_DrawStringExt( int x, int y, float size, const char *string, float *setColor, qboolean forceColor, qboolean noColorEscape )
 {
 	vec4_t		color;
-	const char	*s;
-	int			xx;
 
 	// draw the drop shadow
 	color[0] = color[1] = color[2] = 0;
 	color[3] = setColor[3];
 	re.SetColor( color );
-	s = string;
-	xx = x;
-	while ( *s ) {
+	const char *s = string;
+	int xx = x;
+	while ( *s )
+    {
 		if ( !noColorEscape && Q_IsColorString( s ) ) {
 			s += 2;
 			continue;
@@ -466,25 +447,27 @@ void SCR_Init( void )
 
 static void SCR_DrawScreenField(void)
 {
-	qboolean uiFullscreen;
-
+	 
 	re.BeginFrame();
 
-	uiFullscreen = (uivm && VM_Call( uivm, UI_IS_FULLSCREEN ));
+	qboolean uiFullscreen = (uivm && VM_Call( uivm, UI_IS_FULLSCREEN ));
 
 	// wide aspect ratio screens need to have the sides cleared
 	// unless they are displaying game renderings
-	if ( uiFullscreen || clc.state < CA_LOADING ) {
-		if ( cls.glconfig.vidWidth * 480 > cls.glconfig.vidHeight * 640 ) {
+	if ( uiFullscreen || clc.state < CA_LOADING )
+    {
+		if ( cls.glconfig.vidWidth * 480 > cls.glconfig.vidHeight * 640 )
+        {
 			re.SetColor( g_color_table[0] );
 			re.DrawStretchPic( 0, 0, cls.glconfig.vidWidth, cls.glconfig.vidHeight, 0, 0, 0, 0, cls.whiteShader );
 			re.SetColor( NULL );
 		}
 	}
 
-	// if the menu is going to cover the entire screen, we
-	// don't need to render anything under it
-	if ( uivm && !uiFullscreen ) {
+	// if the menu is going to cover the entire screen,
+    // we don't need to render anything under it
+	if ( uivm && !uiFullscreen )
+    {
 		switch( clc.state ) {
 		default:
 			Com_Error( ERR_FATAL, "SCR_DrawScreenField: bad clc.state" );

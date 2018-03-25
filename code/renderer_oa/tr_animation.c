@@ -23,7 +23,7 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #include "tr_local.h"
 
 extern shaderCommands_t tess;
-
+static cvar_t* r_lodscale;
 /*
 
 All bones should be an identity orientation to display the mesh exactly as it is specified.
@@ -40,19 +40,17 @@ orientation of the bone in the base frame to the orientation in this frame.
 
 static float ProjectRadius( float r, vec3_t location )
 {
-	vec3_t	p;
-	float	projected[4];
 
 	float c = DotProduct( tr.viewParms.or.axis[0], tr.viewParms.or.origin );
 	float dist = DotProduct( tr.viewParms.or.axis[0], location ) - c;
 
 	if ( dist <= 0 )
 		return 0;
-
+	vec3_t	p;
 	p[0] = 0;
 	p[1] = fabs( r );
 	p[2] = -dist;
-
+	float	projected[4];
 	projected[0] = p[0] * tr.viewParms.projectionMatrix[0] + 
 		           p[1] * tr.viewParms.projectionMatrix[4] +
 				   p[2] * tr.viewParms.projectionMatrix[8] +
@@ -679,9 +677,13 @@ void R_AddMD3Surfaces( trRefEntity_t *ent )
 }
 
 
-int R_ComputeLOD( trRefEntity_t *ent )
-{
-	float flod;
+int R_ComputeLOD( trRefEntity_t *ent ) {
+	float radius;
+	float flod, lodscale;
+	float projectedRadius;
+	md3Frame_t *frame;
+	mdrHeader_t *mdr;
+	mdrFrame_t *mdrframe;
 	int lod;
 
 	if ( tr.currentModel->numLods < 2 )
@@ -693,32 +695,30 @@ int R_ComputeLOD( trRefEntity_t *ent )
 	{
 		// multiple LODs exist, so compute projected bounding sphere
 		// and use that as a criteria for selecting LOD
-	    float radius;
 
 		if(tr.currentModel->type == MOD_MDR)
 		{
-			mdrHeader_t* mdr = (mdrHeader_t *) tr.currentModel->modelData;
-			int frameSize = (size_t) (&((mdrFrame_t *)0)->bones[mdr->numBones]);
-			mdrFrame_t* mdrframe = (mdrFrame_t *) ((unsigned char *) mdr + mdr->ofsFrames + frameSize * ent->e.frame);
+			int frameSize;
+			mdr = (mdrHeader_t *) tr.currentModel->modelData;
+			frameSize = (size_t) (&((mdrFrame_t *)0)->bones[mdr->numBones]);
+			
+			mdrframe = (mdrFrame_t *) ((byte *) mdr + mdr->ofsFrames + frameSize * ent->e.frame);
 			
 			radius = RadiusFromBounds(mdrframe->bounds[0], mdrframe->bounds[1]);
 		}
 		else
 		{
-			md3Frame_t* frame = (md3Frame_t *) (( ( unsigned char * ) tr.currentModel->md3[0] ) + tr.currentModel->md3[0]->ofsFrames);
+			frame = ( md3Frame_t * ) ( ( ( unsigned char * ) tr.currentModel->md3[0] ) + tr.currentModel->md3[0]->ofsFrames );
 
 			frame += ent->e.frame;
 
 			radius = RadiusFromBounds( frame->bounds[0], frame->bounds[1] );
 		}
 
-        float projectedRadius = ProjectRadius( radius, ent->e.origin );
-		
-        if ( projectedRadius != 0 )
+		if ( ( projectedRadius = ProjectRadius( radius, ent->e.origin ) ) != 0 )
 		{
-			float lodscale = r_lodscale->value;
-			if (lodscale > 20)
-                lodscale = 20;
+			lodscale = r_lodscale->value;
+			if (lodscale > 20) lodscale = 20;
 			flod = 1.0f - projectedRadius * lodscale;
 		}
 		else
@@ -744,9 +744,87 @@ int R_ComputeLOD( trRefEntity_t *ent )
 	
 	if ( lod >= tr.currentModel->numLods )
 		lod = tr.currentModel->numLods - 1;
+	if ( lod < 0 )
+		lod = 0;
+
+	return lod;
+}
+
+
+int R_ComputeLOD2( trRefEntity_t *ent )
+{
+	float flod;
+	float radius, projectedRadius;
+	int lod;
+    
+
+    if ( tr.currentModel->numLods < 2 )
+	{
+		// model has only 1 LOD level, skip computations and bias
+		lod = 0;
+ 	}
+	else
+	{
+		// multiple LODs exist, so compute projected bounding sphere
+		// and use that as a criteria for selecting LOD
+
+		if(tr.currentModel->type == MOD_MDR)
+		{
+			mdrHeader_t* mdr = (mdrHeader_t *) tr.currentModel->modelData;
+			int frameSize = (size_t) (&((mdrFrame_t *)0)->bones[mdr->numBones]);
+			mdrFrame_t* mdrframe = (mdrFrame_t *) ((unsigned char *) mdr + mdr->ofsFrames + frameSize * ent->e.frame);
+			
+			radius = RadiusFromBounds(mdrframe->bounds[0], mdrframe->bounds[1]);
+		}
+		else
+		{
+			md3Frame_t* frame = (md3Frame_t *) (( ( unsigned char * ) tr.currentModel->md3[0] ) + tr.currentModel->md3[0]->ofsFrames);
+
+			frame += ent->e.frame;
+
+			radius = RadiusFromBounds( frame->bounds[0], frame->bounds[1] );
+		}
+
+        projectedRadius = ProjectRadius( radius, ent->e.origin );
+        if ( projectedRadius != 0 )
+		{
+			float lodscale = r_lodscale->value;
+			if (lodscale > 20)
+                lodscale = 20;
+			flod = 1.0f - projectedRadius * lodscale;
+		}
+		else
+		{
+			// object intersects near view plane, e.g. view weapon
+			flod = 0;
+		}
+
+		flod *= tr.currentModel->numLods;
+		
+        lod = ri.ftol(flod);
+
+		if ( lod < 0 )
+		{
+			lod = 0;
+		}
+		else if ( lod >= tr.currentModel->numLods )
+		{
+			lod = tr.currentModel->numLods - 1;
+		}
+	}
+
+	lod += r_lodbias->integer;
+	
+	if ( lod >= tr.currentModel->numLods )
+		lod = tr.currentModel->numLods - 1;
     else if ( lod < 0 )
 		lod = 0;
 
 	return lod;
+}
+
+void R_InitAnimation(void)
+{
+    r_lodscale = ri.Cvar_Get( "r_lodscale", "5", CVAR_CHEAT );;
 }
 

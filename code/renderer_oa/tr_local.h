@@ -45,6 +45,11 @@ extern glconfig_t glConfig;
 #define LIGHTMAP_NONE       -1
 
 
+// max dimensions of a grid mesh in memory, tr_surface, tr_bsp
+#define	MAX_GRID_SIZE		65
+#define	MAX_FACE_POINTS		64
+
+
 // 14 bits, can't be increased without changing bit packing for drawsurfs, see QSORT_SHADERNUM_SHIFT
 #define SHADERNUM_BITS      14
 #define MAX_SHADERS         (1<<SHADERNUM_BITS)
@@ -254,8 +259,6 @@ typedef struct image_s {
 	imgFlags_t  flags;
 
 	struct image_s*	next;
-
-	qboolean	maptexture;	// leilei - map texture listing hack
 } image_t;
 
 
@@ -298,8 +301,6 @@ typedef struct {
 	float		bulgeWidth;
 	float		bulgeHeight;
 	float		bulgeSpeed;
-
-//	lfx_t		deformationLfx;
 } deformStage_t;
 
 
@@ -352,7 +353,7 @@ typedef struct
 	int             alphahack;
 } textureBundle_t;
 
-#define NUM_TEXTURE_BUNDLES 16 // leilei - was 8, increased for motion blur
+#define NUM_TEXTURE_BUNDLES 8
 
 typedef struct {
 	qboolean		active;
@@ -472,18 +473,6 @@ typedef struct shader_s
 } shader_t;
 
 
-// leilei - shader materials for detail texturing
-
-#define		SHADMAT_GENERIC 	0	// none
-#define		SHADMAT_METAL	 	1	// from metalsteps
-#define		SHADMAT_WOOD	 	2	// ql
-#define		SHADMAT_FLESH	 	3	// unused
-#define		SHADMAT_SAND	 	4	// from dust?
-#define		SHADMAT_SNOW	 	5	// unused
-#define		SHADMAT_EARTH	 	6	// unused
-#define		SHADMAT_CONCRETE	7 	// unused? redundant?
-#define		SHADMAT_ICE	        8	// from slick
-
 // trRefdef_t holds everything that comes in refdef_t,
 // as well as the locally generated scene information
 typedef struct {
@@ -594,10 +583,6 @@ typedef struct drawSurf_s {
 	unsigned			sort;			// bit combination for fast compares
 	surfaceType_t		*surface;		// any of surface*_t
 } drawSurf_t;
-
-
-#define	MAX_FACE_POINTS		64
-#define	MAX_GRID_SIZE		65			// max dimensions of a grid mesh in memory
 
 
 
@@ -1036,17 +1021,6 @@ typedef struct {
 	qhandle_t				skyProgram;
 	qhandle_t				postprocessingProgram;
 
-	qhandle_t				leiFXGammaProgram;	// leilei
-	qhandle_t				leiFXFilterProgram;	// leilei
-	qhandle_t				animeProgram;	// leilei
-	qhandle_t				animeFilmProgram;	// leilei
-	qhandle_t				BrightnessProgram;	// leilei
-	qhandle_t				CRTProgram;	// leilei
-	qhandle_t				NTSCEncodeProgram;	// leilei
-	qhandle_t				NTSCDecodeProgram;	// leilei
-	qhandle_t				NTSCBleedProgram;	// leilei
-	qhandle_t				paletteProgram;	// leilei
-
 	int						numPrograms;
 
 	int						numLightmaps;
@@ -1103,25 +1077,7 @@ typedef struct {
 	float					sawToothTable[FUNCTABLE_SIZE];
 	float					inverseSawToothTable[FUNCTABLE_SIZE];
 	float					fogTable[FOG_TABLE_SIZE];
-/*  
-	shader_t				*placeholderTextureShader;	// leilei - for map textures
-	shader_t				*placeholderModelShader;	// leilei - for models
-	shader_t				*placeholderSkyShader;		// leilei - for skies
-	shader_t				*placeholderWaterShader;	// leilei - for liquids
-	shader_t				*placeholderLavaShader;		// leilei - for lavas
-	shader_t				*placeholderSlimeShader;	// leilei - for slimes
-	shader_t				*placeholderFogShader;		// leilei - for fogs
-	shader_t				*placeholderShader;		// leilei - for anything else
-	
-	qboolean				placeholderTextureAvail;
-	qboolean				placeholderModelAvail;
-	qboolean				placeholderSkyAvail;
-	qboolean				placeholderWaterAvail;
-	qboolean				placeholderLavaAvail;
-	qboolean				placeholderSlimeAvail;
-	qboolean				placeholderFogAvail;
-	qboolean				placeholderAvail;
-*/
+
 } trGlobals_t;
 
 extern backEndState_t	backEnd;
@@ -1145,22 +1101,15 @@ extern cvar_t	*r_stereoSeparation;			// separation of cameras for stereo renderi
 extern cvar_t	*r_measureOverdraw;		// enables stencil buffer overdraw measurement
 
 extern cvar_t	*r_lodbias;				// push/pull LOD transitions
-extern cvar_t	*r_lodscale;
 
-extern cvar_t	*r_primitives;			// "0" = based on compiled vertex array existance
-										// "1" = glDrawElemet tristrips
-										// "2" = glDrawElements triangles
-										// "-1" = no drawing
 
 extern cvar_t	*r_inGameVideo;				// controls whether in game video should be draw
-extern cvar_t	*r_drawSun;				// controls drawing of sun quad
-extern cvar_t	*r_dlightBacks;			// dlight non-facing surfaces for continuity
+//extern cvar_t	*r_dlightBacks;			// dlight non-facing surfaces for continuity
 
 extern	cvar_t	*r_norefresh;			// bypasses the ref rendering
 extern	cvar_t	*r_drawentities;		// disable/enable entity rendering
 extern	cvar_t	*r_drawworld;			// disable/enable world rendering
-extern	cvar_t	*r_speeds;				// various levels of information display
-extern  cvar_t	*r_detailTextures;		// enables/disables detail texturing stages
+
 extern	cvar_t	*r_novis;				// disable/enable usage of PVS
 extern	cvar_t	*r_nocull;
 extern	cvar_t	*r_facePlaneCull;		// enables culling of planar surfaces with back side test
@@ -1170,24 +1119,18 @@ extern	cvar_t	*r_showcluster;
 extern cvar_t	*r_gamma;
 
 extern	cvar_t	*r_nobind;						// turns off binding to appropriate textures
-extern	cvar_t	*r_singleShader;				// make most world faces use default shader
 extern	cvar_t	*r_roundImagesDown;
 extern	cvar_t	*r_colorMipLevels;				// development aid to see texture mip usage
 extern	cvar_t	*r_picmip;						// controls picmip values
 extern	cvar_t	*r_finish;
 
-extern	cvar_t	*r_offsetFactor;
-extern	cvar_t	*r_offsetUnits;
-
-extern	cvar_t	*r_fullbright;					// avoid lightmap pass
-extern	cvar_t	*r_lightmap;					// render lightmaps only
 extern	cvar_t	*r_vertexLight;					// vertex lighting mode for better performance
-extern	cvar_t	*r_uiFullScreen;				// ui is running fullscreen
+
 
 extern	cvar_t	*r_logFile;						// number of frames to emit GL logs
-extern	cvar_t	*r_showtris;					// enables wireframe rendering of the world
+
 extern	cvar_t	*r_showsky;						// forces sky in front of all surfaces
-extern	cvar_t	*r_shownormals;					// draws wireframe normals
+
 extern	cvar_t	*r_clear;						// force screen clear every frame
 
 extern	cvar_t	*r_shadows;						// controls shadows: 0 = none, 1 = blur, 2 = stencil, 3 = black planar projection
@@ -1197,34 +1140,25 @@ extern	cvar_t	*r_noportals;
 extern	cvar_t	*r_portalOnly;
 
 extern	cvar_t	*r_subdivisions;
-extern	cvar_t	*r_lodCurveError;
-extern	cvar_t	*r_skipBackEnd;
+
 
 
 extern	cvar_t	*r_ignoreGLErrors;
 
-extern	cvar_t	*r_mapOverBrightBits;
 
-extern	cvar_t	*r_debugSurface;
+
 extern	cvar_t	*r_simpleMipMaps;
-
-extern	cvar_t	*r_showImages;
-extern	cvar_t	*r_debugSort;
-
-extern	cvar_t	*r_printShaders;
 
 extern cvar_t	*r_marksOnTriangleMeshes;
 
 
-extern	cvar_t	*r_specMode;		
+	
 
 extern cvar_t	*r_modelshader;	// Leilei - new model shading
 
 extern	cvar_t	*r_iconmip;	// leilei - icon mip - picmip for 2d icons
 extern	cvar_t	*r_iconBits;	// leilei - icon color depth for 2d icons
 
-extern  cvar_t	*r_detailTextureScale;		// leilei - scale tweak the detail textures, 0 doesn't tweak at all.
-extern  cvar_t	*r_detailTextureLayers;		// leilei - add in more smaller detail texture layers, expensive!
 
 
 
@@ -1273,9 +1207,6 @@ typedef struct shaderCommands_s
 	void		(*currentStageIteratorFunc)( void );
 	shaderStage_t** xstages;
 
-	// lfx stuf
-	float		lfxTime;
-	float		lfxTimeNext;
 } shaderCommands_t;
 
 
@@ -1321,7 +1252,7 @@ typedef struct {
 
 typedef struct {
 	int		commandId;
-	shader_t	*shader;
+	shader_t* shader;
 	float	x, y;
 	float	w, h;
 	float	s1, t1;
@@ -1434,7 +1365,7 @@ int R_CullLocalBox(vec3_t bounds[2]);
 
 void R_MDRAddAnimSurfaces( trRefEntity_t *ent );
 void R_AddMD3Surfaces( trRefEntity_t *e );
-
+void R_InitAnimation(void);
 
 
 
@@ -1442,18 +1373,19 @@ void R_AddMD3Surfaces( trRefEntity_t *e );
 
 // RENDERER BACK END FUNCTIONS
 // GL wrapper/helper functions
-void	GL_Bind( image_t *image );
-void	GL_SelectTexture( int unit );
-void	GL_Cull( int cullType );
-void	GL_TexEnv( int env );
-void	GL_State( unsigned long stateVector );
+void GL_Bind( image_t *image );
+void GL_SelectTexture( int unit );
+void GL_Cull( int cullType );
+void GL_TexEnv( int env );
+void GL_State( unsigned long stateVector );
 
 
-void	RE_StretchRaw (int x, int y, int w, int h, int cols, int rows, const unsigned char *data, int client, qboolean dirty);
-void	RE_UploadCinematic (int w, int h, int cols, int rows, const unsigned char *data, int client, qboolean dirty);
-void    RB_ShowImages( void );
-void    RB_ExecuteRenderCommands( const void *data );
+void RE_StretchRaw (int x, int y, int w, int h, int cols, int rows, const unsigned char *data, int client, qboolean dirty);
+void RE_UploadCinematic (int w, int h, int cols, int rows, const unsigned char *data, int client, qboolean dirty);
+void RB_ShowImages( void );
+void RB_ExecuteRenderCommands( const void *data );
 
+void R_InitBackend(void);
 
 ///////////////////////////////// tr_cmds ///////////////////////////////////
 // all of the information needed by the back end must be contained in a backEndData_t
@@ -1507,6 +1439,7 @@ float	R_FogFactor( float s, float t );
 void        RE_LoadWorldMap( const char *mapname );
 void        RE_SetWorldVisData( const byte *vis );
 void        R_IssuePendingRenderCommands( void );
+void        R_InitBSP(void);
 qboolean	R_GetEntityToken( char *buffer, int size );
 
 
@@ -1528,7 +1461,7 @@ void RB_StageIteratorGeneric( void );
 void RB_StageIteratorVertexLitTexture( void );
 void RB_StageIteratorLightmappedMultitexture( void );
 void RB_EndSurface(void);
-
+void R_InitShade(void);
 
 //////////////////////////// tr_sky.c /////////////////////////////////
 void R_BuildCloudData( shaderCommands_t *shader );

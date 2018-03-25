@@ -88,11 +88,9 @@ static float EvalWaveFormClamped( const waveForm_t *wf )
 */
 void RB_CalcStretchTexCoords( const waveForm_t *wf, float *st )
 {
-	float p;
+
+	float p = 1.0f / EvalWaveForm( wf );
 	texModInfo_t tmi;
-
-	p = 1.0f / EvalWaveForm( wf );
-
 	tmi.matrix[0][0] = p;
 	tmi.matrix[1][0] = 0;
 	tmi.translate[0] = 0.5f - 0.5f * p;
@@ -634,11 +632,10 @@ static void Autosprite2Deform( void ) {
 void RB_DeformTessGeometry( void )
 {
 	int	i;
-	deformStage_t *ds;
 
-	for ( i = 0 ; i < tess.shader->numDeforms ; i++ )
+	for( i = 0 ; i < tess.shader->numDeforms ; i++ )
     {
-		ds = &tess.shader->deforms[ i ];
+		deformStage_t *ds = &tess.shader->deforms[ i ];
 
 		switch ( ds->deformation )
         {
@@ -680,6 +677,7 @@ void RB_DeformTessGeometry( void )
 	}
 }
 
+
 /*
 ====================================================================
 
@@ -688,115 +686,90 @@ COLORS
 ====================================================================
 */
 
-
-/*
-** RB_CalcColorFromEntity
-*/
 void RB_CalcColorFromEntity( unsigned char *dstColors )
 {
-	int	i;
-	int *pColors = ( int * ) dstColors;
-	int c;
-
 	if ( !backEnd.currentEntity )
 		return;
 
-	c = * ( int * ) backEnd.currentEntity->e.shaderRGBA;
-
+	int *pColors = ( int * ) dstColors;
+	int c = * ( int * ) backEnd.currentEntity->e.shaderRGBA;
+    int i;
 	for ( i = 0; i < tess.numVertexes; i++, pColors++ )
 	{
 		*pColors = c;
 	}
 }
 
-/*
-** RB_CalcColorFromOneMinusEntity
-*/
+
 void RB_CalcColorFromOneMinusEntity( unsigned char *dstColors )
 {
-	int	i;
-	int *pColors = ( int * ) dstColors;
-	unsigned char invModulate[4];
-	int c;
-
 	if ( !backEnd.currentEntity )
 		return;
 
+	int *pColors = ( int * ) dstColors;
+	unsigned char invModulate[4];
 	invModulate[0] = 255 - backEnd.currentEntity->e.shaderRGBA[0];
 	invModulate[1] = 255 - backEnd.currentEntity->e.shaderRGBA[1];
 	invModulate[2] = 255 - backEnd.currentEntity->e.shaderRGBA[2];
 	invModulate[3] = 255 - backEnd.currentEntity->e.shaderRGBA[3];	// this trashes alpha, but the AGEN block fixes it
 
-	c = * ( int * ) invModulate;
-
+	int c = * ( int * ) invModulate;
+    int i;
 	for ( i = 0; i < tess.numVertexes; i++, pColors++ )
 	{
 		*pColors = c;
 	}
 }
 
-/*
-** RB_CalcAlphaFromEntity
-*/
+
 void RB_CalcAlphaFromEntity( unsigned char *dstColors )
 {
-	int	i;
-
 	if ( !backEnd.currentEntity )
 		return;
 
 	dstColors += 3;
-
+	
+    int	i;
 	for ( i = 0; i < tess.numVertexes; i++, dstColors += 4 )
 	{
 		*dstColors = backEnd.currentEntity->e.shaderRGBA[3];
 	}
 }
 
-/*
-** RB_CalcAlphaFromOneMinusEntity
-*/
+
 void RB_CalcAlphaFromOneMinusEntity( unsigned char *dstColors )
 {
-	int	i;
-
 	if ( !backEnd.currentEntity )
 		return;
 
 	dstColors += 3;
-
+    int i;
 	for ( i = 0; i < tess.numVertexes; i++, dstColors += 4 )
 	{
 		*dstColors = 0xff - backEnd.currentEntity->e.shaderRGBA[3];
 	}
 }
 
-/*
-** RB_CalcWaveColor
-*/
+
 void RB_CalcWaveColor( const waveForm_t *wf, unsigned char *dstColors )
 {
 	int i;
-	int v;
 	float glow;
 	int *colors = ( int * ) dstColors;
-	byte	color[4];
+	unsigned char color[4];
 
 
-  if ( wf->func == GF_NOISE ) {
+    if ( wf->func == GF_NOISE )
 		glow = wf->base + R_NoiseGet4f( 0, 0, 0, ( tess.shaderTime + wf->phase ) * wf->frequency ) * wf->amplitude;
-	} else {
+	else
 		glow = EvalWaveForm( wf ) * tr.identityLight;
-	}
 	
-	if ( glow < 0 ) {
+	if ( glow < 0 )
 		glow = 0;
-	}
-	else if ( glow > 1 ) {
+	else if ( glow > 1 )
 		glow = 1;
-	}
 
-	v = ri.ftol(255 * glow);
+	int v = ri.ftol(255 * glow);
 	color[0] = color[1] = color[2] = v;
 	color[3] = 255;
 	v = *(int *)color;
@@ -806,38 +779,30 @@ void RB_CalcWaveColor( const waveForm_t *wf, unsigned char *dstColors )
 	}
 }
 
-/*
-** RB_CalcWaveAlpha
-*/
+
 void RB_CalcWaveAlpha( const waveForm_t *wf, unsigned char *dstColors )
 {
-	int i;
-	int v;
-	float glow;
-
-	glow = EvalWaveFormClamped( wf );
-
-	v = 255 * glow;
-
+	float glow = EvalWaveFormClamped( wf );
+	int v = 255 * glow;
+    int i;
 	for ( i = 0; i < tess.numVertexes; i++, dstColors += 4 )
 	{
 		dstColors[3] = v;
 	}
 }
 
-/*
-** RB_CalcModulateColorsByFog
-*/
-void RB_CalcModulateColorsByFog( unsigned char *colors ) {
-	int		i;
-	float	texCoords[SHADER_MAX_VERTEXES][2];
+
+void RB_CalcModulateColorsByFog( unsigned char *colors )
+{
+	float texCoords[SHADER_MAX_VERTEXES][2];
 
 	// calculate texcoords so we can derive density
 	// this is not wasted, because it would only have
 	// been previously called if the surface was opaque
 	RB_CalcFogTexCoords( texCoords[0] );
-
-	for ( i = 0; i < tess.numVertexes; i++, colors += 4 ) {
+    int i;
+	for ( i = 0; i < tess.numVertexes; i++, colors += 4 )
+    {
 		float f = 1.0 - R_FogFactor( texCoords[i][0], texCoords[i][1] );
 		colors[0] *= f;
 		colors[1] *= f;
@@ -845,37 +810,35 @@ void RB_CalcModulateColorsByFog( unsigned char *colors ) {
 	}
 }
 
-/*
-** RB_CalcModulateAlphasByFog
-*/
-void RB_CalcModulateAlphasByFog( unsigned char *colors ) {
-	int		i;
-	float	texCoords[SHADER_MAX_VERTEXES][2];
+
+void RB_CalcModulateAlphasByFog( unsigned char *colors )
+{
+	float texCoords[SHADER_MAX_VERTEXES][2];
 
 	// calculate texcoords so we can derive density
 	// this is not wasted, because it would only have
 	// been previously called if the surface was opaque
 	RB_CalcFogTexCoords( texCoords[0] );
-
-	for ( i = 0; i < tess.numVertexes; i++, colors += 4 ) {
+    int i;
+	for ( i = 0; i < tess.numVertexes; i++, colors += 4 )
+    {
 		float f = 1.0 - R_FogFactor( texCoords[i][0], texCoords[i][1] );
 		colors[3] *= f;
 	}
 }
 
-/*
-** RB_CalcModulateRGBAsByFog
-*/
-void RB_CalcModulateRGBAsByFog( unsigned char *colors ) {
-	int		i;
-	float	texCoords[SHADER_MAX_VERTEXES][2];
+
+void RB_CalcModulateRGBAsByFog( unsigned char *colors )
+{
+	float texCoords[SHADER_MAX_VERTEXES][2];
 
 	// calculate texcoords so we can derive density
 	// this is not wasted, because it would only have
 	// been previously called if the surface was opaque
 	RB_CalcFogTexCoords( texCoords[0] );
-
-	for ( i = 0; i < tess.numVertexes; i++, colors += 4 ) {
+    int i;
+	for ( i = 0; i < tess.numVertexes; i++, colors += 4 )
+    {
 		float f = 1.0 - R_FogFactor( texCoords[i][0], texCoords[i][1] );
 		colors[0] *= f;
 		colors[1] *= f;
@@ -897,22 +860,21 @@ TEX COORDS
 ========================
 RB_CalcFogTexCoords
 
-To do the clipped fog plane really correctly, we should use
-projected textures, but I don't trust the drivers and it
-doesn't fit our shader data.
+To do the clipped fog plane really correctly, we should use projected textures,
+but I don't trust the drivers and it doesn't fit our shader data.
 ========================
 */
-void RB_CalcFogTexCoords( float *st ) {
+void RB_CalcFogTexCoords( float *st )
+{
 	int			i;
 	float		*v;
 	float		s, t;
 	float		eyeT;
 	qboolean	eyeOutside;
-	fog_t		*fog;
 	vec3_t		local;
 	vec4_t		fogDistanceVector, fogDepthVector = {0, 0, 0, 0};
 
-	fog = tr.world->fogs + tess.fogNum;
+	fog_t* fog = tr.world->fogs + tess.fogNum;
 
 	// all fogging distance is based on world Z units
 	VectorSubtract( backEnd.or.origin, backEnd.viewParms.or.origin, local );
@@ -928,45 +890,48 @@ void RB_CalcFogTexCoords( float *st ) {
 	fogDistanceVector[3] *= fog->tcScale;
 
 	// rotate the gradient vector for this orientation
-	if ( fog->hasSurface ) {
-		fogDepthVector[0] = fog->surface[0] * backEnd.or.axis[0][0] + 
-			fog->surface[1] * backEnd.or.axis[0][1] + fog->surface[2] * backEnd.or.axis[0][2];
-		fogDepthVector[1] = fog->surface[0] * backEnd.or.axis[1][0] + 
-			fog->surface[1] * backEnd.or.axis[1][1] + fog->surface[2] * backEnd.or.axis[1][2];
-		fogDepthVector[2] = fog->surface[0] * backEnd.or.axis[2][0] + 
-			fog->surface[1] * backEnd.or.axis[2][1] + fog->surface[2] * backEnd.or.axis[2][2];
+	if ( fog->hasSurface )
+    {
+		fogDepthVector[0] = fog->surface[0] * backEnd.or.axis[0][0] + fog->surface[1] * backEnd.or.axis[0][1] + fog->surface[2] * backEnd.or.axis[0][2];
+		fogDepthVector[1] = fog->surface[0] * backEnd.or.axis[1][0] + fog->surface[1] * backEnd.or.axis[1][1] + fog->surface[2] * backEnd.or.axis[1][2];
+		fogDepthVector[2] = fog->surface[0] * backEnd.or.axis[2][0] + fog->surface[1] * backEnd.or.axis[2][1] + fog->surface[2] * backEnd.or.axis[2][2];
 		fogDepthVector[3] = -fog->surface[3] + DotProduct( backEnd.or.origin, fog->surface );
 
 		eyeT = DotProduct( backEnd.or.viewOrigin, fogDepthVector ) + fogDepthVector[3];
-	} else {
-		eyeT = 1;	// non-surface fog always has eye inside
 	}
+    else
+		eyeT = 1;	// non-surface fog always has eye inside
+
 
 	// see if the viewpoint is outside
 	// this is needed for clipping distance even for constant fog
 
-	if ( eyeT < 0 ) {
+	if ( eyeT < 0 )
 		eyeOutside = qtrue;
-	} else {
+	else
 		eyeOutside = qfalse;
-	}
+
 
 	fogDistanceVector[3] += 1.0/512;
 
 	// calculate density for each point
-	for (i = 0, v = tess.xyz[0] ; i < tess.numVertexes ; i++, v += 4) {
+	for (i = 0, v = tess.xyz[0] ; i < tess.numVertexes ; i++, v += 4)
+    {
 		// calculate the length in fog
 		s = DotProduct( v, fogDistanceVector ) + fogDistanceVector[3];
 		t = DotProduct( v, fogDepthVector ) + fogDepthVector[3];
 
 		// partially clipped fogs use the T axis		
-		if ( eyeOutside ) {
+		if ( eyeOutside )
+        {
 			if ( t < 1.0 ) {
 				t = 1.0/32;	// point is outside, so no fogging
 			} else {
 				t = 1.0/32 + 30.0/32 * t / ( t - eyeT );	// cut the distance at the fog plane
 			}
-		} else {
+		}
+        else
+        {
 			if ( t < 0 ) {
 				t = 1.0/32;	// point is outside, so no fogging
 			} else {
@@ -987,20 +952,17 @@ void RB_CalcFogTexCoords( float *st ) {
 */
 void RB_CalcEnvironmentTexCoords( float *st ) 
 {
-	int			i;
-	float		*v, *normal;
-	vec3_t		viewer, reflected;
-	float		d;
+	vec3_t viewer, reflected;
 
-	v = tess.xyz[0];
-	normal = tess.normal[0];
-
+	float* v = tess.xyz[0];
+	float* normal = tess.normal[0];
+    int i;
 	for (i = 0 ; i < tess.numVertexes ; i++, v += 4, normal += 4, st += 2 ) 
 	{
 		VectorSubtract (backEnd.or.viewOrigin, v, viewer);
 		VectorNormalizeFast (viewer);
 
-		d = DotProduct (normal, viewer);
+		float d = DotProduct (normal, viewer);
 
 		reflected[0] = normal[0]*2*d - viewer[0];
 		reflected[1] = normal[1]*2*d - viewer[1];

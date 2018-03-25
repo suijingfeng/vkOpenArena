@@ -113,6 +113,8 @@ void GLimp_Shutdown( void )
 	ri.IN_Shutdown();
 
 	SDL_QuitSubSystem( SDL_INIT_VIDEO );
+
+    ri.Printf(PRINT_ALL, " GLimp_Shutdown. \n");
 }
 
 

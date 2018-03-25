@@ -1041,7 +1041,8 @@ void *S_Malloc( int size ) {
 Z_CheckHeap
 ========================
 */
-static void Z_CheckHeap( void ) {
+static void Z_CheckHeap( void )
+{
 	memblock_t	*block;
 	
 	for (block = mainzone->blocklist.next ; ; block = block->next) {
@@ -1338,17 +1339,15 @@ Com_TouchMemory
 Touch all known used data to make sure it is paged in
 ===============
 */
-void Com_TouchMemory( void ) {
-	int		start, end;
+void Com_TouchMemory( void )
+{
 	int		i, j;
-	int		sum;
+	int		sum = 0;
 	memblock_t	*block;
 
 	Z_CheckHeap();
 
-	start = Sys_Milliseconds();
-
-	sum = 0;
+	int start = Sys_Milliseconds();
 
 	j = hunk_low.permanent >> 2;
 	for ( i = 0 ; i < j ; i+=64 ) {			// only need to touch each page
@@ -1373,7 +1372,7 @@ void Com_TouchMemory( void ) {
 		}
 	}
 
-	end = Sys_Milliseconds();
+    int end = Sys_Milliseconds();
 
 	Com_Printf( "Com_TouchMemory: %i msec\n", end - start );
 }

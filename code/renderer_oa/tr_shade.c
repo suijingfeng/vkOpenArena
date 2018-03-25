@@ -47,7 +47,17 @@ QGL_EXT_direct_state_access_PROCS;
 
 
 extern shaderCommands_t tess;
+extern cvar_t* r_lightmap;
 
+static cvar_t* r_shownormals;
+static cvar_t* r_showtris;					// enables wireframe rendering of the world
+static cvar_t* r_debugSort;
+static cvar_t* r_dlightBacks;
+static cvar_t* r_primitives;
+static cvar_t* r_offsetFactor;
+static cvar_t* r_offsetUnits;
+
+static cvar_t* r_specMode; //
 
 static qboolean	setArraysOnce;
 /*
@@ -354,11 +364,11 @@ static void DrawMultitextured( shaderCommands_t *input, int stage )
 	qglEnable( GL_TEXTURE_2D );
 	qglEnableClientState( GL_TEXTURE_COORD_ARRAY );
 
-	if ( r_lightmap->integer ) {
+	if ( r_lightmap->integer )
 		GL_TexEnv( GL_REPLACE );
-	} else {
+    else
 		GL_TexEnv( tess.shader->multitextureEnv );
-	}
+
 
 	qglTexCoordPointer( 2, GL_FLOAT, 0, input->svars.texcoords[1] );
 
@@ -681,6 +691,7 @@ static void ProjectDlightTexture_scalar( void )
 	}
 }
 
+
 static void ProjectDlightTexture( void )
 {
 #if idppc_altivec
@@ -705,17 +716,14 @@ Blends a fog texture on top of everything else
 */
 static void RB_FogPass( void )
 {
-	fog_t *fog;
-	int	i;
-
 	qglEnableClientState( GL_COLOR_ARRAY );
 	qglColorPointer( 4, GL_UNSIGNED_BYTE, 0, tess.svars.colors );
 
 	qglEnableClientState( GL_TEXTURE_COORD_ARRAY);
 	qglTexCoordPointer( 2, GL_FLOAT, 0, tess.svars.texcoords[0] );
 
-	fog = tr.world->fogs + tess.fogNum;
-
+	fog_t* fog = tr.world->fogs + tess.fogNum;
+    int i;
 	for ( i = 0; i < tess.numVertexes; i++ ) {
 		* ( int * )&tess.svars.colors[i] = fog->colorInt;
 	}
@@ -724,11 +732,11 @@ static void RB_FogPass( void )
 
 	GL_Bind( tr.fogImage );
 
-	if ( tess.shader->fogPass == FP_EQUAL ) {
+	if ( tess.shader->fogPass == FP_EQUAL )
 		GL_State( GLS_SRCBLEND_SRC_ALPHA | GLS_DSTBLEND_ONE_MINUS_SRC_ALPHA | GLS_DEPTHFUNC_EQUAL );
-	} else {
+	else
 		GL_State( GLS_SRCBLEND_SRC_ALPHA | GLS_DSTBLEND_ONE_MINUS_SRC_ALPHA );
-	}
+
 
 	// leilei -  hmm., will integrate additive fog in the future
 	//
@@ -737,18 +745,12 @@ static void RB_FogPass( void )
 	R_DrawElements( tess.numIndexes, tess.indexes );
 }
 
-/*
-===============
-ComputeColors
-===============
-*/
+
 static void ComputeColors( shaderStage_t *pStage )
 {
-	int		i;
+	int	i;
 
-	//
 	// rgbGen
-	//
 	switch ( pStage->rgbGen )
 	{
 		case CGEN_IDENTITY:
@@ -886,9 +888,9 @@ static void ComputeColors( shaderStage_t *pStage )
 	//
 	switch ( pStage->alphaGen )
 	{
-	case AGEN_SKIP:
-		break;
-	case AGEN_IDENTITY:
+	    case AGEN_SKIP:	break;
+	
+        case AGEN_IDENTITY:
 		if ( pStage->rgbGen != CGEN_IDENTITY ) {
 			if ( ( pStage->rgbGen == CGEN_VERTEX && tr.identityLight != 1 ) ||
 				 pStage->rgbGen != CGEN_VERTEX ) {
@@ -896,55 +898,57 @@ static void ComputeColors( shaderStage_t *pStage )
 					tess.svars.colors[i][3] = 0xff;
 				}
 			}
-		}
-		break;
-	case AGEN_CONST:
+		}break;
+        
+        case AGEN_CONST:
 		if ( pStage->rgbGen != CGEN_CONST ) {
 			for ( i = 0; i < tess.numVertexes; i++ ) {
 				tess.svars.colors[i][3] = pStage->constantColor[3];
 			}
-		}
-		break;
-	case AGEN_WAVEFORM:
+		}break;
+        
+        case AGEN_WAVEFORM:
 		RB_CalcWaveAlpha( &pStage->alphaWave, ( unsigned char * ) tess.svars.colors );
 		break;
-	case AGEN_LIGHTING_SPECULAR:
+        
+        case AGEN_LIGHTING_SPECULAR:
 		if ( r_specMode->integer == 1)
 			RB_CalcSpecularAlphaNew( ( unsigned char * ) tess.svars.colors );
 		else
 			RB_CalcSpecularAlpha( ( unsigned char * ) tess.svars.colors );
 		break;
-	case AGEN_ENTITY:
+        
+        case AGEN_ENTITY:
 		RB_CalcAlphaFromEntity( ( unsigned char * ) tess.svars.colors );
 		break;
-	case AGEN_ONE_MINUS_ENTITY:
+        
+        case AGEN_ONE_MINUS_ENTITY:
 		RB_CalcAlphaFromOneMinusEntity( ( unsigned char * ) tess.svars.colors );
 		break;
-    case AGEN_VERTEX:
+        
+        case AGEN_VERTEX:
 		if ( pStage->rgbGen != CGEN_VERTEX ) {
 			for ( i = 0; i < tess.numVertexes; i++ ) {
 				tess.svars.colors[i][3] = tess.vertexColors[i][3];
 			}
-		}
-        break;
-    case AGEN_ONE_MINUS_VERTEX:
+		}break;
+        
+        case AGEN_ONE_MINUS_VERTEX:
         for ( i = 0; i < tess.numVertexes; i++ )
         {
 			tess.svars.colors[i][3] = 255 - tess.vertexColors[i][3];
-        }
-        break;
-	case AGEN_PORTAL:
+        } break;
+	    
+        case AGEN_PORTAL:
 		{
 			unsigned char alpha;
 
 			for ( i = 0; i < tess.numVertexes; i++ )
 			{
-				float len;
 				vec3_t v;
 
 				VectorSubtract( tess.xyz[i], backEnd.viewParms.or.origin, v );
-				len = VectorLength( v );
-
+				float len = VectorLength( v );
 				len /= tess.shader->portalRange;
 
 				if ( len < 0 )
@@ -962,8 +966,7 @@ static void ComputeColors( shaderStage_t *pStage )
 
 				tess.svars.colors[i][3] = alpha;
 			}
-		}
-		break;
+		}break;
 	}
 
 	//
@@ -1279,12 +1282,11 @@ void RB_StageIteratorGeneric( void )
 void RB_StageIteratorVertexLitTexture( void )
 {
 	shaderCommands_t *input = &tess;
-	shader_t		*shader = input->shader;
+	shader_t * shader = input->shader;
 
 
 	// compute colors
 	RB_CalcDiffuseColor( ( unsigned char * ) tess.svars.colors );
-
 
 
 	// set face culling appropriately
@@ -1423,26 +1425,28 @@ void RB_StageIteratorLightmappedMultitexture( void )
 
 void RB_EndSurface( void )
 {
-	shaderCommands_t *input = &tess;
+	shaderCommands_t* input = &tess;
 
-	if (input->numIndexes == 0) {
+	if (input->numIndexes == 0)
 		return;
-	}
 
-	if (input->indexes[SHADER_MAX_INDEXES-1] != 0) {
+
+	if (input->indexes[SHADER_MAX_INDEXES-1] != 0)
 		ri.Error (ERR_DROP, "RB_EndSurface() - SHADER_MAX_INDEXES hit");
-	}	
-	if (input->xyz[SHADER_MAX_VERTEXES-1][0] != 0) {
-		ri.Error (ERR_DROP, "RB_EndSurface() - SHADER_MAX_VERTEXES hit");
-	}
 
-	if ( tess.shader == tr.shadowShader ) {
+	if (input->xyz[SHADER_MAX_VERTEXES-1][0] != 0)
+		ri.Error (ERR_DROP, "RB_EndSurface() - SHADER_MAX_VERTEXES hit");
+
+
+	if ( tess.shader == tr.shadowShader )
+    {
 		RB_ShadowTessEnd();
 		return;
 	}
 
 	// for debugging of sort order issues, stop rendering after a given sort value
-	if ( r_debugSort->integer && r_debugSort->integer < tess.shader->sort ) {
+	if ( r_debugSort->integer && (r_debugSort->integer < tess.shader->sort) )
+    {
 		return;
 	}
 
@@ -1454,21 +1458,72 @@ void RB_EndSurface( void )
 	backEnd.pc.c_indexes += tess.numIndexes;
 	backEnd.pc.c_totalIndexes += tess.numIndexes * tess.numPasses;
 
-	//
 	// call off to shader specific tess end function
-	//
 	tess.currentStageIteratorFunc();
 
 	//
 	// draw debugging stuff
 	//
-	if ( r_showtris->integer ) {
+	if ( r_showtris->integer )
 		DrawTris (input);
-	}
-	if ( r_shownormals->integer == 1 ) {
+
+	if ( r_shownormals->integer )
 		DrawNormals (input);
-	}
+
 	// clear shader so we can tell we don't have any unclosed surfaces
 	tess.numIndexes = 0;
 }
 
+
+void R_InitShade(void)
+{
+	r_showtris = ri.Cvar_Get ("r_showtris", "0", CVAR_CHEAT);
+    
+    // draws wireframe normals
+    r_shownormals = ri.Cvar_Get ("r_shownormals", "0", CVAR_CHEAT);
+
+    r_debugSort = ri.Cvar_Get( "r_debugSort", "0", CVAR_CHEAT );
+
+    r_dlightBacks = ri.Cvar_Get( "r_dlightBacks", "1", CVAR_ARCHIVE );
+
+    r_primitives = ri.Cvar_Get( "r_primitives", "0", CVAR_ARCHIVE );
+
+	r_offsetFactor = ri.Cvar_Get( "r_offsetfactor", "-1", CVAR_CHEAT );
+	r_offsetUnits = ri.Cvar_Get( "r_offsetunits", "-2", CVAR_CHEAT );
+
+	r_specMode = ri.Cvar_Get( "r_specMode", "1" , CVAR_ARCHIVE );
+
+    // rendering primitives, default is to use triangles if compiled vertex arrays are present
+	ri.Printf( PRINT_ALL, "rendering primitives: ");
+
+    // "0" = based on compiled vertex array existance
+	// "1" = glDrawElemet tristrips
+	// "2" = glDrawElements triangles
+	// "-1" = no drawing
+
+	int primitives = r_primitives->integer;
+    if ( primitives == 0 )
+    {
+        if ( qglLockArraysEXT )
+        {
+            primitives = 2;
+        }
+        else {
+            primitives = 1;
+        }
+    }
+
+    if ( primitives == -1 ) {
+        ri.Printf( PRINT_ALL, "none\n" );
+    }
+    else if ( primitives == 2 ) {
+        ri.Printf( PRINT_ALL, "single glDrawElements\n" );
+    }
+    else if ( primitives == 1 ) {
+        ri.Printf( PRINT_ALL, "multiple glArrayElement\n" );
+    }
+    else if ( primitives == 3 ) {
+        ri.Printf( PRINT_ALL, "multiple glColor4ubv + glTexCoord2fv + glVertex3fv\n" );
+    }
+
+}

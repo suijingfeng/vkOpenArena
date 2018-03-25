@@ -33,25 +33,27 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 static world_t		s_worldData;
 static unsigned char *fileBase;
 
-static int			c_gridVerts;
-int			ismaptexture;
+
+// render lightmaps only
+cvar_t* r_lightmap;
+
+// avoid lightmap pass
+static cvar_t* r_fullbright;
+static cvar_t* r_mapOverBrightBits;
+
 
 //===============================================================================
 
 static void HSVtoRGB( float h, float s, float v, float rgb[3] )
 {
-	int i;
-	float f;
-	float p, q, t;
-
 	h *= 5;
 
-	i = floor( h );
-	f = h - i;
+	int i = floor( h );
+	float f = h - i;
 
-	p = v * ( 1 - s );
-	q = v * ( 1 - s * f );
-	t = v * ( 1 - s * ( 1 - f ) );
+	float p = v * ( 1 - s );
+	float q = v * ( 1 - s * f );
+	float t = v * ( 1 - s * ( 1 - f ) );
 
 	switch ( i )
 	{
@@ -91,15 +93,13 @@ static void HSVtoRGB( float h, float s, float v, float rgb[3] )
 
 static void R_ColorShiftLightingBytes(unsigned char in[4], unsigned char out[4])
 {
-	int	shift, r, g, b;
-
 	// shift the color data based on overbright range
-	shift = r_mapOverBrightBits->integer - tr.overbrightBits;
+	int shift = r_mapOverBrightBits->integer - tr.overbrightBits;
 
 	// shift the data based on overbright range
-	r = in[0] << shift;
-	g = in[1] << shift;
-	b = in[2] << shift;
+	int r = in[0] << shift;
+	int g = in[1] << shift;
+	int b = in[2] << shift;
 	
 	// normalize by color instead of saturating to white
 	if ( ( r | g | b ) > 255 )
@@ -161,10 +161,8 @@ static	void R_LoadLightmaps( lump_t *l ) {
 				float r = buf_p[j*3+0];
 				float g = buf_p[j*3+1];
 				float b = buf_p[j*3+2];
-				float intensity;
 				float out[3] = {0.0, 0.0, 0.0};
-
-				intensity = 0.33f * r + 0.685f * g + 0.063f * b;
+				float intensity = 0.33f * r + 0.685f * g + 0.063f * b;
 
 				if ( intensity > 255 )
 					intensity = 1.0f;
@@ -251,24 +249,19 @@ ShaderForShaderNum
 */
 static shader_t *ShaderForShaderNum( int shaderNum, int lightmapNum )
 {
-	shader_t	*shader;
-	dshader_t	*dsh;
-
 	int _shaderNum = LittleLong( shaderNum );
 	if ( _shaderNum < 0 || _shaderNum >= s_worldData.numShaders )
     {
 		ri.Error( ERR_DROP, "ShaderForShaderNum: bad num %i", _shaderNum );
 	}
-	dsh = &s_worldData.shaders[ _shaderNum ];
+	dshader_t* dsh = &s_worldData.shaders[ _shaderNum ];
 
 	if ( r_fullbright->integer )
     {
 		lightmapNum = LIGHTMAP_WHITEIMAGE;
 	}
 
-	ismaptexture = 1;
-
-	shader = R_FindShader( dsh->shader, lightmapNum, qtrue );
+	shader_t* shader = R_FindShader( dsh->shader, lightmapNum, qtrue );
 
 	// if the shader had errors, just use default shader
 	if ( shader->defaultShader )
@@ -292,28 +285,21 @@ static shader_t *ShaderForShaderNum( int shaderNum, int lightmapNum )
 	return shader;
 }
 
-/*
-===============
-ParseFace
-===============
-*/
-static void ParseFace( dsurface_t *ds, drawVert_t *verts, msurface_t *surf, int *indexes  ) {
+
+static void ParseFace( dsurface_t *ds, drawVert_t *verts, msurface_t *surf, int *indexes  )
+{
 	int			i, j;
 	srfSurfaceFace_t	*cv;
 	int			numPoints, numIndexes;
-	int			lightmapNum;
 	int			sfaceSize, ofsIndexes;
 
-	lightmapNum = LittleLong( ds->lightmapNum );
+	int lightmapNum = LittleLong( ds->lightmapNum );
 
 	// get fog volume
 	surf->fogIndex = LittleLong( ds->fogNum ) + 1;
 
 	// get shader value
 	surf->shader = ShaderForShaderNum( ds->shaderNum, lightmapNum );
-	if ( r_singleShader->integer && !surf->shader->isSky ) {
-		surf->shader = tr.defaultShader;
-	}
 
 	numPoints = LittleLong( ds->numVerts );
 	if (numPoints > MAX_FACE_POINTS) {
@@ -387,9 +373,6 @@ static void ParseMesh ( dsurface_t *ds, drawVert_t *verts, msurface_t *surf ) {
 
 	// get shader value
 	surf->shader = ShaderForShaderNum( ds->shaderNum, lightmapNum );
-	if ( r_singleShader->integer && !surf->shader->isSky ) {
-		surf->shader = tr.defaultShader;
-	}
 
 	// we may have a nodraw surface, because they might still need to
 	// be around for movement clipping
@@ -434,25 +417,18 @@ static void ParseMesh ( dsurface_t *ds, drawVert_t *verts, msurface_t *surf ) {
 ParseTriSurf
 ===============
 */
-static void ParseTriSurf( dsurface_t *ds, drawVert_t *verts, msurface_t *surf, int *indexes ) {
-	srfTriangles_t	*tri;
-	int				i, j;
-	int				numVerts, numIndexes;
-
+static void ParseTriSurf( dsurface_t *ds, drawVert_t *verts, msurface_t *surf, int *indexes )
+{
 	// get fog volume
 	surf->fogIndex = LittleLong( ds->fogNum ) + 1;
 
 	// get shader
 	surf->shader = ShaderForShaderNum( ds->shaderNum, LIGHTMAP_BY_VERTEX );
-	if ( r_singleShader->integer && !surf->shader->isSky ) {
-		surf->shader = tr.defaultShader;
-	}
 
-	numVerts = LittleLong( ds->numVerts );
-	numIndexes = LittleLong( ds->numIndexes );
+	int numVerts = LittleLong( ds->numVerts );
+	int numIndexes = LittleLong( ds->numIndexes );
 
-	tri = ri.Hunk_Alloc( sizeof( *tri ) + numVerts * sizeof( tri->verts[0] ) 
-		+ numIndexes * sizeof( tri->indexes[0] ), h_low );
+	srfTriangles_t* tri = ri.Hunk_Alloc( sizeof( *tri ) + numVerts * sizeof( tri->verts[0] ) + numIndexes * sizeof( tri->indexes[0] ), h_low );
 	tri->surfaceType = SF_TRIANGLES;
 	tri->numVerts = numVerts;
 	tri->numIndexes = numIndexes;
@@ -464,7 +440,10 @@ static void ParseTriSurf( dsurface_t *ds, drawVert_t *verts, msurface_t *surf, i
 	// copy vertexes
 	ClearBounds( tri->bounds[0], tri->bounds[1] );
 	verts += LittleLong( ds->firstVert );
-	for ( i = 0 ; i < numVerts ; i++ ) {
+    
+    int	i, j;
+	for ( i = 0 ; i < numVerts ; i++ )
+    {
 		for ( j = 0 ; j < 3 ; j++ ) {
 			tri->verts[i].xyz[j] = LittleFloat( verts[i].xyz[j] );
 			tri->verts[i].normal[j] = LittleFloat( verts[i].normal[j] );
@@ -493,24 +472,19 @@ static void ParseTriSurf( dsurface_t *ds, drawVert_t *verts, msurface_t *surf, i
 ParseFlare
 ===============
 */
-static void ParseFlare( dsurface_t *ds, drawVert_t *verts, msurface_t *surf, int *indexes ) {
-	srfFlare_t		*flare;
-	int				i;
-
+static void ParseFlare( dsurface_t *ds, drawVert_t *verts, msurface_t *surf, int *indexes )
+{
 	// get fog volume
 	surf->fogIndex = LittleLong( ds->fogNum ) + 1;
 
 	// get shader
 	surf->shader = ShaderForShaderNum( ds->shaderNum, LIGHTMAP_BY_VERTEX );
-	if ( r_singleShader->integer && !surf->shader->isSky ) {
-		surf->shader = tr.defaultShader;
-	}
 
-	flare = ri.Hunk_Alloc( sizeof( *flare ), h_low );
+	srfFlare_t* flare = ri.Hunk_Alloc( sizeof( *flare ), h_low );
 	flare->surfaceType = SF_FLARE;
 	flare->shadder = surf->shader;		// leilei - custom flare textures
 	surf->data = (surfaceType_t *)flare;
-
+    int i;
 	for ( i = 0 ; i < 3 ; i++ ) {
 		flare->origin[i] = LittleFloat( ds->lightmapOrigin[i] );
 		flare->color[i] = LittleFloat( ds->lightmapVecs[0][i] );
@@ -1676,7 +1650,7 @@ R_LoadEntities
 ================
 */
 void R_LoadEntities( lump_t *l ) {
-	char *p, *token, *s;
+	char* s;
 	char keyname[MAX_TOKEN_CHARS];
 	char value[MAX_TOKEN_CHARS];
 	world_t	*w;
@@ -1686,14 +1660,14 @@ void R_LoadEntities( lump_t *l ) {
 	w->lightGridSize[1] = 64;
 	w->lightGridSize[2] = 128;
 
-	p = (char *)(fileBase + l->fileofs);
+	char* p = (char *)(fileBase + l->fileofs);
 
 	// store for reference by the cgame
 	w->entityString = ri.Hunk_Alloc( l->filelen + 1, h_low );
 	strcpy( w->entityString, p );
 	w->entityParsePoint = w->entityString;
 
-	token = COM_ParseExt( &p, qtrue );
+	char* token = COM_ParseExt( &p, qtrue );
 	if (!*token || *token != '{') {
 		return;
 	}
@@ -1765,6 +1739,13 @@ qboolean R_GetEntityToken( char *buffer, int size ) {
 	}
 }
 
+void R_InitBSP(void)
+{
+	r_fullbright = ri.Cvar_Get ("r_fullbright", "0", CVAR_LATCH|CVAR_CHEAT );
+	r_mapOverBrightBits = ri.Cvar_Get ("r_mapOverBrightBits", "2", CVAR_LATCH );
+	r_lightmap = ri.Cvar_Get ("r_lightmap", "0", 0 );
+}
+
 /*
 =================
 RE_LoadWorldMap
@@ -1772,14 +1753,12 @@ RE_LoadWorldMap
 Called directly from cgame
 =================
 */
-void RE_LoadWorldMap( const char *name ) {
-	int			i;
-	dheader_t	*header;
+void RE_LoadWorldMap( const char *name )
+{
 	union {
-		byte *b;
+		unsigned char* b;
 		void *v;
 	} buffer;
-	byte		*startMarker;
 
 	if ( tr.worldMapLoaded ) {
 		ri.Error( ERR_DROP, "ERROR: attempted to redundantly load world map" );
@@ -1811,16 +1790,13 @@ void RE_LoadWorldMap( const char *name ) {
 	Q_strncpyz( s_worldData.baseName, COM_SkipPath( s_worldData.name ), sizeof( s_worldData.name ) );
 	COM_StripExtension(s_worldData.baseName, s_worldData.baseName, sizeof(s_worldData.baseName));
 
-	startMarker = ri.Hunk_Alloc(0, h_low);
-	c_gridVerts = 0;
+	unsigned char* startMarker = ri.Hunk_Alloc(0, h_low);
+	dheader_t* header = (dheader_t *)buffer.b;
+	fileBase = (unsigned char *)header;
+	int i = LittleLong (header->version);
 
-	header = (dheader_t *)buffer.b;
-	fileBase = (byte *)header;
-
-	i = LittleLong (header->version);
 	if ( i != BSP_VERSION ) {
-		ri.Error (ERR_DROP, "RE_LoadWorldMap: %s has wrong version number (%i should be %i)", 
-			name, i, BSP_VERSION);
+		ri.Error (ERR_DROP, "RE_LoadWorldMap: %s has wrong version number (%i should be %i)", name, i, BSP_VERSION);
 	}
 
 	// swap all the lumps

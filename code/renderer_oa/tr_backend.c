@@ -24,6 +24,11 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
 extern shaderCommands_t tess;
 extern cvar_t* r_fastsky;
+extern cvar_t* r_debugSurface; //tr_init
+extern cvar_t* r_speeds; // various levels of information display
+
+
+static cvar_t* r_showImages;
 
 
 backEndState_t	backEnd;
@@ -382,10 +387,10 @@ static void RB_SetGL2D (void)
 	qglScissor( 0, 0, glConfig.vidWidth, glConfig.vidHeight );
 	
 	qglMatrixMode(GL_PROJECTION);
-    qglLoadIdentity ();
-	qglOrtho (0, glConfig.vidWidth, glConfig.vidHeight, 0, 0, 1);
+    qglLoadIdentity();
+	qglOrtho(0, glConfig.vidWidth, glConfig.vidHeight, 0, 0, 1);
 	qglMatrixMode(GL_MODELVIEW);
-    qglLoadIdentity ();
+    qglLoadIdentity();
 
 
     qglGetFloatv(GL_PROJECTION_MATRIX, glState.currentProjectionMatrix);
@@ -418,16 +423,14 @@ static const void *RB_SetColor( const void *data )
 
 static const void *RB_StretchPic( const void *data )
 {
-	shader_t *shader;
-	int	numVerts, numIndexes;
-
 	const stretchPicCommand_t *cmd = (const stretchPicCommand_t *)data;
 
-	if ( !backEnd.projection2D ) {
+	if ( !backEnd.projection2D )
+    {
 		RB_SetGL2D();
 	}
 
-	shader = cmd->shader;
+	shader_t* shader = cmd->shader;
 	if ( shader != tess.shader )
     {
 		if ( tess.numIndexes )
@@ -443,8 +446,8 @@ static const void *RB_StretchPic( const void *data )
     {
         RB_CheckOverflow(4,6);
     }
-	numVerts = tess.numVertexes;
-	numIndexes = tess.numIndexes;
+	int numVerts = tess.numVertexes;
+	int numIndexes = tess.numIndexes;
 
 	tess.numVertexes += 4;
 	tess.numIndexes += 6;
@@ -560,7 +563,7 @@ static const void *RB_ClearDepth(const void *data)
 }
 
 
-static const void* RB_SwapBuffers( const void *data )
+static const void* RB_SwapBuffers(const void *data)
 {
 	// finish any 2D drawing if needed
 	if ( tess.numIndexes )
@@ -581,13 +584,13 @@ static const void* RB_SwapBuffers( const void *data )
 	// counting up the number of increments that have happened
 	if ( r_measureOverdraw->integer )
     {
-		int i;
 		long sum = 0;
 		unsigned char *stencilReadback;
 
 		stencilReadback = ri.Hunk_AllocateTempMemory( glConfig.vidWidth * glConfig.vidHeight );
 		qglReadPixels( 0, 0, glConfig.vidWidth, glConfig.vidHeight, GL_STENCIL_INDEX, GL_UNSIGNED_BYTE, stencilReadback );
-
+        
+        int i;
 		for ( i = 0; i < glConfig.vidWidth * glConfig.vidHeight; i++ ) {
 			sum += stencilReadback[i];
 		}
@@ -1159,7 +1162,6 @@ void RB_ShowImages( void )
 }
 
 
-
 void RB_ExecuteRenderCommands(const void *data)
 {
 	int	t1 = ri.Milliseconds();
@@ -1206,4 +1208,10 @@ void RB_ExecuteRenderCommands(const void *data)
                 return;
 		}
 	}
+}
+
+
+void R_InitBackend(void)
+{
+   	r_showImages = ri.Cvar_Get( "r_showImages", "0", CVAR_TEMP ); 
 }

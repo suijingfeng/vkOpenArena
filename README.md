@@ -24,20 +24,7 @@ the build dependencies, you shouldn't need to do anything else.  By default it
 builds a modular renderer so you need the binary + *.so or *.dll files in the
 same directory to run it.
 
-## Development ##
 
-```sh
-# Get this project or sign up on github and fork it
-$ git clone git://github.com/OpenArena/engine.git
-$ cd engine
-
-# Create a reference to the upstream project
-$ git remote add upstream git://github.com/ioquake/ioq3.git
-
-# View changes in this project compared to ioquake3
-$ git fetch upstream
-$ git diff upstream/master
-```
 
 ## Switching renderers ##
 
@@ -46,19 +33,19 @@ select the renderer at runtime rather than compiling in one into the binary.
 
 This feature is enabled by default.  If you wish to disable it, uncomment
 USE_RENDERER_DLOPEN=0 in Makefile.local.  With ioquake3, this embeds the
-opengl1 renderer.  In OpenArena, it embeds the openarena1 renderer.
+opengl2 renderer by default.  In OpenArena, it embeds the openarena renderer.
 
-When you start OpenArena, you can pass the name of the dynamic library to
-load.  ioquake3 assumes a naming convention renderer_*_.
+When you start OpenArena, you can pass the name of the dynamic library to load. 
+ioquake3 assumes a naming convention renderer_*_.
 
 Example:
 
 ```sh
-# Enable the default OpenArena renderer with GLSL, bloom support and more.
+# Enable the default OpenArena renderer:
 # This is based on the renderergl1 code.
-$ ./openarena.x86_64 +set cl_renderer openarena1
+$ ./openarena.x86_64 +set cl_renderer openarena
 
-# Enable the default ioquake3 renderer (renderergl1).
+# Enable the default ioquake3 renderer (renderergl1):.
 # If you are having trouble with OA's renderer, this is a safe alternative.
 $ ./openarena.x86_64 +set cl_renderer opengl1
 
@@ -68,21 +55,10 @@ $ ./openarena.x86_64 +set cl_renderer opengl2
 
 ## TODO ##
 
-* Wait for ioquake3 to add/reject vorbis so we can fix Windows builds
-    - Cross compiling on Windows works in experimental/latest-libraries branch
-* Wait for ioquake3 to add/reject latest curl
-    - Required to fix build problems on Windows for some users
-    - Also in the experimental/latest-libraries branch
 * Verify that allowing say/say_team to bypass Cmd_Args_Sanitize is safe.
 * Try to avoid changing qcommon area to support GLSL.  Canete's renderergl2
   didn't need this change so this renderer shouldn't either.
 * Build in FreeBSD and Mac OS X
-* Remove compiler warnings.  I kept them in for now so the code would be
-  as close as possible to 0.8.8.
-* Potential GLSL debugging fix that was made available after 0.8.8 release
-    - Need to find a link to this.  Is this real?
-* Fix Ogg Vorbis music looping hitching bug.
-* Restore the use of the WGL_3DFX_gamma_control extension
 
 ## NOTTODO ##
 
@@ -99,12 +75,9 @@ for non-Linux platforms to compile the game. This isn't changing.
 
 ## Status ##
 
-* Initial testing on Debian and Windows
-* Need help testing on other platforms
-* Need help testing the SDL2 branch since ioquake3 is moving to SDL2
-    - sdl2 branch is considered finished in ioquake3 so it is a good base
-    - See experimental/latest-libraries-sdl2 branch in this repository to
-      test with OpenArena.
+* Initial testing on Ubuntu16.04, Need help testing on other platforms
+
+
 
 ## Changes from 0.8.8 release ##
 
@@ -133,12 +106,7 @@ for non-Linux platforms to compile the game. This isn't changing.
 
 ## renderer_oa changes ##
 
-* Widescreen horizontal expansion support
-* Paletted texturing support, for the few older cards that support the paletted texture extensions (3dfx)
-* Many changes to the flares code - sun flares, support for custom flare shaders, a lower quality flare option (huge framerate jump on oa_pvomit), additional lens reflection effects, configurable lens reflection types for dynamic lights, sun or map lights
 * Brightness by blended quad, allowing overbrights to work in a window without the need for a fragment shader
-* More postprocessing effects, including a multipass shader effect for simulating the looks of a popular 1996 3d card
-* Slowness feature to simulate the rough speed of a typical 6th generation computer setup by default (common 1998 computers), potentially useful for content producers looking to optimize their stuff
 
 
 ## client changes ##
@@ -287,29 +255,6 @@ The defaults for these variables differ depending on the target platform.
                                       behaviour, 0 for standard q3
   cl_mouseAccelOffset               - Tuning the acceleration curve, see below
 
-  in_joystickUseAnalog              - Do not translate joystick axis events
-                                      to keyboard commands
-
-  j_forward                         - Joystick analogue to m_forward,
-                                      for forward movement speed/direction.
-  j_side                            - Joystick analogue to m_side,
-                                      for side movement speed/direction.
-  j_up                              - Joystick up movement speed/direction.
-  j_pitch                           - Joystick analogue to m_pitch,
-                                      for pitch rotation speed/direction.
-  j_yaw                             - Joystick analogue to m_yaw,
-                                      for yaw rotation speed/direction.
-  j_forward_axis                    - Selects which joystick axis
-                                      controls forward/back.
-  j_side_axis                       - Selects which joystick axis
-                                      controls left/right.
-  j_up_axis                         - Selects which joystick axis
-                                      controls up/down.
-  j_pitch_axis                      - Selects which joystick axis
-                                      controls pitch.
-  j_yaw_axis                        - Selects which joystick axis
-                                      controls yaw.
-
   s_useOpenAL                       - use the OpenAL sound backend if available
   s_alPrecache                      - cache OpenAL sounds before use
   s_alGain                          - the value of AL_GAIN for each source
@@ -344,8 +289,7 @@ The defaults for these variables differ depending on the target platform.
 
   com_ansiColor                     - enable use of ANSI escape codes in the tty
   com_altivec                       - enable use of altivec on PowerPC systems
-  com_standalone (read only)        - If set to 1, quake3 is running in
-                                      standalone mode
+  com_standalone (read only)        - If set to 1, quake3 is running in standalone mode
   com_basegame                      - Use a different base than baseq3. If no
                                       original Quake3 or TeamArena pak files
                                       are found, this will enable running in
@@ -373,9 +317,6 @@ The defaults for these variables differ depending on the target platform.
                                       "Network protocols" section below
                                       (startup only)
 
-  in_joystickNo                     - select which joystick to use
-  in_availableJoysticks             - list of available Joysticks
-  in_keyboardDebug                  - print keyboard debug info
 
   sv_dlURL                          - the base of the HTTP or FTP site that
                                       holds custom pk3 files for your server
@@ -412,12 +353,6 @@ The defaults for these variables differ depending on the target platform.
                                       color combination. For red-blue and
                                       red-green you probably want to enable
                                       r_greyscale
-  r_stereoSeparation                - Control eye separation. Resulting
-                                      separation is r_zProj divided by this
-                                      value in quake3 standard units.
-                                      See also
-                                      http://wiki.ioquake3.org/Stereo_Rendering
-                                      for more information
   r_marksOnTriangleMeshes           - Support impact marks on md3 models, MOD
                                       developers should increase the mark
                                       triangle limits in cg_marks.c if they
@@ -430,8 +365,6 @@ The defaults for these variables differ depending on the target platform.
                                       captured using screenshotJPEG
   r_aviMotionJpegQuality            - Controls quality of video capture when
                                       cl_aviMotionJpeg is enabled
-  r_mode -2                         - This new video mode automatically uses the
-                                      desktop resolution.
 ```
 
 ## New commands

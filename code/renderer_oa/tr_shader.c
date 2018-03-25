@@ -24,10 +24,28 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
 #include "tr_local.h"
 
+
+// leilei - shader materials for detail texturing
+
+
+
+
 extern	backEndData_t *backEndData;	// the second one may not be allocated
+
+static cvar_t* r_printShaders;
+
+static cvar_t* r_detailTextures; // enables/disables detail texturing stages
+
+// leilei - scale tweak the detail textures, 0 doesn't tweak at all.
+static cvar_t* r_detailTextureScale;
+// leilei - add in more smaller detail texture layers, expensive!
+static cvar_t* r_detailTextureLayers;
 
 
 static char* s_shaderText;
+
+
+
 
 // the shader is parsed into these global variables, then copied into dynamically allocated memory if it is valid.
 static	shaderStage_t	stages[MAX_SHADER_STAGES];		
@@ -4397,7 +4415,6 @@ TODO:	if r_detailTextures 2, try to move the detail texture before the lightmap 
 ===============
 */
 
-
 shader_t *R_FindShader( const char *name, int lightmapIndex, qboolean mipRawImage )
 {
 	char strippedName[MAX_QPATH];
@@ -4487,10 +4504,11 @@ shader_t *R_FindShader( const char *name, int lightmapIndex, qboolean mipRawImag
 	// attempt to define shader from an explicit parameter file
 	//
 	shaderText = FindShaderInShaderText( strippedName );
-	if ( shaderText ) {
-		// enable this when building a pak file to get a global list
-		// of all explicit shaders
-		if ( r_printShaders->integer ) {
+	if ( shaderText )
+    {
+		// enable this when building a pak file to get a global list of all explicit shaders
+		if ( r_printShaders->integer )
+        {
 			ri.Printf( PRINT_ALL, "*SHADER* %s\n", name );
 		}
 
@@ -4502,7 +4520,6 @@ shader_t *R_FindShader( const char *name, int lightmapIndex, qboolean mipRawImag
 		if (shader.surfaceFlags || SURF_METALSTEPS)
 			material = 1;
 
-
 			// leilei -  SUPER detail hack to existing shaders,very aggressive and won't look good on 100% of shaders
 		
 			if( (shader.lightmapIndex != LIGHTMAP_WHITEIMAGE) && (shader.lightmapIndex != LIGHTMAP_BY_VERTEX) && 
@@ -4510,7 +4527,7 @@ shader_t *R_FindShader( const char *name, int lightmapIndex, qboolean mipRawImag
             {
 			    if (r_detailTextures->integer)
 				{
-					image_t		*imageDetail;		 // for snagging it into more layers if we find a defined one
+					image_t* imageDetail;		 // for snagging it into more layers if we find a defined one
 					int e = 0;
 					int f = 0;
 					int gotdetailalready = 0;
@@ -5242,6 +5259,12 @@ static void CreateExternalShaders( void )
 void R_InitShaders( void )
 {
 	ri.Printf(PRINT_ALL, "\n-------- Initializing Shaders --------\n");
+
+    r_printShaders = ri.Cvar_Get( "r_printShaders", "0", 0 );
+	r_detailTextures = ri.Cvar_Get( "r_detailtextures", "1", CVAR_ARCHIVE | CVAR_LATCH );
+	r_detailTextureScale = ri.Cvar_Get( "r_detailtextureScale", "0", CVAR_ARCHIVE | CVAR_LATCH ); // leilei - adjust scale of detail textures
+	r_detailTextureLayers = ri.Cvar_Get( "r_detailtextureLayers", "0", CVAR_ARCHIVE | CVAR_LATCH ); // leilei - add more detail layers
+
 
 	memset(hashTable, 0, sizeof(hashTable));
 
