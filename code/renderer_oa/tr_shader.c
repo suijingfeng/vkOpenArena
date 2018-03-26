@@ -24,13 +24,14 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
 #include "tr_local.h"
 
+extern trGlobals_t	tr;
+extern backEndData_t *backEndData;	// the second one may not be allocated
 
 // leilei - shader materials for detail texturing
 
+static cvar_t* r_ignoreFastPath;		// allows us to ignore our Tess fast paths
 
 
-
-extern	backEndData_t *backEndData;	// the second one may not be allocated
 
 static cvar_t* r_printShaders;
 
@@ -40,6 +41,8 @@ static cvar_t* r_detailTextures; // enables/disables detail texturing stages
 static cvar_t* r_detailTextureScale;
 // leilei - add in more smaller detail texture layers, expensive!
 static cvar_t* r_detailTextureLayers;
+// Leilei - new model shading
+static cvar_t* r_modelshader;
 
 
 static char* s_shaderText;
@@ -5264,7 +5267,8 @@ void R_InitShaders( void )
 	r_detailTextures = ri.Cvar_Get( "r_detailtextures", "1", CVAR_ARCHIVE | CVAR_LATCH );
 	r_detailTextureScale = ri.Cvar_Get( "r_detailtextureScale", "0", CVAR_ARCHIVE | CVAR_LATCH ); // leilei - adjust scale of detail textures
 	r_detailTextureLayers = ri.Cvar_Get( "r_detailtextureLayers", "0", CVAR_ARCHIVE | CVAR_LATCH ); // leilei - add more detail layers
-
+	r_modelshader = ri.Cvar_Get( "r_modelshader", "0" , CVAR_ARCHIVE | CVAR_LATCH);	// leilei - load and use special shaders for lightDiffuse models
+	r_ignoreFastPath = ri.Cvar_Get( "r_ignoreFastPath", "1", CVAR_ARCHIVE | CVAR_LATCH );
 
 	memset(hashTable, 0, sizeof(hashTable));
 

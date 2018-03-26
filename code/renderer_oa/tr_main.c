@@ -24,8 +24,6 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #include "tr_local.h"
 
 
-
-
 ///////// globals ///////////
 
 trGlobals_t	tr;
@@ -35,7 +33,14 @@ refimport_t	ri;
 shaderCommands_t tess;
 
 extern cvar_t* r_fastsky;
-extern cvar_t* r_debugSurface;
+
+static cvar_t* r_debugSurface;
+static cvar_t* r_noportals;
+static cvar_t* r_drawentities;		// disable/enable entity rendering
+static cvar_t* r_znear; // near Z clip plane
+
+static cvar_t* r_zproj; // z distance of projection plane
+
 
 //////// statics ///////////
 
@@ -479,8 +484,6 @@ static qboolean IsMirror( const drawSurf_t *drawSurf, int entityNum )
 {
 	int			i;
 	cplane_t	originalPlane, plane;
-	trRefEntity_t	*e;
-	float		d;
 
 	// create plane axis for the portal we are seeing
 	R_PlaneForSurface( drawSurf->surface, &originalPlane );
@@ -508,12 +511,12 @@ static qboolean IsMirror( const drawSurf_t *drawSurf, int entityNum )
 	// the origin of the camera
 	for ( i = 0 ; i < tr.refdef.num_entities ; i++ ) 
 	{
-		e = &tr.refdef.entities[i];
+		trRefEntity_t* e = &tr.refdef.entities[i];
 		if ( e->e.reType != RT_PORTALSURFACE ) {
 			continue;
 		}
 
-		d = DotProduct( e->e.origin, originalPlane.normal ) - originalPlane.dist;
+		float d = DotProduct( e->e.origin, originalPlane.normal ) - originalPlane.dist;
 		if ( d > 64 || d < -64) {
 			continue;
 		}
@@ -543,7 +546,7 @@ static qboolean SurfIsOffscreen( const drawSurf_t *drawSurf, vec4_t clipDest[128
 	int		fogNum;
 	int dlighted;
 	vec4_t clip, eye;
-	int i;
+
 	unsigned int pointOr = 0;
 	unsigned int pointAnd = (unsigned int)~0;
 
@@ -554,14 +557,14 @@ static qboolean SurfIsOffscreen( const drawSurf_t *drawSurf, vec4_t clipDest[128
 	rb_surfaceTable[ *drawSurf->surface ]( drawSurf->surface );
 
 	assert( tess.numVertexes < 128 );
-
+	int i;
 	for ( i = 0; i < tess.numVertexes; i++ )
 	{
-		int j;
+
 		unsigned int pointFlags = 0;
 
 		R_TransformModelToClip( tess.xyz[i], tr.or.modelMatrix, tr.viewParms.projectionMatrix, eye, clip );
-
+		int j;
 		for ( j = 0; j < 3; j++ )
 		{
 			if ( clip[j] >= clip[3] )
@@ -593,11 +596,9 @@ static qboolean SurfIsOffscreen( const drawSurf_t *drawSurf, vec4_t clipDest[128
 	for ( i = 0; i < tess.numIndexes; i += 3 )
 	{
 		vec3_t normal;
-		float len;
-
 		VectorSubtract( tess.xyz[tess.indexes[i]], tr.viewParms.or.origin, normal );
 
-		len = VectorLengthSquared( normal );			// lose the sqrt
+		float len = VectorLengthSquared( normal );			// lose the sqrt
 		if ( len < shortest )
 		{
 			shortest = len;
@@ -694,12 +695,13 @@ static qboolean R_MirrorViewBySurface (drawSurf_t *drawSurf, int entityNum)
 	orientation_t	surface, camera;
 
 	// don't recursively mirror
-	if (tr.viewParms.isPortal) {
+	if(tr.viewParms.isPortal)
+    {
 		ri.Printf( PRINT_DEVELOPER, "WARNING: recursive mirror/portal found\n" );
 		return qfalse;
 	}
 
-	if ( r_noportals->integer || (r_fastsky->integer == 1) )
+	if(r_noportals->integer || (r_fastsky->integer == 1) )
     {
 		return qfalse;
 	}
@@ -766,7 +768,8 @@ static void R_SortDrawSurfs( drawSurf_t *drawSurfs, int numDrawSurfs )
 
 	// check for any pass through drawing, which
 	// may cause another view to be rendered first
-	for ( i = 0 ; i < numDrawSurfs ; i++ ) {
+	for ( i = 0 ; i < numDrawSurfs ; i++ )
+    {
 		R_DecomposeSort( (drawSurfs+i)->sort, &entityNum, &shader, &fogNum, &dlighted );
 
 		if ( shader->sort > SS_PORTAL ) {
@@ -779,11 +782,9 @@ static void R_SortDrawSurfs( drawSurf_t *drawSurfs, int numDrawSurfs )
 		}
 
 		// if the mirror was completely clipped away, we may need to check another surface
-		if ( R_MirrorViewBySurface( (drawSurfs+i), entityNum) ) {
+		if ( R_MirrorViewBySurface( (drawSurfs+i), entityNum) )
+        {
 			// this is a debug option to see exactly what is being mirrored
-			if ( r_portalOnly->integer ) {
-				return;
-			}
 			break;		// only one mirror view at a time
 		}
 	}
@@ -827,10 +828,6 @@ static void R_AddEntitySurfaces (void)
 {
 	trRefEntity_t	*ent;
 	shader_t		*shader;
-
-	if ( !r_drawentities->integer ) {
-		return;
-	}
 
 	for ( tr.currentEntityNum = 0; tr.currentEntityNum < tr.refdef.num_entities; tr.currentEntityNum++ )
     {
@@ -913,7 +910,7 @@ static void R_AddEntitySurfaces (void)
 
 static void R_GenerateDrawSurfs( void )
 {
-	R_AddWorldSurfaces ();
+	R_AddWorldSurfaces();
 
 	R_AddPolygonSurfaces();
 
@@ -928,7 +925,11 @@ static void R_GenerateDrawSurfs( void )
 	// we know the size of the clipping volume. Now set the rest of the projection matrix.
 	R_SetupProjectionZ (&tr.viewParms);
 
-	R_AddEntitySurfaces ();
+	if( r_drawentities->integer )
+    {
+		R_AddEntitySurfaces ();
+	}
+
 }
 
 /*
@@ -1231,4 +1232,17 @@ void R_RotateForEntity( const trRefEntity_t *ent, const viewParms_t *viewParms, 
 	or->viewOrigin[1] = DotProduct( delta, or->axis[1] ) * axisLength;
 	or->viewOrigin[2] = DotProduct( delta, or->axis[2] ) * axisLength;
 }
+
+void R_InitMain(void)
+{
+    r_noportals = ri.Cvar_Get ("r_noportals", "0", CVAR_CHEAT);
+    r_debugSurface = ri.Cvar_Get ("r_debugSurface", "0", CVAR_CHEAT);
+    r_drawentities = ri.Cvar_Get ("r_drawentities", "1", CVAR_CHEAT );
+
+
+    r_znear = ri.Cvar_Get( "r_znear", "4", CVAR_CHEAT );
+    ri.Cvar_CheckRange( r_znear, 0.001f, 200, qfalse );
+    r_zproj = ri.Cvar_Get( "r_zproj", "64", CVAR_ARCHIVE );
+}
+
 

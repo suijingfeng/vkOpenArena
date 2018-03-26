@@ -45,13 +45,18 @@ QGL_ARB_vertex_array_object_PROCS;
 QGL_EXT_direct_state_access_PROCS;
 #undef GLE
 
-
+extern backEndState_t backEnd;
+extern trGlobals_t	tr;
 extern shaderCommands_t tess;
 extern cvar_t* r_lightmap;
 
+
+#ifdef USE_RENDERER_DLOPEN
+static cvar_t* com_altivec;
+#endif
+
 static cvar_t* r_shownormals;
 static cvar_t* r_showtris;					// enables wireframe rendering of the world
-static cvar_t* r_debugSort;
 static cvar_t* r_dlightBacks;
 static cvar_t* r_primitives;
 static cvar_t* r_offsetFactor;
@@ -395,7 +400,8 @@ Perform dynamic lighting with another rendering pass
 ===================
 */
 #if idppc_altivec
-static void ProjectDlightTexture_altivec( void ) {
+static void ProjectDlightTexture_altivec( void )
+{
 	int		i, l;
 	vec_t	origin0, origin1, origin2;
 	float   texCoords0, texCoords1;
@@ -695,7 +701,8 @@ static void ProjectDlightTexture_scalar( void )
 static void ProjectDlightTexture( void )
 {
 #if idppc_altivec
-	if (com_altivec->integer) {
+	if (com_altivec->integer)
+    {
 		// must be in a seperate function or G3 systems will crash.
 		ProjectDlightTexture_altivec();
 		return;
@@ -1444,12 +1451,6 @@ void RB_EndSurface( void )
 		return;
 	}
 
-	// for debugging of sort order issues, stop rendering after a given sort value
-	if ( r_debugSort->integer && (r_debugSort->integer < tess.shader->sort) )
-    {
-		return;
-	}
-
 	//
 	// update performance counters
 	//
@@ -1477,12 +1478,14 @@ void RB_EndSurface( void )
 
 void R_InitShade(void)
 {
+    #ifdef USE_RENDERER_DLOPEN
+	    com_altivec = ri.Cvar_Get("com_altivec", "0", CVAR_ARCHIVE);
+    #endif
+
 	r_showtris = ri.Cvar_Get ("r_showtris", "0", CVAR_CHEAT);
     
     // draws wireframe normals
     r_shownormals = ri.Cvar_Get ("r_shownormals", "0", CVAR_CHEAT);
-
-    r_debugSort = ri.Cvar_Get( "r_debugSort", "0", CVAR_CHEAT );
 
     r_dlightBacks = ri.Cvar_Get( "r_dlightBacks", "1", CVAR_ARCHIVE );
 

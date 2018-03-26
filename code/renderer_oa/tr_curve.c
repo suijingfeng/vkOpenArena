@@ -39,6 +39,9 @@ srfGridMesh_t *R_SubdividePatchToGrid( int width, int height, drawVert_t points[
 #define PATCH_STITCHING
 
 
+static cvar_t* r_subdivisions;
+
+
 static void LerpDrawVert( drawVert_t *a, drawVert_t *b, drawVert_t *out )
 {
 	out->xyz[0] = 0.5f * (a->xyz[0] + b->xyz[0]);
@@ -411,7 +414,8 @@ srfGridMesh_t *R_SubdividePatchToGrid( int width, int height, drawVert_t points[
 				continue;	// can't subdivide any more
 			}
 
-			if ( maxLen <= r_subdivisions->value ) {
+			if ( maxLen <= r_subdivisions->value )
+            {
 				errorTable[dir][j+1] = 1.0f/maxLen;
 				continue;	// didn't need subdivision
 			}
@@ -498,19 +502,19 @@ srfGridMesh_t *R_SubdividePatchToGrid( int width, int height, drawVert_t points[
 R_GridInsertColumn
 ===============
 */
-srfGridMesh_t *R_GridInsertColumn( srfGridMesh_t *grid, int column, int row, vec3_t point, float loderror ) {
+srfGridMesh_t *R_GridInsertColumn( srfGridMesh_t *grid, int column, int row, vec3_t point, float loderror )
+{
 	int i, j;
-	int width, height, oldwidth;
+	int oldwidth = 0;
 	drawVert_t ctrl[MAX_GRID_SIZE][MAX_GRID_SIZE];
 	float errorTable[2][MAX_GRID_SIZE];
 	float lodRadius;
 	vec3_t lodOrigin;
 
-	oldwidth = 0;
-	width = grid->width + 1;
+	int width = grid->width + 1;
 	if (width > MAX_GRID_SIZE)
 		return NULL;
-	height = grid->height;
+	int height = grid->height;
 	for (i = 0; i < width; i++) {
 		if (i == column) {
 			//insert new column
@@ -608,4 +612,9 @@ void R_FreeSurfaceGridMesh( srfGridMesh_t *grid )
 	ri.Free(grid->widthLodError);
 	ri.Free(grid->heightLodError);
 	ri.Free(grid);
+}
+
+void R_InitCurve(void)
+{
+    r_subdivisions = ri.Cvar_Get ("r_subdivisions", "4", CVAR_ARCHIVE | CVAR_LATCH);
 }

@@ -22,7 +22,10 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
 #include "tr_local.h"
 
-extern	backEndData_t *backEndData;	// the second one may not be allocated
+extern backEndData_t* backEndData;	// the second one may not be allocated
+extern trGlobals_t	tr;
+extern cvar_t* r_maxpolyverts;
+extern cvar_t* r_maxpolys;
 
 static int	r_firstSceneDrawSurf = 0;
 
@@ -37,8 +40,9 @@ static int	r_firstScenePoly = 0;
 
 static int	r_numpolyverts = 0;
 
-
+static cvar_t* r_norefresh;			// bypasses the ref rendering
 static cvar_t* r_dynamiclight;
+
 
 void R_InitNextFrame( void )
 {
@@ -110,14 +114,16 @@ void RE_AddPolyToScene( qhandle_t hShader, int numVerts, const polyVert_t *verts
 		return;
 	}
 
-	for ( j = 0; j < numPolys; j++ ) {
-		if ( r_numpolyverts + numVerts > max_polyverts || r_numpolys >= max_polys ) {
-      /*
-      NOTE TTimo this was initially a PRINT_WARNING
-      but it happens a lot with high fighting scenes and particles
-      since we don't plan on changing the const and making for room for those effects
-      simply cut this message to developer only
-      */
+	for ( j = 0; j < numPolys; j++ )
+    {
+		if ( (r_numpolyverts + numVerts > r_maxpolyverts->integer) || (r_numpolys >= r_maxpolys->integer) )
+        {
+          /*
+          NOTE TTimo this was initially a PRINT_WARNING
+          but it happens a lot with high fighting scenes and particles
+          since we don't plan on changing the const and making for room for those effects
+          simply cut this message to developer only
+          */
 			ri.Printf( PRINT_DEVELOPER, "WARNING: RE_AddPolyToScene: r_max_polys or r_max_polyverts reached\n");
 			return;
 		}
@@ -263,8 +269,6 @@ Rendering a scene may require multiple views to be rendered to handle mirrors,
 */
 void RE_RenderScene( const refdef_t *fd )
 {
-	viewParms_t	parms;
-
 	if ( !tr.registered ) {
 		return;
 	}
@@ -354,7 +358,8 @@ void RE_RenderScene( const refdef_t *fd )
 	// set up viewport
 	// The refdef takes 0-at-the-top y coordinates, so
 	// convert to GL's 0-at-the-bottom space
-	//
+	
+    viewParms_t	parms;
 	memset( &parms, 0, sizeof( parms ) );
 	parms.viewportX = tr.refdef.x;
 	parms.viewportY = glConfig.vidHeight - ( tr.refdef.y + tr.refdef.height );
@@ -417,4 +422,5 @@ void RE_RenderScene( const refdef_t *fd )
 void R_InitScene( void )
 {
     r_dynamiclight = ri.Cvar_Get( "r_dynamiclight", "1", CVAR_ARCHIVE );
+    r_norefresh = ri.Cvar_Get ("r_norefresh", "0", CVAR_CHEAT);
 }

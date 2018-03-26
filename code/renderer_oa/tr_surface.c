@@ -42,10 +42,9 @@ if you don't want to use the shader system.
 #include <altivec.h>
 #endif
 
-
-
-extern	shaderCommands_t	tess;
-
+extern backEndState_t backEnd;
+extern shaderCommands_t tess;
+extern trGlobals_t	tr;
 
 static cvar_t* r_railWidth;
 static cvar_t* r_railCoreWidth;

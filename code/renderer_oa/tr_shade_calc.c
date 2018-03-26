@@ -26,8 +26,9 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #include <altivec.h>
 #endif
 
-
-extern	shaderCommands_t	tess;
+extern backEndState_t backEnd;
+extern shaderCommands_t	tess;
+extern trGlobals_t tr;
 
 #define	WAVEVALUE( table, base, amplitude, phase, freq ) \
     ((base) + table[ ri.ftol( ( ( (phase) + tess.shaderTime * (freq) ) * FUNCTABLE_SIZE ) ) & FUNCTABLE_MASK ] * (amplitude))

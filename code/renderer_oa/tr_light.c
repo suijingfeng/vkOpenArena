@@ -29,7 +29,7 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #define	DLIGHT_MINIMUM_RADIUS	16		
 // never calculate a range less than this to prevent huge light numbers
 
-
+extern trGlobals_t	tr;
 
 
 static cvar_t* r_ambientScale;

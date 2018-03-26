@@ -26,119 +26,43 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
 extern shaderCommands_t tess;
 extern backEndData_t* backEndData;	// the second one may not be allocated
+extern trGlobals_t	tr;
+extern backEndState_t backEnd;
 
 
 glconfig_t  glConfig;
 glstate_t	glState;
 
 
-#ifdef USE_RENDERER_DLOPEN
-cvar_t  *com_altivec;
-#endif
-
-
-cvar_t	*r_ignoreFastPath;
-
-cvar_t	*r_verbose;
-cvar_t	*r_ignore;
 
 
 
-cvar_t	*r_znear;
-cvar_t	*r_zproj;
+//
+// cvars
+//
 
-cvar_t	*r_skipBackEnd;
-
-cvar_t	*r_inGameVideo;
-
-
-
-
-
-cvar_t	*r_lodbias;
+//extern cvar_t	*r_verbose;				// used for verbose debug spew
+//extern cvar_t	*r_vertexLight;		// vertex lighting mode for better performance
+//extern cvar_t	*r_logFile;		    // number of frames to emit GL logs
+//cvar_t	*r_clear;
+cvar_t* r_maxpolys;
+cvar_t* r_maxpolyverts;
 
 
-cvar_t	*r_norefresh;
-cvar_t	*r_drawentities;
-cvar_t	*r_drawworld;
-cvar_t	*r_speeds;
-
-cvar_t	*r_novis;
-cvar_t	*r_nocull;
-cvar_t	*r_facePlaneCull;
-cvar_t	*r_showcluster;
-
-cvar_t	*r_ignoreGLErrors;
-cvar_t	*r_logFile;
-
-
-
-cvar_t	*r_measureOverdraw;
-
-cvar_t	*r_uiFullScreen;
-cvar_t	*r_shadows;
-
-cvar_t	*r_nobind;
-
-cvar_t	*r_roundImagesDown;
-cvar_t	*r_colorMipLevels;
-cvar_t	*r_picmip;
-cvar_t	*r_iconmip;
-cvar_t	*r_iconBits;
-
-//cvar_t	*r_showtris;
-cvar_t	*r_showsky;
-
-cvar_t	*r_finish;
-cvar_t	*r_clear;
 static cvar_t* r_textureMode;
-
-cvar_t	*r_gamma;
-
-cvar_t	*r_lockpvs;
-cvar_t	*r_noportals;
-cvar_t	*r_portalOnly;
-
-cvar_t	*r_subdivisions;
-
-
-
-
-cvar_t	*r_debugSurface;
-cvar_t	*r_simpleMipMaps;
-
-
-
-
-
-
-
-cvar_t	*r_saveFontData;
-
-cvar_t	*r_marksOnTriangleMeshes;
-
 static cvar_t* r_aviMotionJpegQuality;
-cvar_t	*r_screenshotJpegQuality;
-
-cvar_t	*r_maxpolys;
-int		max_polys;
-cvar_t	*r_maxpolyverts;
-int		max_polyverts;
+static cvar_t* r_screenshotJpegQuality;
 
 
 
-
-
-cvar_t	*r_modelshader;		// Leilei
-
-
-typedef struct vidmode_s {
+struct vidmode_s {
 	const char *description;
 	int width, height;
 	float pixelAspect;		// pixel width / height
-} vidmode_t;
+};
 
-static const vidmode_t r_vidModes[] = {
+/*
+static const struct vidmode_s r_vidModes[] = {
 	{ "Mode  0: 320x240",		320,	240,	1 },
 	{ "Mode  1: 400x300",		400,	300,	1 },
 	{ "Mode  2: 512x384",		512,	384,	1 },
@@ -169,7 +93,7 @@ static const vidmode_t r_vidModes[] = {
 	{ "Mode 27: 3840x2160 (4K)",	3840,	2160,	1 }
 };
 static const int s_numVidModes = ARRAY_LEN( r_vidModes );
-
+*/
 
 static void GL_SetDefaultState(void)
 {
@@ -258,15 +182,13 @@ static void GfxInfo_f( void )
 
 
 	ri.Printf( PRINT_ALL, "texturemode: %s\n", r_textureMode->string );
-	ri.Printf( PRINT_ALL, "picmip: %d\n", r_picmip->integer );
+
 	ri.Printf( PRINT_ALL, "multitexture: %s\n", enablestrings[qglActiveTextureARB != 0] );
 	ri.Printf( PRINT_ALL, "compiled vertex arrays: %s\n", enablestrings[qglLockArraysEXT != 0 ] );
 	ri.Printf( PRINT_ALL, "texenv add: %s\n", enablestrings[glConfig.textureEnvAddAvailable != 0] );
 	ri.Printf( PRINT_ALL, "compressed textures: %s\n", enablestrings[glConfig.textureCompression!=TC_NONE] );
 
-	if ( r_finish->integer ) {
-		ri.Printf( PRINT_ALL, "Forcing glFinish\n" );
-	}
+  
 }
 
 
@@ -283,7 +205,6 @@ static void InitOpenGL(void)
 	//		- r_fullscreen
 	//		- r_mode
 	//		- r_(color|depth|stencil)bits
-	//		- r_gamma
 
     GLimp_Init(qfalse);
     // GLimp_InitExtraExtensions();
@@ -304,18 +225,19 @@ static void InitOpenGL(void)
 	GfxInfo_f();
 }
 
+
+/*
 static void R_ModeList_f( void )
 {
-	int i;
-
 	ri.Printf( PRINT_ALL, "\n" );
+    int i;
 	for ( i = 0; i < s_numVidModes; i++ )
     {
 		ri.Printf( PRINT_ALL, "%s\n", r_vidModes[i].description );
 	}
 	ri.Printf( PRINT_ALL, "\n" );
 }
-
+*/
 
 
 /*
@@ -790,124 +712,6 @@ static void R_SkinList_f( void )
 }
 
 
-static void R_Register( void )
-{
-#ifdef USE_RENDERER_DLOPEN
-	com_altivec = ri.Cvar_Get("com_altivec", "1", CVAR_ARCHIVE);
-#endif
-
-#if defined( _WIN32 )
-	// leilei -  Get some version info first, code torn from quake
-	OSVERSIONINFO vinfo;
-	vinfo.dwOSVersionInfoSize = sizeof(vinfo);
-#endif
-
-	//
-	// latched and archived variables
-	//
-
-	r_picmip = ri.Cvar_Get ("r_picmip", "1", CVAR_ARCHIVE | CVAR_LATCH );
-	r_roundImagesDown = ri.Cvar_Get ("r_roundImagesDown", "1", CVAR_ARCHIVE | CVAR_LATCH );
-	r_colorMipLevels = ri.Cvar_Get ("r_colorMipLevels", "0", CVAR_LATCH );
-	ri.Cvar_CheckRange( r_picmip, 0, 16, qtrue );
-
-
-	r_simpleMipMaps = ri.Cvar_Get( "r_simpleMipMaps", "1", CVAR_ARCHIVE | CVAR_LATCH );
-	r_subdivisions = ri.Cvar_Get ("r_subdivisions", "4", CVAR_ARCHIVE | CVAR_LATCH);
-	r_ignoreFastPath = ri.Cvar_Get( "r_ignoreFastPath", "1", CVAR_ARCHIVE | CVAR_LATCH );
-
-	//
-	// temporary latched variables that can only change over a restart
-	//
-
-
-	//
-	// archived variables that can change at any time
-	//
-
-	r_lodbias = ri.Cvar_Get( "r_lodbias", "0", CVAR_ARCHIVE );
-
-	r_znear = ri.Cvar_Get( "r_znear", "4", CVAR_CHEAT );
-	ri.Cvar_CheckRange( r_znear, 0.001f, 200, qfalse );
-	r_zproj = ri.Cvar_Get( "r_zproj", "64", CVAR_ARCHIVE );
-	r_ignoreGLErrors = ri.Cvar_Get( "r_ignoreGLErrors", "1", CVAR_ARCHIVE );
-
-	r_inGameVideo = ri.Cvar_Get( "r_inGameVideo", "1", CVAR_ARCHIVE );
-
-	r_finish = ri.Cvar_Get ("r_finish", "0", CVAR_ARCHIVE);
-	r_textureMode = ri.Cvar_Get( "r_textureMode", "GL_LINEAR_MIPMAP_NEAREST", CVAR_ARCHIVE | CVAR_LATCH );
-	r_gamma = ri.Cvar_Get( "r_gamma", "1", CVAR_ARCHIVE );
-	r_facePlaneCull = ri.Cvar_Get ("r_facePlaneCull", "1", CVAR_ARCHIVE );
-
-
-	//
-	// temporary variables that can change at any time
-	//
-
-
-	r_saveFontData = ri.Cvar_Get( "r_saveFontData", "0", 0 );
-
-	r_drawworld = ri.Cvar_Get ("r_drawworld", "1", CVAR_CHEAT );
-
-	r_portalOnly = ri.Cvar_Get ("r_portalOnly", "0", CVAR_CHEAT );
-
-	r_skipBackEnd = ri.Cvar_Get ("r_skipBackEnd", "0", CVAR_CHEAT);
-    
-    // tr_backend.c tr_cmd.c
-	r_measureOverdraw = ri.Cvar_Get( "r_measureOverdraw", "0", CVAR_CHEAT );
-	r_norefresh = ri.Cvar_Get ("r_norefresh", "0", CVAR_CHEAT);
-	r_drawentities = ri.Cvar_Get ("r_drawentities", "1", CVAR_CHEAT );
-	r_ignore = ri.Cvar_Get( "r_ignore", "1", CVAR_CHEAT );
-	r_nocull = ri.Cvar_Get ("r_nocull", "0", CVAR_CHEAT);
-	r_novis = ri.Cvar_Get ("r_novis", "0", CVAR_CHEAT);
-	r_showcluster = ri.Cvar_Get ("r_showcluster", "0", CVAR_CHEAT);
-	r_speeds = ri.Cvar_Get ("r_speeds", "0", CVAR_CHEAT);
-	r_verbose = ri.Cvar_Get( "r_verbose", "0", CVAR_CHEAT );
-	r_logFile = ri.Cvar_Get( "r_logFile", "0", CVAR_CHEAT );
-	r_debugSurface = ri.Cvar_Get ("r_debugSurface", "0", CVAR_CHEAT);
-	r_nobind = ri.Cvar_Get ("r_nobind", "0", CVAR_CHEAT);
-
-	r_showsky = ri.Cvar_Get ("r_showsky", "0", CVAR_CHEAT);
-
-	r_clear = ri.Cvar_Get ("r_clear", "0", CVAR_CHEAT);
-
-
-	r_lockpvs = ri.Cvar_Get ("r_lockpvs", "0", CVAR_CHEAT);
-	r_noportals = ri.Cvar_Get ("r_noportals", "0", CVAR_CHEAT);
-	r_shadows = ri.Cvar_Get( "cg_shadows", "1", 0 );
-
-	r_marksOnTriangleMeshes = ri.Cvar_Get("r_marksOnTriangleMeshes", "0", CVAR_ARCHIVE);
-
-	r_aviMotionJpegQuality = ri.Cvar_Get("r_aviMotionJpegQuality", "90", CVAR_ARCHIVE);
-	r_screenshotJpegQuality = ri.Cvar_Get("r_screenshotJpegQuality", "90", CVAR_ARCHIVE);
-
-	r_maxpolys = ri.Cvar_Get( "r_maxpolys", va("%d", MAX_POLYS), 0);
-	r_maxpolyverts = ri.Cvar_Get( "r_maxpolyverts", va("%d", MAX_POLYVERTS), 0);
-
-
-
-	r_modelshader = ri.Cvar_Get( "r_modelshader", "0" , CVAR_ARCHIVE | CVAR_LATCH);		// leilei - load and use special shaders for lightDiffuse models
-
-	r_iconmip = ri.Cvar_Get ("r_iconmip", "0", CVAR_ARCHIVE | CVAR_LATCH );		// leilei - icon mip
-	r_iconBits = ri.Cvar_Get ("r_iconBits", "0", CVAR_ARCHIVE | CVAR_LATCH );	// leilei - icon bits
-
-
-	// make sure all the commands added here are also
-	// removed in R_Shutdown
-	ri.Cmd_AddCommand( "imagelist", R_ImageList_f );
-	ri.Cmd_AddCommand( "shaderlist", R_ShaderList_f );
-	ri.Cmd_AddCommand( "skinlist", R_SkinList_f );
-	ri.Cmd_AddCommand( "modellist", R_Modellist_f );
-	ri.Cmd_AddCommand( "modelist", R_ModeList_f );
-	ri.Cmd_AddCommand( "imagelistmaponly", R_ImageListMapOnly_f );
-	ri.Cmd_AddCommand( "screenshot", R_ScreenShot_f );
-	ri.Cmd_AddCommand( "screenshotJPEG", R_ScreenShotJPEG_f );
-	ri.Cmd_AddCommand( "gfxinfo", GfxInfo_f );
-	ri.Cmd_AddCommand( "minimize", GLimp_Minimize );
-}
-
-
-
 
 //===========================================================================
 //                        SKINS
@@ -1185,7 +989,7 @@ void RE_Shutdown( qboolean destroyWindow )
 	ri.Cmd_RemoveCommand("skinlist");
 	ri.Cmd_RemoveCommand("gfxinfo");
 	ri.Cmd_RemoveCommand("minimize");
-	ri.Cmd_RemoveCommand("modelist");
+//	ri.Cmd_RemoveCommand("modelist");
 	ri.Cmd_RemoveCommand("shaderstate");
 
 	if ( tr.registered )
@@ -1212,7 +1016,11 @@ void RE_Shutdown( qboolean destroyWindow )
 
 
 
-
+// these are sort of arbitrary limits.
+// the limits apply to the sum of all scenes in a frame --
+// the main view, all the 3D icons, etc
+#define	MAX_POLYS		600
+#define	MAX_POLYVERTS	3000
 
 void R_Init(void)
 {
@@ -1252,21 +1060,34 @@ void R_Init(void)
 
 	R_NoiseInit();
 
-	R_Register();
 
-	max_polys = r_maxpolys->integer;
-	if (max_polys < MAX_POLYS)
-		max_polys = MAX_POLYS;
+#if defined( _WIN32 )
+	// leilei -  Get some version info first, code torn from quake
+	OSVERSIONINFO vinfo;
+	vinfo.dwOSVersionInfoSize = sizeof(vinfo);
+#endif
 
-	max_polyverts = r_maxpolyverts->integer;
-	if (max_polyverts < MAX_POLYVERTS)
-		max_polyverts = MAX_POLYVERTS;
+	//
+	// latched and archived variables
+	// temporary latched variables that can only change over a restart
+	// temporary variables that can change at any time
+	// archived variables that can change at any time
+	//
 
-	unsigned char *ptr = ri.Hunk_Alloc(sizeof( *backEndData ) + sizeof(srfPoly_t) * max_polys + sizeof(polyVert_t) * max_polyverts, h_low);
+	r_textureMode = ri.Cvar_Get( "r_textureMode", "GL_LINEAR_MIPMAP_NEAREST", CVAR_ARCHIVE | CVAR_LATCH );
+
+	r_aviMotionJpegQuality = ri.Cvar_Get("r_aviMotionJpegQuality", "90", CVAR_ARCHIVE);
+	r_screenshotJpegQuality = ri.Cvar_Get("r_screenshotJpegQuality", "90", CVAR_ARCHIVE);
+
+    r_maxpolys = ri.Cvar_Get( "r_maxpolys", va("%d", MAX_POLYS), 0);
+	r_maxpolyverts = ri.Cvar_Get( "r_maxpolyverts", va("%d", MAX_POLYVERTS), 0);
+
+
+	unsigned char *ptr = ri.Hunk_Alloc(sizeof( *backEndData ) + sizeof(srfPoly_t) * r_maxpolys->integer + sizeof(polyVert_t) * r_maxpolyverts->integer, h_low);
 
 	backEndData = (backEndData_t *) ptr;
 	backEndData->polys = (srfPoly_t *) ((char *) ptr + sizeof( *backEndData ));
-	backEndData->polyVerts = (polyVert_t *) ((char *) ptr + sizeof( *backEndData ) + sizeof(srfPoly_t) * max_polys);
+	backEndData->polyVerts = (polyVert_t *) ((char *) ptr + sizeof( *backEndData ) + sizeof(srfPoly_t) * r_maxpolys->integer);
 	R_InitNextFrame();
 
 	InitOpenGL();
@@ -1278,6 +1099,8 @@ void R_Init(void)
 	R_ModelInit();
 	R_InitFlares();
     R_InitCloudAndSky();
+    R_InitCurve();
+
     R_InitSurface();
     R_InitScene();
     R_InitShade();
@@ -1286,10 +1109,26 @@ void R_Init(void)
     R_InitShaders();
     R_InitAnimation();
 	R_InitFreeType();
+    R_InitMarks();
+    R_InitMain();
+    R_InitWorld();
 
     int err = qglGetError();
 	if ( err != GL_NO_ERROR )
 		ri.Printf( PRINT_ALL, "glGetError() = 0x%x\n", err);
+
+
+	// make sure all the commands added here are also removed in R_Shutdown
+	ri.Cmd_AddCommand( "imagelist", R_ImageList_f );
+	ri.Cmd_AddCommand( "shaderlist", R_ShaderList_f );
+	ri.Cmd_AddCommand( "skinlist", R_SkinList_f );
+	ri.Cmd_AddCommand( "modellist", R_Modellist_f );
+//	ri.Cmd_AddCommand( "modelist", R_ModeList_f );
+	ri.Cmd_AddCommand( "imagelistmaponly", R_ImageListMapOnly_f );
+	ri.Cmd_AddCommand( "screenshot", R_ScreenShot_f );
+	ri.Cmd_AddCommand( "screenshotJPEG", R_ScreenShotJPEG_f );
+	ri.Cmd_AddCommand( "gfxinfo", GfxInfo_f );
+	ri.Cmd_AddCommand( "minimize", GLimp_Minimize );
 
 
 	ri.Printf( PRINT_ALL, "------- R_Init() finished -------\n\n");

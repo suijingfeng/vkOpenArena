@@ -36,6 +36,13 @@ Out must have space for two more vertexes than in
 #define	SIDE_FRONT	0
 #define	SIDE_BACK	1
 #define	SIDE_ON		2
+
+
+extern trGlobals_t	tr;
+
+static cvar_t* r_marksOnTriangleMeshes;
+
+
 static void R_ChopPolyBehindPlane( int numInPoints, vec3_t inPoints[MAX_VERTS_ON_POLY],
 		int *numOutPoints, vec3_t outPoints[MAX_VERTS_ON_POLY], vec3_t normal, vec_t dist, vec_t epsilon)
 {
@@ -432,7 +439,8 @@ int R_MarkFragments( int numPoints, const vec3_t *points, const vec3_t projectio
 				}
 			}
 		}
-		else if(*surfaces[i] == SF_TRIANGLES && r_marksOnTriangleMeshes->integer) {
+		else if(*surfaces[i] == SF_TRIANGLES && r_marksOnTriangleMeshes->integer)
+        {
 
 			srfTriangles_t *surf = (srfTriangles_t *) surfaces[i];
 
@@ -445,10 +453,8 @@ int R_MarkFragments( int numPoints, const vec3_t *points, const vec3_t projectio
 				}
 
 				// add the fragments of this face
-				R_AddMarkFragments(3, clipPoints,
-								   numPlanes, normals, dists,
-								   maxPoints, pointBuffer,
-								   maxFragments, fragmentBuffer, &returnedPoints, &returnedFragments, mins, maxs);
+				R_AddMarkFragments(3, clipPoints, numPlanes, normals, dists,
+								   maxPoints, pointBuffer, maxFragments, fragmentBuffer, &returnedPoints, &returnedFragments, mins, maxs);
 				if(returnedFragments == maxFragments)
 				{
 					return returnedFragments;	// not enough space for more fragments
@@ -459,3 +465,8 @@ int R_MarkFragments( int numPoints, const vec3_t *points, const vec3_t projectio
 	return returnedFragments;
 }
 
+
+void R_InitMarks(void)
+{
+	r_marksOnTriangleMeshes = ri.Cvar_Get("r_marksOnTriangleMeshes", "0", CVAR_ARCHIVE);
+}

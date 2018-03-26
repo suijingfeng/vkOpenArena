@@ -23,7 +23,12 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #include "tr_local.h"
 
 extern shaderCommands_t tess;
+extern cvar_t* r_nocull;
+
+extern trGlobals_t	tr;
+
 static cvar_t* r_lodscale;
+static cvar_t* r_lodbias;// push/pull LOD transitions
 /*
 
 All bones should be an identity orientation to display the mesh exactly as it is specified.
@@ -50,6 +55,7 @@ static float ProjectRadius( float r, vec3_t location )
 	p[0] = 0;
 	p[1] = fabs( r );
 	p[2] = -dist;
+
 	float	projected[4];
 	projected[0] = p[0] * tr.viewParms.projectionMatrix[0] + 
 		           p[1] * tr.viewParms.projectionMatrix[4] +
@@ -87,7 +93,7 @@ static float ProjectRadius( float r, vec3_t location )
 static int R_CullModel( md3Header_t *header, trRefEntity_t *ent )
 {
 	vec3_t bounds[2];
-	int	i;
+
 
 	// compute frame pointers
 	md3Frame_t* newFrame = ( md3Frame_t * ) ( (unsigned char*) header + header->ofsFrames ) + ent->e.frame;
@@ -145,6 +151,7 @@ static int R_CullModel( md3Header_t *header, trRefEntity_t *ent )
 	}
 	
 	// calculate a bounding box in the current coordinate system
+    int	i;
 	for (i = 0 ; i < 3 ; i++)
     {
 		bounds[0][i] = oldFrame->bounds[0][i] < newFrame->bounds[0][i] ? oldFrame->bounds[0][i] : newFrame->bounds[0][i];
@@ -324,44 +331,6 @@ static int R_ComputeFogNum( md3Header_t *header, trRefEntity_t *ent )
 //////////////////////////////////////////////////////////////////////////
 
 
-int R_CullLocalPointAndRadius( vec3_t pt, float radius )
-{
-	vec3_t transformed;
-
-	R_LocalPointToWorld( pt, transformed );
-
-	return R_CullPointAndRadius( transformed, radius );
-}
-
-
-int R_CullPointAndRadius( vec3_t pt, float radius )
-{
-	int		i;
-	float	dist;
-	cplane_t	*frust;
-	qboolean mightBeClipped = qfalse;
-
-	if ( r_nocull->integer )
-		return CULL_CLIP;
-
-	// check against frustum planes
-	for (i = 0 ; i < 4 ; i++) 
-	{
-		frust = &tr.viewParms.frustum[i];
-
-		dist = DotProduct( pt, frust->normal) - frust->dist;
-		if ( dist < -radius )
-			return CULL_OUT;
-		else if ( dist <= radius ) 
-			mightBeClipped = qtrue;
-	}
-
-	if ( mightBeClipped )
-		return CULL_CLIP;
-
-	return CULL_IN;		// completely inside frustum
-}
-
 /*
 =================
 R_CullLocalBox
@@ -467,7 +436,8 @@ void R_MDRAddAnimSurfaces( trRefEntity_t *ent )
 	// is outside the view frustum.
 	//
 	int cull = R_MDRCullModel(header, ent);
-	if ( cull == CULL_OUT ) {
+	if ( cull == CULL_OUT )
+    {
 		return;
 	}	
 
@@ -486,7 +456,7 @@ void R_MDRAddAnimSurfaces( trRefEntity_t *ent )
 	}
 	
 	// set up lighting
-	if ( !personalModel || r_shadows->integer > 1 )
+	if ( !personalModel )
 	{
 		R_SetupEntityLighting( &tr.refdef, ent );
 	}
@@ -502,7 +472,7 @@ void R_MDRAddAnimSurfaces( trRefEntity_t *ent )
 			shader = R_GetShaderByHandle(ent->e.customShader);
 		else if(ent->e.customSkin > 0 && ent->e.customSkin < tr.numSkins)
 		{
-			skin_t * skin = tr.skins[ent->e.customSkin];
+			skin_t* skin = tr.skins[ent->e.customSkin];
 			shader = tr.defaultShader;
 			
 			for(j = 0; j < skin->numSurfaces; j++)
@@ -520,22 +490,6 @@ void R_MDRAddAnimSurfaces( trRefEntity_t *ent )
 			shader = tr.defaultShader;
 
 		// we will add shadows even if the main object isn't visible in the view
-
-		// stencil shadows can't do personal models unless I polyhedron clip
-		if ( !personalModel && (r_shadows->integer == 2) && (fogNum == 0)
-			&& !(ent->e.renderfx & ( RF_NOSHADOW | RF_DEPTHHACK ) ) && (shader->sort == SS_OPAQUE) )
-		{
-			R_AddDrawSurf( (void *)surface, tr.shadowShader, 0, qfalse );
-		}
-
-		// projection shadows work fine with personal models
-		if ( r_shadows->integer == 3
-			&& fogNum == 0
-			&& (ent->e.renderfx & RF_SHADOW_PLANE )
-			&& shader->sort == SS_OPAQUE )
-		{
-			R_AddDrawSurf( (void *)surface, tr.projectionShadowShader, 0, qfalse );
-		}
 
 		if (!personalModel)
 			R_AddDrawSurf( (void *)surface, shader, fogNum, qfalse );
@@ -592,7 +546,7 @@ void R_AddMD3Surfaces( trRefEntity_t *ent )
 	}
 
 	// set up lighting now that we know we aren't culled
-	if ( !personalModel || r_shadows->integer > 1 )
+	if ( !personalModel )
     {
 		R_SetupEntityLighting( &tr.refdef, ent );
 	}
@@ -652,20 +606,6 @@ void R_AddMD3Surfaces( trRefEntity_t *ent )
 		}
 
 
-		// we will add shadows even if the main object isn't visible in the view
-		// stencil shadows can't do personal models unless I polyhedron clip
-		if ( (!personalModel) && (r_shadows->integer == 2) && (fogNum == 0)
-			&& !(ent->e.renderfx & ( RF_NOSHADOW | RF_DEPTHHACK ) ) && (shader->sort == SS_OPAQUE) )
-        {
-			R_AddDrawSurf( (void *)surface, tr.shadowShader, 0, qfalse );
-		}
-
-		// projection shadows work fine with personal models
-		if ( (r_shadows->integer == 3) && (fogNum == 0) && (ent->e.renderfx & RF_SHADOW_PLANE ) && (shader->sort == SS_OPAQUE) )
-        {
-			R_AddDrawSurf( (void *)surface, tr.projectionShadowShader, 0, qfalse );
-		}
-
 		// don't add third_person objects if not viewing through a portal
 		if ( !personalModel )
         {
@@ -677,7 +617,8 @@ void R_AddMD3Surfaces( trRefEntity_t *ent )
 }
 
 
-int R_ComputeLOD( trRefEntity_t *ent ) {
+int R_ComputeLOD( trRefEntity_t *ent )
+{
 	float radius;
 	float flod, lodscale;
 	float projectedRadius;
@@ -825,6 +766,8 @@ int R_ComputeLOD2( trRefEntity_t *ent )
 
 void R_InitAnimation(void)
 {
-    r_lodscale = ri.Cvar_Get( "r_lodscale", "5", CVAR_CHEAT );;
+    r_lodscale = ri.Cvar_Get( "r_lodscale", "5", CVAR_CHEAT );
+    r_lodbias = ri.Cvar_Get( "r_lodbias", "0", CVAR_ARCHIVE );
+
 }
 

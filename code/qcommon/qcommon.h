@@ -860,7 +860,6 @@ extern	cvar_t	*com_unfocused;
 extern	cvar_t	*com_maxfpsUnfocused;
 extern	cvar_t	*com_minimized;
 extern	cvar_t	*com_maxfpsMinimized;
-extern	cvar_t	*com_altivec;
 extern	cvar_t	*com_standalone;
 extern	cvar_t	*com_basegame;
 extern	cvar_t	*com_homepath;
@@ -995,7 +994,7 @@ void CL_MapLoading( void );
 // will be cleared, so the client must shutdown cgame, ui, and
 // the renderer
 
-void	CL_ForwardCommandToServer( const char *string );
+void CL_ForwardCommandToServer( const char *string );
 // adds the current command line as a clc_clientCommand to the client message.
 // things like godmode, noclip, etc, are commands directed to the server,
 // so when they are typed in at the console, they will need to be forwarded.
@@ -1063,8 +1062,8 @@ NON-PORTABLE SYSTEM SERVICES
 void	Sys_Init (void);
 
 // general development dll loading for virtual machine testing
-void	* QDECL Sys_LoadGameDll( const char *name, intptr_t (QDECL **entryPoint)(int, ...),
-				  intptr_t (QDECL *systemcalls)(intptr_t, ...) );
+void*   QDECL Sys_LoadGameDll( const char *name, intptr_t (QDECL **entryPoint)(int, ...),
+intptr_t (QDECL *systemcalls)(intptr_t, ...) );
 void	Sys_UnloadDll( void *dllHandle );
 
 char	*Sys_GetCurrentUser( void );

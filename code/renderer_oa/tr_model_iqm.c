@@ -23,7 +23,9 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
 #include "tr_local.h"
 
-extern	shaderCommands_t	tess;
+extern shaderCommands_t	tess;
+extern trGlobals_t	tr;
+extern backEndState_t backEnd;
 
 
 #define	LL(x) x=LittleLong(x)
@@ -836,21 +838,19 @@ R_AddIQMSurfaces
 Add all surfaces of this model
 =================
 */
-void R_AddIQMSurfaces( trRefEntity_t *ent ) {
-	iqmData_t		*data;
-	srfIQModel_t		*surface;
+void R_AddIQMSurfaces( trRefEntity_t *ent )
+{
 	int			i, j;
-	qboolean		personalModel;
 	int			cull;
 	int			fogNum;
 	shader_t		*shader;
 	skin_t			*skin;
 
-	data = tr.currentModel->modelData;
-	surface = data->surfaces;
+	iqmData_t* data = tr.currentModel->modelData;
+	srfIQModel_t* surface = data->surfaces;
 
 	// don't add third_person objects if not in a portal
-	personalModel = (ent->e.renderfx & RF_THIRD_PERSON) && !tr.viewParms.isPortal;
+	qboolean personalModel = (ent->e.renderfx & RF_THIRD_PERSON) && !tr.viewParms.isPortal;
 
 	if ( ent->e.renderfx & RF_WRAP_FRAMES ) {
 		ent->e.frame %= data->num_frames;
@@ -886,7 +886,7 @@ void R_AddIQMSurfaces( trRefEntity_t *ent ) {
 	//
 	// set up lighting now that we know we aren't culled
 	//
-	if ( !personalModel || r_shadows->integer > 1 ) {
+	if ( !personalModel ) {
 		R_SetupEntityLighting( &tr.refdef, ent );
 	}
 
@@ -917,24 +917,6 @@ void R_AddIQMSurfaces( trRefEntity_t *ent ) {
 			shader = surface->shader;
 		}
 
-		// we will add shadows even if the main object isn't visible in the view
-
-		// stencil shadows can't do personal models unless I polyhedron clip
-		if ( !personalModel
-			&& r_shadows->integer == 2 
-			&& fogNum == 0
-			&& !(ent->e.renderfx & ( RF_NOSHADOW | RF_DEPTHHACK ) ) 
-			&& shader->sort == SS_OPAQUE ) {
-			R_AddDrawSurf( (void *)surface, tr.shadowShader, 0, 0 );
-		}
-
-		// projection shadows work fine with personal models
-		if ( r_shadows->integer == 3
-			&& fogNum == 0
-			&& (ent->e.renderfx & RF_SHADOW_PLANE )
-			&& shader->sort == SS_OPAQUE ) {
-			R_AddDrawSurf( (void *)surface, tr.projectionShadowShader, 0, 0 );
-		}
 
 		if( !personalModel ) {
 			R_AddDrawSurf( (void *)surface, shader, fogNum, 0 );
@@ -1159,6 +1141,7 @@ void RB_IQMSurfaceAnim( surfaceType_t *surface )
 	tess.numIndexes += 3 * surf->num_triangles;
 	tess.numVertexes += surf->num_vertexes;
 }
+
 
 int R_IQMLerpTag( orientation_t *tag, iqmData_t *data,
 		  int startFrame, int endFrame, 

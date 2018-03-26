@@ -93,6 +93,8 @@ void GL_SelectTexture( int unit )
 /*
 ** GL_BindMultitexture
 */
+
+/*
 void GL_BindMultitexture( image_t *image0, GLuint env0, image_t *image1, GLuint env1 ) {
 	int		texnum0, texnum1;
 
@@ -116,7 +118,7 @@ void GL_BindMultitexture( image_t *image0, GLuint env0, image_t *image1, GLuint 
 		qglBindTexture( GL_TEXTURE_2D, texnum0 );
 	}
 }
-
+*/
 
 /*
 ** GL_Cull

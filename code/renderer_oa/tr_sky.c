@@ -25,10 +25,14 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #define SKY_SUBDIVISIONS		8
 #define HALF_SKY_SUBDIVISIONS	(SKY_SUBDIVISIONS/2)
 
-
-extern	shaderCommands_t	tess;
+extern trGlobals_t	tr;
+extern shaderCommands_t	tess;
+extern backEndState_t backEnd;
 
 cvar_t* r_fastsky;
+
+// forces sky in front of all surfaces
+static cvar_t* r_showsky;
 
 // controls drawing of sun quad
 static cvar_t* r_drawSun;
@@ -855,5 +859,7 @@ void R_InitCloudAndSky(void)
     // controls whether sky should be cleared or drawn
     r_fastsky = ri.Cvar_Get( "r_fastsky", "0", CVAR_ARCHIVE );
     r_drawSun = ri.Cvar_Get( "r_drawSun", "0", CVAR_ARCHIVE );
+
+    r_showsky = ri.Cvar_Get ("r_showsky", "0", CVAR_CHEAT);
 }
 

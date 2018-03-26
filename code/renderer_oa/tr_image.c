@@ -23,6 +23,12 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #include "tr_local.h"
 #include "../sdl/sdl_glimp.h"
 
+extern trGlobals_t	tr;
+extern backEndState_t backEnd;
+
+cvar_t* r_ignoreGLErrors;
+cvar_t* r_gamma;
+
 static unsigned char s_gammatable[256];
 
 static int gl_filter_min = GL_LINEAR_MIPMAP_NEAREST;
@@ -33,6 +39,10 @@ static int force32upload;		// leilei - hack to get bloom/post to always do 32bit
 static cvar_t* r_texturebits;
 static cvar_t* r_greyscale;
 static cvar_t* r_overBrightBits;
+static cvar_t* r_simpleMipMaps;
+static cvar_t* r_picmip;						// controls picmip values
+static cvar_t* r_colorMipLevels;				// development aid to see texture mip usage
+static cvar_t* r_roundImagesDown;
 
 
 #define FILE_HASH_SIZE		1024
@@ -128,11 +138,9 @@ static void ResampleTexture( unsigned *in, int inwidth, int inheight, unsigned *
 }
 
 
-
-//
+/*
 // Darkplaces texture resampling with lerping
 // from Twilight/Darkplaces, code by LordHavoc (I AM ASSUMING)
-//
 
 static void Image_Resample32LerpLine (const unsigned char *in, unsigned char *out, int inwidth, int outwidth)
 {
@@ -273,7 +281,7 @@ static void Image_Resample32Lerp(const void *indata, int inwidth, int inheight, 
 	resamplerow1 = NULL;
 	resamplerow2 = NULL;
 }
-
+*/
 
 
 /*
@@ -342,10 +350,9 @@ R_MipMap: Operates in place, quartering the size of the texture
 static void R_MipMap(unsigned char *in, int width, int height)
 {
 	int	i, j;
-	unsigned char *out;
-	int	row;
 
-	if ( !r_simpleMipMaps->integer ) {
+	if ( !r_simpleMipMaps->integer )
+    {
 		R_MipMap2( (unsigned *)in, width, height );
 		return;
 	}
@@ -353,8 +360,8 @@ static void R_MipMap(unsigned char *in, int width, int height)
 	if ( width == 1 && height == 1 )
 		return;
 
-	row = width * 4;
-	out = in;
+	int row = width * 4;
+	unsigned char *out = in;
 	width >>= 1;
 	height >>= 1;
 
@@ -413,9 +420,6 @@ static void GL_CheckErrors( void )
 	if ( err == GL_NO_ERROR )
 		return;
 
-	if ( r_ignoreGLErrors->integer ) {
-		return;
-	}
 	switch( err )
     {
         case GL_INVALID_ENUM:
@@ -485,11 +489,7 @@ static void Upload32( unsigned *data, int width, int height, qboolean mipmap, qb
         {
 			resampledBuffer = ri.Hunk_AllocateTempMemory( scaled_width * scaled_height * 4 );
 		    
-            //leilei - high quality texture resampling, Currently 0 as there is an alignment issue I haven't fixed.
-            if ( 0 )
-			    Image_Resample32Lerp(data, width, height, resampledBuffer, scaled_width, scaled_height - 1);
-			else
-			    ResampleTexture (data, width, height, resampledBuffer, scaled_width, scaled_height);
+			ResampleTexture (data, width, height, resampledBuffer, scaled_width, scaled_height);
 			
             data = resampledBuffer;
 			width = scaled_width;
@@ -753,7 +753,11 @@ done:
 		qglTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR );
 	}
 
-	GL_CheckErrors();
+    if ( !r_ignoreGLErrors->integer )
+    {
+		GL_CheckErrors();
+	}
+
 
 	if ( scaledBuffer != 0 )
 		ri.Hunk_FreeTempMemory( scaledBuffer );
@@ -1433,26 +1437,6 @@ void R_InitSkins( void )
 }
 
 
-void R_InitImages(void)
-{
-	memset(hashTable, 0, sizeof(hashTable));
-	// build brightness translation tables
-	
-    r_texturebits = ri.Cvar_Get( "r_texturebits", "0", CVAR_ARCHIVE | CVAR_LATCH );
-    ri.Printf( PRINT_ALL, "texture bits: %d\n", r_texturebits->integer );
-
-    r_overBrightBits = ri.Cvar_Get ("r_overBrightBits", "1", CVAR_ARCHIVE | CVAR_LATCH );
-    
-    r_greyscale = ri.Cvar_Get("r_greyscale", "0", CVAR_ARCHIVE | CVAR_LATCH);
-	ri.Cvar_CheckRange(r_greyscale, 0, 1, qfalse);
-  
-    R_SetColorMappings();
-
-	// create default texture and white texture
-	R_CreateBuiltinImages();
-}
-
-
 void R_SetColorMappings(void)
 {
 	int	i, inf,	shift;
@@ -1476,9 +1460,7 @@ void R_SetColorMappings(void)
 	if( glConfig.colorBits > 16 )
     {
 		if( tr.overbrightBits > 2 )
-        {
 			tr.overbrightBits = 2;
-		}
 	}
     else
     {
@@ -1494,7 +1476,6 @@ void R_SetColorMappings(void)
 
 	tr.identityLight = 1.0f / ( 1 << tr.overbrightBits );
 	tr.identityLightByte = 255 * tr.identityLight;
-
 
 	if( r_gamma->value < 0.4f )
     {
@@ -1595,3 +1576,35 @@ float R_FogFactor( float s, float t )
 	return d;
 }
 
+
+void R_InitImages(void)
+{
+	memset(hashTable, 0, sizeof(hashTable));
+	// build brightness translation tables
+	
+    r_texturebits = ri.Cvar_Get( "r_texturebits", "0", CVAR_ARCHIVE | CVAR_LATCH );
+    ri.Printf( PRINT_ALL, "texture bits: %d\n", r_texturebits->integer );
+
+    r_overBrightBits = ri.Cvar_Get ("r_overBrightBits", "1", CVAR_ARCHIVE | CVAR_LATCH );
+    
+	r_simpleMipMaps = ri.Cvar_Get( "r_simpleMipMaps", "1", CVAR_ARCHIVE | CVAR_LATCH );
+
+	r_ignoreGLErrors = ri.Cvar_Get( "r_ignoreGLErrors", "1", CVAR_ARCHIVE );
+
+    r_picmip = ri.Cvar_Get("r_picmip", "1", CVAR_ARCHIVE | CVAR_LATCH );
+	ri.Cvar_CheckRange(r_picmip, 0, 16, qtrue );
+	ri.Printf( PRINT_ALL, "picmip: %d\n", r_picmip->integer );
+
+    r_greyscale = ri.Cvar_Get("r_greyscale", "0", CVAR_ARCHIVE | CVAR_LATCH);
+	ri.Cvar_CheckRange(r_greyscale, 0, 1, qfalse);
+
+	r_roundImagesDown = ri.Cvar_Get ("r_roundImagesDown", "1", CVAR_ARCHIVE | CVAR_LATCH ); 
+	r_gamma = ri.Cvar_Get( "r_gamma", "1", CVAR_ARCHIVE );
+    
+    r_colorMipLevels = ri.Cvar_Get ("r_colorMipLevels", "0", CVAR_LATCH );
+
+    R_SetColorMappings();
+
+	// create default texture and white texture
+	R_CreateBuiltinImages();
+}

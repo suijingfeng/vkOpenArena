@@ -22,16 +22,27 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #include "tr_local.h"
 #include "../sdl/sdl_glimp.h"
 
+
+
 extern shaderCommands_t tess;
 extern cvar_t* r_fastsky;
 extern cvar_t* r_debugSurface; //tr_init
-extern cvar_t* r_speeds; // various levels of information display
+
+extern trGlobals_t	tr;
 
 
-static cvar_t* r_showImages;
-
-
+cvar_t	*r_measureOverdraw;		// enables stencil buffer overdraw measurement
+cvar_t* r_speeds; // various levels of information display
 backEndState_t	backEnd;
+
+
+static cvar_t* r_clear;	// force screen clear every frame
+static cvar_t* r_showImages;
+static cvar_t* r_finish;
+
+
+
+
 
 const static float s_flipMatrix[16] =
 {
@@ -80,13 +91,12 @@ A player has predicted a teleport, but hasn't arrived yet
 */
 static void RB_Hyperspace( void )
 {
-	float c;
 
 	if ( !backEnd.isHyperspace ) {
 		// do initialization shit
 	}
 
-	c = ( backEnd.refdef.time & 255 ) / 255.0f;
+	float c = ( backEnd.refdef.time & 255 ) / 255.0f;
 	qglClearColor( c, c, c, 1 );
 	qglClear( GL_COLOR_BUFFER_BIT );
 
@@ -116,16 +126,18 @@ static void SetViewportAndScissor( void )
  */
 static void RB_BeginDrawingView(void)
 {
-	int clearBits = 0;
+	//int clearBits = 0;
 
 	// sync with gl if needed
-	if ( r_finish->integer == 1 && !glState.finishCalled ) {
-		qglFinish();
+	if ( r_finish->integer == 0 )
+    {
 		glState.finishCalled = qtrue;
 	}
-	if ( r_finish->integer == 0 ) {
+    else if( !glState.finishCalled )
+    {
+        qglFinish();
 		glState.finishCalled = qtrue;
-	}
+    }
 
 	// we will need to change the projection matrix before drawing 2D images again
 	backEnd.projection2D = qfalse;
@@ -138,9 +150,9 @@ static void RB_BeginDrawingView(void)
 	// ensures that depth writes are enabled for the depth clear
 	GL_State( GLS_DEFAULT );
 	// clear relevant buffers
-	clearBits = GL_DEPTH_BUFFER_BIT;
+	int clearBits = GL_DEPTH_BUFFER_BIT;
 
-	if ( r_measureOverdraw->integer || r_shadows->integer == 2 )
+	if ( r_measureOverdraw->integer )
 	{
 		clearBits |= GL_STENCIL_BUFFER_BIT;
 	}
@@ -209,13 +221,12 @@ static void RB_RenderDrawSurfList( drawSurf_t *drawSurfs, int numDrawSurfs )
 	qboolean		isCrosshair;
 	int				i;
 	drawSurf_t		*drawSurf;
-	float			originalTime;
 
 	// save original time for entity shader offsets
-	originalTime = backEnd.refdef.floatTime;
+	float originalTime = backEnd.refdef.floatTime;
 
 	// clear the z buffer, set the modelview, etc
-	RB_BeginDrawingView ();
+	RB_BeginDrawingView();
 
 	// draw everything
 	int oldEntityNum = -1;
@@ -228,14 +239,13 @@ static void RB_RenderDrawSurfList( drawSurf_t *drawSurfs, int numDrawSurfs )
 	qboolean wasCrosshair = qfalse;
 	qboolean oldDlighted = qfalse;
 
-
 	backEnd.currentEntity = &tr.worldEntity;
 		
     qboolean depthRange = qfalse;
 
 	backEnd.pc.c_surfaces += numDrawSurfs;
 
-	for (i = 0, drawSurf = drawSurfs; i < numDrawSurfs ; i++, drawSurf++)
+	for (i = 0, drawSurf = drawSurfs; i < numDrawSurfs; i++, drawSurf++)
     {
 		if ( drawSurf->sort == oldSort )
         {
@@ -253,9 +263,9 @@ static void RB_RenderDrawSurfList( drawSurf_t *drawSurfs, int numDrawSurfs )
 		if ( shader != NULL && ( shader != oldShader || fogNum != oldFogNum || dlighted != oldDlighted 
 			|| ( entityNum != oldEntityNum && !shader->entityMergable ) ) )
         {
-			if (oldShader != NULL) {
+			if (oldShader != NULL) 
 				RB_EndSurface();
-			}
+			
 			RB_BeginSurface( shader, fogNum );
 			oldShader = shader;
 			oldFogNum = fogNum;
@@ -353,10 +363,6 @@ static void RB_RenderDrawSurfList( drawSurf_t *drawSurfs, int numDrawSurfs )
     {
 		qglDepthRange (0, 1);
 	}
-
-
-	// darken down any stencil shadows
-	RB_ShadowFinish();		
 
 	// add light flares on lights that aren't obscured
 	RB_RenderFlares();
@@ -500,7 +506,8 @@ static const void *RB_StretchPic( const void *data )
 static const void *RB_DrawSurfs(const void *data)
 {
 	// finish any 2D drawing if needed
-	if ( tess.numIndexes ) {
+	if ( tess.numIndexes )
+    {
 		RB_EndSurface();
 	}
 
@@ -649,11 +656,6 @@ void GL_Bind(image_t *image)
     else
     {
 		texnum = image->texnum;
-	}
-
-	if ( r_nobind->integer && tr.dlightImage )
-    {		// performance evaluation option
-		texnum = tr.dlightImage->texnum;
 	}
 
 	if ( glState.currenttextures[glState.currenttmu] != texnum )
@@ -1003,7 +1005,7 @@ Used for cinematics.
 void RE_StretchRaw (int x, int y, int w, int h, int cols, int rows, const unsigned char *data, int client, qboolean dirty)
 {
 	int	i, j;
-	int	start, end;
+	int	start = 0, end;
 
 	if ( !tr.registered ) {
 		return;
@@ -1017,8 +1019,8 @@ void RE_StretchRaw (int x, int y, int w, int h, int cols, int rows, const unsign
 	// we definately want to sync every frame for the cinematics
 	qglFinish();
 
-	start = 0;
-	if ( r_speeds->integer ) {
+	if( r_speeds->integer )
+    {
 		start = ri.Milliseconds();
 	}
 
@@ -1044,7 +1046,9 @@ void RE_StretchRaw (int x, int y, int w, int h, int cols, int rows, const unsign
 
 		qglTexParameterf( GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE );
 		qglTexParameterf( GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE );	
-	} else {
+	}
+    else
+    {
 		if (dirty) {
 			// otherwise, just subimage upload it so that drivers can tell we are going to be changing
 			// it and don't try and do a texture compression
@@ -1089,7 +1093,9 @@ void RE_UploadCinematic (int w, int h, int cols, int rows, const byte *data, int
 
 		qglTexParameterf( GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE );
 		qglTexParameterf( GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE );	
-	} else {
+	}
+    else
+    {
 		if (dirty) {
 			// otherwise, just subimage upload it so that drivers can tell we are going to be changing
 			// it and don't try and do a texture compression
@@ -1112,10 +1118,6 @@ Also called by RE_EndRegistration
 */
 void RB_ShowImages( void )
 {
-	int		i;
-	image_t	*image;
-	float	x, y, w, h;
-
     if ( !backEnd.projection2D )
     {
 		RB_SetGL2D();
@@ -1126,15 +1128,16 @@ void RB_ShowImages( void )
 	qglFinish();
 
 	int start = ri.Milliseconds();
-
+    
+    int i;
 	for( i=0 ; i<tr.numImages ; i++ )
     {
-		image = tr.images[i];
+		image_t* image = tr.images[i];
 
-		w = glConfig.vidWidth / 20;
-		h = glConfig.vidHeight / 15;
-		x = i % 20 * w;
-		y = i / 20 * h;
+		float w = glConfig.vidWidth / 20;
+		float h = glConfig.vidHeight / 15;
+		float x = i % 20 * w;
+		float y = i / 20 * h;
 
 		// show in proportional size in mode 2
 		if ( r_showImages->integer == 2 ) {
@@ -1214,4 +1217,17 @@ void RB_ExecuteRenderCommands(const void *data)
 void R_InitBackend(void)
 {
    	r_showImages = ri.Cvar_Get( "r_showImages", "0", CVAR_TEMP ); 
+
+    r_clear = ri.Cvar_Get ("r_clear", "0", CVAR_CHEAT); 
+
+    r_finish = ri.Cvar_Get ("r_finish", "0", CVAR_ARCHIVE);
+
+	r_measureOverdraw = ri.Cvar_Get( "r_measureOverdraw", "0", CVAR_CHEAT );
+
+	r_speeds = ri.Cvar_Get ("r_speeds", "0", CVAR_CHEAT);
+
+    if ( r_finish->integer )
+    {
+		ri.Printf( PRINT_ALL, "Forcing glFinish\n" );
+	}
 }

@@ -21,7 +21,9 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 */
 #include "tr_local.h"
 
-extern	shaderCommands_t tess;
+extern shaderCommands_t tess;
+extern backEndState_t backEnd;
+extern trGlobals_t	tr;
 
 /*
 
@@ -222,11 +224,11 @@ RB_ShadowFinish
 
 Darken everything that is is a shadow volume.
 We have to delay this until everything has been shadowed,
-because otherwise shadows from different body parts would
-overlap and double darken.
+because otherwise shadows from different body parts would overlap and double darken.
 =================
 */
 
+/*
 void RB_ShadowFinish( void )
 {
 	if ( r_shadows->integer != 2 ) {
@@ -262,7 +264,7 @@ void RB_ShadowFinish( void )
 	qglColor4f(1,1,1,1);
 	qglDisable( GL_STENCIL_TEST );
 }
-
+*/
 
 
 void RB_ProjectionShadowDeform( void )
@@ -284,7 +286,7 @@ void RB_ProjectionShadowDeform( void )
 		d = DotProduct( lightDir, ground );
 	}
 	d = 1.0 / d;
-	vec3_t	light;
+	vec3_t light;
 	light[0] = lightDir[0] * d;
 	light[1] = lightDir[1] * d;
 	light[2] = lightDir[2] * d;

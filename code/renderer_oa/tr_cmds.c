@@ -21,11 +21,16 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 */
 #include "tr_local.h"
 
-extern	cvar_t	*r_skipBackEnd;
-extern	cvar_t	*r_speeds;				// various levels of information display
+extern trGlobals_t	tr;
+extern cvar_t* r_speeds;				// various levels of information display
+extern cvar_t* r_ignoreGLErrors;
+extern cvar_t* r_gamma;
+extern cvar_t* r_measureOverdraw;
+
+extern backEndState_t backEnd;
+
+
 backEndData_t *backEndData;
-
-
 
 
 static void R_PerformanceCounters(void)
@@ -94,20 +99,15 @@ static void R_IssueRenderCommands(qboolean runPerformanceCounters)
 
 
 	// actually start the commands going
-	if ( !r_skipBackEnd->integer )
-    {
-		// let it start on the new batch
-		RB_ExecuteRenderCommands( cmdList->cmds );
-	}
+    // let it start on the new batch
+    RB_ExecuteRenderCommands( cmdList->cmds );
 }
 
 
 //////////////////////////////////////////////////////////////////////////
 
 /*
-====================
-R_IssuePendingRenderCommands: Issue any pending commands and wait for them to complete.
-====================
+ Issue any pending commands and wait for them to complete.
 */
 void R_IssuePendingRenderCommands( void )
 {
@@ -123,17 +123,12 @@ void R_IssuePendingRenderCommands( void )
 	cmdList->used = 0;
 
 	// actually start the commands going
-	if ( !r_skipBackEnd->integer )
-    {
-		// let it start on the new batch
-		RB_ExecuteRenderCommands( cmdList->cmds );
-	}
+	// let it start on the new batch
+	RB_ExecuteRenderCommands( cmdList->cmds );
 }
 
 /*
-============
-R_GetCommandBuffer: make sure there is enough command space
-============
+ make sure there is enough command space
 */
 void *R_GetCommandBuffer(int bytes)
 {
@@ -251,12 +246,6 @@ void RE_BeginFrame(void)
 			ri.Cvar_Set( "r_measureOverdraw", "0" );
 			r_measureOverdraw->modified = qfalse;
 		}
-		else if ( r_shadows->integer == 2 )
-		{
-			ri.Printf( PRINT_ALL, "Warning: stencil shadows and overdraw measurement are mutually exclusive\n" );
-			ri.Cvar_Set( "r_measureOverdraw", "0" );
-			r_measureOverdraw->modified = qfalse;
-		}
 		else
 		{
 			R_IssuePendingRenderCommands();
@@ -296,6 +285,7 @@ void RE_BeginFrame(void)
 		int	err;
 
 		R_IssuePendingRenderCommands();
+
 		if ((err = qglGetError()) != GL_NO_ERROR)
 			ri.Error(ERR_FATAL, "RE_BeginFrame() - glGetError() failed (0x%x)!", err);
 	}

@@ -95,7 +95,9 @@ typedef struct flare_s {
 #define		MAX_FLARES		256 // was 128
 #define     FLARE_STDCOEFF "150"
 
-extern	shaderCommands_t	tess;
+extern shaderCommands_t	tess;
+extern backEndState_t backEnd;
+extern trGlobals_t	tr;
 
 
 static flare_t		r_flareStructs[MAX_FLARES];
@@ -107,7 +109,7 @@ static flare_t*     r_inactiveFlares;
 
 static cvar_t* r_flares;
 static cvar_t* r_flareMethod;	// method of flare intensity
-static cvar_t* r_flareCoeff;
+static cvar_t* r_flareCoeff;    // coefficient for the flare intensity falloff function.
 static cvar_t* r_flareQuality;	// testing quality of the flares.
 static cvar_t* r_flareSize;
 static cvar_t* r_flareFade;

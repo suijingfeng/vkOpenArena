@@ -928,6 +928,7 @@ typedef struct {
 	unsigned long	glStateBits;
 } glstate_t;
 
+
 typedef struct {
 	int		c_surfaces, c_shaders, c_vertexes, c_indexes, c_totalIndexes;
 	float	c_overDraw;
@@ -942,8 +943,8 @@ typedef struct {
 	int		msec;			// total msec for backend run
 } backEndCounters_t;
 
-// all state modified by the back end is seperated
-// from the front end state
+
+// all state modified by the back end is seperated from the front end state
 typedef struct {
 	trRefdef_t	refdef;
 	viewParms_t	viewParms;
@@ -1080,84 +1081,6 @@ typedef struct {
 
 } trGlobals_t;
 
-extern backEndState_t	backEnd;
-extern trGlobals_t	tr;
-
-//
-// cvars
-//
-
-// coefficient for the flare intensity falloff function.
-
-
-extern cvar_t	*r_ignore;				// used for debugging anything
-extern cvar_t	*r_verbose;				// used for verbose debug spew
-extern cvar_t	*r_ignoreFastPath;		// allows us to ignore our Tess fast paths
-
-extern cvar_t	*r_znear;				// near Z clip plane
-extern cvar_t	*r_zproj;				// z distance of projection plane
-extern cvar_t	*r_stereoSeparation;			// separation of cameras for stereo rendering
-
-extern cvar_t	*r_measureOverdraw;		// enables stencil buffer overdraw measurement
-
-extern cvar_t	*r_lodbias;				// push/pull LOD transitions
-
-
-extern cvar_t	*r_inGameVideo;				// controls whether in game video should be draw
-//extern cvar_t	*r_dlightBacks;			// dlight non-facing surfaces for continuity
-
-extern	cvar_t	*r_norefresh;			// bypasses the ref rendering
-extern	cvar_t	*r_drawentities;		// disable/enable entity rendering
-extern	cvar_t	*r_drawworld;			// disable/enable world rendering
-
-extern	cvar_t	*r_novis;				// disable/enable usage of PVS
-extern	cvar_t	*r_nocull;
-extern	cvar_t	*r_facePlaneCull;		// enables culling of planar surfaces with back side test
-extern	cvar_t	*r_nocurves;
-extern	cvar_t	*r_showcluster;
-
-extern cvar_t	*r_gamma;
-
-extern	cvar_t	*r_nobind;						// turns off binding to appropriate textures
-extern	cvar_t	*r_roundImagesDown;
-extern	cvar_t	*r_colorMipLevels;				// development aid to see texture mip usage
-extern	cvar_t	*r_picmip;						// controls picmip values
-extern	cvar_t	*r_finish;
-
-extern	cvar_t	*r_vertexLight;					// vertex lighting mode for better performance
-
-
-extern	cvar_t	*r_logFile;						// number of frames to emit GL logs
-
-extern	cvar_t	*r_showsky;						// forces sky in front of all surfaces
-
-extern	cvar_t	*r_clear;						// force screen clear every frame
-
-extern	cvar_t	*r_shadows;						// controls shadows: 0 = none, 1 = blur, 2 = stencil, 3 = black planar projection
-
-extern	cvar_t	*r_lockpvs;
-extern	cvar_t	*r_noportals;
-extern	cvar_t	*r_portalOnly;
-
-extern	cvar_t	*r_subdivisions;
-
-
-
-extern	cvar_t	*r_ignoreGLErrors;
-
-
-
-extern	cvar_t	*r_simpleMipMaps;
-
-extern cvar_t	*r_marksOnTriangleMeshes;
-
-
-	
-
-extern cvar_t	*r_modelshader;	// Leilei - new model shading
-
-extern	cvar_t	*r_iconmip;	// leilei - icon mip - picmip for 2d icons
-extern	cvar_t	*r_iconBits;	// leilei - icon color depth for 2d icons
 
 
 
@@ -1193,7 +1116,7 @@ typedef struct shaderCommands_s
 
 	color4ub_t	constantColor255[SHADER_MAX_VERTEXES] QALIGN(16);
 
-	shader_t	*shader;
+	shader_t*   shader;
 	float		shaderTime;
 	int			fogNum;
 
@@ -1322,27 +1245,17 @@ extern glstate_t glState;
 // extern qboolean vertexShaders;
 
 
-// these are sort of arbitrary limits.
-// the limits apply to the sum of all scenes in a frame --
-// the main view, all the 3D icons, etc
-#define	MAX_POLYS		600
-#define	MAX_POLYVERTS	3000
-
-extern int max_polys;
-extern int max_polyverts;
 
 // https://zerowing.idsoftware.com/bugzilla/show_bug.cgi?id=516
 const void *RB_TakeScreenshotCmd( const void *data );
 const void *RB_TakeVideoFrameCmd( const void *data );
-
-//void	RE_Shutdown( qboolean destroyWindow );
-//void	RE_BeginRegistration( glconfig_t *glconfig );
 
 
 ////////////////////////////  tr_main.c  //////////////////////////////
 #define	CULL_IN		0		// completely unclipped
 #define	CULL_CLIP	1		// clipped by one or more planes
 #define	CULL_OUT	2		// completely outside the clipping planes
+
 
 void R_SetupProjection(viewParms_t *dest, float zProj, qboolean computeFrustum);
 void R_AddDrawSurf( surfaceType_t *surface, shader_t *shader, int fogIndex, int dlightMap );
@@ -1354,13 +1267,23 @@ void R_TransformModelToClip( const vec3_t src, const float *modelMatrix, const f
 void R_TransformClipToWindow( const vec4_t clip, const viewParms_t *view, vec4_t normalized, vec4_t window );
 void R_RotateForEntity( const trRefEntity_t *ent, const viewParms_t *viewParms, orientationr_t *or );
 
+void R_InitMain(void);
+
+/////////////////////////// tr_world //////////////////////////////////
+// WORLD MAP
+
+void R_AddBrushModelSurfaces( trRefEntity_t *e );
+qboolean R_inPVS( const vec3_t p1, const vec3_t p2 );
+void R_AddWorldSurfaces( void );
+int R_CullPointAndRadius( vec3_t origin, float radius );
+int R_CullLocalPointAndRadius( vec3_t origin, float radius ); 
+void R_InitWorld(void);
 
 
 /////////////////////////// tr_animation //////////////////////////////////
 // ANIMATED MODELS
 int R_ComputeLOD( trRefEntity_t *ent );
-int R_CullLocalPointAndRadius( vec3_t origin, float radius ); //tr_world need it
-int R_CullPointAndRadius( vec3_t origin, float radius );
+
 int R_CullLocalBox(vec3_t bounds[2]);
 
 void R_MDRAddAnimSurfaces( trRefEntity_t *ent );
@@ -1519,15 +1442,6 @@ void RB_MDRSurfaceAnim( mdrSurface_t *surface );
 extern void (*rb_surfaceTable[SF_NUM_SURFACE_TYPES])(void *);
 
 
-/////////////////////////// tr_world //////////////////////////////////
-// WORLD MAP
-
-void R_AddBrushModelSurfaces( trRefEntity_t *e );
-qboolean R_inPVS( const vec3_t p1, const vec3_t p2 );
-void R_AddWorldSurfaces( void );
-
-
-
 
 /////////////////////////// tr_curve.c //////////////////////////////////
 // CURVE TESSELATION
@@ -1537,6 +1451,7 @@ srfGridMesh_t *R_SubdividePatchToGrid( int width, int height, drawVert_t points[
 srfGridMesh_t *R_GridInsertColumn( srfGridMesh_t *grid, int column, int row, vec3_t point, float loderror );
 srfGridMesh_t *R_GridInsertRow( srfGridMesh_t *grid, int row, int column, vec3_t point, float loderror );
 void R_FreeSurfaceGridMesh( srfGridMesh_t *grid );
+void R_InitCurve(void);
 
 
 ///////////////////////////// tr_light.c ////////////////////////////////
@@ -1560,7 +1475,7 @@ int R_IQMLerpTag( orientation_t *tag, iqmData_t *data, int startFrame, int endFr
 ///////////////////////////// tr_SHADOWS  ////////////////////////////////
 //
 void RB_ShadowTessEnd( void );
-void RB_ShadowFinish( void );
+//void RB_ShadowFinish( void );
 void RB_ProjectionShadowDeform( void );
 
 
@@ -1617,8 +1532,7 @@ qhandle_t RE_RegisterShaderFromImage(const char *name, int lightmapIndex, image_
 ////////////////////////////////  tr_marks.c ////////////////////////////////////////
 //      MARKERS, POLYGON PROJECTION ON WORLD POLYGONS
 int R_MarkFragments( int numPoints, const vec3_t *points, const vec3_t projection,  int maxPoints, vec3_t pointBuffer, int maxFragments, markFragment_t *fragmentBuffer );
-
-
+void R_InitMarks(void);
 
 /////////////////////////  tr_shade_calc  //////////////////////////////////////////
 void	RB_DeformTessGeometry( void );

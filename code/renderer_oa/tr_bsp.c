@@ -30,9 +30,8 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
  * void RE_LoadWorldMap( const char *name );
 */
 
-static world_t		s_worldData;
-static unsigned char *fileBase;
 
+extern trGlobals_t	tr;
 
 // render lightmaps only
 cvar_t* r_lightmap;
@@ -40,7 +39,8 @@ cvar_t* r_lightmap;
 // avoid lightmap pass
 static cvar_t* r_fullbright;
 static cvar_t* r_mapOverBrightBits;
-
+static world_t	s_worldData;
+static unsigned char *fileBase;
 
 //===============================================================================
 
