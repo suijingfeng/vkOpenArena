@@ -56,7 +56,7 @@ static float ProjectRadius( float r, vec3_t location )
 	p[1] = fabs( r );
 	p[2] = -dist;
 
-	float	projected[4];
+	float projected[4];
 	projected[0] = p[0] * tr.viewParms.projectionMatrix[0] + 
 		           p[1] * tr.viewParms.projectionMatrix[4] +
 				   p[2] * tr.viewParms.projectionMatrix[8] +
@@ -94,7 +94,6 @@ static int R_CullModel( md3Header_t *header, trRefEntity_t *ent )
 {
 	vec3_t bounds[2];
 
-
 	// compute frame pointers
 	md3Frame_t* newFrame = ( md3Frame_t * ) ( (unsigned char*) header + header->ofsFrames ) + ent->e.frame;
 	md3Frame_t* oldFrame = ( md3Frame_t * ) ( (unsigned char*) header + header->ofsFrames ) + ent->e.oldframe;
@@ -122,9 +121,9 @@ static int R_CullModel( md3Header_t *header, trRefEntity_t *ent )
 		else
 		{
 			int sphereCullB;
-
 			int sphereCull = R_CullLocalPointAndRadius( newFrame->localOrigin, newFrame->radius );
-			if ( newFrame == oldFrame )
+			
+            if( newFrame == oldFrame )
 				sphereCullB = sphereCull;
 			else
 				sphereCullB = R_CullLocalPointAndRadius( oldFrame->localOrigin, oldFrame->radius );
@@ -184,8 +183,8 @@ static int R_MDRCullModel( mdrHeader_t *header, trRefEntity_t *ent )
 	int frameSize = (size_t)( &((mdrFrame_t *)0)->bones[ header->numBones ] );
 	
 	// compute frame pointers
-	mdrFrame_t* newFrame = ( mdrFrame_t * ) ( ( byte * ) header + header->ofsFrames + frameSize * ent->e.frame);
-	mdrFrame_t* oldFrame = ( mdrFrame_t * ) ( ( byte * ) header + header->ofsFrames + frameSize * ent->e.oldframe);
+	mdrFrame_t* newFrame = ( mdrFrame_t * ) ( (unsigned char*) header + header->ofsFrames + frameSize * ent->e.frame);
+	mdrFrame_t* oldFrame = ( mdrFrame_t * ) ( (unsigned char*) header + header->ofsFrames + frameSize * ent->e.oldframe);
 
 	// cull bounding sphere ONLY if this is not an upscaled entity
 	if ( !ent->e.nonNormalizedAxes )
@@ -295,6 +294,8 @@ static int R_MDRComputeFogNum( mdrHeader_t *header, trRefEntity_t *ent )
 	return 0;
 }
 
+
+
 static int R_ComputeFogNum( md3Header_t *header, trRefEntity_t *ent )
 {
 	int	i, j;
@@ -351,7 +352,7 @@ int R_CullLocalBox(vec3_t bounds[2])
 	// transform into world space
 	for (i = 0 ; i < 8 ; i++)
     {
-        vec3_t	v;
+        vec3_t v;
 
 		v[0] = bounds[i&1][0];
 		v[1] = bounds[(i>>1)&1][1];
@@ -698,7 +699,6 @@ int R_ComputeLOD2( trRefEntity_t *ent )
 	float radius, projectedRadius;
 	int lod;
     
-
     if ( tr.currentModel->numLods < 2 )
 	{
 		// model has only 1 LOD level, skip computations and bias
@@ -744,11 +744,11 @@ int R_ComputeLOD2( trRefEntity_t *ent )
 		
         lod = ri.ftol(flod);
 
-		if ( lod < 0 )
+		if(lod < 0)
 		{
 			lod = 0;
 		}
-		else if ( lod >= tr.currentModel->numLods )
+		else if(lod >= tr.currentModel->numLods)
 		{
 			lod = tr.currentModel->numLods - 1;
 		}

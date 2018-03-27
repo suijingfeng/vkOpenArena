@@ -34,9 +34,6 @@ glconfig_t  glConfig;
 glstate_t	glState;
 
 
-
-
-
 //
 // cvars
 //
@@ -144,11 +141,11 @@ static void GL_SetDefaultState(void)
 static void R_PrintLongString(const char *string)
 {
 	char buffer[1024];
-	const char *p;
 	int size = strlen(string);
-
-	p = string;
-	while(size > 0) {
+	const char *p = string;
+	
+    while(size > 0)
+    {
 		Q_strncpyz(buffer, p, sizeof (buffer) );
 		ri.Printf( PRINT_ALL, "%s", buffer );
 		p += 1023;
@@ -295,16 +292,14 @@ FIXME: the statics don't get a reinit between fs_game changes
 */
 static void RB_TakeScreenshot(int x, int y, int width, int height, char *fileName)
 {
-	byte *allbuf, *buffer;
-	byte *srcptr, *destptr;
-	byte *endline, *endmem;
+	byte *destptr, *endline;
 	byte temp;
 
-	int linelen, padlen;
+	int padlen;
 	size_t offset = 18, memcount;
 
-	allbuf = RB_ReadPixels(x, y, width, height, &offset, &padlen);
-	buffer = allbuf + offset - 18;
+	unsigned char* allbuf = RB_ReadPixels(x, y, width, height, &offset, &padlen);
+	unsigned char* buffer = allbuf + offset - 18;
 
 	memset (buffer, 0, 18);
 	buffer[2] = 2;		// uncompressed type
@@ -315,12 +310,13 @@ static void RB_TakeScreenshot(int x, int y, int width, int height, char *fileNam
 	buffer[16] = 24;	// pixel size
 
 	// swap rgb to bgr and remove padding from line endings
-	linelen = width * 3;
+	int linelen = width * 3;
 
-	srcptr = destptr = allbuf + offset;
-	endmem = srcptr + (linelen + padlen) * height;
+	unsigned char* srcptr = destptr = allbuf + offset;
+	unsigned char* endmem = srcptr + (linelen + padlen) * height;
 
-	while(srcptr < endmem) {
+	while(srcptr < endmem)
+    {
 		endline = srcptr + linelen;
 
 		while(srcptr < endline) {

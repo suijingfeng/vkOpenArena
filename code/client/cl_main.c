@@ -605,12 +605,11 @@ Dumps the current net message, prefixed by the length
 ====================
 */
 
-void CL_WriteDemoMessage ( msg_t *msg, int headerBytes ) {
-	int		len, swlen;
-
+void CL_WriteDemoMessage ( msg_t *msg, int headerBytes )
+{
 	// write the packet sequence
-	len = clc.serverMessageSequence;
-	swlen = LittleLong( len );
+    int len = clc.serverMessageSequence;
+	int swlen = LittleLong( len );
 	FS_Write (&swlen, 4, clc.demofile);
 	// skip the packet sequencing information
 	len = msg->cursize - headerBytes;
@@ -627,16 +626,15 @@ CL_StopRecording_f
 stop recording a demo
 ====================
 */
-void CL_StopRecord_f( void ) {
-	int		len;
-
+void CL_StopRecord_f( void )
+{
 	if ( !clc.demorecording ) {
 		Com_Printf ("Not recording a demo.\n");
 		return;
 	}
 
 	// finish up
-	len = -1;
+	int len = -1;
 	FS_Write (&len, 4, clc.demofile);
 	FS_Write (&len, 4, clc.demofile);
 	FS_FCloseFile (clc.demofile);
@@ -651,22 +649,20 @@ void CL_StopRecord_f( void ) {
 CL_DemoFilename
 ================== 
 */  
-void CL_DemoFilename( int number, char *fileName, int fileNameSize ) {
-	int		a,b,c,d;
-
+void CL_DemoFilename( int number, char *fileName, int fileNameSize )
+{
 	if(number < 0 || number > 9999)
 		number = 9999;
 
-	a = number / 1000;
+    int a = number / 1000;
 	number -= a*1000;
-	b = number / 100;
+	int b = number / 100;
 	number -= b*100;
-	c = number / 10;
+	int c = number / 10;
 	number -= c*10;
-	d = number;
+	int d = number;
 
-	Com_sprintf( fileName, fileNameSize, "demo%i%i%i%i"
-		, a, b, c, d );
+	Com_sprintf( fileName, fileNameSize, "demo%i%i%i%i", a, b, c, d );
 }
 
 /*
@@ -678,16 +674,18 @@ record <demoname>
 Begins recording a demo from the current position
 ====================
 */
-static char		demoName[MAX_QPATH];	// compiler bug workaround
-void CL_Record_f( void ) {
-	char		name[MAX_OSPATH];
-	byte		bufData[MAX_MSGLEN];
+static char	demoName[MAX_QPATH];	// compiler bug workaround
+
+void CL_Record_f( void )
+{
+	char name[MAX_OSPATH];
+	unsigned char bufData[MAX_MSGLEN];
 	msg_t	buf;
 	int			i;
 	int			len;
-	entityState_t	*ent;
+	entityState_t* ent;
 	entityState_t	nullstate;
-	char		*s;
+	char* s;
 
 	if ( Cmd_Argc() > 2 ) {
 		Com_Printf ("record <demoname>\n");
@@ -769,7 +767,8 @@ void CL_Record_f( void ) {
 	MSG_WriteLong (&buf, clc.serverCommandSequence );
 
 	// configstrings
-	for ( i = 0 ; i < MAX_CONFIGSTRINGS ; i++ ) {
+	for ( i = 0 ; i < MAX_CONFIGSTRINGS ; i++ )
+    {
 		if ( !cl.gameState.stringOffsets[i] ) {
 			continue;
 		}
@@ -781,7 +780,8 @@ void CL_Record_f( void ) {
 
 	// baselines
 	memset (&nullstate, 0, sizeof(nullstate));
-	for ( i = 0; i < MAX_GENTITIES ; i++ ) {
+	for ( i = 0; i < MAX_GENTITIES ; i++ )
+    {
 		ent = &cl.entityBaselines[i];
 		if ( !ent->number ) {
 			continue;
@@ -929,8 +929,8 @@ void CL_DemoCompleted( void )
 CL_ReadDemoMessage
 =================
 */
-void CL_ReadDemoMessage( void ) {
-	int			r;
+void CL_ReadDemoMessage( void )
+{
 	msg_t		buf;
 	byte		bufData[ MAX_MSGLEN ];
 	int			s;
@@ -941,7 +941,7 @@ void CL_ReadDemoMessage( void ) {
 	}
 
 	// get the sequence number
-	r = FS_Read( &s, 4, clc.demofile);
+	int r = FS_Read( &s, 4, clc.demofile);
 	if ( r != 4 ) {
 		CL_DemoCompleted ();
 		return;

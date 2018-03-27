@@ -91,7 +91,6 @@ A player has predicted a teleport, but hasn't arrived yet
 */
 static void RB_Hyperspace( void )
 {
-
 	if ( !backEnd.isHyperspace ) {
 		// do initialization shit
 	}
@@ -185,14 +184,13 @@ static void RB_BeginDrawingView(void)
 	// clip to the plane of the portal
 	if ( backEnd.viewParms.isPortal )
     {
-		float	plane[4];
-		double	plane2[4];
-
+		float plane[4];
 		plane[0] = backEnd.viewParms.portalPlane.normal[0];
 		plane[1] = backEnd.viewParms.portalPlane.normal[1];
 		plane[2] = backEnd.viewParms.portalPlane.normal[2];
 		plane[3] = backEnd.viewParms.portalPlane.dist;
-
+		
+        double plane2[4];
 		plane2[0] = DotProduct (backEnd.viewParms.or.axis[0], plane);
 		plane2[1] = DotProduct (backEnd.viewParms.or.axis[1], plane);
 		plane2[2] = DotProduct (backEnd.viewParms.or.axis[2], plane);
@@ -214,7 +212,7 @@ static void RB_BeginDrawingView(void)
 
 static void RB_RenderDrawSurfList( drawSurf_t *drawSurfs, int numDrawSurfs )
 {
-	shader_t		*shader;
+	shader_t* shader;
 	int				fogNum;
 	int				entityNum;
 	int				dlighted;
@@ -245,9 +243,9 @@ static void RB_RenderDrawSurfList( drawSurf_t *drawSurfs, int numDrawSurfs )
 
 	backEnd.pc.c_surfaces += numDrawSurfs;
 
-	for (i = 0, drawSurf = drawSurfs; i < numDrawSurfs; i++, drawSurf++)
+	for(i = 0, drawSurf = drawSurfs; i < numDrawSurfs; i++, drawSurf++)
     {
-		if ( drawSurf->sort == oldSort )
+		if(drawSurf->sort == oldSort)
         {
 			// fast path, same as previous sort
 			rb_surfaceTable[ *drawSurf->surface ]( drawSurf->surface );

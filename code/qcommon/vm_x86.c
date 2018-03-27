@@ -26,10 +26,6 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #ifdef _WIN32
   #include <windows.h>
 #else
-  #ifdef __FreeBSD__
-  #include <sys/types.h>
-  #endif
-
   #include <sys/mman.h> // for PROT_ stuff
 
   /* need this on NX enabled systems (i386 with PAE kernel or noexec32=on x86_64) */
@@ -147,6 +143,7 @@ static void EmitPtr(void *ptr)
 #endif
 }
 
+
 static int Hex( int c )
 {
 	if ( c >= 'a' && c <= 'f' ) {
@@ -165,21 +162,22 @@ static int Hex( int c )
 	return 0;
 }
 
+
 static void EmitString( const char *string )
 {
-	int	v;
-
 	while ( 1 )
     {
-		v = ( Hex( (int)string[0] ) << 4 ) | Hex( (int)string[1] );
+		int v = ( Hex( (int)string[0] ) << 4 ) | Hex( (int)string[1] );
 		Emit1( v );
 
-		if ( !string[2] ) {
+		if ( !string[2] )
+        {
 			break;
 		}
 		string += 3;
 	}
 }
+
 
 static void EmitRexString(unsigned char rex, const char *string)
 {
@@ -213,6 +211,7 @@ static void EmitRexString(unsigned char rex, const char *string)
 		Emit1(bytes); \
 	} while(0)
 
+
 static void EmitCommand(ELastCommand command)
 {
 	switch(command)
@@ -233,6 +232,7 @@ static void EmitCommand(ELastCommand command)
 	}
 	LastCommand = command;
 }
+
 
 static void EmitPushStack(vm_t *vm)
 {
@@ -255,6 +255,7 @@ static void EmitPushStack(vm_t *vm)
 
 	STACK_PUSH(1);		// add bl, 1
 }
+
 
 static void EmitMovEAXStack(vm_t *vm, int andit)
 {
@@ -293,6 +294,7 @@ static void EmitMovEAXStack(vm_t *vm, int andit)
 		Emit4(andit);
 	}
 }
+
 
 void EmitMovECXStack(vm_t *vm)
 {
@@ -399,23 +401,20 @@ intptr_t vm_arg;
 
 static void DoSyscall(void)
 {
-	vm_t *savedVM;
-
 	// save currentVM so as to allow for recursive VM entry
-	savedVM = currentVM;
+	vm_t *savedVM = currentVM;
 	// modify VM stack pointer for recursive VM entry
 	currentVM->programStack = vm_programStack - 4;
 
 	if(vm_syscallNum < 0)
 	{
-		int *data, *ret;
 #if idx64
 		int index;
 		intptr_t args[MAX_VMSYSCALL_ARGS];
 #endif
 		
-		data = (int *) (savedVM->dataBase + vm_programStack + 4);
-		ret = &vm_opStackBase[vm_opStackOfs + 1];
+		int* data = (int *) (savedVM->dataBase + vm_programStack + 4);
+		int* ret = &vm_opStackBase[vm_opStackOfs + 1];
 
 #if idx64
 		args[0] = ~vm_syscallNum;
@@ -432,21 +431,20 @@ static void DoSyscall(void)
 	{
 		switch(vm_syscallNum)
 		{
-		case VM_JMP_VIOLATION:
-			ErrJump();
-		break;
-		case VM_BLOCK_COPY: 
-			if(vm_opStackOfs < 1)
-				Com_Error(ERR_DROP, "VM_BLOCK_COPY failed due to corrupted opStack");
-			
-			VM_BlockCopy(vm_opStackBase[(vm_opStackOfs - 1)], vm_opStackBase[vm_opStackOfs], vm_arg);
-		break;
-		default:
-			Com_Error(ERR_DROP, "Unknown VM operation %d", vm_syscallNum);
-		break;
+            case VM_JMP_VIOLATION:
+                ErrJump();
+            break;
+            case VM_BLOCK_COPY: 
+                if(vm_opStackOfs < 1)
+                    Com_Error(ERR_DROP, "VM_BLOCK_COPY failed due to corrupted opStack");
+                
+                VM_BlockCopy(vm_opStackBase[(vm_opStackOfs - 1)], vm_opStackBase[vm_opStackOfs], vm_arg);
+            break;
+            default:
+                Com_Error(ERR_DROP, "Unknown VM operation %d", vm_syscallNum);
+            break;
 		}
 	}
-
 	currentVM = savedVM;
 }
 
@@ -675,36 +673,36 @@ void EmitBranchConditions(vm_t *vm, int op)
 {
 	switch(op)
 	{
-	case OP_EQ:
-		EmitJumpIns(vm, "0F 84", Constant4());	// je 0x12345678
-	break;
-	case OP_NE:
-		EmitJumpIns(vm, "0F 85", Constant4());	// jne 0x12345678
-	break;
-	case OP_LTI:
-		EmitJumpIns(vm, "0F 8C", Constant4());	// jl 0x12345678
-	break;
-	case OP_LEI:
-		EmitJumpIns(vm, "0F 8E", Constant4());	// jle 0x12345678
-	break;
-	case OP_GTI:
-		EmitJumpIns(vm, "0F 8F", Constant4());	// jg 0x12345678
-	break;
-	case OP_GEI:
-		EmitJumpIns(vm, "0F 8D", Constant4());	// jge 0x12345678
-	break;
-	case OP_LTU:
-		EmitJumpIns(vm, "0F 82", Constant4());	// jb 0x12345678
-	break;
-	case OP_LEU:
-		EmitJumpIns(vm, "0F 86", Constant4());	// jbe 0x12345678
-	break;
-	case OP_GTU:
-		EmitJumpIns(vm, "0F 87", Constant4());	// ja 0x12345678
-	break;
-	case OP_GEU:
-		EmitJumpIns(vm, "0F 83", Constant4());	// jae 0x12345678
-	break;
+        case OP_EQ:
+            EmitJumpIns(vm, "0F 84", Constant4());	// je 0x12345678
+        break;
+        case OP_NE:
+            EmitJumpIns(vm, "0F 85", Constant4());	// jne 0x12345678
+        break;
+        case OP_LTI:
+            EmitJumpIns(vm, "0F 8C", Constant4());	// jl 0x12345678
+        break;
+        case OP_LEI:
+            EmitJumpIns(vm, "0F 8E", Constant4());	// jle 0x12345678
+        break;
+        case OP_GTI:
+            EmitJumpIns(vm, "0F 8F", Constant4());	// jg 0x12345678
+        break;
+        case OP_GEI:
+            EmitJumpIns(vm, "0F 8D", Constant4());	// jge 0x12345678
+        break;
+        case OP_LTU:
+            EmitJumpIns(vm, "0F 82", Constant4());	// jb 0x12345678
+        break;
+        case OP_LEU:
+            EmitJumpIns(vm, "0F 86", Constant4());	// jbe 0x12345678
+        break;
+        case OP_GTU:
+            EmitJumpIns(vm, "0F 87", Constant4());	// ja 0x12345678
+        break;
+        case OP_GEU:
+            EmitJumpIns(vm, "0F 83", Constant4());	// jae 0x12345678
+        break;
 	}
 }
 
