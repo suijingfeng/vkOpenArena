@@ -291,12 +291,12 @@ ifneq (,$(findstring "$(PLATFORM)", "linux" "gnu_kfreebsd" "kfreebsd-gnu" "gnu")
 
 
   ifeq ($(ARCH),x86_64)
-    OPTIMIZEVM = -O3 -fomit-frame-pointer -funroll-loops -mmmx -msse2 -msse3 -msse4
+    OPTIMIZEVM = -O3 -fomit-frame-pointer -funroll-loops -mmmx -msse2 -msse3 -msse4 -m64
     OPTIMIZE = $(OPTIMIZEVM) -ffast-math
     HAVE_VM_COMPILED=true
   else
   ifeq ($(ARCH),x86)
-    OPTIMIZEVM = -O3 -march=i586 -fomit-frame-pointer -funroll-loops
+    OPTIMIZEVM = -O3 -march=i586 -fomit-frame-pointer -funroll-loops -m32
     OPTIMIZE = $(OPTIMIZEVM) -ffast-math
     HAVE_VM_COMPILED=true
   else
@@ -342,18 +342,10 @@ endif
     CLIENT_LIBS += -lrt
   endif
 
-  ifeq ($(ARCH),x86)
-    # linux32 make ...
-    BASE_CFLAGS += -m32
-  else
-  ifeq ($(ARCH),x86_64)
-    BASE_CFLAGS += -m64
-  endif
-
   ifeq ($(ARCH),ppc64)
     BASE_CFLAGS += -m64
   endif
-  endif
+
 else # ifeq Linux
 
 #############################################################################
@@ -572,9 +564,7 @@ else
 endif
 
 BASE_CFLAGS += -DPRODUCT_VERSION=\\\"$(VERSION)\\\"
-BASE_CFLAGS += -Wformat=2 -Wno-format-zero-length -Wformat-security -Wno-format-nonliteral
 BASE_CFLAGS += -Wstrict-aliasing=2 -Wmissing-format-attribute
-BASE_CFLAGS += -Wdisabled-optimization
 BASE_CFLAGS += -Werror-implicit-function-declaration
 
 ifeq ($(V),1)

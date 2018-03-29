@@ -202,12 +202,12 @@ void RE_SetColor( const float *rgba )
 }
 
 
-void RE_StretchPic( float x, float y, float w, float h, float s1, float t1, float s2, float t2, qhandle_t hShader )
+void RE_StretchPic(float x, float y, float w, float h, float s1, float t1, float s2, float t2, qhandle_t hShader)
 {    
     if (!tr.registered)
         return;
 
-	stretchPicCommand_t	* cmd = R_GetCommandBuffer( sizeof( *cmd ) );
+	stretchPicCommand_t* cmd = R_GetCommandBuffer( sizeof( *cmd ) );
 	if ( !cmd )
 	    return;
 

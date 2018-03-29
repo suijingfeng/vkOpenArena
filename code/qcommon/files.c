@@ -502,14 +502,16 @@ FS_BuildOSPath
 Qpath may have either forward or backwards slashes
 ===================
 */
-char *FS_BuildOSPath( const char *base, const char *game, const char *qpath ) {
-	char	temp[MAX_OSPATH];
+char *FS_BuildOSPath( const char *base, const char *game, const char *qpath )
+{
+	char temp[MAX_OSPATH];
 	static char ospath[2][MAX_OSPATH];
 	static int toggle;
 	
 	toggle ^= 1;		// flip-flop to allow two returns without clash
 
-	if( !game || !game[0] ) {
+	if( !game || !game[0] )
+    {
 		game = fs_gamedir;
 	}
 
@@ -869,15 +871,13 @@ void FS_FCloseFile( fileHandle_t f ) {
 	memset( &fsh[f], 0, sizeof( fsh[f] ) );
 }
 
-/*
-===========
-FS_FOpenFileWrite
 
-===========
-*/
-fileHandle_t FS_FOpenFileWrite( const char *filename ) {
 
-	if ( !fs_searchpaths ) {
+fileHandle_t FS_FOpenFileWrite( const char *filename )
+{
+
+	if ( !fs_searchpaths )
+    {
 		Com_Error( ERR_FATAL, "Filesystem call made without initialization" );
 	}
 
@@ -904,7 +904,8 @@ fileHandle_t FS_FOpenFileWrite( const char *filename ) {
 	Q_strncpyz( fsh[f].name, filename, sizeof( fsh[f].name ) );
 
 	fsh[f].handleSync = qfalse;
-	if (!fsh[f].handleFiles.file.o) {
+	if (!fsh[f].handleFiles.file.o)
+    {
 		f = 0;
 	}
 	return f;
@@ -2882,7 +2883,7 @@ void FS_AddGameDirectory( const char *path, const char *dir )
     Com_Printf( "path: %s\n", path);
     Com_Printf( "dir: %s\n", dir );
 
-	searchpath_t	*sp;
+
 	searchpath_t	*search;
 	pack_t			*pak;
 	char			curpath[MAX_OSPATH + 1], *pakfile;
@@ -2894,25 +2895,23 @@ void FS_AddGameDirectory( const char *path, const char *dir )
 
 	int				pakwhich;
 
-
 	// Unique
-	for ( sp = fs_searchpaths ; sp ; sp = sp->next )
+    searchpath_t* sp = fs_searchpaths;
+	for( sp = fs_searchpaths ; sp ; sp = sp->next )
     {
-		if ( sp->dir && !Q_stricmp(sp->dir->path, path) && !Q_stricmp(sp->dir->gamedir, dir))
+		if( sp->dir && !Q_stricmp(sp->dir->path, path) && !Q_stricmp(sp->dir->gamedir, dir))
         {
 			return;			// we've already got this one
 		}
 	}
 
 	Q_strncpyz( fs_gamedir, dir, sizeof( fs_gamedir ) );
-
 	// find all pak files in this directory
 	Q_strncpyz(curpath, FS_BuildOSPath(path, dir, ""), sizeof(curpath));
 	curpath[strlen(curpath) - 1] = '\0';	// strip the trailing slash
 
 	// Get .pk3 files
 	char** pakfiles = Sys_ListFiles(curpath, ".pk3", NULL, &numfiles, qfalse);
-
 	qsort( pakfiles, numfiles, sizeof(char*), paksort );
 
 	if ( fs_numServerPaks )
@@ -2924,13 +2923,11 @@ void FS_AddGameDirectory( const char *path, const char *dir )
     {
 		// Get top level directories (we'll filter them later since the Sys_ListFiles filtering is terrible)
 		pakdirs = Sys_ListFiles(curpath, "/", NULL, &numdirs, qfalse);
-
 		qsort( pakdirs, numdirs, sizeof(char *), paksort );
 	}
 
     int	pakfilesi = 0;
 	int pakdirsi = 0;
-
 
 	while((pakfilesi < numfiles) || (pakdirsi < numdirs))
 	{
@@ -2958,7 +2955,8 @@ void FS_AddGameDirectory( const char *path, const char *dir )
         {
 			// The next .pk3 file is before the next .pk3dir
 			pakfile = FS_BuildOSPath(path, dir, pakfiles[pakfilesi]);
-			if ((pak = FS_LoadZipFile(pakfile, pakfiles[pakfilesi])) == 0) {
+			if((pak = FS_LoadZipFile(pakfile, pakfiles[pakfilesi])) == 0)
+            {
 				// This isn't a .pk3! Next!
 				pakfilesi++;
 				continue;
@@ -3010,7 +3008,9 @@ void FS_AddGameDirectory( const char *path, const char *dir )
 	// done
 	Sys_FreeFileList( pakfiles );
 	Sys_FreeFileList( pakdirs );
-    
+   
+
+
 	//
 	// add the directory to the search path
 	//

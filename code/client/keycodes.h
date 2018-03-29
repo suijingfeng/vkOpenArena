@@ -29,7 +29,8 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
 // normal keys should be passed as lowercased ascii
 
-typedef enum {
+typedef enum
+{
 	K_TAB = 9,
 	K_ENTER = 13,
 	K_ESCAPE = 27,

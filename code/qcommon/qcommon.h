@@ -732,7 +732,7 @@ void FS_Rename( const char *from, const char *to );
 void FS_Remove( const char *osPath );
 void FS_HomeRemove( const char *homePath );
 
-void	FS_FilenameCompletion( const char *dir, const char *ext,
+void FS_FilenameCompletion( const char *dir, const char *ext,
 		qboolean stripExt, void(*callback)(const char *s), qboolean allowNonPureFilesOnDisk );
 
 const char *FS_GetCurrentGameDir(void);
@@ -745,11 +745,12 @@ Edit fields and command line history/completion
 */
 
 #define	MAX_EDIT_LINE	256
-typedef struct {
-	int		cursor;
-	int		scroll;
-	int		widthInChars;
-	char	buffer[MAX_EDIT_LINE];
+typedef struct
+{
+	int	cursor;
+	int	scroll;
+	int	widthInChars;
+	char buffer[MAX_EDIT_LINE];
 } field_t;
 
 void Field_Clear( field_t *edit );
@@ -759,11 +760,10 @@ void Field_CompleteFilename( const char *dir, const char *ext, qboolean stripExt
 void Field_CompleteCommand( char *cmd, qboolean doCommands, qboolean doCvars );
 void Field_CompletePlayerName( const char **names, int count );
 
+
 /*
 ==============================================================
-
 MISC
-
 ==============================================================
 */
 
@@ -812,7 +812,7 @@ void		Com_QueueEvent( int time, sysEventType_t type, int value, int value2, int 
 int			Com_EventLoop( void );
 sysEvent_t	Com_GetSystemEvent( void );
 
-char		*CopyString( const char *in );
+char*       CopyString( const char *in );
 void		Info_Print( const char *s );
 
 void		Com_BeginRedirect (char *buffer, int buffersize, void (*flush)(char *));
@@ -839,8 +839,8 @@ void		Com_StartupVariable( const char *match );
 // if match is NULL, all set commands will be executed, otherwise
 // only a set with the exact name.  Only used during startup.
 
-qboolean		Com_PlayerNameToFieldString( char *str, int length, const char *name );
-qboolean		Com_FieldStringToPlayerName( char *name, int length, const char *rawname );
+qboolean	Com_PlayerNameToFieldString( char *str, int length, const char *name );
+qboolean	Com_FieldStringToPlayerName( char *name, int length, const char *rawname );
 int QDECL	Com_strCompare( const void *a, const void *b );
 
 

@@ -27,9 +27,12 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 int g_console_field_width = 78;
 #define	NUM_CON_TIMES   4
 #define	CON_TEXTSIZE    32768
+#define	DEFAULT_CONSOLE_WIDTH	78
 
-typedef struct {
-	qboolean	initialized;
+
+typedef struct
+{
+	qboolean initialized;
 
 	short	text[CON_TEXTSIZE];
 	int		current;		// line where next message will be printed
@@ -49,21 +52,22 @@ typedef struct {
 	int		times[NUM_CON_TIMES];	// cls.realtime time the line was generated
 								// for transparent notify lines
 	vec4_t	color;
-} console_t;
+}console_t;
 
-console_t	con;
+console_t con;
 
-cvar_t		*con_conspeed;
-cvar_t		*con_notifytime;
+field_t	g_consoleField;
 
-#define	DEFAULT_CONSOLE_WIDTH	78
+static cvar_t* con_conspeed;
+static cvar_t* con_notifytime;
 
 
 void Con_ToggleConsole_f(void)
 {
     int	i;
 	// Can't toggle the console when it's the only thing available
-	if ( clc.state == CA_DISCONNECTED && Key_GetCatcher( ) == KEYCATCH_CONSOLE ) {
+	if( (clc.state == CA_DISCONNECTED) && (Key_GetCatcher() == KEYCATCH_CONSOLE) )
+    {
 		return;
 	}
 
@@ -74,28 +78,22 @@ void Con_ToggleConsole_f(void)
     g_consoleField.widthInChars = g_console_field_width;
 
 	//Con_ClearNotify ();
-	for ( i = 0 ; i < NUM_CON_TIMES ; i++ )
+	for(i = 0; i < NUM_CON_TIMES; i++)
 		con.times[i] = 0;
 
-	Key_SetCatcher( Key_GetCatcher( ) ^ KEYCATCH_CONSOLE );
+	Key_SetCatcher( Key_GetCatcher() ^ KEYCATCH_CONSOLE );
 }
 
-/*
-===================
-Con_ToggleMenu_f
-===================
-*/
-void Con_ToggleMenu_f( void ) {
+
+void Con_ToggleMenu_f( void )
+{
 	CL_KeyEvent( K_ESCAPE, qtrue, Sys_Milliseconds() );
 	CL_KeyEvent( K_ESCAPE, qfalse, Sys_Milliseconds() );
 }
 
-/*
-================
-Con_MessageMode_f
-================
-*/
-void Con_MessageMode_f (void) {
+
+void Con_MessageMode_f (void)
+{
 	chat_playerNum = -1;
 	chat_team = qfalse;
 	Field_Clear( &chatField );
@@ -109,7 +107,8 @@ void Con_MessageMode_f (void) {
 Con_MessageMode2_f
 ================
 */
-void Con_MessageMode2_f (void) {
+void Con_MessageMode2_f(void)
+{
 	chat_playerNum = -1;
 	chat_team = qtrue;
 	Field_Clear( &chatField );
@@ -122,7 +121,8 @@ void Con_MessageMode2_f (void) {
 Con_MessageMode3_f
 ================
 */
-void Con_MessageMode3_f (void) {
+void Con_MessageMode3_f (void)
+{
 	chat_playerNum = VM_Call( cgvm, CG_CROSSHAIR_PLAYER );
 	if ( chat_playerNum < 0 || chat_playerNum >= MAX_CLIENTS ) {
 		chat_playerNum = -1;
@@ -139,9 +139,11 @@ void Con_MessageMode3_f (void) {
 Con_MessageMode4_f
 ================
 */
-void Con_MessageMode4_f (void) {
+void Con_MessageMode4_f (void)
+{
 	chat_playerNum = VM_Call( cgvm, CG_LAST_ATTACKER );
-	if ( chat_playerNum < 0 || chat_playerNum >= MAX_CLIENTS ) {
+	if ( chat_playerNum < 0 || chat_playerNum >= MAX_CLIENTS )
+    {
 		chat_playerNum = -1;
 		return;
 	}
@@ -151,15 +153,12 @@ void Con_MessageMode4_f (void) {
 	Key_SetCatcher( Key_GetCatcher( ) ^ KEYCATCH_MESSAGE );
 }
 
-/*
-================
-Con_Clear_f
-================
-*/
-void Con_Clear_f (void) {
-	int		i;
 
-	for ( i = 0 ; i < CON_TEXTSIZE ; i++ ) {
+void Con_Clear_f (void)
+{
+	int	i;
+	for( i = 0; i < CON_TEXTSIZE; i++ )
+    {
 		con.text[i] = (ColorIndex(COLOR_WHITE)<<8) | ' ';
 	}
 
@@ -262,12 +261,12 @@ void Con_ClearNotify( void )
 Con_CheckResize: If the line width has changed, reformat the buffer.
 ================
 */
-void Con_CheckResize (void)
+void Con_CheckResize(void)
 {
-	int		i, j, width, oldwidth, oldtotallines, numlines, numchars;
+	int		i, j, oldwidth, oldtotallines, numlines, numchars;
 	short	tbuf[CON_TEXTSIZE];
 
-	width = (SCREEN_WIDTH / SMALLCHAR_WIDTH) - 2;
+	int width = (SCREEN_WIDTH / SMALLCHAR_WIDTH) - 2;
 
 	if (width == con.linewidth)
 		return;
@@ -320,13 +319,11 @@ void Con_CheckResize (void)
 	con.display = con.current;
 }
 
-/*
-==================
-Cmd_CompleteTxtName
-==================
-*/
-void Cmd_CompleteTxtName( char *args, int argNum ) {
-	if( argNum == 2 ) {
+
+void Cmd_CompleteTxtName( char *args, int argNum )
+{
+	if( argNum == 2 )
+    {
 		Field_CompleteFilename( "", "txt", qfalse, qtrue );
 	}
 }
@@ -335,7 +332,6 @@ void Cmd_CompleteTxtName( char *args, int argNum ) {
 
 void Con_Init(void)
 {
-	int	i;
 
 	con_notifytime = Cvar_Get ("con_notifytime", "3", 0);
 	con_conspeed = Cvar_Get ("scr_conspeed", "3", 0);
@@ -345,13 +341,14 @@ void Con_Init(void)
 	g_consoleField.cursor = 0;
 	g_consoleField.scroll = 0;
 	g_consoleField.widthInChars = g_console_field_width;
-	
-    for(i = 0 ; i < COMMAND_HISTORY ; i++ )
+    
+    int i;
+    for(i = 0; i < COMMAND_HISTORY; i++ )
     {
 		Field_Clear( &historyEditLines[i] );
 		historyEditLines[i].widthInChars = g_console_field_width;
 	}
-	CL_LoadConsoleHistory( );
+	CL_LoadConsoleHistory();
 
 	Cmd_AddCommand ("toggleconsole", Con_ToggleConsole_f);
 	Cmd_AddCommand ("togglemenu", Con_ToggleMenu_f);
@@ -409,13 +406,11 @@ If no console is visible, the text will appear at the top of the game window
 void CL_ConsolePrint( char *txt )
 {
 	int	y, l;
-	unsigned char c;
-	unsigned short color;
+
 	qboolean skipnotify = qfalse;		// NERVE - SMF
 	int prev;							// NERVE - SMF
 
-	// TTimo - prefix for text that shows up in console but not in notify
-	// backported from RTCW
+	// TTimo - prefix for text that shows up in console but not in notify backported from RTCW
 	if ( !Q_strncmp( txt, "[skipnotify]", 12 ) )
     {
 		skipnotify = qtrue;
@@ -423,7 +418,8 @@ void CL_ConsolePrint( char *txt )
 	}
 	
 	// for some demos we don't want to ever show anything on the console
-	if ( cl_noprint && cl_noprint->integer ) {
+	if ( cl_noprint && cl_noprint->integer )
+    {
 		return;
 	}
 	
@@ -434,7 +430,9 @@ void CL_ConsolePrint( char *txt )
 		con.initialized = qtrue;
 	}
 
-	color = ColorIndex(COLOR_WHITE);
+	unsigned short color = ColorIndex(COLOR_WHITE);
+
+    unsigned char c;
 
 	while ( (c = *((unsigned char *) txt)) != 0 )
     {
@@ -513,20 +511,18 @@ Con_DrawInput: Draw the editline after a ] prompt
 */
 void Con_DrawInput (void)
 {
-	int	y;
-
-	if ( clc.state != CA_DISCONNECTED && !(Key_GetCatcher( ) & KEYCATCH_CONSOLE ) ) {
+	if ( clc.state != CA_DISCONNECTED && !(Key_GetCatcher( ) & KEYCATCH_CONSOLE ) )
+    {
 		return;
 	}
 
-	y = con.vislines - ( SMALLCHAR_HEIGHT * 2 );
+	int y = con.vislines - ( SMALLCHAR_HEIGHT * 2 );
 
 	re.SetColor( con.color );
 
 	SCR_DrawSmallChar( con.xadjust + 1 * SMALLCHAR_WIDTH, y, ']' );
 
-	Field_Draw( &g_consoleField, con.xadjust + 2 * SMALLCHAR_WIDTH, y,
-		SCREEN_WIDTH - 3 * SMALLCHAR_WIDTH, qtrue, qtrue );
+	Field_Draw( &g_consoleField, con.xadjust + 2 * SMALLCHAR_WIDTH, y, SCREEN_WIDTH - 3 * SMALLCHAR_WIDTH, qtrue, qtrue );
 }
 
 
@@ -537,19 +533,17 @@ Con_DrawNotify
 Draws the last few lines of output transparently over the game top
 ================
 */
-void Con_DrawNotify (void)
+void Con_DrawNotify(void)
 {
-	int		x, v;
+	int		x, v = 0;
 	short	*text;
 	int		i;
 	int		time;
 	int		skip;
-	int		currentColor;
 
-	currentColor = 7;
+	int currentColor = 7;
 	re.SetColor( g_color_table[currentColor] );
 
-	v = 0;
 	for (i= con.current-NUM_CON_TIMES+1 ; i<=con.current ; i++)
 	{
 		if (i < 0)
@@ -562,35 +556,37 @@ void Con_DrawNotify (void)
 			continue;
 		text = con.text + (i % con.totallines)*con.linewidth;
 
-		if (cl.snap.ps.pm_type != PM_INTERMISSION && Key_GetCatcher( ) & (KEYCATCH_UI | KEYCATCH_CGAME) ) {
+		if ( (cl.snap.ps.pm_type != PM_INTERMISSION) && (Key_GetCatcher() & (KEYCATCH_UI | KEYCATCH_CGAME) ) )
+        {
 			continue;
 		}
 
-		for (x = 0 ; x < con.linewidth ; x++) {
-			if ( ( text[x] & 0xff ) == ' ' ) {
+		for (x = 0; x < con.linewidth; x++)
+        {
+			if(( text[x] & 0xff ) == ' ')
+            {
 				continue;
 			}
-			if ( ( (text[x]>>8) % NUMBER_OF_COLORS ) != currentColor ) {
-				currentColor = (text[x]>>8) % NUMBER_OF_COLORS;
-			}
-			if ( ColorIndexForNumber( text[x]>>8 ) != currentColor ) {
+
+			if( ColorIndexForNumber( text[x]>>8 ) != currentColor )
+            {
 				currentColor = ColorIndexForNumber( text[x]>>8 );
 				re.SetColor( g_color_table[currentColor] );
 			}
 			SCR_DrawSmallChar( cl_conXOffset->integer + con.xadjust + (x+1)*SMALLCHAR_WIDTH, v, text[x] & 0xff );
 		}
-
 		v += SMALLCHAR_HEIGHT;
 	}
 
 	re.SetColor( NULL );
 
-	if (Key_GetCatcher( ) & (KEYCATCH_UI | KEYCATCH_CGAME) ) {
+	if(Key_GetCatcher( ) & (KEYCATCH_UI | KEYCATCH_CGAME) )
+    {
 		return;
 	}
 
 	// draw the chat line
-	if ( Key_GetCatcher( ) & KEYCATCH_MESSAGE )
+	if( Key_GetCatcher() & KEYCATCH_MESSAGE )
 	{
 		if (chat_team)
 		{
@@ -603,10 +599,8 @@ void Con_DrawNotify (void)
 			skip = 5;
 		}
 
-		Field_BigDraw( &chatField, skip * BIGCHAR_WIDTH, v,
-			SCREEN_WIDTH - ( skip + 1 ) * BIGCHAR_WIDTH, qtrue, qtrue );
+		Field_BigDraw( &chatField, skip * BIGCHAR_WIDTH, v, SCREEN_WIDTH - ( skip + 1 ) * BIGCHAR_WIDTH, qtrue, qtrue );
 	}
-
 }
 
 /*
@@ -616,17 +610,17 @@ Con_DrawSolidConsole
 Draws the console with the solid background
 ================
 */
-void Con_DrawSolidConsole( float frac ) {
-	int				i, x, y;
+void Con_DrawSolidConsole( float frac )
+{
+	int				i, x;
 	int				rows;
 	short			*text;
 	int				row;
-	int				lines;
 //	qhandle_t		conShader;
 	int				currentColor;
 	vec4_t			color;
 
-	lines = cls.glconfig.vidHeight * frac;
+	int lines = cls.glconfig.vidHeight * frac;
 	if (lines <= 0)
 		return;
 
@@ -638,7 +632,7 @@ void Con_DrawSolidConsole( float frac ) {
 	SCR_AdjustFrom640( &con.xadjust, NULL, NULL, NULL );
 
 	// draw the background
-	y = frac * SCREEN_HEIGHT;
+	int y = frac * SCREEN_HEIGHT;
 	if ( y < 1 ) {
 		y = 0;
 	}
@@ -650,9 +644,12 @@ void Con_DrawSolidConsole( float frac ) {
 			color[3] = cl_consoleColor[3]->value;
 			re.SetColor( color );
 		}
-		if ( cl_consoleType->integer == 2 ) {
+		if ( cl_consoleType->integer == 2 )
+        {
 			SCR_DrawPic( 0, 0, SCREEN_WIDTH, y, cls.whiteShader );
-		} else {
+		}
+        else
+        {
 			SCR_DrawPic( 0, 0, SCREEN_WIDTH, y, cls.consoleShader );
 		}
 	}
@@ -728,7 +725,7 @@ void Con_DrawSolidConsole( float frac ) {
 	}
 
 	// draw the input prompt, user text, and cursor if desired
-	Con_DrawInput ();
+	Con_DrawInput();
 
 	re.SetColor( NULL );
 }
@@ -740,9 +737,10 @@ void Con_DrawSolidConsole( float frac ) {
 Con_DrawConsole
 ==================
 */
-void Con_DrawConsole( void ) {
+void Con_DrawConsole( void )
+{
 	// check for console width changes from a vid mode change
-	Con_CheckResize ();
+	Con_CheckResize();
 
 	// if disconnected, render console full screen
 	if ( clc.state == CA_DISCONNECTED ) {
@@ -771,7 +769,8 @@ Con_RunConsole
 Scroll it up or down
 ==================
 */
-void Con_RunConsole (void) {
+void Con_RunConsole (void)
+{
 	// decide on the destination height of the console
 	if ( Key_GetCatcher( ) & KEYCATCH_CONSOLE )
 		con.finalFrac = con.userFrac;
@@ -834,7 +833,8 @@ void Con_Top( void ) {
 	}
 }
 
-void Con_Bottom( void ) {
+void Con_Bottom( void )
+{
 	con.display = con.current;
 }
 

@@ -121,13 +121,15 @@ clientActive_t		cl;
 clientConnection_t	clc;
 clientStatic_t		cls;
 vm_t* cgvm;
+refexport_t	re;
 
 char				cl_reconnectArgs[MAX_OSPATH];
 char				cl_oldGame[MAX_QPATH];
 qboolean			cl_oldGameSet;
 
 // Structure containing functions exported from refresh DLL
-refexport_t	re;
+
+
 #ifdef USE_RENDERER_DLOPEN
 static void	*rendererLib = NULL;
 #endif
@@ -209,22 +211,21 @@ static void CL_UpdateMumble(void)
 static
 void CL_UpdateVoipIgnore(const char *idstr, qboolean ignore)
 {
-	if ((*idstr >= '0') && (*idstr <= '9')) {
+	if ((*idstr >= '0') && (*idstr <= '9'))
+    {
 		const int id = atoi(idstr);
 		if ((id >= 0) && (id < MAX_CLIENTS)) {
 			clc.voipIgnore[id] = ignore;
 			CL_AddReliableCommand(va("voip %s %d",
 			                         ignore ? "ignore" : "unignore", id), qfalse);
-			Com_Printf("VoIP: %s ignoring player #%d\n",
-			            ignore ? "Now" : "No longer", id);
+			Com_Printf("VoIP: %s ignoring player #%d\n", ignore ? "Now" : "No longer", id);
 			return;
 		}
 	}
 	Com_Printf("VoIP: invalid player ID#\n");
 }
 
-static
-void CL_UpdateVoipGain(const char *idstr, float gain)
+static void CL_UpdateVoipGain(const char *idstr, float gain)
 {
 	if ((*idstr >= '0') && (*idstr <= '9')) {
 		const int id = atoi(idstr);
@@ -1497,21 +1498,20 @@ void CL_ForwardCommandToServer( const char *string )
 		CL_AddReliableCommand(cmd, qfalse);
 }
 
-/*
-===================
-CL_RequestMotd
 
-===================
-*/
-void CL_RequestMotd( void ) {
+void CL_RequestMotd( void )
+{
 #ifdef UPDATE_SERVER_NAME
 	char		info[MAX_INFO_STRING];
 
-	if ( !cl_motd->integer ) {
+	if ( !cl_motd->integer )
+    {
 		return;
 	}
+
 	Com_Printf( "Resolving %s\n", UPDATE_SERVER_NAME );
-	if ( !NET_StringToAdr( UPDATE_SERVER_NAME, &cls.updateServer, NA_IP ) ) {
+	if ( !NET_StringToAdr( UPDATE_SERVER_NAME, &cls.updateServer, NA_IP ) )
+    {
 		Com_Printf( "Couldn't resolve address\n" );
 		return;
 	}
@@ -2029,17 +2029,17 @@ void CL_ReferencedPK3List_f( void ) {
 CL_Configstrings_f
 ==================
 */
-void CL_Configstrings_f( void ) {
-	int		i;
-	int		ofs;
-
+void CL_Configstrings_f( void )
+{
 	if ( clc.state != CA_ACTIVE ) {
 		Com_Printf( "Not connected to a server.\n");
 		return;
 	}
 
-	for ( i = 0 ; i < MAX_CONFIGSTRINGS ; i++ ) {
-		ofs = cl.gameState.stringOffsets[ i ];
+    int i = 0;
+	for ( i = 0 ; i < MAX_CONFIGSTRINGS ; i++ )
+    {
+		int ofs = cl.gameState.stringOffsets[ i ];
 		if ( !ofs ) {
 			continue;
 		}
@@ -2052,7 +2052,8 @@ void CL_Configstrings_f( void ) {
 CL_Clientinfo_f
 ==============
 */
-void CL_Clientinfo_f( void ) {
+void CL_Clientinfo_f( void )
+{
 	Com_Printf( "--------- Client Information ---------\n" );
 	Com_Printf( "state: %i\n", clc.state );
 	Com_Printf( "Server: %s\n", clc.servername );
@@ -2886,7 +2887,8 @@ CL_CheckUserinfo
 
 ==================
 */
-void CL_CheckUserinfo( void ) {
+void CL_CheckUserinfo( void )
+{
 	// don't add reliable commands when not yet connected
 	if(clc.state < CA_CONNECTED)
 		return;
@@ -4255,15 +4257,13 @@ CL_GetPingQueueCount
 */
 int CL_GetPingQueueCount( void )
 {
-	int		i;
-	int		count;
-	ping_t*	pingptr;
-
-	count   = 0;
-	pingptr = cl_pinglist;
-
-	for (i=0; i<MAX_PINGREQUESTS; i++, pingptr++ ) {
-		if (pingptr->adr.port) {
+	int count = 0;
+	ping_t* pingptr = cl_pinglist;
+    int i;
+	for (i=0; i<MAX_PINGREQUESTS; i++, pingptr++ )
+    {
+		if (pingptr->adr.port)
+        {
 			count++;
 		}
 	}
@@ -4271,21 +4271,13 @@ int CL_GetPingQueueCount( void )
 	return (count);
 }
 
-/*
-==================
-CL_GetFreePing
-==================
-*/
+
 ping_t* CL_GetFreePing( void )
 {
-	ping_t*	pingptr;
-	ping_t*	best;	
-	int		oldest;
+	ping_t*	pingptr = cl_pinglist;
 	int		i;
-	int		time;
 
-	pingptr = cl_pinglist;
-	for (i=0; i<MAX_PINGREQUESTS; i++, pingptr++ )
+	for(i=0; i<MAX_PINGREQUESTS; i++, pingptr++)
 	{
 		// find free ping slot
 		if (pingptr->adr.port)
@@ -4312,12 +4304,13 @@ ping_t* CL_GetFreePing( void )
 
 	// use oldest entry
 	pingptr = cl_pinglist;
-	best    = cl_pinglist;
-	oldest  = INT_MIN;
+	ping_t* best = cl_pinglist;
+	int oldest  = INT_MIN;
+
 	for (i=0; i<MAX_PINGREQUESTS; i++, pingptr++ )
 	{
 		// scan for oldest
-		time = Sys_Milliseconds() - pingptr->start;
+	    int time = Sys_Milliseconds() - pingptr->start;
 		if (time > oldest)
 		{
 			oldest = time;
@@ -4328,21 +4321,17 @@ ping_t* CL_GetFreePing( void )
 	return (best);
 }
 
-/*
-==================
-CL_Ping_f
-==================
-*/
-void CL_Ping_f( void ) {
+
+void CL_Ping_f( void )
+{
 	netadr_t	to;
-	ping_t*		pingptr;
-	char*		server;
-	int			argc;
-	netadrtype_t	family = NA_UNSPEC;
+	char* server;
+	netadrtype_t family = NA_UNSPEC;
 
-	argc = Cmd_Argc();
+	int argc = Cmd_Argc();
 
-	if ( argc != 2 && argc != 3 ) {
+	if ( argc != 2 && argc != 3 )
+    {
 		Com_Printf( "usage: ping [-4|-6] server\n");
 		return;	
 	}
@@ -4367,7 +4356,7 @@ void CL_Ping_f( void ) {
 		return;
 	}
 
-	pingptr = CL_GetFreePing();
+	ping_t* pingptr = CL_GetFreePing();
 
 	memcpy( &pingptr->adr, &to, sizeof (netadr_t) );
 	pingptr->start = Sys_Milliseconds();
@@ -4487,14 +4476,14 @@ qboolean CL_UpdateVisiblePings_f(int source) {
 CL_ServerStatus_f
 ==================
 */
-void CL_ServerStatus_f(void) {
+void CL_ServerStatus_f(void)
+{
 	netadr_t	to, *toptr = NULL;
 	char		*server;
 	serverStatus_t *serverStatus;
-	int			argc;
 	netadrtype_t	family = NA_UNSPEC;
 
-	argc = Cmd_Argc();
+	int argc = Cmd_Argc();
 
 	if ( argc != 2 && argc != 3 )
 	{
@@ -4545,7 +4534,8 @@ void CL_ShowIP_f(void) {
 }
 
 
-qboolean CL_CDKeyValidate( const char *key, const char *checksum ) {
+qboolean CL_CDKeyValidate( const char *key, const char *checksum )
+{
 #ifdef STANDALONE
 	return qtrue;
 #else

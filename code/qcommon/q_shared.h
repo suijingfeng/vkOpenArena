@@ -383,7 +383,7 @@ extern	vec4_t		colorLtGrey;
 extern	vec4_t		colorMdGrey;
 extern	vec4_t		colorDkGrey;
 
-#define NUMBER_OF_COLORS 9
+
 #define Q_COLOR_ESCAPE	'^'
 #define Q_IsColorString(p)      ((p) && *(p) == Q_COLOR_ESCAPE && *((p)+1) && *((p)+1) >= '0' && *((p)+1) <= '8') // ^[0-8]
 
@@ -396,8 +396,10 @@ extern	vec4_t		colorDkGrey;
 #define COLOR_MAGENTA   '6'
 #define COLOR_WHITE     '7'
 #define COLOR_MENU      '8'
-#define ColorIndexForNumber(c) ((c) % NUMBER_OF_COLORS)
-#define ColorIndex(c) (ColorIndexForNumber((c) - '0'))
+#define NUMBER_OF_COLORS 9
+
+#define ColorIndexForNumber(c)  ((c) % NUMBER_OF_COLORS)
+#define ColorIndex(c)   (ColorIndexForNumber((c) - '0'))
 
 #define S_COLOR_BLACK	"^0"
 #define S_COLOR_RED	    "^1"
@@ -1345,7 +1347,7 @@ typedef enum _flag_status {
 #define CDKEY_LEN       16
 #define CDCHKSUM_LEN    2
 
-#define LERP( a, b, w ) ( ( a ) * ( 1.0f - ( w ) ) + ( b ) * ( w ) )
+#define LERP( a, b, w )     ( ( a ) * ( 1.0f - ( w ) ) + ( b ) * ( w ) )
 #define LUMA( red, green, blue ) ( 0.296875f * ( red ) + 0.5859375f * ( green ) + 0.109375f * ( blue ) )
 
 #endif	// __Q_SHARED_H

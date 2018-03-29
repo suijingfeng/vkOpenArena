@@ -187,14 +187,12 @@ void QDECL Com_Printf(const char *fmt, ... )
     {
     // TTimo: only open the qconsole.log if the filesystem is in an initialized state
     //   also, avoid recursing in the qconsole.log opening (i.e. if fs_debug is on)
-		if( !logfile && FS_Initialized() && !opening_qconsole) {
-			struct tm *newtime;
-			time_t aclock;
-            
+		if( !logfile && FS_Initialized() && !opening_qconsole)
+        {
             opening_qconsole = qtrue;
-
+			time_t aclock;
 			time( &aclock );
-			newtime = localtime( &aclock );
+			struct tm *newtime = localtime( &aclock );
 
 			logfile = FS_FOpenFileWrite( "qconsole.log" );
 			
@@ -202,10 +200,9 @@ void QDECL Com_Printf(const char *fmt, ... )
 			{
 				Com_Printf( "logfile opened on %s\n", asctime( newtime ) );
 			
-				if ( com_logfile->integer > 1 )
+				if( com_logfile->integer > 1 )
 				{
-					// force it to not buffer so we get valid
-					// data even if we are crashing
+					// force it to not buffer so we get valid data even if we are crashing
 					FS_ForceFlush(logfile);
 				}
 			}
@@ -339,10 +336,12 @@ Com_Quit_f
 Both client and server can use this, and it will do the apropriate things.
 =============
 */
-void Com_Quit_f( void ) {
+void Com_Quit_f( void )
+{
 	// don't try to shutdown if we are in a recursive error
 	char *p = Cmd_Args( );
-	if ( !com_errorEntered ) {
+	if ( !com_errorEntered )
+    {
 		// Some VMs might execute "quit" command directly,
 		// which would trigger an unload of active VM error.
 		// Sys_Quit will kill this process anyways, so
@@ -391,14 +390,18 @@ void Com_ParseCommandLine( char *commandLine )
     com_consoleLines[0] = commandLine;
     com_numConsoleLines = 1;
 
-    while ( *commandLine ) {
-        if (*commandLine == '"') {
+    while ( *commandLine )
+    {
+        if (*commandLine == '"')
+        {
             inq = !inq;
         }
         // look for a + seperating character
         // if commandLine came from a file, we might have real line seperators
-        if ( (*commandLine == '+' && !inq) || *commandLine == '\n'  || *commandLine == '\r' ) {
-            if ( com_numConsoleLines == MAX_CONSOLE_LINES ) {
+        if ( (*commandLine == '+' && !inq) || *commandLine == '\n'  || *commandLine == '\r' )
+        {
+            if ( com_numConsoleLines == MAX_CONSOLE_LINES )
+            {
                 return;
             }
             com_consoleLines[com_numConsoleLines] = commandLine + 1;
@@ -472,26 +475,26 @@ void Com_StartupVariable( const char *match )
 =================
 Com_AddStartupCommands
 
-Adds command line parameters as script statements
-Commands are seperated by + signs
+Adds command line parameters as script statements Commands are seperated by + signs
 
-Returns qtrue if any late commands were added, which
-will keep the demoloop from immediately starting
+Returns qtrue if any late commands were added, which will keep the demoloop from immediately starting
 =================
 */
-qboolean Com_AddStartupCommands( void ) {
-	int		i;
-	qboolean	added;
-
-	added = qfalse;
+qboolean Com_AddStartupCommands( void )
+{
+	qboolean added = qfalse;
+    int i;
 	// quote every token, so args with semicolons can work
-	for (i=0 ; i < com_numConsoleLines ; i++) {
-		if ( !com_consoleLines[i] || !com_consoleLines[i][0] ) {
+	for (i=0 ; i < com_numConsoleLines ; i++)
+    {
+		if ( !com_consoleLines[i] || !com_consoleLines[i][0] )
+        {
 			continue;
 		}
 
 		// set commands already added with Com_StartupVariable
-		if ( !Q_stricmpn( com_consoleLines[i], "set", 3 ) ) {
+		if ( !Q_stricmpn( com_consoleLines[i], "set", 3 ) )
+        {
 			continue;
 		}
 
@@ -506,11 +509,11 @@ qboolean Com_AddStartupCommands( void ) {
 
 //============================================================================
 
-void Info_Print( const char *s ) {
+void Info_Print( const char *s )
+{
 	char	key[BIG_INFO_KEY];
 	char	value[BIG_INFO_VALUE];
 	char	*o;
-	int		l;
 
 	if (*s == '\\')
 		s++;
@@ -520,7 +523,7 @@ void Info_Print( const char *s ) {
 		while (*s && *s != '\\')
 			*o++ = *s++;
 
-		l = o - key;
+		int l = o - key;
 		if (l < 20)
 		{
 			memset (o, ' ', 20-l);
@@ -873,14 +876,10 @@ void Z_Free(void* ptr)
 }
 
 
-/*
-================
-Z_FreeTags
-================
-*/
-void Z_FreeTags( int tag ) {
-	int			count;
-	memzone_t	*zone;
+void Z_FreeTags( int tag )
+{
+	int	count = 0;
+	memzone_t* zone;
 
 	if ( tag == TAG_SMALL ) {
 		zone = smallzone;
@@ -888,7 +887,6 @@ void Z_FreeTags( int tag ) {
 	else {
 		zone = mainzone;
 	}
-	count = 0;
 	// use the rover as our pointer, because
 	// Z_Free automatically adjusts it
 	zone->rover = zone->blocklist.next;
@@ -3156,7 +3154,7 @@ void Com_Frame(void)
 	//
 	// trace optimization tracking
 	//
-	if ( com_showtrace->integer )
+	if( com_showtrace->integer )
     {
 		extern	int c_traces, c_brush_traces, c_patch_traces;
 		extern	int	c_pointcontents;

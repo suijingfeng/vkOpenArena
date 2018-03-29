@@ -4418,6 +4418,7 @@ TODO:	if r_detailTextures 2, try to move the detail texture before the lightmap 
 ===============
 */
 
+
 shader_t *R_FindShader( const char *name, int lightmapIndex, qboolean mipRawImage )
 {
 	char strippedName[MAX_QPATH];
@@ -4740,6 +4741,177 @@ shader_t *R_FindShader( const char *name, int lightmapIndex, qboolean mipRawImag
 
 	return FinishShader();
 }
+
+
+
+/*
+===============
+InitShader
+===============
+
+static void InitShader( const char *name, int lightmapIndex ) {
+	int i;
+
+	// clear the global shader
+	memset( &shader, 0, sizeof( shader ) );
+	memset( &stages, 0, sizeof( stages ) );
+
+	Q_strncpyz( shader.name, name, sizeof( shader.name ) );
+	shader.lightmapIndex = lightmapIndex;
+
+	for ( i = 0 ; i < MAX_SHADER_STAGES ; i++ ) {
+		stages[i].bundle[0].texMods = texMods[i];
+	}
+}
+
+shader_t *R_FindShader( const char *name, int lightmapIndex, qboolean mipRawImage ) {
+	char		strippedName[MAX_QPATH];
+	int			hash;
+	char		*shaderText;
+	image_t		*image;
+	shader_t	*sh;
+
+	if ( name[0] == 0 ) {
+		return tr.defaultShader;
+	}
+
+	// use (fullbright) vertex lighting if the bsp file doesn't have
+	// lightmaps
+	if ( lightmapIndex >= 0 && lightmapIndex >= tr.numLightmaps ) {
+		lightmapIndex = LIGHTMAP_BY_VERTEX;
+	} else if ( lightmapIndex < LIGHTMAP_2D ) {
+		// negative lightmap indexes cause stray pointers (think tr.lightmaps[lightmapIndex])
+		ri.Printf( PRINT_WARNING, "WARNING: shader '%s' has invalid lightmap index of %d\n", name, lightmapIndex  );
+		lightmapIndex = LIGHTMAP_BY_VERTEX;
+	}
+
+	COM_StripExtension(name, strippedName, sizeof(strippedName));
+
+	hash = generateHashValue(strippedName, FILE_HASH_SIZE);
+
+	//
+	// see if the shader is already loaded
+	//
+	for (sh = hashTable[hash]; sh; sh = sh->next) {
+		// NOTE: if there was no shader or image available with the name strippedName
+		// then a default shader is created with lightmapIndex == LIGHTMAP_NONE, so we
+		// have to check all default shaders otherwise for every call to R_FindShader
+		// with that same strippedName a new default shader is created.
+		if ( (sh->lightmapIndex == lightmapIndex || sh->defaultShader) &&
+		     !Q_stricmp(sh->name, strippedName)) {
+			// match found
+			return sh;
+		}
+	}
+
+	InitShader( strippedName, lightmapIndex );
+
+	// FIXME: set these "need" values appropriately
+	shader.needsNormal = qtrue;
+	shader.needsST1 = qtrue;
+	shader.needsST2 = qtrue;
+	shader.needsColor = qtrue;
+
+	//
+	// attempt to define shader from an explicit parameter file
+	//
+	shaderText = FindShaderInShaderText( strippedName );
+	if ( shaderText ) {
+		// enable this when building a pak file to get a global list
+		// of all explicit shaders
+		if ( r_printShaders->integer ) {
+			ri.Printf( PRINT_ALL, "*SHADER* %s\n", name );
+		}
+
+		if ( !ParseShader( &shaderText ) ) {
+			// had errors, so use default shader
+			shader.defaultShader = qtrue;
+		}
+		sh = FinishShader();
+		return sh;
+	}
+
+
+	//
+	// if not defined in the in-memory shader descriptions,
+	// look for a single supported image file
+	//
+	{
+		imgFlags_t flags;
+
+		flags = IMGFLAG_NONE;
+
+		if (mipRawImage)
+		{
+			flags |= IMGFLAG_MIPMAP | IMGFLAG_PICMIP;
+		}
+		else
+		{
+			flags |= IMGFLAG_CLAMPTOEDGE;
+		}
+
+		image = R_FindImageFile( name, IMGTYPE_COLORALPHA, flags );
+		if ( !image ) {
+			ri.Printf( PRINT_DEVELOPER, "Couldn't find image file for shader %s\n", name );
+			shader.defaultShader = qtrue;
+			return FinishShader();
+		}
+	}
+
+	//
+	// create the default shading commands
+	//
+	if ( shader.lightmapIndex == LIGHTMAP_NONE ) {
+		// dynamic colors at vertexes
+		stages[0].bundle[0].image[0] = image;
+		stages[0].active = qtrue;
+		stages[0].rgbGen = CGEN_LIGHTING_DIFFUSE;
+		stages[0].stateBits = GLS_DEFAULT;
+	} else if ( shader.lightmapIndex == LIGHTMAP_BY_VERTEX ) {
+		// explicit colors at vertexes
+		stages[0].bundle[0].image[0] = image;
+		stages[0].active = qtrue;
+		stages[0].rgbGen = CGEN_EXACT_VERTEX;
+		stages[0].alphaGen = AGEN_SKIP;
+		stages[0].stateBits = GLS_DEFAULT;
+	} else if ( shader.lightmapIndex == LIGHTMAP_2D ) {
+		// GUI elements
+		stages[0].bundle[0].image[0] = image;
+		stages[0].active = qtrue;
+		stages[0].rgbGen = CGEN_VERTEX;
+		stages[0].alphaGen = AGEN_VERTEX;
+		stages[0].stateBits = GLS_DEPTHTEST_DISABLE |
+			  GLS_SRCBLEND_SRC_ALPHA |
+			  GLS_DSTBLEND_ONE_MINUS_SRC_ALPHA;
+	} else if ( shader.lightmapIndex == LIGHTMAP_WHITEIMAGE ) {
+		// fullbright level
+		stages[0].bundle[0].image[0] = tr.whiteImage;
+		stages[0].active = qtrue;
+		stages[0].rgbGen = CGEN_IDENTITY_LIGHTING;
+		stages[0].stateBits = GLS_DEFAULT;
+
+		stages[1].bundle[0].image[0] = image;
+		stages[1].active = qtrue;
+		stages[1].rgbGen = CGEN_IDENTITY;
+		stages[1].stateBits |= GLS_SRCBLEND_DST_COLOR | GLS_DSTBLEND_ZERO;
+	} else {
+		// two pass lightmap
+		stages[0].bundle[0].image[0] = tr.lightmaps[shader.lightmapIndex];
+		stages[0].bundle[0].isLightmap = qtrue;
+		stages[0].active = qtrue;
+		stages[0].rgbGen = CGEN_IDENTITY;	// lightmaps are scaled on creation
+													// for identitylight
+		stages[0].stateBits = GLS_DEFAULT;
+
+		stages[1].bundle[0].image[0] = image;
+		stages[1].active = qtrue;
+		stages[1].rgbGen = CGEN_IDENTITY;
+		stages[1].stateBits |= GLS_SRCBLEND_DST_COLOR | GLS_DSTBLEND_ZERO;
+	}
+
+	return FinishShader();
+}
+*/
 
 
 qhandle_t RE_RegisterShaderFromImage(const char *name, int lightmapIndex, image_t *image, qboolean mipRawImage)

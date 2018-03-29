@@ -33,8 +33,6 @@ cvar_t *cl_graphshift;
 
 /*
 ================
-SCR_AdjustFrom640
-
 Adjusted for resolution and screen aspect ratio
 ================
 */
@@ -43,25 +41,20 @@ void SCR_AdjustFrom640( float *x, float *y, float *w, float *h )
 	// scale for screen sizes
 	float xscale = cls.glconfig.vidWidth / 640.0;
 	float yscale = cls.glconfig.vidHeight / 480.0;
-	if ( x ) {
-		*x *= xscale;
-	}
-	if ( y ) {
-		*y *= yscale;
-	}
-	if ( w ) {
-		*w *= xscale;
-	}
-	if ( h ) {
-		*h *= yscale;
-	}
+   
+    if(x)
+        *x *= xscale;
+    if(y)
+        *y *= yscale;
+    if(w)
+        *w *= xscale;
+    if(h)
+        *h *= yscale;
 }
 
 
 /*
 ================
-SCR_DrawNamedPic
-
 Coordinates are 640*480 virtual values
 =================
 */
@@ -113,14 +106,9 @@ void SCR_DrawPic( float x, float y, float width, float height, qhandle_t hShader
 */
 static void SCR_DrawChar( int x, int y, float size, int ch )
 {
-	int row, col;
 	float frow, fcol;
 
 	ch &= 255;
-
-	if ( ch == ' ' ) {
-		return;
-	}
 
 	if ( y < -size ) {
 		return;
@@ -132,8 +120,8 @@ static void SCR_DrawChar( int x, int y, float size, int ch )
 	float ah = size;
 	SCR_AdjustFrom640( &ax, &ay, &aw, &ah );
 
-	row = ch>>4;
-	col = ch&15;
+	int row = ch>>4;
+	int col = ch&15;
 
 	frow = row*0.0625;
 	fcol = col*0.0625;
@@ -180,17 +168,19 @@ Coordinates are at 640 by 480 virtual resolution
 */
 void SCR_DrawStringExt( int x, int y, float size, const char *string, float *setColor, qboolean forceColor, qboolean noColorEscape )
 {
-	vec4_t		color;
+    int xx = x;
+    const char *s = string;
+	vec4_t color;
 
 	// draw the drop shadow
 	color[0] = color[1] = color[2] = 0;
 	color[3] = setColor[3];
 	re.SetColor( color );
-	const char *s = string;
-	int xx = x;
+
 	while ( *s )
     {
-		if ( !noColorEscape && Q_IsColorString( s ) ) {
+		if ( !noColorEscape && Q_IsColorString( s ) )
+        {
 			s += 2;
 			continue;
 		}
@@ -274,6 +264,8 @@ void SCR_DrawSmallStringExt( int x, int y, const char *string, float *setColor, 
 	}
 	re.SetColor( NULL );
 }
+
+
 
 
 
@@ -533,7 +525,7 @@ This is called every frame, and can also be called explicitly to flush text to t
 */
 void SCR_UpdateScreen( void )
 {
-	static int	recursive;
+	static int recursive;
 
 	if ( !scr_initialized )
 		return;				// not initialized yet

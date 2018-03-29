@@ -34,14 +34,10 @@ glconfig_t  glConfig;
 glstate_t	glState;
 
 
-//
-// cvars
-//
-
-//extern cvar_t	*r_verbose;				// used for verbose debug spew
+//extern cvar_t	*r_verbose;			// used for verbose debug spew
 //extern cvar_t	*r_vertexLight;		// vertex lighting mode for better performance
 //extern cvar_t	*r_logFile;		    // number of frames to emit GL logs
-//cvar_t	*r_clear;
+
 cvar_t* r_maxpolys;
 cvar_t* r_maxpolyverts;
 
@@ -50,7 +46,7 @@ static cvar_t* r_textureMode;
 static cvar_t* r_aviMotionJpegQuality;
 static cvar_t* r_screenshotJpegQuality;
 
-
+/*
 
 struct vidmode_s {
 	const char *description;
@@ -58,7 +54,7 @@ struct vidmode_s {
 	float pixelAspect;		// pixel width / height
 };
 
-/*
+
 static const struct vidmode_s r_vidModes[] = {
 	{ "Mode  0: 320x240",		320,	240,	1 },
 	{ "Mode  1: 400x300",		400,	300,	1 },
@@ -156,7 +152,8 @@ static void R_PrintLongString(const char *string)
 
 static void GfxInfo_f( void )
 {
-	const char *enablestrings[] = {
+	const char *enablestrings[] =
+    {
 		"disabled",
 		"enabled"
 	};
@@ -292,9 +289,8 @@ FIXME: the statics don't get a reinit between fs_game changes
 */
 static void RB_TakeScreenshot(int x, int y, int width, int height, char *fileName)
 {
-	byte *destptr, *endline;
-	byte temp;
-
+	unsigned char *destptr, *endline;
+	
 	int padlen;
 	size_t offset = 18, memcount;
 
@@ -319,8 +315,9 @@ static void RB_TakeScreenshot(int x, int y, int width, int height, char *fileNam
     {
 		endline = srcptr + linelen;
 
-		while(srcptr < endline) {
-			temp = srcptr[0];
+		while(srcptr < endline)
+        {
+			unsigned char temp = srcptr[0];
 			*destptr++ = srcptr[2];
 			*destptr++ = srcptr[1];
 			*destptr++ = temp;
@@ -437,8 +434,8 @@ static void R_ScreenshotFilenameJPEG( int lastNumber, char *fileName )
 ====================
 R_LevelShot
 
-levelshots are specialized 128*128 thumbnails for
-the menu system, sampled down from full screen distorted images
+levelshots are specialized 128*128 thumbnails for the menu system,
+sampled down from full screen distorted images
 ====================
 */
 static void R_LevelShot( void )
@@ -456,9 +453,9 @@ static void R_LevelShot( void )
 
 	unsigned char* allsource = RB_ReadPixels(0, 0, glConfig.vidWidth, glConfig.vidHeight, &offset, &padlen);
 	unsigned char* source = allsource + offset;
-
 	unsigned char* buffer = ri.Hunk_AllocateTempMemory(128 * 128*3 + 18);
-	memset (buffer, 0, 18);
+
+    memset (buffer, 0, 18);
 	buffer[2] = 2;		// uncompressed type
 	buffer[12] = 128;
 	buffer[14] = 128;
@@ -467,11 +464,15 @@ static void R_LevelShot( void )
 	// resample from source
 	float xScale = glConfig.vidWidth / 512.0f;
 	float yScale = glConfig.vidHeight / 384.0f;
-	for ( y = 0 ; y < 128 ; y++ ) {
-		for ( x = 0 ; x < 128 ; x++ ) {
+	for ( y = 0 ; y < 128 ; y++ )
+    {
+		for ( x = 0 ; x < 128 ; x++ )
+        {
 			r = g = b = 0;
-			for ( yy = 0 ; yy < 3 ; yy++ ) {
-				for ( xx = 0 ; xx < 4 ; xx++ ) {
+			for ( yy = 0 ; yy < 3 ; yy++ )
+            {
+				for ( xx = 0 ; xx < 4 ; xx++ )
+                {
 					src = source + (3 * glConfig.vidWidth + padlen) * (int)((y*3 + yy) * yScale) +
 					      3 * (int) ((x*4 + xx) * xScale);
 					r += src[0];
@@ -554,6 +555,7 @@ static void R_ScreenShotJPEG_f (void)
 		ri.Printf (PRINT_ALL, "Wrote %s\n", checkname);
 	}
 }
+
 
 //============================================================================
 
@@ -640,7 +642,8 @@ static void R_ScreenShot_f(void)
 	static	int	lastNumber = -1;
 	qboolean	silent;
 
-	if ( !strcmp( ri.Cmd_Argv(1), "levelshot" ) ) {
+	if ( !strcmp( ri.Cmd_Argv(1), "levelshot" ) )
+    {
 		R_LevelShot();
 		return;
 	}
