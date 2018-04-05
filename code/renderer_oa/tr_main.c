@@ -26,13 +26,12 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
 ///////// globals ///////////
 
-trGlobals_t	tr;
 
-refimport_t	ri;
-
-shaderCommands_t tess;
-
+extern refimport_t ri;
 extern cvar_t* r_fastsky;
+
+trGlobals_t	tr;
+shaderCommands_t tess;
 
 static cvar_t* r_debugSurface;
 static cvar_t* r_noportals;
@@ -101,17 +100,17 @@ static void R_RotateForViewer(void)
 	viewerMatrix[0] = tr.viewParms.or.axis[0][0];
 	viewerMatrix[4] = tr.viewParms.or.axis[0][1];
 	viewerMatrix[8] = tr.viewParms.or.axis[0][2];
-	viewerMatrix[12] = -origin[0] * viewerMatrix[0] + -origin[1] * viewerMatrix[4] + -origin[2] * viewerMatrix[8];
+	viewerMatrix[12] = -origin[0] * viewerMatrix[0] -origin[1] * viewerMatrix[4] -origin[2] * viewerMatrix[8];
 
 	viewerMatrix[1] = tr.viewParms.or.axis[1][0];
 	viewerMatrix[5] = tr.viewParms.or.axis[1][1];
 	viewerMatrix[9] = tr.viewParms.or.axis[1][2];
-	viewerMatrix[13] = -origin[0] * viewerMatrix[1] + -origin[1] * viewerMatrix[5] + -origin[2] * viewerMatrix[9];
+	viewerMatrix[13] = -origin[0] * viewerMatrix[1] -origin[1] * viewerMatrix[5] -origin[2] * viewerMatrix[9];
 
 	viewerMatrix[2] = tr.viewParms.or.axis[2][0];
 	viewerMatrix[6] = tr.viewParms.or.axis[2][1];
 	viewerMatrix[10] = tr.viewParms.or.axis[2][2];
-	viewerMatrix[14] = -origin[0] * viewerMatrix[2] + -origin[1] * viewerMatrix[6] + -origin[2] * viewerMatrix[10];
+	viewerMatrix[14] = -origin[0] * viewerMatrix[2] -origin[1] * viewerMatrix[6] -origin[2] * viewerMatrix[10];
 
 	viewerMatrix[3] = 0;
 	viewerMatrix[7] = 0;
@@ -193,13 +192,13 @@ Set up the culling frustum planes for the current view using the results we got 
 the projection matrix.
 =================
 */
-static void R_SetupFrustum(viewParms_t *dest, float xmin, float xmax, float ymax, float zProj, float stereoSep)
+static void R_SetupFrustum(viewParms_t *dest, float xmin, float xmax, float ymax, float zProj)
 {
 	vec3_t ofsorigin;
 	float oppleg, adjleg, length;
 	int i;
 	
-	if(stereoSep == 0 && xmin == -xmax)
+	if( xmin == -xmax)
 	{
 		// symmetric case can be simplified
 		VectorCopy(dest->or.origin, ofsorigin);
@@ -214,22 +213,7 @@ static void R_SetupFrustum(viewParms_t *dest, float xmin, float xmax, float ymax
 		VectorScale(dest->or.axis[0], oppleg, dest->frustum[1].normal);
 		VectorMA(dest->frustum[1].normal, -adjleg, dest->or.axis[1], dest->frustum[1].normal);
 	}
-	else
-	{
-		// In stereo rendering, due to the modification of the projection matrix, dest->or.origin is not the
-		// actual origin that we're rendering so offset the tip of the view pyramid.
-		VectorMA(dest->or.origin, stereoSep, dest->or.axis[1], ofsorigin);
-	
-		oppleg = xmax + stereoSep;
-		length = sqrt(oppleg * oppleg + zProj * zProj);
-		VectorScale(dest->or.axis[0], oppleg / length, dest->frustum[0].normal);
-		VectorMA(dest->frustum[0].normal, zProj / length, dest->or.axis[1], dest->frustum[0].normal);
 
-		oppleg = xmin + stereoSep;
-		length = sqrt(oppleg * oppleg + zProj * zProj);
-		VectorScale(dest->or.axis[0], -oppleg / length, dest->frustum[1].normal);
-		VectorMA(dest->frustum[1].normal, -zProj / length, dest->or.axis[1], dest->frustum[1].normal);
-	}
 
 	length = sqrt(ymax * ymax + zProj * zProj);
 	oppleg = ymax / length;
@@ -914,8 +898,7 @@ static void R_GenerateDrawSurfs( void )
 
 	R_AddPolygonSurfaces();
 
-	// set the projection matrix with the minimum zfar
-	// now that we have the world bounded
+	// set the projection matrix with the minimum zfar now that we have the world bounded
 	// this needs to be done before entities are added, 
     // because they use the projection matrix for lod calculation
 
@@ -927,7 +910,7 @@ static void R_GenerateDrawSurfs( void )
 
 	if( r_drawentities->integer )
     {
-		R_AddEntitySurfaces ();
+		R_AddEntitySurfaces();
 	}
 
 }
@@ -986,7 +969,7 @@ static void R_DebugGraphics( void )
 
 //==========================================================================================
 
-void R_SetupProjection(viewParms_t *dest, float zProj, qboolean computeFrustum)
+void R_SetupProjection(viewParms_t *dest, float zProj)
 {
 	float ymax = zProj * tan(dest->fovY * M_PI / 360.0f);
 	float ymin = -ymax;
@@ -1013,8 +996,7 @@ void R_SetupProjection(viewParms_t *dest, float zProj, qboolean computeFrustum)
 	dest->projectionMatrix[15] = 0;
 	
 	// Now that we have all the data for the projection matrix we can also setup the view frustum.
-	if(computeFrustum)
-		R_SetupFrustum(dest, xmin, xmax, ymax, zProj, 0);
+	R_SetupFrustum(dest, xmin, xmax, ymax, zProj);
 }
 
 
@@ -1052,11 +1034,8 @@ void R_DecomposeSort( unsigned sort, int *entityNum, shader_t **shader, int *fog
  */
 void R_RenderView(viewParms_t *parms)
 {
-	int	firstDrawSurf;
-
-	if ( parms->viewportWidth <= 0 || parms->viewportHeight <= 0 ) {
+	if ( (parms->viewportWidth <= 0) || (parms->viewportHeight <= 0) )
 		return;
-	}
 
 	tr.viewCount++;
 
@@ -1064,14 +1043,14 @@ void R_RenderView(viewParms_t *parms)
 	tr.viewParms.frameSceneNum = tr.frameSceneNum;
 	tr.viewParms.frameCount = tr.frameCount;
 
-	firstDrawSurf = tr.refdef.numDrawSurfs;
+	int firstDrawSurf = tr.refdef.numDrawSurfs;
 
 	tr.viewCount++;
 
 	// set viewParms.world
 	R_RotateForViewer();
 
-	R_SetupProjection(&tr.viewParms, r_zproj->value, qtrue);
+	R_SetupProjection(&tr.viewParms, r_zproj->value);
 
 	R_GenerateDrawSurfs();
 

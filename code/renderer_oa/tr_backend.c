@@ -28,10 +28,12 @@ extern shaderCommands_t tess;
 extern cvar_t* r_fastsky;
 extern cvar_t* r_debugSurface; //tr_init
 
-extern trGlobals_t	tr;
+extern trGlobals_t tr;
+extern glconfig_t glConfig;
+extern refimport_t ri;
 
 
-cvar_t	*r_measureOverdraw;		// enables stencil buffer overdraw measurement
+cvar_t* r_measureOverdraw;		// enables stencil buffer overdraw measurement
 cvar_t* r_speeds; // various levels of information display
 backEndState_t	backEnd;
 

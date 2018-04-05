@@ -27,6 +27,7 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #include "../sys/sys_local.h"
 #include "../sys/sys_loadlib.h"
 #include "../sdl/sdl_input.h"
+#include "../qcommon/puff.h"
 
 #ifdef USE_MUMBLE
 #include "libmumblelink.h"
@@ -2764,13 +2765,13 @@ void CL_ConnectionlessPacket( netadr_t from, msg_t *msg ) {
 	}
 
 	// list of servers sent back by a master server (classic)
-	if ( !Q_strncmp(c, "getserversResponse", 18) ) {
+	if ( !strncmp(c, "getserversResponse", 18) ) {
 		CL_ServersResponsePacket( &from, msg, qfalse );
 		return;
 	}
 
 	// list of servers sent back by a master server (extended)
-	if ( !Q_strncmp(c, "getserversExtResponse", 21) ) {
+	if ( !strncmp(c, "getserversExtResponse", 21) ) {
 		CL_ServersResponsePacket( &from, msg, qtrue );
 		return;
 	}
@@ -3062,19 +3063,18 @@ static __attribute__((format(printf, 2, 3))) void QDECL CL_RefPrintf( int print_
 		Com_Printf(S_COLOR_YELLOW "%s", msg);	// yellow
 	else if(print_level == PRINT_DEVELOPER)
 		Com_DPrintf(S_COLOR_RED "%s", msg);		// red
+
 }
 
 
-
-
-void CL_ShutdownRef( void )
+void CL_ShutdownRef(void)
 {
-	if ( re.Shutdown )
+	if(re.Shutdown)
     {
-		re.Shutdown( qtrue );
+		re.Shutdown(qtrue);
 	}
 
-	memset( &re, 0, sizeof( re ) );
+	memset(&re, 0, sizeof(re));
 
 #ifdef USE_RENDERER_DLOPEN
 	if ( rendererLib ) {
@@ -3096,12 +3096,12 @@ static void CL_SetModel_f( void )
 	
     if (arg[0])
     {
-		Cvar_Set( "model", arg );
-		Cvar_Set( "headmodel", arg );
+		Cvar_Set("model", arg);
+		Cvar_Set("headmodel", arg);
 	}
     else
     {
-		Cvar_VariableStringBuffer( "model", name, sizeof(name) );
+		Cvar_VariableStringBuffer("model", name, sizeof(name));
 		Com_Printf("model is set to %s\n", name);
 	}
 }
@@ -3117,8 +3117,8 @@ video [filename]
 */
 static void CL_Video_f( void )
 {
-  char  filename[ MAX_OSPATH ];
-  int   i, last;
+  char filename[ MAX_OSPATH ];
+  int i, last;
 
   if( !clc.demoplaying )
   {
@@ -3276,6 +3276,11 @@ void CL_InitRef(void)
 
 	ri.Sys_SetEnv = Sys_SetEnv;
 	ri.Sys_LowPhysicalMemory = Sys_LowPhysicalMemory;
+
+    // extra
+    ri.Puff = puff;
+
+
 
 	ret = GetRefAPI(REF_API_VERSION, &ri);
 
@@ -3549,11 +3554,11 @@ void CL_Init( void )
 	// ~ and `, as keys and characters
 	cl_consoleKeys = Cvar_Get( "cl_consoleKeys", "~ ` 0x7e 0x60", CVAR_ARCHIVE);
 
-	cl_consoleType = Cvar_Get( "cl_consoleType", "0", CVAR_ARCHIVE );
+	cl_consoleType = Cvar_Get( "cl_consoleType", "2", CVAR_ARCHIVE );
 	cl_consoleColor[0] = Cvar_Get( "cl_consoleColorRed", "1", CVAR_ARCHIVE );
 	cl_consoleColor[1] = Cvar_Get( "cl_consoleColorGreen", "1", CVAR_ARCHIVE );
-	cl_consoleColor[2] = Cvar_Get( "cl_consoleColorBlue", "0", CVAR_ARCHIVE );
-	cl_consoleColor[3] = Cvar_Get( "cl_consoleColorAlpha", "0.8", CVAR_ARCHIVE );
+	cl_consoleColor[2] = Cvar_Get( "cl_consoleColorBlue", "1", CVAR_ARCHIVE );
+	cl_consoleColor[3] = Cvar_Get( "cl_consoleColorAlpha", "0.05", CVAR_ARCHIVE );
 
 	cl_consoleHeight = Cvar_Get("cl_consoleHeight", "0.5", CVAR_ARCHIVE);
 
@@ -3733,11 +3738,12 @@ static void CL_SetServerInfo(serverInfo_t *server, const char *info, int ping)
 	}
 }
 
+
 static void CL_SetServerInfoByAddress(netadr_t from, const char *info, int ping)
 {
 	int i;
-
-	for (i = 0; i < MAX_OTHER_SERVERS; i++) {
+	for (i = 0; i < MAX_OTHER_SERVERS; i++)
+    {
 		if (NET_CompareAdr(from, cls.localServers[i].adr)) {
 			CL_SetServerInfo(&cls.localServers[i], info, ping);
 		}
@@ -3762,18 +3768,16 @@ static void CL_SetServerInfoByAddress(netadr_t from, const char *info, int ping)
 CL_ServerInfoPacket
 ===================
 */
-void CL_ServerInfoPacket( netadr_t from, msg_t *msg ) {
+void CL_ServerInfoPacket( netadr_t from, msg_t *msg )
+{
 	int		i, type;
 	char	info[MAX_INFO_STRING];
-	char	*infoString;
-	int		prot;
-	char	*gamename;
 	qboolean gameMismatch;
 
-	infoString = MSG_ReadString( msg );
+	char* infoString = MSG_ReadString( msg );
 
 	// if this isn't the correct gamename, ignore it
-	gamename = Info_ValueForKey( infoString, "gamename" );
+	char* gamename = Info_ValueForKey( infoString, "gamename" );
 
 #ifdef LEGACY_PROTOCOL
 	// gamename is optional for legacy protocol
@@ -3790,7 +3794,7 @@ void CL_ServerInfoPacket( netadr_t from, msg_t *msg ) {
 	}
 
 	// if this isn't the correct protocol version, ignore it
-	prot = atoi( Info_ValueForKey( infoString, "protocol" ) );
+	int prot = atoi( Info_ValueForKey( infoString, "protocol" ) );
 
 	if(prot != com_protocol->integer
 #ifdef LEGACY_PROTOCOL
@@ -3837,7 +3841,8 @@ void CL_ServerInfoPacket( netadr_t from, msg_t *msg ) {
 	}
 
 	// if not just sent a local broadcast or pinging local servers
-	if (cls.pingUpdateSource != AS_LOCAL) {
+	if (cls.pingUpdateSource != AS_LOCAL)
+    {
 		return;
 	}
 
@@ -3863,7 +3868,8 @@ void CL_ServerInfoPacket( netadr_t from, msg_t *msg ) {
 	CL_InitServerInfo( &cls.localServers[i], &from );
 
 	Q_strncpyz( info, MSG_ReadString( msg ), MAX_INFO_STRING );
-	if (strlen(info)) {
+	if (strlen(info))
+    {
 		if (info[strlen(info)-1] != '\n') {
 			Q_strcat(info, sizeof(info), "\n");
 		}
@@ -3968,14 +3974,13 @@ int CL_ServerStatus( char *serverAddress, char *serverStatusString, int maxLen )
 CL_ServerStatusResponse
 ===================
 */
-void CL_ServerStatusResponse( netadr_t from, msg_t *msg ) {
-	char	*s;
-	char	info[MAX_INFO_STRING];
+void CL_ServerStatusResponse( netadr_t from, msg_t *msg )
+{
+	
+    char	info[MAX_INFO_STRING];
 	int		i, l, score, ping;
 	int		len;
-	serverStatus_t *serverStatus;
-
-	serverStatus = NULL;
+	serverStatus_t *serverStatus = NULL;
 	for (i = 0; i < MAX_SERVERSTATUSREQUESTS; i++) {
 		if ( NET_CompareAdr( from, cl_serverStatusList[i].address ) ) {
 			serverStatus = &cl_serverStatusList[i];
@@ -3987,7 +3992,7 @@ void CL_ServerStatusResponse( netadr_t from, msg_t *msg ) {
 		return;
 	}
 
-	s = MSG_ReadStringLine( msg );
+	char* s = MSG_ReadStringLine( msg );
 
 	len = 0;
 	Com_sprintf(&serverStatus->string[len], sizeof(serverStatus->string)-len, "%s", s);
@@ -4183,10 +4188,6 @@ CL_GetPing
 */
 void CL_GetPing( int n, char *buf, int buflen, int *pingtime )
 {
-	const char	*str;
-	int		time;
-	int		maxPing;
-
 	if (n < 0 || n >= MAX_PINGREQUESTS || !cl_pinglist[n].adr.port)
 	{
 		// empty or invalid slot
@@ -4195,15 +4196,15 @@ void CL_GetPing( int n, char *buf, int buflen, int *pingtime )
 		return;
 	}
 
-	str = NET_AdrToStringwPort( cl_pinglist[n].adr );
+	const char* str = NET_AdrToStringwPort( cl_pinglist[n].adr );
 	Q_strncpyz( buf, str, buflen );
 
-	time = cl_pinglist[n].time;
+	int time = cl_pinglist[n].time;
 	if (!time)
 	{
 		// check for timeout
 		time = Sys_Milliseconds() - cl_pinglist[n].start;
-		maxPing = Cvar_VariableIntegerValue( "cl_maxPing" );
+		int maxPing = Cvar_VariableIntegerValue( "cl_maxPing" );
 		if( maxPing < 100 ) {
 			maxPing = 100;
 		}
@@ -4372,8 +4373,9 @@ void CL_Ping_f( void )
 CL_UpdateVisiblePings_f
 ==================
 */
-qboolean CL_UpdateVisiblePings_f(int source) {
-	int			slots, i;
+qboolean CL_UpdateVisiblePings_f(int source)
+{
+	int			i;
 	char		buff[MAX_STRING_CHARS];
 	int			pingTime;
 	int			max;
@@ -4385,7 +4387,7 @@ qboolean CL_UpdateVisiblePings_f(int source) {
 
 	cls.pingUpdateSource = source;
 
-	slots = CL_GetPingQueueCount();
+    int	slots = CL_GetPingQueueCount();
 	if (slots < MAX_PINGREQUESTS) {
 		serverInfo_t *server = NULL;
 
@@ -4540,11 +4542,11 @@ qboolean CL_CDKeyValidate( const char *key, const char *checksum )
 	return qtrue;
 #else
 	char	ch;
-	byte	sum;
+	unsigned char sum = 0;
 	char	chs[3];
-	int i, len;
+	int i;
 
-	len = strlen(key);
+	int len = strlen(key);
 	if( len != CDKEY_LEN ) {
 		return qfalse;
 	}

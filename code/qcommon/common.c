@@ -109,7 +109,7 @@ qboolean	com_errorEntered = qfalse;
 qboolean	com_fullyInitialized = qfalse;
 qboolean	com_gameRestarting = qfalse;
 
-char	com_errorMessage[MAXPRINTMSG];
+char com_errorMessage[MAXPRINTMSG];
 
 //void Com_WriteConfig_f( void );
 void CIN_CloseAllVideos( void );
@@ -2664,7 +2664,7 @@ void Com_Init(char *commandLine )
 	Cmd_Init();
 
 	// get the developer cvar set as early as possible
-	com_developer = Cvar_Get("developer", "1", CVAR_TEMP);
+	com_developer = Cvar_Get("developer", "0", CVAR_TEMP);
 
 	// done early so bind command exists
 	CL_InitKeyCommands();

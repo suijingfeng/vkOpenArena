@@ -25,6 +25,10 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #include "tr_dsa.h"
 #include "../sdl/sdl_glimp.h"
 
+extern cvar_t *r_ext_texture_filter_anisotropic;
+extern cvar_t *r_ext_max_anisotropy;
+extern cvar_t *r_ext_compressed_textures;// these control use of specific extensions, tr2
+
 static cvar_t* r_texturebits;
 static unsigned char s_intensitytable[256];
 static unsigned char s_gammatable[256];
@@ -38,10 +42,12 @@ static	image_t*		hashTable[FILE_HASH_SIZE];
 /*
 ** R_GammaCorrect
 */
-void R_GammaCorrect( byte *buffer, int bufSize ) {
+void R_GammaCorrect( byte *buffer, int bufSize )
+{
 	int i;
 
-	for ( i = 0; i < bufSize; i++ ) {
+	for ( i = 0; i < bufSize; i++ )
+    {
 		buffer[i] = s_gammatable[buffer[i]];
 	}
 }
@@ -51,7 +57,9 @@ typedef struct {
 	int	minimize, maximize;
 } textureMode_t;
 
-textureMode_t modes[] = {
+
+textureMode_t modes[] =
+{
 	{"GL_NEAREST", GL_NEAREST, GL_NEAREST},
 	{"GL_LINEAR", GL_LINEAR, GL_LINEAR},
 	{"GL_NEAREST_MIPMAP_NEAREST", GL_NEAREST_MIPMAP_NEAREST, GL_NEAREST},
@@ -65,15 +73,13 @@ textureMode_t modes[] = {
 return a hash value for the filename
 ================
 */
-static long generateHashValue( const char *fname ) {
-	int		i;
-	long	hash;
-	char	letter;
-
-	hash = 0;
-	i = 0;
-	while (fname[i] != '\0') {
-		letter = tolower(fname[i]);
+static long generateHashValue( const char *fname )
+{
+	int		i = 0;
+	long	hash = 0;
+	while (fname[i] != '\0')
+    {
+		char letter = tolower(fname[i]);
 		if (letter =='.') break;				// don't include extension
 		if (letter =='\\') letter = '/';		// damn path names
 		hash+=(long)(letter)*(i+119);

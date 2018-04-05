@@ -28,6 +28,8 @@ extern cvar_t* r_gamma;
 extern cvar_t* r_measureOverdraw;
 
 extern backEndState_t backEnd;
+extern refimport_t ri;
+extern glconfig_t glConfig;
 
 
 backEndData_t *backEndData;

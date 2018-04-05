@@ -20,9 +20,6 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 ===========================================================================
 */
 
-#include "tr_local.h"
-#include "../qcommon/cm_local.h"
-
 /*
 =============================================================================
 
@@ -51,6 +48,13 @@ potentially up to five or more times in a frame with 3D status bar icons).
 
 =============================================================================
 */
+
+
+#include "tr_local.h"
+#include "../qcommon/cm_local.h"
+
+extern refimport_t ri;
+
 
 
 // flare states maintain visibility over multiple frames for fading

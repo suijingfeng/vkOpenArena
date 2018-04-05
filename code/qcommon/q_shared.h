@@ -182,9 +182,7 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
 //=============================================================
 
-typedef unsigned char byte;
 
-typedef enum {qfalse, qtrue} qboolean;
 
 typedef union {
 	float f;
@@ -256,7 +254,8 @@ typedef enum {
 //
 // these aren't needed by any of the VMs.  put in another header?
 //
-#define	MAX_MAP_AREA_BYTES		32		// bit vector of area visibility
+#define	MAX_MAP_AREA_BYTES		    32		// bit vector of area visibility
+
 
 
 // print levels from renderer (FIXME: set up for game / cgame?)
@@ -336,6 +335,10 @@ MATHLIB
 ==============================================================
 */
 
+typedef unsigned char byte;
+
+typedef enum {qfalse, qtrue} qboolean;
+
 
 typedef float vec_t;
 typedef vec_t vec2_t[2];
@@ -352,7 +355,7 @@ typedef	int	fixed16_t;
 #endif
 
 #define NUMVERTEXNORMALS	162
-extern	vec3_t	bytedirs[NUMVERTEXNORMALS];
+
 
 // all drawing is done to a 640*480 virtual screen size
 // and will be automatically scaled to the real resolution
@@ -431,12 +434,12 @@ extern	vec3_t	axisDefault[3];
 int Q_isnan(float x);
 
 #if (idx64 || id386)
-  extern long QDECL qftolx87(float f);
-  extern long QDECL qftolsse(float f);
-  extern int QDECL qvmftolx87(void);
-  extern int QDECL qvmftolsse(void);
-  extern void QDECL qsnapvectorx87(vec3_t vec);
-  extern void QDECL qsnapvectorsse(vec3_t vec);
+    extern long QDECL qftolx87(float f);
+    extern long QDECL qftolsse(float f);
+    extern int QDECL qvmftolx87(void);
+    extern int QDECL qvmftolsse(void);
+    extern void QDECL qsnapvectorx87(vec3_t vec);
+    extern void QDECL qsnapvectorsse(vec3_t vec);
 
     extern long (QDECL *Q_ftol)(float f);
     extern int (QDECL *Q_VMftol)(void);
@@ -560,17 +563,21 @@ void ClearBounds( vec3_t mins, vec3_t maxs );
 void AddPointToBounds( const vec3_t v, vec3_t mins, vec3_t maxs );
 
 
-static ID_INLINE int VectorCompare( const vec3_t v1, const vec3_t v2 ) {
+static ID_INLINE int VectorCompare( const vec3_t v1, const vec3_t v2 )
+{
 	if (v1[0] != v2[0] || v1[1] != v2[1] || v1[2] != v2[2]) {
 		return 0;
 	}			
 	return 1;
 }
-static ID_INLINE vec_t VectorLength( const vec3_t v ) {
+
+static ID_INLINE vec_t VectorLength( const vec3_t v )
+{
 	return (vec_t)sqrt (v[0]*v[0] + v[1]*v[1] + v[2]*v[2]);
 }
 
-static ID_INLINE vec_t VectorLengthSquared( const vec3_t v ) {
+static ID_INLINE vec_t VectorLengthSquared( const vec3_t v )
+{
 	return (v[0]*v[0] + v[1]*v[1] + v[2]*v[2]);
 }
 
@@ -592,9 +599,7 @@ static ID_INLINE vec_t DistanceSquared( const vec3_t p1, const vec3_t p2 ) {
 // that length != 0, nor does it return length, uses rsqrt approximation
 static ID_INLINE void VectorNormalizeFast( vec3_t v )
 {
-	float ilength;
-
-	ilength = Q_rsqrt( DotProduct( v, v ) );
+	float ilength = 1/sqrt( DotProduct( v, v ) );
 
 	v[0] *= ilength;
 	v[1] *= ilength;
@@ -761,7 +766,7 @@ qboolean Q_isintegral( float f );
 
 // portable case insensitive compare
 int		Q_stricmp (const char *s1, const char *s2);
-int		Q_strncmp (const char *s1, const char *s2, int n);
+//int		Q_strncmp (const char *s1, const char *s2, int n);
 int		Q_stricmpn (const char *s1, const char *s2, int n);
 char	*Q_strlwr( char *s1 );
 char	*Q_strupr( char *s1 );

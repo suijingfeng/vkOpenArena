@@ -24,8 +24,9 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
 extern shaderCommands_t tess;
 extern cvar_t* r_nocull;
+extern refimport_t ri;
+extern trGlobals_t tr;
 
-extern trGlobals_t	tr;
 
 static cvar_t* r_lodscale;
 static cvar_t* r_lodbias;// push/pull LOD transitions
@@ -478,9 +479,9 @@ void R_MDRAddAnimSurfaces( trRefEntity_t *ent )
 			
 			for(j = 0; j < skin->numSurfaces; j++)
 			{
-				if (!strcmp(skin->surfaces[j]->name, surface->name))
+				if (!strcmp(skin->surfaces[j].name, surface->name))
 				{
-					shader = skin->surfaces[j]->shader;
+					shader = skin->surfaces[j].shader;
 					break;
 				}
 			}
@@ -578,9 +579,9 @@ void R_AddMD3Surfaces( trRefEntity_t *ent )
 			for(j = 0 ; j < skin->numSurfaces; j++ )
             {
 				// the names have both been lowercased
-				if ( !strcmp( skin->surfaces[j]->name, surface->name ) )
+				if ( !strcmp( skin->surfaces[j].name, surface->name ) )
                 {
-					shader = skin->surfaces[j]->shader;
+					shader = skin->surfaces[j].shader;
 					break;
 				}
 			}

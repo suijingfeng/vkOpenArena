@@ -39,6 +39,9 @@ QGL_ARB_vertex_array_object_PROCS;
 QGL_EXT_direct_state_access_PROCS;
 #undef GLE
 
+
+extern cvar_t *r_ext_compressed_textures;// these control use of specific extensions, tr2
+
 void GLimp_InitExtraExtensions()
 {
 	char *extension;

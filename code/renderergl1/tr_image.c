@@ -23,6 +23,12 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #include "tr_local.h"
 #include "../sdl/sdl_glimp.h"
 
+
+extern cvar_t *r_ext_texture_filter_anisotropic;
+extern cvar_t *r_ext_max_anisotropy;
+
+
+
 static unsigned char s_intensitytable[256];
 static unsigned char s_gammatable[256];
 static cvar_t* r_texturebits;

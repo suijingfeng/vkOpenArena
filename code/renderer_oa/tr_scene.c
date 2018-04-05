@@ -23,7 +23,11 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #include "tr_local.h"
 
 extern backEndData_t* backEndData;	// the second one may not be allocated
-extern trGlobals_t	tr;
+extern trGlobals_t tr;
+extern refimport_t ri;
+extern glconfig_t glConfig;
+
+
 extern cvar_t* r_maxpolyverts;
 extern cvar_t* r_maxpolys;
 
@@ -97,13 +101,12 @@ void R_AddPolygonSurfaces( void )
 }
 
 
+
 void RE_AddPolyToScene( qhandle_t hShader, int numVerts, const polyVert_t *verts, int numPolys )
 {
-	srfPoly_t	*poly;
-	int			i, j;
-	int			fogIndex;
-	fog_t		*fog;
-	vec3_t		bounds[2];
+	int	i, j;
+	int	fogIndex;
+	vec3_t bounds[2];
 
 	if ( !tr.registered ) {
 		return;
@@ -127,8 +130,8 @@ void RE_AddPolyToScene( qhandle_t hShader, int numVerts, const polyVert_t *verts
 			ri.Printf( PRINT_DEVELOPER, "WARNING: RE_AddPolyToScene: r_max_polys or r_max_polyverts reached\n");
 			return;
 		}
-
-		poly = &backEndData->polys[r_numpolys];
+    
+        srfPoly_t* poly = &backEndData->polys[r_numpolys];
 		poly->surfaceType = SF_POLY;
 		poly->hShader = hShader;
 		poly->numVerts = numVerts;
@@ -141,21 +144,26 @@ void RE_AddPolyToScene( qhandle_t hShader, int numVerts, const polyVert_t *verts
 		r_numpolyverts += numVerts;
 
 		// if no world is loaded
-		if ( tr.world == NULL ) {
+		if ( tr.world == NULL )
+        {
 			fogIndex = 0;
 		}
-		// see if it is in a fog volume
-		else if ( tr.world->numfogs == 1 ) {
+		else if ( tr.world->numfogs == 1 )
+        {
 			fogIndex = 0;
-		} else {
+            // see if it is in a fog volume
+		} else
+        {
 			// find which fog volume the poly is in
 			VectorCopy( poly->verts[0].xyz, bounds[0] );
 			VectorCopy( poly->verts[0].xyz, bounds[1] );
-			for ( i = 1 ; i < poly->numVerts ; i++ ) {
+			for ( i = 1 ; i < poly->numVerts ; i++ )
+            {
 				AddPointToBounds( poly->verts[i].xyz, bounds[0], bounds[1] );
 			}
-			for ( fogIndex = 1 ; fogIndex < tr.world->numfogs ; fogIndex++ ) {
-				fog = &tr.world->fogs[fogIndex]; 
+			for ( fogIndex = 1 ; fogIndex < tr.world->numfogs ; fogIndex++ )
+            {
+				fog_t* fog = &tr.world->fogs[fogIndex]; 
 				if ( bounds[1][0] >= fog->bounds[0][0]
 					&& bounds[1][1] >= fog->bounds[0][1]
 					&& bounds[1][2] >= fog->bounds[0][2]
@@ -211,13 +219,7 @@ void RE_AddRefEntityToScene( const refEntity_t *ent )
 }
 
 
-/*
-=====================
-RE_AddDynamicLightToScene
-
-=====================
-*/
-void RE_AddDynamicLightToScene( const vec3_t org, float intensity, float r, float g, float b, int additive )
+static void RE_AddDynamicLightToScene( const vec3_t org, float intensity, float r, float g, float b, int additive )
 {
 	if ( !tr.registered ) {
 		return;
@@ -238,23 +240,15 @@ void RE_AddDynamicLightToScene( const vec3_t org, float intensity, float r, floa
 	dl->additive = additive;
 }
 
-/*
-=====================
-RE_AddLightToScene
 
-=====================
-*/
-void RE_AddLightToScene( const vec3_t org, float intensity, float r, float g, float b ) {
+void RE_AddLightToScene( const vec3_t org, float intensity, float r, float g, float b )
+{
 	RE_AddDynamicLightToScene( org, intensity, r, g, b, qfalse );
 }
 
-/*
-=====================
-RE_AddAdditiveLightToScene
 
-=====================
-*/
-void RE_AddAdditiveLightToScene( const vec3_t org, float intensity, float r, float g, float b ) {
+void RE_AddAdditiveLightToScene( const vec3_t org, float intensity, float r, float g, float b )
+{
 	RE_AddDynamicLightToScene( org, intensity, r, g, b, qtrue );
 }
 
@@ -305,8 +299,8 @@ void RE_RenderScene( const refdef_t *fd )
 	tr.refdef.areamaskModified = qfalse;
 	if ( ! (tr.refdef.rdflags & RDF_NOWORLDMODEL) )
     {
-		int		areaDiff = 0;
-		int		i;
+		int	areaDiff = 0;
+		int	i;
 
 		// compare the area bits
 		for (i = 0 ; i < MAX_MAP_AREA_BYTES/4 ; i++)
@@ -375,27 +369,24 @@ void RE_RenderScene( const refdef_t *fd )
 	if (!( fd->rdflags & RDF_NOWORLDMODEL ) ) // don't affect interface refdefs
 	{
 		float zoomfov = tr.refdef.fov_x / 90;	// figure out our zoom or changed fov magnitiude from cg_fov and cg_zoomfov
-		int thisisit;
 
 		// find aspect to immediately match our vidwidth for perfect match with resized screens...
 		float erspact = tr.refdef.width / tr.refdef.height;
 		float aspact = glConfig.vidWidth / glConfig.vidHeight;
-		if (erspact == aspact) thisisit = 1;
 
 	
 		// try not to recalculate fov of ui and hud elements
 		//if (((tr.refdef.fov_x /  tr.refdef.fov_y) > 1.3) && (tr.refdef.width > 320) && (tr.refdef.height > 240))
 		//if (((tr.refdef.fov_x /  tr.refdef.fov_y) > 1.3) && (tr.refdef.width > (320 * refdefscalex)) && (tr.refdef.height > (240 * refdefscaley)))
-		if (((tr.refdef.fov_x /  tr.refdef.fov_y) > 1.3) && (thisisit))
-
-			{
+		if (((tr.refdef.fov_x /  tr.refdef.fov_y) > 1.3) && (erspact == aspact))
+		{
 			// undo vert-
 			parms.fovY = parms.fovY * (73.739792 / tr.refdef.fov_y) * zoomfov;
 			
 			// recalculate the fov
 			parms.fovX = (atan (glConfig.vidWidth / (glConfig.vidHeight / tan ((parms.fovY * M_PI) / 360.0f))) * 360.0f) / M_PI;
 			parms.fovY = (atan (glConfig.vidHeight / (glConfig.vidWidth / tan ((parms.fovX * M_PI) / 360.0f))) * 360.0f) / M_PI;
-			}
+		}
 	}
 
 	// leilei - end

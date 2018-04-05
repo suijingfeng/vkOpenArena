@@ -36,17 +36,11 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #endif
 
 
-#define GLE(ret, name, ...) name##proc * qgl##name;
-QGL_1_3_PROCS;
-QGL_1_5_PROCS;
-QGL_2_0_PROCS;
-QGL_ARB_framebuffer_object_PROCS;
-QGL_ARB_vertex_array_object_PROCS;
-QGL_EXT_direct_state_access_PROCS;
-#undef GLE
-
 extern backEndState_t backEnd;
-extern trGlobals_t	tr;
+extern trGlobals_t tr;
+extern refimport_t ri;
+
+
 extern shaderCommands_t tess;
 extern cvar_t* r_lightmap;
 
@@ -58,11 +52,8 @@ static cvar_t* com_altivec;
 static cvar_t* r_shownormals;
 static cvar_t* r_showtris;					// enables wireframe rendering of the world
 static cvar_t* r_dlightBacks;
-static cvar_t* r_primitives;
 static cvar_t* r_offsetFactor;
 static cvar_t* r_offsetUnits;
-
-static cvar_t* r_specMode; //
 
 static qboolean	setArraysOnce;
 /*
@@ -71,7 +62,7 @@ R_ArrayElementDiscrete
 
 This is just for OpenGL conformance testing, it should never be the fastest
 ================
-*/
+
 static void APIENTRY R_ArrayElementDiscrete( GLint index )
 {
 	qglColor4ubv( tess.svars.colors[ index ] );
@@ -86,7 +77,7 @@ static void APIENTRY R_ArrayElementDiscrete( GLint index )
 	}
 	qglVertex3fv( tess.xyz[ index ] );
 }
-
+*/
 
 
 static void R_DrawStripElements( int numIndexes, const unsigned int *indexes, void ( APIENTRY *element )(GLint) )
@@ -195,38 +186,27 @@ instead of using the single glDrawElements call that may be inefficient without 
 */
 static void R_DrawElements( int numIndexes, const unsigned int* indexes )
 {
-	int	primitives = r_primitives->integer;
+//	int	primitives;
 
 	// default is to use triangles if compiled vertex arrays are present
-	if ( primitives == 0 )
+    if ( qglLockArraysEXT )
     {
-		if ( qglLockArraysEXT )
-        {
-			primitives = 2;
-		}
-        else
-        {
-			primitives = 1;
-		}
-	}
+//        primitives = 2;
+        qglDrawElements( GL_TRIANGLES, numIndexes, GL_UNSIGNED_INT, indexes );
+    }
+    else
+    {
+//        primitives = 1;
+        R_DrawStripElements( numIndexes,  indexes, qglArrayElement );
+    }
 
-
-	if ( primitives == 2 )
-    {
-		qglDrawElements( GL_TRIANGLES, numIndexes, GL_UNSIGNED_INT, indexes );
-		return;
-	}
-    else if ( primitives == 1 )
-    {
-		R_DrawStripElements( numIndexes,  indexes, qglArrayElement );
-		return;
-	}
-    else if ( primitives == 3 )
+/*  
+    if ( primitives == 3 )
     {
 		R_DrawStripElements( numIndexes,  indexes, R_ArrayElementDiscrete );
 		return;
 	}
-
+*/
 	// anything else will cause no drawing
 }
 
@@ -241,8 +221,6 @@ SURFACE SHADERS
 */
 static void R_BindAnimatedImage( textureBundle_t *bundle )
 {
-	int	index;
-
 	if ( bundle->isVideoMap )
     {
 		ri.CIN_RunCinematic(bundle->videoMapHandle);
@@ -258,7 +236,7 @@ static void R_BindAnimatedImage( textureBundle_t *bundle )
 
 	// it is necessary to do this messy calc to make sure animations line up
 	// exactly with waveforms of the same frequency
-	index = ri.ftol(tess.shaderTime * bundle->imageAnimationSpeed * FUNCTABLE_SIZE);
+	int64_t index = tess.shaderTime * bundle->imageAnimationSpeed * FUNCTABLE_SIZE;
 	index >>= FUNCTABLE_SIZE2;
 
 	if ( index < 0 )
@@ -277,7 +255,7 @@ DrawTris
 Draws triangle outlines for debugging
 ================
 */
-static void DrawTris (shaderCommands_t *input)
+static void DrawTris(shaderCommands_t *input)
 {
 	GL_Bind( tr.whiteImage );
 	qglColor3f (1,1,1);
@@ -768,9 +746,11 @@ static void ComputeColors( shaderStage_t *pStage )
 			memset( tess.svars.colors, tr.identityLightByte, tess.numVertexes * 4 );
 			break;
 		case CGEN_LIGHTING_DIFFUSE:
-			if (r_shownormals->integer > 1 || (pStage->isLeiShade)){
-				RB_CalcNormal( ( unsigned char * ) tess.svars.colors ); // leilei - debug normals, or use the normals as a color for a lighting shader
-				break;
+			if (r_shownormals->integer > 1 || (pStage->isLeiShade))
+            {
+                // leilei - debug normals, or use the normals as a color for a lighting shader
+				RB_CalcNormal( ( unsigned char * ) tess.svars.colors );
+                break;
 			}
 			RB_CalcDiffuseColor( ( unsigned char * ) tess.svars.colors );
 			break;
@@ -790,7 +770,8 @@ static void ComputeColors( shaderStage_t *pStage )
 			memcpy( tess.svars.colors, tess.vertexColors, tess.numVertexes * sizeof( tess.vertexColors[0] ) );
 			break;
 		case CGEN_CONST:
-			for ( i = 0; i < tess.numVertexes; i++ ) {
+			for ( i = 0; i < tess.numVertexes; i++ )
+            {
 				*(int *)tess.svars.colors[i] = *(int *)pStage->constantColor;
 			}
 			break;
@@ -824,13 +805,16 @@ static void ComputeColors( shaderStage_t *pStage )
 
 			// Make our vertex color take over 
 
-			for(y=0;y<3;y++){
+			for(y=0;y<3;y++)
+            {
 				backEnd.currentEntity->ambientLight[y] 	*= (vcolor[y] / 255);
 
-				if (backEnd.currentEntity->ambientLight[y] < 1)   backEnd.currentEntity->ambientLight[y] = 1; // black!!!
-				if (backEnd.currentEntity->ambientLight[y] > 255) backEnd.currentEntity->ambientLight[y] = 255; // white!!!!!
-			//	backEnd.currentEntity->ambientLight[y] 	*= (vcolor[y] / 255);
-			//	backEnd.currentEntity->directedLight[y] *= (vcolor[y] / 255);
+				if (backEnd.currentEntity->ambientLight[y] < 1)   
+                    backEnd.currentEntity->ambientLight[y] = 1; // black!!!
+				if (backEnd.currentEntity->ambientLight[y] > 255)
+                    backEnd.currentEntity->ambientLight[y] = 255; // white!!!!!
+			    //	backEnd.currentEntity->ambientLight[y] 	*= (vcolor[y] / 255);
+			    //	backEnd.currentEntity->directedLight[y] *= (vcolor[y] / 255);
 			}
 		
 			// run it through our favorite preferred lighting calculation functions
@@ -863,11 +847,10 @@ static void ComputeColors( shaderStage_t *pStage )
 			break;
 		case CGEN_FOG:
 			{
-				fog_t		*fog;
+				fog_t* fog = tr.world->fogs + tess.fogNum;
 
-				fog = tr.world->fogs + tess.fogNum;
-
-				for ( i = 0; i < tess.numVertexes; i++ ) {
+				for ( i = 0; i < tess.numVertexes; i++ )
+                {
 					* ( int * )&tess.svars.colors[i] = fog->colorInt;
 				}
 			}
@@ -882,7 +865,8 @@ static void ComputeColors( shaderStage_t *pStage )
 			RB_CalcColorFromOneMinusEntity( ( unsigned char * ) tess.svars.colors );
 			break;
 		case CGEN_LIGHTING_DIFFUSE_SPECULAR:		// leilei - specular hack
-			if (r_shownormals->integer > 1 || (pStage->isLeiShade)){
+			if (r_shownormals->integer > 1 || (pStage->isLeiShade))
+            {
 				RB_CalcNormal( ( unsigned char * ) tess.svars.colors ); // leilei - debug normals, or use the normals as a color for a lighting shader
 				break;
 			}
@@ -915,15 +899,10 @@ static void ComputeColors( shaderStage_t *pStage )
 		}break;
         
         case AGEN_WAVEFORM:
-		RB_CalcWaveAlpha( &pStage->alphaWave, ( unsigned char * ) tess.svars.colors );
-		break;
+		    RB_CalcWaveAlpha( &pStage->alphaWave, ( unsigned char * ) tess.svars.colors ); break;
         
         case AGEN_LIGHTING_SPECULAR:
-		if ( r_specMode->integer == 1)
-			RB_CalcSpecularAlphaNew( ( unsigned char * ) tess.svars.colors );
-		else
-			RB_CalcSpecularAlpha( ( unsigned char * ) tess.svars.colors );
-		break;
+			RB_CalcSpecularAlphaNew( ( unsigned char * ) tess.svars.colors ); break;
         
         case AGEN_ENTITY:
 		RB_CalcAlphaFromEntity( ( unsigned char * ) tess.svars.colors );
@@ -1489,21 +1468,19 @@ void R_InitShade(void)
 
     r_dlightBacks = ri.Cvar_Get( "r_dlightBacks", "1", CVAR_ARCHIVE );
 
-    r_primitives = ri.Cvar_Get( "r_primitives", "0", CVAR_ARCHIVE );
+//    r_primitives = ri.Cvar_Get( "r_primitives", "0", CVAR_ARCHIVE );
 
 	r_offsetFactor = ri.Cvar_Get( "r_offsetfactor", "-1", CVAR_CHEAT );
 	r_offsetUnits = ri.Cvar_Get( "r_offsetunits", "-2", CVAR_CHEAT );
 
-	r_specMode = ri.Cvar_Get( "r_specMode", "1" , CVAR_ARCHIVE );
-
     // rendering primitives, default is to use triangles if compiled vertex arrays are present
-	ri.Printf( PRINT_ALL, "rendering primitives: ");
+//	ri.Printf( PRINT_ALL, "rendering primitives: ");
 
     // "0" = based on compiled vertex array existance
 	// "1" = glDrawElemet tristrips
 	// "2" = glDrawElements triangles
 	// "-1" = no drawing
-
+/*
 	int primitives = r_primitives->integer;
     if ( primitives == 0 )
     {
@@ -1528,5 +1505,5 @@ void R_InitShade(void)
     else if ( primitives == 3 ) {
         ri.Printf( PRINT_ALL, "multiple glColor4ubv + glTexCoord2fv + glVertex3fv\n" );
     }
-
+*/
 }

@@ -777,7 +777,8 @@ int Q_stricmpn(const char *s1, const char *s2, int n)
 	return 0;		// strings are equal
 }
 
-int Q_strncmp(const char *s1, const char *s2, int n)
+/*
+static int Q_strncmp(const char *s1, const char *s2, int n)
 {
 	int	c1, c2;
 	
@@ -796,7 +797,7 @@ int Q_strncmp(const char *s1, const char *s2, int n)
 	
 	return 0;		// strings are equal
 }
-
+*/
 
 ID_INLINE int Q_stricmp(const char *s1, const char *s2)
 {
@@ -900,7 +901,7 @@ char *Q_CleanStr( char *string )
 {
 	char* d = string;
 	char* s = string;
-	int		c;
+	int	c;
 
 	while ((c = *s) != 0 )
     {

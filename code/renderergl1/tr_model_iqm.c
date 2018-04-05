@@ -157,7 +157,7 @@ qboolean R_LoadIQM( model_t *mod, void *buffer, int filesize, const char *mod_na
 	}
 
 	header = (iqmHeader_t *)buffer;
-	if( Q_strncmp( header->magic, IQM_MAGIC, sizeof(header->magic) ) ) {
+	if( strncmp( header->magic, IQM_MAGIC, sizeof(header->magic) ) ) {
 		return qfalse;
 	}
 

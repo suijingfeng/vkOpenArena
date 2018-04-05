@@ -24,8 +24,10 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
 #include "tr_local.h"
 
-extern trGlobals_t	tr;
+extern trGlobals_t tr;
 extern backEndData_t *backEndData;	// the second one may not be allocated
+extern refimport_t ri;
+extern glconfig_t glConfig;
 
 // leilei - shader materials for detail texturing
 
@@ -90,9 +92,9 @@ static long int generateHashValue( const char *fname, const int size )
 void R_RemapShader(const char *shaderName, const char *newShaderName, const char *timeOffset)
 {
 	char strippedName[MAX_QPATH];
-	
     qhandle_t h;
-	shader_t* sh = R_FindShaderByName( shaderName );
+	
+    shader_t* sh = R_FindShaderByName( shaderName );
 	
     if(sh == NULL || sh == tr.defaultShader)
     {
@@ -797,7 +799,9 @@ static qboolean ParseStage( shaderStage_t *stage, char **text )
 				stage->bundle[0].isLightmap = qtrue;
 				if ( shader.lightmapIndex < 0 || !tr.lightmaps ) {
 					stage->bundle[0].image[0] = tr.whiteImage;
-				} else {
+				}
+                else
+                {
 					stage->bundle[0].image[0] = tr.lightmaps[shader.lightmapIndex];
 				}
 				continue;
@@ -4017,22 +4021,21 @@ static void FixRenderCommandList( int newShader )
 SortNewShader
 
 Positions the most recently created shader in the tr.sortedShaders[]
-array so that the shader->sort key is sorted relative to the other
-shaders.
+array so that the shader->sort key is sorted relative to the other shaders.
 
 Sets shader->sortedIndex
 ==============
 */
-static void SortNewShader( void ) {
-	int		i;
-	float	sort;
-	shader_t	*newShader;
+static void SortNewShader( void )
+{
+	shader_t* newShader = tr.shaders[ tr.numShaders - 1 ];
+	float sort = newShader->sort;
 
-	newShader = tr.shaders[ tr.numShaders - 1 ];
-	sort = newShader->sort;
-
-	for ( i = tr.numShaders - 2 ; i >= 0 ; i-- ) {
-		if ( tr.sortedShaders[ i ]->sort <= sort ) {
+    int i;
+	for ( i = tr.numShaders - 2 ; i >= 0 ; i-- )
+    {
+		if ( tr.sortedShaders[ i ]->sort <= sort )
+        {
 			break;
 		}
 		tr.sortedShaders[i+1] = tr.sortedShaders[i];
@@ -4053,17 +4056,16 @@ static void SortNewShader( void ) {
 GeneratePermanentShader
 ====================
 */
-static shader_t *GeneratePermanentShader( void ) {
-	shader_t	*newShader;
-	int			i, b;
-	int			size;
+static shader_t *GeneratePermanentShader( void )
+{
 
-	if ( tr.numShaders == MAX_SHADERS ) {
+	if ( tr.numShaders == MAX_SHADERS )
+    {
 		ri.Printf( PRINT_WARNING, "WARNING: GeneratePermanentShader - MAX_SHADERS hit\n");
 		return tr.defaultShader;
 	}
 
-	newShader = ri.Hunk_Alloc( sizeof( shader_t ), h_low );
+	shader_t* newShader = ri.Hunk_Alloc( sizeof( shader_t ), h_low );
 
 	*newShader = shader;
 
@@ -4080,16 +4082,16 @@ static shader_t *GeneratePermanentShader( void ) {
 	newShader->sortedIndex = tr.numShaders;
 
 	tr.numShaders++;
-
+    int i;
 	for ( i = 0 ; i < newShader->numUnfoggedPasses ; i++ ) {
 		if ( !stages[i].active ) {
 			break;
 		}
 		newShader->stages[i] = ri.Hunk_Alloc( sizeof( stages[i] ), h_low );
 		*newShader->stages[i] = stages[i];
-
+        int b;
 		for ( b = 0 ; b < NUM_TEXTURE_BUNDLES ; b++ ) {
-			size = newShader->stages[i]->bundle[b].numTexMods * sizeof( texModInfo_t );
+			int size = newShader->stages[i]->bundle[b].numTexMods * sizeof( texModInfo_t );
 			newShader->stages[i]->bundle[b].texMods = ri.Hunk_Alloc( size, h_low );
 			memcpy( newShader->stages[i]->bundle[b].texMods, stages[i].bundle[b].texMods, size );
 		}
@@ -4138,16 +4140,17 @@ static shader_t *FinishShader( void )
 	//
 	// set appropriate stage information
 	//
-	for ( stage = 0; stage < MAX_SHADER_STAGES; ) {
+	for ( stage = 0; stage < MAX_SHADER_STAGES; )
+    {
 		shaderStage_t *pStage = &stages[stage];
 
-		if ( !pStage->active ) {
+		if ( !pStage->active )
+        {
 			break;
 		}
 
 
-
-    // check for a missing texture
+        // check for a missing texture
 		if ( !pStage->bundle[0].image[0] ) 
         {
 			ri.Printf( PRINT_WARNING, "Shader %s has a stage with no image\n", shader.name );
@@ -4186,12 +4189,15 @@ static shader_t *FinishShader( void )
 		//
 		// default texture coordinate generation
 		//
-		if ( pStage->bundle[0].isLightmap ) {
-			if ( pStage->bundle[0].tcGen == TCGEN_BAD ) {
+		if ( pStage->bundle[0].isLightmap )
+        {
+			if ( pStage->bundle[0].tcGen == TCGEN_BAD )
+            {
 				pStage->bundle[0].tcGen = TCGEN_LIGHTMAP;
 			}
 			hasLightmapStage = qtrue;
-		} else {
+		}
+        else {
 			if ( pStage->bundle[0].tcGen == TCGEN_BAD ) {
 				pStage->bundle[0].tcGen = TCGEN_TEXTURE;
 			}
@@ -4201,7 +4207,8 @@ static shader_t *FinishShader( void )
 		// determine sort order and fog color adjustment
 		//
 		if ( ( pStage->stateBits & ( GLS_SRCBLEND_BITS | GLS_DSTBLEND_BITS ) ) &&
-			 ( stages[0].stateBits & ( GLS_SRCBLEND_BITS | GLS_DSTBLEND_BITS ) ) ) {
+			 ( stages[0].stateBits & ( GLS_SRCBLEND_BITS | GLS_DSTBLEND_BITS ) ) )
+        {
 			int blendSrcBits = pStage->stateBits & GLS_SRCBLEND_BITS;
 			int blendDstBits = pStage->stateBits & GLS_DSTBLEND_BITS;
 
@@ -4213,7 +4220,8 @@ static shader_t *FinishShader( void )
 
 			// modulate, additive
 			if ( ( ( blendSrcBits == GLS_SRCBLEND_ONE ) && ( blendDstBits == GLS_DSTBLEND_ONE ) ) ||
-				( ( blendSrcBits == GLS_SRCBLEND_ZERO ) && ( blendDstBits == GLS_DSTBLEND_ONE_MINUS_SRC_COLOR ) ) ) {
+				( ( blendSrcBits == GLS_SRCBLEND_ZERO ) && ( blendDstBits == GLS_DSTBLEND_ONE_MINUS_SRC_COLOR ) ) )
+            {
 				pStage->adjustColorsForFog = ACFF_MODULATE_RGB;
 			}
 			// strict blend
@@ -4230,7 +4238,8 @@ static shader_t *FinishShader( void )
 			}
 
 			// don't screw with sort order if this is a portal or environment
-			if ( !shader.sort ) {
+			if ( !shader.sort )
+            {
 				// see through item, like a grill or grate
 				if ( pStage->stateBits & GLS_DEPTHMASK_TRUE ) {
 					shader.sort = SS_SEE_THROUGH;
@@ -4326,7 +4335,8 @@ static char *FindShaderInShaderText( const char *shadername ) {
 	}
 
 	// look for label
-	while ( 1 ) {
+	while ( 1 )
+    {
 		token = COM_ParseExt( &p, qtrue );
 		if ( token[0] == 0 ) {
 			break;
@@ -4349,17 +4359,16 @@ static char *FindShaderInShaderText( const char *shadername ) {
 ==================
 R_FindShaderByName
 
-Will always return a valid shader, but it might be the
-default shader if the real one can't be found.
+Will always return a valid shader, but it might be the default shader if the real one can't be found.
 ==================
 */
 shader_t *R_FindShaderByName( const char *name )
 {
-	char		strippedName[MAX_QPATH];
-	shader_t	*sh;
+	char strippedName[MAX_QPATH];
+	shader_t* sh;
 
-	if ( (name==NULL) || (name[0] == 0) ) {
-
+	if ( (name==NULL) || (name[0] == 0) )
+    {
 		return tr.defaultShader;
 	}
 
@@ -4541,64 +4550,65 @@ shader_t *R_FindShader( const char *name, int lightmapIndex, qboolean mipRawImag
 					wi = hi = 32; // reset to none....
 
 					shouldIDetail = 0; //yeah
-					for (f=0;f<detailLayer;f++){
-					for (e=0;e<(MAX_SHADER_STAGES-1);e++)
-					{
-						if (shader.defaultShader)
-							break; // DON'T! This fixes a crash, trying to stage up placeholder/default textures
-
-						// Pick the first free stage to do, hopefully the last
-						if (stages[e].active == qfalse){ thisstage = e; shouldIDetail = 1; break;}
-			
-						// find detail texture scale by determining which of the stages have the largest image
-						if (stages[e].bundle[0].image[0]->uploadHeight > wi) wi = stages[e].bundle[0].image[0]->uploadWidth;
-						if (stages[e].bundle[0].image[0]->uploadHeight > hi) hi = stages[e].bundle[0].image[0]->uploadHeight;
-
-						// for adjusting the detail textures and skipping some redundancy
-						if (stages[e].isDetail)
-                        {
-							if (f < 1)
-                            {
-                                gotdetailalready = 1; shouldIDetail = 0;
-    							imageDetail = stages[e].bundle[0].image[0]; // this is it
-	    						hasaDetailImage = 1;
-							}
-							if (r_detailTextureScale->integer)
-                            {
-								if (stages[e].bundle[0].texMods[0].type == TMOD_SCALE)
-								{
-                                    wi = 0.25 * wi / (detailScale / (f + 1));
-                                    hi = 0.25 * hi / (detailScale / (f + 1));
-                                    stages[e].bundle[0].texMods[0].scale[0] = wi;
-                                    stages[e].bundle[0].texMods[0].scale[1] = hi;
-								}
-							}
-						}						
-					}
-					if (r_detailTextures->integer < 3)
-                        shouldIDetail = 0; // don't add detail for low settings
-
-					if ((!gotdetailalready || thisstage) && (shouldIDetail))
+					for (f=0;f<detailLayer;f++)
                     {
-                        // detail it up because i don't care.
-                        wi = 0.25  * (f + 1)  * wi / detailScale;
-                        hi = 0.25  * (f + 1)  * hi / detailScale;
+                        for (e=0;e<(MAX_SHADER_STAGES-1);e++)
+                        {
+                            if (shader.defaultShader)
+                                break; // DON'T! This fixes a crash, trying to stage up placeholder/default textures
 
-                        if (material == 1)	// metalsteps
-                            stages[thisstage].bundle[0].image[0] = R_FindImageFile( "gfx/fx/detail/d_genericmetal.tga", IMGFLAG_MIPMAP , IMGFLAG_MIPMAP);
-                        else if (hasaDetailImage && imageDetail)
-                            stages[thisstage].bundle[0].image[0] = imageDetail;
-                        else
-                        stages[thisstage].bundle[0].image[0] = R_FindImageFile( "gfx/fx/detail/d_generic.tga", IMGFLAG_MIPMAP , IMGFLAG_MIPMAP);
-                        stages[thisstage].active = qtrue;
-                        stages[thisstage].rgbGen = CGEN_IDENTITY;
-                        stages[thisstage].stateBits |= GLS_SRCBLEND_DST_COLOR | GLS_DSTBLEND_SRC_COLOR | GLS_DEPTHFUNC_EQUAL;
-                        stages[thisstage].bundle[0].texMods[0].scale[0] = wi;
-                        stages[thisstage].bundle[0].texMods[0].scale[1] = hi;
-                        stages[thisstage].bundle[0].texMods[0].type = TMOD_SCALE;
-                        stages[thisstage].isDetail = qtrue;
-                        stages[thisstage].bundle[0].numTexMods = 1;
-                    }
+                            // Pick the first free stage to do, hopefully the last
+                            if (stages[e].active == qfalse){ thisstage = e; shouldIDetail = 1; break;}
+                
+                            // find detail texture scale by determining which of the stages have the largest image
+                            if (stages[e].bundle[0].image[0]->uploadHeight > wi) wi = stages[e].bundle[0].image[0]->uploadWidth;
+                            if (stages[e].bundle[0].image[0]->uploadHeight > hi) hi = stages[e].bundle[0].image[0]->uploadHeight;
+
+                            // for adjusting the detail textures and skipping some redundancy
+                            if (stages[e].isDetail)
+                            {
+                                if (f < 1)
+                                {
+                                    gotdetailalready = 1; shouldIDetail = 0;
+                                    imageDetail = stages[e].bundle[0].image[0]; // this is it
+                                    hasaDetailImage = 1;
+                                }
+                                if (r_detailTextureScale->integer)
+                                {
+                                    if (stages[e].bundle[0].texMods[0].type == TMOD_SCALE)
+                                    {
+                                        wi = 0.25 * wi / (detailScale / (f + 1));
+                                        hi = 0.25 * hi / (detailScale / (f + 1));
+                                        stages[e].bundle[0].texMods[0].scale[0] = wi;
+                                        stages[e].bundle[0].texMods[0].scale[1] = hi;
+                                    }
+                                }
+                            }						
+                        }
+                        if (r_detailTextures->integer < 3)
+                            shouldIDetail = 0; // don't add detail for low settings
+
+                        if ((!gotdetailalready || thisstage) && (shouldIDetail))
+                        {
+                            // detail it up because i don't care.
+                            wi = 0.25  * (f + 1)  * wi / detailScale;
+                            hi = 0.25  * (f + 1)  * hi / detailScale;
+
+                            if (material == 1)	// metalsteps
+                                stages[thisstage].bundle[0].image[0] = R_FindImageFile( "gfx/fx/detail/d_genericmetal.tga", IMGFLAG_MIPMAP , IMGFLAG_MIPMAP);
+                            else if (hasaDetailImage && imageDetail)
+                                stages[thisstage].bundle[0].image[0] = imageDetail;
+                            else
+                            stages[thisstage].bundle[0].image[0] = R_FindImageFile( "gfx/fx/detail/d_generic.tga", IMGFLAG_MIPMAP , IMGFLAG_MIPMAP);
+                            stages[thisstage].active = qtrue;
+                            stages[thisstage].rgbGen = CGEN_IDENTITY;
+                            stages[thisstage].stateBits |= GLS_SRCBLEND_DST_COLOR | GLS_DSTBLEND_SRC_COLOR | GLS_DEPTHFUNC_EQUAL;
+                            stages[thisstage].bundle[0].texMods[0].scale[0] = wi;
+                            stages[thisstage].bundle[0].texMods[0].scale[1] = hi;
+                            stages[thisstage].bundle[0].texMods[0].type = TMOD_SCALE;
+                            stages[thisstage].isDetail = qtrue;
+                            stages[thisstage].bundle[0].numTexMods = 1;
+                        }
 					}
 				
 				}
@@ -5413,8 +5423,8 @@ static void CreateExternalShaders( void )
 	tr.projectionShadowShader = R_FindShader( "projectionShadow", LIGHTMAP_NONE, qtrue );
 	tr.flareShader = R_FindShader( "flareShader", LIGHTMAP_NONE, qtrue );
 
-	// Hack to make fogging work correctly on flares. Fog colors are calculated
-	// in tr_flare.c already.
+	// Hack to make fogging work correctly on flares. 
+    // Fog colors are calculated in tr_flare.c already.
 	if(!tr.flareShader->defaultShader)
 	{
 		int index;

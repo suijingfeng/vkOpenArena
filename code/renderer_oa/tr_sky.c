@@ -28,6 +28,8 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 extern trGlobals_t	tr;
 extern shaderCommands_t	tess;
 extern backEndState_t backEnd;
+extern refimport_t ri;
+
 
 cvar_t* r_fastsky;
 

@@ -713,7 +713,7 @@ static uint32_t DecompressIDATs(struct BufferedFile *BF, uint8_t **Buffer)
 	 *  first puff() to calculate the size of the uncompressed data
 	 */
 
-	puffResult = puff(puffDest, &puffDestLen, puffSrc, &puffSrcLen);
+	puffResult = ri.Puff(puffDest, &puffDestLen, puffSrc, &puffSrcLen);
 	if(!((puffResult == 0) && (puffDestLen > 0)))
 	{
 		ri.Free(CompressedData);
@@ -745,7 +745,7 @@ static uint32_t DecompressIDATs(struct BufferedFile *BF, uint8_t **Buffer)
 	 *  decompression puff()
 	 */
 
-	puffResult = puff(puffDest, &puffDestLen, puffSrc, &puffSrcLen);
+	puffResult = ri.Puff(puffDest, &puffDestLen, puffSrc, &puffSrcLen);
 
 	/*
 	 *  The compressed data is not needed anymore.

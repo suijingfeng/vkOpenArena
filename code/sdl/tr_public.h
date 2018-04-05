@@ -27,24 +27,6 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #define	REF_API_VERSION		8
 
 
-//
-// cvars
-//
-//extern cvar_t *r_ext_multisample;
-										// 0 = use framebuffer depth
-										// 16 = use 16-bit textures
-										// 32 = use 32-bit textures
-										// all else = error
-
-extern cvar_t *r_drawBuffer;
-extern cvar_t *r_ext_compressed_textures;// these control use of specific extensions, tr2
-extern cvar_t *r_ext_texture_filter_anisotropic;
-extern cvar_t *r_ext_max_anisotropy;
-
-
-//extern cvar_t *r_saveFontData;
-
-
 
 //
 // these are the functions exported by the refresh module
@@ -187,6 +169,13 @@ typedef struct {
 	// system stuff
 	void	(*Sys_SetEnv)( const char *name, const char *value );
 	qboolean (*Sys_LowPhysicalMemory)( void );
+
+    // extra
+    int32_t ( *Puff)(uint8_t  *dest,		/* pointer to destination pointer */
+             uint32_t *destlen,		/* amount of output space */
+             uint8_t  *source,		/* pointer to source data pointer */
+             uint32_t *sourcelen);	/* amount of input available */
+
 } refimport_t;
 
 

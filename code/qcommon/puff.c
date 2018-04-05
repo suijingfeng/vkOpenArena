@@ -72,7 +72,6 @@
 #include <setjmp.h>             /* for setjmp(), longjmp(), and jmp_buf */
 #include "puff.h"		/* prototype for puff() */
 
-#define local static            /* for local function definitions */
 
 /*
  * Maximums for allocations and loops.  It is not useful to change these --
@@ -113,7 +112,7 @@ struct state {
  *   buffer, using shift right, and new bytes are appended to the top of the
  *   bit buffer, using shift left.
  */
-local int32_t bits(struct state *s, int32_t need)
+static int32_t bits(struct state *s, int32_t need)
 {
     int32_t val;           /* bit accumulator (can use up to 20 bits) */
 
@@ -150,7 +149,7 @@ local int32_t bits(struct state *s, int32_t need)
  * - A stored block can have zero length.  This is sometimes used to byte-align
  *   subsets of the compressed data for random access or partial recovery.
  */
-local int32_t stored(struct state *s)
+static int32_t stored(struct state *s)
 {
     uint32_t len;       /* length of stored block */
 
@@ -218,7 +217,7 @@ struct huffman {
  * - Incomplete codes are handled by this decoder, since they are permitted
  *   in the deflate format.  See the format notes for fixed() and dynamic().
  */
-local int32_t decode(struct state *s, struct huffman *h)
+static int32_t decode(struct state *s, struct huffman *h)
 {
     int32_t len;            /* current number of bits in code */
     int32_t code;           /* len bits being decoded */
@@ -291,7 +290,7 @@ local int32_t decode(struct state *s, struct huffman *h)
  * - Within a given code length, the symbols are kept in ascending order for
  *   the code bits definition.
  */
-local int32_t construct(struct huffman *h, int16_t *length, int32_t n)
+static int32_t construct(struct huffman *h, int16_t *length, int32_t n)
 {
     int32_t symbol;         /* current symbol when stepping through length[] */
     int32_t len;            /* current length when stepping through h->count[] */
@@ -386,9 +385,7 @@ local int32_t construct(struct huffman *h, int16_t *length, int32_t n)
  *   since though their behavior -is- defined for overlapping arrays, it is
  *   defined to do the wrong thing in this case.
  */
-local int32_t codes(struct state *s,
-                struct huffman *lencode,
-                struct huffman *distcode)
+static int32_t codes(struct state *s, struct huffman *lencode, struct huffman *distcode)
 {
     int32_t symbol;         /* decoded symbol */
     int32_t len;            /* length for copy */
@@ -474,7 +471,7 @@ local int32_t codes(struct state *s,
  *   length, this can be implemented as an incomplete code.  Then the invalid
  *   codes are detected while decoding.
  */
-local int32_t fixed(struct state *s)
+static int32_t fixed(struct state *s)
 {
     static int32_t virgin = 1;
     static int16_t lencnt[MAXBITS+1], lensym[FIXLCODES];
@@ -598,7 +595,7 @@ local int32_t fixed(struct state *s)
  * - For reference, a "typical" size for the code description in a dynamic
  *   block is around 80 bytes.
  */
-local int32_t dynamic(struct state *s)
+static int32_t dynamic(struct state *s)
 {
     int32_t nlen, ndist, ncode;             /* number of lengths in descriptor */
     int32_t index;                          /* index of lengths[] */

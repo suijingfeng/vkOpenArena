@@ -24,7 +24,7 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 extern shaderCommands_t tess;
 extern backEndState_t backEnd;
 extern trGlobals_t	tr;
-
+extern glconfig_t glConfig;
 /*
 
   for a projection shadow:

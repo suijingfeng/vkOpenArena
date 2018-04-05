@@ -25,11 +25,13 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #define NOISE_SIZE 256
 #define NOISE_MASK ( NOISE_SIZE - 1 )
 
-#define VAL( a ) s_noise_perm[ ( a ) & ( NOISE_MASK )]
-#define INDEX( x, y, z, t ) VAL( x + VAL( y + VAL( z + VAL( t ) ) ) )
 
 static float s_noise_table[NOISE_SIZE];
 static int s_noise_perm[NOISE_SIZE];
+
+#define VAL( a )                s_noise_perm[ ( a ) & ( NOISE_MASK )]
+#define INDEX( x, y, z, t )     VAL( x + VAL( y + VAL( z + VAL( t ) ) ) )
+
 
 static float GetNoiseValue( int x, int y, int z, int t )
 {
@@ -37,6 +39,7 @@ static float GetNoiseValue( int x, int y, int z, int t )
 
 	return s_noise_table[index];
 }
+
 
 void R_NoiseInit( void )
 {
@@ -49,43 +52,49 @@ void R_NoiseInit( void )
 	}
 }
 
+
 float R_NoiseGet4f( float x, float y, float z, float t )
 {
-	int i;
-	int ix, iy, iz, it;
-	float fx, fy, fz, ft;
-	float front[4];
-	float back[4];
-	float fvalue, bvalue, value[2], finalvalue;
+	int ix = ( int ) floor( x );
+	int iy = ( int ) floor( y );
+	int iz = ( int ) floor( z );
+	int it = ( int ) floor( t );
+    
+    float fx = x - ix;
+	float fy = y - iy;
+	float fz = z - iz;
+	float ft = t - it;
 
-	ix = ( int ) floor( x );
-	fx = x - ix;
-	iy = ( int ) floor( y );
-	fy = y - iy;
-	iz = ( int ) floor( z );
-	fz = z - iz;
-	it = ( int ) floor( t );
-	ft = t - it;
+    float value[2];
 
+    int i;
 	for ( i = 0; i < 2; i++ )
-	{
+	{   
+	    float front[4];
 		front[0] = GetNoiseValue( ix, iy, iz, it + i );
 		front[1] = GetNoiseValue( ix+1, iy, iz, it + i );
 		front[2] = GetNoiseValue( ix, iy+1, iz, it + i );
 		front[3] = GetNoiseValue( ix+1, iy+1, iz, it + i );
 
+	    float back[4];
 		back[0] = GetNoiseValue( ix, iy, iz + 1, it + i );
 		back[1] = GetNoiseValue( ix+1, iy, iz + 1, it + i );
 		back[2] = GetNoiseValue( ix, iy+1, iz + 1, it + i );
 		back[3] = GetNoiseValue( ix+1, iy+1, iz + 1, it + i );
 
-		fvalue = LERP( LERP( front[0], front[1], fx ), LERP( front[2], front[3], fx ), fy );
-		bvalue = LERP( LERP( back[0], back[1], fx ), LERP( back[2], back[3], fx ), fy );
+
+        float lerp1 = LERP( front[0], front[1], fx );
+        float lerp2 = LERP( front[2], front[3], fx );
+        float fvalue = LERP( lerp1, lerp2, fy );
+		
+        lerp1 = LERP( back[0], back[1], fx );
+        lerp2 = LERP( back[2], back[3], fx );
+        float bvalue = LERP(lerp1, lerp2, fy);
 
 		value[i] = LERP( fvalue, bvalue, fz );
 	}
 
-	finalvalue = LERP( value[0], value[1], ft );
+	float finalvalue = LERP( value[0], value[1], ft );
 
 	return finalvalue;
 }

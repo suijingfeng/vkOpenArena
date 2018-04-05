@@ -1060,73 +1060,20 @@ Q3ROAOBJ = \
 ifneq ($(USE_RENDERER_DLOPEN), 0)
   Q3ROBJ += \
     $(B)/renderergl1/q_shared.o \
-    $(B)/renderergl1/puff.o \
     $(B)/renderergl1/q_math.o \
     $(B)/renderergl1/tr_subs.o
   
   Q3ROAOBJ += \
     $(B)/renderer_oa/q_shared.o \
-    $(B)/renderer_oa/puff.o \
     $(B)/renderer_oa/q_math.o \
-    $(B)/renderer_oa/tr_subs.o
+    $(B)/renderer_oa/tr_subs.o 
 
   Q3R2OBJ += \
-    $(B)/renderer_oa/q_shared.o \
-    $(B)/renderer_oa/puff.o \
-    $(B)/renderer_oa/q_math.o \
-    $(B)/renderer_oa/tr_subs.o
+    $(B)/renderergl2/q_shared.o \
+    $(B)/renderergl2/q_math.o \
+    $(B)/renderergl2/tr_subs.o
 endif
 
-
-ifneq ($(USE_INTERNAL_JPEG),0)
-  JPGOBJ = \
-    $(B)/renderergl1/jaricom.o \
-    $(B)/renderergl1/jcapimin.o \
-    $(B)/renderergl1/jcapistd.o \
-    $(B)/renderergl1/jcarith.o \
-    $(B)/renderergl1/jccoefct.o  \
-    $(B)/renderergl1/jccolor.o \
-    $(B)/renderergl1/jcdctmgr.o \
-    $(B)/renderergl1/jchuff.o   \
-    $(B)/renderergl1/jcinit.o \
-    $(B)/renderergl1/jcmainct.o \
-    $(B)/renderergl1/jcmarker.o \
-    $(B)/renderergl1/jcmaster.o \
-    $(B)/renderergl1/jcomapi.o \
-    $(B)/renderergl1/jcparam.o \
-    $(B)/renderergl1/jcprepct.o \
-    $(B)/renderergl1/jcsample.o \
-    $(B)/renderergl1/jctrans.o \
-    $(B)/renderergl1/jdapimin.o \
-    $(B)/renderergl1/jdapistd.o \
-    $(B)/renderergl1/jdarith.o \
-    $(B)/renderergl1/jdatadst.o \
-    $(B)/renderergl1/jdatasrc.o \
-    $(B)/renderergl1/jdcoefct.o \
-    $(B)/renderergl1/jdcolor.o \
-    $(B)/renderergl1/jddctmgr.o \
-    $(B)/renderergl1/jdhuff.o \
-    $(B)/renderergl1/jdinput.o \
-    $(B)/renderergl1/jdmainct.o \
-    $(B)/renderergl1/jdmarker.o \
-    $(B)/renderergl1/jdmaster.o \
-    $(B)/renderergl1/jdmerge.o \
-    $(B)/renderergl1/jdpostct.o \
-    $(B)/renderergl1/jdsample.o \
-    $(B)/renderergl1/jdtrans.o \
-    $(B)/renderergl1/jerror.o \
-    $(B)/renderergl1/jfdctflt.o \
-    $(B)/renderergl1/jfdctfst.o \
-    $(B)/renderergl1/jfdctint.o \
-    $(B)/renderergl1/jidctflt.o \
-    $(B)/renderergl1/jidctfst.o \
-    $(B)/renderergl1/jidctint.o \
-    $(B)/renderergl1/jmemmgr.o \
-    $(B)/renderergl1/jmemnobs.o \
-    $(B)/renderergl1/jquant1.o \
-    $(B)/renderergl1/jquant2.o \
-    $(B)/renderergl1/jutils.o
-endif
 
 ifeq ($(ARCH),x86)
   Q3OBJ += \
@@ -1141,201 +1088,6 @@ ifeq ($(ARCH),x86_64)
     $(B)/client/ftola.o
 endif
 
-ifeq ($(NEED_OPUS),1)
-ifeq ($(USE_INTERNAL_OPUS),1)
-Q3OBJ += \
-  $(B)/client/opus/analysis.o \
-  $(B)/client/opus/mlp.o \
-  $(B)/client/opus/mlp_data.o \
-  $(B)/client/opus/opus.o \
-  $(B)/client/opus/opus_decoder.o \
-  $(B)/client/opus/opus_encoder.o \
-  $(B)/client/opus/opus_multistream.o \
-  $(B)/client/opus/opus_multistream_encoder.o \
-  $(B)/client/opus/opus_multistream_decoder.o \
-  $(B)/client/opus/repacketizer.o \
-  \
-  $(B)/client/opus/bands.o \
-  $(B)/client/opus/celt.o \
-  $(B)/client/opus/cwrs.o \
-  $(B)/client/opus/entcode.o \
-  $(B)/client/opus/entdec.o \
-  $(B)/client/opus/entenc.o \
-  $(B)/client/opus/kiss_fft.o \
-  $(B)/client/opus/laplace.o \
-  $(B)/client/opus/mathops.o \
-  $(B)/client/opus/mdct.o \
-  $(B)/client/opus/modes.o \
-  $(B)/client/opus/pitch.o \
-  $(B)/client/opus/celt_encoder.o \
-  $(B)/client/opus/celt_decoder.o \
-  $(B)/client/opus/celt_lpc.o \
-  $(B)/client/opus/quant_bands.o \
-  $(B)/client/opus/rate.o \
-  $(B)/client/opus/vq.o \
-  \
-  $(B)/client/opus/CNG.o \
-  $(B)/client/opus/code_signs.o \
-  $(B)/client/opus/init_decoder.o \
-  $(B)/client/opus/decode_core.o \
-  $(B)/client/opus/decode_frame.o \
-  $(B)/client/opus/decode_parameters.o \
-  $(B)/client/opus/decode_indices.o \
-  $(B)/client/opus/decode_pulses.o \
-  $(B)/client/opus/decoder_set_fs.o \
-  $(B)/client/opus/dec_API.o \
-  $(B)/client/opus/enc_API.o \
-  $(B)/client/opus/encode_indices.o \
-  $(B)/client/opus/encode_pulses.o \
-  $(B)/client/opus/gain_quant.o \
-  $(B)/client/opus/interpolate.o \
-  $(B)/client/opus/LP_variable_cutoff.o \
-  $(B)/client/opus/NLSF_decode.o \
-  $(B)/client/opus/NSQ.o \
-  $(B)/client/opus/NSQ_del_dec.o \
-  $(B)/client/opus/PLC.o \
-  $(B)/client/opus/shell_coder.o \
-  $(B)/client/opus/tables_gain.o \
-  $(B)/client/opus/tables_LTP.o \
-  $(B)/client/opus/tables_NLSF_CB_NB_MB.o \
-  $(B)/client/opus/tables_NLSF_CB_WB.o \
-  $(B)/client/opus/tables_other.o \
-  $(B)/client/opus/tables_pitch_lag.o \
-  $(B)/client/opus/tables_pulses_per_block.o \
-  $(B)/client/opus/VAD.o \
-  $(B)/client/opus/control_audio_bandwidth.o \
-  $(B)/client/opus/quant_LTP_gains.o \
-  $(B)/client/opus/VQ_WMat_EC.o \
-  $(B)/client/opus/HP_variable_cutoff.o \
-  $(B)/client/opus/NLSF_encode.o \
-  $(B)/client/opus/NLSF_VQ.o \
-  $(B)/client/opus/NLSF_unpack.o \
-  $(B)/client/opus/NLSF_del_dec_quant.o \
-  $(B)/client/opus/process_NLSFs.o \
-  $(B)/client/opus/stereo_LR_to_MS.o \
-  $(B)/client/opus/stereo_MS_to_LR.o \
-  $(B)/client/opus/check_control_input.o \
-  $(B)/client/opus/control_SNR.o \
-  $(B)/client/opus/init_encoder.o \
-  $(B)/client/opus/control_codec.o \
-  $(B)/client/opus/A2NLSF.o \
-  $(B)/client/opus/ana_filt_bank_1.o \
-  $(B)/client/opus/biquad_alt.o \
-  $(B)/client/opus/bwexpander_32.o \
-  $(B)/client/opus/bwexpander.o \
-  $(B)/client/opus/debug.o \
-  $(B)/client/opus/decode_pitch.o \
-  $(B)/client/opus/inner_prod_aligned.o \
-  $(B)/client/opus/lin2log.o \
-  $(B)/client/opus/log2lin.o \
-  $(B)/client/opus/LPC_analysis_filter.o \
-  $(B)/client/opus/LPC_inv_pred_gain.o \
-  $(B)/client/opus/table_LSF_cos.o \
-  $(B)/client/opus/NLSF2A.o \
-  $(B)/client/opus/NLSF_stabilize.o \
-  $(B)/client/opus/NLSF_VQ_weights_laroia.o \
-  $(B)/client/opus/pitch_est_tables.o \
-  $(B)/client/opus/resampler.o \
-  $(B)/client/opus/resampler_down2_3.o \
-  $(B)/client/opus/resampler_down2.o \
-  $(B)/client/opus/resampler_private_AR2.o \
-  $(B)/client/opus/resampler_private_down_FIR.o \
-  $(B)/client/opus/resampler_private_IIR_FIR.o \
-  $(B)/client/opus/resampler_private_up2_HQ.o \
-  $(B)/client/opus/resampler_rom.o \
-  $(B)/client/opus/sigm_Q15.o \
-  $(B)/client/opus/sort.o \
-  $(B)/client/opus/sum_sqr_shift.o \
-  $(B)/client/opus/stereo_decode_pred.o \
-  $(B)/client/opus/stereo_encode_pred.o \
-  $(B)/client/opus/stereo_find_predictor.o \
-  $(B)/client/opus/stereo_quant_pred.o \
-  \
-  $(B)/client/opus/apply_sine_window_FLP.o \
-  $(B)/client/opus/corrMatrix_FLP.o \
-  $(B)/client/opus/encode_frame_FLP.o \
-  $(B)/client/opus/find_LPC_FLP.o \
-  $(B)/client/opus/find_LTP_FLP.o \
-  $(B)/client/opus/find_pitch_lags_FLP.o \
-  $(B)/client/opus/find_pred_coefs_FLP.o \
-  $(B)/client/opus/LPC_analysis_filter_FLP.o \
-  $(B)/client/opus/LTP_analysis_filter_FLP.o \
-  $(B)/client/opus/LTP_scale_ctrl_FLP.o \
-  $(B)/client/opus/noise_shape_analysis_FLP.o \
-  $(B)/client/opus/prefilter_FLP.o \
-  $(B)/client/opus/process_gains_FLP.o \
-  $(B)/client/opus/regularize_correlations_FLP.o \
-  $(B)/client/opus/residual_energy_FLP.o \
-  $(B)/client/opus/solve_LS_FLP.o \
-  $(B)/client/opus/warped_autocorrelation_FLP.o \
-  $(B)/client/opus/wrappers_FLP.o \
-  $(B)/client/opus/autocorrelation_FLP.o \
-  $(B)/client/opus/burg_modified_FLP.o \
-  $(B)/client/opus/bwexpander_FLP.o \
-  $(B)/client/opus/energy_FLP.o \
-  $(B)/client/opus/inner_product_FLP.o \
-  $(B)/client/opus/k2a_FLP.o \
-  $(B)/client/opus/levinsondurbin_FLP.o \
-  $(B)/client/opus/LPC_inv_pred_gain_FLP.o \
-  $(B)/client/opus/pitch_analysis_core_FLP.o \
-  $(B)/client/opus/scale_copy_vector_FLP.o \
-  $(B)/client/opus/scale_vector_FLP.o \
-  $(B)/client/opus/schur_FLP.o \
-  $(B)/client/opus/sort_FLP.o \
-  \
-  $(B)/client/http.o \
-  $(B)/client/info.o \
-  $(B)/client/internal.o \
-  $(B)/client/opusfile.o \
-  $(B)/client/stream.o \
-  $(B)/client/wincerts.o
-endif
-endif
-
-ifeq ($(NEED_OGG),1)
-ifeq ($(USE_INTERNAL_OGG),1)
-Q3OBJ += \
-  $(B)/client/bitwise.o \
-  $(B)/client/framing.o
-endif
-endif
-
-ifeq ($(USE_CODEC_VORBIS),1)
-ifeq ($(USE_INTERNAL_VORBIS),1)
-Q3OBJ += \
-  $(B)/client/vorbis/analysis.o \
-  $(B)/client/vorbis/bitrate.o \
-  $(B)/client/vorbis/block.o \
-  $(B)/client/vorbis/codebook.o \
-  $(B)/client/vorbis/envelope.o \
-  $(B)/client/vorbis/floor0.o \
-  $(B)/client/vorbis/floor1.o \
-  $(B)/client/vorbis/info.o \
-  $(B)/client/vorbis/lookup.o \
-  $(B)/client/vorbis/lpc.o \
-  $(B)/client/vorbis/lsp.o \
-  $(B)/client/vorbis/mapping0.o \
-  $(B)/client/vorbis/mdct.o \
-  $(B)/client/vorbis/psy.o \
-  $(B)/client/vorbis/registry.o \
-  $(B)/client/vorbis/res0.o \
-  $(B)/client/vorbis/smallft.o \
-  $(B)/client/vorbis/sharedbook.o \
-  $(B)/client/vorbis/synthesis.o \
-  $(B)/client/vorbis/vorbisfile.o \
-  $(B)/client/vorbis/window.o
-endif
-endif
-
-ifeq ($(USE_INTERNAL_ZLIB),1)
-Q3OBJ += \
-  $(B)/client/adler32.o \
-  $(B)/client/crc32.o \
-  $(B)/client/inffast.o \
-  $(B)/client/inflate.o \
-  $(B)/client/inftrees.o \
-  $(B)/client/zutil.o
-endif
 
 ifeq ($(HAVE_VM_COMPILED),true)
   ifneq ($(findstring $(ARCH),x86 x86_64),)
@@ -1503,15 +1255,6 @@ ifeq ($(ARCH),x86_64)
     $(B)/ded/ftola.o
 endif
 
-ifeq ($(USE_INTERNAL_ZLIB),1)
-Q3DOBJ += \
-  $(B)/ded/adler32.o \
-  $(B)/ded/crc32.o \
-  $(B)/ded/inffast.o \
-  $(B)/ded/inflate.o \
-  $(B)/ded/inftrees.o \
-  $(B)/ded/zutil.o
-endif
 
 ifeq ($(HAVE_VM_COMPILED),true)
   ifneq ($(findstring $(ARCH),x86 x86_64),)

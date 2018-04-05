@@ -23,6 +23,7 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
 #include "tr_local.h"
 
+
 #define MAX_VERTS_ON_POLY		64
 #define MARKER_OFFSET			0	// 1
 
@@ -38,7 +39,10 @@ Out must have space for two more vertexes than in
 #define	SIDE_ON		2
 
 
-extern trGlobals_t	tr;
+extern trGlobals_t tr;
+extern refimport_t ri;
+
+
 
 static cvar_t* r_marksOnTriangleMeshes;
 

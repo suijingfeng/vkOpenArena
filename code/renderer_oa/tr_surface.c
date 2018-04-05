@@ -44,7 +44,9 @@ if you don't want to use the shader system.
 
 extern backEndState_t backEnd;
 extern shaderCommands_t tess;
-extern trGlobals_t	tr;
+extern trGlobals_t tr;
+extern refimport_t ri;
+
 
 static cvar_t* r_railWidth;
 static cvar_t* r_railCoreWidth;

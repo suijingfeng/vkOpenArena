@@ -31,9 +31,11 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 */
 
 
-extern trGlobals_t	tr;
-
+extern trGlobals_t tr;
+extern refimport_t ri;
 // render lightmaps only
+
+
 cvar_t* r_lightmap;
 
 // avoid lightmap pass
@@ -268,13 +270,13 @@ static shader_t *ShaderForShaderNum( int shaderNum, int lightmapNum )
     {
         /*  
 		// leilei - placeholder hack
-		if (tr.placeholderTextureAvail == 1 && !Q_strncmp( dsh->shader, "textures", 8 ))
+		if (tr.placeholderTextureAvail == 1 && !strncmp( dsh->shader, "textures", 8 ))
 		{
 	        //	return tr.placeholderTextureShader;
 		    shader = R_FindShader( "placeholder_texture", lightmapNum, qtrue );
 		    return shader;
 		}
-		else if (tr.placeholderModelAvail == 1 && !Q_strncmp( dsh->shader, "models", 6 ))
+		else if (tr.placeholderModelAvail == 1 && !strncmp( dsh->shader, "models", 6 ))
 		{
 		    return tr.placeholderModelShader;
 		}
@@ -311,7 +313,8 @@ static void ParseFace( dsurface_t *ds, drawVert_t *verts, msurface_t *surf, int 
 	numIndexes = LittleLong( ds->numIndexes );
 
 	// create the srfSurfaceFace_t
-	sfaceSize = ( size_t ) &((srfSurfaceFace_t *)0)->points[numPoints];
+    // sfaceSize = ( size_t ) &((srfSurfaceFace_t *)0)->points[numPoints];
+    sfaceSize = offsetof( srfSurfaceFace_t, points ) + sizeof( *cv->points ) * numPoints;
 	ofsIndexes = sfaceSize;
 	sfaceSize += sizeof( int ) * numIndexes;
 
@@ -1692,7 +1695,7 @@ void R_LoadEntities( lump_t *l ) {
 
 		// check for remapping of shaders for vertex lighting
 		s = "vertexremapshader";
-		if (!Q_strncmp(keyname, s, strlen(s)) ) {
+		if (!strncmp(keyname, s, strlen(s)) ) {
 			s = strchr(value, ';');
 			if (!s) {
 				ri.Printf( PRINT_WARNING, "WARNING: no semi colon in vertexshaderremap '%s'\n", value );
@@ -1703,7 +1706,7 @@ void R_LoadEntities( lump_t *l ) {
 		}
 		// check for remapping of shaders
 		s = "remapshader";
-		if (!Q_strncmp(keyname, s, strlen(s)) ) {
+		if (!strncmp(keyname, s, strlen(s)) ) {
 			s = strchr(value, ';');
 			if (!s) {
 				ri.Printf( PRINT_WARNING, "WARNING: no semi colon in shaderremap '%s'\n", value );

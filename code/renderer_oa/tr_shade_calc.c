@@ -29,9 +29,9 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 extern backEndState_t backEnd;
 extern shaderCommands_t	tess;
 extern trGlobals_t tr;
+extern refimport_t ri;
 
-#define	WAVEVALUE( table, base, amplitude, phase, freq ) \
-    ((base) + table[ ri.ftol( ( ( (phase) + tess.shaderTime * (freq) ) * FUNCTABLE_SIZE ) ) & FUNCTABLE_MASK ] * (amplitude))
+#define	WAVEVALUE(table, base, amplitude, phase, freq)  ((base) + table[ ri.ftol( ( ( (phase) + tess.shaderTime * (freq) ) * FUNCTABLE_SIZE ) ) & FUNCTABLE_MASK ] * (amplitude))
 
 
 static float *TableForFunc( genFunc_t func ) 
@@ -57,6 +57,8 @@ static float *TableForFunc( genFunc_t func )
 	return NULL;
 }
 
+
+
 /*
 ** Evaluates a given waveForm_t, referencing backEnd.refdef.time directly
 */
@@ -64,7 +66,9 @@ static float EvalWaveForm( const waveForm_t *wf )
 {
 	float* table = TableForFunc( wf->func );
 
-	return WAVEVALUE( table, wf->base, wf->amplitude, wf->phase, wf->frequency );
+    float wavevalue = wf->base + table[ ri.ftol( ( wf->phase + tess.shaderTime * wf->frequency) * FUNCTABLE_SIZE ) & FUNCTABLE_MASK ] * wf->amplitude;
+
+	return wavevalue;
 }
 
 static float EvalWaveFormClamped( const waveForm_t *wf )
@@ -107,18 +111,16 @@ void RB_CalcStretchTexCoords( const waveForm_t *wf, float *st )
 // leilei - this is for celshading
 void RB_CalcLightscaleTexCoords(float *st )
 {
-	float p;
 	texModInfo_t tmi;
-	float light = 1.0f;
 
-	vec3_t		directedLight;
+	vec3_t directedLight;
 	VectorCopy( backEnd.currentEntity->directedLight, directedLight );
 	//light = DotProduct (directedLight, lightDir);
-	light = ((directedLight[0] + directedLight[1] + directedLight[2]) * 0.333) / 255;
+	float light = ((directedLight[0] + directedLight[1] + directedLight[2]) * 0.333) / 255;
 	if (light > 1)
 		light = 1.0f;
 
-	p = 1.0f - (light * 0.7f);
+	float p = 1.0f - (light * 0.7f);
 
 	tmi.matrix[0][0] = p;
 	tmi.matrix[1][0] = 0;
@@ -200,14 +202,15 @@ RB_CalcDeformNormals
 Wiggle the normals for wavy environment mapping
 =========================
 */
-void RB_CalcDeformNormals( deformStage_t *ds ) {
+void RB_CalcDeformNormals( deformStage_t *ds )
+{
 	int i;
-	float	scale;
-	float	*xyz = ( float * ) tess.xyz;
-	float	*normal = ( float * ) tess.normal;
+	float* xyz = ( float * ) tess.xyz;
+	float* normal = ( float * ) tess.normal;
 
-	for ( i = 0; i < tess.numVertexes; i++, xyz += 4, normal += 4 ) {
-		scale = 0.98f;
+	for ( i = 0; i < tess.numVertexes; i++, xyz += 4, normal += 4 )
+    {
+		float scale = 0.98f;
 		scale = R_NoiseGet4f( xyz[0] * scale, xyz[1] * scale, xyz[2] * scale,
 			tess.shaderTime * ds->deformationWave.frequency );
 		normal[ 0 ] += ds->deformationWave.amplitude * scale;
@@ -227,14 +230,14 @@ void RB_CalcDeformNormals( deformStage_t *ds ) {
 }
 
 
-void RB_CalcDeformNormalsEvenMore( deformStage_t *ds ) {
+void RB_CalcDeformNormalsEvenMore( deformStage_t *ds )
+{
 	int i;
-	float	scale;
-	float	*xyz = ( float * ) tess.xyz;
-	float	*normal = ( float * ) tess.normal;
+	float* xyz = ( float * ) tess.xyz;
+	float* normal = ( float * ) tess.normal;
 
 	for ( i = 0; i < tess.numVertexes; i++, xyz += 4, normal += 4 ) {
-		scale = 5.98f;
+		float scale = 5.98f;
 		scale = R_NoiseGet4f( xyz[0] * scale, xyz[1] * scale, xyz[2] * scale,
 			tess.shaderTime * ds->deformationWave.frequency );
 		normal[ 0 ] += ds->deformationWave.amplitude * scale;
@@ -253,28 +256,21 @@ void RB_CalcDeformNormalsEvenMore( deformStage_t *ds ) {
 	}
 }
 
-/*
-========================
-RB_CalcBulgeVertexes
 
-========================
-*/
-void OldRB_CalcBulgeVertexes( deformStage_t *ds ) {
-	int i;
-	const float *st = ( const float * ) tess.texCoords[0];
-	float		*xyz = ( float * ) tess.xyz;
-	float		*normal = ( float * ) tess.normal;
-	float		now;
 
-	now = backEnd.refdef.time * ds->bulgeSpeed * 0.001f;
+void OldRB_CalcBulgeVertexes( deformStage_t *ds )
+{
 
-	for ( i = 0; i < tess.numVertexes; i++, xyz += 4, st += 4, normal += 4 ) {
-		int		off;
-		float scale;
+	const float *st = (const float *) tess.texCoords[0];
+	float* xyz = ( float * ) tess.xyz;
+	float* normal = ( float * ) tess.normal;
+	float now = backEnd.refdef.time * ds->bulgeSpeed * 0.001f;
 
-		off = (float)( FUNCTABLE_SIZE / (M_PI*2) ) * ( st[0] * ds->bulgeWidth + now );
-
-		scale = tr.sinTable[ off & FUNCTABLE_MASK ] * ds->bulgeHeight;
+    int i;
+	for(i = 0; i < tess.numVertexes; i++, xyz += 4, st += 4, normal += 4 )
+    {
+		int64_t off = (float)( FUNCTABLE_SIZE / (M_PI*2) ) * ( st[0] * ds->bulgeWidth + now );
+		float scale = tr.sinTable[ off & FUNCTABLE_MASK ] * ds->bulgeHeight;
 			
 		xyz[0] += normal[0] * scale;
 		xyz[1] += normal[1] * scale;
@@ -285,10 +281,11 @@ void OldRB_CalcBulgeVertexes( deformStage_t *ds ) {
 
 // leilei - adapted a bit from the jk2 source, for performance
 
-void RB_CalcBulgeVertexes( deformStage_t *ds ) {
+void RB_CalcBulgeVertexes( deformStage_t *ds )
+{
 	int i;
-	float		*xyz = ( float * ) tess.xyz;
-	float		*normal = ( float * ) tess.normal;
+	float* xyz = ( float * ) tess.xyz;
+	float* normal = ( float * ) tess.normal;
 
 	if ( ds->bulgeSpeed == 0.0f && ds->bulgeWidth == 0.0f )
 	{
@@ -303,21 +300,17 @@ void RB_CalcBulgeVertexes( deformStage_t *ds ) {
 	else
 	{
 		const float *st = ( const float * ) tess.texCoords[0];
-		float		now;
-	
-		now = backEnd.refdef.time * ds->bulgeSpeed * 0.001f;
-	for ( i = 0; i < tess.numVertexes; i++, xyz += 4, st += 4, normal += 4 ) {
-		int		off;
-		float scale;
+		float now = backEnd.refdef.time * ds->bulgeSpeed * 0.001f;
 
-		off = (float)( FUNCTABLE_SIZE / (M_PI*2) ) * ( st[0] * ds->bulgeWidth + now );
-
-		scale = tr.sinTable[ off & FUNCTABLE_MASK ] * ds->bulgeHeight;
-			
-		xyz[0] += normal[0] * scale;
-		xyz[1] += normal[1] * scale;
-		xyz[2] += normal[2] * scale;
-	}
+        for ( i = 0; i < tess.numVertexes; i++, xyz += 4, st += 4, normal += 4 )
+        {
+            int off = (float)( FUNCTABLE_SIZE / (M_PI*2) ) * ( st[0] * ds->bulgeWidth + now );
+            float scale = tr.sinTable[ off & FUNCTABLE_MASK ] * ds->bulgeHeight;
+                
+            xyz[0] += normal[0] * scale;
+            xyz[1] += normal[1] * scale;
+            xyz[2] += normal[2] * scale;
+        }
 	}
 }
 
@@ -330,23 +323,20 @@ RB_CalcMoveVertexes
 A deformation that can move an entire surface along a wave path
 ======================
 */
-void RB_CalcMoveVertexes( deformStage_t *ds ) {
-	int			i;
-	float		*xyz;
-	float		*table;
-	float		scale;
-	vec3_t		offset;
+void RB_CalcMoveVertexes( deformStage_t *ds )
+{
+	int	i;
+	vec3_t offset;
 
-	table = TableForFunc( ds->deformationWave.func );
+	float* table = TableForFunc( ds->deformationWave.func );
 
-	scale = WAVEVALUE( table, ds->deformationWave.base, 
-		ds->deformationWave.amplitude,
-		ds->deformationWave.phase,
-		ds->deformationWave.frequency );
+    float scale = ds->deformationWave.base + ds->deformationWave.amplitude * 
+    table[ ri.ftol( ( ( ds->deformationWave.phase + tess.shaderTime * ds->deformationWave.frequency ) * FUNCTABLE_SIZE ) ) & FUNCTABLE_MASK ];
+
 
 	VectorScale( ds->moveVector, scale, offset );
 
-	xyz = ( float * ) tess.xyz;
+	float* xyz = ( float * ) tess.xyz;
 	for ( i = 0; i < tess.numVertexes; i++, xyz += 4 ) {
 		VectorAdd( xyz, offset, xyz );
 	}
@@ -360,12 +350,13 @@ DeformText
 Change a polygon into a bunch of text polygons
 =============
 */
-void DeformText( const char *text ) {
+void DeformText( const char *text )
+{
 	int		i;
 	vec3_t	origin, width, height;
 	int		len;
 	int		ch;
-	byte	color[4];
+	unsigned char color[4];
 	float	bottom, top;
 	vec3_t	mid;
 
@@ -407,11 +398,13 @@ void DeformText( const char *text ) {
 	color[0] = color[1] = color[2] = color[3] = 255;
 
 	// draw each character
-	for ( i = 0 ; i < len ; i++ ) {
+	for ( i = 0 ; i < len ; i++ )
+    {
 		ch = text[i];
 		ch &= 255;
 
-		if ( ch != ' ' ) {
+		if ( ch != ' ' )
+        {
 			int		row, col;
 			float	frow, fcol, size;
 
@@ -1196,7 +1189,6 @@ void RB_CalcEnvironmentCelShadeTexCoords( float *st )
     int    i;
     float  *v, *normal;
     vec3_t lightDir;
-    float  d;
 
     normal = tess.normal[0];
 	v = tess.xyz[0];
@@ -1206,27 +1198,25 @@ void RB_CalcEnvironmentCelShadeTexCoords( float *st )
 //	if ( backEnd.currentEntity == &tr.worldEntity )
 //		VectorSubtract( lightOrigin, v, lightDir );
 //	else
-		VectorCopy( backEnd.currentEntity->lightDir, lightDir );
+	VectorCopy( backEnd.currentEntity->lightDir, lightDir );
 	VectorNormalizeFast( lightDir );
 
-    for (i = 0 ; i < tess.numVertexes ; i++, v += 4, normal += 4, st += 2 ) {
-		d= DotProduct( normal, lightDir );
+    for (i = 0 ; i < tess.numVertexes ; i++, v += 4, normal += 4, st += 2 )
+    {
+		float d= DotProduct( normal, lightDir );
 
 		st[0] = 0.5 + d * 0.5;
 		st[1] = 0.5;
     }
 }
 
-/*
-** RB_CalcTurbulentTexCoords
-*/
+
+
+
 void RB_CalcTurbulentTexCoords( const waveForm_t *wf, float *st )
 {
-	int i;
-	float now;
-
-	now = ( wf->phase + tess.shaderTime * wf->frequency );
-
+	float now = ( wf->phase + tess.shaderTime * wf->frequency );
+    int i;
 	for ( i = 0; i < tess.numVertexes; i++, st += 2 )
 	{
 		float s = st[0];
@@ -1237,13 +1227,11 @@ void RB_CalcTurbulentTexCoords( const waveForm_t *wf, float *st )
 	}
 }
 
-/*
-** RB_CalcScaleTexCoords
-*/
+
+
 void RB_CalcScaleTexCoords( const float scale[2], float *st )
 {
 	int i;
-
 	for ( i = 0; i < tess.numVertexes; i++, st += 2 )
 	{
 		st[0] *= scale[0];
@@ -1402,79 +1390,22 @@ void RB_CalcAtlasTexCoords( const atlas_t *at, float *st )
 **
 ** Calculates specular coefficient and places it in the alpha channel
 */
-vec3_t lightOrigin = { -960, 1980, 96 };		// FIXME: track dynamically
-
-void RB_CalcSpecularAlpha( unsigned char *alphas ) {
-	int			i;
-	float		*v, *normal;
-	vec3_t		viewer,  reflected;
-	float		l, d;
-	int			b;
-	vec3_t		lightDir;
-	int			numVertexes;
-
-	v = tess.xyz[0];
-	normal = tess.normal[0];
-
-	alphas += 3;
-
-	numVertexes = tess.numVertexes;
-	for (i = 0 ; i < numVertexes ; i++, v += 4, normal += 4, alphas += 4) {
-		float ilength;
-
-		VectorSubtract( lightOrigin, v, lightDir );
-//		ilength = Q_rsqrt( DotProduct( lightDir, lightDir ) );
-		VectorNormalizeFast( lightDir );
-
-		// calculate the specular color
-		d = DotProduct (normal, lightDir);
-//		d *= ilength;
-
-		// we don't optimize for the d < 0 case since this tends to
-		// cause visual artifacts such as faceted "snapping"
-		reflected[0] = normal[0]*2*d - lightDir[0];
-		reflected[1] = normal[1]*2*d - lightDir[1];
-		reflected[2] = normal[2]*2*d - lightDir[2];
-
-		VectorSubtract (backEnd.or.viewOrigin, v, viewer);
-		ilength = Q_rsqrt( DotProduct( viewer, viewer ) );
-		l = DotProduct (reflected, viewer);
-		l *= ilength;
-
-		if (l < 0) {
-			b = 0;
-		} else {
-			l = l*l;
-			l = l*l;
-			b = l * 255;
-			if (b > 255) {
-				b = 255;
-			}
-		}
-
-		*alphas = b;
-	}
-}
 
 // This fixed version comes from ZEQ2Lite
-void RB_CalcSpecularAlphaNew( unsigned char *alphas ) {
-int			i;
-	float		*v, *normal;
+void RB_CalcSpecularAlphaNew( unsigned char *alphas )
+{
 	vec3_t		viewer,  reflected;
-	float		l, d;
-	int			b;
+	int			i, b;
 	vec3_t		lightDir;
-	int			numVertexes;
 
-	v = tess.xyz[0];
-	normal = tess.normal[0];
+	float* v = tess.xyz[0];
+	float* normal = tess.normal[0];
+	int numVertexes = tess.numVertexes;
 
 	alphas += 3;
-
-	numVertexes = tess.numVertexes;
-	for (i = 0 ; i < numVertexes ; i++, v += 4, normal += 4, alphas += 4) {
-		float ilength;
-
+    vec3_t lightOrigin = { -960, 1980, 96 };		// FIXME: track dynamically
+	for (i = 0 ; i < numVertexes ; i++, v += 4, normal += 4, alphas += 4)
+    {
 		if ( backEnd.currentEntity == &tr.worldEntity )
 			VectorSubtract( lightOrigin, v, lightDir );	// old compatibility with maps that use it on some models
 		else
@@ -1483,7 +1414,7 @@ int			i;
 		VectorNormalizeFast( lightDir );
 
 		// calculate the specular color
-		d = DotProduct (normal, lightDir);
+		float d = DotProduct (normal, lightDir);
 
 		// we don't optimize for the d < 0 case since this tends to
 		// cause visual artifacts such as faceted "snapping"
@@ -1492,25 +1423,25 @@ int			i;
 		reflected[2] = normal[2]*2*d - lightDir[2];
 
 		VectorSubtract (backEnd.or.viewOrigin, v, viewer);
-		ilength = Q_rsqrt( DotProduct( viewer, viewer ) );
-		l = DotProduct (reflected, viewer);
+		float ilength = Q_rsqrt( DotProduct( viewer, viewer ) );
+		float l = DotProduct (reflected, viewer);
 		l *= ilength;
 
-		if (l < 0) {
+		if (l < 0)
 			b = 0;
-		} else {
-			l = l*l;
-			l = l*l;
-			b = l * 255;
-			if (b > 255) {
+        else
+        {
+			b = l*l*l*l*255;
+			if (b > 255)
+            {
 				b = 255;
 			}
 		}
 
 		*alphas = b;
 	}
-
 }
+
 
 /*
 ** RB_CalcDiffuseColor
@@ -1645,33 +1576,23 @@ void RB_CalcNormal( unsigned char *colors )
 	float		*normal = ( float * ) tess.normal; 
 	vec3_t			n, m;
 
-
-
 	numVertexes = tess.numVertexes;
-	for (i = 0 ; i < numVertexes ; i++, v += 4, normal += 4) {
+	for (i = 0 ; i < numVertexes ; i++, v += 4, normal += 4)
+    {
 		int y;
-		float mid;
-		for (y=0;y<3;y++){
-				n[y] = normal[y];
-				
-//				colors[i*4+y] = n[y];
-			}
-		//VectorNormalize(n);
+		for (y=0;y<3;y++)
+        {
+			n[y] = normal[y];
+        }
 
-			mid = n[1] + n[2];
-			if (mid < 0) mid *= -1;
+		float mid = n[1] + n[2];
+		
+        if (mid < 0)
+            mid *= -1;
 			
-
-	//		m[0] = 127 - (n[1]*128);
-	//		m[1] = 127 - (n[2]*128);
-	//		m[2] = 255 - (mid*128);
-
-			m[0] = 127 + (n[0]*128);
-			m[1] = 127 + (n[1]*128);
-			m[2] = 127 + (n[2]*128);
-
-
-
+        m[0] = 127 + (n[0]*128);
+        m[1] = 127 + (n[1]*128);
+        m[2] = 127 + (n[2]*128);
 		
 		colors[i*4+0] = m[0];
 		colors[i*4+1] = m[1];

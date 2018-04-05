@@ -29,7 +29,8 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
 static int	bloc = 0;
 
-void Huff_putBit( int bit, byte *fout, int *offset) {
+void Huff_putBit( int bit, byte *fout, int *offset)
+{
 	bloc = *offset;
 	if ((bloc&7) == 0) {
 		fout[(bloc>>3)] = 0;
@@ -39,20 +40,20 @@ void Huff_putBit( int bit, byte *fout, int *offset) {
 	*offset = bloc;
 }
 
-int		Huff_getBloc(void)
+int	Huff_getBloc(void)
 {
 	return bloc;
 }
 
-void	Huff_setBloc(int _bloc)
+void Huff_setBloc(int _bloc)
 {
 	bloc = _bloc;
 }
 
-int		Huff_getBit( byte *fin, int *offset) {
-	int t;
+int	Huff_getBit( byte *fin, int *offset)
+{
 	bloc = *offset;
-	t = (fin[(bloc>>3)] >> (bloc&7)) & 0x1;
+	int t = (fin[(bloc>>3)] >> (bloc&7)) & 0x1;
 	bloc++;
 	*offset = bloc;
 	return t;

@@ -62,9 +62,9 @@ typedef unsigned int glIndex_t;
 #define MAX_VISCOUNTS 5
 #define MAX_VAOS      4096
 
-#define MAX_CALC_PSHADOWS    64
-#define MAX_DRAWN_PSHADOWS    16 // do not increase past 32, because bit flags are used on surfaces
-#define PSHADOW_MAP_SIZE      512
+#define MAX_CALC_PSHADOWS       64
+#define MAX_DRAWN_PSHADOWS      16 // do not increase past 32, because bit flags are used on surfaces
+#define PSHADOW_MAP_SIZE        512
 
 
 typedef enum
@@ -87,6 +87,7 @@ typedef enum
 	IMGFLAG_SRGB           = 0x0080,
 	IMGFLAG_GENNORMALMAP   = 0x0100,
 } imgFlags_t;
+
 
 typedef struct image_s {
 	char		imgName[MAX_QPATH];		// game path, including extension
@@ -115,6 +116,7 @@ typedef struct cubemap_s {
 	float parallaxRadius;
 	image_t *image;
 } cubemap_t;
+
 
 typedef struct dlight_s {
 	vec3_t	origin;
@@ -1332,8 +1334,6 @@ the bits are allocated as follows:
 #endif
 #define QSORT_PSHADOW_SHIFT     1
 
-extern	int			gl_filter_min, gl_filter_max;
-
 /*
 ** performanceCounters_t
 */
@@ -1493,7 +1493,7 @@ typedef struct {
 	vec3_t                  toneMinAvgMaxLevel;
 	world_t					*world;
 
-	const byte				*externalVisData;	// from RE_SetWorldVisData, shared with CM_Load
+	const unsigned char*    externalVisData;	// from RE_SetWorldVisData, shared with CM_Load
 
 	image_t					*defaultImage;
 	image_t					*scratchImage[32];

@@ -21,8 +21,8 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 */
 #include "tr_local.h"
 
-extern trGlobals_t	tr;
-
+extern trGlobals_t tr;
+extern refimport_t ri;
 
 
 cvar_t* r_nocull;
@@ -50,7 +50,7 @@ static qboolean	R_CullTriSurf( srfTriangles_t *cv )
 {
 	int boxCull = R_CullLocalBox( cv->bounds );
 
-	if ( boxCull == CULL_OUT )
+	if( boxCull == CULL_OUT )
     {
 		return qtrue;
 	}
@@ -548,12 +548,12 @@ static void R_MarkLeaves (void)
 	// hasn't changed, we don't need to mark everything again
 
 	// if r_showcluster was just turned on, remark everything 
-	if ( (tr.viewCluster == cluster) && (!tr.refdef.areamaskModified) && (!r_showcluster->modified) )
+	if( (tr.viewCluster == cluster) && (!tr.refdef.areamaskModified) && (!r_showcluster->modified) )
     {
 		return;
 	}
 
-	if ( r_showcluster->modified || r_showcluster->integer )
+	if( r_showcluster->modified || r_showcluster->integer )
     {
 		r_showcluster->modified = qfalse;
 		if ( r_showcluster->integer ) {
@@ -578,7 +578,7 @@ static void R_MarkLeaves (void)
 
 	const unsigned char	*vis = R_ClusterPVS (tr.viewCluster);
 	
-	for (i=0,leaf=tr.world->nodes ; i<tr.world->numnodes ; i++, leaf++)
+	for (i=0,leaf=tr.world->nodes; i<tr.world->numnodes; i++, leaf++)
     {
 		cluster = leaf->cluster;
 		if ( cluster < 0 || cluster >= tr.world->numClusters )
@@ -655,7 +655,8 @@ qboolean R_inPVS( const vec3_t p1, const vec3_t p2 )
 
 void R_AddWorldSurfaces (void)
 {
-	if ( tr.refdef.rdflags & RDF_NOWORLDMODEL ) {
+	if ( tr.refdef.rdflags & RDF_NOWORLDMODEL )
+    {
 		return;
 	}
 

@@ -531,7 +531,6 @@ float Q_rsqrt( float number )
 	y  = t.f;
 	y  = y * ( threehalfs - ( x2 * y * y ) );   // 1st iteration
 //	y  = y * ( threehalfs - ( x2 * y * y ) );   // 2nd iteration, this can be removed
-
 	return y;
 }
 
@@ -649,13 +648,15 @@ ID_INLINE float AngleDelta ( float angle1, float angle2 )
 SetPlaneSignbits
 =================
 */
-void SetPlaneSignbits (cplane_t *out) {
-	int	bits, j;
+ID_INLINE void SetPlaneSignbits (cplane_t *out)
+{
+	int	bits = 0, j = 0;
 
 	// for fast box on planeside test
-	bits = 0;
-	for (j=0 ; j<3 ; j++) {
-		if (out->normal[j] < 0) {
+	for (j=0 ; j<3 ; j++)
+    {
+		if (out->normal[j] < 0)
+        {
 			bits |= 1<<j;
 		}
 	}
@@ -734,31 +735,31 @@ ID_INLINE void ClearBounds( vec3_t mins, vec3_t maxs ) {
 	maxs[0] = maxs[1] = maxs[2] = -99999;
 }
 
-ID_INLINE void AddPointToBounds( const vec3_t v, vec3_t mins, vec3_t maxs ) {
-	if ( v[0] < mins[0] ) {
+ID_INLINE void AddPointToBounds( const vec3_t v, vec3_t mins, vec3_t maxs )
+{
+	if ( v[0] < mins[0] )
 		mins[0] = v[0];
-	}
-	if ( v[0] > maxs[0]) {
+
+	if ( v[0] > maxs[0])
 		maxs[0] = v[0];
-	}
 
-	if ( v[1] < mins[1] ) {
+
+	if ( v[1] < mins[1] )
 		mins[1] = v[1];
-	}
-	if ( v[1] > maxs[1]) {
-		maxs[1] = v[1];
-	}
 
-	if ( v[2] < mins[2] ) {
+	if ( v[1] > maxs[1])
+		maxs[1] = v[1];
+
+
+	if ( v[2] < mins[2] )
 		mins[2] = v[2];
-	}
-	if ( v[2] > maxs[2]) {
+
+	if ( v[2] > maxs[2])
 		maxs[2] = v[2];
-	}
 }
 
-ID_INLINE qboolean BoundsIntersect(const vec3_t mins, const vec3_t maxs,
-		const vec3_t mins2, const vec3_t maxs2)
+
+ID_INLINE qboolean BoundsIntersect(const vec3_t mins, const vec3_t maxs, const vec3_t mins2, const vec3_t maxs2)
 {
 	if ( maxs[0] < mins2[0] ||
 		maxs[1] < mins2[1] ||

@@ -23,6 +23,9 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
 #include "tr_local.h"
 
+extern refimport_t ri;
+
+
 extern shaderCommands_t	tess;
 extern trGlobals_t	tr;
 extern backEndState_t backEnd;
@@ -172,7 +175,7 @@ qboolean R_LoadIQM( model_t *mod, void *buffer, int filesize, const char *mod_na
 	}
 
 	iqmHeader_t* header = (iqmHeader_t *)buffer;
-	if( Q_strncmp( header->magic, IQM_MAGIC, sizeof(header->magic) ) )
+	if( strncmp( header->magic, IQM_MAGIC, sizeof(header->magic) ) )
     {
 		return qfalse;
 	}
@@ -907,9 +910,9 @@ void R_AddIQMSurfaces( trRefEntity_t *ent )
 
 			for(j = 0; j < skin->numSurfaces; j++)
 			{
-				if (!strcmp(skin->surfaces[j]->name, surface->name))
+				if (!strcmp(skin->surfaces[j].name, surface->name))
 				{
-					shader = skin->surfaces[j]->shader;
+					shader = skin->surfaces[j].shader;
 					break;
 				}
 			}

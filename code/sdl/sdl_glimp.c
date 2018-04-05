@@ -62,6 +62,17 @@ static cvar_t* r_ext_multitexture;
 static cvar_t* r_ext_compiled_vertex_array;
 
 
+//
+// cvars
+//
+//extern cvar_t *r_ext_multisample;
+										// 0 = use framebuffer depth
+										// 16 = use 16-bit textures
+										// 32 = use 32-bit textures
+										// all else = error
+
+
+
 cvar_t* r_ext_texture_filter_anisotropic;
 cvar_t* r_ext_max_anisotropy;
 cvar_t* r_ext_compressed_textures;

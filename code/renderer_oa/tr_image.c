@@ -25,6 +25,12 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
 extern trGlobals_t	tr;
 extern backEndState_t backEnd;
+extern refimport_t ri;
+extern glconfig_t glConfig;
+
+extern cvar_t *r_ext_texture_filter_anisotropic;
+extern cvar_t *r_ext_max_anisotropy;
+
 
 cvar_t* r_ignoreGLErrors;
 cvar_t* r_gamma;
@@ -1410,7 +1416,6 @@ void R_ImageList_f( void )
 			sizeSuffix = "Gb";
 		}
 
-		//ri.Printf(PRINT_ALL, "%4i: %4ix%4i %s %4i%s %s\n", i, image->uploadWidth, image->uploadHeight, format, displaySize, sizeSuffix, image->imgName);
 		ri.Printf(PRINT_ALL, "%4i: %4ix%4i %s %4i%s %s\n", i, image->uploadWidth, image->uploadHeight, format, displaySize, sizeSuffix, image->imgName);
 
 		estTotalSize += estSize;
@@ -1432,8 +1437,8 @@ void R_InitSkins( void )
 	skin_t* skin = tr.skins[0] = ri.Hunk_Alloc( sizeof( skin_t ), h_low );
 	Q_strncpyz( skin->name, "<default skin>", sizeof( skin->name )  );
 	skin->numSurfaces = 1;
-	skin->surfaces[0] = ri.Hunk_Alloc( sizeof( *skin->surfaces ), h_low );
-	skin->surfaces[0]->shader = tr.defaultShader;
+	skin->surfaces = ri.Hunk_Alloc( sizeof( skinSurface_t ), h_low );
+	skin->surfaces[0].shader = tr.defaultShader;
 }
 
 
@@ -1608,3 +1613,4 @@ void R_InitImages(void)
 	// create default texture and white texture
 	R_CreateBuiltinImages();
 }
+

@@ -31,10 +31,10 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #include "../sdl/tr_public.h"
 #include "../sdl/qgl.h"
 
+
 #include "iqm.h"
 
-extern refimport_t ri;
-extern glconfig_t glConfig;
+
 
 
 // any change in the LIGHTMAP_* defines here MUST be reflected in
@@ -509,7 +509,11 @@ typedef struct {
 
 
 //=================================================================================
-
+// max surfaces per-skin
+// This is an arbitry limit. Vanilla Q3 only supported 32 surfaces in skins but failed to
+// enforce the maximum limit when reading skin files. It was possile to use more than 32
+// surfaces which accessed out of bounds memory past end of skin->surfaces hunk block.
+#define MAX_SKIN_SURFACES	256
 // skins allow models to be retextured without modifying the model file
 typedef struct {
 	char		name[MAX_QPATH];
@@ -517,9 +521,9 @@ typedef struct {
 } skinSurface_t;
 
 typedef struct skin_s {
-	char		name[MAX_QPATH];		// game path, including extension
-	int			numSurfaces;
-	skinSurface_t	*surfaces[MD3_MAX_SURFACES];
+	char name[MAX_QPATH];		// game path, including extension
+	int	numSurfaces;
+	skinSurface_t* surfaces;
 } skin_t;
 
 
@@ -1257,7 +1261,7 @@ const void *RB_TakeVideoFrameCmd( const void *data );
 #define	CULL_OUT	2		// completely outside the clipping planes
 
 
-void R_SetupProjection(viewParms_t *dest, float zProj, qboolean computeFrustum);
+void R_SetupProjection(viewParms_t *dest, float zProj);
 void R_AddDrawSurf( surfaceType_t *surface, shader_t *shader, int fogIndex, int dlightMap );
 void R_DecomposeSort( unsigned sort, int *entityNum, shader_t **shader, int *fogNum, int *dlightMap );
 void R_RenderView( viewParms_t *parms );
@@ -1417,7 +1421,6 @@ void R_InitScene( void );
 void RE_ClearScene( void );
 void RE_AddRefEntityToScene( const refEntity_t *ent );
 void RE_AddPolyToScene( qhandle_t hShader , int numVerts, const polyVert_t *verts, int num );
-void RE_AddLightToScene( const vec3_t org, float intensity, float r, float g, float b );
 void RE_AddAdditiveLightToScene( const vec3_t org, float intensity, float r, float g, float b );
 void RE_RenderScene( const refdef_t *fd );
 void R_AddPolygonSurfaces( void );

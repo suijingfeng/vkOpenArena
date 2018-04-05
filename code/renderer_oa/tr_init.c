@@ -32,7 +32,7 @@ extern backEndState_t backEnd;
 
 glconfig_t  glConfig;
 glstate_t	glState;
-
+refimport_t	ri;
 
 //extern cvar_t	*r_verbose;			// used for verbose debug spew
 //extern cvar_t	*r_vertexLight;		// vertex lighting mode for better performance
@@ -133,7 +133,6 @@ static void GL_SetDefaultState(void)
 
 /*
 ** Workaround for ri.Printf's 1024 characters buffer limit.
-*/
 static void R_PrintLongString(const char *string)
 {
 	char buffer[1024];
@@ -142,12 +141,13 @@ static void R_PrintLongString(const char *string)
 	
     while(size > 0)
     {
-		Q_strncpyz(buffer, p, sizeof (buffer) );
-		ri.Printf( PRINT_ALL, "%s", buffer );
+		Q_strncpyz(buffer, p, sizeof(buffer) );
+		ri.Printf(PRINT_ALL, "%s", buffer);
 		p += 1023;
 		size -= 1023;
 	}
 }
+*/
 
 
 static void GfxInfo_f( void )
@@ -162,7 +162,7 @@ static void GfxInfo_f( void )
 	ri.Printf( PRINT_ALL, "GL_RENDERER: %s\n", glConfig.renderer_string );
 	ri.Printf( PRINT_ALL, "GL_VERSION: %s\n", glConfig.version_string );
 	ri.Printf( PRINT_ALL, "GL_EXTENSIONS: " );
-	R_PrintLongString( glConfig.extensions_string );
+//	R_PrintLongString( glConfig.extensions_string );
     ri.Printf( PRINT_ALL, "\n" );
 	ri.Printf( PRINT_ALL, "GL_MAX_TEXTURE_SIZE: %d\n", glConfig.maxTextureSize );
 	ri.Printf( PRINT_ALL, "GL_MAX_TEXTURE_UNITS_ARB: %d\n", glConfig.numTextureUnits );
@@ -176,7 +176,6 @@ static void GfxInfo_f( void )
 
 
 	ri.Printf( PRINT_ALL, "texturemode: %s\n", r_textureMode->string );
-
 	ri.Printf( PRINT_ALL, "multitexture: %s\n", enablestrings[qglActiveTextureARB != 0] );
 	ri.Printf( PRINT_ALL, "compiled vertex arrays: %s\n", enablestrings[qglLockArraysEXT != 0 ] );
 	ri.Printf( PRINT_ALL, "texenv add: %s\n", enablestrings[glConfig.textureEnvAddAvailable != 0] );
@@ -648,18 +647,22 @@ static void R_ScreenShot_f(void)
 		return;
 	}
 
-	if ( !strcmp( ri.Cmd_Argv(1), "silent" ) ) {
+	if ( !strcmp( ri.Cmd_Argv(1), "silent" ) )
+    {
 		silent = qtrue;
 	}
-	else {
+	else
+    {
 		silent = qfalse;
 	}
 
-	if ( ri.Cmd_Argc() == 2 && !silent ) {
+	if ( ri.Cmd_Argc() == 2 && !silent )
+    {
 		// explicit filename
 		Com_sprintf( checkname, MAX_OSPATH, "screenshots/%s.tga", ri.Cmd_Argv( 1 ) );
 	}
-	else {
+	else
+    {
 		// scan for a free filename
 
 		// if we have saved a previous screenshot, don't scan
@@ -701,10 +704,10 @@ static void R_SkinList_f( void )
     {
 		skin_t *skin = tr.skins[i];
 
-		ri.Printf( PRINT_ALL, "%3i:%s\n", i, skin->name );
+		ri.Printf( PRINT_ALL, "%3i:%s (%d surfaces)\n", i, skin->name, skin->numSurfaces );
 		for ( j = 0 ; j < skin->numSurfaces ; j++ )
         {
-			ri.Printf( PRINT_ALL, " %s = %s\n", skin->surfaces[j]->name, skin->surfaces[j]->shader->name );
+			ri.Printf( PRINT_ALL, " %s = %s\n", skin->surfaces[j].name, skin->surfaces[j].shader->name );
 		}
 	}
 	ri.Printf (PRINT_ALL, "------------------\n");
@@ -734,7 +737,7 @@ static char *CommaParse( char **data_p )
 		return com_token;
 	}
 
-	while ( 1 )
+	while( 1 )
     {
 		// skip whitespace
 		while( (c = *data) <= ' ')
@@ -824,6 +827,8 @@ static char *CommaParse( char **data_p )
 
 static qhandle_t RE_RegisterSkin( const char *name )
 {
+    
+    skinSurface_t parseSurfaces[MAX_SKIN_SURFACES];
 	qhandle_t	hSkin;
 	skin_t* skin;
 	skinSurface_t* surf;
@@ -880,8 +885,8 @@ static qhandle_t RE_RegisterSkin( const char *name )
 	if( strcmp( name + strlen( name ) - 5, ".skin" ) )
     {
 		skin->numSurfaces = 1;
-		skin->surfaces[0] = ri.Hunk_Alloc( sizeof(skin->surfaces[0]), h_low );
-		skin->surfaces[0]->shader = R_FindShader( name, LIGHTMAP_NONE, qtrue );
+		skin->surfaces = ri.Hunk_Alloc( sizeof( skinSurface_t ), h_low );
+		skin->surfaces[0].shader = R_FindShader( name, LIGHTMAP_NONE, qtrue );
 		return hSkin;
 	}
 
@@ -915,12 +920,7 @@ static qhandle_t RE_RegisterSkin( const char *name )
 		// parse the shader name
 		token = CommaParse( &text_p );
 
-		if ( skin->numSurfaces >= MD3_MAX_SURFACES ) {
-			ri.Printf( PRINT_WARNING, "WARNING: Ignoring surfaces in '%s', the max is %d surfaces!\n", name, MD3_MAX_SURFACES );
-			break;
-		}
-
-		surf = skin->surfaces[ skin->numSurfaces ] = ri.Hunk_Alloc( sizeof( *skin->surfaces[0] ), h_low );
+        surf = &parseSurfaces[skin->numSurfaces];
 		Q_strncpyz( surf->name, surfName, sizeof( surf->name ) );
 		surf->shader = R_FindShader( token, LIGHTMAP_NONE, qtrue );
 		skin->numSurfaces++;
@@ -933,6 +933,9 @@ static qhandle_t RE_RegisterSkin( const char *name )
 	if ( skin->numSurfaces == 0 ) {
 		return 0;		// use default skin
 	}
+
+	skin->surfaces = ri.Hunk_Alloc( skin->numSurfaces * sizeof( skinSurface_t ), h_low );
+	memcpy( skin->surfaces, parseSurfaces, skin->numSurfaces * sizeof( skinSurface_t ) );
 
 	return hSkin;
 }
