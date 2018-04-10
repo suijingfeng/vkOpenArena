@@ -476,10 +476,8 @@ static void IN_ProcessEvents( void )
 				{
                     case SDL_WINDOWEVENT_RESIZED:
 					{
-                        int width, height;
-
-                        width = e.window.data1;
-                        height = e.window.data2;
+                        int width = e.window.data1;
+                        int height = e.window.data2;
 
                         // ignore this event on fullscreen
                         if( cls.glconfig.isFullscreen )
@@ -521,17 +519,17 @@ static void IN_ProcessEvents( void )
 void IN_Frame(void)
 {
 	// If not DISCONNECTED (main menu) or ACTIVE (in game), we're loading
-	qboolean loading = ( clc.state != CA_DISCONNECTED && clc.state != CA_ACTIVE );
+	qboolean loading = (clc.state != CA_DISCONNECTED) && (clc.state != CA_ACTIVE);
 
 	if( !cls.glconfig.isFullscreen && ( Key_GetCatcher( ) & KEYCATCH_CONSOLE ) )
 	{
 		// Console is down in windowed mode
-		IN_DeactivateMouse( );
+		IN_DeactivateMouse();
 	}
 	else if( !cls.glconfig.isFullscreen && loading )
 	{
 		// Loading in windowed mode
-		IN_DeactivateMouse( );
+		IN_DeactivateMouse();
 	}
 	else if( !( SDL_GetWindowFlags( SDL_window ) & SDL_WINDOW_INPUT_FOCUS ) )
 	{

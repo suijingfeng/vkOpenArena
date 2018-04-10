@@ -164,7 +164,7 @@ typedef struct {
 	void	(*IN_Restart)(void);
 
 	// math
-	long    (*ftol)(float f);
+//	long    (*ftol)(float f);
 
 	// system stuff
 	void	(*Sys_SetEnv)( const char *name, const char *value );

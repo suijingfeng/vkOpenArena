@@ -27,6 +27,9 @@ extern trGlobals_t	tr;
 extern backEndState_t backEnd;
 extern refimport_t ri;
 extern glconfig_t glConfig;
+// outside of TR since it shouldn't be cleared during ref re-init
+extern glstate_t glState;
+
 
 extern cvar_t *r_ext_texture_filter_anisotropic;
 extern cvar_t *r_ext_max_anisotropy;

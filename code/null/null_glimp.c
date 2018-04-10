@@ -28,9 +28,6 @@ void ( * qglActiveTextureARB )( GLenum texture );
 void ( * qglClientActiveTextureARB )( GLenum texture );
 
 
-void ( * qglLockArraysEXT)( int, int);
-void ( * qglUnlockArraysEXT) ( void );
-
 
 void		GLimp_EndFrame( void ) {
 }

@@ -31,7 +31,7 @@ extern shaderCommands_t	tess;
 extern trGlobals_t tr;
 extern refimport_t ri;
 
-#define	WAVEVALUE(table, base, amplitude, phase, freq)  ((base) + table[ ri.ftol( ( ( (phase) + tess.shaderTime * (freq) ) * FUNCTABLE_SIZE ) ) & FUNCTABLE_MASK ] * (amplitude))
+#define	WAVEVALUE(table, base, amplitude, phase, freq)  ((base) + table[ (unsigned int)( ( ( (phase) + tess.shaderTime * (freq) ) * FUNCTABLE_SIZE ) ) & FUNCTABLE_MASK ] * (amplitude))
 
 
 static float *TableForFunc( genFunc_t func ) 
@@ -66,7 +66,7 @@ static float EvalWaveForm( const waveForm_t *wf )
 {
 	float* table = TableForFunc( wf->func );
 
-    float wavevalue = wf->base + table[ ri.ftol( ( wf->phase + tess.shaderTime * wf->frequency) * FUNCTABLE_SIZE ) & FUNCTABLE_MASK ] * wf->amplitude;
+    float wavevalue = wf->base + table[ (unsigned int)( ( wf->phase + tess.shaderTime * wf->frequency) * FUNCTABLE_SIZE ) & FUNCTABLE_MASK ] * wf->amplitude;
 
 	return wavevalue;
 }
@@ -331,7 +331,7 @@ void RB_CalcMoveVertexes( deformStage_t *ds )
 	float* table = TableForFunc( ds->deformationWave.func );
 
     float scale = ds->deformationWave.base + ds->deformationWave.amplitude * 
-    table[ ri.ftol( ( ( ds->deformationWave.phase + tess.shaderTime * ds->deformationWave.frequency ) * FUNCTABLE_SIZE ) ) & FUNCTABLE_MASK ];
+    table[ (unsigned int)( ( ( ds->deformationWave.phase + tess.shaderTime * ds->deformationWave.frequency ) * FUNCTABLE_SIZE ) ) & FUNCTABLE_MASK ];
 
 
 	VectorScale( ds->moveVector, scale, offset );
@@ -763,7 +763,7 @@ void RB_CalcWaveColor( const waveForm_t *wf, unsigned char *dstColors )
 	else if ( glow > 1 )
 		glow = 1;
 
-	int v = ri.ftol(255 * glow);
+	int v = 255 * glow;
 	color[0] = color[1] = color[2] = v;
 	color[3] = 255;
 	v = *(int *)color;
@@ -1521,7 +1521,7 @@ static void RB_CalcDiffuseColor_altivec( unsigned char *colors )
 
 static void RB_CalcDiffuseColor_scalar( unsigned char *colors )
 {
-	int				i, j;
+	int				i;
 	float			*v, *normal;
 	float			incoming;
 	trRefEntity_t	*ent;
@@ -1546,19 +1546,19 @@ static void RB_CalcDiffuseColor_scalar( unsigned char *colors )
 			*(int *)&colors[i*4] = ambientLightInt;
 			continue;
 		} 
-		j = ri.ftol(ambientLight[0] + incoming * directedLight[0]);
+		int j = ambientLight[0] + incoming * directedLight[0];
 		if ( j > 255 ) {
 			j = 255;
 		}
 		colors[i*4+0] = j;
 
-		j = ri.ftol(ambientLight[1] + incoming * directedLight[1]);
+		j = ambientLight[1] + incoming * directedLight[1];
 		if ( j > 255 ) {
 			j = 255;
 		}
 		colors[i*4+1] = j;
 
-		j = ri.ftol(ambientLight[2] + incoming * directedLight[2]);
+		j = ambientLight[2] + incoming * directedLight[2];
 		if ( j > 255 ) {
 			j = 255;
 		}
@@ -1601,7 +1601,7 @@ void RB_CalcNormal( unsigned char *colors )
 	}
 }
 
-
+/*
 
 void RB_CalcDiffuseColor_Specular( unsigned char *colors )
 {
@@ -1626,28 +1626,6 @@ void RB_CalcDiffuseColor_Specular( unsigned char *colors )
 	VectorAdd( ent->ambientLight, directedLight, directedLight );
 	VectorCopy( ent->lightDir, lightDir );
 
-	// averaging colors test
-/*
-	{
-		int rf;
-		for (rf=0;rf<3;rf++){
-			//directedLight[rf] = ambientLight[rf] + directedLight[rf] / 2;
-			//ambientLight[rf] = pow((ambientLight[rf] / 255), (directedLight[rf] / 255)) * 255;
-			specularLight[rf] -= ambientLight[rf];
-			ambientLight[rf] = ambientLight[rf] + ambientLight[rf] + (directedLight[rf] / 512);
-
-
-			//shadecap += directedLight[rf];
-			if (specularLight[rf] < 0) specularLight[rf] = 0;
-			if (ambientLight[rf] > 255) ambientLight[rf] = 255;
-
-			}
-		//shadecap /= 3;
-
-			ambientLightInt *= 1.5;			
-
-	}
-*/
 	v = tess.xyz[0];
 	normal = tess.normal[0];
 
@@ -1734,7 +1712,7 @@ void RB_CalcDiffuseColor_Specular( unsigned char *colors )
 	}
 }
 
-
+*/
 
 void RB_CalcDiffuseColor( unsigned char *colors )
 {
@@ -1827,14 +1805,8 @@ void RB_CalcDynamicColor( unsigned char *colors )
 
 void RB_CalcFlatAmbient( unsigned char *colors )
 {
-	int				i, j;
-	float			*v, *normal;
-	//float			incoming;
-	//int				ambientLightInt;
+	int				i;
 	vec3_t			ambientLight;
-	//vec3_t			lightDir;
-	//vec3_t			directedLight;
-	int				numVertexes;
 	trRefEntity_t* ent = backEnd.currentEntity;
 	//ambientLightInt = ent->ambientLightInt;
 	VectorCopy( ent->ambientLight, ambientLight );
@@ -1845,24 +1817,23 @@ void RB_CalcFlatAmbient( unsigned char *colors )
 	//lightDir[1] = 0;
 	//lightDir[2] = 1;
 
-	v = tess.xyz[0];
-	normal = tess.normal[0];
-
-	numVertexes = tess.numVertexes;
+	float* v = tess.xyz[0];
+	float* normal = tess.normal[0];
+	int numVertexes = tess.numVertexes;
 	for (i = 0 ; i < numVertexes ; i++, v += 4, normal += 4) {
-		j = ri.ftol(ambientLight[0]);
+		int j = ambientLight[0];
 		if ( j > 255 ) {
 			j = 255;
 		}
 		colors[i*4+0] = j;
 
-		j = ri.ftol(ambientLight[1]);
+		j = ambientLight[1];
 		if ( j > 255 ) {
 			j = 255;
 		}
 		colors[i*4+1] = j;
 
-		j = ri.ftol(ambientLight[2]);
+		j = ambientLight[2];
 		if ( j > 255 ) {
 			j = 255;
 		}
@@ -1874,7 +1845,7 @@ void RB_CalcFlatAmbient( unsigned char *colors )
 
 void RB_CalcFlatDirect( unsigned char *colors )
 {
-	int				i, j;
+	int				i;
 	float			*v, *normal;
 	// float			incoming;
 	trRefEntity_t	*ent;
@@ -1907,19 +1878,19 @@ void RB_CalcFlatDirect( unsigned char *colors )
 	numVertexes = tess.numVertexes;
 	for (i = 0 ; i < numVertexes ; i++, v += 4, normal += 4)
     {
-		j = ri.ftol(directedLight[0]);
+	    int j = directedLight[0];
 		if ( j > 255 ) {
 			j = 255;
 		}
 		colors[i*4+0] = j;
 
-		j = ri.ftol(directedLight[1]);
+		j = directedLight[1];
 		if ( j > 255 ) {
 			j = 255;
 		}
 		colors[i*4+1] = j;
 
-		j = ri.ftol(directedLight[2]);
+		j = directedLight[2];
 		if ( j > 255 ) {
 			j = 255;
 		}

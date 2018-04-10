@@ -680,7 +680,6 @@ void RB_CalcAlphaFromOneMinusEntity( unsigned char *dstColors )
 void RB_CalcWaveColor( const waveForm_t *wf, unsigned char *dstColors )
 {
 	int i;
-	int v;
 	float glow;
 	int *colors = ( int * ) dstColors;
 	byte	color[4];
@@ -699,7 +698,7 @@ void RB_CalcWaveColor( const waveForm_t *wf, unsigned char *dstColors )
 		glow = 1;
 	}
 
-	v = ri.ftol(255 * glow);
+	int v = 255 * glow;
 	color[0] = color[1] = color[2] = v;
 	color[3] = 255;
 	v = *(int *)color;
@@ -1155,7 +1154,7 @@ static void RB_CalcDiffuseColor_altivec( unsigned char *colors )
 
 static void RB_CalcDiffuseColor_scalar( unsigned char *colors )
 {
-	int				i, j;
+	int				i;
 	float			*v, *normal;
 	float			incoming;
 	trRefEntity_t	*ent;
@@ -1180,19 +1179,19 @@ static void RB_CalcDiffuseColor_scalar( unsigned char *colors )
 			*(int *)&colors[i*4] = ambientLightInt;
 			continue;
 		} 
-		j = ri.ftol(ambientLight[0] + incoming * directedLight[0]);
+		int j = ambientLight[0] + incoming * directedLight[0];
 		if ( j > 255 ) {
 			j = 255;
 		}
 		colors[i*4+0] = j;
 
-		j = ri.ftol(ambientLight[1] + incoming * directedLight[1]);
+		j = ambientLight[1] + incoming * directedLight[1];
 		if ( j > 255 ) {
 			j = 255;
 		}
 		colors[i*4+1] = j;
 
-		j = ri.ftol(ambientLight[2] + incoming * directedLight[2]);
+		j = ambientLight[2] + incoming * directedLight[2];
 		if ( j > 255 ) {
 			j = 255;
 		}

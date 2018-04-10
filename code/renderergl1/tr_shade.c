@@ -672,10 +672,8 @@ static void ProjectDlightTexture_scalar( void ) {
 				} else if ( texCoords[1] > 1.0f ) {
 					clip |= 8;
 				}
-				texCoords[0] = texCoords[0];
-				texCoords[1] = texCoords[1];
 
-				// modulate the strength based on the height and color
+                // modulate the strength based on the height and color
 				if ( dist[2] > radius ) {
 					clip |= 16;
 					modulate = 0.0f;
@@ -692,9 +690,9 @@ static void ProjectDlightTexture_scalar( void ) {
 				}
 			}
 			clipBits[i] = clip;
-			colors[0] = ri.ftol(floatColor[0] * modulate);
-			colors[1] = ri.ftol(floatColor[1] * modulate);
-			colors[2] = ri.ftol(floatColor[2] * modulate);
+			colors[0] = (unsigned char)(floatColor[0] * modulate);
+			colors[1] = (unsigned char)(floatColor[1] * modulate);
+			colors[2] = (unsigned char)(floatColor[2] * modulate);
 			colors[3] = 255;
 		}
 

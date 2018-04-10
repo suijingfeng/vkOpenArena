@@ -30,7 +30,8 @@ extern cvar_t* r_measureOverdraw;
 extern backEndState_t backEnd;
 extern refimport_t ri;
 extern glconfig_t glConfig;
-
+// outside of TR since it shouldn't be cleared during ref re-init
+extern glstate_t glState;
 
 backEndData_t *backEndData;
 
@@ -282,7 +283,7 @@ void RE_BeginFrame(void)
 	}
 
 	// check for errors
-	if ( !r_ignoreGLErrors->integer )
+	if( !r_ignoreGLErrors->integer )
 	{
 		int	err;
 

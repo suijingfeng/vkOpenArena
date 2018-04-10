@@ -56,6 +56,7 @@ long qftolsse(float f)
   return retval;
 }
 
+
 int qvmftolsse(void)
 {
   int retval;

@@ -906,7 +906,7 @@ static void R_GenerateDrawSurfs( void )
 	R_SetFarClip();
 
 	// we know the size of the clipping volume. Now set the rest of the projection matrix.
-	R_SetupProjectionZ (&tr.viewParms);
+	R_SetupProjectionZ(&tr.viewParms);
 
 	if( r_drawentities->integer )
     {
@@ -969,7 +969,7 @@ static void R_DebugGraphics( void )
 
 //==========================================================================================
 
-void R_SetupProjection(viewParms_t *dest, float zProj)
+static void R_SetupProjection(viewParms_t *dest, float zProj)
 {
 	float ymax = zProj * tan(dest->fovY * M_PI / 360.0f);
 	float ymin = -ymax;

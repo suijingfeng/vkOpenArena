@@ -2840,27 +2840,24 @@ void CL_PacketEvent( netadr_t from, msg_t *msg )
 	}
 }
 
-/*
-==================
-CL_CheckTimeout
 
-==================
-*/
-void CL_CheckTimeout( void ) {
+void CL_CheckTimeout( void )
+{
 	//
 	// check timeout
 	//
-	if ( ( !CL_CheckPaused() || !sv_paused->integer ) 
-		&& clc.state >= CA_CONNECTED && clc.state != CA_CINEMATIC
-	    && cls.realtime - clc.lastPacketTime > cl_timeout->value*1000) {
-		if (++cl.timeoutcount > 5) {	// timeoutcount saves debugger
+	if ( ( !CL_CheckPaused() || !sv_paused->integer ) && (clc.state >= CA_CONNECTED) && (clc.state != CA_CINEMATIC)
+	    && (cls.realtime - clc.lastPacketTime > cl_timeout->value*1000) )
+    {
+		if (++cl.timeoutcount > 5)
+        {	// timeoutcount saves debugger
 			Com_Printf ("\nServer connection timed out.\n");
 			CL_Disconnect( qtrue );
 			return;
 		}
-	} else {
-		cl.timeoutcount = 0;
 	}
+    else 
+		cl.timeoutcount = 0;
 }
 
 /*
@@ -2938,7 +2935,7 @@ void CL_Frame ( int msec )
 		cls.cddialog = qfalse;
 		VM_Call( uivm, UI_SET_ACTIVE_MENU, UIMENU_NEED_CD );
 	}
-    else if ( clc.state == CA_DISCONNECTED && !( Key_GetCatcher( ) & KEYCATCH_UI ) && !com_sv_running->integer && uivm )
+    else if( (clc.state == CA_DISCONNECTED) && !( Key_GetCatcher( ) & KEYCATCH_UI ) && !com_sv_running->integer && uivm )
     {
 		// if disconnected, bring up the menu
 		S_StopAllSounds();
@@ -2959,17 +2956,17 @@ void CL_Frame ( int msec )
 		}
 	}
 	
-	if( cl_autoRecordDemo->integer ) {
-		if( clc.state == CA_ACTIVE && !clc.demorecording && !clc.demoplaying ) {
+	if( cl_autoRecordDemo->integer )
+    {
+		if( clc.state == CA_ACTIVE && !clc.demorecording && !clc.demoplaying )
+        {
 			// If not recording a demo, and we should be, start one
-			qtime_t	now;
-			char		*nowString;
-			char		*p;
+
 			char		mapName[ MAX_QPATH ];
 			char		serverName[ MAX_OSPATH ];
-
+			qtime_t	now;
 			Com_RealTime( &now );
-			nowString = va( "%04d%02d%02d%02d%02d%02d",
+			char* nowString = va( "%04d%02d%02d%02d%02d%02d",
 					1900 + now.tm_year,
 					1 + now.tm_mon,
 					now.tm_mday,
@@ -2980,7 +2977,7 @@ void CL_Frame ( int msec )
 			Q_strncpyz( serverName, clc.servername, MAX_OSPATH );
 			// Replace the ":" in the address as it is not a valid
 			// file name character
-			p = strstr( serverName, ":" );
+			char* p = strstr( serverName, ":" );
 			if( p ) {
 				*p = '.';
 			}
@@ -3005,7 +3002,7 @@ void CL_Frame ( int msec )
 	cls.realtime += cls.frametime;
 
 	if ( cl_timegraph->integer ) {
-		SCR_DebugGraph ( cls.realFrametime * 0.25 );
+		SCR_DebugGraph( cls.realFrametime * 0.25 );
 	}
 
 	// see if we need to update any userinfo
@@ -3272,7 +3269,7 @@ void CL_InitRef(void)
 	ri.IN_Shutdown = IN_Shutdown;
 	ri.IN_Restart = IN_Restart;
 
-	ri.ftol = Q_ftol;
+//	ri.ftol = Q_ftol;
 
 	ri.Sys_SetEnv = Sys_SetEnv;
 	ri.Sys_LowPhysicalMemory = Sys_LowPhysicalMemory;

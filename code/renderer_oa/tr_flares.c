@@ -54,7 +54,8 @@ potentially up to five or more times in a frame with 3D status bar icons).
 #include "../qcommon/cm_local.h"
 
 extern refimport_t ri;
-
+// outside of TR since it shouldn't be cleared during ref re-init
+extern glstate_t glState;
 
 
 // flare states maintain visibility over multiple frames for fading

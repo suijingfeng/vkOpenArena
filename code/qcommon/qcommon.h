@@ -42,7 +42,7 @@ typedef struct {
 	qboolean	allowoverflow;	// if false, do a Com_Error
 	qboolean	overflowed;		// set to true if the buffer size failed (with allowoverflow set)
 	qboolean	oob;			// set to true if the buffer size failed (with allowoverflow set)
-	byte	*data;
+	unsigned char* data;
 	int		maxsize;
 	int		cursize;
 	int		readcount;
@@ -599,9 +599,9 @@ issues.
 #define	MAX_FILE_HANDLES	64
 
 #ifdef DEDICATED
-#	define Q3CONFIG_CFG "q3config_server.cfg"
+#	define Q3CONFIG_CFG "oa_config_server.cfg"
 #else
-#	define Q3CONFIG_CFG "q3config.cfg"
+#	define Q3CONFIG_CFG "oa_config.cfg"
 #endif
 
 qboolean FS_Initialized( void );
@@ -792,20 +792,20 @@ typedef enum
 
 
 typedef enum {
-	// SE_NONE must be zero
-	SE_NONE = 0,		// evTime is still valid
+	SE_NONE = 0,	// SE_NONE must be zero, evTime is still valid
 	SE_KEY,			// evValue is a key code, evValue2 is the down flag
 	SE_CHAR,		// evValue is an ascii char
 	SE_MOUSE,		// evValue and evValue2 are relative signed x / y moves
 	SE_CONSOLE		// evPtr is a char*
 } sysEventType_t;
 
-typedef struct {
+
+typedef struct{
 	int				evTime;
 	sysEventType_t	evType;
 	int				evValue, evValue2;
 	int				evPtrLength;	// bytes of data pointed to by evPtr, for journaling
-	void			*evPtr;			// this must be manually freed if not NULL
+	void*           evPtr;			// this must be manually freed if not NULL
 } sysEvent_t;
 
 void		Com_QueueEvent( int time, sysEventType_t type, int value, int value2, int ptrLength, void *ptr );

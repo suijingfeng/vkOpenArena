@@ -200,9 +200,6 @@ ifndef USE_INTERNAL_ZLIB
 USE_INTERNAL_ZLIB=0
 endif
 
-ifndef USE_INTERNAL_JPEG
-USE_INTERNAL_JPEG=0
-endif
 
 ifndef USE_LOCAL_HEADERS
 USE_LOCAL_HEADERS=0
@@ -518,17 +515,12 @@ endif
 BASE_CFLAGS += $(ZLIB_CFLAGS)
 LIBS += $(ZLIB_LIBS)
 
-ifeq ($(USE_INTERNAL_JPEG),1)
-  BASE_CFLAGS += -DUSE_INTERNAL_JPEG
-  BASE_CFLAGS += -I$(JPDIR)
-else
   # IJG libjpeg doesn't have pkg-config, but libjpeg-turbo uses libjpeg.pc;
   # we fall back to hard-coded answers if libjpeg.pc is unavailable
   JPEG_CFLAGS ?= $(shell pkg-config --silence-errors --cflags libjpeg || true)
   JPEG_LIBS ?= $(shell pkg-config --silence-errors --libs libjpeg || echo -ljpeg)
   BASE_CFLAGS += $(JPEG_CFLAGS)
   RENDERER_LIBS += $(JPEG_LIBS)
-endif
 
 ifeq ($(USE_FREETYPE),1)
   FREETYPE_CFLAGS ?= $(shell pkg-config --silence-errors --cflags freetype2 || true)
@@ -1841,7 +1833,6 @@ ifdef MINGW
 		USE_CURL_DLOPEN=$(USE_CURL_DLOPEN) \
 		USE_INTERNAL_OPUS=$(USE_INTERNAL_OPUS) \
 		USE_INTERNAL_ZLIB=$(USE_INTERNAL_ZLIB) \
-		USE_INTERNAL_JPEG=$(USE_INTERNAL_JPEG)
 else
 	@$(MAKE) VERSION=$(VERSION) -C $(LOKISETUPDIR) V=$(V)
 endif

@@ -388,19 +388,17 @@ void Huff_Decompress(msg_t *mbuf, int offset)
 
 extern 	int oldsize;
 
-void Huff_Compress(msg_t *mbuf, int offset) {
-	int			i, ch, size;
-	byte		seq[65536];
-	byte*		buffer;
-	huff_t		huff;
-
-	size = mbuf->cursize - offset;
-	buffer = mbuf->data+ + offset;
+void Huff_Compress(msg_t *mbuf, int offset)
+{
+	unsigned char seq[65536];
+	int size = mbuf->cursize - offset;
+	unsigned char* buffer = mbuf->data+ + offset;
 
 	if (size<=0) {
 		return;
 	}
 
+	huff_t huff;
 	memset(&huff, 0, sizeof(huff_t));
 	// Add the NYT (not yet transmitted) node into the tree/list */
 	huff.tree = huff.lhead = huff.loc[NYT] =  &(huff.nodeList[huff.blocNode++]);
@@ -413,9 +411,10 @@ void Huff_Compress(msg_t *mbuf, int offset) {
 	seq[1] = size&0xff;
 
 	bloc = 16;
-
-	for (i=0; i<size; i++ ) {
-		ch = buffer[i];
+    int i;
+	for (i=0; i<size; i++ )
+    {
+		unsigned char ch = buffer[i];
 		Huff_transmit(&huff, ch, seq);						/* Transmit symbol */
 		Huff_addRef(&huff, (byte)ch);								/* Do update */
 	}

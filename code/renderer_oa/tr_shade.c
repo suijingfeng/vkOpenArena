@@ -45,6 +45,7 @@ extern shaderCommands_t tess;
 extern cvar_t* r_lightmap;
 
 
+
 #ifdef USE_RENDERER_DLOPEN
 static cvar_t* com_altivec;
 #endif
@@ -62,6 +63,7 @@ R_ArrayElementDiscrete
 
 This is just for OpenGL conformance testing, it should never be the fastest
 ================
+extern glstate_t glState;
 
 static void APIENTRY R_ArrayElementDiscrete( GLint index )
 {
@@ -77,15 +79,15 @@ static void APIENTRY R_ArrayElementDiscrete( GLint index )
 	}
 	qglVertex3fv( tess.xyz[ index ] );
 }
-*/
 
 
-static void R_DrawStripElements( int numIndexes, const unsigned int *indexes, void ( APIENTRY *element )(GLint) )
+
+static void R_DrawStripElements(int numIndexes, const unsigned int *indexes, void ( APIENTRY *element )(GLint) )
 {
     static int c_vertexes;		// for seeing how long our average strips are
     static int c_begins;
 
-	int i;
+
 	int last[3] = { -1, -1, -1 };
 	qboolean even = qfalse;
 
@@ -106,7 +108,7 @@ static void R_DrawStripElements( int numIndexes, const unsigned int *indexes, vo
 	last[0] = indexes[0];
 	last[1] = indexes[1];
 	last[2] = indexes[2];
-
+	int i;
 	for ( i = 3; i < numIndexes; i += 3 )
 	{
 		// odd numbered triangle in potential strip
@@ -114,7 +116,7 @@ static void R_DrawStripElements( int numIndexes, const unsigned int *indexes, vo
 		{
 			// check previous triangle to see if we're continuing a strip,
             // otherwise we're done with this strip so finish it and start a new one
-			if( ( indexes[i+0] == last[2] ) && ( indexes[i+1] == last[1] ) )
+			if( ( indexes[i] == last[2] ) && ( indexes[i+1] == last[1] ) )
 			{
 				element( indexes[i+2] );
 				c_vertexes++;
@@ -173,44 +175,7 @@ static void R_DrawStripElements( int numIndexes, const unsigned int *indexes, vo
 
 	qglEnd();
 }
-
-
-
-/*
-==================
-R_DrawElements
-
-Optionally performs our own glDrawElements that looks for strip conditions
-instead of using the single glDrawElements call that may be inefficient without compiled vertex arrays.
-==================
 */
-static void R_DrawElements( int numIndexes, const unsigned int* indexes )
-{
-//	int	primitives;
-
-	// default is to use triangles if compiled vertex arrays are present
-    if ( qglLockArraysEXT )
-    {
-//        primitives = 2;
-        qglDrawElements( GL_TRIANGLES, numIndexes, GL_UNSIGNED_INT, indexes );
-    }
-    else
-    {
-//        primitives = 1;
-        R_DrawStripElements( numIndexes,  indexes, qglArrayElement );
-    }
-
-/*  
-    if ( primitives == 3 )
-    {
-		R_DrawStripElements( numIndexes,  indexes, R_ArrayElementDiscrete );
-		return;
-	}
-*/
-	// anything else will cause no drawing
-}
-
-
 
 /*
 =============================================================
@@ -267,16 +232,13 @@ static void DrawTris(shaderCommands_t *input)
 	qglDisableClientState (GL_TEXTURE_COORD_ARRAY);
 
 	qglVertexPointer (3, GL_FLOAT, 16, input->xyz);	// padded for SIMD
-
+/*  
 	if (qglLockArraysEXT) {
 		qglLockArraysEXT(0, input->numVertexes);
 	}
-
-	R_DrawElements( input->numIndexes, input->indexes );
-
-	if (qglUnlockArraysEXT) {
-		qglUnlockArraysEXT();
-	}
+*/        
+    qglDrawElements( GL_TRIANGLES, input->numIndexes, GL_UNSIGNED_INT, input->indexes );
+	
 	qglDepthRange( 0, 1 );
 }
 
@@ -288,10 +250,10 @@ DrawNormals
 Draws vertex normals for debugging
 ================
 */
-static void DrawNormals (shaderCommands_t *input)
+static void DrawNormals(shaderCommands_t *input)
 {
 	int		i;
-	vec3_t	temp;
+
 
 	GL_Bind( tr.whiteImage );
 	qglColor3f (1,1,1);
@@ -302,8 +264,9 @@ static void DrawNormals (shaderCommands_t *input)
 	for (i = 0 ; i < input->numVertexes ; i++)
     {
 		qglVertex3fv (input->xyz[i]);
-		VectorMA (input->xyz[i], 2, input->normal[i], temp);
-		qglVertex3fv (temp);
+        vec3_t temp;
+		VectorMA(input->xyz[i], 2, input->normal[i], temp);
+		qglVertex3fv(temp);
 	}
 	qglEnd();
 
@@ -356,10 +319,10 @@ static void DrawMultitextured( shaderCommands_t *input, int stage )
 	qglTexCoordPointer( 2, GL_FLOAT, 0, input->svars.texcoords[1] );
 
 	R_BindAnimatedImage( &pStage->bundle[1] );
-
-	R_DrawElements( input->numIndexes, input->indexes );
-
-	//
+        
+    qglDrawElements( GL_TRIANGLES, input->numIndexes, GL_UNSIGNED_INT, input->indexes );
+	
+    //
 	// disable texturing on TEXTURE1, then select TEXTURE0
 	//
 	//qglDisableClientState( GL_TEXTURE_COORD_ARRAY );
@@ -534,7 +497,7 @@ static void ProjectDlightTexture_altivec( void )
 		else {
 			GL_State( GLS_SRCBLEND_DST_COLOR | GLS_DSTBLEND_ONE | GLS_DEPTHFUNC_EQUAL );
 		}
-		R_DrawElements( numIndexes, hitIndexes );
+        qglDrawElements( GL_TRIANGLES, numIndexes, GL_UNSIGNED_INT, hitIndexes );
 		backEnd.pc.c_totalIndexes += numIndexes;
 		backEnd.pc.c_dlightIndexes += numIndexes;
 	}
@@ -551,9 +514,7 @@ static void ProjectDlightTexture_scalar( void )
 	unsigned char colorArray[SHADER_MAX_VERTEXES][4];
 	unsigned	hitIndexes[SHADER_MAX_INDEXES];
 	int		numIndexes;
-	float	scale;
-	float	radius;
-	vec3_t	floatColor;
+
 	float	modulate = 0.0f;
 
 	if ( !backEnd.refdef.num_dlights ) {
@@ -572,9 +533,10 @@ static void ProjectDlightTexture_scalar( void )
 
 		dlight_t* dl = &backEnd.refdef.dlights[l];
 		VectorCopy( dl->transformed, origin );
-		radius = dl->radius;
-		scale = 1.0f / radius;
-
+		float radius = dl->radius;
+		float scale = 1.0f / radius;
+        
+        vec3_t	floatColor;
         floatColor[0] = dl->color[0] * 255.0f;
         floatColor[1] = dl->color[1] * 255.0f;
         floatColor[2] = dl->color[2] * 255.0f;
@@ -597,18 +559,16 @@ static void ProjectDlightTexture_scalar( void )
 			}
             else
             {
-				if ( texCoords[0] < 0.0f ) {
+				if ( texCoords[0] < 0.0f )
 					clip |= 1;
-				} else if ( texCoords[0] > 1.0f ) {
+                else if ( texCoords[0] > 1.0f )
 					clip |= 2;
-				}
-				if ( texCoords[1] < 0.0f ) {
+
+				if ( texCoords[1] < 0.0f )
 					clip |= 4;
-				} else if ( texCoords[1] > 1.0f ) {
+				else if ( texCoords[1] > 1.0f )
 					clip |= 8;
-				}
-				texCoords[0] = texCoords[0];
-				texCoords[1] = texCoords[1];
+
 
 				// modulate the strength based on the height and color
 				if ( dist[2] > radius ) {
@@ -627,27 +587,25 @@ static void ProjectDlightTexture_scalar( void )
 				}
 			}
 			clipBits[i] = clip;
-			colors[0] = ri.ftol(floatColor[0] * modulate);
-			colors[1] = ri.ftol(floatColor[1] * modulate);
-			colors[2] = ri.ftol(floatColor[2] * modulate);
+			colors[0] = (floatColor[0] * modulate);
+			colors[1] = (floatColor[1] * modulate);
+			colors[2] = (floatColor[2] * modulate);
 			colors[3] = 255;
 		}
 
+        
 		// build a list of triangles that need light
-		numIndexes = 0;
-		for ( i = 0 ; i < tess.numIndexes ; i += 3 ) {
-			int		a, b, c;
-
-			a = tess.indexes[i];
-			b = tess.indexes[i+1];
-			c = tess.indexes[i+2];
-			if ( clipBits[a] & clipBits[b] & clipBits[c] ) {
+		for( i = 0, numIndexes = 0; i < tess.numIndexes; i += 3)
+        {
+			int a = tess.indexes[i++];
+			int b = tess.indexes[i++];
+			int c = tess.indexes[i++];
+			if ( clipBits[a] & clipBits[b] & clipBits[c] )
 				continue;	// not lighted
-			}
-			hitIndexes[numIndexes] = a;
-			hitIndexes[numIndexes+1] = b;
-			hitIndexes[numIndexes+2] = c;
-			numIndexes += 3;
+
+			hitIndexes[numIndexes++] = a;
+			hitIndexes[numIndexes++] = b;
+			hitIndexes[numIndexes++] = c;
 		}
 
 		if ( !numIndexes ) {
@@ -669,7 +627,8 @@ static void ProjectDlightTexture_scalar( void )
 		else {
 			GL_State( GLS_SRCBLEND_DST_COLOR | GLS_DSTBLEND_ONE | GLS_DEPTHFUNC_EQUAL );
 		}
-		R_DrawElements( numIndexes, hitIndexes );
+
+        qglDrawElements( GL_TRIANGLES, numIndexes, GL_UNSIGNED_INT, hitIndexes );
 		backEnd.pc.c_totalIndexes += numIndexes;
 		backEnd.pc.c_dlightIndexes += numIndexes;
 	}
@@ -726,8 +685,7 @@ static void RB_FogPass( void )
 	// leilei -  hmm., will integrate additive fog in the future
 	//
 	//	GL_State( GLS_SRCBLEND_SRC_ALPHA | GLS_DSTBLEND_ONE );
-
-	R_DrawElements( tess.numIndexes, tess.indexes );
+    qglDrawElements( GL_TRIANGLES, tess.numIndexes, GL_UNSIGNED_INT, tess.indexes );
 }
 
 
@@ -849,28 +807,20 @@ static void ComputeColors( shaderStage_t *pStage )
 			{
 				fog_t* fog = tr.world->fogs + tess.fogNum;
 
-				for ( i = 0; i < tess.numVertexes; i++ )
+				for( i = 0; i < tess.numVertexes; i++ )
                 {
-					* ( int * )&tess.svars.colors[i] = fog->colorInt;
+					*( int * )&tess.svars.colors[i] = fog->colorInt;
 				}
 			}
 			break;
 		case CGEN_WAVEFORM:
-			RB_CalcWaveColor( &pStage->rgbWave, ( unsigned char * ) tess.svars.colors );
+			RB_CalcWaveColor( &pStage->rgbWave, (unsigned char *)tess.svars.colors );
 			break;
 		case CGEN_ENTITY:
-			RB_CalcColorFromEntity( ( unsigned char * ) tess.svars.colors );
+			RB_CalcColorFromEntity(( unsigned char *)tess.svars.colors );
 			break;
 		case CGEN_ONE_MINUS_ENTITY:
-			RB_CalcColorFromOneMinusEntity( ( unsigned char * ) tess.svars.colors );
-			break;
-		case CGEN_LIGHTING_DIFFUSE_SPECULAR:		// leilei - specular hack
-			if (r_shownormals->integer > 1 || (pStage->isLeiShade))
-            {
-				RB_CalcNormal( ( unsigned char * ) tess.svars.colors ); // leilei - debug normals, or use the normals as a color for a lighting shader
-				break;
-			}
-			RB_CalcDiffuseColor_Specular( ( unsigned char * ) tess.svars.colors );
+			RB_CalcColorFromOneMinusEntity( (unsigned char *)tess.svars.colors );
 			break;
 	}
 
@@ -1127,7 +1077,7 @@ static void RB_IterateStagesGeneric( shaderCommands_t *input )
 			GL_State( pStage->stateBits );
 
 			// draw
-			R_DrawElements( input->numIndexes, input->indexes );
+            qglDrawElements( GL_TRIANGLES, input->numIndexes, GL_UNSIGNED_INT, input->indexes );
 		}
 
 		// allow skipping out to show just lightmaps during development
@@ -1217,11 +1167,12 @@ void RB_StageIteratorGeneric( void )
     
 	// lock XYZ
 	qglVertexPointer (3, GL_FLOAT, 16, input->xyz);	// padded for SIMD
-	if (qglLockArraysEXT)
+/*
+    if (qglLockArraysEXT)
 	{
 		qglLockArraysEXT(0, input->numVertexes);
 	}
-
+*/
 
 	// enable color and texcoord arrays after the lock if necessary
 	if ( !setArraysOnce )
@@ -1246,14 +1197,6 @@ void RB_StageIteratorGeneric( void )
 		RB_FogPass();
 	}
 
-    
-	// unlock arrays
-	if (qglUnlockArraysEXT) 
-	{
-		qglUnlockArraysEXT();
-	}
-
-
 	// reset polygon offset
 	if ( shader->polygonOffset )
 	{
@@ -1268,7 +1211,7 @@ void RB_StageIteratorGeneric( void )
 void RB_StageIteratorVertexLitTexture( void )
 {
 	shaderCommands_t *input = &tess;
-	shader_t * shader = input->shader;
+	shader_t *shader = input->shader;
 
 
 	// compute colors
@@ -1286,18 +1229,19 @@ void RB_StageIteratorVertexLitTexture( void )
 	qglColorPointer( 4, GL_UNSIGNED_BYTE, 0, tess.svars.colors );
 	qglTexCoordPointer( 2, GL_FLOAT, 16, tess.texCoords[0][0] );
 	qglVertexPointer (3, GL_FLOAT, 16, input->xyz);
-
+/*
 	if ( qglLockArraysEXT )
 	{
 		qglLockArraysEXT(0, input->numVertexes);
 	}
-
+*/
 
 	// call special shade routine
 	R_BindAnimatedImage( &tess.xstages[0]->bundle[0] );
 	GL_State( tess.xstages[0]->stateBits );
-	R_DrawElements( input->numIndexes, input->indexes );
-
+    
+    // draw
+    qglDrawElements( GL_TRIANGLES, input->numIndexes, GL_UNSIGNED_INT, input->indexes );
 
 	// now do any dynamic lighting needed
 	if ( tess.dlightBits && tess.shader->sort <= SS_OPAQUE )
@@ -1306,16 +1250,11 @@ void RB_StageIteratorVertexLitTexture( void )
 	}
 
 	// now do fog
-	if ( tess.fogNum && tess.shader->fogPass )
+	if( tess.fogNum && tess.shader->fogPass )
     {
 		RB_FogPass();
 	}
 
-	// unlock arrays
-	if (qglUnlockArraysEXT) 
-	{
-		qglUnlockArraysEXT();
-	}
 }
 
 
@@ -1366,15 +1305,15 @@ void RB_StageIteratorLightmappedMultitexture( void )
 	R_BindAnimatedImage( &tess.xstages[0]->bundle[1] );
 	qglEnableClientState( GL_TEXTURE_COORD_ARRAY );
 	qglTexCoordPointer( 2, GL_FLOAT, 16, tess.texCoords[0][1] );
-
+/*
 	// lock arrays
 	if ( qglLockArraysEXT )
     {
 		qglLockArraysEXT(0, input->numVertexes);
 	}
-
-	R_DrawElements( input->numIndexes, input->indexes );
-
+*/
+    // draw
+    qglDrawElements( GL_TRIANGLES, input->numIndexes, GL_UNSIGNED_INT, input->indexes );
 
 	// disable texturing on TEXTURE1, then select TEXTURE0
 	qglDisable( GL_TEXTURE_2D );
@@ -1399,12 +1338,6 @@ void RB_StageIteratorLightmappedMultitexture( void )
 		RB_FogPass();
 	}
 
-
-	// unlock arrays
-	if ( qglUnlockArraysEXT )
-    {
-		qglUnlockArraysEXT();
-	}
 }
 
 

@@ -692,19 +692,13 @@ int Com_FilterPath(char *filter, char *name, int casesensitive)
 	return Com_Filter(new_filter, new_name, casesensitive);
 }
 
-/*
-================
-Com_RealTime
-================
-*/
-int Com_RealTime(qtime_t *qtime) {
-	time_t t;
-	struct tm *tms;
 
-	t = time(NULL);
+int Com_RealTime(qtime_t *qtime)
+{
+	time_t t = time(NULL);
 	if (!qtime)
 		return t;
-	tms = localtime(&t);
+	struct tm* tms = localtime(&t);
 	if (tms) {
 		qtime->tm_sec = tms->tm_sec;
 		qtime->tm_min = tms->tm_min;
@@ -769,14 +763,14 @@ static memzone_t *smallzone;
 
 static void Z_CheckHeap( void );
 
+
 static void Z_ClearZone( memzone_t *zone, int size )
 {
-	memblock_t	*block;
+	memblock_t* block;
 	
 	// set the entire zone to one free block
 
-	zone->blocklist.next = zone->blocklist.prev = block =
-		(memblock_t *)( (byte *)zone + sizeof(memzone_t) );
+	zone->blocklist.next = zone->blocklist.prev = block = (memblock_t *)( (unsigned char *)zone + sizeof(memzone_t) );
 	zone->blocklist.tag = 1;	// in use block
 	zone->blocklist.id = 0;
 	zone->blocklist.size = 0;
@@ -1849,17 +1843,18 @@ In addition to these events, .cfg files are also copied to the journaled file
 ===================================================================
 */
 
-#define	MAX_PUSHED_EVENTS	            1024
+#define	MAX_PUSHED_EVENTS	    1024
 static int com_pushedEventsHead = 0;
 static int com_pushedEventsTail = 0;
-static sysEvent_t	com_pushedEvents[MAX_PUSHED_EVENTS];
+static sysEvent_t com_pushedEvents[MAX_PUSHED_EVENTS];
 
 
 void Com_InitJournaling( void )
 {
 	Com_StartupVariable( "journal" );
-	com_journal = Cvar_Get ("journal", "0", CVAR_INIT);
-	if ( !com_journal->integer ) {
+	com_journal = Cvar_Get("journal", "0", CVAR_INIT);
+	if( !com_journal->integer )
+    {
 		return;
 	}
 
@@ -1951,16 +1946,10 @@ void Com_QueueEvent( int time, sysEventType_t type, int value, int value2, int p
 	ev->evPtr = ptr;
 }
 
-/*
-================
-Com_GetSystemEvent
 
-================
-*/
 sysEvent_t Com_GetSystemEvent( void )
 {
 	sysEvent_t  ev;
-	char        *s;
 
 	// return if we have data
 	if ( eventHead > eventTail )
@@ -1970,14 +1959,11 @@ sysEvent_t Com_GetSystemEvent( void )
 	}
 
 	// check for console commands
-	s = Sys_ConsoleInput();
+	char *s = Sys_ConsoleInput();
 	if ( s )
 	{
-		char  *b;
-		int   len;
-
-		len = strlen( s ) + 1;
-		b = Z_Malloc( len );
+		int len = strlen( s ) + 1;
+		char* b = Z_Malloc( len );
 		strcpy( b, s );
 		Com_QueueEvent( 0, SE_CONSOLE, 0, 0, len, b );
 	}
@@ -1996,17 +1982,16 @@ sysEvent_t Com_GetSystemEvent( void )
 	return ev;
 }
 
-/*
-=================
-Com_GetRealEvent
-=================
-*/
-sysEvent_t	Com_GetRealEvent( void ) {
+
+
+sysEvent_t Com_GetRealEvent( void )
+{
 	int			r;
 	sysEvent_t	ev;
 
 	// either get an event from the system or the journal file
-	if ( com_journal->integer == 2 ) {
+	if ( com_journal->integer == 2 )
+    {
 		r = FS_Read( &ev, sizeof(ev), com_journalFile );
 		if ( r != sizeof(ev) ) {
 			Com_Error( ERR_FATAL, "Error reading from journal file" );
@@ -2018,7 +2003,9 @@ sysEvent_t	Com_GetRealEvent( void ) {
 				Com_Error( ERR_FATAL, "Error reading from journal file" );
 			}
 		}
-	} else {
+	}
+    else
+    {
 		ev = Com_GetSystemEvent();
 
 		// write the journal value out if needed
@@ -2060,13 +2047,11 @@ Com_PushEvent
 */
 void Com_PushEvent( sysEvent_t *event )
 {
-	sysEvent_t *ev;
 	static int printedWarning = 0;
+	sysEvent_t* ev = &com_pushedEvents[ com_pushedEventsHead & (MAX_PUSHED_EVENTS-1) ];
 
-	ev = &com_pushedEvents[ com_pushedEventsHead & (MAX_PUSHED_EVENTS-1) ];
-
-	if ( com_pushedEventsHead - com_pushedEventsTail >= MAX_PUSHED_EVENTS ) {
-
+	if ( com_pushedEventsHead - com_pushedEventsTail >= MAX_PUSHED_EVENTS )
+    {
 		// don't print the warning constantly, or it can give time for more...
 		if ( !printedWarning ) {
 			printedWarning = qtrue;
@@ -2077,7 +2062,9 @@ void Com_PushEvent( sysEvent_t *event )
 			Z_Free( ev->evPtr );
 		}
 		com_pushedEventsTail++;
-	} else {
+	}
+    else
+    {
 		printedWarning = qfalse;
 	}
 
@@ -2126,7 +2113,7 @@ Returns last event time
 */
 int Com_EventLoop( void )
 {
-	netadr_t	evFrom;
+	netadr_t evFrom;
 	unsigned char bufData[MAX_MSGLEN];
 	msg_t buf;
 
@@ -2160,25 +2147,21 @@ int Com_EventLoop( void )
 		switch(ev.evType)
 		{
 			case SE_KEY:
-				CL_KeyEvent( ev.evValue, ev.evValue2, ev.evTime );
-			break;
+				CL_KeyEvent( ev.evValue, ev.evValue2, ev.evTime ); break;
 			case SE_CHAR:
-				CL_CharEvent( ev.evValue );
-			break;
+				CL_CharEvent( ev.evValue );	break;
 			case SE_MOUSE:
-				CL_MouseEvent( ev.evValue, ev.evValue2, ev.evTime );
-			break;
+				CL_MouseEvent( ev.evValue, ev.evValue2, ev.evTime ); break;
 			case SE_CONSOLE:
 				Cbuf_AddText( (char *)ev.evPtr );
-				Cbuf_AddText( "\n" );
-			break;
+				Cbuf_AddText( "\n" ); break;
 			default:
-				Com_Error( ERR_FATAL, "Com_EventLoop: bad event type %i", ev.evType );
-			break;
+				Com_Error( ERR_FATAL, "Com_EventLoop: bad event type %i", ev.evType ); break;
 		}
 
 		// free any block data
-		if ( ev.evPtr ) {
+		if ( ev.evPtr )
+        {
 			Z_Free( ev.evPtr );
 		}
 	}
@@ -2326,10 +2309,8 @@ void Com_GameRestart(int checksumFeed, qboolean disconnect)
 	// make sure no recursion can be triggered
 	if(!com_gameRestarting && com_fullyInitialized)
 	{
-		int clWasRunning;
-		
 		com_gameRestarting = qtrue;
-		clWasRunning = com_cl_running->integer;
+		int clWasRunning = com_cl_running->integer;
 		
 		// Kill server if we have one
 		if(com_sv_running->integer)
@@ -2526,7 +2507,6 @@ Find out whether we have SSE support for Q_ftol function
 
 static void Com_DetectSSE(void)
 {
-// #if !idx64
 	cpuFeatures_t feat = Sys_GetProcessorFeatures();
 
 	if(feat & CF_SSE)
@@ -2540,21 +2520,18 @@ static void Com_DetectSSE(void)
 			Q_SnapVector = qsnapvectorx87;
 
 		Q_ftol = qftolsse;
-// #endif
 		Q_VMftol = qvmftolsse;
 
 		Com_Printf(" Have SSE support\n");
-// #if !idx64
 	}
 	else
 	{
-		Q_ftol = qftolx87;
-		Q_VMftol = qvmftolx87;
+	//	Q_ftol = qftolx87;
+	//	Q_VMftol = qvmftolx87;
 		Q_SnapVector = qsnapvectorx87;
 
 		Com_Printf(" No SSE support on this machine\n");
 	}
-// #endif
 
     if(feat & CF_SSE3)
         Com_Printf(" Have SSE3 support\n");
@@ -2598,10 +2575,10 @@ static void Com_WriteConfigToFile( const char *filename )
 		return;
 	}
 
-	FS_Printf (f, "// generated by quake, do not modify\n");
-	Key_WriteBindings (f);
-	Cvar_WriteVariables (f);
-	FS_FCloseFile( f );
+	FS_Printf (f, "// generated by OA, do not modify\n");
+	Key_WriteBindings(f);
+	Cvar_WriteVariables(f);
+	FS_FCloseFile(f);
 }
 
 /*
@@ -2615,7 +2592,8 @@ static void Com_WriteConfig_f( void )
 {
 	char filename[MAX_QPATH];
 
-	if ( Cmd_Argc() != 2 ) {
+	if( Cmd_Argc() != 2 )
+    {
 		Com_Printf( "Usage: writeconfig <filename>\n" );
 		return;
 	}
@@ -2835,14 +2813,11 @@ Com_ReadFromPipe
 Read whatever is in com_pipefile, if anything, and execute it
 ===============
 */
-void Com_ReadFromPipe( void )
+static void Com_ReadFromPipe( void )
 {
 	static char buf[MAX_STRING_CHARS];
 	static int accu = 0;
 	int read;
-
-	if( !pipefile )
-		return;
 
 	while( ( read = FS_Read( buf + accu, sizeof( buf ) - accu - 1, pipefile ) ) > 0 )
 	{
@@ -2891,19 +2866,8 @@ Com_WriteConfiguration
 Writes key bindings and archived cvars to config file if modified
 ===============
 */
-void Com_WriteConfiguration( void )
+static void Com_WriteConfiguration( void )
 {
-
-    // if we are quiting without fully initializing, make sure we don't write out anything
-	if ( !com_fullyInitialized )
-		return;
-
-
-	if ( !(cvar_modifiedFlags & CVAR_ARCHIVE ) )
-		return;
-
-	cvar_modifiedFlags &= ~CVAR_ARCHIVE;
-
 	Com_WriteConfigToFile( Q3CONFIG_CFG );
 
 	// not needed for dedicated or standalone
@@ -2923,11 +2887,7 @@ void Com_WriteConfiguration( void )
 
 
 
-/*
-================
-Com_ModifyMsec
-================
-*/
+
 int Com_ModifyMsec( int msec )
 {
 	int	clampTime;
@@ -3006,16 +2966,19 @@ void Com_Frame(void)
 	if ( setjmp (abortframe) )
 		return;	// an ERR_DROP was thrown
 
-
 	// write config file if anything changed
-	Com_WriteConfiguration(); 
-
-	//
-	// main event loop
-	//
-	if ( com_speeds->integer ) {
+    // if we are quiting without fully initializing, make sure we don't write out anything
+	if( com_fullyInitialized && (cvar_modifiedFlags & CVAR_ARCHIVE ))
+    {
+	    Com_WriteConfiguration();
+        cvar_modifiedFlags &= ~CVAR_ARCHIVE;
+    }
+	
+	
+    // main event loop
+	if ( com_speeds->integer )
 		timeBeforeFirstEvents = Sys_Milliseconds();
-	}
+
 
 	// Figure out how much time we have
 	if(!com_timedemo->integer)
@@ -3090,7 +3053,7 @@ void Com_Frame(void)
 
 	// if "dedicated" has been modified, start up or shut down the client system.
 	// Do this after the server may have started, but before the client tries to auto-connect
-	if ( com_dedicated->modified )
+	if( com_dedicated->modified )
     {
 		// get the latched value
 		Cvar_Get( "dedicated", "0", 0 );
@@ -3109,7 +3072,7 @@ void Com_Frame(void)
 	//
 	//
 	// run event loop a second time to get server to client packets without a frame of latency
-	if ( com_speeds->integer )
+	if( com_speeds->integer )
     {
         timeBeforeEvents = Sys_Milliseconds();
 	    Com_EventLoop();
@@ -3126,7 +3089,7 @@ void Com_Frame(void)
     }
 
 #else
-	if ( com_speeds->integer ) {
+	if( com_speeds->integer ) {
 		timeAfter = Sys_Milliseconds ();
 		timeBeforeEvents = timeAfter;
 		timeBeforeClient = timeAfter;
@@ -3165,8 +3128,10 @@ void Com_Frame(void)
 		c_patch_traces = 0;
 		c_pointcontents = 0;
 	}
-                                        
-	Com_ReadFromPipe( );
+
+    if( pipefile )
+		Com_ReadFromPipe();
+
 	com_frameNumber++;
 }
 

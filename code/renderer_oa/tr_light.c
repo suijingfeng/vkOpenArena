@@ -372,9 +372,9 @@ void R_SetupEntityLighting( const trRefdef_t *refdef, trRefEntity_t *ent )
 	}
 
 	// save out the byte packet version
-	((unsigned char *)&ent->ambientLightInt)[0] = ri.ftol(ent->ambientLight[0]);
-	((unsigned char *)&ent->ambientLightInt)[1] = ri.ftol(ent->ambientLight[1]);
-	((unsigned char *)&ent->ambientLightInt)[2] = ri.ftol(ent->ambientLight[2]);
+	((unsigned char *)&ent->ambientLightInt)[0] = (unsigned char)ent->ambientLight[0];
+	((unsigned char *)&ent->ambientLightInt)[1] = (unsigned char)ent->ambientLight[1];
+	((unsigned char *)&ent->ambientLightInt)[2] = (unsigned char)ent->ambientLight[2];
 	((unsigned char *)&ent->ambientLightInt)[3] = 0xff;
 	
 	// transform the direction to local space

@@ -36,7 +36,6 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
 
 
-
 // any change in the LIGHTMAP_* defines here MUST be reflected in
 // R_FindShader() in tr_bsp.c
 #define LIGHTMAP_2D         -4	// shader is for 2D rendering
@@ -189,7 +188,6 @@ typedef enum {
 	CGEN_FOG,				// standard fog
 	CGEN_CONST,				// fixed color
 	CGEN_VERTEX_LIT,			// leilei - tess.vertexColors * tr.identityLight * ambientlight*directlight
-	CGEN_LIGHTING_DIFFUSE_SPECULAR		// leilei - LIGHTING_DIFFUSE, capped by specular exponent
 } colorGen_t;
 
 typedef enum {
@@ -1239,29 +1237,13 @@ typedef enum {
 
 
 
-//void GLimp_InitExtraExtensions(void);
-
-
-///////////////////////////// tr_init.c  //////////////////////////////
-
-// outside of TR since it shouldn't be cleared during ref re-init
-extern glstate_t glState;
-// extern qboolean vertexShaders;
-
-
-
-// https://zerowing.idsoftware.com/bugzilla/show_bug.cgi?id=516
-const void *RB_TakeScreenshotCmd( const void *data );
-const void *RB_TakeVideoFrameCmd( const void *data );
-
-
 ////////////////////////////  tr_main.c  //////////////////////////////
 #define	CULL_IN		0		// completely unclipped
 #define	CULL_CLIP	1		// clipped by one or more planes
 #define	CULL_OUT	2		// completely outside the clipping planes
 
 
-void R_SetupProjection(viewParms_t *dest, float zProj);
+//void R_SetupProjection(viewParms_t *dest, float zProj);
 void R_AddDrawSurf( surfaceType_t *surface, shader_t *shader, int fogIndex, int dlightMap );
 void R_DecomposeSort( unsigned sort, int *entityNum, shader_t **shader, int *fogNum, int *dlightMap );
 void R_RenderView( viewParms_t *parms );
@@ -1311,7 +1293,7 @@ void RE_StretchRaw (int x, int y, int w, int h, int cols, int rows, const unsign
 void RE_UploadCinematic (int w, int h, int cols, int rows, const unsigned char *data, int client, qboolean dirty);
 void RB_ShowImages( void );
 void RB_ExecuteRenderCommands( const void *data );
-
+unsigned char* RB_ReadPixels(int x, int y, int width, int height, size_t *offset, int *padlen);
 void R_InitBackend(void);
 
 ///////////////////////////////// tr_cmds ///////////////////////////////////
@@ -1478,7 +1460,6 @@ int R_IQMLerpTag( orientation_t *tag, iqmData_t *data, int startFrame, int endFr
 ///////////////////////////// tr_SHADOWS  ////////////////////////////////
 //
 void RB_ShadowTessEnd( void );
-//void RB_ShadowFinish( void );
 void RB_ProjectionShadowDeform( void );
 
 
@@ -1571,10 +1552,14 @@ void	RB_CalcSpecularAlphaNew( unsigned char *alphas );
 void	RB_CalcDiffuseColor( unsigned char *colors );
 void	RB_CalcUniformColor( unsigned char *colors );
 void	RB_CalcDynamicColor( unsigned char *colors );
-void	RB_CalcDiffuseColor_Specular( unsigned char *colors );	// leilei - specular hack
+
 void	RB_CalcFlatAmbient( unsigned char *colors ); // leilei - cel hack
 void	RB_CalcFlatDirect( unsigned char *colors ); // leilei - cel hack
 void	RB_CalcNormal( unsigned char *colors ); // leilei - normal hack
+
+
+///////////////////////////// tr_init.c  //////////////////////////////
+//void GLimp_InitExtraExtensions(void);
 
 
 /////////////////////////// rendercommon.h //////////////////////////////

@@ -1314,7 +1314,7 @@ Fetch and decompress the pending frame
 e_status CIN_RunCinematic (int handle)
 {
 	int	start = 0;
-	int     thisTime = 0;
+	int thisTime = 0;
 
 	if (handle < 0 || handle>= MAX_VIDEO_HANDLES || cinTable[handle].status == FMV_EOF) return FMV_EOF;
 
@@ -1633,7 +1633,8 @@ void CL_PlayCinematic_f(void)
 
 void SCR_DrawCinematic (void)
 {
-	if (CL_handle >= 0 && CL_handle < MAX_VIDEO_HANDLES) {
+	if (CL_handle >= 0 && CL_handle < MAX_VIDEO_HANDLES)
+    {
 		CIN_DrawCinematic(CL_handle);
 	}
 }

@@ -3197,7 +3197,8 @@ FS_Shutdown
 Frees all resources.
 ================
 */
-void FS_Shutdown( qboolean closemfp ) {
+void FS_Shutdown( qboolean closemfp )
+{
 	searchpath_t *p, *next;
 	int	i;
 
@@ -3781,18 +3782,15 @@ const char *FS_ReferencedPakNames( void ) {
 	return info;
 }
 
-/*
-=====================
-FS_ClearPakReferences
-=====================
-*/
-void FS_ClearPakReferences( int flags ) {
-	searchpath_t *search;
 
-	if ( !flags ) {
+void FS_ClearPakReferences( int flags )
+{
+	if ( !flags )
 		flags = -1;
-	}
-	for ( search = fs_searchpaths; search; search = search->next ) {
+
+	searchpath_t *search;
+	for ( search = fs_searchpaths; search; search = search->next )
+    {
 		// is the element a pak file and has it been referenced?
 		if ( search->pack ) {
 			search->pack->referenced &= ~flags;
@@ -3849,7 +3847,8 @@ void FS_PureServerSetLoadedPaks( const char *pakSums, const char *pakNames )
 		}
 		fs_serverPakNames[i] = NULL;
 	}
-	if ( pakNames && *pakNames ) {
+	if ( pakNames && *pakNames )
+    {
 		Cmd_TokenizeString( pakNames );
 
 		d = Cmd_Argc();
@@ -3954,13 +3953,9 @@ void FS_InitFilesystem( void )
 }
 
 
-/*
-================
-FS_Restart
-================
-*/
-void FS_Restart( int checksumFeed ) {
 
+void FS_Restart( int checksumFeed )
+{
 	// free anything we currently have loaded
 	FS_Shutdown(qfalse);
 
@@ -3996,7 +3991,8 @@ void FS_Restart( int checksumFeed ) {
 		Com_Error( ERR_FATAL, "Couldn't load default.cfg" );
 	}
 
-	if ( Q_stricmp(fs_gamedirvar->string, lastValidGame) ) {
+	if( Q_stricmp(fs_gamedirvar->string, lastValidGame) )
+    {
 		// skip the q3config.cfg if "safe" is on the command line
 		if ( !Com_SafeMode() ) {
 			Cbuf_AddText ("exec " Q3CONFIG_CFG "\n");

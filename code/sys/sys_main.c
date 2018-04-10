@@ -194,9 +194,7 @@ qboolean Sys_WritePIDFile( void )
 	if( ( f = fopen( pidFile, "r" ) ) != NULL )
 	{
 		char  pidBuffer[ 64 ] = { 0 };
-		int   pid;
-
-		pid = fread( pidBuffer, sizeof( char ), sizeof( pidBuffer ) - 1, f );
+		int pid = fread( pidBuffer, sizeof( char ), sizeof( pidBuffer ) - 1, f );
 		fclose( f );
 
 		if(pid > 0)
@@ -490,23 +488,20 @@ Sys_LoadGameDll
 Used to load a development dll instead of a virtual machine
 =================
 */
-void *Sys_LoadGameDll(const char *name,
-	intptr_t (QDECL **entryPoint)(int, ...),
-	intptr_t (*systemcalls)(intptr_t, ...))
+void *Sys_LoadGameDll(const char *name,	intptr_t (QDECL **entryPoint)(int, ...), intptr_t (*systemcalls)(intptr_t, ...))
 {
-	void *libHandle;
-	void (*dllEntry)(intptr_t (*syscallptr)(intptr_t, ...));
 
 	assert(name);
-
 	Com_Printf( "Loading DLL file: %s\n", name);
-	libHandle = Sys_LoadLibrary(name);
-
+	
+    void* libHandle = Sys_LoadLibrary(name);
 	if(!libHandle)
 	{
 		Com_Printf("Sys_LoadGameDll(%s) failed:\n\"%s\"\n", name, Sys_LibraryError());
 		return NULL;
 	}
+
+    void (*dllEntry)(intptr_t (*syscallptr)(intptr_t, ...));
 
 	dllEntry = Sys_LoadFunction( libHandle, "dllEntry" );
 	*entryPoint = Sys_LoadFunction( libHandle, "vmMain" );
@@ -628,7 +623,7 @@ int main( int argc, char **argv )
 	// Concatenate the command line for passing to Com_Init
 	for(i = 1; i < argc; i++)
 	{
-		const qboolean containsSpaces = strchr(argv[i], ' ') != NULL;
+		const qboolean containsSpaces = (strchr(argv[i], ' ') != NULL);
 		if(containsSpaces)
 			Q_strcat( commandLine, sizeof( commandLine ), "\"" );
 

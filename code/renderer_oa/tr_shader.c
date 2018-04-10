@@ -33,8 +33,6 @@ extern glconfig_t glConfig;
 
 static cvar_t* r_ignoreFastPath;		// allows us to ignore our Tess fast paths
 
-
-
 static cvar_t* r_printShaders;
 
 static cvar_t* r_detailTextures; // enables/disables detail texturing stages
@@ -186,11 +184,7 @@ static qboolean ParseVector( char **text, int count, float *v )
 }
 
 
-/*
-===============
-NameToAFunc
-===============
-*/
+
 static unsigned NameToAFunc( const char *funcname )
 {	
 	if ( !Q_stricmp( funcname, "GT0" ) )
@@ -211,11 +205,7 @@ static unsigned NameToAFunc( const char *funcname )
 }
 
 
-/*
-===============
-NameToSrcBlendMode
-===============
-*/
+
 static int NameToSrcBlendMode( const char *name )
 {
 	if ( !Q_stricmp( name, "GL_ONE" ) )
@@ -259,11 +249,7 @@ static int NameToSrcBlendMode( const char *name )
 	return GLS_SRCBLEND_ONE;
 }
 
-/*
-===============
-NameToDstBlendMode
-===============
-*/
+
 static int NameToDstBlendMode( const char *name )
 {
 	if ( !Q_stricmp( name, "GL_ONE" ) )
@@ -310,7 +296,7 @@ NameToGenFunc
 */
 static genFunc_t NameToGenFunc( const char *funcname )
 {
-	if ( !Q_stricmp( funcname, "sin" ) )
+	if( !Q_stricmp( funcname, "sin" ) )
 	{
 		return GF_SIN;
 	}
@@ -4379,12 +4365,14 @@ shader_t *R_FindShaderByName( const char *name )
 	//
 	// see if the shader is already loaded
 	//
-	for (sh=hashTable[hash]; sh; sh=sh->next) {
+	for (sh=hashTable[hash]; sh; sh=sh->next)
+    {
 		// NOTE: if there was no shader or image available with the name strippedName
 		// then a default shader is created with lightmapIndex == LIGHTMAP_NONE, so we
 		// have to check all default shaders otherwise for every call to R_FindShader
 		// with that same strippedName a new default shader is created.
-		if (Q_stricmp(sh->name, strippedName) == 0) {
+		if (Q_stricmp(sh->name, strippedName) == 0)
+        {
 			// match found
 			return sh;
 		}

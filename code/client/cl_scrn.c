@@ -23,8 +23,6 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
 #include "client.h"
 
-static qboolean scr_initialized;		// ready to draw
-
 cvar_t *cl_timegraph;
 cvar_t *cl_debuggraph;
 cvar_t *cl_graphheight;
@@ -374,22 +372,14 @@ DEBUG GRAPH
 static	int			current;
 static	float		values[1024];
 
-/*
-==============
-SCR_DebugGraph
-==============
-*/
+
 void SCR_DebugGraph (float value)
 {
 	values[current] = value;
 	current = (current + 1) % ARRAY_LEN(values);
 }
 
-/*
-==============
-SCR_DrawDebugGraph
-==============
-*/
+
 void SCR_DrawDebugGraph (void)
 {
 	int		a, x, y, w, i, h;
@@ -429,8 +419,6 @@ void SCR_Init( void )
 	cl_graphheight = Cvar_Get ("graphheight", "32", CVAR_CHEAT);
 	cl_graphscale = Cvar_Get ("graphscale", "1", CVAR_CHEAT);
 	cl_graphshift = Cvar_Get ("graphshift", "0", CVAR_CHEAT);
-
-	scr_initialized = qtrue;
 }
 
 
@@ -439,14 +427,13 @@ void SCR_Init( void )
 
 static void SCR_DrawScreenField(void)
 {
-	 
 	re.BeginFrame();
 
 	qboolean uiFullscreen = (uivm && VM_Call( uivm, UI_IS_FULLSCREEN ));
 
 	// wide aspect ratio screens need to have the sides cleared
 	// unless they are displaying game renderings
-	if ( uiFullscreen || clc.state < CA_LOADING )
+	if( uiFullscreen || clc.state < CA_LOADING )
     {
 		if ( cls.glconfig.vidWidth * 480 > cls.glconfig.vidHeight * 640 )
         {
@@ -458,46 +445,47 @@ static void SCR_DrawScreenField(void)
 
 	// if the menu is going to cover the entire screen,
     // we don't need to render anything under it
-	if ( uivm && !uiFullscreen )
+	if( uivm && !uiFullscreen )
     {
-		switch( clc.state ) {
-		default:
-			Com_Error( ERR_FATAL, "SCR_DrawScreenField: bad clc.state" );
-			break;
-		case CA_CINEMATIC:
-			SCR_DrawCinematic();
-			break;
-		case CA_DISCONNECTED:
-			// force menu up
-			S_StopAllSounds();
-			VM_Call( uivm, UI_SET_ACTIVE_MENU, UIMENU_MAIN );
-			break;
-		case CA_CONNECTING:
-		case CA_CHALLENGING:
-		case CA_CONNECTED:
-			// connecting clients will only show the connection dialog
-			// refresh to update the time
-			VM_Call( uivm, UI_REFRESH, cls.realtime );
-			VM_Call( uivm, UI_DRAW_CONNECT_SCREEN, qfalse );
-			break;
-		case CA_LOADING:
-		case CA_PRIMED:
-			// draw the game information screen and loading progress
-			CL_CGameRendering();
+		switch( clc.state )
+        {
+            default:
+                Com_Error( ERR_FATAL, "SCR_DrawScreenField: bad clc.state" );
+                break;
+            case CA_CINEMATIC:
+                SCR_DrawCinematic();
+                break;
+            case CA_DISCONNECTED:
+                // force menu up
+                S_StopAllSounds();
+                VM_Call( uivm, UI_SET_ACTIVE_MENU, UIMENU_MAIN );
+                break;
+            case CA_CONNECTING:
+            case CA_CHALLENGING:
+            case CA_CONNECTED:
+                // connecting clients will only show the connection dialog
+                // refresh to update the time
+                VM_Call( uivm, UI_REFRESH, cls.realtime );
+                VM_Call( uivm, UI_DRAW_CONNECT_SCREEN, qfalse );
+                break;
+            case CA_LOADING:
+            case CA_PRIMED:
+                // draw the game information screen and loading progress
+                CL_CGameRendering();
 
-			// also draw the connection information, so it doesn't
-			// flash away too briefly on local or lan games
-			// refresh to update the time
-			VM_Call( uivm, UI_REFRESH, cls.realtime );
-			VM_Call( uivm, UI_DRAW_CONNECT_SCREEN, qtrue );
-			break;
-		case CA_ACTIVE:
-			// always supply STEREO_CENTER as vieworg offset is now done by the engine.
-			CL_CGameRendering();
-			SCR_DrawDemoRecording();
-#ifdef USE_VOIP
-			SCR_DrawVoipMeter();
-#endif
+                // also draw the connection information, so it doesn't
+                // flash away too briefly on local or lan games
+                // refresh to update the time
+                VM_Call( uivm, UI_REFRESH, cls.realtime );
+                VM_Call( uivm, UI_DRAW_CONNECT_SCREEN, qtrue );
+                break;
+            case CA_ACTIVE:
+                // always supply STEREO_CENTER as vieworg offset is now done by the engine.
+                CL_CGameRendering();
+                SCR_DrawDemoRecording();
+                #ifdef USE_VOIP
+                SCR_DrawVoipMeter();
+                #endif
 			break;
 		}
 	}
@@ -527,9 +515,6 @@ void SCR_UpdateScreen( void )
 {
 	static int recursive;
 
-	if ( !scr_initialized )
-		return;				// not initialized yet
-	
 
 	if ( ++recursive > 2 ) {
 		Com_Error( ERR_FATAL, "SCR_UpdateScreen: recursively called" );

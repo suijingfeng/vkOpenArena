@@ -972,7 +972,6 @@ typedef struct {
 
 //=====================================================================
 
-
 // in order from highest priority to lowest
 // if none of the catchers are active, bound key strings will be executed
 #define KEYCATCH_CONSOLE		0x0001

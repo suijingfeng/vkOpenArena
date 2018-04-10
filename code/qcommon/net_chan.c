@@ -474,7 +474,7 @@ typedef struct packetQueue_s {
         int release;
 } packetQueue_t;
 
-packetQueue_t *packetQueue = NULL;
+static packetQueue_t *packetQueue = NULL;
 
 
 static void NET_QueuePacket( int length, const void *data, netadr_t to, int offset )
@@ -509,10 +509,6 @@ void NET_FlushPacketQueue(void)
 {
 	while(packetQueue)
     {
-	    int now = Sys_Milliseconds();
-		if(packetQueue->release >= now)
-			break;
-        
 		Sys_SendPacket(packetQueue->length, packetQueue->data, packetQueue->to);
 		
         packetQueue_t *last = packetQueue;
@@ -525,30 +521,37 @@ void NET_FlushPacketQueue(void)
 
 void NET_SendPacket( netsrc_t sock, int length, const void *data, netadr_t to )
 {
-
 	// sequenced packets are shown in netchan, so just show oob
 	if ( showpackets->integer && *(int *)data == -1 )	{
 		Com_Printf ("send packet %4i\n", length);
 	}
 
-	if ( to.type == NA_LOOPBACK ) {
+	if ( to.type == NA_LOOPBACK )
+    {
 		NET_SendLoopPacket (sock, length, data, to);
 		return;
 	}
-	if ( to.type == NA_BOT ) {
-		return;
-	}
-	if ( to.type == NA_BAD ) {
+
+	if ( to.type == NA_BOT )
+    {
 		return;
 	}
 
-	if ( sock == NS_CLIENT && cl_packetdelay->integer > 0 ) {
+	if ( to.type == NA_BAD )
+    {
+		return;
+	}
+
+	if ( sock == NS_CLIENT && cl_packetdelay->integer > 0 )
+    {
 		NET_QueuePacket( length, data, to, cl_packetdelay->integer );
 	}
-	else if ( sock == NS_SERVER && sv_packetdelay->integer > 0 ) {
+	else if ( sock == NS_SERVER && sv_packetdelay->integer > 0 )
+    {
 		NET_QueuePacket( length, data, to, sv_packetdelay->integer );
 	}
-	else {
+	else
+    {
 		Sys_SendPacket( length, data, to );
 	}
 }
@@ -586,10 +589,9 @@ NET_OutOfBandPrint
 Sends a data message in an out-of-band datagram (only used for "connect")
 ================
 */
-void QDECL NET_OutOfBandData( netsrc_t sock, netadr_t adr, byte *format, int len ) {
-	byte		string[MAX_MSGLEN*2];
-	int			i;
-	msg_t		mbuf;
+void QDECL NET_OutOfBandData( netsrc_t sock, netadr_t adr, unsigned char *format, int len )
+{
+	unsigned char string[MAX_MSGLEN*2];
 
 	// set the header
 	string[0] = 0xff;
@@ -597,10 +599,12 @@ void QDECL NET_OutOfBandData( netsrc_t sock, netadr_t adr, byte *format, int len
 	string[2] = 0xff;
 	string[3] = 0xff;
 
+    int i;
 	for(i=0;i<len;i++) {
 		string[i+4] = format[i];
 	}
 
+	msg_t mbuf;
 	mbuf.data = string;
 	mbuf.cursize = len+4;
 	Huff_Compress( &mbuf, 12);

@@ -634,12 +634,8 @@ qboolean NET_GetPacket(netadr_t *net_from, msg_t *net_message, fd_set *fdr)
 
 static char socksBuf[4096];
 
-/*
-==================
-Sys_SendPacket
-==================
-*/
-void Sys_SendPacket( int length, const void *data, netadr_t to )
+
+void Sys_SendPacket(int length, const void *data, netadr_t to)
 {
 	int	ret = SOCKET_ERROR;
 	struct sockaddr_storage	addr;

@@ -31,7 +31,8 @@ extern cvar_t* r_debugSurface; //tr_init
 extern trGlobals_t tr;
 extern glconfig_t glConfig;
 extern refimport_t ri;
-
+// outside of TR since it shouldn't be cleared during ref re-init
+extern glstate_t glState;
 
 cvar_t* r_measureOverdraw;		// enables stencil buffer overdraw measurement
 cvar_t* r_speeds; // various levels of information display
@@ -41,9 +42,12 @@ backEndState_t	backEnd;
 static cvar_t* r_clear;	// force screen clear every frame
 static cvar_t* r_showImages;
 static cvar_t* r_finish;
+static cvar_t* r_screenshotJpegQuality;
+static cvar_t* r_aviMotionJpegQuality;
 
-
-
+// https://zerowing.idsoftware.com/bugzilla/show_bug.cgi?id=516
+//extern const void* RB_TakeScreenshotCmd( const void *data );
+//extern const void* RB_TakeVideoFrameCmd( const void *data );
 
 
 const static float s_flipMatrix[16] =
@@ -1107,6 +1111,204 @@ void RE_UploadCinematic (int w, int h, int cols, int rows, const byte *data, int
 
 
 /*
+==================
+RB_ReadPixels: Reads an image but takes care of alignment issues for reading RGB images.
+
+Reads a minimum offset for where the RGB data starts in the image from integer stored at pointer offset. 
+When the function has returned the actual offset was written back to address offset. 
+This address will always have an alignment of packAlign to ensure efficient copying.
+
+Stores the length of padding after a line of pixels to address padlen
+
+Return value must be freed with ri.Hunk_FreeTempMemory()
+==================
+*/
+
+unsigned char* RB_ReadPixels(int x, int y, int width, int height, size_t *offset, int *padlen)
+{
+	GLint packAlign;
+	qglGetIntegerv(GL_PACK_ALIGNMENT, &packAlign);
+
+	int linelen = width * 3;
+	int padwidth = PAD(linelen, packAlign);
+
+	// Allocate a few more bytes so that we can choose an alignment we like
+	unsigned char* buffer = ri.Hunk_AllocateTempMemory(padwidth * height + *offset + packAlign - 1);
+
+	unsigned char* bufstart = PADP((intptr_t) buffer + *offset, packAlign);
+	qglReadPixels(x, y, width, height, GL_RGB, GL_UNSIGNED_BYTE, bufstart);
+
+	*offset = bufstart - buffer;
+	*padlen = padwidth - linelen;
+
+	return buffer;
+}
+
+/*
+==============================================================================
+						SCREEN SHOTS
+
+NOTE TTimo
+some thoughts about the screenshots system:
+screenshots get written in fs_homepath + fs_gamedir
+vanilla q3 .. baseq3/screenshots/ *.tga
+team arena .. missionpack/screenshots/ *.tga
+
+two commands: "screenshot" and "screenshotJPEG"
+we use statics to store a count and start writing the first screenshot/screenshot????.tga (.jpg) available
+(with FS_FileExists / FS_FOpenFileWrite calls)
+FIXME: the statics don't get a reinit between fs_game changes
+
+==============================================================================
+*/
+static void RB_TakeScreenshot(int x, int y, int width, int height, char *fileName)
+{
+	unsigned char *destptr, *endline;
+	
+	int padlen;
+	size_t offset = 18, memcount;
+
+	unsigned char* allbuf = RB_ReadPixels(x, y, width, height, &offset, &padlen);
+	unsigned char* buffer = allbuf + offset - 18;
+
+	memset (buffer, 0, 18);
+	buffer[2] = 2;		// uncompressed type
+	buffer[12] = width & 255;
+	buffer[13] = width >> 8;
+	buffer[14] = height & 255;
+	buffer[15] = height >> 8;
+	buffer[16] = 24;	// pixel size
+
+	// swap rgb to bgr and remove padding from line endings
+	int linelen = width * 3;
+
+	unsigned char* srcptr = destptr = allbuf + offset;
+	unsigned char* endmem = srcptr + (linelen + padlen) * height;
+
+	while(srcptr < endmem)
+    {
+		endline = srcptr + linelen;
+
+		while(srcptr < endline)
+        {
+			unsigned char temp = srcptr[0];
+			*destptr++ = srcptr[2];
+			*destptr++ = srcptr[1];
+			*destptr++ = temp;
+
+			srcptr += 3;
+		}
+
+		// Skip the pad
+		srcptr += padlen;
+	}
+
+	memcount = linelen * height;
+
+	// gamma correct
+	if ( glConfig.deviceSupportsGamma ) {
+		R_GammaCorrect(allbuf + offset, memcount);
+	}
+
+	ri.FS_WriteFile(fileName, buffer, memcount + 18);
+
+	ri.Hunk_FreeTempMemory(allbuf);
+}
+
+
+
+static void RB_TakeScreenshotJPEG(int x, int y, int width, int height, char *fileName)
+{
+	size_t offset = 0;
+	int padlen;
+	unsigned char* buffer = RB_ReadPixels(x, y, width, height, &offset, &padlen);
+	size_t memcount = (width * 3 + padlen) * height;
+
+	// gamma correct
+	if(glConfig.deviceSupportsGamma)
+		R_GammaCorrect(buffer + offset, memcount);
+
+	RE_SaveJPG(fileName, r_screenshotJpegQuality->integer, width, height, buffer + offset, padlen);
+	ri.Hunk_FreeTempMemory(buffer);
+}
+
+
+static const void *RB_TakeScreenshotCmd( const void *data )
+{
+	const screenshotCommand_t *cmd = (const screenshotCommand_t *)data;
+
+	if (cmd->jpeg)
+		RB_TakeScreenshotJPEG( cmd->x, cmd->y, cmd->width, cmd->height, cmd->fileName);
+	else
+		RB_TakeScreenshot( cmd->x, cmd->y, cmd->width, cmd->height, cmd->fileName);
+
+	return (const void *)(cmd + 1);
+}
+
+
+const void *RB_TakeVideoFrameCmd( const void *data )
+{
+	const videoFrameCommand_t* cmd = (const videoFrameCommand_t *)data;
+	GLint packAlign;
+	qglGetIntegerv(GL_PACK_ALIGNMENT, &packAlign);
+
+	size_t linelen = cmd->width * 3;
+
+	// Alignment stuff for glReadPixels
+	int padwidth = PAD(linelen, packAlign);
+	int padlen = padwidth - linelen;
+	// AVI line padding
+	int avipadwidth = PAD(linelen, AVI_LINE_PADDING);
+	int avipadlen = avipadwidth - linelen;
+
+	unsigned char* cBuf = PADP(cmd->captureBuffer, packAlign);
+
+	qglReadPixels(0, 0, cmd->width, cmd->height, GL_RGB, GL_UNSIGNED_BYTE, cBuf);
+
+	size_t memcount = padwidth * cmd->height;
+
+	// gamma correct
+	if(glConfig.deviceSupportsGamma)
+		R_GammaCorrect(cBuf, memcount);
+
+	if(cmd->motionJpeg)
+    {
+		memcount = RE_SaveJPGToBuffer(cmd->encodeBuffer, linelen * cmd->height, r_aviMotionJpegQuality->integer, cmd->width, cmd->height, cBuf, padlen);
+		ri.CL_WriteAVIVideoFrame(cmd->encodeBuffer, memcount);
+	}
+	else
+    {
+		unsigned char* lineend;
+
+		unsigned char* srcptr = cBuf;
+		unsigned char* destptr = cmd->encodeBuffer;
+		unsigned char* memend = srcptr + memcount;
+
+		// swap R and B and remove line paddings
+		while(srcptr < memend)
+        {
+			lineend = srcptr + linelen;
+			while(srcptr < lineend)
+            {
+				*destptr++ = srcptr[2];
+				*destptr++ = srcptr[1];
+				*destptr++ = srcptr[0];
+				srcptr += 3;
+			}
+
+			memset(destptr, '\0', avipadlen);
+			destptr += avipadlen;
+
+			srcptr += padlen;
+		}
+
+		ri.CL_WriteAVIVideoFrame(cmd->encodeBuffer, avipadwidth * cmd->height);
+	}
+
+	return (const void *)(cmd + 1);
+}
+
+/*
 ===============
 RB_ShowImages
 
@@ -1216,17 +1418,19 @@ void RB_ExecuteRenderCommands(const void *data)
 
 void R_InitBackend(void)
 {
-   	r_showImages = ri.Cvar_Get( "r_showImages", "0", CVAR_TEMP ); 
+	r_screenshotJpegQuality = ri.Cvar_Get("r_screenshotJpegQuality", "90", CVAR_ARCHIVE);
+	r_aviMotionJpegQuality = ri.Cvar_Get("r_aviMotionJpegQuality", "90", CVAR_ARCHIVE);
+   	r_showImages = ri.Cvar_Get("r_showImages", "0", CVAR_TEMP ); 
 
-    r_clear = ri.Cvar_Get ("r_clear", "0", CVAR_CHEAT); 
+    r_clear = ri.Cvar_Get("r_clear", "0", CVAR_CHEAT); 
 
-    r_finish = ri.Cvar_Get ("r_finish", "0", CVAR_ARCHIVE);
+    r_finish = ri.Cvar_Get("r_finish", "0", CVAR_ARCHIVE);
 
-	r_measureOverdraw = ri.Cvar_Get( "r_measureOverdraw", "0", CVAR_CHEAT );
+	r_measureOverdraw = ri.Cvar_Get("r_measureOverdraw", "0", CVAR_CHEAT );
 
-	r_speeds = ri.Cvar_Get ("r_speeds", "0", CVAR_CHEAT);
+	r_speeds = ri.Cvar_Get("r_speeds", "0", CVAR_CHEAT);
 
-    if ( r_finish->integer )
+    if(r_finish->integer)
     {
 		ri.Printf( PRINT_ALL, "Forcing glFinish\n" );
 	}
