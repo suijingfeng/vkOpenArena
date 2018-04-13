@@ -152,9 +152,6 @@ ifndef USE_CURL
 USE_CURL=1
 endif
 
-ifndef USE_CURL_DLOPEN
-    USE_CURL_DLOPEN=0
-endif
 
 ifndef USE_CODEC_VORBIS
 USE_CODEC_VORBIS=1
@@ -207,8 +204,10 @@ endif
 
 
 ifndef DEBUG_CFLAGS
-DEBUG_CFLAGS=-g -O0
+DEBUG_CFLAGS=-pg -g
 endif
+
+
 
 #############################################################################
 
@@ -288,7 +287,7 @@ ifneq (,$(findstring "$(PLATFORM)", "linux" "gnu_kfreebsd" "kfreebsd-gnu" "gnu")
 
 
   ifeq ($(ARCH),x86_64)
-    OPTIMIZEVM = -O3 -fomit-frame-pointer -funroll-loops -mmmx -msse2 -msse3 -msse4 -m64
+    OPTIMIZEVM = -O3 -fomit-frame-pointer -funroll-loops -mmmx -msse -msse2 -msse3 -msse4 -m64
     OPTIMIZE = $(OPTIMIZEVM) -ffast-math
     HAVE_VM_COMPILED=true
   else
@@ -311,7 +310,7 @@ ifneq (,$(findstring "$(PLATFORM)", "linux" "gnu_kfreebsd" "kfreebsd-gnu" "gnu")
 endif
 
 endif
-
+  LDFLAGS = 
   SHLIBEXT=so
   SHLIBCFLAGS=-fPIC -fvisibility=hidden
   SHLIBLDFLAGS=-shared $(LDFLAGS)
@@ -330,9 +329,7 @@ endif
 
   ifeq ($(USE_CURL),1)
     CLIENT_CFLAGS += $(CURL_CFLAGS)
-    ifneq ($(USE_CURL_DLOPEN),1)
-      CLIENT_LIBS += $(CURL_LIBS)
-    endif
+	CLIENT_LIBS += $(CURL_LIBS)
   endif
 
   ifeq ($(USE_MUMBLE),1)
@@ -438,9 +435,6 @@ endif
 
 ifeq ($(USE_CURL),1)
   CLIENT_CFLAGS += -DUSE_CURL
-  ifeq ($(USE_CURL_DLOPEN),1)
-    CLIENT_CFLAGS += -DUSE_CURL_DLOPEN
-  endif
 endif
 
 ifeq ($(USE_VOIP),1)
@@ -672,7 +666,7 @@ all: debug release
 debug:
 	@$(MAKE) targets B=$(BD) CFLAGS="$(CFLAGS) $(BASE_CFLAGS) $(DEPEND_CFLAGS)" \
 	  OPTIMIZE="$(DEBUG_CFLAGS)" OPTIMIZEVM="$(DEBUG_CFLAGS)" \
-	  CLIENT_CFLAGS="$(CLIENT_CFLAGS)" SERVER_CFLAGS="$(SERVER_CFLAGS)" V=$(V)
+	  CLIENT_CFLAGS="$(CLIENT_CFLAGS)" SERVER_CFLAGS="$(SERVER_CFLAGS)" V=$(V) LDFLAGS="-pg $(LDFLAGS)"
 
 release:
 	@$(MAKE) targets B=$(BR) CFLAGS="$(CFLAGS) $(BASE_CFLAGS) $(DEPEND_CFLAGS)" \
@@ -1635,7 +1629,7 @@ $(B)/renderergl2/%.o: $(SDLDIR)/%.c
 
 
 $(B)/ded/%.o: $(CMDIR)/%.c
-	$(DO_CC)  -mmmx -msse2
+	$(DO_CC)  
 
 $(B)/ded/%.o: $(SDIR)/%.c
 	$(DO_DED_CC)
@@ -1830,7 +1824,6 @@ ifdef MINGW
 		SDLDLL=$(SDLDLL) \
 		USE_RENDERER_DLOPEN=$(USE_RENDERER_DLOPEN) \
 		USE_OPENAL_DLOPEN=$(USE_OPENAL_DLOPEN) \
-		USE_CURL_DLOPEN=$(USE_CURL_DLOPEN) \
 		USE_INTERNAL_OPUS=$(USE_INTERNAL_OPUS) \
 		USE_INTERNAL_ZLIB=$(USE_INTERNAL_ZLIB) \
 else

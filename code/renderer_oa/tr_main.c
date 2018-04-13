@@ -289,6 +289,45 @@ static void R_MirrorVector(vec3_t in, orientation_t *surface, orientation_t *cam
 	}
 }
 
+/*
+=====================
+PlaneFromPoints
+
+Returns false if the triangle is degenrate.
+The normal will point out of the clock for clockwise ordered points
+=====================
+*/
+
+static void PlaneFromPoints(const float* a, const float* b, const float* c, float* plane, float* dis)
+{
+	float d1[3], d2[3];
+
+	//VectorSubtract( b, a, d1 );
+    d1[0] = b[0] - a[0];
+    d1[1] = b[1] - a[1];
+    d1[2] = b[2] - a[2];
+    
+    //VectorSubtract( c, a, d2 );
+    d2[0] = c[0] - a[0];
+    d2[1] = c[1] - a[1];
+    d2[2] = c[2] - a[2];
+
+	CrossProduct( d2, d1, plane );
+   
+    // VectorNormalize( plane )
+	float invLen = plane[0]*plane[0] + plane[1]*plane[1] + plane[2]*plane[2];
+
+	if(invLen == 0)
+		return;
+
+    invLen = 1.0f / sqrtf(invLen);
+
+    plane[0] *= invLen;
+    plane[1] *= invLen;
+    plane[2] *= invLen;
+    *dis = a[0]*plane[0] + a[1]*plane[1] + a[2]*plane[2];
+}
+
 
 
 static void R_PlaneForSurface(surfaceType_t *surfType, cplane_t *plane)
@@ -296,7 +335,6 @@ static void R_PlaneForSurface(surfaceType_t *surfType, cplane_t *plane)
 	srfTriangles_t	*tri;
 	srfPoly_t		*poly;
 	drawVert_t		*v1, *v2, *v3;
-	vec4_t			plane4;
 
 	if (!surfType) {
 		memset (plane, 0, sizeof(*plane));
@@ -313,15 +351,12 @@ static void R_PlaneForSurface(surfaceType_t *surfType, cplane_t *plane)
             v1 = tri->verts + tri->indexes[0];
             v2 = tri->verts + tri->indexes[1];
             v3 = tri->verts + tri->indexes[2];
-            PlaneFromPoints( plane4, v1->xyz, v2->xyz, v3->xyz );
-            VectorCopy( plane4, plane->normal ); 
-            plane->dist = plane4[3];
+
+            PlaneFromPoints( v1->xyz, v2->xyz, v3->xyz, plane->normal, &plane->dist);
             return;
         case SF_POLY:
             poly = (srfPoly_t *)surfType;
-            PlaneFromPoints( plane4, poly->verts[0].xyz, poly->verts[1].xyz, poly->verts[2].xyz );
-            VectorCopy( plane4, plane->normal ); 
-            plane->dist = plane4[3];
+            PlaneFromPoints( poly->verts[0].xyz, poly->verts[1].xyz, poly->verts[2].xyz, plane->normal, &plane->dist);
             return;
         default:
             memset (plane, 0, sizeof(*plane));
@@ -424,13 +459,16 @@ static qboolean R_GetPortalOrientations( drawSurf_t *drawSurf, int entityNum,
 		if ( e->e.oldframe )
         {
 			// if a speed is specified
-			if ( e->e.frame ) {
+			if ( e->e.frame )
+            {
 				// continuous rotate
 				d = (tr.refdef.time/1000.0f) * e->e.frame;
 				VectorCopy( camera->axis[1], transformed );
 				RotatePointAroundVector( camera->axis[1], camera->axis[0], transformed, d );
 				CrossProduct( camera->axis[0], camera->axis[1], camera->axis[2] );
-			} else {
+			} 
+            else
+            {
 				// bobbing rotate, with skinNum being the rotation offset
 				d = sin( tr.refdef.time * 0.003f );
 				d = e->e.skinNum + d * 4;

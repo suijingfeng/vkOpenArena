@@ -385,9 +385,9 @@ static void BotImport_DebugLineDelete(int line) {
 BotImport_DebugLineShow
 ==================
 */
-static void BotImport_DebugLineShow(int line, vec3_t start, vec3_t end, int color) {
+static void BotImport_DebugLineShow(int line, vec3_t start, vec3_t end, int color)
+{
 	vec3_t points[4], dir, cross, up = {0, 0, 1};
-	float dot;
 
 	VectorCopy(start, points[0]);
 	VectorCopy(start, points[1]);
@@ -399,9 +399,11 @@ static void BotImport_DebugLineShow(int line, vec3_t start, vec3_t end, int colo
 
 	VectorSubtract(end, start, dir);
 	VectorNormalize(dir);
-	dot = DotProduct(dir, up);
-	if (dot > 0.99 || dot < -0.99) VectorSet(cross, 1, 0, 0);
-	else CrossProduct(dir, up, cross);
+	float dot = DotProduct(dir, up);
+	if (dot > 0.99 || dot < -0.99)
+        VectorSet(cross, 1, 0, 0);
+	else
+        CrossProduct(dir, up, cross);
 
 	VectorNormalize(cross);
 

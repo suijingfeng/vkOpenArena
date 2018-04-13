@@ -501,7 +501,7 @@ typedef struct {
 	struct srfPoly_s	*polys;
 
 	int			numDrawSurfs;
-	struct drawSurf_s	*drawSurfs;
+	struct drawSurf_s* drawSurfs;
 
 } trRefdef_t;
 
@@ -581,9 +581,11 @@ typedef enum {
 	SF_MAX = 0x7fffffff			// ensures that sizeof( surfaceType_t ) == sizeof( int )
 } surfaceType_t;
 
-typedef struct drawSurf_s {
-	unsigned			sort;			// bit combination for fast compares
-	surfaceType_t		*surface;		// any of surface*_t
+
+typedef struct drawSurf_s
+{
+    unsigned int sort;			// bit combination for fast compares
+    surfaceType_t* surface;		// any of surface*_t
 } drawSurf_t;
 
 
@@ -642,7 +644,7 @@ typedef struct srfGridMesh_s {
 #define	VERTEXSIZE	8
 typedef struct {
 	surfaceType_t	surfaceType;
-	cplane_t	plane;
+    cplane_t	plane;
 
 	// dynamic lighting information
 	int			dlightBits;
@@ -756,23 +758,23 @@ typedef struct mnode_s {
 	int			contents;		// -1 for nodes, to differentiate from leafs
 	int			visframe;		// node needs to be traversed if current
 	vec3_t		mins, maxs;		// for bounding box culling
-	struct mnode_s	*parent;
+	struct mnode_s* parent;
 
 	// node specific
-	cplane_t	*plane;
-	struct mnode_s	*children[2];	
+	cplane_t* plane;
+	struct mnode_s* children[2];	
 
 	// leaf specific
 	int			cluster;
 	int			area;
 
-	msurface_t	**firstmarksurface;
+	msurface_t** firstmarksurface;
 	int			nummarksurfaces;
 } mnode_t;
 
 typedef struct {
 	vec3_t		bounds[2];		// for culling
-	msurface_t	*firstSurface;
+	msurface_t* firstSurface;
 	int			numSurfaces;
 } bmodel_t;
 
@@ -819,8 +821,8 @@ typedef struct {
 
 	unsigned char* novis;			// clusterBytes of 0xff
 
-	char		*entityString;
-	char		*entityParsePoint;
+	char*       entityString;
+	char*       entityParsePoint;
 } world_t;
 
 #define MAX_PROGRAMS 256
@@ -927,7 +929,7 @@ typedef struct {
 	qboolean	finishCalled;
 	int			texEnv[2];
 	int			faceCulling;
-	unsigned long	glStateBits;
+	unsigned long glStateBits;
 } glstate_t;
 
 
@@ -1096,11 +1098,10 @@ TESSELATOR/SHADER DECLARATIONS
 
 ====================================================================
 */
-typedef unsigned char color4ub_t[4];
 
 typedef struct stageVars
 {
-	color4ub_t	colors[SHADER_MAX_VERTEXES];
+	unsigned char colors[SHADER_MAX_VERTEXES][4];
 	vec2_t		texcoords[NUM_TEXTURE_BUNDLES][SHADER_MAX_VERTEXES];
 } stageVars_t;
 
@@ -1108,17 +1109,22 @@ typedef struct stageVars
 typedef struct shaderCommands_s 
 {
 	unsigned int indexes[SHADER_MAX_INDEXES] QALIGN(16);
-	vec4_t		xyz[SHADER_MAX_VERTEXES] QALIGN(16);
-	vec4_t		normal[SHADER_MAX_VERTEXES] QALIGN(16);
-	vec2_t		texCoords[SHADER_MAX_VERTEXES][2] QALIGN(16);
-	color4ub_t	vertexColors[SHADER_MAX_VERTEXES] QALIGN(16);
-	int			vertexDlightBits[SHADER_MAX_VERTEXES] QALIGN(16);
+	vec4_t		xyz[SHADER_MAX_VERTEXES];
+	vec4_t		normal[SHADER_MAX_VERTEXES];
+	vec2_t		texCoords[SHADER_MAX_VERTEXES][2];
+	int			vertexDlightBits[SHADER_MAX_VERTEXES];
+	unsigned char vertexColors[SHADER_MAX_VERTEXES][4];
+	unsigned char constantColor255[SHADER_MAX_VERTEXES][4];
 
-	stageVars_t	svars QALIGN(16);
+    stageVars_t	svars QALIGN(16);
+	
+    shader_t*   shader;
+    
+	// info extracted from current shader
+	void		(*currentStageIteratorFunc)( void );
+	shaderStage_t** xstages;
+	int			numPasses;
 
-	color4ub_t	constantColor255[SHADER_MAX_VERTEXES] QALIGN(16);
-
-	shader_t*   shader;
 	float		shaderTime;
 	int			fogNum;
 
@@ -1126,12 +1132,6 @@ typedef struct shaderCommands_s
 
 	int			numIndexes;
 	int			numVertexes;
-
-	// info extracted from current shader
-	int			numPasses;
-	void		(*currentStageIteratorFunc)( void );
-	shaderStage_t** xstages;
-
 } shaderCommands_t;
 
 
@@ -1188,7 +1188,7 @@ typedef struct {
 	int		commandId;
 	trRefdef_t	refdef;
 	viewParms_t	viewParms;
-	drawSurf_t *drawSurfs;
+	drawSurf_t* drawSurfs;
 	int		numDrawSurfs;
 } drawSurfsCommand_t;
 
@@ -1372,6 +1372,7 @@ void RB_StageIteratorLightmappedMultitexture( void );
 void RB_EndSurface(void);
 void R_InitShade(void);
 
+
 //////////////////////////// tr_sky.c /////////////////////////////////
 void R_BuildCloudData( shaderCommands_t *shader );
 void R_InitSkyTexCoords( float cloudLayerHeight );
@@ -1500,9 +1501,9 @@ void RB_ProjectionShadowDeform( void );
 
 #define GLS_DEFAULT			                GLS_DEPTHMASK_TRUE
 
-shader_t	*R_FindShader( const char *name, int lightmapIndex, qboolean mipRawImage );
-shader_t	*R_GetShaderByHandle( qhandle_t hShader );
-shader_t    *R_FindShaderByName( const char *name );
+shader_t*   R_FindShader( const char *name, int lightmapIndex, qboolean mipRawImage );
+shader_t*   R_GetShaderByHandle( qhandle_t hShader );
+shader_t*   R_FindShaderByName( const char *name );
 void		R_InitShaders( void );
 void		R_ShaderList_f( void );
 void        R_RemapShader(const char *oldShader, const char *newShader, const char *timeOffset);
@@ -1586,4 +1587,32 @@ void R_LoadPCX( const char *name, byte **pic, int *width, int *height );
 void R_LoadPNG( const char *name, byte **pic, int *width, int *height );
 void R_LoadTGA( const char *name, byte **pic, int *width, int *height );
 
+
+ID_INLINE void FastVectorNormalize( float* v )
+{
+	float ilength = 1.0f/sqrtf( v[0] * v[0] + v[1] * v[1] + v[2]*v[2] );
+
+	v[0] *= ilength;
+	v[1] *= ilength;
+	v[2] *= ilength;
+}
+
+
+ID_INLINE void VectorNormalize2( const float* v, float* out)
+{
+    // writing it this way allows gcc to recognize that rsqrt can be used
+	float invLen = 1.0f/sqrtf(v[0]*v[0] + v[1]*v[1] + v[2]*v[2]);
+
+ 	out[0] = v[0] * invLen;
+	out[1] = v[1] * invLen;
+	out[2] = v[2] * invLen;
+}
+
+/*
+ID_INLINE float Norm(const float* v)
+{
+    // writing it this way allows gcc to recognize that rsqrt can be used
+	return sqrtf(v[0]*v[0] + v[1]*v[1] + v[2]*v[2]);
+}
+*/
 #endif //TR_LOCAL_H

@@ -2247,12 +2247,11 @@ void CL_NextDownload(void)
 				cl_allowDownload->integer);
 		}
 #endif /* USE_CURL */
-		if(!useCURL) {
+		if(!useCURL)
+        {
 			if((cl_allowDownload->integer & DLF_NO_UDP)) {
-				Com_Error(ERR_DROP, "UDP Downloads are "
-					"disabled on your client. "
-					"(cl_allowDownload is %d)",
-					cl_allowDownload->integer);
+				Com_Error(ERR_DROP, "UDP Downloads are disabled on your client. "
+					"(cl_allowDownload is %d)",	cl_allowDownload->integer);
 				return;	
 			}
 			else {

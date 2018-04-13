@@ -211,21 +211,18 @@ void RB_CalcDeformNormals( deformStage_t *ds )
 	for ( i = 0; i < tess.numVertexes; i++, xyz += 4, normal += 4 )
     {
 		float scale = 0.98f;
-		scale = R_NoiseGet4f( xyz[0] * scale, xyz[1] * scale, xyz[2] * scale,
-			tess.shaderTime * ds->deformationWave.frequency );
+		scale = R_NoiseGet4f( xyz[0] * scale, xyz[1] * scale, xyz[2] * scale, tess.shaderTime * ds->deformationWave.frequency );
 		normal[ 0 ] += ds->deformationWave.amplitude * scale;
 
 		scale = 0.98f;
-		scale = R_NoiseGet4f( 100 + xyz[0] * scale, xyz[1] * scale, xyz[2] * scale,
-			tess.shaderTime * ds->deformationWave.frequency );
+		scale = R_NoiseGet4f( 100 + xyz[0] * scale, xyz[1] * scale, xyz[2] * scale, tess.shaderTime * ds->deformationWave.frequency );
 		normal[ 1 ] += ds->deformationWave.amplitude * scale;
 
 		scale = 0.98f;
-		scale = R_NoiseGet4f( 200 + xyz[0] * scale, xyz[1] * scale, xyz[2] * scale,
-			tess.shaderTime * ds->deformationWave.frequency );
+		scale = R_NoiseGet4f( 200 + xyz[0] * scale, xyz[1] * scale, xyz[2] * scale, tess.shaderTime * ds->deformationWave.frequency );
 		normal[ 2 ] += ds->deformationWave.amplitude * scale;
 
-		VectorNormalizeFast( normal );
+		FastVectorNormalize( normal );
 	}
 }
 
@@ -236,23 +233,21 @@ void RB_CalcDeformNormalsEvenMore( deformStage_t *ds )
 	float* xyz = ( float * ) tess.xyz;
 	float* normal = ( float * ) tess.normal;
 
-	for ( i = 0; i < tess.numVertexes; i++, xyz += 4, normal += 4 ) {
+	for ( i = 0; i < tess.numVertexes; i++, xyz += 4, normal += 4 )
+    {
 		float scale = 5.98f;
-		scale = R_NoiseGet4f( xyz[0] * scale, xyz[1] * scale, xyz[2] * scale,
-			tess.shaderTime * ds->deformationWave.frequency );
+		scale = R_NoiseGet4f( xyz[0] * scale, xyz[1] * scale, xyz[2] * scale, tess.shaderTime * ds->deformationWave.frequency );
 		normal[ 0 ] += ds->deformationWave.amplitude * scale;
 
 		scale = 5.98f;
-		scale = R_NoiseGet4f( 100 + xyz[0] * scale, xyz[1] * scale, xyz[2] * scale,
-			tess.shaderTime * ds->deformationWave.frequency );
+		scale = R_NoiseGet4f( 100 + xyz[0] * scale, xyz[1] * scale, xyz[2] * scale, tess.shaderTime * ds->deformationWave.frequency );
 		normal[ 1 ] += ds->deformationWave.amplitude * scale;
 
 		scale = 5.98f;
-		scale = R_NoiseGet4f( 200 + xyz[0] * scale, xyz[1] * scale, xyz[2] * scale,
-			tess.shaderTime * ds->deformationWave.frequency );
+		scale = R_NoiseGet4f( 200 + xyz[0] * scale, xyz[1] * scale, xyz[2] * scale,	tess.shaderTime * ds->deformationWave.frequency );
 		normal[ 2 ] += ds->deformationWave.amplitude * scale;
 
-		VectorNormalizeFast( normal );
+		FastVectorNormalize( normal );
 	}
 }
 
@@ -262,8 +257,8 @@ void OldRB_CalcBulgeVertexes( deformStage_t *ds )
 {
 
 	const float *st = (const float *) tess.texCoords[0];
-	float* xyz = ( float * ) tess.xyz;
-	float* normal = ( float * ) tess.normal;
+	float* xyz = (float *) tess.xyz;
+	float* normal = (float *) tess.normal;
 	float now = backEnd.refdef.time * ds->bulgeSpeed * 0.001f;
 
     int i;
@@ -337,7 +332,8 @@ void RB_CalcMoveVertexes( deformStage_t *ds )
 	VectorScale( ds->moveVector, scale, offset );
 
 	float* xyz = ( float * ) tess.xyz;
-	for ( i = 0; i < tess.numVertexes; i++, xyz += 4 ) {
+	for ( i = 0; i < tess.numVertexes; i++, xyz += 4 )
+    {
 		VectorAdd( xyz, offset, xyz );
 	}
 }
@@ -354,11 +350,8 @@ void DeformText( const char *text )
 {
 	int		i;
 	vec3_t	origin, width, height;
-	int		len;
 	int		ch;
 	unsigned char color[4];
-	float	bottom, top;
-	vec3_t	mid;
 
 	height[0] = 0;
 	height[1] = 0;
@@ -366,10 +359,12 @@ void DeformText( const char *text )
 	CrossProduct( tess.normal[0], height, width );
 
 	// find the midpoint of the box
-	VectorClear( mid );
-	bottom = 999999;
-	top = -999999;
-	for ( i = 0 ; i < 4 ; i++ ) {
+	vec3_t mid = {0};
+	float bottom = 999999;
+	float top = -999999;
+
+	for ( i = 0 ; i < 4 ; i++ )
+    {
 		VectorAdd( tess.xyz[i], mid, mid );
 		if ( tess.xyz[i][2] < bottom ) {
 			bottom = tess.xyz[i][2];
@@ -388,7 +383,7 @@ void DeformText( const char *text )
 	VectorScale( width, height[2] * -0.75f, width );
 
 	// determine the starting position
-	len = strlen( text );
+	int len = strlen( text );
 	VectorMA( origin, (len-1), width, origin );
 
 	// clear the shader indexes
@@ -405,15 +400,12 @@ void DeformText( const char *text )
 
 		if ( ch != ' ' )
         {
-			int		row, col;
-			float	frow, fcol, size;
+			int row = ch>>4;
+			int col = ch&15;
 
-			row = ch>>4;
-			col = ch&15;
-
-			frow = row*0.0625f;
-			fcol = col*0.0625f;
-			size = 0.0625f;
+			int frow = row*0.0625f;
+			int fcol = col*0.0625f;
+			int size = 0.0625f;
 
 			RB_AddQuadStampExt( origin, width, height, color, fcol, frow, fcol + size, frow + size );
 		}
@@ -426,7 +418,8 @@ void DeformText( const char *text )
 GlobalVectorToLocal
 ==================
 */
-static void GlobalVectorToLocal( const vec3_t in, vec3_t out ) {
+static void GlobalVectorToLocal( const vec3_t in, vec3_t out )
+{
 	out[0] = DotProduct( in, backEnd.or.axis[0] );
 	out[1] = DotProduct( in, backEnd.or.axis[1] );
 	out[2] = DotProduct( in, backEnd.or.axis[2] );
@@ -442,7 +435,6 @@ quads, rebuild them as forward facing sprites
 */
 static void AutospriteDeform( void ) {
 	int		i;
-	int		oldVerts;
 	float	*xyz;
 	vec3_t	mid, delta;
 	float	radius;
@@ -456,7 +448,7 @@ static void AutospriteDeform( void ) {
 		ri.Printf( PRINT_WARNING, "Autosprite shader %s had odd index count\n", tess.shader->name );
 	}
 
-	oldVerts = tess.numVertexes;
+	int oldVerts = tess.numVertexes;
 	tess.numVertexes = 0;
 	tess.numIndexes = 0;
 
@@ -954,7 +946,7 @@ void RB_CalcEnvironmentTexCoords( float *st )
 	for (i = 0 ; i < tess.numVertexes ; i++, v += 4, normal += 4, st += 2 ) 
 	{
 		VectorSubtract (backEnd.or.viewOrigin, v, viewer);
-		VectorNormalizeFast (viewer);
+		FastVectorNormalize(viewer);
 
 		float d = DotProduct (normal, viewer);
 
@@ -979,8 +971,6 @@ void RB_CalcEnvironmentTexCoordsNew( float *st )
 
 	int			i;
 	vec3_t		viewer, reflected, where, what, why, who;
-	float		d;
-
 	float *v = tess.xyz[0];
 	float *normal = tess.normal[0];
 
@@ -994,13 +984,13 @@ void RB_CalcEnvironmentTexCoordsNew( float *st )
 		VectorSubtract (backEnd.or.origin, v, where);
 		VectorSubtract (backEnd.or.viewOrigin, v, viewer);
 
-		VectorNormalizeFast (viewer);
-		VectorNormalizeFast (where);
-		VectorNormalizeFast (what);
-		VectorNormalizeFast (why);
-		VectorNormalizeFast (who);
+		FastVectorNormalize(viewer);
+		FastVectorNormalize(where);
+		FastVectorNormalize(what);
+		FastVectorNormalize(why);
+		FastVectorNormalize(who);
 
-		d = DotProduct (normal, viewer);
+		float d = DotProduct (normal, viewer);
 		//a = DotProduct (normal, where);
 
 		if ( backEnd.currentEntity == &tr.worldEntity )
@@ -1048,12 +1038,11 @@ void RB_CalcEnvironmentTexCoordsHW()
 void RB_CalcEnvironmentTexCoordsJO( float *st ) 
 {
 	int			i;
-	float		*v, *normal;
 	vec3_t		viewer;
 	float		d;
 
-	v = tess.xyz[0];
-	normal = tess.normal[0];
+	float* v = tess.xyz[0];
+	float* normal = tess.normal[0];
 
 	if (backEnd.currentEntity && backEnd.currentEntity->e.renderfx&RF_FIRST_PERSON)	//this is a view model so we must use world lights instead of vieworg
 	{
@@ -1067,7 +1056,7 @@ void RB_CalcEnvironmentTexCoordsJO( float *st )
 		for (i = 0 ; i < tess.numVertexes ; i++, v += 4, normal += 4, st += 2 ) 
 		{
 			VectorSubtract (backEnd.or.viewOrigin, v, viewer);
-			VectorNormalizeFast (viewer);
+			FastVectorNormalize(viewer);
 
 			d = DotProduct (normal, viewer);
 			st[0] = normal[0]*d - 0.5*viewer[0];
@@ -1112,10 +1101,10 @@ void RB_CalcEnvironmentTexCoordsR( float *st )
 	for (i = 0 ; i < tess.numVertexes ; i++, v += 4, normal += 4, st += 2 ) 
 	{
 		VectorSubtract (backEnd.or.viewOrigin, v, viewer);
-		VectorNormalizeFast (viewer);
+		FastVectorNormalize(viewer);
 
 		VectorSubtract (sundy, v, sunned);
-		VectorNormalizeFast (sunned);
+		FastVectorNormalize(sunned);
 
 		d = DotProduct (normal, viewer) + DotProduct (viewer, sunned);
 
@@ -1151,7 +1140,7 @@ void RB_CalcCelTexCoords( float *st )
 	for (i = 0 ; i < tess.numVertexes ; i++, v += 4, normal += 4, st += 2 ) 
 	{
 		VectorSubtract (backEnd.or.viewOrigin, v, viewer);
-		VectorNormalizeFast (viewer);
+		FastVectorNormalize(viewer);
 
 		d = DotProduct (normal, viewer);
 
@@ -1187,11 +1176,10 @@ void RB_CalcCelTexCoords( float *st )
 void RB_CalcEnvironmentCelShadeTexCoords( float *st ) 
 {
     int    i;
-    float  *v, *normal;
     vec3_t lightDir;
 
-    normal = tess.normal[0];
-	v = tess.xyz[0];
+    float* normal = tess.normal[0];
+	float* v = tess.xyz[0];
 
 	// Calculate only once
 //	VectorCopy( backEnd.currentEntity->lightDir, lightDir );
@@ -1199,7 +1187,7 @@ void RB_CalcEnvironmentCelShadeTexCoords( float *st )
 //		VectorSubtract( lightOrigin, v, lightDir );
 //	else
 	VectorCopy( backEnd.currentEntity->lightDir, lightDir );
-	VectorNormalizeFast( lightDir );
+	FastVectorNormalize( lightDir );
 
     for (i = 0 ; i < tess.numVertexes ; i++, v += 4, normal += 4, st += 2 )
     {
@@ -1411,7 +1399,7 @@ void RB_CalcSpecularAlphaNew( unsigned char *alphas )
 		else
 			VectorCopy( backEnd.currentEntity->lightDir, lightDir );
 
-		VectorNormalizeFast( lightDir );
+		FastVectorNormalize( lightDir );
 
 		// calculate the specular color
 		float d = DotProduct (normal, lightDir);
@@ -1521,28 +1509,26 @@ static void RB_CalcDiffuseColor_altivec( unsigned char *colors )
 
 static void RB_CalcDiffuseColor_scalar( unsigned char *colors )
 {
-	int				i;
-	float			*v, *normal;
-	float			incoming;
-	trRefEntity_t	*ent;
-	int				ambientLightInt;
 	vec3_t			ambientLight;
 	vec3_t			lightDir;
 	vec3_t			directedLight;
-	int				numVertexes;
-	ent = backEnd.currentEntity;
-	ambientLightInt = ent->ambientLightInt;
+	
+    trRefEntity_t* ent = backEnd.currentEntity;
+	int ambientLightInt = ent->ambientLightInt;
 	VectorCopy( ent->ambientLight, ambientLight );
 	VectorCopy( ent->directedLight, directedLight );
 	VectorCopy( ent->lightDir, lightDir );
 
-	v = tess.xyz[0];
-	normal = tess.normal[0];
+	float* v = tess.xyz[0];
+	float* normal = tess.normal[0];
+	int numVertexes = tess.numVertexes;
 
-	numVertexes = tess.numVertexes;
-	for (i = 0 ; i < numVertexes ; i++, v += 4, normal += 4) {
-		incoming = DotProduct (normal, lightDir);
-		if ( incoming <= 0 ) {
+    int i;
+	for (i = 0 ; i < numVertexes ; i++, v += 4, normal += 4)
+    {
+		float incoming = DotProduct(normal, lightDir);
+		if ( incoming <= 0 )
+        {
 			*(int *)&colors[i*4] = ambientLightInt;
 			continue;
 		} 
@@ -1726,8 +1712,6 @@ void RB_CalcDiffuseColor( unsigned char *colors )
 
 	// leilei - reduced it to just this, r_shadeMode deprecated. :(
 	RB_CalcDiffuseColor_scalar( colors );
-
-
 }
 
 /*

@@ -2507,4 +2507,27 @@ void  R_NoiseInit( void );
 void R_InitFreeType( void );
 void R_DoneFreeType( void );
 void RE_RegisterFont(const char *fontName, int pointSize, fontInfo_t *font);
+
+
+
+ID_INLINE void FastVectorNormalize( float* v )
+{
+	float ilength = 1.0f/sqrtf( v[0] * v[0] + v[1] * v[1] + v[2]*v[2] );
+
+	v[0] *= ilength;
+	v[1] *= ilength;
+	v[2] *= ilength;
+}
+
+ID_INLINE void VectorNormalize2( const vec3_t v, vec3_t out)
+{
+    // writing it this way allows gcc to recognize that rsqrt can be used
+	float invLen = 1.0f/sqrtf(v[0]*v[0] + v[1]*v[1] + v[2]*v[2]);
+
+ 	out[0] = v[0] * invLen;
+	out[1] = v[1] * invLen;
+	out[2] = v[2] * invLen;
+}
+
+
 #endif //TR_LOCAL_H

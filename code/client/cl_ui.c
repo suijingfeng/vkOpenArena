@@ -573,15 +573,11 @@ static void CL_GetGlconfig( glconfig_t *config ) {
 	*config = cls.glconfig;
 }
 
-/*
-====================
-CL_GetClipboardData
-====================
-*/
-static void CL_GetClipboardData( char *buf, int buflen ) {
-	char	*cbd;
 
-	cbd = Sys_GetClipboardData();
+
+static void CL_GetClipboardData( char *buf, int buflen )
+{
+	char* cbd = Sys_GetClipboardData();
 
 	if ( !cbd ) {
 		*buf = 0;

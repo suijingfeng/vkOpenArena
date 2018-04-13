@@ -146,9 +146,8 @@ void RB_AddFlare(srfFlare_t *surface, int fogNum, vec3_t point, vec3_t color, ve
 	int				i;
 	flare_t			*f;
 	vec3_t			local;
-	float			d = 1;
 	vec4_t			eye, clip, normalized, window;
-
+    float d = 1.0f;
 	backEnd.pc.c_flareAdds++;
 
 	// fade the intensity of the flare down as the
@@ -156,7 +155,7 @@ void RB_AddFlare(srfFlare_t *surface, int fogNum, vec3_t point, vec3_t color, ve
 	if(normal && (normal[0] || normal[1] || normal[2]) )
     {
 		VectorSubtract( backEnd.viewParms.or.origin, point, local );
-		VectorNormalizeFast(local);
+		FastVectorNormalize(local);
 		d = DotProduct(local, normal);
 
 		// If the viewer is behind the flare don't add it.
@@ -252,8 +251,10 @@ void RB_AddFlare(srfFlare_t *surface, int fogNum, vec3_t point, vec3_t color, ve
 
 	if ( (type == 1) && (r_flaresDlightScale->value) ) {	// leilei - dynamic light flare scale
 		float ef = r_flaresDlightScale->value;
-		if (ef > 1.0f) ef = 1.0f;
-		if (ef < 0.01f) ef = 0.01f;
+		if (ef > 1.0f)
+            ef = 1.0f;
+        else if (ef < 0.01f)
+            ef = 0.01f;
 
 		f->radius *= ef;
 	}
@@ -575,7 +576,7 @@ void RB_RenderFlare( flare_t *f )
             f->theshader->stages[index]->stateBits |= GLS_DEPTHTEST_DISABLE;
         }
     }
-    RB_BeginSurface( f->theshader, f->fogNum );
+    RB_BeginSurface(f->theshader, f->fogNum);
 
 
 

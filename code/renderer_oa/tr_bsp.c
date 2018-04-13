@@ -290,10 +290,7 @@ static shader_t *ShaderForShaderNum( int shaderNum, int lightmapNum )
 
 static void ParseFace( dsurface_t *ds, drawVert_t *verts, msurface_t *surf, int *indexes  )
 {
-	int			i, j;
-	srfSurfaceFace_t	*cv;
-	int			numPoints, numIndexes;
-	int			sfaceSize, ofsIndexes;
+	int	i, j;
 
 	int lightmapNum = LittleLong( ds->lightmapNum );
 
@@ -303,20 +300,23 @@ static void ParseFace( dsurface_t *ds, drawVert_t *verts, msurface_t *surf, int 
 	// get shader value
 	surf->shader = ShaderForShaderNum( ds->shaderNum, lightmapNum );
 
-	numPoints = LittleLong( ds->numVerts );
-	if (numPoints > MAX_FACE_POINTS) {
+	int numPoints = LittleLong( ds->numVerts );
+	if (numPoints > MAX_FACE_POINTS)
+    {
 		ri.Printf( PRINT_WARNING, "WARNING: MAX_FACE_POINTS exceeded: %i\n", numPoints);
-    numPoints = MAX_FACE_POINTS;
-    surf->shader = tr.defaultShader;
+        numPoints = MAX_FACE_POINTS;
+        surf->shader = tr.defaultShader;
 	}
+//	ri.Printf( PRINT_ALL, "WARNING: MAX_FACE_POINTS exceeded: %i\n", numPoints);
 
-	numIndexes = LittleLong( ds->numIndexes );
+	int numIndexes = LittleLong( ds->numIndexes );
 
 	// create the srfSurfaceFace_t
     // sfaceSize = ( size_t ) &((srfSurfaceFace_t *)0)->points[numPoints];
-    sfaceSize = offsetof( srfSurfaceFace_t, points ) + sizeof( *cv->points ) * numPoints;
-	ofsIndexes = sfaceSize;
-	sfaceSize += sizeof( int ) * numIndexes;
+    srfSurfaceFace_t* cv;
+    int sfaceSize = offsetof( srfSurfaceFace_t, points ) + sizeof( *cv->points ) * numPoints;
+	int ofsIndexes = sfaceSize;
+    sfaceSize += sizeof( int ) * numIndexes;
 
 	cv = ri.Hunk_Alloc( sfaceSize, h_low );
 	cv->surfaceType = SF_FACE;
@@ -326,10 +326,12 @@ static void ParseFace( dsurface_t *ds, drawVert_t *verts, msurface_t *surf, int 
 
 	verts += LittleLong( ds->firstVert );
 	for ( i = 0 ; i < numPoints ; i++ ) {
-		for ( j = 0 ; j < 3 ; j++ ) {
+		for ( j = 0 ; j < 3 ; j++ )
+        {
 			cv->points[i][j] = LittleFloat( verts[i].xyz[j] );
 		}
-		for ( j = 0 ; j < 2 ; j++ ) {
+		for ( j = 0 ; j < 2 ; j++ )
+        {
 			cv->points[i][3+j] = LittleFloat( verts[i].st[j] );
 			cv->points[i][5+j] = LittleFloat( verts[i].lightmap[j] );
 		}

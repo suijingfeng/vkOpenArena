@@ -187,7 +187,7 @@ void RB_CalcDeformNormals( deformStage_t *ds ) {
 			tess.shaderTime * ds->deformationWave.frequency );
 		fNormal[ 2 ] += ds->deformationWave.amplitude * scale;
 
-		VectorNormalizeFast( fNormal );
+		FastVectorNormalize( fNormal );
 
 		R_VaoPackNormal(normal, fNormal);
 	}
@@ -204,9 +204,7 @@ void RB_CalcBulgeVertexes( deformStage_t *ds ) {
 	const float *st = ( const float * ) tess.texCoords[0];
 	float		*xyz = ( float * ) tess.xyz;
 	int16_t	*normal = tess.normal[0];
-	double		now;
-
-	now = backEnd.refdef.time * 0.001 * ds->bulgeSpeed;
+	double now = backEnd.refdef.time * 0.001 * ds->bulgeSpeed;
 
 	for ( i = 0; i < tess.numVertexes; i++, xyz += 4, st += 2, normal += 4 ) {
 		int64_t off;

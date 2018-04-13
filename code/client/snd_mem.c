@@ -113,22 +113,17 @@ ResampleSfx
 resample / decimate to the current source rate
 ================
 */
-static int ResampleSfx( sfx_t *sfx, int channels, int inrate, int inwidth, int samples, byte *data, qboolean compressed ) {
-	int		outcount;
-	int		srcsample;
-	float	stepscale;
-	int		i, j;
-	int		sample, samplefrac, fracstep;
-	int			part;
-	sndBuffer	*chunk;
+static int ResampleSfx(sfx_t *sfx, int channels, int inrate, int inwidth, int samples, unsigned char* data, qboolean compressed ) {
+	int	i, j;
+	int	sample, srcsample;
 	
-	stepscale = (float)inrate / dma.speed;	// this is usually 0.5, 1, or 2
+	float stepscale = (float)inrate / dma.speed;	// this is usually 0.5, 1, or 2
 
-	outcount = samples / stepscale;
+	int outcount = samples / stepscale;
 
-	samplefrac = 0;
-	fracstep = stepscale * 256 * channels;
-	chunk = sfx->soundData;
+	int samplefrac = 0;
+	int fracstep = stepscale * 256 * channels;
+	sndBuffer* chunk = sfx->soundData;
 
 	for (i=0 ; i<outcount ; i++)
 	{
@@ -141,7 +136,7 @@ static int ResampleSfx( sfx_t *sfx, int channels, int inrate, int inwidth, int s
 			} else {
 				sample = (int)( (unsigned char)(data[srcsample+j]) - 128) << 8;
 			}
-			part = (i*channels+j)&(SND_CHUNK_SIZE-1);
+			int part = (i*channels+j)&(SND_CHUNK_SIZE-1);
 			if (part == 0) {
 				sndBuffer	*newchunk;
 				newchunk = SND_malloc();

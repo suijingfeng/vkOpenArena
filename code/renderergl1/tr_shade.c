@@ -524,7 +524,7 @@ static void ProjectDlightTexture_altivec( void ) {
 					clip |= 32;
 					modulate = 0.0f;
 				} else {
-					dist2 = Q_fabs(dist2);
+					dist2 = fabs(dist2);
 					if ( dist2 < radius * 0.5f ) {
 						modulate = 1.0f;
 					} else {
@@ -681,7 +681,7 @@ static void ProjectDlightTexture_scalar( void ) {
 					clip |= 32;
 					modulate = 0.0f;
 				} else {
-					dist[2] = Q_fabs(dist[2]);
+					dist[2] = fabs(dist[2]);
 					if ( dist[2] < radius * 0.5f ) {
 						modulate = 1.0f;
 					} else {

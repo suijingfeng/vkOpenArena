@@ -182,11 +182,21 @@ static	int	neighbors[8][2] = {
 						break;					// edge of patch
 					}
 					VectorSubtract( ctrl[y][x].xyz, base, temp );
-					if ( VectorNormalize2( temp, temp ) == 0 ) {
+                    
+                    float iSquareLen = temp[0]*temp[0] + temp[1]*temp[1] + temp[2]*temp[2]; 
+                    if ( iSquareLen == 0 )
+                    {
 						continue;				// degenerate edge, get more dist
-					} else {
+					}
+                    else
+                    {
 						good[k] = qtrue;
-						VectorCopy( temp, around[k] );
+                        
+                        iSquareLen = 1.0f/sqrtf(iSquareLen);
+                        around[k][0] = iSquareLen * temp[0];
+                        around[k][1] = iSquareLen * temp[1];
+                        around[k][2] = iSquareLen * temp[2];
+
 						break;					// good edge
 					}
 				}
@@ -198,10 +208,16 @@ static	int	neighbors[8][2] = {
 					continue;	// didn't get two points
 				}
 				CrossProduct( around[(k+1)&7], around[k], normal );
-				if ( VectorNormalize2( normal, normal ) == 0 ) {
+                float iSquareLen = normal[0]*normal[0] + normal[1]*normal[1] + normal[2]*normal[2]; 
+                
+                if ( iSquareLen == 0 )
 					continue;
-				}
-				VectorAdd( normal, sum, sum );
+                
+                iSquareLen = 1.0f/sqrtf(iSquareLen);
+
+			    sum[0] += iSquareLen * normal[0];
+			    sum[1] += iSquareLen * normal[1];
+			    sum[2] += iSquareLen * normal[2];
 				count++;
 			}
 			//if ( count == 0 ) {

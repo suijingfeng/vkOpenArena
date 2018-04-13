@@ -35,3 +35,16 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #endif
 #define Maximum(x,y)			(x > y ? x : y)
 #define Minimum(x,y)			(x < y ? x : y)
+
+
+
+ID_INLINE void VectorNormalize2( const vec3_t v, vec3_t out)
+{
+    // writing it this way allows gcc to recognize that rsqrt can be used
+	float invLen = 1.0f/sqrtf(v[0]*v[0] + v[1]*v[1] + v[2]*v[2]);
+
+ 	out[0] = v[0] * invLen;
+	out[1] = v[1] * invLen;
+	out[2] = v[2] * invLen;
+}
+

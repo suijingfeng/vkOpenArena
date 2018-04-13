@@ -1392,7 +1392,7 @@ void CL_LoadConsoleHistory( void )
 		return;
 	}
 
-	if( consoleSaveBufferSize <= MAX_CONSOLE_SAVE_BUFFER && FS_Read( consoleSaveBuffer, consoleSaveBufferSize, f ) == consoleSaveBufferSize )
+	if( (consoleSaveBufferSize <= MAX_CONSOLE_SAVE_BUFFER) && (FS_Read( consoleSaveBuffer, consoleSaveBufferSize, f ) == consoleSaveBufferSize) )
 	{
 		char* text_p = consoleSaveBuffer;
 

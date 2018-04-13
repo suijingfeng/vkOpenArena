@@ -881,9 +881,7 @@ static void S_AL_NewLoopMaster(src_t *rmSource, qboolean iskilled)
 {
 	int index;
 	src_t *curSource = NULL;
-	alSfx_t *curSfx;
-	
-	curSfx = &knownSfx[rmSource->sfx];
+	alSfx_t *curSfx = &knownSfx[rmSource->sfx];
 
 	if(rmSource->isPlaying)
 		curSfx->loopActiveCnt--;
@@ -901,7 +899,7 @@ static void S_AL_NewLoopMaster(src_t *rmSource, qboolean iskilled)
 				S_AL_SaveLoopPos(rmSource, rmSource->alSource);
 			}
 		}
-		else if(rmSource == &srcList[curSfx->masterLoopSrc])
+        else if((curSfx->masterLoopSrc != -1) && (rmSource == &srcList[curSfx->masterLoopSrc]))
 		{
 			int firstInactive = -1;
 

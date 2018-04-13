@@ -536,7 +536,6 @@ Draws the last few lines of output transparently over the game top
 void Con_DrawNotify(void)
 {
 	int		x, v = 0;
-	short	*text;
 	int		i;
 	int		time;
 	int		skip;
@@ -554,7 +553,8 @@ void Con_DrawNotify(void)
 		time = cls.realtime - time;
 		if (time > con_notifytime->value*1000)
 			continue;
-		text = con.text + (i % con.totallines)*con.linewidth;
+
+		short* text = con.text + (i % con.totallines)*con.linewidth;
 
 		if ( (cl.snap.ps.pm_type != PM_INTERMISSION) && (Key_GetCatcher() & (KEYCATCH_UI | KEYCATCH_CGAME) ) )
         {

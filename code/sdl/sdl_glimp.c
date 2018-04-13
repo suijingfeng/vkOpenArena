@@ -72,7 +72,6 @@ static cvar_t* r_ext_compiled_vertex_array;
 										// all else = error
 
 
-
 cvar_t* r_ext_texture_filter_anisotropic;
 cvar_t* r_ext_max_anisotropy;
 cvar_t* r_ext_compressed_textures;

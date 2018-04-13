@@ -169,14 +169,15 @@ RB_CalcDeformNormals
 Wiggle the normals for wavy environment mapping
 =========================
 */
-void RB_CalcDeformNormals( deformStage_t *ds ) {
+void RB_CalcDeformNormals( deformStage_t *ds )
+{
 	int i;
-	float	scale;
-	float	*xyz = ( float * ) tess.xyz;
-	float	*normal = ( float * ) tess.normal;
+	float* xyz = ( float * ) tess.xyz;
+	float* normal = ( float * ) tess.normal;
 
-	for ( i = 0; i < tess.numVertexes; i++, xyz += 4, normal += 4 ) {
-		scale = 0.98f;
+	for ( i = 0; i < tess.numVertexes; i++, xyz += 4, normal += 4 )
+    {
+		float scale = 0.98f;
 		scale = R_NoiseGet4f( xyz[0] * scale, xyz[1] * scale, xyz[2] * scale,
 			tess.shaderTime * ds->deformationWave.frequency );
 		normal[ 0 ] += ds->deformationWave.amplitude * scale;
@@ -191,7 +192,7 @@ void RB_CalcDeformNormals( deformStage_t *ds ) {
 			tess.shaderTime * ds->deformationWave.frequency );
 		normal[ 2 ] += ds->deformationWave.amplitude * scale;
 
-		VectorNormalizeFast( normal );
+		FastVectorNormalize( normal );
 	}
 }
 
@@ -890,19 +891,17 @@ void RB_CalcFogTexCoords( float *st ) {
 void RB_CalcEnvironmentTexCoords( float *st ) 
 {
 	int			i;
-	float		*v, *normal;
 	vec3_t		viewer, reflected;
-	float		d;
 
-	v = tess.xyz[0];
-	normal = tess.normal[0];
+    float *v = tess.xyz[0];
+	float *normal = tess.normal[0];
 
 	for (i = 0 ; i < tess.numVertexes ; i++, v += 4, normal += 4, st += 2 ) 
 	{
 		VectorSubtract (backEnd.or.viewOrigin, v, viewer);
-		VectorNormalizeFast (viewer);
+		FastVectorNormalize(viewer);
 
-		d = DotProduct (normal, viewer);
+		float d = DotProduct(normal, viewer);
 
 		reflected[0] = normal[0]*2*d - viewer[0];
 		reflected[1] = normal[1]*2*d - viewer[1];
@@ -1024,11 +1023,11 @@ void RB_CalcRotateTexCoords( float degsPerSecond, float *st )
 */
 vec3_t lightOrigin = { -960, 1980, 96 };		// FIXME: track dynamically
 
-void RB_CalcSpecularAlpha( unsigned char *alphas ) {
+void RB_CalcSpecularAlpha( unsigned char *alphas )
+{
 	int			i;
 	float		*v, *normal;
 	vec3_t		viewer,  reflected;
-	float		l, d;
 	int			b;
 	vec3_t		lightDir;
 	int			numVertexes;
@@ -1039,15 +1038,15 @@ void RB_CalcSpecularAlpha( unsigned char *alphas ) {
 	alphas += 3;
 
 	numVertexes = tess.numVertexes;
-	for (i = 0 ; i < numVertexes ; i++, v += 4, normal += 4, alphas += 4) {
-		float ilength;
+	for (i = 0 ; i < numVertexes ; i++, v += 4, normal += 4, alphas += 4)
+    {
 
 		VectorSubtract( lightOrigin, v, lightDir );
 //		ilength = Q_rsqrt( DotProduct( lightDir, lightDir ) );
-		VectorNormalizeFast( lightDir );
+		FastVectorNormalize( lightDir );
 
 		// calculate the specular color
-		d = DotProduct (normal, lightDir);
+		float d = DotProduct (normal, lightDir);
 //		d *= ilength;
 
 		// we don't optimize for the d < 0 case since this tends to
@@ -1057,8 +1056,8 @@ void RB_CalcSpecularAlpha( unsigned char *alphas ) {
 		reflected[2] = normal[2]*2*d - lightDir[2];
 
 		VectorSubtract (backEnd.or.viewOrigin, v, viewer);
-		ilength = Q_rsqrt( DotProduct( viewer, viewer ) );
-		l = DotProduct (reflected, viewer);
+		float ilength = Q_rsqrt( DotProduct( viewer, viewer ) );
+		float l = DotProduct (reflected, viewer);
 		l *= ilength;
 
 		if (l < 0) {

@@ -271,29 +271,6 @@ float NormalizeColor( const vec3_t in, vec3_t out )
 }
 
 
-/*
-=====================
-PlaneFromPoints
-
-Returns false if the triangle is degenrate.
-The normal will point out of the clock for clockwise ordered points
-=====================
-*/
-qboolean PlaneFromPoints( vec4_t plane, const vec3_t a, const vec3_t b, const vec3_t c )
-{
-	vec3_t d1, d2;
-
-	VectorSubtract( b, a, d1 );
-	VectorSubtract( c, a, d2 );
-	CrossProduct( d2, d1, plane );
-	if ( VectorNormalize( plane ) == 0 )
-    {
-		return qfalse;
-	}
-
-	plane[3] = DotProduct( a, plane );
-	return qtrue;
-}
 
 
 /*
@@ -303,11 +280,11 @@ RotatePointAroundVector
 This is not implemented very well...
 ===============
 */
+
 void RotatePointAroundVector( vec3_t dst, const vec3_t dir, const vec3_t point,	float degrees )
 {
 	float	m[3][3];
 	float	im[3][3];
-	float	zrot[3][3];
 	float	tmpmat[3][3];
 	float	rot[3][3];
 	int	i;
@@ -335,21 +312,14 @@ void RotatePointAroundVector( vec3_t dst, const vec3_t dir, const vec3_t point,	
 
 	memcpy( im, m, sizeof( im ) );
 
-	im[0][1] = m[1][0];
-	im[0][2] = m[2][0];
-	im[1][0] = m[0][1];
-	im[1][2] = m[2][1];
-	im[2][0] = m[0][2];
-	im[2][1] = m[1][2];
-
+	float	zrot[3][3];
 	memset( zrot, 0, sizeof( zrot ) );
-	zrot[0][0] = zrot[1][1] = zrot[2][2] = 1.0F;
-
 	rad = DEG2RAD( degrees );
 	zrot[0][0] = cos( rad );
 	zrot[0][1] = sin( rad );
 	zrot[1][0] = -sin( rad );
 	zrot[1][1] = cos( rad );
+    zrot[2][2] = 1.0F;
 
 	MatrixMultiply( m, zrot, tmpmat );
 	MatrixMultiply( tmpmat, im, rot );
@@ -360,11 +330,12 @@ void RotatePointAroundVector( vec3_t dst, const vec3_t dir, const vec3_t point,	
 	}
 }
 
+
 /*
 ===============
 RotateAroundDirection
 ===============
-*/
+
 void RotateAroundDirection( vec3_t axis[3], float yaw )
 {
 	// create an arbitrary axis[1] 
@@ -382,7 +353,7 @@ void RotateAroundDirection( vec3_t axis[3], float yaw )
 	// cross to get axis[2]
 	CrossProduct( axis[0], axis[1], axis[2] );
 }
-
+*/
 
 
 void vectoangles( const vec3_t value1, vec3_t angles )
@@ -466,7 +437,7 @@ ID_INLINE void AxisCopy( vec3_t in[3], vec3_t out[3] )
 void ProjectPointOnPlane( vec3_t dst, const vec3_t p, const vec3_t normal )
 {
 	float inv_denom = DotProduct( normal, normal );
-	assert( Q_fabs(inv_denom) != 0.0f ); // zero vectors get here
+
 	inv_denom = 1.0f / inv_denom;
 
 	float d = DotProduct( normal, p ) * inv_denom;
@@ -515,7 +486,7 @@ ID_INLINE void VectorRotate( vec3_t in, vec3_t matrix[3], vec3_t out )
 
 
 //============================================================================
-#if !idppc
+#if(idppc==0)
 /*
 ** float q_rsqrt( float number )
 */
@@ -534,12 +505,6 @@ float Q_rsqrt( float number )
 	return y;
 }
 
-float Q_fabs( float f ) {
-	floatint_t fi;
-	fi.f = f;
-	fi.i &= 0x7FFFFFFF;
-	return fi.f;
-}
 #endif
 
 //============================================================
@@ -807,47 +772,40 @@ ID_INLINE qboolean BoundsIntersectPoint(const vec3_t mins, const vec3_t maxs, co
 
 ID_INLINE vec_t VectorNormalize( vec3_t v )
 {
-	float length = sqrt(v[0]*v[0] + v[1]*v[1] + v[2]*v[2]);
+	float length = v[0]*v[0] + v[1]*v[1] + v[2]*v[2];
 
 	if ( length != 0)
     {
-		/* writing it this way allows gcc to recognize that rsqrt can be used */
-		float invLen = 1 / length;
-		/* sqrt(length) = length * (1 / sqrt(length)) */
+		float invLen = 1.0f / sqrtf(length);
 		v[0] *= invLen;
 		v[1] *= invLen;
 		v[2] *= invLen;
+        return length*invLen;
 	}
-    else
-    {
-        v[0] = v[1] = v[2] = 0;
-    }
 		
 	return length;
 }
 
 
+/*
 ID_INLINE vec_t VectorNormalize2( const vec3_t v, vec3_t out)
 {
 	float length = sqrt(v[0]*v[0] + v[1]*v[1] + v[2]*v[2]);
 
 	if(length != 0)
     {
-		/* writing it this way allows gcc to recognize that rsqrt can be used */
+		// writing it this way allows gcc to recognize that rsqrt can be used 
 		float invLen = 1 / length;
-		/* sqrt(length) = length * (1 / sqrt(length)) */
+		// sqrt(length) = length * (1 / sqrt(length))
 		out[0] = v[0] * invLen;
 		out[1] = v[1] * invLen;
 		out[2] = v[2] * invLen;
 	}
-    else
-    {
-        out[0] = out[1] = out[2] = 0;
-    }
+
 		
 	return length;
 }
-
+*/
 
 ID_INLINE void _VectorMA( const vec3_t veca, float scale, const vec3_t vecb, vec3_t vecc)
 {
@@ -961,7 +919,7 @@ ID_INLINE void Matrix4Multiply(const float a[16], const float b[16], float out[1
 }
 
 
-ID_INLINE void MatrixMultiply(float in1[3][3], float in2[3][3], float out[3][3])
+ID_INLINE void MatrixMultiply(const float in1[3][3],const float in2[3][3], float out[3][3])
 {
 	out[0][0] = in1[0][0] * in2[0][0] + in1[0][1] * in2[1][0] +	in1[0][2] * in2[2][0];
 	out[0][1] = in1[0][0] * in2[0][1] + in1[0][1] * in2[1][1] +	in1[0][2] * in2[2][1];
@@ -1023,10 +981,11 @@ void PerpendicularVector( vec3_t dst, const vec3_t src )
 	// find the smallest magnitude axially aligned vector
 	for ( pos = 0, i = 0; i < 3; i++ )
 	{
-		if ( fabs( src[i] ) < minelem )
+        float len = fabs( src[i] );
+		if ( len < minelem )
 		{
 			pos = i;
-			minelem = fabs( src[i] );
+			minelem = len;
 		}
 	}
 	//tempvec[0] = tempvec[1] = tempvec[2] = 0.0F;
@@ -1038,6 +997,8 @@ void PerpendicularVector( vec3_t dst, const vec3_t src )
     //normalize the result
 	VectorNormalize( dst );
 }
+
+
 
 /*
 ================

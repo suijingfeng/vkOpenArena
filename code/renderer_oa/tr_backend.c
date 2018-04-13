@@ -116,10 +116,8 @@ static void SetViewportAndScissor( void )
 	qglMatrixMode(GL_MODELVIEW);
 
 	// set the window clipping
-	qglViewport( backEnd.viewParms.viewportX, backEnd.viewParms.viewportY, 
-		backEnd.viewParms.viewportWidth, backEnd.viewParms.viewportHeight );
-	qglScissor( backEnd.viewParms.viewportX, backEnd.viewParms.viewportY, 
-		backEnd.viewParms.viewportWidth, backEnd.viewParms.viewportHeight );
+	qglViewport( backEnd.viewParms.viewportX, backEnd.viewParms.viewportY, backEnd.viewParms.viewportWidth, backEnd.viewParms.viewportHeight );
+	qglScissor( backEnd.viewParms.viewportX, backEnd.viewParms.viewportY, backEnd.viewParms.viewportWidth, backEnd.viewParms.viewportHeight );
 	Matrix4Copy(backEnd.viewParms.projectionMatrix, glState.currentProjectionMatrix);
 	Matrix4Multiply(glState.currentProjectionMatrix, glState.currentModelViewMatrix, glState.currentModelViewProjectionMatrix);
 }
@@ -205,8 +203,8 @@ static void RB_BeginDrawingView(void)
 		qglLoadMatrixf( s_flipMatrix );
 		Matrix4Copy(s_flipMatrix, glState.currentModelViewMatrix);
 		Matrix4Multiply(glState.currentProjectionMatrix, glState.currentModelViewMatrix, glState.currentModelViewProjectionMatrix);
-		qglClipPlane (GL_CLIP_PLANE0, plane2);
-		qglEnable (GL_CLIP_PLANE0);
+		qglClipPlane(GL_CLIP_PLANE0, plane2);
+		qglEnable(GL_CLIP_PLANE0);
 	}
     else
     {
@@ -224,7 +222,7 @@ static void RB_RenderDrawSurfList( drawSurf_t *drawSurfs, int numDrawSurfs )
 	int				dlighted;
 	qboolean		isCrosshair;
 	int				i;
-	drawSurf_t		*drawSurf;
+	drawSurf_t* drawSurf;
 
 	// save original time for entity shader offsets
 	float originalTime = backEnd.refdef.floatTime;
@@ -264,7 +262,7 @@ static void RB_RenderDrawSurfList( drawSurf_t *drawSurfs, int numDrawSurfs )
 		// change the tess parameters if needed
 		// a "entityMergable" shader is a shader that can have surfaces from seperate
 		// entities merged into a single batch, like smoke and blood puff sprites
-		if ( shader != NULL && ( shader != oldShader || fogNum != oldFogNum || dlighted != oldDlighted 
+		if ( (shader != NULL) && ( shader != oldShader || fogNum != oldFogNum || dlighted != oldDlighted 
 			|| ( entityNum != oldEntityNum && !shader->entityMergable ) ) )
         {
 			if (oldShader != NULL) 
@@ -309,7 +307,8 @@ static void RB_RenderDrawSurfList( drawSurf_t *drawSurfs, int numDrawSurfs )
 						isCrosshair = qtrue;
 				}
 			}
-            else {
+            else
+            {
 				backEnd.currentEntity = &tr.worldEntity;
 				backEnd.refdef.floatTime = originalTime;
 				backEnd.or = backEnd.viewParms.world;
@@ -367,6 +366,7 @@ static void RB_RenderDrawSurfList( drawSurf_t *drawSurfs, int numDrawSurfs )
     {
 		qglDepthRange (0, 1);
 	}
+
 
 	// add light flares on lights that aren't obscured
 	RB_RenderFlares();
@@ -577,13 +577,13 @@ static const void *RB_ClearDepth(const void *data)
 static const void* RB_SwapBuffers(const void *data)
 {
 	// finish any 2D drawing if needed
-	if ( tess.numIndexes )
+	if( tess.numIndexes )
     {
 		RB_EndSurface();
 	}
 
 	// texture swapping test
-	if ( r_showImages->integer )
+	if( r_showImages->integer )
     {
 		RB_ShowImages();
 	}
@@ -602,7 +602,7 @@ static const void* RB_SwapBuffers(const void *data)
 		qglReadPixels( 0, 0, glConfig.vidWidth, glConfig.vidHeight, GL_STENCIL_INDEX, GL_UNSIGNED_BYTE, stencilReadback );
         
         int i;
-		for ( i = 0; i < glConfig.vidWidth * glConfig.vidHeight; i++ ) {
+		for( i = 0; i < glConfig.vidWidth * glConfig.vidHeight; i++ ) {
 			sum += stencilReadback[i];
 		}
 
@@ -644,6 +644,172 @@ static const void* RB_SwapBuffers(const void *data)
 
 	return (const void *)(cmd + 1);
 }
+
+
+/*
+==============================================================================
+						SCREEN SHOTS
+
+NOTE TTimo
+some thoughts about the screenshots system:
+screenshots get written in fs_homepath + fs_gamedir
+vanilla q3 .. baseq3/screenshots/ *.tga
+team arena .. missionpack/screenshots/ *.tga
+
+two commands: "screenshot" and "screenshotJPEG"
+we use statics to store a count and start writing the first screenshot/screenshot????.tga (.jpg) available
+(with FS_FileExists / FS_FOpenFileWrite calls)
+FIXME: the statics don't get a reinit between fs_game changes
+
+==============================================================================
+*/
+static void RB_TakeScreenshot(int x, int y, int width, int height, char *fileName)
+{
+	unsigned char *destptr, *endline;
+	
+	int padlen;
+	size_t offset = 18, memcount;
+
+	unsigned char* allbuf = RB_ReadPixels(x, y, width, height, &offset, &padlen);
+	unsigned char* buffer = allbuf + offset - 18;
+
+	memset (buffer, 0, 18);
+	buffer[2] = 2;		// uncompressed type
+	buffer[12] = width & 255;
+	buffer[13] = width >> 8;
+	buffer[14] = height & 255;
+	buffer[15] = height >> 8;
+	buffer[16] = 24;	// pixel size
+
+	// swap rgb to bgr and remove padding from line endings
+	int linelen = width * 3;
+
+	unsigned char* srcptr = destptr = allbuf + offset;
+	unsigned char* endmem = srcptr + (linelen + padlen) * height;
+
+	while(srcptr < endmem)
+    {
+		endline = srcptr + linelen;
+
+		while(srcptr < endline)
+        {
+			unsigned char temp = srcptr[0];
+			*destptr++ = srcptr[2];
+			*destptr++ = srcptr[1];
+			*destptr++ = temp;
+
+			srcptr += 3;
+		}
+
+		// Skip the pad
+		srcptr += padlen;
+	}
+
+	memcount = linelen * height;
+
+	// gamma correct
+	if ( glConfig.deviceSupportsGamma ) {
+		R_GammaCorrect(allbuf + offset, memcount);
+	}
+
+	ri.FS_WriteFile(fileName, buffer, memcount + 18);
+
+	ri.Hunk_FreeTempMemory(allbuf);
+}
+
+
+
+static void RB_TakeScreenshotJPEG(int x, int y, int width, int height, char *fileName)
+{
+	size_t offset = 0;
+	int padlen;
+	unsigned char* buffer = RB_ReadPixels(x, y, width, height, &offset, &padlen);
+	size_t memcount = (width * 3 + padlen) * height;
+
+	// gamma correct
+	if(glConfig.deviceSupportsGamma)
+		R_GammaCorrect(buffer + offset, memcount);
+
+	RE_SaveJPG(fileName, r_screenshotJpegQuality->integer, width, height, buffer + offset, padlen);
+	ri.Hunk_FreeTempMemory(buffer);
+}
+
+
+static const void *RB_TakeScreenshotCmd( const void *data )
+{
+	const screenshotCommand_t *cmd = (const screenshotCommand_t *)data;
+
+	if (cmd->jpeg)
+		RB_TakeScreenshotJPEG( cmd->x, cmd->y, cmd->width, cmd->height, cmd->fileName);
+	else
+		RB_TakeScreenshot( cmd->x, cmd->y, cmd->width, cmd->height, cmd->fileName);
+
+	return (const void *)(cmd + 1);
+}
+
+
+static const void *RB_TakeVideoFrameCmd( const void *data )
+{
+	const videoFrameCommand_t* cmd = (const videoFrameCommand_t *)data;
+	GLint packAlign;
+	qglGetIntegerv(GL_PACK_ALIGNMENT, &packAlign);
+
+	size_t linelen = cmd->width * 3;
+
+	// Alignment stuff for glReadPixels
+	int padwidth = PAD(linelen, packAlign);
+	int padlen = padwidth - linelen;
+	// AVI line padding
+	int avipadwidth = PAD(linelen, AVI_LINE_PADDING);
+	int avipadlen = avipadwidth - linelen;
+
+	unsigned char* cBuf = PADP(cmd->captureBuffer, packAlign);
+
+	qglReadPixels(0, 0, cmd->width, cmd->height, GL_RGB, GL_UNSIGNED_BYTE, cBuf);
+
+	size_t memcount = padwidth * cmd->height;
+
+	// gamma correct
+	if(glConfig.deviceSupportsGamma)
+		R_GammaCorrect(cBuf, memcount);
+
+	if(cmd->motionJpeg)
+    {
+		memcount = RE_SaveJPGToBuffer(cmd->encodeBuffer, linelen * cmd->height, r_aviMotionJpegQuality->integer, cmd->width, cmd->height, cBuf, padlen);
+		ri.CL_WriteAVIVideoFrame(cmd->encodeBuffer, memcount);
+	}
+	else
+    {
+		unsigned char* lineend;
+
+		unsigned char* srcptr = cBuf;
+		unsigned char* destptr = cmd->encodeBuffer;
+		unsigned char* memend = srcptr + memcount;
+
+		// swap R and B and remove line paddings
+		while(srcptr < memend)
+        {
+			lineend = srcptr + linelen;
+			while(srcptr < lineend)
+            {
+				*destptr++ = srcptr[2];
+				*destptr++ = srcptr[1];
+				*destptr++ = srcptr[0];
+				srcptr += 3;
+			}
+
+			memset(destptr, '\0', avipadlen);
+			destptr += avipadlen;
+
+			srcptr += padlen;
+		}
+
+		ri.CL_WriteAVIVideoFrame(cmd->encodeBuffer, avipadwidth * cmd->height);
+	}
+
+	return (const void *)(cmd + 1);
+}
+
 
 
 /////////////////////////////////////////////////////////////////////////////////
@@ -1006,7 +1172,7 @@ Stretches a raw 32 bit power of 2 bitmap image over the given screen rectangle.
 Used for cinematics.
 =============
 */
-void RE_StretchRaw (int x, int y, int w, int h, int cols, int rows, const unsigned char *data, int client, qboolean dirty)
+void RE_StretchRaw(int x, int y, int w, int h, int cols, int rows, const unsigned char *data, int client, qboolean dirty)
 {
 	int	i, j;
 	int	start = 0, end;
@@ -1082,12 +1248,13 @@ void RE_StretchRaw (int x, int y, int w, int h, int cols, int rows, const unsign
 }
 
 
-void RE_UploadCinematic (int w, int h, int cols, int rows, const byte *data, int client, qboolean dirty)
+void RE_UploadCinematic (int w, int h, int cols, int rows, const unsigned char* data, int client, qboolean dirty)
 {
 	GL_Bind( tr.scratchImage[client] );
 
 	// if the scratchImage isn't in the format we want, specify it as a new texture
-	if ( cols != tr.scratchImage[client]->width || rows != tr.scratchImage[client]->height ) {
+	if ( cols != tr.scratchImage[client]->width || rows != tr.scratchImage[client]->height )
+    {
 		tr.scratchImage[client]->width = tr.scratchImage[client]->uploadWidth = cols;
 		tr.scratchImage[client]->height = tr.scratchImage[client]->uploadHeight = rows;
 		qglTexImage2D( GL_TEXTURE_2D, 0, GL_RGB8, cols, rows, 0, GL_RGBA, GL_UNSIGNED_BYTE, data );
@@ -1100,7 +1267,8 @@ void RE_UploadCinematic (int w, int h, int cols, int rows, const byte *data, int
 	}
     else
     {
-		if (dirty) {
+		if (dirty)
+        {
 			// otherwise, just subimage upload it so that drivers can tell we are going to be changing
 			// it and don't try and do a texture compression
 			qglTexSubImage2D( GL_TEXTURE_2D, 0, 0, 0, cols, rows, GL_RGBA, GL_UNSIGNED_BYTE, data );
@@ -1144,169 +1312,7 @@ unsigned char* RB_ReadPixels(int x, int y, int width, int height, size_t *offset
 	return buffer;
 }
 
-/*
-==============================================================================
-						SCREEN SHOTS
 
-NOTE TTimo
-some thoughts about the screenshots system:
-screenshots get written in fs_homepath + fs_gamedir
-vanilla q3 .. baseq3/screenshots/ *.tga
-team arena .. missionpack/screenshots/ *.tga
-
-two commands: "screenshot" and "screenshotJPEG"
-we use statics to store a count and start writing the first screenshot/screenshot????.tga (.jpg) available
-(with FS_FileExists / FS_FOpenFileWrite calls)
-FIXME: the statics don't get a reinit between fs_game changes
-
-==============================================================================
-*/
-static void RB_TakeScreenshot(int x, int y, int width, int height, char *fileName)
-{
-	unsigned char *destptr, *endline;
-	
-	int padlen;
-	size_t offset = 18, memcount;
-
-	unsigned char* allbuf = RB_ReadPixels(x, y, width, height, &offset, &padlen);
-	unsigned char* buffer = allbuf + offset - 18;
-
-	memset (buffer, 0, 18);
-	buffer[2] = 2;		// uncompressed type
-	buffer[12] = width & 255;
-	buffer[13] = width >> 8;
-	buffer[14] = height & 255;
-	buffer[15] = height >> 8;
-	buffer[16] = 24;	// pixel size
-
-	// swap rgb to bgr and remove padding from line endings
-	int linelen = width * 3;
-
-	unsigned char* srcptr = destptr = allbuf + offset;
-	unsigned char* endmem = srcptr + (linelen + padlen) * height;
-
-	while(srcptr < endmem)
-    {
-		endline = srcptr + linelen;
-
-		while(srcptr < endline)
-        {
-			unsigned char temp = srcptr[0];
-			*destptr++ = srcptr[2];
-			*destptr++ = srcptr[1];
-			*destptr++ = temp;
-
-			srcptr += 3;
-		}
-
-		// Skip the pad
-		srcptr += padlen;
-	}
-
-	memcount = linelen * height;
-
-	// gamma correct
-	if ( glConfig.deviceSupportsGamma ) {
-		R_GammaCorrect(allbuf + offset, memcount);
-	}
-
-	ri.FS_WriteFile(fileName, buffer, memcount + 18);
-
-	ri.Hunk_FreeTempMemory(allbuf);
-}
-
-
-
-static void RB_TakeScreenshotJPEG(int x, int y, int width, int height, char *fileName)
-{
-	size_t offset = 0;
-	int padlen;
-	unsigned char* buffer = RB_ReadPixels(x, y, width, height, &offset, &padlen);
-	size_t memcount = (width * 3 + padlen) * height;
-
-	// gamma correct
-	if(glConfig.deviceSupportsGamma)
-		R_GammaCorrect(buffer + offset, memcount);
-
-	RE_SaveJPG(fileName, r_screenshotJpegQuality->integer, width, height, buffer + offset, padlen);
-	ri.Hunk_FreeTempMemory(buffer);
-}
-
-
-static const void *RB_TakeScreenshotCmd( const void *data )
-{
-	const screenshotCommand_t *cmd = (const screenshotCommand_t *)data;
-
-	if (cmd->jpeg)
-		RB_TakeScreenshotJPEG( cmd->x, cmd->y, cmd->width, cmd->height, cmd->fileName);
-	else
-		RB_TakeScreenshot( cmd->x, cmd->y, cmd->width, cmd->height, cmd->fileName);
-
-	return (const void *)(cmd + 1);
-}
-
-
-const void *RB_TakeVideoFrameCmd( const void *data )
-{
-	const videoFrameCommand_t* cmd = (const videoFrameCommand_t *)data;
-	GLint packAlign;
-	qglGetIntegerv(GL_PACK_ALIGNMENT, &packAlign);
-
-	size_t linelen = cmd->width * 3;
-
-	// Alignment stuff for glReadPixels
-	int padwidth = PAD(linelen, packAlign);
-	int padlen = padwidth - linelen;
-	// AVI line padding
-	int avipadwidth = PAD(linelen, AVI_LINE_PADDING);
-	int avipadlen = avipadwidth - linelen;
-
-	unsigned char* cBuf = PADP(cmd->captureBuffer, packAlign);
-
-	qglReadPixels(0, 0, cmd->width, cmd->height, GL_RGB, GL_UNSIGNED_BYTE, cBuf);
-
-	size_t memcount = padwidth * cmd->height;
-
-	// gamma correct
-	if(glConfig.deviceSupportsGamma)
-		R_GammaCorrect(cBuf, memcount);
-
-	if(cmd->motionJpeg)
-    {
-		memcount = RE_SaveJPGToBuffer(cmd->encodeBuffer, linelen * cmd->height, r_aviMotionJpegQuality->integer, cmd->width, cmd->height, cBuf, padlen);
-		ri.CL_WriteAVIVideoFrame(cmd->encodeBuffer, memcount);
-	}
-	else
-    {
-		unsigned char* lineend;
-
-		unsigned char* srcptr = cBuf;
-		unsigned char* destptr = cmd->encodeBuffer;
-		unsigned char* memend = srcptr + memcount;
-
-		// swap R and B and remove line paddings
-		while(srcptr < memend)
-        {
-			lineend = srcptr + linelen;
-			while(srcptr < lineend)
-            {
-				*destptr++ = srcptr[2];
-				*destptr++ = srcptr[1];
-				*destptr++ = srcptr[0];
-				srcptr += 3;
-			}
-
-			memset(destptr, '\0', avipadlen);
-			destptr += avipadlen;
-
-			srcptr += padlen;
-		}
-
-		ri.CL_WriteAVIVideoFrame(cmd->encodeBuffer, avipadwidth * cmd->height);
-	}
-
-	return (const void *)(cmd + 1);
-}
 
 /*
 ===============
@@ -1332,7 +1338,7 @@ void RB_ShowImages( void )
 	int start = ri.Milliseconds();
     
     int i;
-	for( i=0 ; i<tr.numImages ; i++ )
+	for(i=0; i<tr.numImages ; i++ )
     {
 		image_t* image = tr.images[i];
 

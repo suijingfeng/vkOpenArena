@@ -600,7 +600,7 @@ static void VectorArrayNormalize(vec4_t *normals, unsigned int count)
 #else // No assembly version for this architecture, or C_ONLY defined
 	// given the input, it's safe to call VectorNormalizeFast
     while (count--) {
-        VectorNormalizeFast(normals[0]);
+        FastVectorNormalize(normals[0]);
         normals++;
     }
 #endif
@@ -912,7 +912,6 @@ static void RB_SurfaceFace( srfSurfaceFace_t *surf ) {
 	float		*v;
 	float		*normal;
 	int			ndx;
-	int			Bob;
 	int			numPoints;
 	int			dlightBits;
 
@@ -923,10 +922,9 @@ static void RB_SurfaceFace( srfSurfaceFace_t *surf ) {
 
 	indices = ( unsigned * ) ( ( ( char  * ) surf ) + surf->ofsIndices );
 
-	Bob = tess.numVertexes;
 	tessIndexes = tess.indexes + tess.numIndexes;
 	for ( i = surf->numIndices-1 ; i >= 0  ; i-- ) {
-		tessIndexes[i] = indices[i] + Bob;
+		tessIndexes[i] = indices[i] + tess.numVertexes;
 	}
 
 	tess.numIndexes += surf->numIndices;

@@ -22,9 +22,9 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #include "q_shared.h"
 #include "qcommon.h"
 
-static huffman_t		msgHuff;
+static huffman_t msgHuff;
 
-static qboolean			msgInit = qfalse;
+static qboolean	msgInit = qfalse;
 
 int pcount[256];
 
@@ -191,14 +191,13 @@ void MSG_WriteBits( msg_t *msg, int value, int bits ) {
 	}
 }
 
-int MSG_ReadBits( msg_t *msg, int bits ) {
-	int			value;
+int MSG_ReadBits( msg_t *msg, int bits )
+{
+	int	value = 0;
 	int			get;
 	qboolean	sgn;
 	int			i, nbits;
 //	FILE*	fp;
-
-	value = 0;
 
 	if ( bits < 0 ) {
 		bits = -bits;
@@ -245,7 +244,7 @@ int MSG_ReadBits( msg_t *msg, int bits ) {
 			for(i=0;i<bits;i+=8) {
 				Huff_offsetReceive (msgHuff.decompressor.tree, &get, msg->data, &msg->bit);
 //				fwrite(&get, 1, 1, fp);
-				value |= (get<<(i+nbits));
+				value = (unsigned int)value | ((unsigned int)get<<(i+nbits));
 			}
 //			fclose(fp);
 		}

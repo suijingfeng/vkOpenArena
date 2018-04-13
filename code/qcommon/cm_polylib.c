@@ -262,8 +262,9 @@ winding_t *BaseWindingForPlane (vec3_t normal, vec_t dist)
 winding_t *CopyWinding (winding_t *w)
 {
 	winding_t *c = AllocWinding (w->numpoints);
-	intptr_t  size = (intptr_t) ((winding_t *)0)->p[w->numpoints];
-	memcpy(c, w, size);
+//	intptr_t  size = (intptr_t) ((winding_t *)0)->p[w->numpoints];
+	intptr_t size = (intptr_t)&(w->p[w->numpoints]) - (intptr_t)w;
+    memcpy(c, w, size);
 	return c;
 }
 
@@ -274,10 +275,8 @@ ReverseWinding
 */
 winding_t	*ReverseWinding (winding_t *w)
 {
-	int			i;
-	winding_t	*c;
-
-	c = AllocWinding (w->numpoints);
+	int	i;
+	winding_t* c = AllocWinding (w->numpoints);
 	for (i=0 ; i<w->numpoints ; i++)
 	{
 		VectorCopy (w->p[w->numpoints-1-i], c->p[i]);

@@ -333,178 +333,7 @@ static void DrawMultitextured( shaderCommands_t *input, int stage )
 
 
 
-/*
-===================
-ProjectDlightTexture
-
-Perform dynamic lighting with another rendering pass
-===================
-*/
-#if idppc_altivec
-static void ProjectDlightTexture_altivec( void )
-{
-	int		i, l;
-	vec_t	origin0, origin1, origin2;
-	float   texCoords0, texCoords1;
-	vector float floatColorVec0, floatColorVec1;
-	vector float modulateVec, colorVec, zero;
-	vector short colorShort;
-	vector signed int colorInt;
-	vector unsigned char floatColorVecPerm, modulatePerm, colorChar;
-	vector unsigned char vSel = VECCONST_UINT8(0x00, 0x00, 0x00, 0xff,
-                                               0x00, 0x00, 0x00, 0xff,
-                                               0x00, 0x00, 0x00, 0xff,
-                                               0x00, 0x00, 0x00, 0xff);
-	float	*texCoords;
-	byte	*colors;
-	byte	clipBits[SHADER_MAX_VERTEXES];
-	float	texCoordsArray[SHADER_MAX_VERTEXES][2];
-	byte	colorArray[SHADER_MAX_VERTEXES][4];
-	unsigned	hitIndexes[SHADER_MAX_INDEXES];
-	int		numIndexes;
-	float	scale;
-	float	radius;
-	vec3_t	floatColor;
-	float	modulate = 0.0f;
-
-	if ( !backEnd.refdef.num_dlights ) {
-		return;
-	}
-
-	// There has to be a better way to do this so that floatColor
-	// and/or modulate are already 16-byte aligned.
-	floatColorVecPerm = vec_lvsl(0,(float *)floatColor);
-	modulatePerm = vec_lvsl(0,(float *)&modulate);
-	modulatePerm = (vector unsigned char)vec_splat((vector unsigned int)modulatePerm,0);
-	zero = (vector float)vec_splat_s8(0);
-
-	for ( l = 0 ; l < backEnd.refdef.num_dlights ; l++ ) {
-		dlight_t	*dl;
-
-		if ( !( tess.dlightBits & ( 1 << l ) ) ) {
-			continue;	// this surface definately doesn't have any of this light
-		}
-		texCoords = texCoordsArray[0];
-		colors = colorArray[0];
-
-		dl = &backEnd.refdef.dlights[l];
-		origin0 = dl->transformed[0];
-		origin1 = dl->transformed[1];
-		origin2 = dl->transformed[2];
-		radius = dl->radius;
-		scale = 1.0f / radius;
-
-        floatColor[0] = dl->color[0] * 255.0f;
-        floatColor[1] = dl->color[1] * 255.0f;
-        floatColor[2] = dl->color[2] * 255.0f;
-		floatColorVec0 = vec_ld(0, floatColor);
-		floatColorVec1 = vec_ld(11, floatColor);
-		floatColorVec0 = vec_perm(floatColorVec0,floatColorVec0,floatColorVecPerm);
-		for ( i = 0 ; i < tess.numVertexes ; i++, texCoords += 2, colors += 4 ) {
-			int		clip = 0;
-			vec_t dist0, dist1, dist2;
-			
-			dist0 = origin0 - tess.xyz[i][0];
-			dist1 = origin1 - tess.xyz[i][1];
-			dist2 = origin2 - tess.xyz[i][2];
-
-			backEnd.pc.c_dlightVertexes++;
-
-			texCoords0 = 0.5f + dist0 * scale;
-			texCoords1 = 0.5f + dist1 * scale;
-
-			if( !r_dlightBacks->integer &&
-					// dist . tess.normal[i]
-					( dist0 * tess.normal[i][0] +
-					dist1 * tess.normal[i][1] +
-					dist2 * tess.normal[i][2] ) < 0.0f ) {
-				clip = 63;
-			} else {
-				if ( texCoords0 < 0.0f ) {
-					clip |= 1;
-				} else if ( texCoords0 > 1.0f ) {
-					clip |= 2;
-				}
-				if ( texCoords1 < 0.0f ) {
-					clip |= 4;
-				} else if ( texCoords1 > 1.0f ) {
-					clip |= 8;
-				}
-				texCoords[0] = texCoords0;
-				texCoords[1] = texCoords1;
-
-				// modulate the strength based on the height and color
-				if ( dist2 > radius ) {
-					clip |= 16;
-					modulate = 0.0f;
-				} else if ( dist2 < -radius ) {
-					clip |= 32;
-					modulate = 0.0f;
-				} else {
-					dist2 = Q_fabs(dist2);
-					if ( dist2 < radius * 0.5f ) {
-						modulate = 1.0f;
-					} else {
-						modulate = 2.0f * (radius - dist2) * scale;
-					}
-				}
-			}
-			clipBits[i] = clip;
-
-			modulateVec = vec_ld(0,(float *)&modulate);
-			modulateVec = vec_perm(modulateVec,modulateVec,modulatePerm);
-			colorVec = vec_madd(floatColorVec0,modulateVec,zero);
-			colorInt = vec_cts(colorVec,0);	// RGBx
-			colorShort = vec_pack(colorInt,colorInt);		// RGBxRGBx
-			colorChar = vec_packsu(colorShort,colorShort);	// RGBxRGBxRGBxRGBx
-			colorChar = vec_sel(colorChar,vSel,vSel);		// RGBARGBARGBARGBA replace alpha with 255
-			vec_ste((vector unsigned int)colorChar,0,(unsigned int *)colors);	// store color
-		}
-
-		// build a list of triangles that need light
-		numIndexes = 0;
-		for ( i = 0 ; i < tess.numIndexes ; i += 3 ) {
-			int		a, b, c;
-
-			a = tess.indexes[i];
-			b = tess.indexes[i+1];
-			c = tess.indexes[i+2];
-			if ( clipBits[a] & clipBits[b] & clipBits[c] ) {
-				continue;	// not lighted
-			}
-			hitIndexes[numIndexes] = a;
-			hitIndexes[numIndexes+1] = b;
-			hitIndexes[numIndexes+2] = c;
-			numIndexes += 3;
-		}
-
-		if ( !numIndexes ) {
-			continue;
-		}
-
-		qglEnableClientState( GL_TEXTURE_COORD_ARRAY );
-		qglTexCoordPointer( 2, GL_FLOAT, 0, texCoordsArray[0] );
-
-		qglEnableClientState( GL_COLOR_ARRAY );
-		qglColorPointer( 4, GL_UNSIGNED_BYTE, 0, colorArray );
-
-		GL_Bind( tr.dlightImage );
-		// include GLS_DEPTHFUNC_EQUAL so alpha tested surfaces don't add light
-		// where they aren't rendered
-		if ( dl->additive ) {
-			GL_State( GLS_SRCBLEND_ONE | GLS_DSTBLEND_ONE | GLS_DEPTHFUNC_EQUAL );
-		}
-		else {
-			GL_State( GLS_SRCBLEND_DST_COLOR | GLS_DSTBLEND_ONE | GLS_DEPTHFUNC_EQUAL );
-		}
-        qglDrawElements( GL_TRIANGLES, numIndexes, GL_UNSIGNED_INT, hitIndexes );
-		backEnd.pc.c_totalIndexes += numIndexes;
-		backEnd.pc.c_dlightIndexes += numIndexes;
-	}
-}
-#endif
-
-
+// Perform dynamic lighting with another rendering pass
 static void ProjectDlightTexture_scalar( void )
 {
 	int		i, l;
@@ -513,15 +342,12 @@ static void ProjectDlightTexture_scalar( void )
 	float	texCoordsArray[SHADER_MAX_VERTEXES][2];
 	unsigned char colorArray[SHADER_MAX_VERTEXES][4];
 	unsigned	hitIndexes[SHADER_MAX_INDEXES];
-	int		numIndexes;
-
-	float	modulate = 0.0f;
-
+	
 	if ( !backEnd.refdef.num_dlights ) {
 		return;
 	}
 
-	for ( l = 0 ; l < backEnd.refdef.num_dlights ; l++ )
+	for( l = 0 ; l < backEnd.refdef.num_dlights ; l++ )
     {
 		if ( !( tess.dlightBits & ( 1 << l ) ) )
         {
@@ -533,8 +359,7 @@ static void ProjectDlightTexture_scalar( void )
 
 		dlight_t* dl = &backEnd.refdef.dlights[l];
 		VectorCopy( dl->transformed, origin );
-		float radius = dl->radius;
-		float scale = 1.0f / radius;
+		float scale = 1.0f / dl->radius;
         
         vec3_t	floatColor;
         floatColor[0] = dl->color[0] * 255.0f;
@@ -543,8 +368,10 @@ static void ProjectDlightTexture_scalar( void )
 
 		for ( i = 0 ; i < tess.numVertexes ; i++, texCoords += 2, colors += 4 )
         {
-			int		clip = 0;
-			vec3_t	dist;
+			int	clip = 0;
+            float modulate = 0;
+			
+            vec3_t dist;
 			
 			VectorSubtract( origin, tess.xyz[i], dist );
 
@@ -571,19 +398,24 @@ static void ProjectDlightTexture_scalar( void )
 
 
 				// modulate the strength based on the height and color
-				if ( dist[2] > radius ) {
+
+				if ( dist[2] > dl->radius )
+                {
 					clip |= 16;
 					modulate = 0.0f;
-				} else if ( dist[2] < -radius ) {
+				}
+                else if( dist[2] < -dl->radius )
+                {
 					clip |= 32;
 					modulate = 0.0f;
-				} else {
-					dist[2] = Q_fabs(dist[2]);
-					if ( dist[2] < radius * 0.5f ) {
+				}
+                else
+                {
+					dist[2] = fabs(dist[2]);
+					if ( dist[2] < dl->radius * 0.5f )
 						modulate = 1.0f;
-					} else {
-						modulate = 2.0f * (radius - dist[2]) * scale;
-					}
+                    else
+						modulate = 2.0f * (dl->radius - dist[2]) * scale;
 				}
 			}
 			clipBits[i] = clip;
@@ -595,7 +427,9 @@ static void ProjectDlightTexture_scalar( void )
 
         
 		// build a list of triangles that need light
-		for( i = 0, numIndexes = 0; i < tess.numIndexes; i += 3)
+    
+        int	numIndexes = 0;
+		for( i = 0; i < tess.numIndexes; )
         {
 			int a = tess.indexes[i++];
 			int b = tess.indexes[i++];
@@ -608,9 +442,9 @@ static void ProjectDlightTexture_scalar( void )
 			hitIndexes[numIndexes++] = c;
 		}
 
-		if ( !numIndexes ) {
+		if( !numIndexes )
 			continue;
-		}
+
 
 		qglEnableClientState( GL_TEXTURE_COORD_ARRAY );
 		qglTexCoordPointer( 2, GL_FLOAT, 0, texCoordsArray[0] );
@@ -619,35 +453,19 @@ static void ProjectDlightTexture_scalar( void )
 		qglColorPointer( 4, GL_UNSIGNED_BYTE, 0, colorArray );
 
 		GL_Bind( tr.dlightImage );
-		// include GLS_DEPTHFUNC_EQUAL so alpha tested surfaces don't add light
-		// where they aren't rendered
-		if ( dl->additive ) {
+		
+        // include GLS_DEPTHFUNC_EQUAL so alpha tested surfaces don't add light where they aren't rendered
+		if ( dl->additive )
 			GL_State( GLS_SRCBLEND_ONE | GLS_DSTBLEND_ONE | GLS_DEPTHFUNC_EQUAL );
-		}
-		else {
+		else
 			GL_State( GLS_SRCBLEND_DST_COLOR | GLS_DSTBLEND_ONE | GLS_DEPTHFUNC_EQUAL );
-		}
+
 
         qglDrawElements( GL_TRIANGLES, numIndexes, GL_UNSIGNED_INT, hitIndexes );
 		backEnd.pc.c_totalIndexes += numIndexes;
 		backEnd.pc.c_dlightIndexes += numIndexes;
 	}
 }
-
-
-static void ProjectDlightTexture( void )
-{
-#if idppc_altivec
-	if (com_altivec->integer)
-    {
-		// must be in a seperate function or G3 systems will crash.
-		ProjectDlightTexture_altivec();
-		return;
-	}
-#endif
-	ProjectDlightTexture_scalar();
-}
-
 
 
 
@@ -1113,7 +931,7 @@ void RB_BeginSurface( shader_t *shader, int fogNum )
 	tess.currentStageIteratorFunc = state->optimalStageIteratorFunc;
 
 	tess.shaderTime = backEnd.refdef.floatTime - tess.shader->timeOffset;
-	if (tess.shader->clampTime && tess.shaderTime >= tess.shader->clampTime)
+	if(tess.shader->clampTime && tess.shaderTime >= tess.shader->clampTime)
     {
 		tess.shaderTime = tess.shader->clampTime;
 	}
@@ -1126,7 +944,6 @@ void RB_BeginSurface( shader_t *shader, int fogNum )
 */
 void RB_StageIteratorGeneric( void )
 {
-
 	shaderCommands_t* input = &tess;
 	shader_t* shader = input->shader;
 
@@ -1136,7 +953,7 @@ void RB_StageIteratorGeneric( void )
 	GL_Cull( shader->cullType );
 
 	// set polygon offset if necessary
-	if ( shader->polygonOffset )
+	if( shader->polygonOffset )
 	{
 		qglEnable( GL_POLYGON_OFFSET_FILL );
 		qglPolygonOffset( r_offsetFactor->value, r_offsetUnits->value );
@@ -1147,11 +964,11 @@ void RB_StageIteratorGeneric( void )
     // otherwise we need to avoid compiling those arrays 
     // since they will change during multipass rendering
 	
-    if ( tess.numPasses > 1 || shader->multitextureEnv )
+    if( tess.numPasses > 1 || shader->multitextureEnv )
 	{
 		setArraysOnce = qfalse;
-		qglDisableClientState (GL_COLOR_ARRAY);
-		qglDisableClientState (GL_TEXTURE_COORD_ARRAY);
+		qglDisableClientState(GL_COLOR_ARRAY);
+		qglDisableClientState(GL_TEXTURE_COORD_ARRAY);
 	}
 	else
 	{
@@ -1185,10 +1002,10 @@ void RB_StageIteratorGeneric( void )
 	RB_IterateStagesGeneric( input );
 
 	// now do any dynamic lighting needed
-	if( tess.dlightBits && tess.shader->sort <= SS_OPAQUE && !(tess.shader->surfaceFlags & (SURF_NODLIGHT | SURF_SKY) ) )
+	if( tess.dlightBits && (tess.shader->sort <= SS_OPAQUE) && !(tess.shader->surfaceFlags & (SURF_NODLIGHT | SURF_SKY) ) )
     {
-		ProjectDlightTexture();
-	}
+		ProjectDlightTexture_scalar();
+    }
 
 
 	// now do fog
@@ -1246,7 +1063,7 @@ void RB_StageIteratorVertexLitTexture( void )
 	// now do any dynamic lighting needed
 	if ( tess.dlightBits && tess.shader->sort <= SS_OPAQUE )
     {
-		ProjectDlightTexture();
+		ProjectDlightTexture_scalar();
 	}
 
 	// now do fog
@@ -1272,16 +1089,8 @@ void RB_StageIteratorLightmappedMultitexture( void )
 	GL_State( GLS_DEFAULT );
 	qglVertexPointer( 3, GL_FLOAT, 16, input->xyz );
 
-    
-#ifdef REPLACE_MODE
-	qglDisableClientState( GL_COLOR_ARRAY );
-	qglColor3f( 1, 1, 1 );
-	qglShadeModel( GL_FLAT );
-#else
 	qglEnableClientState( GL_COLOR_ARRAY );
 	qglColorPointer( 4, GL_UNSIGNED_BYTE, 0, tess.constantColor255 );
-#endif
-
 
 	// select base stage
 	GL_SelectTexture( 0 );
@@ -1320,24 +1129,19 @@ void RB_StageIteratorLightmappedMultitexture( void )
 	qglDisableClientState( GL_TEXTURE_COORD_ARRAY );
 
 	GL_SelectTexture( 0 );
-#ifdef REPLACE_MODE
-	GL_TexEnv( GL_MODULATE );
-	qglShadeModel( GL_SMOOTH );
-#endif
 
 
 	// now do any dynamic lighting needed
-	if ( tess.dlightBits && tess.shader->sort <= SS_OPAQUE ) {
-		ProjectDlightTexture();
+	if ( tess.dlightBits && (tess.shader->sort <= SS_OPAQUE) )
+    {
+		ProjectDlightTexture_scalar();
 	}
-
 
 	// now do fog
 	if ( tess.fogNum && tess.shader->fogPass )
     {
 		RB_FogPass();
 	}
-
 }
 
 
@@ -1378,10 +1182,10 @@ void RB_EndSurface( void )
 	// draw debugging stuff
 	//
 	if ( r_showtris->integer )
-		DrawTris (input);
+		DrawTris(input);
 
 	if ( r_shownormals->integer )
-		DrawNormals (input);
+		DrawNormals(input);
 
 	// clear shader so we can tell we don't have any unclosed surfaces
 	tess.numIndexes = 0;

@@ -481,8 +481,9 @@ static void VectorArrayNormalize(vec4_t *normals, unsigned int count)
     }
 #else // No assembly version for this architecture, or C_ONLY defined
 	// given the input, it's safe to call VectorNormalizeFast
-    while (count--) {
-        VectorNormalizeFast(normals[0]);
+    while (count--)
+    {
+        FastVectorNormalize(normals[0]);
         normals++;
     }
 #endif
@@ -781,32 +782,31 @@ static void RB_SurfaceMesh(md3Surface_t *surface)
 
 static void RB_SurfaceFace( srfSurfaceFace_t *surf )
 {
-	int			i;
-	float		*v;
-	float		*normal;
+	float* v;
 	int			ndx;
-	int			dlightBits;
 
 	RB_CHECKOVERFLOW( surf->numPoints, surf->numIndices );
 
-	dlightBits = surf->dlightBits;
+	int dlightBits = surf->dlightBits;
 	tess.dlightBits |= dlightBits;
 
-	unsigned int* indices = (unsigned int* ) ( ( ( char  * ) surf ) + surf->ofsIndices );
+	unsigned int* indices = (unsigned int* ) ( (char *)surf + surf->ofsIndices );
 
-	int Bob = tess.numVertexes;
 	unsigned int* tessIndexes = tess.indexes + tess.numIndexes;
-	for(i = surf->numIndices-1; i >= 0; i--)
+	
+    int i;
+    for(i = surf->numIndices-1; i >= 0; i--)
     {
-		tessIndexes[i] = indices[i] + Bob;
+		tessIndexes[i] = indices[i] + tess.numVertexes;
 	}
 
 	tess.numIndexes += surf->numIndices;
 
 	int numPoints = surf->numPoints;
 
-	if ( tess.shader->needsNormal ) {
-		normal = surf->plane.normal;
+	if ( tess.shader->needsNormal )
+    {
+		float* normal = surf->plane.normal;
 		for ( i = 0, ndx = tess.numVertexes; i < numPoints; i++, ndx++ ) {
 			VectorCopy( normal, tess.normal[ndx] );
 		}
@@ -824,6 +824,9 @@ static void RB_SurfaceFace( srfSurfaceFace_t *surf )
 	}
 	tess.numVertexes += surf->numPoints;
 }
+
+
+
 
 
 static float LodErrorForVolume( vec3_t local, float radius )
@@ -1207,7 +1210,7 @@ void RB_MDRSurfaceAnim( mdrSurface_t *surface )
 
     RB_CheckOverflow( surface->numVerts, surface->numTriangles );
 
-	int* triangles = (int *) ((byte *)surface + surface->ofsTriangles);
+	int* triangles = (int *) ((unsigned char *)surface + surface->ofsTriangles);
 	int indexes	= surface->numTriangles * 3;
 	int baseIndex = tess.numIndexes;
 	int baseVertex = tess.numVertexes;

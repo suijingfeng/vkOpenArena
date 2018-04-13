@@ -524,9 +524,11 @@ static void RGBAtoNormal(const byte *in, byte *out, int width, int height, qbool
 
 			normal[2] = s[4] * 4;
 
-			if (!VectorNormalize2(normal, normal))
+			if ( normal[0]*normal[0] + normal[1]*normal[1] + normal[2]*normal[2] == 0)
 			{
-				VectorSet(normal, 0, 0, 1);
+				normal[0] = 0;
+                normal[1] = 0;
+                normal[2] = 1;       
 			}
 
 			*outbyte++ = FloatToOffsetByte(normal[0]);
@@ -547,7 +549,7 @@ static void RGBAtoNormal(const byte *in, byte *out, int width, int height, qbool
 static void DoFCBI(byte *in, byte *out, int width, int height, int component)
 {
 	int x, y;
-	byte *outbyte, *inbyte;
+	unsigned char *outbyte, *inbyte;
 
 	// copy in to out
 	for (y = 2; y < height - 2; y += 2)
@@ -1399,7 +1401,7 @@ static void R_MipMapNormalHeight (const byte *in, byte *out, int width, int heig
 			v[1] += OffsetByteToFloat(in[   row+5]);
 			v[2] += OffsetByteToFloat(in[   row+6]);
 
-			VectorNormalizeFast(v);
+			FastVectorNormalize(v);
 
 			//v[0] *= 0.25f;
 			//v[1] *= 0.25f;

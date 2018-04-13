@@ -303,16 +303,17 @@ static glyphInfo_t *RE_ConstructGlyphInfo(unsigned char *imageOut, int *xOut, in
 #endif
 
 static int fdOffset;
-static byte	*fdFile;
+static unsigned char* fdFile;
 
-int readInt( void ) {
+int readInt( void )
+{
 	int i = fdFile[fdOffset]+(fdFile[fdOffset+1]<<8)+(fdFile[fdOffset+2]<<16)+(fdFile[fdOffset+3]<<24);
 	fdOffset += 4;
 	return i;
 }
 
 typedef union {
-	byte	fred[4];
+	unsigned char fred[4];
 	float	ffred;
 } poor;
 

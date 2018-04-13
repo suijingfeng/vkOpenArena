@@ -1666,4 +1666,27 @@ qhandle_t RE_RegisterShader( const char *name );
 qhandle_t RE_RegisterShaderNoMip( const char *name );
 qhandle_t RE_RegisterShaderFromImage(const char *name, int lightmapIndex, image_t *image, qboolean mipRawImage);
 image_t *R_FindImageFile( const char *name, imgType_t type, imgFlags_t flags );
+
+
+
+ID_INLINE void FastVectorNormalize( float* v )
+{
+	float ilength = 1.0f/sqrtf( v[0] * v[0] + v[1] * v[1] + v[2]*v[2] );
+
+	v[0] *= ilength;
+	v[1] *= ilength;
+	v[2] *= ilength;
+}
+
+ID_INLINE void VectorNormalize2( const float* v, float* out)
+{
+    // writing it this way allows gcc to recognize that rsqrt can be used
+	float invLen = 1.0f/sqrtf(v[0]*v[0] + v[1]*v[1] + v[2]*v[2]);
+
+ 	out[0] = v[0] * invLen;
+	out[1] = v[1] * invLen;
+	out[2] = v[2] * invLen;
+}
+
+
 #endif //TR_LOCAL_H

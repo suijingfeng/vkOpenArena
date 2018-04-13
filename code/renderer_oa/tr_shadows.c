@@ -116,39 +116,38 @@ RB_ShadowTessEnd
 
 triangleFromEdge[ v1 ][ v2 ]
 
-
   set triangle from edge( v1, v2, tri )
-  if ( facing[ triangleFromEdge[ v1 ][ v2 ] ] && !facing[ triangleFromEdge[ v2 ][ v1 ] ) {
-  }
+
 =================
 */
 void RB_ShadowTessEnd( void )
 {
-	int		i;
-	vec3_t	lightDir;
 	GLboolean rgba[4];
 
 	// we can only do this if we have enough space in the vertex buffers
-	if ( tess.numVertexes >= SHADER_MAX_VERTEXES / 2 ) {
+	if( tess.numVertexes >= SHADER_MAX_VERTEXES / 2 ) {
 		return;
 	}
 
-	if ( glConfig.stencilBits < 4 ) {
+	if( glConfig.stencilBits < 4 ) {
 		return;
 	}
 
-	VectorCopy( backEnd.currentEntity->lightDir, lightDir );
+	vec3_t lightDir;
+	VectorCopy( backEnd.currentEntity->lightDir, lightDir);
 
 	// project vertexes away from light direction
-	for ( i = 0 ; i < tess.numVertexes ; i++ ) {
-		VectorMA( tess.xyz[i], -512, lightDir, tess.xyz[i+tess.numVertexes] );
+    int i;
+	for(i = 0; i<tess.numVertexes; i++)
+    {
+		VectorMA(tess.xyz[i], -512, lightDir, tess.xyz[i+tess.numVertexes]);
 	}
 
 	// decide which triangles face the light
 	memset( numEdgeDefs, 0, 4 * tess.numVertexes );
 
-	int numTris = tess.numIndexes / 3;
-	for ( i = 0 ; i < numTris ; i++ )
+	int numTris = tess.numIndexes/3;
+	for( i = 0 ; i < numTris ; i++ )
     {
 		int i1 = tess.indexes[ i*3 + 0 ];
 		int i2 = tess.indexes[ i*3 + 1 ];
