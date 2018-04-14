@@ -1669,7 +1669,7 @@ image_t *R_FindImageFile( const char *name, imgType_t type, imgFlags_t flags );
 
 
 
-ID_INLINE void FastVectorNormalize( float* v )
+static ID_INLINE void FastVectorNormalize( float* v )
 {
 	float ilength = 1.0f/sqrtf( v[0] * v[0] + v[1] * v[1] + v[2]*v[2] );
 
@@ -1678,7 +1678,7 @@ ID_INLINE void FastVectorNormalize( float* v )
 	v[2] *= ilength;
 }
 
-ID_INLINE void VectorNormalize2( const float* v, float* out)
+static ID_INLINE void FastVectorNormalize2( const float* v, float* out)
 {
     // writing it this way allows gcc to recognize that rsqrt can be used
 	float invLen = 1.0f/sqrtf(v[0]*v[0] + v[1]*v[1] + v[2]*v[2]);

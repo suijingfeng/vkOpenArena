@@ -225,7 +225,7 @@ static void MakeMeshNormals( int width, int height, drawVert_t ctrl[MAX_GRID_SIZ
 			//if ( count == 0 ) {
 			//	printf("bad normal\n");
 			//}
-			VectorNormalize2( sum, dv->normal );
+			FastVectorNormalize2( sum, dv->normal );
 		}
 	}
 }

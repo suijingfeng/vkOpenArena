@@ -275,7 +275,7 @@ static void R_SetupEntityLightingGrid( trRefEntity_t *ent, world_t *world ) {
 	VectorScale( ent->ambientLight, r_ambientScale->value, ent->ambientLight );
 	VectorScale( ent->directedLight, r_directedScale->value, ent->directedLight );
 
-	VectorNormalize2( direction, ent->lightDir );
+	FastVectorNormalize2( direction, ent->lightDir );
 }
 
 

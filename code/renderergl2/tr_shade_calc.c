@@ -163,16 +163,17 @@ Wiggle the normals for wavy environment mapping
 */
 void RB_CalcDeformNormals( deformStage_t *ds ) {
 	int i;
-	float	scale;
-	float	*xyz = ( float * ) tess.xyz;
-	int16_t *normal = tess.normal[0];
+	float* xyz = ( float * ) tess.xyz;
+	int16_t* normal = tess.normal[0];
 
-	for ( i = 0; i < tess.numVertexes; i++, xyz += 4, normal += 4 ) {
+	for ( i = 0; i < tess.numVertexes; i++, xyz += 4, normal += 4 )
+	{
+
 		vec3_t fNormal;
 
 		R_VaoUnpackNormal(fNormal, normal);
 
-		scale = 0.98f;
+		float scale = 0.98f;
 		scale = R_NoiseGet4f( xyz[0] * scale, xyz[1] * scale, xyz[2] * scale,
 			tess.shaderTime * ds->deformationWave.frequency );
 		fNormal[ 0 ] += ds->deformationWave.amplitude * scale;
@@ -184,7 +185,8 @@ void RB_CalcDeformNormals( deformStage_t *ds ) {
 
 		scale = 0.98f;
 		scale = R_NoiseGet4f( 200 + xyz[0] * scale, xyz[1] * scale, xyz[2] * scale,
-			tess.shaderTime * ds->deformationWave.frequency );
+		tess.shaderTime * ds->deformationWave.frequency );
+		
 		fNormal[ 2 ] += ds->deformationWave.amplitude * scale;
 
 		FastVectorNormalize( fNormal );

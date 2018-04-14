@@ -225,7 +225,7 @@ static	int	neighbors[8][2] = {
 			//}
 			{
 				vec3_t fNormal;
-				VectorNormalize2(sum, fNormal);
+				FastVectorNormalize2(sum, fNormal);
 				R_VaoPackNormal(dv->normal, fNormal);
 			}
 		}

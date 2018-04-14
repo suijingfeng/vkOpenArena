@@ -29,6 +29,9 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
  *
  *****************************************************************************/
 
+#ifndef L_UTILS_H_
+#define L_UTILS_H_
+
 #define Vector2Angles(v,a)		vectoangles(v,a)
 #ifndef MAX_PATH
 #define MAX_PATH				MAX_QPATH
@@ -38,7 +41,7 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
 
 
-ID_INLINE void VectorNormalize2( const vec3_t v, vec3_t out)
+static ID_INLINE void VectorNormalize2( const float* v, float* out)
 {
     // writing it this way allows gcc to recognize that rsqrt can be used
 	float invLen = 1.0f/sqrtf(v[0]*v[0] + v[1]*v[1] + v[2]*v[2]);
@@ -48,3 +51,4 @@ ID_INLINE void VectorNormalize2( const vec3_t v, vec3_t out)
 	out[2] = v[2] * invLen;
 }
 
+#endif

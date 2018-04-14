@@ -408,16 +408,14 @@ static void DoSyscall(void)
 
 	if(vm_syscallNum < 0)
 	{
-#if idx64
-		int index;
-		intptr_t args[MAX_VMSYSCALL_ARGS];
-#endif
 		
 		int* data = (int *) (savedVM->dataBase + vm_programStack + 4);
 		int* ret = &vm_opStackBase[vm_opStackOfs + 1];
 
 #if idx64
+		intptr_t args[MAX_VMSYSCALL_ARGS];
 		args[0] = ~vm_syscallNum;
+		int index;
 		for(index = 1; index < ARRAY_LEN(args); index++)
 			args[index] = data[index];
 			

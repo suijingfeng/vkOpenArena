@@ -1382,7 +1382,8 @@ static void R_MipMapNormalHeight (const byte *in, byte *out, int width, int heig
 	height >>= 1;
 	
 	for (i=0 ; i<height ; i++, in+=row) {
-		for (j=0 ; j<width ; j++, out+=4, in+=8) {
+		for (j=0 ; j<width ; j++, out+=4, in+=8)
+		{
 			vec3_t v;
 
 			v[0] =  OffsetByteToFloat(in[sx      ]);

@@ -1588,8 +1588,9 @@ void R_LoadPNG( const char *name, byte **pic, int *width, int *height );
 void R_LoadTGA( const char *name, byte **pic, int *width, int *height );
 
 
-ID_INLINE void FastVectorNormalize( float* v )
+static ID_INLINE void FastVectorNormalize( float* v )
 {
+	// writing it this way allows gcc to recognize that rsqrt can be used
 	float ilength = 1.0f/sqrtf( v[0] * v[0] + v[1] * v[1] + v[2]*v[2] );
 
 	v[0] *= ilength;
@@ -1598,7 +1599,7 @@ ID_INLINE void FastVectorNormalize( float* v )
 }
 
 
-ID_INLINE void VectorNormalize2( const float* v, float* out)
+static ID_INLINE void VectorNormalize2( const float* v, float* out)
 {
     // writing it this way allows gcc to recognize that rsqrt can be used
 	float invLen = 1.0f/sqrtf(v[0]*v[0] + v[1]*v[1] + v[2]*v[2]);
