@@ -230,47 +230,11 @@ static unsigned ColorBytes3 (float r, float g, float b) {
 
 	return i;
 }
+
+
+
+
 */
-
-ID_INLINE unsigned ColorBytes4 (float r, float g, float b, float a)
-{
-	unsigned int i;
-
-	( (byte *)&i )[0] = r * 255;
-	( (byte *)&i )[1] = g * 255;
-	( (byte *)&i )[2] = b * 255;
-	( (byte *)&i )[3] = a * 255;
-
-	return i;
-}
-
-
-float NormalizeColor( const vec3_t in, vec3_t out )
-{
-	float max= in[0];
-	if ( in[1] > max )
-    {
-		max = in[1];
-	}
-	if ( in[2] > max )
-    {
-		max = in[2];
-	}
-
-	if ( !max )
-    {
-		VectorClear( out );
-	}
-    else
-    {
-		out[0] = in[0] / max;
-		out[1] = in[1] / max;
-		out[2] = in[2] / max;
-	}
-	return max;
-}
-
-
 
 
 /*
@@ -279,7 +243,7 @@ RotatePointAroundVector
 
 This is not implemented very well...
 ===============
-*/
+
 
 void RotatePointAroundVector( vec3_t dst, const vec3_t dir, const vec3_t point,	float degrees )
 {
@@ -289,7 +253,6 @@ void RotatePointAroundVector( vec3_t dst, const vec3_t dir, const vec3_t point,	
 	float	rot[3][3];
 	int	i;
 	vec3_t vr, vup, vf;
-	float	rad;
 
 	vf[0] = dir[0];
 	vf[1] = dir[1];
@@ -314,7 +277,7 @@ void RotatePointAroundVector( vec3_t dst, const vec3_t dir, const vec3_t point,	
 
 	float	zrot[3][3];
 	memset( zrot, 0, sizeof( zrot ) );
-	rad = DEG2RAD( degrees );
+	float rad = DEG2RAD( degrees );
 	zrot[0][0] = cos( rad );
 	zrot[0][1] = sin( rad );
 	zrot[1][0] = -sin( rad );
@@ -329,6 +292,7 @@ void RotatePointAroundVector( vec3_t dst, const vec3_t dir, const vec3_t point,	
 		dst[i] = rot[i][0] * point[0] + rot[i][1] * point[1] + rot[i][2] * point[2];
 	}
 }
+*/
 
 
 /*
@@ -426,30 +390,22 @@ void AxisClear( vec3_t axis[3] )
 }
 
 
-ID_INLINE void AxisCopy( vec3_t in[3], vec3_t out[3] )
-{
-	VectorCopy( in[0], out[0] );
-	VectorCopy( in[1], out[1] );
-	VectorCopy( in[2], out[2] );
-}
-
 
 void ProjectPointOnPlane( vec3_t dst, const vec3_t p, const vec3_t normal )
 {
-	float inv_denom = DotProduct( normal, normal );
+	float inv_denom = 1.0/DotProduct( normal, normal );
 
-	inv_denom = 1.0f / inv_denom;
 
 	float d = DotProduct( normal, p ) * inv_denom;
 	vec3_t n;
 
-	n[0] = normal[0] * inv_denom;
-	n[1] = normal[1] * inv_denom;
-	n[2] = normal[2] * inv_denom;
+	n[0] = normal[0] * d;
+	n[1] = normal[1] * d;
+	n[2] = normal[2] * d;
 
-	dst[0] = p[0] - d * n[0];
-	dst[1] = p[1] - d * n[1];
-	dst[2] = p[2] - d * n[2];
+	dst[0] = p[0] - n[0];
+	dst[1] = p[1] - n[1];
+	dst[2] = p[2] - n[2];
 }
 
 
@@ -484,9 +440,6 @@ ID_INLINE void VectorRotate( vec3_t in, vec3_t matrix[3], vec3_t out )
 }
 
 
-
-//============================================================================
-#if(idppc==0)
 /*
 ** float q_rsqrt( float number )
 */
@@ -504,10 +457,6 @@ float Q_rsqrt( float number )
 //	y  = y * ( threehalfs - ( x2 * y * y ) );   // 2nd iteration, this can be removed
 	return y;
 }
-
-#endif
-
-//============================================================
 
 
 float LerpAngle (float from, float to, float frac)
@@ -681,17 +630,16 @@ RadiusFromBounds
 ID_INLINE float RadiusFromBounds( const vec3_t mins, const vec3_t maxs )
 {
 	int		i;
-	vec3_t	corner;
-	float	a, b;
+	vec3_t	v;
 
 	for (i=0 ; i<3 ; i++)
     {
-		a = fabs( mins[i] );
-		b = fabs( maxs[i] );
-		corner[i] = a > b ? a : b;
+		float a = fabs( mins[i] );
+		float b = fabs( maxs[i] );
+		v[i] = a > b ? a : b;
 	}
 
-	return VectorLength (corner);
+	return sqrtf(v[0]*v[0] + v[1]*v[1] + v[2]*v[2]);
 }
 
 
@@ -787,25 +735,6 @@ ID_INLINE vec_t VectorNormalize( vec3_t v )
 }
 
 
-/*
-ID_INLINE vec_t VectorNormalize2( const vec3_t v, vec3_t out)
-{
-	float length = sqrt(v[0]*v[0] + v[1]*v[1] + v[2]*v[2]);
-
-	if(length != 0)
-    {
-		// writing it this way allows gcc to recognize that rsqrt can be used 
-		float invLen = 1 / length;
-		// sqrt(length) = length * (1 / sqrt(length))
-		out[0] = v[0] * invLen;
-		out[1] = v[1] * invLen;
-		out[2] = v[2] * invLen;
-	}
-
-		
-	return length;
-}
-*/
 
 ID_INLINE void _VectorMA( const vec3_t veca, float scale, const vec3_t vecb, vec3_t vecc)
 {
@@ -877,46 +806,9 @@ ID_INLINE qboolean Matrix4Compare(const float a[16], const float b[16])
 	return qtrue;
 }
 
-/*
-=================
-Matrix4Copy
-=================
-*/
-ID_INLINE void Matrix4Copy(const float in[16], float out[16])
-{
-    out[ 0] = in[ 0];       out[ 4] = in[ 4];       out[ 8] = in[ 8];       out[12] = in[12];
-    out[ 1] = in[ 1];       out[ 5] = in[ 5];       out[ 9] = in[ 9];       out[13] = in[13];
-    out[ 2] = in[ 2];       out[ 6] = in[ 6];       out[10] = in[10];       out[14] = in[14];
-    out[ 3] = in[ 3];       out[ 7] = in[ 7];       out[11] = in[11];       out[15] = in[15];
-}
 
-/*
-=================
-Matrix4Multiply
-=================
-*/
-ID_INLINE void Matrix4Multiply(const float a[16], const float b[16], float out[16])
-{
-    out[ 0] = b[ 0]*a[ 0] + b[ 1]*a[ 4] + b[ 2]*a[ 8] + b[ 3]*a[12];
-    out[ 1] = b[ 0]*a[ 1] + b[ 1]*a[ 5] + b[ 2]*a[ 9] + b[ 3]*a[13];
-    out[ 2] = b[ 0]*a[ 2] + b[ 1]*a[ 6] + b[ 2]*a[10] + b[ 3]*a[14];
-    out[ 3] = b[ 0]*a[ 3] + b[ 1]*a[ 7] + b[ 2]*a[11] + b[ 3]*a[15];
 
-    out[ 4] = b[ 4]*a[ 0] + b[ 5]*a[ 4] + b[ 6]*a[ 8] + b[ 7]*a[12];
-    out[ 5] = b[ 4]*a[ 1] + b[ 5]*a[ 5] + b[ 6]*a[ 9] + b[ 7]*a[13];
-    out[ 6] = b[ 4]*a[ 2] + b[ 5]*a[ 6] + b[ 6]*a[10] + b[ 7]*a[14];
-    out[ 7] = b[ 4]*a[ 3] + b[ 5]*a[ 7] + b[ 6]*a[11] + b[ 7]*a[15];
 
-    out[ 8] = b[ 8]*a[ 0] + b[ 9]*a[ 4] + b[10]*a[ 8] + b[11]*a[12];
-    out[ 9] = b[ 8]*a[ 1] + b[ 9]*a[ 5] + b[10]*a[ 9] + b[11]*a[13];
-    out[10] = b[ 8]*a[ 2] + b[ 9]*a[ 6] + b[10]*a[10] + b[11]*a[14];
-    out[11] = b[ 8]*a[ 3] + b[ 9]*a[ 7] + b[10]*a[11] + b[11]*a[15];
-
-    out[12] = b[12]*a[ 0] + b[13]*a[ 4] + b[14]*a[ 8] + b[15]*a[12];
-    out[13] = b[12]*a[ 1] + b[13]*a[ 5] + b[14]*a[ 9] + b[15]*a[13];
-    out[14] = b[12]*a[ 2] + b[13]*a[ 6] + b[14]*a[10] + b[15]*a[14];
-    out[15] = b[12]*a[ 3] + b[13]*a[ 7] + b[14]*a[11] + b[15]*a[15];
-}
 
 
 ID_INLINE void MatrixMultiply(const float in1[3][3],const float in2[3][3], float out[3][3])

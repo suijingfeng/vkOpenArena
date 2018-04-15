@@ -122,7 +122,7 @@ This will also allow mirrors on both sides of a model without recursion.
 */
 static qboolean	R_CullSurface( surfaceType_t *surface, shader_t *shader )
 {
-	srfSurfaceFace_t *sface;
+
 
 	if ( r_nocull->integer ) {
 		return qfalse;
@@ -149,7 +149,7 @@ static qboolean	R_CullSurface( surfaceType_t *surface, shader_t *shader )
 		return qfalse;
 	}
 
-	sface = ( srfSurfaceFace_t * ) surface;
+	srfSurfaceFace_t* sface = ( srfSurfaceFace_t * ) surface;
 	float d = DotProduct (tr.or.viewOrigin, sface->plane.normal);
 
 	// don't cull exactly on the plane, because there are levels of rounding

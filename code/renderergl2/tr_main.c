@@ -1105,6 +1105,7 @@ qboolean R_GetPortalOrientations( drawSurf_t *drawSurf, int entityNum,
 		// now get the camera origin and orientation
 		VectorCopy( e->e.oldorigin, camera->origin );
 		AxisCopy( e->e.axis, camera->axis );
+        //memcpy(camera->axis, e->e.axis, 9*sizeof(float));
 		VectorSubtract( vec3_origin, camera->axis[0], camera->axis[0] );
 		VectorSubtract( vec3_origin, camera->axis[1], camera->axis[1] );
 
@@ -1115,22 +1116,27 @@ qboolean R_GetPortalOrientations( drawSurf_t *drawSurf, int entityNum,
 				// continuous rotate
 				d = (tr.refdef.time/1000.0f) * e->e.frame;
 				VectorCopy( camera->axis[1], transformed );
-				RotatePointAroundVector( camera->axis[1], camera->axis[0], transformed, d );
+				//RotatePointAroundVector( camera->axis[1], camera->axis[0], transformed, d );
+                PointRotateAroundVector(transformed, camera->axis[0], d, camera->axis[1]);
+
 				CrossProduct( camera->axis[0], camera->axis[1], camera->axis[2] );
 			} else {
 				// bobbing rotate, with skinNum being the rotation offset
 				d = sin( tr.refdef.time * 0.003f );
 				d = e->e.skinNum + d * 4;
 				VectorCopy( camera->axis[1], transformed );
-				RotatePointAroundVector( camera->axis[1], camera->axis[0], transformed, d );
+				//RotatePointAroundVector( camera->axis[1], camera->axis[0], transformed, d );
+                PointRotateAroundVector(transformed, camera->axis[0], d, camera->axis[1]);
+
 				CrossProduct( camera->axis[0], camera->axis[1], camera->axis[2] );
 			}
 		}
 		else if ( e->e.skinNum ) {
 			d = e->e.skinNum;
 			VectorCopy( camera->axis[1], transformed );
-			RotatePointAroundVector( camera->axis[1], camera->axis[0], transformed, d );
-			CrossProduct( camera->axis[0], camera->axis[1], camera->axis[2] );
+			//RotatePointAroundVector( camera->axis[1], camera->axis[0], transformed, d );
+			PointRotateAroundVector(transformed, camera->axis[0], d, camera->axis[1]);
+            CrossProduct( camera->axis[0], camera->axis[1], camera->axis[2] );
 		}
 		*mirror = qfalse;
 		return qtrue;
@@ -1315,7 +1321,8 @@ R_MirrorViewBySurface
 Returns qtrue if another view has been rendered
 ========================
 */
-qboolean R_MirrorViewBySurface (drawSurf_t *drawSurf, int entityNum) {
+qboolean R_MirrorViewBySurface (drawSurf_t *drawSurf, int entityNum)
+{
 	vec4_t			clipDest[128];
 	viewParms_t		newParms;
 	viewParms_t		oldParms;

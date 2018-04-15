@@ -377,7 +377,7 @@ int AAS_NearestEntity(vec3_t origin, int modelindex)
 	int i, bestentnum;
 	float dist, bestdist;
 	aas_entity_t *ent;
-	vec3_t dir;
+	vec3_t v;
 
 	bestentnum = 0;
 	bestdist = 99999;
@@ -385,12 +385,12 @@ int AAS_NearestEntity(vec3_t origin, int modelindex)
 	{
 		ent = &aasworld.entities[i];
 		if (ent->i.modelindex != modelindex) continue;
-		VectorSubtract(ent->i.origin, origin, dir);
-		if (abs(dir[0]) < 40)
+		VectorSubtract(ent->i.origin, origin, v);
+		if (abs(v[0]) < 40)
 		{
-			if (abs(dir[1]) < 40)
+			if (abs(v[1]) < 40)
 			{
-				dist = VectorLength(dir);
+				dist = sqrtf(v[0]*v[0] + v[1]*v[1] + v[2]*v[2]);
 				if (dist < bestdist)
 				{
 					bestdist = dist;

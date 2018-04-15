@@ -31,11 +31,6 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #include "tr_local.h"
 
 
-#if idppc_altivec && !defined(MACOS_X)
-#include <altivec.h>
-#endif
-
-
 extern backEndState_t backEnd;
 extern trGlobals_t tr;
 extern refimport_t ri;
@@ -334,10 +329,9 @@ static void DrawMultitextured( shaderCommands_t *input, int stage )
 
 
 // Perform dynamic lighting with another rendering pass
-static void ProjectDlightTexture_scalar( void )
+static void ProjectDlightTexture( void )
 {
 	int		i, l;
-	vec3_t	origin;
 	unsigned char clipBits[SHADER_MAX_VERTEXES];
 	float	texCoordsArray[SHADER_MAX_VERTEXES][2];
 	unsigned char colorArray[SHADER_MAX_VERTEXES][4];
@@ -354,31 +348,20 @@ static void ProjectDlightTexture_scalar( void )
 			continue;	// this surface definately doesn't have any of this light
 		}
         
-		float* texCoords = texCoordsArray[0];
-		unsigned char* colors = colorArray[0];
 
 		dlight_t* dl = &backEnd.refdef.dlights[l];
-		VectorCopy( dl->transformed, origin );
-		float scale = 1.0f / dl->radius;
-        
-        vec3_t	floatColor;
-        floatColor[0] = dl->color[0] * 255.0f;
-        floatColor[1] = dl->color[1] * 255.0f;
-        floatColor[2] = dl->color[2] * 255.0f;
 
-		for ( i = 0 ; i < tess.numVertexes ; i++, texCoords += 2, colors += 4 )
+        
+		for ( i = 0 ; i < tess.numVertexes ; i++)
         {
 			int	clip = 0;
             float modulate = 0;
 			
             vec3_t dist;
 			
-			VectorSubtract( origin, tess.xyz[i], dist );
+			VectorSubtract( dl->transformed, tess.xyz[i], dist );
 
 			backEnd.pc.c_dlightVertexes++;
-
-			texCoords[0] = 0.5f + dist[0] * scale;
-			texCoords[1] = 0.5f + dist[1] * scale;
 
 			if( !r_dlightBacks->integer && ( dist[0] * tess.normal[i][0] + dist[1] * tess.normal[i][1] + dist[2] * tess.normal[i][2] ) < 0.0f )
             {
@@ -386,14 +369,17 @@ static void ProjectDlightTexture_scalar( void )
 			}
             else
             {
-				if ( texCoords[0] < 0.0f )
+                texCoordsArray[i][0] = 0.5f + dist[0] / dl->radius;
+			    texCoordsArray[i][1] = 0.5f + dist[1] / dl->radius;
+
+				if ( texCoordsArray[i][0] < 0.0f )
 					clip |= 1;
-                else if ( texCoords[0] > 1.0f )
+                else if ( texCoordsArray[i][0] > 1.0f )
 					clip |= 2;
 
-				if ( texCoords[1] < 0.0f )
+				if ( texCoordsArray[i][1] < 0.0f )
 					clip |= 4;
-				else if ( texCoords[1] > 1.0f )
+				else if ( texCoordsArray[i][1] > 1.0f )
 					clip |= 8;
 
 
@@ -415,14 +401,16 @@ static void ProjectDlightTexture_scalar( void )
 					if ( dist[2] < dl->radius * 0.5f )
 						modulate = 1.0f;
                     else
-						modulate = 2.0f * (dl->radius - dist[2]) * scale;
+						modulate = 2.0f * (dl->radius - dist[2]) / dl->radius;
 				}
 			}
+
 			clipBits[i] = clip;
-			colors[0] = (floatColor[0] * modulate);
-			colors[1] = (floatColor[1] * modulate);
-			colors[2] = (floatColor[2] * modulate);
-			colors[3] = 255;
+
+			colorArray[i][0] = dl->color[0] * 255.0f * modulate;
+			colorArray[i][1] = dl->color[1] * 255.0f * modulate;
+			colorArray[i][2] = dl->color[2] * 255.0f * modulate;
+			colorArray[i][3] = 255;
 		}
 
         
@@ -507,6 +495,116 @@ static void RB_FogPass( void )
 }
 
 
+// leilei - reveal normals to GLSL for light processing. HACK HACK HACK HACK HACK HACK
+static void RB_CalcNormal( unsigned char *colors )
+{
+	int			i;
+	float		*v = tess.xyz[0];
+	float		*normal = ( float * ) tess.normal; 
+	vec3_t			n, m;
+
+	int numVertexes = tess.numVertexes;
+	for (i = 0 ; i < numVertexes ; i++, v += 4, normal += 4)
+    {
+		int y;
+		for (y=0;y<3;y++)
+        {
+			n[y] = normal[y];
+        }
+
+		float mid = n[1] + n[2];
+		
+        if (mid < 0)
+            mid *= -1;
+			
+        m[0] = 127 + (n[0]*128);
+        m[1] = 127 + (n[1]*128);
+        m[2] = 127 + (n[2]*128);
+		
+		colors[i*4+0] = m[0];
+		colors[i*4+1] = m[1];
+		colors[i*4+2] = m[2];
+		colors[i*4+3] = 255;
+	}
+}
+
+/*
+** RB_CalcUniformColor
+**
+** RiO; Uniform vertex color lighting for cel shading
+*/
+
+
+static void RB_CalcUniformColor( unsigned char *colors )
+{
+	vec4_t			uniformLight;
+
+	trRefEntity_t* ent = backEnd.currentEntity;
+
+	//VectorCopy( ent->directedLight, directedLight );
+
+	VectorAdd( ent->ambientLight, ent->ambientLight, uniformLight );
+
+	float normalize = NormalizeColor( uniformLight, uniformLight );
+	if ( normalize > 255 )
+        normalize = 255;
+
+	VectorScale( uniformLight, normalize, uniformLight );
+	uniformLight[3] = 255;
+
+	int numVertexes = tess.numVertexes;
+
+    int i;
+	for (i = 0 ; i < numVertexes ; i++ )
+    {
+		colors[i*4+0] = uniformLight[0];
+		colors[i*4+1] = uniformLight[1];
+		colors[i*4+2] = uniformLight[2];
+		colors[i*4+3] = uniformLight[3];
+	}
+}
+
+
+
+static void RB_CalcDiffuseColor( unsigned char *colors )
+{
+	int	i;
+	trRefEntity_t* ent = backEnd.currentEntity;
+
+    int numVertexes = tess.numVertexes;
+
+	for (i = 0 ; i < numVertexes ; i++)
+    {
+		float incoming = DotProduct (tess.normal[i], ent->lightDir);
+		
+        if ( incoming <= 0 )
+        {
+			*(int *)&colors[i*4] = ent->ambientLightInt;
+			continue;
+		} 
+		int j = ent->ambientLight[0] + incoming * ent->directedLight[0];
+		if ( j > 255 )
+			colors[i*4+0] = 255;
+        else
+            colors[i*4+0] = j;
+
+
+		j = ent->ambientLight[1] + incoming * ent->directedLight[1];
+		if ( j > 255 )
+			colors[i*4+1] = 255;
+        else
+		    colors[i*4+1] = j;
+
+		j = ent->ambientLight[2] + incoming * ent->directedLight[2];
+		if ( j > 255 )
+			colors[i*4+2] = 255;
+        else
+		    colors[i*4+2] = j;
+
+		colors[i*4+3] = 255;
+	}
+}
+
 static void ComputeColors( shaderStage_t *pStage )
 {
 	int	i;
@@ -522,7 +620,7 @@ static void ComputeColors( shaderStage_t *pStage )
 			memset( tess.svars.colors, tr.identityLightByte, tess.numVertexes * 4 );
 			break;
 		case CGEN_LIGHTING_DIFFUSE:
-			if (r_shownormals->integer > 1 || (pStage->isLeiShade))
+			if (r_shownormals->integer > 1)
             {
                 // leilei - debug normals, or use the normals as a color for a lighting shader
 				RB_CalcNormal( ( unsigned char * ) tess.svars.colors );
@@ -587,7 +685,7 @@ static void ComputeColors( shaderStage_t *pStage )
 
 				if (backEnd.currentEntity->ambientLight[y] < 1)   
                     backEnd.currentEntity->ambientLight[y] = 1; // black!!!
-				if (backEnd.currentEntity->ambientLight[y] > 255)
+                else if (backEnd.currentEntity->ambientLight[y] > 255)
                     backEnd.currentEntity->ambientLight[y] = 255; // white!!!!!
 			    //	backEnd.currentEntity->ambientLight[y] 	*= (vcolor[y] / 255);
 			    //	backEnd.currentEntity->directedLight[y] *= (vcolor[y] / 255);
@@ -759,19 +857,21 @@ static void ComputeTexCoords( shaderStage_t *pStage )
                 memset( tess.svars.texcoords[b], 0, sizeof( float ) * 2 * tess.numVertexes );
                 break;
             case TCGEN_TEXTURE:
-                for ( i = 0 ; i < tess.numVertexes ; i++ ) {
+                for ( i = 0 ; i < tess.numVertexes ; i++ )
+                {
                     tess.svars.texcoords[b][i][0] = tess.texCoords[i][0][0];
                     tess.svars.texcoords[b][i][1] = tess.texCoords[i][0][1];
-                }
-                break;
+                }break;
             case TCGEN_LIGHTMAP:
-                for ( i = 0 ; i < tess.numVertexes ; i++ ) {
+                for ( i = 0 ; i < tess.numVertexes ; i++ )
+                {
                     tess.svars.texcoords[b][i][0] = tess.texCoords[i][1][0];
                     tess.svars.texcoords[b][i][1] = tess.texCoords[i][1][1];
                 }
                 break;
             case TCGEN_VECTOR:
-                for ( i = 0 ; i < tess.numVertexes ; i++ ) {
+                for ( i = 0 ; i < tess.numVertexes ; i++ )
+                {
                     tess.svars.texcoords[b][i][0] = DotProduct( tess.xyz[i], pStage->bundle[b].tcGenVectors[0] );
                     tess.svars.texcoords[b][i][1] = DotProduct( tess.xyz[i], pStage->bundle[b].tcGenVectors[1] );
                 }
@@ -1004,7 +1104,7 @@ void RB_StageIteratorGeneric( void )
 	// now do any dynamic lighting needed
 	if( tess.dlightBits && (tess.shader->sort <= SS_OPAQUE) && !(tess.shader->surfaceFlags & (SURF_NODLIGHT | SURF_SKY) ) )
     {
-		ProjectDlightTexture_scalar();
+		ProjectDlightTexture();
     }
 
 
@@ -1063,7 +1163,7 @@ void RB_StageIteratorVertexLitTexture( void )
 	// now do any dynamic lighting needed
 	if ( tess.dlightBits && tess.shader->sort <= SS_OPAQUE )
     {
-		ProjectDlightTexture_scalar();
+		ProjectDlightTexture();
 	}
 
 	// now do fog
@@ -1134,7 +1234,7 @@ void RB_StageIteratorLightmappedMultitexture( void )
 	// now do any dynamic lighting needed
 	if ( tess.dlightBits && (tess.shader->sort <= SS_OPAQUE) )
     {
-		ProjectDlightTexture_scalar();
+		ProjectDlightTexture();
 	}
 
 	// now do fog

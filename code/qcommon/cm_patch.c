@@ -155,11 +155,11 @@ Returns true if the given quadratic curve is not flat enough for our
 collision detection purposes
 =================
 */
-static qboolean	CM_NeedsSubdivision( vec3_t a, vec3_t b, vec3_t c ) {
+static qboolean	CM_NeedsSubdivision( vec3_t a, vec3_t b, vec3_t c )
+{
 	vec3_t		cmid;
 	vec3_t		lmid;
 	vec3_t		delta;
-	float		dist;
 	int			i;
 
 	// calculate the linear midpoint
@@ -174,7 +174,7 @@ static qboolean	CM_NeedsSubdivision( vec3_t a, vec3_t b, vec3_t c ) {
 
 	// see if the curve is far enough away from the linear mid
 	VectorSubtract( cmid, lmid, delta );
-	dist = VectorLength( delta );
+	float dist = sqrtf(delta[0]*delta[0] + delta[1]*delta[1] + delta[2]*delta[2]);
 	
 	return dist >= SUBDIVIDE_DISTANCE;
 }

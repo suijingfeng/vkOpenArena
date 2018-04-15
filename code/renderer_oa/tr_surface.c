@@ -38,9 +38,6 @@ if you don't want to use the shader system.
 
 #include "tr_local.h"
 
-#if idppc_altivec && !defined(MACOS_X)
-#include <altivec.h>
-#endif
 
 extern backEndState_t backEnd;
 extern shaderCommands_t tess;
@@ -210,7 +207,8 @@ static void RB_SurfaceBeam( void )
 	int	i;
 	for ( i = 0; i < NUM_BEAM_SEGS ; i++ )
 	{
-		RotatePointAroundVector( start_points[i], normalized_direction, perpvec, (360.0/NUM_BEAM_SEGS)*i );
+//		RotatePointAroundVector( start_points[i], normalized_direction, perpvec, (360.0/NUM_BEAM_SEGS)*i );
+        PointRotateAroundVector( perpvec, normalized_direction, (360.0/NUM_BEAM_SEGS)*i, start_points[i] );
 //		VectorAdd( start_points[i], origin, start_points[i] );
 		VectorAdd( start_points[i], direction, end_points[i] );
 	}
@@ -424,236 +422,46 @@ static void RB_SurfaceLightningBolt( void )
 	CrossProduct( v1, v2, right );
 	VectorNormalize( right );
 
-	for ( i = 0 ; i < 4 ; i++ ) {
+	for ( i = 0 ; i < 4 ; i++ )
+    {
 		vec3_t	temp;
 
 		DoRailCore( start, end, right, len, 8 );
-		RotatePointAroundVector( temp, vec, right, 45 );
-		VectorCopy( temp, right );
+		//RotatePointAroundVector( temp, vec, right, 45 );
+		PointRotateAroundVector( right, vec, 45, temp );
+
+        VectorCopy( temp, right );
 	}
 }
 
-/*
-** VectorArrayNormalize
-*
-* The inputs to this routing seem to always be close to length = 1.0 (about 0.6 to 2.0)
-* This means that we don't have to worry about zero length or enormously long vectors.
-*/
-static void VectorArrayNormalize(vec4_t *normals, unsigned int count)
+
+static void LerpMeshVertexes(md3Surface_t *surf, float backlerp)
 {
-//    assert(count);
-        
-#if idppc
-    {
-        register float half = 0.5;
-        register float one  = 1.0;
-        float *components = (float *)normals;
-        
-        // Vanilla PPC code, but since PPC has a reciprocal square root estimate instruction,
-        // runs *much* faster than calling sqrt().  We'll use a single Newton-Raphson
-        // refinement step to get a little more precision.  This seems to yeild results
-        // that are correct to 3 decimal places and usually correct to at least 4 (sometimes 5).
-        // (That is, for the given input range of about 0.6 to 2.0).
-        do {
-            float x, y, z;
-            float B, y0, y1;
-            
-            x = components[0];
-            y = components[1];
-            z = components[2];
-            components += 4;
-            B = x*x + y*y + z*z;
-
-#ifdef __GNUC__            
-            asm("frsqrte %0,%1" : "=f" (y0) : "f" (B));
-#else
-			y0 = __frsqrte(B);
-#endif
-            y1 = y0 + half*y0*(one - B*y0*y0);
-
-            x = x * y1;
-            y = y * y1;
-            components[-4] = x;
-            z = z * y1;
-            components[-3] = y;
-            components[-2] = z;
-        } while(count--);
-    }
-#else // No assembly version for this architecture, or C_ONLY defined
-	// given the input, it's safe to call VectorNormalizeFast
-    while (count--)
-    {
-        FastVectorNormalize(normals[0]);
-        normals++;
-    }
-#endif
-
-}
-
-
-
-/*
-** LerpMeshVertexes
-*/
-#if idppc_altivec
-static void LerpMeshVertexes_altivec(md3Surface_t *surf, float backlerp)
-{
-	short	*oldXyz, *newXyz, *oldNormals, *newNormals;
-	float	*outXyz, *outNormal;
-	float	oldXyzScale QALIGN(16);
-	float   newXyzScale QALIGN(16);
-	float	oldNormalScale QALIGN(16);
-	float newNormalScale QALIGN(16);
+	short *oldNormals;
+	float	oldXyzScale;
+	float	oldNormalScale;
 	int		vertNum;
 	unsigned lat, lng;
-	int		numVerts;
 
-	outXyz = tess.xyz[tess.numVertexes];
-	outNormal = tess.normal[tess.numVertexes];
 
-	newXyz = (short *)((byte *)surf + surf->ofsXyzNormals)
-		+ (backEnd.currentEntity->e.frame * surf->numVerts * 4);
-	newNormals = newXyz + 3;
+	float* outXyz = tess.xyz[tess.numVertexes];
+	float* outNormal = tess.normal[tess.numVertexes];
 
-	newXyzScale = MD3_XYZ_SCALE * (1.0 - backlerp);
-	newNormalScale = 1.0 - backlerp;
+	short* newXyz = (short *)((unsigned char *)surf + surf->ofsXyzNormals) + (backEnd.currentEntity->e.frame * surf->numVerts * 4);
+	short* newNormals = newXyz + 3;
 
-	numVerts = surf->numVerts;
+	float newXyzScale = MD3_XYZ_SCALE * (1.0 - backlerp);
+	float newNormalScale = 1.0 - backlerp;
 
-	if ( backlerp == 0 ) {
-		vector signed short newNormalsVec0;
-		vector signed short newNormalsVec1;
-		vector signed int newNormalsIntVec;
-		vector float newNormalsFloatVec;
-		vector float newXyzScaleVec;
-		vector unsigned char newNormalsLoadPermute;
-		vector unsigned char newNormalsStorePermute;
-		vector float zero;
-		
-		newNormalsStorePermute = vec_lvsl(0,(float *)&newXyzScaleVec);
-		newXyzScaleVec = *(vector float *)&newXyzScale;
-		newXyzScaleVec = vec_perm(newXyzScaleVec,newXyzScaleVec,newNormalsStorePermute);
-		newXyzScaleVec = vec_splat(newXyzScaleVec,0);		
-		newNormalsLoadPermute = vec_lvsl(0,newXyz);
-		newNormalsStorePermute = vec_lvsr(0,outXyz);
-		zero = (vector float)vec_splat_s8(0);
+	int numVerts = surf->numVerts;
+
+	if ( backlerp == 0 )
+    {
 		//
 		// just copy the vertexes
 		//
 		for (vertNum=0 ; vertNum < numVerts ; vertNum++,
-			newXyz += 4, newNormals += 4,
-			outXyz += 4, outNormal += 4) 
-		{
-			newNormalsLoadPermute = vec_lvsl(0,newXyz);
-			newNormalsStorePermute = vec_lvsr(0,outXyz);
-			newNormalsVec0 = vec_ld(0,newXyz);
-			newNormalsVec1 = vec_ld(16,newXyz);
-			newNormalsVec0 = vec_perm(newNormalsVec0,newNormalsVec1,newNormalsLoadPermute);
-			newNormalsIntVec = vec_unpackh(newNormalsVec0);
-			newNormalsFloatVec = vec_ctf(newNormalsIntVec,0);
-			newNormalsFloatVec = vec_madd(newNormalsFloatVec,newXyzScaleVec,zero);
-			newNormalsFloatVec = vec_perm(newNormalsFloatVec,newNormalsFloatVec,newNormalsStorePermute);
-			//outXyz[0] = newXyz[0] * newXyzScale;
-			//outXyz[1] = newXyz[1] * newXyzScale;
-			//outXyz[2] = newXyz[2] * newXyzScale;
-
-			lat = ( newNormals[0] >> 8 ) & 0xff;
-			lng = ( newNormals[0] & 0xff );
-			lat *= (FUNCTABLE_SIZE/256);
-			lng *= (FUNCTABLE_SIZE/256);
-
-			// decode X as cos( lat ) * sin( long )
-			// decode Y as sin( lat ) * sin( long )
-			// decode Z as cos( long )
-
-			outNormal[0] = tr.sinTable[(lat+(FUNCTABLE_SIZE/4))&FUNCTABLE_MASK] * tr.sinTable[lng];
-			outNormal[1] = tr.sinTable[lat] * tr.sinTable[lng];
-			outNormal[2] = tr.sinTable[(lng+(FUNCTABLE_SIZE/4))&FUNCTABLE_MASK];
-
-			vec_ste(newNormalsFloatVec,0,outXyz);
-			vec_ste(newNormalsFloatVec,4,outXyz);
-			vec_ste(newNormalsFloatVec,8,outXyz);
-		}
-	} else {
-		//
-		// interpolate and copy the vertex and normal
-		//
-		oldXyz = (short *)((byte *)surf + surf->ofsXyzNormals)
-			+ (backEnd.currentEntity->e.oldframe * surf->numVerts * 4);
-		oldNormals = oldXyz + 3;
-
-		oldXyzScale = MD3_XYZ_SCALE * backlerp;
-		oldNormalScale = backlerp;
-
-		for (vertNum=0 ; vertNum < numVerts ; vertNum++,
-			oldXyz += 4, newXyz += 4, oldNormals += 4, newNormals += 4,
-			outXyz += 4, outNormal += 4) 
-		{
-			vec3_t uncompressedOldNormal, uncompressedNewNormal;
-
-			// interpolate the xyz
-			outXyz[0] = oldXyz[0] * oldXyzScale + newXyz[0] * newXyzScale;
-			outXyz[1] = oldXyz[1] * oldXyzScale + newXyz[1] * newXyzScale;
-			outXyz[2] = oldXyz[2] * oldXyzScale + newXyz[2] * newXyzScale;
-
-			// FIXME: interpolate lat/long instead?
-			lat = ( newNormals[0] >> 8 ) & 0xff;
-			lng = ( newNormals[0] & 0xff );
-			lat *= 4;
-			lng *= 4;
-			uncompressedNewNormal[0] = tr.sinTable[(lat+(FUNCTABLE_SIZE/4))&FUNCTABLE_MASK] * tr.sinTable[lng];
-			uncompressedNewNormal[1] = tr.sinTable[lat] * tr.sinTable[lng];
-			uncompressedNewNormal[2] = tr.sinTable[(lng+(FUNCTABLE_SIZE/4))&FUNCTABLE_MASK];
-
-			lat = ( oldNormals[0] >> 8 ) & 0xff;
-			lng = ( oldNormals[0] & 0xff );
-			lat *= 4;
-			lng *= 4;
-
-			uncompressedOldNormal[0] = tr.sinTable[(lat+(FUNCTABLE_SIZE/4))&FUNCTABLE_MASK] * tr.sinTable[lng];
-			uncompressedOldNormal[1] = tr.sinTable[lat] * tr.sinTable[lng];
-			uncompressedOldNormal[2] = tr.sinTable[(lng+(FUNCTABLE_SIZE/4))&FUNCTABLE_MASK];
-
-			outNormal[0] = uncompressedOldNormal[0] * oldNormalScale + uncompressedNewNormal[0] * newNormalScale;
-			outNormal[1] = uncompressedOldNormal[1] * oldNormalScale + uncompressedNewNormal[1] * newNormalScale;
-			outNormal[2] = uncompressedOldNormal[2] * oldNormalScale + uncompressedNewNormal[2] * newNormalScale;
-
-//			VectorNormalize (outNormal);
-		}
-    	VectorArrayNormalize((vec4_t *)tess.normal[tess.numVertexes], numVerts);
-   	}
-}
-#endif
-
-static void LerpMeshVertexes_scalar(md3Surface_t *surf, float backlerp)
-{
-	short	*oldXyz, *newXyz, *oldNormals, *newNormals;
-	float	*outXyz, *outNormal;
-	float	oldXyzScale, newXyzScale;
-	float	oldNormalScale, newNormalScale;
-	int		vertNum;
-	unsigned lat, lng;
-	int		numVerts;
-
-	outXyz = tess.xyz[tess.numVertexes];
-	outNormal = tess.normal[tess.numVertexes];
-
-	newXyz = (short *)((byte *)surf + surf->ofsXyzNormals)
-		+ (backEnd.currentEntity->e.frame * surf->numVerts * 4);
-	newNormals = newXyz + 3;
-
-	newXyzScale = MD3_XYZ_SCALE * (1.0 - backlerp);
-	newNormalScale = 1.0 - backlerp;
-
-	numVerts = surf->numVerts;
-
-	if ( backlerp == 0 ) {
-		//
-		// just copy the vertexes
-		//
-		for (vertNum=0 ; vertNum < numVerts ; vertNum++,
-			newXyz += 4, newNormals += 4,
-			outXyz += 4, outNormal += 4) 
+			newXyz += 4, newNormals += 4, outXyz += 4, outNormal += 4) 
 		{
 
 			outXyz[0] = newXyz[0] * newXyzScale;
@@ -673,12 +481,13 @@ static void LerpMeshVertexes_scalar(md3Surface_t *surf, float backlerp)
 			outNormal[1] = tr.sinTable[lat] * tr.sinTable[lng];
 			outNormal[2] = tr.sinTable[(lng+(FUNCTABLE_SIZE/4))&FUNCTABLE_MASK];
 		}
-	} else {
+	}
+    else
+    {
 		//
 		// interpolate and copy the vertex and normal
 		//
-		oldXyz = (short *)((byte *)surf + surf->ofsXyzNormals)
-			+ (backEnd.currentEntity->e.oldframe * surf->numVerts * 4);
+		short* oldXyz = (short *)((byte *)surf + surf->ofsXyzNormals) + (backEnd.currentEntity->e.oldframe * surf->numVerts * 4);
 		oldNormals = oldXyz + 3;
 
 		oldXyzScale = MD3_XYZ_SCALE * backlerp;
@@ -719,28 +528,24 @@ static void LerpMeshVertexes_scalar(md3Surface_t *surf, float backlerp)
 
 //			VectorNormalize (outNormal);
 		}
-    	VectorArrayNormalize((vec4_t *)tess.normal[tess.numVertexes], numVerts);
-   	}
-}
+        //  VectorArrayNormalize
+        // The inputs to this routing seem to always be close to length = 1.0 (about 0.6 to 2.0)
+        // This means that we don't have to worry about zero length or enormously long vectors.
+        //VectorArrayNormalize((vec4_t *)tess.normal[tess.numVertexes], numVerts);
 
-static void LerpMeshVertexes(md3Surface_t *surf, float backlerp)
-{
-#if idppc_altivec
-	if (com_altivec->integer) {
-		// must be in a seperate function or G3 systems will crash.
-		LerpMeshVertexes_altivec( surf, backlerp );
-		return;
-	}
-#endif // idppc_altivec
-	LerpMeshVertexes_scalar( surf, backlerp );
+        int i = 0;
+        for (i = tess.numVertexes; i< numVerts; i++)
+            FastVectorNormalize(tess.normal[i]);
+
+   	}
 }
 
 
 
 static void RB_SurfaceMesh(md3Surface_t *surface)
 {
-	int				j;
-	float			backlerp;
+	int	j;
+	float backlerp;
 
 
 	if( backEnd.currentEntity->e.oldframe == backEnd.currentEntity->e.frame )
@@ -750,7 +555,7 @@ static void RB_SurfaceMesh(md3Surface_t *surface)
 
 	RB_CHECKOVERFLOW( surface->numVerts, surface->numTriangles*3 );
 
-	LerpMeshVertexes (surface, backlerp);
+	LerpMeshVertexes(surface, backlerp);
 
 	int* triangles = (int *) ((unsigned char *)surface + surface->ofsTriangles);
 	int indexes = surface->numTriangles * 3;
@@ -782,12 +587,11 @@ static void RB_SurfaceMesh(md3Surface_t *surface)
 
 static void RB_SurfaceFace( srfSurfaceFace_t *surf )
 {
-	float* v;
-	int			ndx;
+    if (tess.numVertexes + surf->numPoints >= SHADER_MAX_VERTEXES || tess.numIndexes + surf->numIndices >= SHADER_MAX_INDEXES ) 
+        RB_CheckOverflow(surf->numPoints, surf->numIndices);
+	
 
-	RB_CHECKOVERFLOW( surf->numPoints, surf->numIndices );
-
-	int dlightBits = surf->dlightBits;
+    int dlightBits = surf->dlightBits;
 	tess.dlightBits |= dlightBits;
 
 	unsigned int* indices = (unsigned int* ) ( (char *)surf + surf->ofsIndices );
@@ -803,25 +607,36 @@ static void RB_SurfaceFace( srfSurfaceFace_t *surf )
 	tess.numIndexes += surf->numIndices;
 
 	int numPoints = surf->numPoints;
+    int	ndx;
+
 
 	if ( tess.shader->needsNormal )
     {
-		float* normal = surf->plane.normal;
-		for ( i = 0, ndx = tess.numVertexes; i < numPoints; i++, ndx++ ) {
-			VectorCopy( normal, tess.normal[ndx] );
+		for ( i = 0, ndx = tess.numVertexes; i < numPoints; i++, ndx++ )
+        {
+			VectorCopy( surf->plane.normal, tess.normal[ndx] );
 		}
 	}
 
-	for ( i = 0, v = surf->points[0], ndx = tess.numVertexes; i < numPoints; i++, v += VERTEXSIZE, ndx++ )
+	float* v = surf->points[0];
+	for ( i = 0, ndx = tess.numVertexes; i < numPoints; i++, ndx++ )
     {
-		VectorCopy( v, tess.xyz[ndx]);
+        tess.xyz[ndx][0] = v[0];
+        tess.xyz[ndx][1] = v[1];
+        tess.xyz[ndx][2] = v[2];
+
 		tess.texCoords[ndx][0][0] = v[3];
 		tess.texCoords[ndx][0][1] = v[4];
 		tess.texCoords[ndx][1][0] = v[5];
 		tess.texCoords[ndx][1][1] = v[6];
-		* ( unsigned int * ) &tess.vertexColors[ndx] = * ( unsigned int * ) &v[7];
+		*(unsigned int *) &tess.vertexColors[ndx] = *(unsigned int *) &v[7];
 		tess.vertexDlightBits[ndx] = dlightBits;
+        v += VERTEXSIZE;
 	}
+
+    //printf("surf->numPoints: %f, %f, %f, %f, %f, %f, %f, %f\n", v[0],v[1],v[2],v[3],v[4],v[5],v[6],v[7]);    
+    //printf("size: %d\n", v - surf->points[0]);
+
 	tess.numVertexes += surf->numPoints;
 }
 

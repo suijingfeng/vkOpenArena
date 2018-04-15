@@ -48,3 +48,5 @@ void QDECL Com_Error( int level, const char *error, ... )
 
 	ri.Error(level, "%s", text);
 }
+
+

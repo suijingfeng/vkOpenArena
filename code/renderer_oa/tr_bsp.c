@@ -1493,12 +1493,8 @@ static	void R_LoadPlanes( lump_t *l ) {
 	}
 }
 
-/*
-=================
-R_LoadFogs
 
-=================
-*/
+
 static	void R_LoadFogs( lump_t *l, lump_t *brushesLump, lump_t *sidesLump ) {
 	int			i;
 	fog_t		*out;

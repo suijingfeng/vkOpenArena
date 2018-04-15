@@ -291,7 +291,7 @@ int R_MarkFragments( int numPoints, const vec3_t *points, const vec3_t projectio
 	tr.viewCount++;
 
 	//
-	VectorNormalize2( projection, projectionDir );
+	FastVectorNormalize2( projection, projectionDir );
 	// find all the brushes that are to be considered
 	ClearBounds( mins, maxs );
 	for ( i = 0 ; i < numPoints ; i++ ) {

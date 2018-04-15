@@ -51,4 +51,10 @@ static ID_INLINE void VectorNormalize2( const float* v, float* out)
 	out[2] = v[2] * invLen;
 }
 
+
+static ID_INLINE float VectorLength( const vec3_t v )
+{
+	return sqrtf(v[0]*v[0] + v[1]*v[1] + v[2]*v[2]);
+}
+
 #endif

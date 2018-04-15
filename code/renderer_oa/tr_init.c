@@ -40,7 +40,6 @@ cvar_t* r_maxpolyverts;
 
 static cvar_t* r_textureMode;
 
-
 /*
 
 struct vidmode_s {

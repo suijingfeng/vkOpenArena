@@ -27,9 +27,13 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #include "../qcommon/q_shared.h"
 #include "../qcommon/qfiles.h"
 #include "../qcommon/qcommon.h"
+
 #include "../sdl/tr_public.h"
-#include "iqm.h"
 #include "../sdl/qgl.h"
+
+#include "iqm.h"
+#include "tr_share.h"
+
 
 #define GL_INDEX_TYPE		GL_UNSIGNED_INT
 typedef unsigned int glIndex_t;
@@ -1669,24 +1673,7 @@ image_t *R_FindImageFile( const char *name, imgType_t type, imgFlags_t flags );
 
 
 
-static ID_INLINE void FastVectorNormalize( float* v )
-{
-	float ilength = 1.0f/sqrtf( v[0] * v[0] + v[1] * v[1] + v[2]*v[2] );
 
-	v[0] *= ilength;
-	v[1] *= ilength;
-	v[2] *= ilength;
-}
-
-static ID_INLINE void FastVectorNormalize2( const float* v, float* out)
-{
-    // writing it this way allows gcc to recognize that rsqrt can be used
-	float invLen = 1.0f/sqrtf(v[0]*v[0] + v[1]*v[1] + v[2]*v[2]);
-
- 	out[0] = v[0] * invLen;
-	out[1] = v[1] * invLen;
-	out[2] = v[2] * invLen;
-}
 
 
 #endif //TR_LOCAL_H

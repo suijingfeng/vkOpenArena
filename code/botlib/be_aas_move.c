@@ -316,7 +316,7 @@ float AAS_WeaponJumpZVelocity(vec3_t origin, float radiusdamage)
 	VectorMA(origin, 0.5, v, v);
 	VectorSubtract(bsptrace.endpos, v, v);
 	//
-	points = radiusdamage - 0.5 * VectorLength(v);
+	points = radiusdamage - 0.5 * sqrtf(v[0]*v[0] + v[1]*v[1] + v[2]*v[2]);
 	if (points < 0) points = 0;
 	//the owner of the rocket gets half the damage
 	points *= 0.5;

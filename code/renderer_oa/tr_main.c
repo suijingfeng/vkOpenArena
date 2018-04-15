@@ -376,8 +376,7 @@ Returns qtrue if it should be mirrored
 =================
 */
 static qboolean R_GetPortalOrientations( drawSurf_t *drawSurf, int entityNum, 
-							 orientation_t *surface, orientation_t *camera,
-							 vec3_t pvsOrigin, qboolean *mirror )
+							 orientation_t *surface, orientation_t *camera, vec3_t pvsOrigin, qboolean *mirror )
 {
 	int			i;
 	cplane_t	originalPlane, plane;
@@ -389,7 +388,8 @@ static qboolean R_GetPortalOrientations( drawSurf_t *drawSurf, int entityNum,
 	R_PlaneForSurface( drawSurf->surface, &originalPlane );
 
 	// rotate the plane if necessary
-	if ( entityNum != REFENTITYNUM_WORLD ) {
+	if ( entityNum != REFENTITYNUM_WORLD )
+    {
 		tr.currentEntityNum = entityNum;
 		tr.currentEntity = &tr.refdef.entities[entityNum];
 
@@ -416,7 +416,8 @@ static qboolean R_GetPortalOrientations( drawSurf_t *drawSurf, int entityNum,
 	// locate the portal entity closest to this plane.
 	// origin will be the origin of the portal, 
     // origin2 will be the origin of the camera
-	for ( i = 0 ; i < tr.refdef.num_entities ; i++ ) {
+	for ( i = 0 ; i < tr.refdef.num_entities ; i++ )
+    {
 		e = &tr.refdef.entities[i];
 		if ( e->e.reType != RT_PORTALSURFACE ) {
 			continue;
@@ -464,7 +465,9 @@ static qboolean R_GetPortalOrientations( drawSurf_t *drawSurf, int entityNum,
 				// continuous rotate
 				d = (tr.refdef.time/1000.0f) * e->e.frame;
 				VectorCopy( camera->axis[1], transformed );
-				RotatePointAroundVector( camera->axis[1], camera->axis[0], transformed, d );
+				//RotatePointAroundVector( camera->axis[1], camera->axis[0], transformed, d );
+                PointRotateAroundVector(transformed, camera->axis[0], d, camera->axis[1]);
+
 				CrossProduct( camera->axis[0], camera->axis[1], camera->axis[2] );
 			} 
             else
@@ -473,16 +476,20 @@ static qboolean R_GetPortalOrientations( drawSurf_t *drawSurf, int entityNum,
 				d = sin( tr.refdef.time * 0.003f );
 				d = e->e.skinNum + d * 4;
 				VectorCopy( camera->axis[1], transformed );
-				RotatePointAroundVector( camera->axis[1], camera->axis[0], transformed, d );
-				CrossProduct( camera->axis[0], camera->axis[1], camera->axis[2] );
+				//RotatePointAroundVector( camera->axis[1], camera->axis[0], transformed, d );
+				PointRotateAroundVector(transformed, camera->axis[0], d, camera->axis[1]);
+
+                CrossProduct( camera->axis[0], camera->axis[1], camera->axis[2] );
 			}
 		}
 		else if ( e->e.skinNum )
         {
 			d = e->e.skinNum;
 			VectorCopy( camera->axis[1], transformed );
-			RotatePointAroundVector( camera->axis[1], camera->axis[0], transformed, d );
-			CrossProduct( camera->axis[0], camera->axis[1], camera->axis[2] );
+			//RotatePointAroundVector( camera->axis[1], camera->axis[0], transformed, d );
+			PointRotateAroundVector(transformed, camera->axis[0], d, camera->axis[1]);
+
+            CrossProduct( camera->axis[0], camera->axis[1], camera->axis[2] );
 		}
 		*mirror = qfalse;
 		return qtrue;
@@ -490,8 +497,7 @@ static qboolean R_GetPortalOrientations( drawSurf_t *drawSurf, int entityNum,
 
 	// if we didn't locate a portal entity, don't render anything.
 	// We don't want to just treat it as a mirror, because without a
-	// portal entity the server won't have communicated a proper entity set
-	// in the snapshot
+	// portal entity the server won't have communicated a proper entity set in the snapshot
 
 	// unfortunately, with local movement prediction it is easily possible
 	// to see a surface before the server has communicated the matching
@@ -729,7 +735,8 @@ static qboolean R_MirrorViewBySurface (drawSurf_t *drawSurf, int entityNum)
 	}
 
 	// trivially reject portal/mirror
-	if ( SurfIsOffscreen( drawSurf, clipDest ) ) {
+	if ( SurfIsOffscreen( drawSurf, clipDest ) )
+    {
 		return qfalse;
 	}
 
@@ -1193,7 +1200,8 @@ void R_RotateForEntity( const trRefEntity_t *ent, const viewParms_t *viewParms, 
 	vec3_t	delta;
 	float	axisLength;
 
-	if ( ent->e.reType != RT_MODEL ) {
+	if ( ent->e.reType != RT_MODEL )
+    {
 		*or = viewParms->world;
 		return;
 	}
@@ -1249,6 +1257,8 @@ void R_RotateForEntity( const trRefEntity_t *ent, const viewParms_t *viewParms, 
 	or->viewOrigin[1] = DotProduct( delta, or->axis[1] ) * axisLength;
 	or->viewOrigin[2] = DotProduct( delta, or->axis[2] ) * axisLength;
 }
+
+
 
 void R_InitMain(void)
 {

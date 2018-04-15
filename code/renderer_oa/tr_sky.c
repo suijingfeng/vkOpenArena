@@ -599,9 +599,7 @@ static void RB_ClipSkyPolygons( shaderCommands_t *input )
 
 
 
-//////////////////////////////////////////////////////////////////
-
-void R_BuildCloudData( shaderCommands_t *input )
+static void R_BuildCloudData( shaderCommands_t *input )
 {
 	int	i;
 	shader_t* shader = input->shader;
@@ -627,6 +625,8 @@ void R_BuildCloudData( shaderCommands_t *input )
 	}
 }
 
+
+//////////////////////////////////////////////////////////////////
 /*
  * R_InitSkyTexCoords: Called when a sky shader is parsed
  */

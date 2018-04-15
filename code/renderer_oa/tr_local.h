@@ -33,7 +33,7 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
 
 #include "iqm.h"
-
+#include "tr_share.h"
 
 
 // any change in the LIGHTMAP_* defines here MUST be reflected in
@@ -371,15 +371,10 @@ typedef struct {
 	acff_t			adjustColorsForFog;
 
 	qboolean		isDetail;
+    qboolean        isBlend;
 	int             mipBias;
-
-	int	            isGLSL;
-	int             isBlend;		// leilei - for leifx
-	qboolean		isLeiShade;		// leilei - for the automatic shader
-
-	int             imgWidth;
-	int             imgHeight;		//leilei for glsl shaders
-
+    int             imgWidth;
+    int             imgHeight;
 } shaderStage_t;
 
 struct shaderCommands_s;
@@ -1116,7 +1111,7 @@ typedef struct shaderCommands_s
 	unsigned char vertexColors[SHADER_MAX_VERTEXES][4];
 	unsigned char constantColor255[SHADER_MAX_VERTEXES][4];
 
-    stageVars_t	svars QALIGN(16);
+    stageVars_t	svars;
 	
     shader_t*   shader;
     
@@ -1374,7 +1369,6 @@ void R_InitShade(void);
 
 
 //////////////////////////// tr_sky.c /////////////////////////////////
-void R_BuildCloudData( shaderCommands_t *shader );
 void R_InitSkyTexCoords( float cloudLayerHeight );
 void R_InitCloudAndSky(void);
 
@@ -1550,13 +1544,13 @@ void	RB_CalcColorFromEntity( unsigned char *dstColors );
 void	RB_CalcColorFromOneMinusEntity( unsigned char *dstColors );
 void	RB_CalcSpecularAlpha( unsigned char *alphas );
 void	RB_CalcSpecularAlphaNew( unsigned char *alphas );
-void	RB_CalcDiffuseColor( unsigned char *colors );
-void	RB_CalcUniformColor( unsigned char *colors );
+//void	RB_CalcDiffuseColor( unsigned char *colors );
+//void	RB_CalcUniformColor( unsigned char *colors );
 void	RB_CalcDynamicColor( unsigned char *colors );
 
 void	RB_CalcFlatAmbient( unsigned char *colors ); // leilei - cel hack
 void	RB_CalcFlatDirect( unsigned char *colors ); // leilei - cel hack
-void	RB_CalcNormal( unsigned char *colors ); // leilei - normal hack
+//void	RB_CalcNormal( unsigned char *colors ); // leilei - normal hack
 
 
 ///////////////////////////// tr_init.c  //////////////////////////////
@@ -1588,32 +1582,5 @@ void R_LoadPNG( const char *name, byte **pic, int *width, int *height );
 void R_LoadTGA( const char *name, byte **pic, int *width, int *height );
 
 
-static ID_INLINE void FastVectorNormalize( float* v )
-{
-	// writing it this way allows gcc to recognize that rsqrt can be used
-	float ilength = 1.0f/sqrtf( v[0] * v[0] + v[1] * v[1] + v[2]*v[2] );
 
-	v[0] *= ilength;
-	v[1] *= ilength;
-	v[2] *= ilength;
-}
-
-
-static ID_INLINE void VectorNormalize2( const float* v, float* out)
-{
-    // writing it this way allows gcc to recognize that rsqrt can be used
-	float invLen = 1.0f/sqrtf(v[0]*v[0] + v[1]*v[1] + v[2]*v[2]);
-
- 	out[0] = v[0] * invLen;
-	out[1] = v[1] * invLen;
-	out[2] = v[2] * invLen;
-}
-
-/*
-ID_INLINE float Norm(const float* v)
-{
-    // writing it this way allows gcc to recognize that rsqrt can be used
-	return sqrtf(v[0]*v[0] + v[1]*v[1] + v[2]*v[2]);
-}
-*/
 #endif //TR_LOCAL_H

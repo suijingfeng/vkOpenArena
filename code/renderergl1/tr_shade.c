@@ -588,7 +588,8 @@ static void ProjectDlightTexture_altivec( void ) {
 #endif
 
 
-static void ProjectDlightTexture_scalar( void ) {
+static void ProjectDlightTexture( void )
+{
 	int		i, l;
 	vec3_t	origin;
 	float	*texCoords;
@@ -736,17 +737,7 @@ static void ProjectDlightTexture_scalar( void ) {
 		backEnd.pc.c_totalIndexes += numIndexes;
 		backEnd.pc.c_dlightIndexes += numIndexes;
 	}
-}
 
-static void ProjectDlightTexture( void ) {
-#if idppc_altivec
-	if (com_altivec->integer) {
-		// must be in a separate function or G3 systems will crash.
-		ProjectDlightTexture_altivec();
-		return;
-	}
-#endif
-	ProjectDlightTexture_scalar();
 }
 
 
@@ -785,6 +776,8 @@ static void RB_FogPass( void ) {
 
 	R_DrawElements( tess.numIndexes, tess.indexes );
 }
+
+
 
 /*
 ===============

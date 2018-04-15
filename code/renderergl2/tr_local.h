@@ -35,7 +35,7 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #include "tr_fbo.h"
 #include "tr_postprocess.h"
 #include "iqm.h"
-
+#include "tr_share.h"
 
 extern refimport_t ri;
 extern glconfig_t glConfig;
@@ -2507,27 +2507,6 @@ void  R_NoiseInit( void );
 void R_InitFreeType( void );
 void R_DoneFreeType( void );
 void RE_RegisterFont(const char *fontName, int pointSize, fontInfo_t *font);
-
-
-
-static ID_INLINE void FastVectorNormalize( float* v )
-{
-	float ilength = 1.0f/sqrtf( v[0] * v[0] + v[1] * v[1] + v[2]*v[2] );
-
-	v[0] *= ilength;
-	v[1] *= ilength;
-	v[2] *= ilength;
-}
-
-static ID_INLINE void FastVectorNormalize2( const float* v, float* out)
-{
-    // writing it this way allows gcc to recognize that rsqrt can be used
-	float invLen = 1.0f/sqrtf(v[0]*v[0] + v[1]*v[1] + v[2]*v[2]);
-
- 	out[0] = v[0] * invLen;
-	out[1] = v[1] * invLen;
-	out[2] = v[2] * invLen;
-}
 
 
 #endif //TR_LOCAL_H

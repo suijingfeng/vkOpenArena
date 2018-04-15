@@ -317,7 +317,9 @@ static void RB_SurfaceBeam( void )
 
 	for ( i = 0; i < NUM_BEAM_SEGS ; i++ )
 	{
-		RotatePointAroundVector( start_points[i], normalized_direction, perpvec, (360.0/NUM_BEAM_SEGS)*i );
+//		RotatePointAroundVector( start_points[i], normalized_direction, perpvec, (360.0/NUM_BEAM_SEGS)*i );
+        PointRotateAroundVector( perpvec, normalized_direction, (360.0/NUM_BEAM_SEGS)*i, start_points[i] );
+
 //		VectorAdd( start_points[i], origin, start_points[i] );
 		VectorAdd( start_points[i], direction, end_points[i] );
 	}
@@ -546,8 +548,10 @@ static void RB_SurfaceLightningBolt( void ) {
 		vec3_t	temp;
 
 		DoRailCore( start, end, right, len, 8 );
-		RotatePointAroundVector( temp, vec, right, 45 );
-		VectorCopy( temp, right );
+		//RotatePointAroundVector( temp, vec, right, 45 );
+		PointRotateAroundVector( right, vec, 45, temp );
+        
+        VectorCopy( temp, right );
 	}
 }
 

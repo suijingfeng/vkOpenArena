@@ -36,6 +36,7 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #include "l_libvar.h"
 #include "l_precomp.h"
 #include "l_struct.h"
+#include "l_utils.h"
 #include "aasfile.h"
 #include "botlib.h"
 #include "be_aas.h"
@@ -131,7 +132,7 @@ float AAS_FaceArea(aas_face_t *face)
 		VectorSubtract(aasworld.vertexes[edge->v[side]], v, d1);
 		VectorSubtract(aasworld.vertexes[edge->v[!side]], v, d2);
 		CrossProduct(d1, d2, cross);
-		total += 0.5 * VectorLength(cross);
+		total += 0.5 * sqrtf(cross[0]*cross[0] + cross[1]*cross[1] +cross[2]*cross[2]);
 	} //end for
 	return total;
 } //end of the function AAS_FaceArea

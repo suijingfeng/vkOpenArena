@@ -475,36 +475,7 @@ int Q_isnan(float x);
 #endif
 */
 
-#if idppc
-
-static ID_INLINE float Q_rsqrt( float number ) 
-{
-		float x = 0.5f * number;
-                float y;
-    #ifdef __GNUC__            
-        asm("frsqrte %0,%1" : "=f" (y) : "f" (number));
-    #else
-		y = __frsqrte( number );
-    #endif
-		return y * (1.5f - (x * y * y));
-}
-
-#ifdef __GNUC__            
-static ID_INLINE float Q_fabs(float x)
-{
-    float abs_x;
-    
-    asm("fabs %0,%1" : "=f" (abs_x) : "f" (x));
-    return abs_x;
-}
-#else
-#define Q_fabs __fabsf
-#endif
-
-#else
-float Q_fabs( float f );
 float Q_rsqrt( float f );		// reciprocal square root
-#endif
 
 #define SQRTFAST( x ) ( (x) * Q_rsqrt( x ) )
 
@@ -554,9 +525,9 @@ void _VectorScale( const vec3_t in, float scale, vec3_t out );
 void _VectorMA( const vec3_t veca, float scale, const vec3_t vecb, vec3_t vecc );
 
 //unsigned ColorBytes3 (float r, float g, float b);
-unsigned ColorBytes4 (float r, float g, float b, float a);
+//unsigned ColorBytes4 (float r, float g, float b, float a);
 
-float NormalizeColor( const vec3_t in, vec3_t out );
+//float NormalizeColor( const vec3_t in, vec3_t out );
 
 float RadiusFromBounds( const vec3_t mins, const vec3_t maxs );
 void ClearBounds( vec3_t mins, vec3_t maxs );
@@ -571,21 +542,19 @@ static ID_INLINE int VectorCompare( const vec3_t v1, const vec3_t v2 )
 	return 1;
 }
 
-static ID_INLINE vec_t VectorLength( const vec3_t v )
-{
-	return (vec_t)sqrt (v[0]*v[0] + v[1]*v[1] + v[2]*v[2]);
-}
+
 
 static ID_INLINE vec_t VectorLengthSquared( const vec3_t v )
 {
 	return (v[0]*v[0] + v[1]*v[1] + v[2]*v[2]);
 }
 
-static ID_INLINE vec_t Distance( const vec3_t p1, const vec3_t p2 ) {
+static ID_INLINE vec_t Distance( const vec3_t p1, const vec3_t p2 )
+{
 	vec3_t	v;
-
 	VectorSubtract (p2, p1, v);
-	return VectorLength( v );
+
+	return sqrtf(v[0]*v[0] + v[1]*v[1] + v[2]*v[2]);
 }
 
 static ID_INLINE vec_t DistanceSquared( const vec3_t p1, const vec3_t p2 ) {
@@ -641,7 +610,7 @@ void vectoangles( const vec3_t value1, vec3_t angles);
 void AnglesToAxis( const vec3_t angles, vec3_t axis[3] );
 
 void AxisClear( vec3_t axis[3] );
-void AxisCopy( vec3_t in[3], vec3_t out[3] );
+
 
 void SetPlaneSignbits( struct cplane_s *out );
 int BoxOnPlaneSide (vec3_t emins, vec3_t emaxs, struct cplane_s *plane);
@@ -665,14 +634,12 @@ float AngleDelta ( float angle1, float angle2 );
 //qboolean PlaneFromPoints( vec4_t plane, const vec3_t a, const vec3_t b, const vec3_t c );
 void ProjectPointOnPlane( vec3_t dst, const vec3_t p, const vec3_t normal );
 void RotatePointAroundVector( vec3_t dst, const vec3_t dir, const vec3_t point, float degrees );
-void RotateAroundDirection( vec3_t axis[3], float yaw );
 void MakeNormalVectors( const vec3_t forward, vec3_t right, vec3_t up );
 // perpendicular vector could be replaced by this
 
 //int	PlaneTypeForNormal (vec3_t normal);
 qboolean Matrix4Compare(const float a[16], const float b[16]);
-void Matrix4Copy(const float in[16], float out[16]);
-void Matrix4Multiply(const float a[16], const float b[16], float out[16]);
+
 
 void MatrixMultiply(const float in1[3][3],const float in2[3][3], float out[3][3]);
 void AngleVectors( const vec3_t angles, vec3_t forward, vec3_t right, vec3_t up);
@@ -1176,7 +1143,7 @@ typedef struct usercmd_s {
 	int				serverTime;
 	int				angles[3];
 	int 			buttons;
-	byte			weapon;           // weapon 
+	unsigned char	weapon;           // weapon 
 	signed char	forwardmove, rightmove, upmove;
 } usercmd_t;
 

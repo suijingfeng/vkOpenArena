@@ -1897,9 +1897,7 @@ static LDOUBLE abs_val (LDOUBLE value)
 
 static long round (LDOUBLE value)
 {
-  long intpart;
-
-  intpart = value;
+  long intpart= value;
   value = value - intpart;
   if (value >= 0.5)
     intpart++;
