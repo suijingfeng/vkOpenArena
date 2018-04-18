@@ -385,18 +385,16 @@ static void RB_SurfaceRailCore( void )
 
 	// compute side vector
 	VectorSubtract( start, backEnd.viewParms.or.origin, v1 );
-	VectorNormalize( v1 );
+	FastVectorNormalize( v1 );
 	VectorSubtract( end, backEnd.viewParms.or.origin, v2 );
-	VectorNormalize( v2 );
+	FastVectorNormalize( v2 );
 	CrossProduct( v1, v2, right );
-	VectorNormalize( right );
+	FastVectorNormalize( right );
 
 	DoRailCore( start, end, right, len, r_railCoreWidth->integer );
 }
 
-/*
-** RB_SurfaceLightningBolt
-*/
+
 static void RB_SurfaceLightningBolt( void )
 {
 	vec3_t		right;
@@ -416,11 +414,11 @@ static void RB_SurfaceLightningBolt( void )
 
 	// compute side vector
 	VectorSubtract( start, backEnd.viewParms.or.origin, v1 );
-	VectorNormalize( v1 );
+	FastVectorNormalize( v1 );
 	VectorSubtract( end, backEnd.viewParms.or.origin, v2 );
-	VectorNormalize( v2 );
+	FastVectorNormalize( v2 );
 	CrossProduct( v1, v2, right );
-	VectorNormalize( right );
+	FastVectorNormalize( right );
 
 	for ( i = 0 ; i < 4 ; i++ )
     {
@@ -541,7 +539,6 @@ static void LerpMeshVertexes(md3Surface_t *surf, float backlerp)
 }
 
 
-
 static void RB_SurfaceMesh(md3Surface_t *surface)
 {
 	int	j;
@@ -607,12 +604,11 @@ static void RB_SurfaceFace( srfSurfaceFace_t *surf )
 	tess.numIndexes += surf->numIndices;
 
 	int numPoints = surf->numPoints;
-    int	ndx;
-
+    int	ndx = tess.numVertexes;
 
 	if ( tess.shader->needsNormal )
     {
-		for ( i = 0, ndx = tess.numVertexes; i < numPoints; i++, ndx++ )
+		for ( i = 0; i < numPoints; i++, ndx++ )
         {
 			VectorCopy( surf->plane.normal, tess.normal[ndx] );
 		}

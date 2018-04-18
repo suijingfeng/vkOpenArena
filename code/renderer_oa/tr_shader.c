@@ -655,7 +655,6 @@ static qboolean ParseStage( shaderStage_t *stage, char **text )
 
 	while ( 1 )
 	{
-		//stage->isBlend = 0;
 		token = COM_ParseExt( text, qtrue );
 		if ( !token[0] )
 		{
@@ -758,13 +757,6 @@ static qboolean ParseStage( shaderStage_t *stage, char **text )
 				if (!token[0])
 					break;
 			}
-		}
-		else if ( !Q_stricmp( token, "mipOffset" ) ){
-			token = COM_ParseExt(text,qfalse);
-			stage->mipBias = atoi(token);
-		}
-		else if ( !Q_stricmp( token, "nomipmaps" ) ){
-			stageMipmaps = qfalse;
 		}
 		else if ( !Q_stricmp( token, "map" ) )
 		{   // map <name>
@@ -2049,8 +2041,6 @@ static qboolean ParseStage( shaderStage_t *stage, char **text )
 				blendDstBits = NameToDstBlendMode( token );
 			}
 			
-			stage->isBlend = 1;	// 2x2
-
 			// clear depth mask for blended surfaces
 			if ( !depthMaskExplicit )
 			{
@@ -2139,14 +2129,6 @@ static qboolean ParseStage( shaderStage_t *stage, char **text )
 			else if ( !Q_stricmp( token, "lightingDynamic" ) )
 			{
 				stage->rgbGen = CGEN_LIGHTING_DYNAMIC;
-			}
-			else if ( !Q_stricmp( token, "flatAmbient" ) )
-			{
-				stage->rgbGen = CGEN_LIGHTING_FLAT_AMBIENT;
-			}
-			else if ( !Q_stricmp( token, "flatDirect" ) )
-			{
-				stage->rgbGen = CGEN_LIGHTING_FLAT_DIRECT;
 			}
 			else if ( !Q_stricmp( token, "oneMinusVertex" ) )
 			{
@@ -2248,14 +2230,6 @@ static qboolean ParseStage( shaderStage_t *stage, char **text )
 			else if ( !Q_stricmp( token, "cel" ) )
 			{
 				stage->bundle[0].tcGen = TCGEN_ENVIRONMENT_CELSHADE_MAPPED;
-			}
-			else if ( !Q_stricmp( token, "celshading" ) )		// leilei - my technique is different
-			{
-				stage->bundle[0].tcGen = TCGEN_ENVIRONMENT_CELSHADE_LEILEI;
-			}
-			else if ( !Q_stricmp( token, "environmentWater" ) )
-			{
-				stage->bundle[0].tcGen = TCGEN_ENVIRONMENT_MAPPED_WATER;	// leilei - water's envmaps
 			}
 			else if ( !Q_stricmp( token, "lightmap" ) )
 			{
@@ -2413,7 +2387,6 @@ qboolean ParseStageSimple( shaderStage_t *stage, char **text )
 
 	while ( 1 )
 	{
-		//stage->isBlend = 0;
 		token = COM_ParseExt( text, qtrue );
 		if ( !token[0] )
 		{
@@ -2502,10 +2475,6 @@ qboolean ParseStageSimple( shaderStage_t *stage, char **text )
 				if (!token[0])
 					break;
 			}
-		}
-		else if ( !Q_stricmp( token, "mipOffset" ) ){
-			token = COM_ParseExt(text,qfalse);
-			stage->mipBias = atoi(token);
 		}
 		else if ( !Q_stricmp( token, "nomipmaps" ) ){
 			stageMipmaps = qfalse;
@@ -2772,7 +2741,6 @@ qboolean ParseStageSimple( shaderStage_t *stage, char **text )
 				blendDstBits = NameToDstBlendMode( token );
 			}
 			
-			stage->isBlend = 1;	// 2x2
 
 			// clear depth mask for blended surfaces
 			if ( !depthMaskExplicit )
@@ -2862,14 +2830,6 @@ qboolean ParseStageSimple( shaderStage_t *stage, char **text )
 			else if ( !Q_stricmp( token, "lightingDynamic" ) )
 			{
 				stage->rgbGen = CGEN_LIGHTING_DYNAMIC;
-			}
-			else if ( !Q_stricmp( token, "flatAmbient" ) )
-			{
-				stage->rgbGen = CGEN_LIGHTING_FLAT_AMBIENT;
-			}
-			else if ( !Q_stricmp( token, "flatDirect" ) )
-			{
-				stage->rgbGen = CGEN_LIGHTING_FLAT_DIRECT;
 			}
 			else if ( !Q_stricmp( token, "oneMinusVertex" ) )
 			{
@@ -2971,14 +2931,6 @@ qboolean ParseStageSimple( shaderStage_t *stage, char **text )
 			else if ( !Q_stricmp( token, "cel" ) )
 			{
 				stage->bundle[0].tcGen = TCGEN_ENVIRONMENT_CELSHADE_MAPPED;
-			}
-			else if ( !Q_stricmp( token, "celshading" ) )		// leilei - my technique is different
-			{
-				stage->bundle[0].tcGen = TCGEN_ENVIRONMENT_CELSHADE_LEILEI;
-			}
-			else if ( !Q_stricmp( token, "environmentWater" ) )
-			{
-				stage->bundle[0].tcGen = TCGEN_ENVIRONMENT_MAPPED_WATER;	// leilei - water's envmaps
 			}
 			else if ( !Q_stricmp( token, "lightmap" ) )
 			{
@@ -3083,10 +3035,12 @@ qboolean ParseStageSimple( shaderStage_t *stage, char **text )
 	// now load our image!
 	//
 
-	if (loadlater){
+	if (loadlater)
+    {
 
 
-		if (stage->bundle[0].numImageAnimations>0){
+		if (stage->bundle[0].numImageAnimations>0)
+        {
 		int n, o;
 				n= stage->bundle[0].numImageAnimations;
 				for (o=0; o<n;o++){
@@ -3108,14 +3062,9 @@ qboolean ParseStageSimple( shaderStage_t *stage, char **text )
 				}
 		}
 		else
-		stage->bundle[0].image[0] = R_FindImageFile( imageName, itype, iflags );
-		stage->isBlend = 0;
+		    stage->bundle[0].image[0] = R_FindImageFile( imageName, itype, iflags );
 
-		if (blendSrcBits == GLS_SRCBLEND_SRC_ALPHA &&
-		    blendDstBits == GLS_SRCBLEND_ONE) 		// additive, but blended away by alpha
-			stage->isBlend = 0;
-
-		}
+    }
 
 	return qtrue;
 }
@@ -4728,14 +4677,6 @@ shader_t *R_FindShader( const char *name, int lightmapIndex, qboolean mipRawImag
 		stages[1].stateBits |= GLS_SRCBLEND_DST_COLOR | GLS_DSTBLEND_ZERO;
 		}
 	}
-
-	// leilei - handle image height
-    int y;
-    for(y=0;y<MAX_SHADER_STAGES;y++)
-    {
-        stages[y].imgWidth = 128;
-        stages[y].imgHeight = 128;
-    }
 
 	return FinishShader();
 }

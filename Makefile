@@ -287,7 +287,7 @@ ifneq (,$(findstring "$(PLATFORM)", "linux" "gnu_kfreebsd" "kfreebsd-gnu" "gnu")
 
 
   ifeq ($(ARCH),x86_64)
-    OPTIMIZEVM = -O3 -fomit-frame-pointer -funroll-loops -mmmx -msse -msse2 -msse3 -msse4 -m64
+    OPTIMIZEVM = -O3 -fomit-frame-pointer -funroll-loops -mmmx  -msse2 -msse3 -msse4 -m64
     OPTIMIZE = $(OPTIMIZEVM) -ffast-math
     HAVE_VM_COMPILED=true
   else

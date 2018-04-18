@@ -183,8 +183,6 @@ typedef enum {
 	CGEN_LIGHTING_DIFFUSE,
 	CGEN_LIGHTING_UNIFORM,
 	CGEN_LIGHTING_DYNAMIC,
-	CGEN_LIGHTING_FLAT_AMBIENT,		// leilei - cel hack
-	CGEN_LIGHTING_FLAT_DIRECT,
 	CGEN_FOG,				// standard fog
 	CGEN_CONST,				// fixed color
 	CGEN_VERTEX_LIT,			// leilei - tess.vertexColors * tr.identityLight * ambientlight*directlight
@@ -197,8 +195,6 @@ typedef enum {
 	TCGEN_TEXTURE,
 	TCGEN_ENVIRONMENT_MAPPED,
 	TCGEN_ENVIRONMENT_CELSHADE_MAPPED,
-	TCGEN_ENVIRONMENT_CELSHADE_LEILEI,	// leilei - cel hack
-	TCGEN_ENVIRONMENT_MAPPED_WATER,	// leilei - fake water reflection
 	TCGEN_FOG,
 	TCGEN_VECTOR			// S and T from world coordinates
 } texCoordGen_t;
@@ -371,10 +367,6 @@ typedef struct {
 	acff_t			adjustColorsForFog;
 
 	qboolean		isDetail;
-    qboolean        isBlend;
-	int             mipBias;
-    int             imgWidth;
-    int             imgHeight;
 } shaderStage_t;
 
 struct shaderCommands_s;
@@ -738,11 +730,11 @@ BRUSH MODELS
 #define	SIDE_ON		2
 
 typedef struct msurface_s {
-	int					viewCount;		// if == tr.viewCount, already added
-	struct shader_s		*shader;
+	int				    viewCount;		// if == tr.viewCount, already added
+	struct shader_s*    shader;
 	int					fogIndex;
 
-	surfaceType_t		*data;			// any of srf*_t
+	surfaceType_t*      data;			// any of srf*_t
 } msurface_t;
 
 
@@ -956,23 +948,8 @@ typedef struct {
 	qboolean	projection2D;	// if qtrue, drawstretchpic doesn't need to change modes
 	unsigned char color2D[4];
 	qboolean	vertexes2D;		// shader needs to be finished
-	qboolean	doneBloom;		// done bloom this frame
-	qboolean	donepostproc;		// done postprocess this frame
-	qboolean	doneleifx;		// leilei - done leifxing this frame
-	qboolean	doneanime;		// leilei - done animeing this frame
-	qboolean	doneAltBrightness;	// leilei - done alternate brightness this frame
-	qboolean	doneFilm;		// leilei - done film filtering this frame
-	qboolean	doneSun;		// leilei - done drawing a sun
-	qboolean	doneSunFlare;		// leilei - done drawing a sun flare
-	qboolean	donewater;		// leilei - done water this frame
-	qboolean	donetv;		// leilei - tv this frame
-	qboolean	doneraa;	// leilei - done aa'ing this frame
-	qboolean	donentsc;	// leilei - done ntsc'ing this frame
-	qboolean	donepalette;		// leilei - done animeing this frame
-	qboolean	doneSurfaces;   // done any 3d surfaces already
-	qboolean	doneParticles;   // done any particle movement
-	qboolean	doneFlareTests;		// leilei - done testing flares
-	float		flareTestTime;
+
+
 	trRefEntity_t	entity2D;	// currentEntity will point at this when doing 2D rendering
 } backEndState_t;
 
@@ -1096,9 +1073,20 @@ TESSELATOR/SHADER DECLARATIONS
 
 typedef struct stageVars
 {
-	unsigned char colors[SHADER_MAX_VERTEXES][4];
+    unsigned char colors[SHADER_MAX_VERTEXES][4];
 	vec2_t		texcoords[NUM_TEXTURE_BUNDLES][SHADER_MAX_VERTEXES];
 } stageVars_t;
+
+/*
+typedef struct stageVars
+{
+    union color{
+        unsigned char uColors[SHADER_MAX_VERTEXES][4];
+        unsigned int iColors[SHADER_MAX_VERTEXES];
+    }colors;
+	vec2_t		texcoords[NUM_TEXTURE_BUNDLES][SHADER_MAX_VERTEXES];
+} stageVars_t;
+*/
 
 
 typedef struct shaderCommands_s 
@@ -1372,7 +1360,6 @@ void R_InitShade(void);
 void R_InitSkyTexCoords( float cloudLayerHeight );
 void R_InitCloudAndSky(void);
 
-void RB_DrawSun( void );
 void RB_StageIteratorSky( void );
 
 
@@ -1385,7 +1372,6 @@ void RB_RenderFlares (void);
 
 void RB_SurfaceFlare(srfFlare_t *surf);
 
-void RB_DrawSunFlare( void );
 void R_InitFlares( void );
 
 
@@ -1517,9 +1503,9 @@ void R_InitMarks(void);
 void	RB_DeformTessGeometry( void );
 
 void	RB_CalcEnvironmentTexCoords( float *dstTexCoords );
-void	RB_CalcCelTexCoords( float *dstTexCoords );		// leilei - cel hack
-void	RB_CalcEnvironmentTexCoordsJO( float *dstTexCoords );	// leilei
-void	RB_CalcEnvironmentTexCoordsR( float *dstTexCoords );	// leilei
+//void	RB_CalcCelTexCoords( float *dstTexCoords );		// leilei - cel hack
+//void	RB_CalcEnvironmentTexCoordsJO( float *dstTexCoords );	// leilei
+//void	RB_CalcEnvironmentTexCoordsR( float *dstTexCoords );	// leilei
 //void    RB_CalcEyes( float *st, qboolean theothereye); // leilei - eyes
 void	RB_CalcEnvironmentCelShadeTexCoords( float *dstTexCoords );
 void	RB_CalcEnvironmentTexCoordsNew( float *dstTexCoords );
@@ -1530,33 +1516,26 @@ void	RB_CalcRotateTexCoords( float rotSpeed, float *dstTexCoords );
 void	RB_CalcScaleTexCoords( const float scale[2], float *dstTexCoords );
 void	RB_CalcTurbulentTexCoords( const waveForm_t *wf, float *dstTexCoords );
 void	RB_CalcTransformTexCoords( const texModInfo_t *tmi, float *dstTexCoords );
-void	RB_CalcModulateColorsByFog( unsigned char *dstColors );
-void	RB_CalcModulateAlphasByFog( unsigned char *dstColors );
-void	RB_CalcModulateRGBAsByFog( unsigned char *dstColors );
-void	RB_CalcWaveAlpha( const waveForm_t *wf, unsigned char *dstColors );
-void	RB_CalcWaveColor( const waveForm_t *wf, unsigned char *dstColors );
-void	RB_CalcAlphaFromEntity( unsigned char *dstColors );
-void	RB_CalcAlphaFromOneMinusEntity( unsigned char *dstColors );
+void	RB_CalcModulateColorsByFog( unsigned char (*dstColors)[4] );
+void	RB_CalcModulateAlphasByFog( unsigned char (*dstColors)[4] );
+void	RB_CalcModulateRGBAsByFog( unsigned char (*dstColors)[4] );
+void	RB_CalcWaveAlpha( const waveForm_t *wf, unsigned char (*dstColors)[4] );
+void	RB_CalcWaveColor( const waveForm_t *wf, unsigned int *dstColors );
+//void	RB_CalcAlphaFromEntity( unsigned char (*dstColors)[4]);
+//void	RB_CalcAlphaFromOneMinusEntity( unsigned char (*dstColors)[4] );
 void	RB_CalcStretchTexCoords( const waveForm_t *wf, float *texCoords );
 void	RB_CalcLightscaleTexCoords( float *texCoords );
 //void	RB_CalcAtlasTexCoords( const atlas_t *at, float *st );
-void	RB_CalcColorFromEntity( unsigned char *dstColors );
-void	RB_CalcColorFromOneMinusEntity( unsigned char *dstColors );
+//void	RB_CalcColorFromEntity( unsigned int *dstColors );
+//void	RB_CalcColorFromOneMinusEntity( unsigned int *dstColors );
 void	RB_CalcSpecularAlpha( unsigned char *alphas );
-void	RB_CalcSpecularAlphaNew( unsigned char *alphas );
+//void	RB_CalcSpecularAlphaNew( unsigned char (*alphas)[4] );
 //void	RB_CalcDiffuseColor( unsigned char *colors );
 //void	RB_CalcUniformColor( unsigned char *colors );
-void	RB_CalcDynamicColor( unsigned char *colors );
-
-void	RB_CalcFlatAmbient( unsigned char *colors ); // leilei - cel hack
-void	RB_CalcFlatDirect( unsigned char *colors ); // leilei - cel hack
-//void	RB_CalcNormal( unsigned char *colors ); // leilei - normal hack
 
 
 ///////////////////////////// tr_init.c  //////////////////////////////
 //void GLimp_InitExtraExtensions(void);
-
-
 /////////////////////////// rendercommon.h //////////////////////////////
 
 //tr_noise
@@ -1580,7 +1559,5 @@ void R_LoadJPG( const char *name, byte **pic, int *width, int *height );
 void R_LoadPCX( const char *name, byte **pic, int *width, int *height );
 void R_LoadPNG( const char *name, byte **pic, int *width, int *height );
 void R_LoadTGA( const char *name, byte **pic, int *width, int *height );
-
-
 
 #endif //TR_LOCAL_H

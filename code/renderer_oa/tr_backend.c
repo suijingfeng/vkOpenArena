@@ -65,35 +65,16 @@ const static float s_flipMatrix[16] =
 
 static ID_INLINE void Matrix4Copy(const float* in, float* out)
 {
+    /*
     out[ 0] = in[ 0];       out[ 4] = in[ 4];       out[ 8] = in[ 8];       out[12] = in[12];
     out[ 1] = in[ 1];       out[ 5] = in[ 5];       out[ 9] = in[ 9];       out[13] = in[13];
     out[ 2] = in[ 2];       out[ 6] = in[ 6];       out[10] = in[10];       out[14] = in[14];
     out[ 3] = in[ 3];       out[ 7] = in[ 7];       out[11] = in[11];       out[15] = in[15];
+    */
+
+    memcpy(out, in, 16*sizeof(float));
 }
 
-//void Matrix4Multiply(const float a[16], const float b[16], float out[16]);
-static ID_INLINE void Matrix4Multiply(const float* a, const float* b, float* out)
-{
-    out[ 0] = b[ 0]*a[ 0] + b[ 1]*a[ 4] + b[ 2]*a[ 8] + b[ 3]*a[12];
-    out[ 1] = b[ 0]*a[ 1] + b[ 1]*a[ 5] + b[ 2]*a[ 9] + b[ 3]*a[13];
-    out[ 2] = b[ 0]*a[ 2] + b[ 1]*a[ 6] + b[ 2]*a[10] + b[ 3]*a[14];
-    out[ 3] = b[ 0]*a[ 3] + b[ 1]*a[ 7] + b[ 2]*a[11] + b[ 3]*a[15];
-
-    out[ 4] = b[ 4]*a[ 0] + b[ 5]*a[ 4] + b[ 6]*a[ 8] + b[ 7]*a[12];
-    out[ 5] = b[ 4]*a[ 1] + b[ 5]*a[ 5] + b[ 6]*a[ 9] + b[ 7]*a[13];
-    out[ 6] = b[ 4]*a[ 2] + b[ 5]*a[ 6] + b[ 6]*a[10] + b[ 7]*a[14];
-    out[ 7] = b[ 4]*a[ 3] + b[ 5]*a[ 7] + b[ 6]*a[11] + b[ 7]*a[15];
-
-    out[ 8] = b[ 8]*a[ 0] + b[ 9]*a[ 4] + b[10]*a[ 8] + b[11]*a[12];
-    out[ 9] = b[ 8]*a[ 1] + b[ 9]*a[ 5] + b[10]*a[ 9] + b[11]*a[13];
-    out[10] = b[ 8]*a[ 2] + b[ 9]*a[ 6] + b[10]*a[10] + b[11]*a[14];
-    out[11] = b[ 8]*a[ 3] + b[ 9]*a[ 7] + b[10]*a[11] + b[11]*a[15];
-
-    out[12] = b[12]*a[ 0] + b[13]*a[ 4] + b[14]*a[ 8] + b[15]*a[12];
-    out[13] = b[12]*a[ 1] + b[13]*a[ 5] + b[14]*a[ 9] + b[15]*a[13];
-    out[14] = b[12]*a[ 2] + b[13]*a[ 6] + b[14]*a[10] + b[15]*a[14];
-    out[15] = b[12]*a[ 3] + b[13]*a[ 7] + b[14]*a[11] + b[15]*a[15];
-}
 
 /*
 static void GL_BindMultitexture( image_t *image0, GLuint env0, image_t *image1, GLuint env1 )
@@ -154,7 +135,7 @@ static void SetViewportAndScissor( void )
 	qglViewport( backEnd.viewParms.viewportX, backEnd.viewParms.viewportY, backEnd.viewParms.viewportWidth, backEnd.viewParms.viewportHeight );
 	qglScissor( backEnd.viewParms.viewportX, backEnd.viewParms.viewportY, backEnd.viewParms.viewportWidth, backEnd.viewParms.viewportHeight );
 	Matrix4Copy(backEnd.viewParms.projectionMatrix, glState.currentProjectionMatrix);
-	Matrix4Multiply(glState.currentProjectionMatrix, glState.currentModelViewMatrix, glState.currentModelViewProjectionMatrix);
+    MatrixMultiply4x4(glState.currentModelViewMatrix, glState.currentProjectionMatrix, glState.currentModelViewProjectionMatrix);
 }
 
 
@@ -237,7 +218,7 @@ static void RB_BeginDrawingView(void)
 
 		qglLoadMatrixf( s_flipMatrix );
 		Matrix4Copy(s_flipMatrix, glState.currentModelViewMatrix);
-		Matrix4Multiply(glState.currentProjectionMatrix, glState.currentModelViewMatrix, glState.currentModelViewProjectionMatrix);
+		MatrixMultiply4x4(glState.currentModelViewMatrix, glState.currentProjectionMatrix, glState.currentModelViewProjectionMatrix);
 		qglClipPlane(GL_CLIP_PLANE0, plane2);
 		qglEnable(GL_CLIP_PLANE0);
 	}
@@ -355,7 +336,7 @@ static void RB_RenderDrawSurfList( drawSurf_t *drawSurfs, int numDrawSurfs )
 			qglLoadMatrixf( backEnd.or.modelMatrix );
 
 			Matrix4Copy(backEnd.or.modelMatrix, glState.currentModelViewMatrix);
-			Matrix4Multiply(glState.currentProjectionMatrix, glState.currentModelViewMatrix, glState.currentModelViewProjectionMatrix);
+			MatrixMultiply4x4(glState.currentModelViewMatrix, glState.currentProjectionMatrix, glState.currentModelViewProjectionMatrix);
 
 			//
 			// change depthrange. Also change projection matrix so first person weapon does not look like coming
@@ -395,7 +376,7 @@ static void RB_RenderDrawSurfList( drawSurf_t *drawSurfs, int numDrawSurfs )
 	// go back to the world modelview matrix
 	qglLoadMatrixf( backEnd.viewParms.world.modelMatrix );
 	Matrix4Copy(backEnd.viewParms.world.modelMatrix, glState.currentModelViewMatrix);
-	Matrix4Multiply(glState.currentProjectionMatrix, glState.currentModelViewMatrix, glState.currentModelViewProjectionMatrix);
+	MatrixMultiply4x4(glState.currentModelViewMatrix, glState.currentProjectionMatrix, glState.currentModelViewProjectionMatrix);
 	if ( depthRange )
     {
 		qglDepthRange (0, 1);
@@ -404,8 +385,6 @@ static void RB_RenderDrawSurfList( drawSurf_t *drawSurfs, int numDrawSurfs )
 
 	// add light flares on lights that aren't obscured
 	RB_RenderFlares();
-	RB_DrawSun();		
-	RB_DrawSunFlare();		// leilei - sun flare
 
 }
 
@@ -438,7 +417,7 @@ static void RB_SetGL2D (void)
 
     qglGetFloatv(GL_PROJECTION_MATRIX, glState.currentProjectionMatrix);
     qglGetFloatv(GL_MODELVIEW_MATRIX, glState.currentModelViewMatrix);
-    Matrix4Multiply(glState.currentProjectionMatrix, glState.currentModelViewMatrix, glState.currentModelViewProjectionMatrix);
+    MatrixMultiply4x4(glState.currentModelViewMatrix, glState.currentProjectionMatrix,  glState.currentModelViewProjectionMatrix);
 	GL_State( GLS_DEPTHTEST_DISABLE | GLS_SRCBLEND_SRC_ALPHA | GLS_DSTBLEND_ONE_MINUS_SRC_ALPHA );
 
 	qglDisable( GL_CULL_FACE );
@@ -554,7 +533,6 @@ static const void *RB_DrawSurfs(const void *data)
 	backEnd.viewParms = cmd->viewParms;
 
 	//TODO Maybe check for rdf_noworld stuff but q3mme has full 3d ui
-	backEnd.doneSurfaces = qtrue;
 	RB_RenderDrawSurfList( cmd->drawSurfs, cmd->numDrawSurfs );
 
 	return (const void *)(cmd + 1);
@@ -652,28 +630,8 @@ static const void* RB_SwapBuffers(const void *data)
 
 	backEnd.projection2D = qfalse;
 
-	backEnd.doneBloom = qfalse;
-	backEnd.donewater = qfalse;
-	backEnd.donepostproc = qfalse;
-	backEnd.doneAltBrightness = qfalse;
-	backEnd.doneFilm = qfalse;
-	backEnd.doneleifx = qfalse;
-	backEnd.doneanime = qfalse;
-	backEnd.donepalette = qfalse;
-	backEnd.doneSurfaces = qfalse;
-	backEnd.doneSun	     = qfalse;
-	backEnd.doneSunFlare = qfalse;
-	backEnd.donentsc = qfalse;
-	backEnd.donetv = qfalse;
-	backEnd.doneraa = qfalse;
-	backEnd.doneParticles = qfalse;
+
 	
-	// leilei - only reset this every 15hz to keep it fast and synchronized
-	if (backEnd.refdef.time > backEnd.flareTestTime)
-    {
-	    backEnd.doneFlareTests = qfalse;
-	    backEnd.flareTestTime = backEnd.refdef.time + 100.0f;
-	}
 
 	return (const void *)(cmd + 1);
 }

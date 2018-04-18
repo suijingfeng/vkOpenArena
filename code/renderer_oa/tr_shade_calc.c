@@ -68,22 +68,7 @@ static float EvalWaveForm( const waveForm_t *wf )
 	return wavevalue;
 }
 
-static float EvalWaveFormClamped( const waveForm_t *wf )
-{
-	float glow  = EvalWaveForm( wf );
 
-	if ( glow < 0 )
-	{
-		return 0;
-	}
-
-	if ( glow > 1 )
-	{
-		return 1;
-	}
-
-	return glow;
-}
 
 /*
 ** RB_CalcStretchTexCoords
@@ -131,7 +116,30 @@ void RB_CalcLightscaleTexCoords(float *st )
 }
 
 
+void RB_CalcWaveColor( const waveForm_t *wf, unsigned int *dstColors )
+{
+	int i;
+	float glow;
 
+
+    if ( wf->func == GF_NOISE )
+		glow = wf->base + R_NoiseGet4f( 0, 0, 0, ( tess.shaderTime + wf->phase ) * wf->frequency ) * wf->amplitude;
+	else
+		glow = EvalWaveForm( wf ) * tr.identityLight;
+
+	
+	if( glow < 0 )
+		glow = 0;
+	else if( glow > 1 )
+		glow = 1;
+
+	
+    unsigned int color = ColorBytes4(glow, glow, glow, 1.0f);
+
+	for(i = 0; i < tess.numVertexes; i++)
+		dstColors[i] = color;
+
+}
 
 
 /*
@@ -671,113 +679,28 @@ COLORS
 ====================================================================
 */
 
-void RB_CalcColorFromEntity( unsigned char *dstColors )
+
+
+
+void RB_CalcWaveAlpha( const waveForm_t *wf, unsigned char (*dstColors)[4] )
 {
-	if ( !backEnd.currentEntity )
-		return;
+	float glow = EvalWaveForm( wf );
 
-	int *pColors = ( int * ) dstColors;
-	int c = * ( int * ) backEnd.currentEntity->e.shaderRGBA;
-    int i;
-	for ( i = 0; i < tess.numVertexes; i++, pColors++ )
-	{
-		*pColors = c;
-	}
-}
-
-
-void RB_CalcColorFromOneMinusEntity( unsigned char *dstColors )
-{
-	if ( !backEnd.currentEntity )
-		return;
-
-	int *pColors = ( int * ) dstColors;
-	unsigned char invModulate[4];
-	invModulate[0] = 255 - backEnd.currentEntity->e.shaderRGBA[0];
-	invModulate[1] = 255 - backEnd.currentEntity->e.shaderRGBA[1];
-	invModulate[2] = 255 - backEnd.currentEntity->e.shaderRGBA[2];
-	invModulate[3] = 255 - backEnd.currentEntity->e.shaderRGBA[3];	// this trashes alpha, but the AGEN block fixes it
-
-	int c = * ( int * ) invModulate;
-    int i;
-	for ( i = 0; i < tess.numVertexes; i++, pColors++ )
-	{
-		*pColors = c;
-	}
-}
-
-
-void RB_CalcAlphaFromEntity( unsigned char *dstColors )
-{
-	if ( !backEnd.currentEntity )
-		return;
-
-	dstColors += 3;
-	
-    int	i;
-	for ( i = 0; i < tess.numVertexes; i++, dstColors += 4 )
-	{
-		*dstColors = backEnd.currentEntity->e.shaderRGBA[3];
-	}
-}
-
-
-void RB_CalcAlphaFromOneMinusEntity( unsigned char *dstColors )
-{
-	if ( !backEnd.currentEntity )
-		return;
-
-	dstColors += 3;
-    int i;
-	for ( i = 0; i < tess.numVertexes; i++, dstColors += 4 )
-	{
-		*dstColors = 0xff - backEnd.currentEntity->e.shaderRGBA[3];
-	}
-}
-
-
-void RB_CalcWaveColor( const waveForm_t *wf, unsigned char *dstColors )
-{
-	int i;
-	float glow;
-	int *colors = ( int * ) dstColors;
-	unsigned char color[4];
-
-
-    if ( wf->func == GF_NOISE )
-		glow = wf->base + R_NoiseGet4f( 0, 0, 0, ( tess.shaderTime + wf->phase ) * wf->frequency ) * wf->amplitude;
-	else
-		glow = EvalWaveForm( wf ) * tr.identityLight;
-	
 	if ( glow < 0 )
 		glow = 0;
-	else if ( glow > 1 )
+    else if ( glow > 1 )
 		glow = 1;
 
-	int v = 255 * glow;
-	color[0] = color[1] = color[2] = v;
-	color[3] = 255;
-	v = *(int *)color;
-	
-	for ( i = 0; i < tess.numVertexes; i++, colors++ ) {
-		*colors = v;
-	}
-}
-
-
-void RB_CalcWaveAlpha( const waveForm_t *wf, unsigned char *dstColors )
-{
-	float glow = EvalWaveFormClamped( wf );
-	int v = 255 * glow;
+    int v = 255 * glow;
     int i;
-	for ( i = 0; i < tess.numVertexes; i++, dstColors += 4 )
+	for ( i = 0; i < tess.numVertexes; i++)
 	{
-		dstColors[3] = v;
+		dstColors[i][3] = v;
 	}
 }
 
 
-void RB_CalcModulateColorsByFog( unsigned char *colors )
+void RB_CalcModulateColorsByFog( unsigned char (*colors)[4] )
 {
 	float texCoords[SHADER_MAX_VERTEXES][2];
 
@@ -786,17 +709,16 @@ void RB_CalcModulateColorsByFog( unsigned char *colors )
 	// been previously called if the surface was opaque
 	RB_CalcFogTexCoords( texCoords[0] );
     int i;
-	for ( i = 0; i < tess.numVertexes; i++, colors += 4 )
+	for ( i = 0; i < tess.numVertexes; i++)
     {
 		float f = 1.0 - R_FogFactor( texCoords[i][0], texCoords[i][1] );
-		colors[0] *= f;
-		colors[1] *= f;
-		colors[2] *= f;
+		colors[i][0] *= f;
+		colors[i][1] *= f;
+		colors[i][2] *= f;
 	}
 }
 
-
-void RB_CalcModulateAlphasByFog( unsigned char *colors )
+void RB_CalcModulateAlphasByFog( unsigned char (*colors)[4] )
 {
 	float texCoords[SHADER_MAX_VERTEXES][2];
 
@@ -805,15 +727,15 @@ void RB_CalcModulateAlphasByFog( unsigned char *colors )
 	// been previously called if the surface was opaque
 	RB_CalcFogTexCoords( texCoords[0] );
     int i;
-	for ( i = 0; i < tess.numVertexes; i++, colors += 4 )
+	for ( i = 0; i < tess.numVertexes; i++)
     {
 		float f = 1.0 - R_FogFactor( texCoords[i][0], texCoords[i][1] );
-		colors[3] *= f;
+		colors[i][3] *= f;
 	}
 }
 
 
-void RB_CalcModulateRGBAsByFog( unsigned char *colors )
+void RB_CalcModulateRGBAsByFog( unsigned char (*colors)[4] )
 {
 	float texCoords[SHADER_MAX_VERTEXES][2];
 
@@ -822,13 +744,13 @@ void RB_CalcModulateRGBAsByFog( unsigned char *colors )
 	// been previously called if the surface was opaque
 	RB_CalcFogTexCoords( texCoords[0] );
     int i;
-	for ( i = 0; i < tess.numVertexes; i++, colors += 4 )
+	for ( i = 0; i < tess.numVertexes; i++)
     {
 		float f = 1.0 - R_FogFactor( texCoords[i][0], texCoords[i][1] );
-		colors[0] *= f;
-		colors[1] *= f;
-		colors[2] *= f;
-		colors[3] *= f;
+		colors[i][0] *= f;
+		colors[i][1] *= f;
+		colors[i][2] *= f;
+		colors[i][3] *= f;
 	}
 }
 
@@ -1375,134 +1297,14 @@ void RB_CalcAtlasTexCoords( const atlas_t *at, float *st )
 /*
 ** RB_CalcSpecularAlpha
 **
-** Calculates specular coefficient and places it in the alpha channel
+** 
 */
 
 // This fixed version comes from ZEQ2Lite
-void RB_CalcSpecularAlphaNew( unsigned char *alphas )
-{
-	vec3_t		viewer,  reflected;
-	int			i, b;
-	vec3_t		lightDir;
-
-	float* v = tess.xyz[0];
-	float* normal = tess.normal[0];
-	int numVertexes = tess.numVertexes;
-
-	alphas += 3;
-    vec3_t lightOrigin = { -960, 1980, 96 };		// FIXME: track dynamically
-	for (i = 0 ; i < numVertexes ; i++, v += 4, normal += 4, alphas += 4)
-    {
-		if ( backEnd.currentEntity == &tr.worldEntity )
-			VectorSubtract( lightOrigin, v, lightDir );	// old compatibility with maps that use it on some models
-		else
-			VectorCopy( backEnd.currentEntity->lightDir, lightDir );
-
-		FastVectorNormalize( lightDir );
-
-		// calculate the specular color
-		float d = DotProduct (normal, lightDir);
-
-		// we don't optimize for the d < 0 case since this tends to
-		// cause visual artifacts such as faceted "snapping"
-		reflected[0] = normal[0]*2*d - lightDir[0];
-		reflected[1] = normal[1]*2*d - lightDir[1];
-		reflected[2] = normal[2]*2*d - lightDir[2];
-
-		VectorSubtract (backEnd.or.viewOrigin, v, viewer);
-		float ilength = Q_rsqrt( DotProduct( viewer, viewer ) );
-		float l = DotProduct (reflected, viewer);
-		l *= ilength;
-
-		if (l < 0)
-			b = 0;
-        else
-        {
-			b = l*l*l*l*255;
-			if (b > 255)
-            {
-				b = 255;
-			}
-		}
-
-		*alphas = b;
-	}
-}
-
-
-
-/*
-** RB_CalcDynamicColor
-**
-** MDave; Vertex color dynamic lighting for cel shading
-*/
-void RB_CalcDynamicColor( unsigned char *colors )
-{
-	int				i;
-	vec4_t			dynamic;
-	int				numVertexes;
-
-	trRefEntity_t* ent = backEnd.currentEntity;
-
-	VectorCopy( ent->dynamicLight, dynamic );
-
-	float normalize = NormalizeColor( dynamic, dynamic );
-	if ( normalize > 255 ) normalize = 255;
-	VectorScale( dynamic, normalize, dynamic );
-	dynamic[3] = 255;
-
-	numVertexes = tess.numVertexes;
-	for (i = 0 ; i < numVertexes ; i++ )
-    {
-		colors[i*4+0] = dynamic[0];
-		colors[i*4+1] = dynamic[1];
-		colors[i*4+2] = dynamic[2];
-		colors[i*4+3] = dynamic[3];
-	}
-}
 
 
 // leilei celsperiment
 
-
-void RB_CalcFlatAmbient( unsigned char *colors )
-{
-	int				i;
-	vec3_t			ambientLight;
-	trRefEntity_t* ent = backEnd.currentEntity;
-	//ambientLightInt = ent->ambientLightInt;
-	VectorCopy( ent->ambientLight, ambientLight );
-	//VectorCopy( ent->directedLight, directedLight );
-
-
-	//lightDir[0] = 0;
-	//lightDir[1] = 0;
-	//lightDir[2] = 1;
-
-	float* v = tess.xyz[0];
-	float* normal = tess.normal[0];
-	int numVertexes = tess.numVertexes;
-	for (i = 0 ; i < numVertexes ; i++, v += 4, normal += 4) {
-		int j = ambientLight[0];
-		if ( j > 255 ) {
-			j = 255;
-		}
-		colors[i*4+0] = j;
-
-		j = ambientLight[1];
-		if ( j > 255 ) {
-			j = 255;
-		}
-		colors[i*4+1] = j;
-
-		j = ambientLight[2];
-		if ( j > 255 ) {
-			j = 255;
-		}
-		colors[i*4+2] = j;
-		colors[i*4+3] = 255;
-	}
-}
 
 
 void RB_CalcFlatDirect( unsigned char *colors )

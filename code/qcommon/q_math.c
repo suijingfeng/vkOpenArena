@@ -237,63 +237,6 @@ static unsigned ColorBytes3 (float r, float g, float b) {
 */
 
 
-/*
-===============
-RotatePointAroundVector
-
-This is not implemented very well...
-===============
-
-
-void RotatePointAroundVector( vec3_t dst, const vec3_t dir, const vec3_t point,	float degrees )
-{
-	float	m[3][3];
-	float	im[3][3];
-	float	tmpmat[3][3];
-	float	rot[3][3];
-	int	i;
-	vec3_t vr, vup, vf;
-
-	vf[0] = dir[0];
-	vf[1] = dir[1];
-	vf[2] = dir[2];
-
-	PerpendicularVector( vr, dir );
-	CrossProduct( vr, vf, vup );
-
-	m[0][0] = vr[0];
-	m[1][0] = vr[1];
-	m[2][0] = vr[2];
-
-	m[0][1] = vup[0];
-	m[1][1] = vup[1];
-	m[2][1] = vup[2];
-
-	m[0][2] = vf[0];
-	m[1][2] = vf[1];
-	m[2][2] = vf[2];
-
-	memcpy( im, m, sizeof( im ) );
-
-	float	zrot[3][3];
-	memset( zrot, 0, sizeof( zrot ) );
-	float rad = DEG2RAD( degrees );
-	zrot[0][0] = cos( rad );
-	zrot[0][1] = sin( rad );
-	zrot[1][0] = -sin( rad );
-	zrot[1][1] = cos( rad );
-    zrot[2][2] = 1.0F;
-
-	MatrixMultiply( m, zrot, tmpmat );
-	MatrixMultiply( tmpmat, im, rot );
-
-	for( i = 0; i < 3; i++ )
-    {
-		dst[i] = rot[i][0] * point[0] + rot[i][1] * point[1] + rot[i][2] * point[2];
-	}
-}
-*/
-
 
 /*
 ===============
@@ -389,24 +332,6 @@ void AxisClear( vec3_t axis[3] )
 	axis[2][2] = 1;
 }
 
-
-
-void ProjectPointOnPlane( vec3_t dst, const vec3_t p, const vec3_t normal )
-{
-	float inv_denom = 1.0/DotProduct( normal, normal );
-
-
-	float d = DotProduct( normal, p ) * inv_denom;
-	vec3_t n;
-
-	n[0] = normal[0] * d;
-	n[1] = normal[1] * d;
-	n[2] = normal[2] * d;
-
-	dst[0] = p[0] - n[0];
-	dst[1] = p[1] - n[1];
-	dst[2] = p[2] - n[2];
-}
 
 
 /*
@@ -809,8 +734,6 @@ ID_INLINE qboolean Matrix4Compare(const float a[16], const float b[16])
 
 
 
-
-
 ID_INLINE void MatrixMultiply(const float in1[3][3],const float in2[3][3], float out[3][3])
 {
 	out[0][0] = in1[0][0] * in2[0][0] + in1[0][1] * in2[1][0] +	in1[0][2] * in2[2][0];
@@ -863,6 +786,24 @@ void AngleVectors( const vec3_t angles, vec3_t forward, vec3_t right, vec3_t up)
 /*
 ** assumes "src" is normalized
 */
+
+void ProjectPointOnPlane( vec3_t dst, const vec3_t p, const vec3_t normal )
+{
+	float inv_denom = 1.0/DotProduct( normal, normal );
+
+	float d = DotProduct( normal, p ) * inv_denom;
+	vec3_t n;
+
+	n[0] = normal[0] * d;
+	n[1] = normal[1] * d;
+	n[2] = normal[2] * d;
+
+	dst[0] = p[0] - n[0];
+	dst[1] = p[1] - n[1];
+	dst[2] = p[2] - n[2];
+}
+
+
 void PerpendicularVector( vec3_t dst, const vec3_t src )
 {
 	int	pos;
@@ -889,8 +830,6 @@ void PerpendicularVector( vec3_t dst, const vec3_t src )
     //normalize the result
 	VectorNormalize( dst );
 }
-
-
 
 /*
 ================

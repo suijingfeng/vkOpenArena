@@ -419,8 +419,8 @@ extern vec4_t	g_color_table[NUMBER_OF_COLORS];
 #define	MAKERGB( v, r, g, b ) v[0]=r;v[1]=g;v[2]=b
 #define	MAKERGBA( v, r, g, b, a ) v[0]=r;v[1]=g;v[2]=b;v[3]=a
 
-#define DEG2RAD( a ) ( ( (a) * M_PI ) / 180.0F )
-#define RAD2DEG( a ) ( ( (a) * 180.0f ) / M_PI )
+#define DEG2RAD( a ) ( (a) * ( M_PI / 180.0F) )
+#define RAD2DEG( a ) ( (a) * ( 180.0f / M_PI ) )
 
 struct cplane_s;
 
@@ -631,9 +631,9 @@ float AngleNormalize360 ( float angle );
 float AngleNormalize180 ( float angle );
 float AngleDelta ( float angle1, float angle2 );
 
-//qboolean PlaneFromPoints( vec4_t plane, const vec3_t a, const vec3_t b, const vec3_t c );
+void PerpendicularVector( vec3_t dst, const vec3_t src );
 void ProjectPointOnPlane( vec3_t dst, const vec3_t p, const vec3_t normal );
-void RotatePointAroundVector( vec3_t dst, const vec3_t dir, const vec3_t point, float degrees );
+
 void MakeNormalVectors( const vec3_t forward, vec3_t right, vec3_t up );
 // perpendicular vector could be replaced by this
 
@@ -643,7 +643,7 @@ qboolean Matrix4Compare(const float a[16], const float b[16]);
 
 void MatrixMultiply(const float in1[3][3],const float in2[3][3], float out[3][3]);
 void AngleVectors( const vec3_t angles, vec3_t forward, vec3_t right, vec3_t up);
-void PerpendicularVector( vec3_t dst, const vec3_t src );
+// void PerpendicularVector( vec3_t dst, const vec3_t src );
 
 #ifndef MAX
 #define MAX(x,y) ((x)>(y)?(x):(y))
@@ -657,16 +657,16 @@ void PerpendicularVector( vec3_t dst, const vec3_t src );
 
 float Com_Clamp( float min, float max, float value );
 
-char	*COM_SkipPath( char *pathname );
-const char	*COM_GetExtension( const char *name );
+char*   COM_SkipPath( char *pathname );
+const char* COM_GetExtension( const char *name );
 void	COM_StripExtension(const char *in, char *out, int destsize);
 qboolean COM_CompareExtension(const char *in, const char *ext);
 void	COM_DefaultExtension( char *path, int maxSize, const char *extension );
 
 void	COM_BeginParseSession( const char *name );
 int		COM_GetCurrentParseLine( void );
-char	*COM_Parse( char **data_p );
-char	*COM_ParseExt( char **data_p, qboolean allowLineBreak );
+char*   COM_Parse( char **data_p );
+char*   COM_ParseExt( char **data_p, qboolean allowLineBreak );
 int		COM_Compress( char *data_p );
 void	COM_ParseError( char *format, ... ) __attribute__ ((format (printf, 1, 2)));
 void	COM_ParseWarning( char *format, ... ) __attribute__ ((format (printf, 1, 2)));

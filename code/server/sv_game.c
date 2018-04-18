@@ -282,6 +282,8 @@ static int	FloatAsInt( float f ) {
 	return fi.i;
 }
 
+
+
 /*
 ====================
 SV_GameSystemCalls

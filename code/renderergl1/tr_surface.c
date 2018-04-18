@@ -904,11 +904,7 @@ static void RB_SurfaceMesh(md3Surface_t *surface) {
 }
 
 
-/*
-==============
-RB_SurfaceFace
-==============
-*/
+
 static void RB_SurfaceFace( srfSurfaceFace_t *surf ) {
 	int			i;
 	unsigned	*indices;
