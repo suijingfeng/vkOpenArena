@@ -779,8 +779,7 @@ static void ComputeColors( shaderStage_t *pStage )
 			for ( i = 0; i < tess.numVertexes; i++ )
             {
 				*(int *)tess.svars.colors[i] = *(int *)pStage->constantColor;
- 			}
-            */
+ 			}*/
             memcpy(tess.svars.colors, pStage->constantColor, 4*tess.numVertexes);
 			break;
 		case CGEN_VERTEX:
@@ -797,40 +796,6 @@ static void ComputeColors( shaderStage_t *pStage )
 					tess.svars.colors[i][2] = tess.vertexColors[i][2] * tr.identityLight;
 					tess.svars.colors[i][3] = tess.vertexColors[i][3];
 				}
-			}
-			break;
-		case CGEN_VERTEX_LIT:		// leilei - mixing vertex colors with lighting through a glorious light hack
-			{			// 	    should only be used for entity models, not map assets!
-			vec3_t	dcolor, acolor;	// to save the color from actual light
-			vec3_t	vcolor;
-			int y;
-
-
-			// Backup our colors
-			VectorCopy( backEnd.currentEntity->ambientLight, acolor );			
-			VectorCopy( backEnd.currentEntity->directedLight, dcolor );			
-			VectorCopy( backEnd.currentEntity->e.shaderRGBA, vcolor );			
-
-			// Make our vertex color take over 
-
-			for(y=0;y<3;y++)
-            {
-				backEnd.currentEntity->ambientLight[y] 	*= (vcolor[y] / 255);
-
-				if (backEnd.currentEntity->ambientLight[y] < 1)   
-                    backEnd.currentEntity->ambientLight[y] = 1; // black!!!
-                else if (backEnd.currentEntity->ambientLight[y] > 255)
-                    backEnd.currentEntity->ambientLight[y] = 255; // white!!!!!
-			    //	backEnd.currentEntity->ambientLight[y] 	*= (vcolor[y] / 255);
-			    //	backEnd.currentEntity->directedLight[y] *= (vcolor[y] / 255);
-			}
-		
-			// run it through our favorite preferred lighting calculation functions
-			RB_CalcDiffuseColor( tess.svars.colors );
-
-			// Restore light color for any other stage that doesn't do it
-			VectorCopy( acolor, backEnd.currentEntity->ambientLight);			
-			VectorCopy( dcolor, backEnd.currentEntity->directedLight);			
 			}
 			break;
 		case CGEN_ONE_MINUS_VERTEX:

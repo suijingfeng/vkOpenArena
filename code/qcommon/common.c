@@ -115,11 +115,8 @@ char com_errorMessage[MAXPRINTMSG];
 void CIN_CloseAllVideos( void );
 
 
-#if (idx64 || id386)
-	long (QDECL *Q_ftol)(float f);
-	int (QDECL *Q_VMftol)(void);
-	void (QDECL *Q_SnapVector)(vec3_t vec);
-#endif
+int (QDECL *Q_VMftol)(void);
+void (QDECL *Q_SnapVector)(vec3_t vec);
 
 
 //============================================================================
@@ -2519,14 +2516,12 @@ static void Com_DetectSSE(void)
         else
 			Q_SnapVector = qsnapvectorx87;
 
-		Q_ftol = qftolsse;
 		Q_VMftol = qvmftolsse;
 
 		Com_Printf(" Have SSE support\n");
 	}
 	else
 	{
-	    Q_ftol = qftolx87;
 	    Q_VMftol = qvmftolx87;
 		Q_SnapVector = qsnapvectorx87;
 
@@ -2767,8 +2762,7 @@ void Com_Init(char *commandLine )
 #endif
 
 	// set com_frameTime so that if a map is started on the command line 
-    // it will still be able to count on com_frameTime
-	// being random enough for a serverid
+    // it will still be able to count on com_frameTime being random enough for a serverid
 	com_frameTime = Com_Milliseconds();
 
 	// add + commands from command line

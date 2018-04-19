@@ -2104,20 +2104,6 @@ static qboolean ParseStage( shaderStage_t *stage, char **text )
 			{
 				stage->rgbGen = CGEN_EXACT_VERTEX;
 			}
-			else if ( !Q_stricmp( token, "vertexLighting" ) )	// leilei - vertex WITH a lighting pass after
-			{
-				stage->rgbGen = CGEN_VERTEX_LIT;
-				if ( stage->alphaGen == 0 ) {
-					stage->alphaGen = AGEN_VERTEX;
-				}
-			}
-			else if ( !Q_stricmp( token, "vertexLighting2" ) )	// leilei - second vertex color
-			{
-				stage->rgbGen = CGEN_VERTEX_LIT;
-				if ( stage->alphaGen == 0 ) {
-					stage->alphaGen = AGEN_VERTEX;
-				}
-			}
 			else if ( !Q_stricmp( token, "lightingDiffuse" ) )
 			{
 				stage->rgbGen = CGEN_LIGHTING_DIFFUSE;
@@ -2804,20 +2790,6 @@ qboolean ParseStageSimple( shaderStage_t *stage, char **text )
 			else if ( !Q_stricmp( token, "exactVertex" ) )
 			{
 				stage->rgbGen = CGEN_EXACT_VERTEX;
-			}
-			else if ( !Q_stricmp( token, "vertexLighting" ) )	// leilei - vertex WITH a lighting pass after
-			{
-				stage->rgbGen = CGEN_VERTEX_LIT;
-				if ( stage->alphaGen == 0 ) {
-					stage->alphaGen = AGEN_VERTEX;
-				}
-			}
-			else if ( !Q_stricmp( token, "vertexLighting2" ) )	// leilei - second vertex color
-			{
-				stage->rgbGen = CGEN_VERTEX_LIT;
-				if ( stage->alphaGen == 0 ) {
-					stage->alphaGen = AGEN_VERTEX;
-				}
 			}
 			else if ( !Q_stricmp( token, "lightingDiffuse" ) )
 			{

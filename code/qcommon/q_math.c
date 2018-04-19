@@ -407,14 +407,15 @@ AngleSubtract
 Always returns a value from -180 to 180
 =================
 */
-float	AngleSubtract( float a1, float a2 ) {
-	float	a;
-
-	a = a1 - a2;
-	while ( a > 180 ) {
+float	AngleSubtract( float a1, float a2 )
+{
+	float a = a1 - a2;
+	while ( a > 180 )
+    {
 		a -= 360;
 	}
-	while ( a < -180 ) {
+	while ( a < -180 )
+    {
 		a += 360;
 	}
 	return a;
@@ -568,7 +569,8 @@ ID_INLINE float RadiusFromBounds( const vec3_t mins, const vec3_t maxs )
 }
 
 
-ID_INLINE void ClearBounds( vec3_t mins, vec3_t maxs ) {
+ID_INLINE void ClearBounds( vec3_t mins, vec3_t maxs )
+{
 	mins[0] = mins[1] = mins[2] = 99999;
 	maxs[0] = maxs[1] = maxs[2] = -99999;
 }
@@ -787,32 +789,15 @@ void AngleVectors( const vec3_t angles, vec3_t forward, vec3_t right, vec3_t up)
 ** assumes "src" is normalized
 */
 
-void ProjectPointOnPlane( vec3_t dst, const vec3_t p, const vec3_t normal )
-{
-	float inv_denom = 1.0/DotProduct( normal, normal );
-
-	float d = DotProduct( normal, p ) * inv_denom;
-	vec3_t n;
-
-	n[0] = normal[0] * d;
-	n[1] = normal[1] * d;
-	n[2] = normal[2] * d;
-
-	dst[0] = p[0] - n[0];
-	dst[1] = p[1] - n[1];
-	dst[2] = p[2] - n[2];
-}
-
-
 void PerpendicularVector( vec3_t dst, const vec3_t src )
 {
-	int	pos;
+	int	pos = 0;
 	int i;
 	float minelem = 1.0F;
 	vec3_t tempvec = {0.0f, 0.0f, 0.0f};
 
 	// find the smallest magnitude axially aligned vector
-	for ( pos = 0, i = 0; i < 3; i++ )
+	for (i = 0; i < 3; i++ )
 	{
         float len = fabs( src[i] );
 		if ( len < minelem )
@@ -825,11 +810,14 @@ void PerpendicularVector( vec3_t dst, const vec3_t src )
 	tempvec[pos] = 1.0F;
 
 	//project the point onto the plane defined by src
-	ProjectPointOnPlane( dst, tempvec, src );
+	float d = -DotProduct( tempvec, src );
+	VectorMA( tempvec, d, src, dst );
 
     //normalize the result
 	VectorNormalize( dst );
 }
+
+
 
 /*
 ================

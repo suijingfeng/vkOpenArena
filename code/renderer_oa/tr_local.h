@@ -185,7 +185,6 @@ typedef enum {
 	CGEN_LIGHTING_DYNAMIC,
 	CGEN_FOG,				// standard fog
 	CGEN_CONST,				// fixed color
-	CGEN_VERTEX_LIT,			// leilei - tess.vertexColors * tr.identityLight * ambientlight*directlight
 } colorGen_t;
 
 typedef enum {

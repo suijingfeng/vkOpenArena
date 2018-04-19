@@ -42,20 +42,6 @@ static const unsigned short fpucw = 0x0C7F;
   #define EDI "%%edi"
 #endif
 
-long qftolsse(float f)
-{
-  long retval;
-  
-  __asm__ volatile
-  (
-    "cvttss2si %1, %0\n"
-    : "=r" (retval)
-    : "x" (f)
-  );
-  
-  return retval;
-}
-
 
 int qvmftolsse(void)
 {

@@ -433,30 +433,16 @@ extern	vec3_t	axisDefault[3];
 
 int Q_isnan(float x);
 
-#if (idx64 || id386)
+
     extern long QDECL qftolx87(float f);
-    extern long QDECL qftolsse(float f);
     extern int QDECL qvmftolx87(void);
     extern int QDECL qvmftolsse(void);
     extern void QDECL qsnapvectorx87(vec3_t vec);
     extern void QDECL qsnapvectorsse(vec3_t vec);
 
-    extern long (QDECL *Q_ftol)(float f);
     extern int (QDECL *Q_VMftol)(void);
     extern void (QDECL *Q_SnapVector)(vec3_t vec);
-#else
-  // Q_ftol must expand to a function name so the pluggable renderer can take its address
-  #define Q_ftol lrintf
-  #define Q_SnapVector(vec)\
-	do\
-	{\
-		vec3_t *temp = (vec);\
-		\
-		(*temp)[0] = round((*temp)[0]);\
-		(*temp)[1] = round((*temp)[1]);\
-		(*temp)[2] = round((*temp)[2]);\
-	} while(0)
-#endif
+
 /*
 // if your system does not have lrintf() and round() you can try this block. Please also open a bug report at bugzilla.icculus.org
 // or write a mail to the ioq3 mailing list.
@@ -632,18 +618,15 @@ float AngleNormalize180 ( float angle );
 float AngleDelta ( float angle1, float angle2 );
 
 void PerpendicularVector( vec3_t dst, const vec3_t src );
-void ProjectPointOnPlane( vec3_t dst, const vec3_t p, const vec3_t normal );
 
 void MakeNormalVectors( const vec3_t forward, vec3_t right, vec3_t up );
 // perpendicular vector could be replaced by this
 
-//int	PlaneTypeForNormal (vec3_t normal);
 qboolean Matrix4Compare(const float a[16], const float b[16]);
 
 
 void MatrixMultiply(const float in1[3][3],const float in2[3][3], float out[3][3]);
 void AngleVectors( const vec3_t angles, vec3_t forward, vec3_t right, vec3_t up);
-// void PerpendicularVector( vec3_t dst, const vec3_t src );
 
 #ifndef MAX
 #define MAX(x,y) ((x)>(y)?(x):(y))
