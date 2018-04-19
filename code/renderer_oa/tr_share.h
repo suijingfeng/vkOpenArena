@@ -140,5 +140,4 @@ static ID_INLINE void MatrixMultiply4x4(const float* A, const float* B, float* o
     out[15] = A[12]*B[3] + A[13]*B[7] + A[14]*B[11] + A[15]*B[15];
 }
 
-
 #endif

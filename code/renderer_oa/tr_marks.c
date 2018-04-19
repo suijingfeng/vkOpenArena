@@ -47,20 +47,18 @@ extern refimport_t ri;
 static cvar_t* r_marksOnTriangleMeshes;
 
 
-static void R_ChopPolyBehindPlane( int numInPoints, vec3_t inPoints[MAX_VERTS_ON_POLY],
-		int *numOutPoints, vec3_t outPoints[MAX_VERTS_ON_POLY], vec3_t normal, vec_t dist, vec_t epsilon)
+static void R_ChopPolyBehindPlane( int numInPoints, vec3_t inPoints[MAX_VERTS_ON_POLY], int *numOutPoints, vec3_t outPoints[MAX_VERTS_ON_POLY], vec3_t normal, float dist)
 {
 	float		dists[MAX_VERTS_ON_POLY+4] = { 0 };
 	int			sides[MAX_VERTS_ON_POLY+4] = { 0 };
 	int			counts[3] = { 0 };
-	float		dot;
-	int			i, j;
-	float		*p1, *p2, *clip;
-	float		d;
+	int			i;
 
 	// don't clip if it might overflow
-	if ( numInPoints >= MAX_VERTS_ON_POLY - 2 ) {
+	if ( numInPoints >= MAX_VERTS_ON_POLY - 2 )
+	{
 		*numOutPoints = 0;
+		ri.Printf(PRINT_WARNING, "numInPoints overflow");
 		return;
 	}
 
@@ -68,67 +66,69 @@ static void R_ChopPolyBehindPlane( int numInPoints, vec3_t inPoints[MAX_VERTS_ON
 	// determine sides for each point
 	for ( i = 0 ; i < numInPoints ; i++ )
     {
-		dot = DotProduct( inPoints[i], normal );
-		dot -= dist;
+		float dot = DotProduct( inPoints[i], normal ) - dist;
 		dists[i] = dot;
 
-		if ( dot > epsilon ) 
+		if ( dot > 0.5 ) 
 			sides[i] = SIDE_FRONT;
-		else if ( dot < -epsilon )
+		else if ( dot < -0.5 )
 			sides[i] = SIDE_BACK;
 		else
 			sides[i] = SIDE_ON;
 	
 		counts[sides[i]]++;
 	}
+	
 	sides[i] = sides[0];
 	dists[i] = dists[0];
 
 	*numOutPoints = 0;
 
-	if ( !counts[0] )
+	if ( counts[0] == 0)
 		return;
     
-	if ( !counts[1] ) 
+	if ( counts[1] == 0) 
     {
 		*numOutPoints = numInPoints;
 		memcpy( outPoints, inPoints, numInPoints * sizeof(vec3_t) );
 		return;
 	}
 
-	for ( i = 0 ; i < numInPoints ; i++ ) {
-		p1 = inPoints[i];
-		clip = outPoints[ *numOutPoints ];
-		
-		if ( sides[i] == SIDE_ON ) {
-			VectorCopy( p1, clip );
+
+	for ( i = 0 ; i < numInPoints ; i++ )
+	{
+				
+		if ( sides[i] == SIDE_ON )
+		{
+			VectorCopy( inPoints[i], outPoints[ *numOutPoints ] );
 			(*numOutPoints)++;
 			continue;
 		}
 	
-		if ( sides[i] == SIDE_FRONT ) {
-			VectorCopy( p1, clip );
+		if ( sides[i] == SIDE_FRONT )
+		{
+			VectorCopy( inPoints[i], outPoints[ *numOutPoints ] );
 			(*numOutPoints)++;
-			clip = outPoints[ *numOutPoints ];
 		}
 
-		if ( sides[i+1] == SIDE_ON || sides[i+1] == sides[i] ) {
+		if ( sides[i+1] == SIDE_ON || sides[i+1] == sides[i] )
 			continue;
-		}
+	
 			
 		// generate a split point
-		p2 = inPoints[ (i+1) % numInPoints ];
 
-		d = dists[i] - dists[i+1];
-		if ( d == 0 )
-			dot = 0;
-		else
-			dot = dists[i] / d;
+
+		float d = dists[i] - dists[i+1];
+		if ( d != 0 )
+			d = dists[i] / d;
 
 		// clip xyz
-
-		for (j=0 ; j<3 ; j++)
-			clip[j] = p1[j] + dot * ( p2[j] - p1[j] );
+		int j = (i+1) % numInPoints;
+		float* clip = outPoints[ *numOutPoints ];
+		
+		clip[0] = (1 - d) * inPoints[i][0] + d * inPoints[j][0];
+		clip[1] = (1 - d) * inPoints[i][1] + d * inPoints[j][1];
+		clip[2] = (1 - d) * inPoints[i][2] + d * inPoints[j][2];
 
 		(*numOutPoints)++;
 	}
@@ -142,17 +142,16 @@ R_BoxSurfaces_r
 */
 static void R_BoxSurfaces_r(mnode_t *node, vec3_t mins, vec3_t maxs, surfaceType_t **list, int listsize, int *listlength, vec3_t dir)
 {
-	int	s;
-	msurface_t* surf;
 
 	// do the tail recursion in a loop
 	while ( node->contents == -1 )
     {
-		s = BoxOnPlaneSide( mins, maxs, node->plane );
+		int s = BoxOnPlaneSide( mins, maxs, node->plane );
 		if (s == 1)
         {
 			node = node->children[0];
-		} else if (s == 2)
+		}
+		else if (s == 2)
         {
 			node = node->children[1];
 		}
@@ -169,9 +168,10 @@ static void R_BoxSurfaces_r(mnode_t *node, vec3_t mins, vec3_t maxs, surfaceType
 	while (c--)
     {
 		//
-		if (*listlength >= listsize) break;
-		//
-		surf = *mark;
+		if (*listlength >= listsize)
+			break;
+	
+		msurface_t* surf = *mark;
 		// check if the surface has NOIMPACT or NOMARKS set
 		if ( ( surf->shader->surfaceFlags & ( SURF_NOIMPACT | SURF_NOMARKS ) )
 			|| ( surf->shader->contentFlags & CONTENTS_FOG ) ) {
@@ -181,7 +181,7 @@ static void R_BoxSurfaces_r(mnode_t *node, vec3_t mins, vec3_t maxs, surfaceType
 		else if (*(surf->data) == SF_FACE)
         {
 			// the face plane should go through the box
-			s = BoxOnPlaneSide( mins, maxs, &(( srfSurfaceFace_t * ) surf->data)->plane );
+			int s = BoxOnPlaneSide( mins, maxs, &(( srfSurfaceFace_t * ) surf->data)->plane );
 			if (s == 1 || s == 2)
             {
 				surf->viewCount = tr.viewCount;
@@ -217,14 +217,13 @@ static void R_AddMarkFragments(int numClipPoints, vec3_t clipPoints[2][MAX_VERTS
 				   vec3_t mins, vec3_t maxs)
 {
 	int pingPong=0, i;
-	markFragment_t* mf;
 
 	// chop the surface by all the bounding planes of the to be projected polygon
 
 	for( i = 0 ; i < numPlanes ; i++ )
     {
 
-		R_ChopPolyBehindPlane( numClipPoints, clipPoints[pingPong], &numClipPoints, clipPoints[!pingPong], normals[i], dists[i], 0.5);
+		R_ChopPolyBehindPlane( numClipPoints, clipPoints[pingPong], &numClipPoints, clipPoints[!pingPong], normals[i], dists[i]);
 		pingPong ^= 1;
 		if ( numClipPoints == 0 )
         {
@@ -253,7 +252,7 @@ static void R_AddMarkFragments(int numClipPoints, vec3_t clipPoints[2][MAX_VERTS
 	if (i < numClipPoints) return;
 	*/
 
-	mf = fragmentBuffer + (*returnedFragments);
+	markFragment_t* mf = fragmentBuffer + (*returnedFragments);
 	mf->firstPoint = (*returnedPoints);
 	mf->numPoints = numClipPoints;
 	memcpy( pointBuffer + (*returnedPoints) * 3, clipPoints[pingPong], numClipPoints * sizeof(vec3_t) );
@@ -294,7 +293,8 @@ int R_MarkFragments( int numPoints, const vec3_t *points, const vec3_t projectio
 	FastVectorNormalize2( projection, projectionDir );
 	// find all the brushes that are to be considered
 	ClearBounds( mins, maxs );
-	for ( i = 0 ; i < numPoints ; i++ ) {
+	for ( i = 0 ; i < numPoints ; i++ )
+	{
 		vec3_t	temp;
 
 		AddPointToBounds( points[i], mins, maxs );
@@ -305,7 +305,8 @@ int R_MarkFragments( int numPoints, const vec3_t *points, const vec3_t projectio
 		AddPointToBounds( temp, mins, maxs );
 	}
 
-	if (numPoints > MAX_VERTS_ON_POLY) numPoints = MAX_VERTS_ON_POLY;
+	if (numPoints > MAX_VERTS_ON_POLY)
+		numPoints = MAX_VERTS_ON_POLY;
 	// create the bounding planes for the to be projected polygon
 	for ( i = 0 ; i < numPoints ; i++ )
     {

@@ -434,8 +434,6 @@ extern	vec3_t	axisDefault[3];
 int Q_isnan(float x);
 
 
-    extern long QDECL qftolx87(float f);
-    extern int QDECL qvmftolx87(void);
     extern int QDECL qvmftolsse(void);
     extern void QDECL qsnapvectorx87(vec3_t vec);
     extern void QDECL qsnapvectorsse(vec3_t vec);

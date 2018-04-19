@@ -2522,7 +2522,6 @@ static void Com_DetectSSE(void)
 	}
 	else
 	{
-	    Q_VMftol = qvmftolx87;
 		Q_SnapVector = qsnapvectorx87;
 
 		Com_Printf(" No SSE support on this machine\n");

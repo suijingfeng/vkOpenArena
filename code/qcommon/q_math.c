@@ -220,23 +220,6 @@ void ByteToDir( int b, vec3_t dir )
 	VectorCopy(bytedirs[b], dir);
 }
 
-/*  
-static unsigned ColorBytes3 (float r, float g, float b) {
-	unsigned int i;
-
-	( (byte *)&i )[0] = r * 255;
-	( (byte *)&i )[1] = g * 255;
-	( (byte *)&i )[2] = b * 255;
-
-	return i;
-}
-
-
-
-
-*/
-
-
 
 /*
 ===============
