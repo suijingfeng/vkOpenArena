@@ -57,8 +57,7 @@ extern int xmpspeed; 		// leilei
 S_AL_Format
 =================
 */
-static
-ALuint S_AL_Format(int width, int channels)
+static ALuint S_AL_Format(int width, int channels)
 {
 	ALuint format = AL_FORMAT_MONO16;
 
@@ -154,6 +153,27 @@ static alSfx_t knownSfx[MAX_SFX];
 static sfxHandle_t numSfx = 0;
 
 static sfxHandle_t default_sfx;
+
+
+/*
+================
+Q_isnan
+
+Don't pass doubles to this
+================
+*/
+ID_INLINE int Q_isnan( float x )
+{
+	floatint_t fi;
+
+	fi.f = x;
+	fi.ui &= 0x7FFFFFFF;
+	fi.ui = 0x7F800000 - fi.ui;
+
+	return (int)( (unsigned int)fi.ui >> 31 );
+}
+
+
 
 /*
 =================

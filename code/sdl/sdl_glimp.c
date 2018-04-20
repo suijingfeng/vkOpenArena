@@ -162,15 +162,14 @@ static qboolean GLimp_GetProcAddresses( void )
 	// OpenGL 1.0 and OpenGL ES 1.0
 	GLE(const GLubyte *, GetString, GLenum name)
 
-	if ( !qglGetString ) {
-		Com_Error( ERR_FATAL, "glGetString is NULL" );
-	}
+	if ( !qglGetString )
+        ri.Error(ERR_FATAL, "glGetString is NULL\n" );
+
 
 	version = (const char *)qglGetString( GL_VERSION );
 
-	if ( !version ) {
-		Com_Error( ERR_FATAL, "GL_VERSION is NULL\n" );
-	}
+	if( !version )
+        ri.Error(ERR_FATAL, "GL_VERSION is NULL\n" );
 
 	if ( Q_stricmpn( "OpenGL ES", version, 9 ) == 0 ) {
 		char profile[6]; // ES, ES-CM, or ES-CL
@@ -192,9 +191,9 @@ static qboolean GLimp_GetProcAddresses( void )
 		QGL_1_1_PROCS;
 		QGL_ES_1_1_PROCS;
 		// error so this doesn't segfault due to NULL desktop GL functions being used
-		Com_Error( ERR_FATAL, "Unsupported OpenGL Version: %s\n", version );
+		ri.Error( ERR_FATAL, "Unsupported OpenGL Version: %s\n", version );
 	} else {
-		Com_Error( ERR_FATAL, "Unsupported OpenGL Version: %s\n", version );
+		ri.Error( ERR_FATAL, "Unsupported OpenGL Version: %s\n", version );
 	}
 
 	if ( QGL_VERSION_ATLEAST( 3, 0 ) || QGLES_VERSION_ATLEAST( 3, 0 ) ) {

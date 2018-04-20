@@ -158,44 +158,39 @@ RB_CalcDeformVertexes
 */
 void RB_CalcDeformVertexes( deformStage_t *ds )
 {
-	int i;
-	vec3_t	offset;
-	float	scale;
-	float	*xyz = ( float * ) tess.xyz;
-	float	*normal = ( float * ) tess.normal;
-	float	*table;
-
 	if ( ds->deformationWave.frequency == 0 )
 	{
-		scale = EvalWaveForm( &ds->deformationWave );
-
-		for ( i = 0; i < tess.numVertexes; i++, xyz += 4, normal += 4 )
+		float scale = EvalWaveForm( &ds->deformationWave );
+        int i;
+		for(i = 0; i < tess.numVertexes; i++)
 		{
-			VectorScale( normal, scale, offset );
+            vec3_t offset;
+			VectorScale( tess.normal[i], scale, offset );
 			
-			xyz[0] += offset[0];
-			xyz[1] += offset[1];
-			xyz[2] += offset[2];
+			tess.xyz[i][0] += offset[0];
+			tess.xyz[i][1] += offset[1];
+			tess.xyz[i][2] += offset[2];
 		}
 	}
 	else
 	{
-		table = TableForFunc( ds->deformationWave.func );
-
-		for ( i = 0; i < tess.numVertexes; i++, xyz += 4, normal += 4 )
+		float* table = TableForFunc( ds->deformationWave.func );
+        int i;
+		for( i = 0; i < tess.numVertexes; i++)
 		{
-			float off = ( xyz[0] + xyz[1] + xyz[2] ) * ds->deformationSpread;
+			float off = ( tess.xyz[i][0] + tess.xyz[i][1] + tess.xyz[i][2] ) * ds->deformationSpread;
 
-			scale = WAVEVALUE( table, ds->deformationWave.base, 
+			float scale = WAVEVALUE( table, ds->deformationWave.base, 
 				ds->deformationWave.amplitude,
 				ds->deformationWave.phase + off,
 				ds->deformationWave.frequency );
-
-			VectorScale( normal, scale, offset );
+	        
+            vec3_t offset;
+			VectorScale( tess.normal[i], scale, offset );
 			
-			xyz[0] += offset[0];
-			xyz[1] += offset[1];
-			xyz[2] += offset[2];
+			tess.xyz[i][0] += offset[0];
+			tess.xyz[i][1] += offset[1];
+			tess.xyz[i][2] += offset[2];
 		}
 	}
 }
@@ -466,7 +461,8 @@ static void AutospriteDeform( void )
 		VectorCopy( backEnd.viewParms.or.axis[2], upDir );
 	}
 
-	for ( i = 0 ; i < oldVerts ; i+=4 ) {
+	for ( i = 0 ; i < oldVerts ; i+=4 )
+    {
 		// find the midpoint
 		xyz = tess.xyz[i];
 
@@ -480,21 +476,25 @@ static void AutospriteDeform( void )
 		VectorScale( leftDir, radius, left );
 		VectorScale( upDir, radius, up );
 
-		if ( backEnd.viewParms.isMirror ) {
+		if ( backEnd.viewParms.isMirror )
+        {
 			VectorSubtract( vec3_origin, left, left );
 		}
 
 	  // compensate for scale in the axes if necessary
-  	if ( backEnd.currentEntity->e.nonNormalizedAxes ) {
-      float axisLength;
-		  axisLength = VectorLength( backEnd.currentEntity->e.axis[0] );
-  		if ( !axisLength ) {
+        if ( backEnd.currentEntity->e.nonNormalizedAxes )
+        {
+            float axisLength = VectorLength( backEnd.currentEntity->e.axis[0] );
+  		if ( !axisLength )
+        {
 	  		axisLength = 0;
-  		} else {
+  		}
+        else
+        {
 	  		axisLength = 1.0f / axisLength;
   		}
-      VectorScale(left, axisLength, left);
-      VectorScale(up, axisLength, up);
+        VectorScale(left, axisLength, left);
+        VectorScale(up, axisLength, up);
     }
 
 		RB_AddQuadStamp( mid, left, up, tess.vertexColors[i] );
@@ -628,23 +628,21 @@ void RB_DeformTessGeometry( void )
 
 	for( i = 0 ; i < tess.shader->numDeforms ; i++ )
     {
-		deformStage_t *ds = &tess.shader->deforms[ i ];
-
-		switch ( ds->deformation )
+		switch ( tess.shader->deforms[i].deformation )
         {
             case DEFORM_NONE:
                 break;
             case DEFORM_NORMALS:
-                RB_CalcDeformNormals( ds );
+                RB_CalcDeformNormals( &tess.shader->deforms[i] );
                 break;
             case DEFORM_WAVE:
-                RB_CalcDeformVertexes( ds );
+                RB_CalcDeformVertexes( &tess.shader->deforms[i] );
                 break;
             case DEFORM_BULGE:
-                RB_CalcBulgeVertexes( ds );
+                RB_CalcBulgeVertexes( &tess.shader->deforms[i] );
                 break;
             case DEFORM_MOVE:
-                RB_CalcMoveVertexes( ds );
+                RB_CalcMoveVertexes( &tess.shader->deforms[i] );
                 break;
             case DEFORM_PROJECTION_SHADOW:
                 RB_ProjectionShadowDeform();
@@ -663,7 +661,7 @@ void RB_DeformTessGeometry( void )
             case DEFORM_TEXT5:
             case DEFORM_TEXT6:
             case DEFORM_TEXT7:
-                DeformText( backEnd.refdef.text[ds->deformation - DEFORM_TEXT0] );
+                DeformText( backEnd.refdef.text[tess.shader->deforms[i].deformation - DEFORM_TEXT0] );
                 break;
             default: break;
 		}
@@ -854,31 +852,7 @@ void RB_CalcFogTexCoords( float *st )
 
 
 
-/*
-** RB_CalcEnvironmentTexCoords
-*/
-void RB_CalcEnvironmentTexCoords( float *st ) 
-{
-	vec3_t viewer, reflected;
 
-	float* v = tess.xyz[0];
-	float* normal = tess.normal[0];
-    int i;
-	for (i = 0 ; i < tess.numVertexes ; i++, v += 4, normal += 4, st += 2 ) 
-	{
-		VectorSubtract (backEnd.or.viewOrigin, v, viewer);
-		FastVectorNormalize(viewer);
-
-		float d = DotProduct (normal, viewer);
-
-		reflected[0] = normal[0]*2*d - viewer[0];
-		reflected[1] = normal[1]*2*d - viewer[1];
-		reflected[2] = normal[2]*2*d - viewer[2];
-
-		st[0] = 0.5 + reflected[1] * 0.5;
-		st[1] = 0.5 - reflected[2] * 0.5;
-	}
-}
 
 /*
 ** RB_CalcEnvironmentTexCoordsNew
@@ -1082,43 +1056,6 @@ void RB_CalcCelTexCoords( float *st )
 
 	}
 }
-
-
-
-/*
-** RB_CalcEnvironmentCelShadeTexCoords
-**
-** RiO; celshade 1D environment map
-*/
-
-
-
-
-void RB_CalcEnvironmentCelShadeTexCoords( float *st ) 
-{
-    int    i;
-    vec3_t lightDir;
-
-    float* normal = tess.normal[0];
-	float* v = tess.xyz[0];
-
-	// Calculate only once
-//	VectorCopy( backEnd.currentEntity->lightDir, lightDir );
-//	if ( backEnd.currentEntity == &tr.worldEntity )
-//		VectorSubtract( lightOrigin, v, lightDir );
-//	else
-	VectorCopy( backEnd.currentEntity->lightDir, lightDir );
-	FastVectorNormalize( lightDir );
-
-    for (i = 0 ; i < tess.numVertexes ; i++, v += 4, normal += 4, st += 2 )
-    {
-		float d= DotProduct( normal, lightDir );
-
-		st[0] = 0.5 + d * 0.5;
-		st[1] = 0.5;
-    }
-}
-
 
 
 

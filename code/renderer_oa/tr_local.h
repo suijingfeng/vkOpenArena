@@ -206,12 +206,11 @@ typedef enum {
 } acff_t;
 
 typedef struct {
-	genFunc_t	func;
-
 	float base;
 	float amplitude;
 	float phase;
 	float frequency;
+    genFunc_t func;
 } waveForm_t;
 
 
@@ -284,16 +283,15 @@ typedef enum {
 } texMod_t;
 
 #define	MAX_SHADER_DEFORMS	3
-typedef struct {
-	deform_t	deformation;			// vertex coordinate modification type
-
+typedef struct
+{
 	vec3_t		moveVector;
-	waveForm_t	deformationWave;
-	float		deformationSpread;
-
 	float		bulgeWidth;
 	float		bulgeHeight;
 	float		bulgeSpeed;
+	float		deformationSpread;
+	waveForm_t	deformationWave;
+	deform_t	deformation;			// vertex coordinate modification type
 } deformStage_t;
 
 
@@ -1076,17 +1074,6 @@ typedef struct stageVars
 	vec2_t		texcoords[NUM_TEXTURE_BUNDLES][SHADER_MAX_VERTEXES];
 } stageVars_t;
 
-/*
-typedef struct stageVars
-{
-    union color{
-        unsigned char uColors[SHADER_MAX_VERTEXES][4];
-        unsigned int iColors[SHADER_MAX_VERTEXES];
-    }colors;
-	vec2_t		texcoords[NUM_TEXTURE_BUNDLES][SHADER_MAX_VERTEXES];
-} stageVars_t;
-*/
-
 
 typedef struct shaderCommands_s 
 {
@@ -1479,7 +1466,6 @@ void RB_ProjectionShadowDeform( void );
 #define	GLS_ATEST_BITS						0x70000000
 
 #define GLS_DEFAULT			                GLS_DEPTHMASK_TRUE
-
 shader_t*   R_FindShader( const char *name, int lightmapIndex, qboolean mipRawImage );
 shader_t*   R_GetShaderByHandle( qhandle_t hShader );
 shader_t*   R_FindShaderByName( const char *name );
@@ -1501,12 +1487,7 @@ void R_InitMarks(void);
 /////////////////////////  tr_shade_calc  //////////////////////////////////////////
 void	RB_DeformTessGeometry( void );
 
-void	RB_CalcEnvironmentTexCoords( float *dstTexCoords );
-//void	RB_CalcCelTexCoords( float *dstTexCoords );		// leilei - cel hack
-//void	RB_CalcEnvironmentTexCoordsJO( float *dstTexCoords );	// leilei
-//void	RB_CalcEnvironmentTexCoordsR( float *dstTexCoords );	// leilei
-//void    RB_CalcEyes( float *st, qboolean theothereye); // leilei - eyes
-void	RB_CalcEnvironmentCelShadeTexCoords( float *dstTexCoords );
+
 void	RB_CalcEnvironmentTexCoordsNew( float *dstTexCoords );
 void	RB_CalcEnvironmentTexCoordsHW(void);
 void	RB_CalcFogTexCoords( float *dstTexCoords );
@@ -1520,17 +1501,10 @@ void	RB_CalcModulateAlphasByFog( unsigned char (*dstColors)[4] );
 void	RB_CalcModulateRGBAsByFog( unsigned char (*dstColors)[4] );
 void	RB_CalcWaveAlpha( const waveForm_t *wf, unsigned char (*dstColors)[4] );
 void	RB_CalcWaveColor( const waveForm_t *wf, unsigned int *dstColors );
-//void	RB_CalcAlphaFromEntity( unsigned char (*dstColors)[4]);
-//void	RB_CalcAlphaFromOneMinusEntity( unsigned char (*dstColors)[4] );
 void	RB_CalcStretchTexCoords( const waveForm_t *wf, float *texCoords );
 void	RB_CalcLightscaleTexCoords( float *texCoords );
-//void	RB_CalcAtlasTexCoords( const atlas_t *at, float *st );
-//void	RB_CalcColorFromEntity( unsigned int *dstColors );
-//void	RB_CalcColorFromOneMinusEntity( unsigned int *dstColors );
 void	RB_CalcSpecularAlpha( unsigned char *alphas );
-//void	RB_CalcSpecularAlphaNew( unsigned char (*alphas)[4] );
-//void	RB_CalcDiffuseColor( unsigned char *colors );
-//void	RB_CalcUniformColor( unsigned char *colors );
+
 
 
 ///////////////////////////// tr_init.c  //////////////////////////////

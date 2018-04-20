@@ -436,9 +436,6 @@ static void RB_SurfaceLightningBolt( void )
 static void LerpMeshVertexes(md3Surface_t *surf, float backlerp)
 {
 	short *oldNormals;
-	float	oldXyzScale;
-	float	oldNormalScale;
-	int		vertNum;
 	unsigned lat, lng;
 
 
@@ -457,9 +454,9 @@ static void LerpMeshVertexes(md3Surface_t *surf, float backlerp)
     {
 		//
 		// just copy the vertexes
-		//
-		for (vertNum=0 ; vertNum < numVerts ; vertNum++,
-			newXyz += 4, newNormals += 4, outXyz += 4, outNormal += 4) 
+		int	vertNum;
+
+		for (vertNum=0 ; vertNum < numVerts ; vertNum++, newXyz += 4, newNormals += 4, outXyz += 4, outNormal += 4) 
 		{
 
 			outXyz[0] = newXyz[0] * newXyzScale;
@@ -485,11 +482,12 @@ static void LerpMeshVertexes(md3Surface_t *surf, float backlerp)
 		//
 		// interpolate and copy the vertex and normal
 		//
-		short* oldXyz = (short *)((byte *)surf + surf->ofsXyzNormals) + (backEnd.currentEntity->e.oldframe * surf->numVerts * 4);
+		short* oldXyz = (short *)((unsigned char *)surf + surf->ofsXyzNormals) + (backEnd.currentEntity->e.oldframe * surf->numVerts * 4);
 		oldNormals = oldXyz + 3;
 
-		oldXyzScale = MD3_XYZ_SCALE * backlerp;
-		oldNormalScale = backlerp;
+		float oldXyzScale = MD3_XYZ_SCALE * backlerp;
+		float oldNormalScale = backlerp;
+	    int	vertNum;
 
 		for (vertNum=0 ; vertNum < numVerts ; vertNum++,
 			oldXyz += 4, newXyz += 4, oldNormals += 4, newNormals += 4,
@@ -529,11 +527,11 @@ static void LerpMeshVertexes(md3Surface_t *surf, float backlerp)
         //  VectorArrayNormalize
         // The inputs to this routing seem to always be close to length = 1.0 (about 0.6 to 2.0)
         // This means that we don't have to worry about zero length or enormously long vectors.
-        //VectorArrayNormalize((vec4_t *)tess.normal[tess.numVertexes], numVerts);
+        // VectorArrayNormalize((vec4_t *)tess.normal[tess.numVertexes], numVerts);
 
         int i = 0;
-        for (i = tess.numVertexes; i< numVerts; i++)
-            FastVectorNormalize(tess.normal[i]);
+        for (i = 0; i< numVerts; i++)
+            FastVectorNormalize(tess.normal[tess.numVertexes+i]);
 
    	}
 }
@@ -577,7 +575,6 @@ static void RB_SurfaceMesh(md3Surface_t *surface)
 	}
 
 	tess.numVertexes += surface->numVerts;
-
 }
 
 

@@ -326,6 +326,29 @@ void QDECL Com_Error( int code, const char *fmt, ... )
 }
 
 
+void COM_StripExtension(const char *in, char *out, int destsize)
+{
+	const char *dot = strrchr(in, '.');
+    const char *slash = strrchr(in, '/');
+
+
+	if ((dot != NULL) && ( (slash < dot) || (slash == NULL) ) )
+    {
+        int len = dot-in+1;
+        if(len <= destsize)
+            destsize = len;
+        else
+		    Com_Printf("stripExtension: dest size not enough!\n");
+    }
+
+    if(in != out)
+    	strncpy(out, in, destsize-1);
+	
+    out[destsize-1] = '\0';
+}
+
+
+
 /*
 =============
 Com_Quit_f

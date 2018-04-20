@@ -113,10 +113,8 @@ static void R_ChopPolyBehindPlane( int numInPoints, vec3_t inPoints[MAX_VERTS_ON
 
 		if ( sides[i+1] == SIDE_ON || sides[i+1] == sides[i] )
 			continue;
-	
 			
 		// generate a split point
-
 
 		float d = dists[i] - dists[i+1];
 		if ( d != 0 )
@@ -173,8 +171,8 @@ static void R_BoxSurfaces_r(mnode_t *node, vec3_t mins, vec3_t maxs, surfaceType
 	
 		msurface_t* surf = *mark;
 		// check if the surface has NOIMPACT or NOMARKS set
-		if ( ( surf->shader->surfaceFlags & ( SURF_NOIMPACT | SURF_NOMARKS ) )
-			|| ( surf->shader->contentFlags & CONTENTS_FOG ) ) {
+		if ( ( surf->shader->surfaceFlags & ( SURF_NOIMPACT | SURF_NOMARKS ) ) || ( surf->shader->contentFlags & CONTENTS_FOG ) )
+        {
 			surf->viewCount = tr.viewCount;
 		}
 		// extra check for surfaces to avoid list overflows

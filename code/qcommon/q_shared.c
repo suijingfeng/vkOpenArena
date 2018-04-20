@@ -25,15 +25,13 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
 float Com_Clamp( float min, float max, float value )
 {
-	if ( value < min ) {
+	if ( value < min )
 		return min;
-	}
-    else if ( value > max ) {
+    else if( value > max )
 		return max;
-	}
+
 	return value;
 }
-
 
 
 char *COM_SkipPath(char *pathname)
@@ -51,7 +49,9 @@ char *COM_SkipPath(char *pathname)
 
 const char *COM_GetExtension( const char *name )
 {
-	const char *dot = strrchr(name, '.'), *slash;
+	const char* dot = strrchr(name, '.');
+    const char* slash;
+
 	if (dot && (!(slash = strrchr(name, '/')) || slash < dot))
 		return dot + 1;
 	else
@@ -59,19 +59,6 @@ const char *COM_GetExtension( const char *name )
 }
 
 
-void COM_StripExtension(const char *in, char *out, int destsize)
-{
-	const char *dot = strrchr(in, '.');
-    const char *slash = strrchr(in, '/');
-
-	if ((dot != NULL) && (!(slash ) || slash < dot))
-		destsize = (destsize < dot-in+1 ? destsize : dot-in+1);
-
-	if ( in == out && destsize > 1 )
-		out[destsize-1] = '\0';
-	else
-		Q_strncpyz(out, in, destsize);
-}
 
 
 /*
@@ -243,6 +230,7 @@ char *COM_Parse( char **data_p )
 	return COM_ParseExt( data_p, qtrue );
 }
 
+/*
 void COM_ParseError( char *format, ... )
 {
 	va_list argptr;
@@ -255,6 +243,7 @@ void COM_ParseError( char *format, ... )
 	Com_Printf("ERROR: %s, line %d: %s\n", com_parsename, COM_GetCurrentParseLine(), string);
 }
 
+
 void COM_ParseWarning( char *format, ... )
 {
 	va_list argptr;
@@ -266,7 +255,7 @@ void COM_ParseWarning( char *format, ... )
 
 	Com_Printf("WARNING: %s, line %d: %s\n", com_parsename, COM_GetCurrentParseLine(), string);
 }
-
+*/
 /*
 ==============
 COM_Parse
@@ -310,12 +299,6 @@ int COM_Compress( char *data_p )
 	if (in)
     {
 		while ((c = *in) != 0) {
-
-			// try for glsl escape sequence
-			if ( c == '/' && in[1] == '/' && in[2]=='G' && in[3]=='L' && in[4]=='S' && in[5]=='L') {
-				in+=6;
-				c = *in; if (c==0 || *in == '\n') break;
-			}
 
 			// skip double slash comments
 			if ( c == '/' && in[1] == '/' ) {
@@ -525,15 +508,6 @@ char *COM_ParseExt2(char **data_p, qboolean allowLineBreaks)
 		}
 
 		c = *data;
-
-		// try for glsl program sequence
-		if ( c == '/' && data[1] == '/' && data[2]=='G' && data[3]=='L' && data[4]=='S' && data[5]=='L' )
-		{
-			data += 6;
-			c = *data;
-            if (c==0 || *data == '\n')
-                break;
-		}
 
 		// skip double slash comments
 		if ( c == '/' && data[1] == '/' )
@@ -1274,7 +1248,8 @@ void Info_RemoveKey( char *s, const char *key ) {
 Info_RemoveKey_Big
 ===================
 */
-void Info_RemoveKey_Big( char *s, const char *key ) {
+void Info_RemoveKey_Big( char *s, const char *key )
+{
 	char	*start;
 	char	pkey[BIG_INFO_KEY];
 	char	value[BIG_INFO_VALUE];
@@ -1331,19 +1306,20 @@ void Info_RemoveKey_Big( char *s, const char *key ) {
 ==================
 Info_Validate
 
-Some characters are illegal in info strings because they
-can mess up the server's parsing
+Some characters are illegal in info strings because they can mess up the server's parsing
 ==================
-*/
-qboolean Info_Validate( const char *s ) {
-	if ( strchr( s, '\"' ) ) {
+
+qboolean Info_Validate( const char *s )
+{
+	if ( strchr( s, '\"' ) )
 		return qfalse;
-	}
-	if ( strchr( s, ';' ) ) {
+
+	if ( strchr( s, ';' ) )
 		return qfalse;
-	}
+
 	return qtrue;
 }
+*/
 
 /*
 ==================
@@ -1352,8 +1328,9 @@ Info_SetValueForKey
 Changes or adds a key/value pair
 ==================
 */
-void Info_SetValueForKey( char *s, const char *key, const char *value ) {
-	char	newi[MAX_INFO_STRING];
+void Info_SetValueForKey( char *s, const char *key, const char *value )
+{
+	char newi[MAX_INFO_STRING];
 	const char* blacklist = "\\;\"";
 
 	if ( strlen( s ) >= MAX_INFO_STRING ) {
@@ -1393,8 +1370,9 @@ Changes or adds a key/value pair
 Includes and retains zero-length values
 ==================
 */
-void Info_SetValueForKey_Big( char *s, const char *key, const char *value ) {
-	char	newi[BIG_INFO_STRING];
+void Info_SetValueForKey_Big( char *s, const char *key, const char *value )
+{
+	char newi[BIG_INFO_STRING];
 	const char* blacklist = "\\;\"";
 
 	if ( strlen( s ) >= BIG_INFO_STRING ) {
@@ -1422,7 +1400,7 @@ void Info_SetValueForKey_Big( char *s, const char *key, const char *value ) {
 		return;
 	}
 
-	strcat (s, newi);
+	strcat(s, newi);
 }
 
 

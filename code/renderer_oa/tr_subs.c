@@ -23,6 +23,7 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
 #include "tr_local.h"
 
+
 extern refimport_t ri;
 
 void QDECL Com_Printf( const char *msg, ... )
@@ -48,5 +49,4 @@ void QDECL Com_Error( int level, const char *error, ... )
 
 	ri.Error(level, "%s", text);
 }
-
 

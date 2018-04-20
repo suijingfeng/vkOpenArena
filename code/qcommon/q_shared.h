@@ -431,7 +431,7 @@ extern	vec3_t	axisDefault[3];
 
 #define	IS_NAN(x) (((*(int *)&x)&nanmask)==nanmask)
 
-int Q_isnan(float x);
+//int Q_isnan(float x);
 
 
     extern int QDECL qvmftolsse(void);
@@ -581,7 +581,7 @@ void Vector4Scale( const vec4_t in, vec_t scale, vec4_t out );
 void VectorRotate( vec3_t in, vec3_t matrix[3], vec3_t out );
 int Q_log2(int val);
 
-float Q_acos(float c);
+//float Q_acos(float c);
 
 int		Q_rand( int *seed );
 float	Q_random( int *seed );
@@ -640,7 +640,7 @@ float Com_Clamp( float min, float max, float value );
 
 char*   COM_SkipPath( char *pathname );
 const char* COM_GetExtension( const char *name );
-void	COM_StripExtension(const char *in, char *out, int destsize);
+
 qboolean COM_CompareExtension(const char *in, const char *ext);
 void	COM_DefaultExtension( char *path, int maxSize, const char *extension );
 
@@ -649,8 +649,8 @@ int		COM_GetCurrentParseLine( void );
 char*   COM_Parse( char **data_p );
 char*   COM_ParseExt( char **data_p, qboolean allowLineBreak );
 int		COM_Compress( char *data_p );
-void	COM_ParseError( char *format, ... ) __attribute__ ((format (printf, 1, 2)));
-void	COM_ParseWarning( char *format, ... ) __attribute__ ((format (printf, 1, 2)));
+//void	COM_ParseError( char *format, ... ) __attribute__ ((format (printf, 1, 2)));
+//void	COM_ParseWarning( char *format, ... ) __attribute__ ((format (printf, 1, 2)));
 //int		COM_ParseInfos( char *buf, int max, char infos[][MAX_INFO_STRING] );
 
 #define MAX_TOKENLENGTH		1024

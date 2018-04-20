@@ -941,6 +941,50 @@ static void ComputeColors( shaderStage_t *pStage )
 }
 
 
+
+/*
+** RB_CalcEnvironmentCelShadeTexCoords
+**
+** RiO; celshade 1D environment map
+*/
+static void RB_CalcEnvironmentCelShadeTexCoords( float (*st)[2] ) 
+{
+    int    i;
+    vec3_t lightDir;
+
+	VectorCopy( backEnd.currentEntity->lightDir, lightDir );
+	FastVectorNormalize( lightDir );
+
+    for(i = 0; i < tess.numVertexes; i++)
+    {
+		float d = DotProduct( tess.normal[i], lightDir );
+
+		st[i][0] = 0.5 + d * 0.5;
+		st[i][1] = 0.5;
+    }
+}
+
+
+static void RB_CalcEnvironmentTexCoords( float (*st)[2] ) 
+{
+    int i;
+	for (i = 0 ; i < tess.numVertexes; i++) 
+	{
+        vec3_t viewer, reflected;
+		VectorSubtract (backEnd.or.viewOrigin, tess.xyz[i], viewer);
+		FastVectorNormalize(viewer);
+
+		float d = 2*DotProduct(tess.normal[i], viewer);
+
+		reflected[0] = tess.normal[i][0]*d - viewer[0];
+		reflected[1] = tess.normal[i][1]*d - viewer[1];
+		reflected[2] = tess.normal[i][2]*d - viewer[2];
+
+		st[i][0] = 0.5 + reflected[1] * 0.5;
+		st[i][1] = 0.5 - reflected[2] * 0.5;
+	}
+}
+
 static void ComputeTexCoords( shaderStage_t *pStage )
 {
 	int	b, i, tm;
@@ -977,10 +1021,10 @@ static void ComputeTexCoords( shaderStage_t *pStage )
                 RB_CalcFogTexCoords( ( float * ) tess.svars.texcoords[b] );
                 break;
             case TCGEN_ENVIRONMENT_MAPPED:
-                RB_CalcEnvironmentTexCoords( ( float * ) tess.svars.texcoords[b] ); 
+                RB_CalcEnvironmentTexCoords( tess.svars.texcoords[b] ); 
                 break;
             case TCGEN_ENVIRONMENT_CELSHADE_MAPPED:
-                RB_CalcEnvironmentCelShadeTexCoords( ( float * ) tess.svars.texcoords[b] );
+                RB_CalcEnvironmentCelShadeTexCoords( tess.svars.texcoords[b] );
                 break;
             case TCGEN_BAD:
                 return;

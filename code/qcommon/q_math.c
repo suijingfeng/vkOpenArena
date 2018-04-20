@@ -772,6 +772,7 @@ void AngleVectors( const vec3_t angles, vec3_t forward, vec3_t right, vec3_t up)
 ** assumes "src" is normalized
 */
 
+
 void PerpendicularVector( vec3_t dst, const vec3_t src )
 {
 	int	pos = 0;
@@ -801,14 +802,13 @@ void PerpendicularVector( vec3_t dst, const vec3_t src )
 }
 
 
-
 /*
 ================
 Q_isnan
 
 Don't pass doubles to this
 ================
-*/
+
 ID_INLINE int Q_isnan( float x )
 {
 	floatint_t fi;
@@ -819,6 +819,7 @@ ID_INLINE int Q_isnan( float x )
 
 	return (int)( (unsigned int)fi.ui >> 31 );
 }
+*/
 //------------------------------------------------------------------------
 
 /*
@@ -828,18 +829,16 @@ the msvc acos doesn't always return a value between -PI and PI:
 int i = 1065353246;
 acos(*(float*) &i) == -1.#IND0
 =====================
-*/
 ID_INLINE float Q_acos(float c)
 {
 	float angle = acos(c);
 
-	if (angle > M_PI) {
+	if (angle > M_PI)
 		return (float)M_PI;
-	}
-    else if (angle < -M_PI) {
+    else if (angle < -M_PI)
 		return (float)M_PI;
-	}
 	return angle;
 }
+*/
 
 

@@ -1,7 +1,6 @@
 #ifndef TR_SHARE_H_
 #define TR_SHARE_H_
 
-
 union uInt4bytes{
     int i;
     unsigned char uc[4];
@@ -140,4 +139,23 @@ static ID_INLINE void MatrixMultiply4x4(const float* A, const float* B, float* o
     out[15] = A[12]*B[3] + A[13]*B[7] + A[14]*B[11] + A[15]*B[15];
 }
 
+
+/*
+================
+Q_isnan
+
+Don't pass doubles to this
+================
+
+static ID_INLINE int Q_isnan( float x )
+{
+	floatint_t fi;
+
+	fi.f = x;
+	fi.ui &= 0x7FFFFFFF;
+	fi.ui = 0x7F800000 - fi.ui;
+
+	return (int)( (unsigned int)fi.ui >> 31 );
+}
+*/
 #endif
