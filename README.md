@@ -6,8 +6,6 @@ This project is a fork of ioquake3 with OpenArena specific changes to the client
 
 This a standard ioquake3 build which they describe [here](http://wiki.ioquake3.org/Building_ioquake3)
 
-It's not an autotools based build.  If you don't have the dependencies, it
-will break in the middle of the build.
 
 If you are on Ubuntu or Debian, the easiest way to compile this is to install
 the build dependencies for the "ioquake3" package.
@@ -19,10 +17,7 @@ $ cd engine
 $ make
 ```
 
-You may want to change a few things in Makefile.local.  Other than installing
-the build dependencies, you shouldn't need to do anything else.  By default it
-builds a modular renderer so you need the binary + *.so or *.dll files in the
-same directory to run it.
+By default it builds a modular renderer so you need the binary + *.so or *.dll files in the same directory to run it.
 
 
 
