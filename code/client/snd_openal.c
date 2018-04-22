@@ -156,26 +156,6 @@ static sfxHandle_t default_sfx;
 
 
 /*
-================
-Q_isnan
-
-Don't pass doubles to this
-================
-*/
-ID_INLINE int Q_isnan( float x )
-{
-	floatint_t fi;
-
-	fi.f = x;
-	fi.ui &= 0x7FFFFFFF;
-	fi.ui = 0x7F800000 - fi.ui;
-
-	return (int)( (unsigned int)fi.ui >> 31 );
-}
-
-
-
-/*
 =================
 S_AL_BufferFindFree
 
@@ -638,7 +618,7 @@ S_AL_SanitiseVector
 #define S_AL_SanitiseVector(v) _S_AL_SanitiseVector(v,__LINE__)
 static void _S_AL_SanitiseVector( vec3_t v, int line )
 {
-	if( Q_isnan( v[ 0 ] ) || Q_isnan( v[ 1 ] ) || Q_isnan( v[ 2 ] ) )
+	if( isnan( v[ 0 ] ) || isnan( v[ 1 ] ) || isnan( v[ 2 ] ) )
 	{
 		Com_DPrintf( S_COLOR_YELLOW "WARNING: vector with one or more NaN components "
 				"being passed to OpenAL at %s:%d -- zeroing\n", __FILE__, line );

@@ -11,6 +11,14 @@ static ID_INLINE float VectorLength( const vec3_t v )
 	return sqrtf(v[0]*v[0] + v[1]*v[1] + v[2]*v[2]);
 }
 
+static ID_INLINE float VectorLength2( const float* v1, const float* v2)
+{
+    float tmp1 = v1[0]-v2[0];
+    float tmp2 = v1[1]-v2[1];
+    float tmp3 = v1[2]-v2[2];
+
+	return sqrtf(tmp1*tmp1 + tmp2*tmp2 + tmp3*tmp3);
+}
 
 
 static ID_INLINE void AxisCopy( vec3_t in[3], vec3_t out[3] )
@@ -60,9 +68,9 @@ static ID_INLINE unsigned int ColorBytes4(float r, float g, float b, float a)
 }
 
 
-static ID_INLINE  float NormalizeColor( const vec3_t in, vec3_t out )
+static ID_INLINE float NormalizeColor( const vec3_t in, vec3_t out )
 {
-	float max= in[0];
+	float max = in[0];
 	if ( in[1] > max )
     {
 		max = in[1];
@@ -87,7 +95,7 @@ static ID_INLINE void VectorCross( const vec3_t v1, const vec3_t v2, vec3_t cros
 }
 
 // use Rodrigue's rotation formula
-static ID_INLINE void PointRotateAroundVector( const vec3_t p, const vec3_t dir, float degrees, vec3_t sum )
+static ID_INLINE void PointRotateAroundVector( const vec3_t p, const vec3_t dir, const float degrees, float* sum )
 {
     vec3_t k; 
     FastVectorNormalize2(dir, k);
@@ -142,20 +150,64 @@ static ID_INLINE void MatrixMultiply4x4(const float* A, const float* B, float* o
 
 /*
 ================
-Q_isnan
+MakeNormalVectors
 
-Don't pass doubles to this
+Given a normalized forward vector, create two other perpendicular vectors
+/perpendicular vector could be replaced by this
+
 ================
+*/
 
-static ID_INLINE int Q_isnan( float x )
+static ID_INLINE void MakeNormalVectors( const vec3_t forward, vec3_t right, vec3_t up)
 {
-	floatint_t fi;
+	// this rotate and negate guarantees a vector not colinear with the original
+	right[1] = -forward[0];
+	right[2] = forward[1];
+	right[0] = forward[2];
+    // actually can not guarantee,
+    // assume forward = (1/sqrt(3), 1/sqrt(3), -1/sqrt(3)),
+    // then right = (-1/sqrt(3), -1/sqrt(3), 1/sqrt(3))
 
-	fi.f = x;
-	fi.ui &= 0x7FFFFFFF;
-	fi.ui = 0x7F800000 - fi.ui;
+	float d = DotProduct(right, forward);
 
-	return (int)( (unsigned int)fi.ui >> 31 );
+	right[0] -= d*forward[0];
+	right[1] -= d*forward[1];
+	right[2] -= d*forward[2];
+
+    FastVectorNormalize(right);
+	CrossProduct(forward, right, up);
+}
+
+/*
+static void VectorPerp(const vec3_t src, vec3_t dst1, vec3_t dst2 )
+{
+	int	pos = 0;
+	int i;
+	float minelem = 1.0F;
+	vec3_t tempvec = {0.0f, 0.0f, 0.0f};
+
+	// find the smallest magnitude axially aligned vector
+	for (i = 0; i < 3; i++ )
+	{
+        float len = fabs( src[i] );
+		if ( len < minelem )
+		{
+			pos = i;
+			minelem = len;
+		}
+	}
+	//tempvec[0] = tempvec[1] = tempvec[2] = 0.0F;
+	tempvec[pos] = 1.0F;
+
+	//project the point onto the plane defined by src
+	//float d = -DotProduct( tempvec, src );
+	VectorMA( tempvec, -src[pos], src, dst1 );
+
+    //normalize the result
+	VectorNormalize( dst1 );
+
+	CrossProduct(src, dst1, dst2);
 }
 */
+
 #endif

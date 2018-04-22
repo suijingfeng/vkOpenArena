@@ -204,7 +204,7 @@ void RE_AddRefEntityToScene( const refEntity_t *ent ) {
 		ri.Printf(PRINT_DEVELOPER, "RE_AddRefEntityToScene: Dropping refEntity, reached MAX_REFENTITIES\n");
 		return;
 	}
-	if ( Q_isnan(ent->origin[0]) || Q_isnan(ent->origin[1]) || Q_isnan(ent->origin[2]) ) {
+	if ( isnan(ent->origin[0]) || isnan(ent->origin[1]) || isnan(ent->origin[2]) ) {
 		static qboolean firstTime = qtrue;
 		if (firstTime) {
 			firstTime = qfalse;

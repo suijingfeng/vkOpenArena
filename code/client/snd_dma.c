@@ -420,6 +420,16 @@ void S_memoryLoad(sfx_t	*sfx) {
 
 //=============================================================================
 
+
+ID_INLINE void VectorRotate( vec3_t in, vec3_t matrix[3], vec3_t out )
+{
+	out[0] = DotProduct( in, matrix[0] );
+	out[1] = DotProduct( in, matrix[1] );
+	out[2] = DotProduct( in, matrix[2] );
+}
+
+
+
 /*
 =================
 S_SpatializeOrigin

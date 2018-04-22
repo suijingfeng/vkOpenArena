@@ -193,7 +193,9 @@ typedef enum {
 	TCGEN_LIGHTMAP,
 	TCGEN_TEXTURE,
 	TCGEN_ENVIRONMENT_MAPPED,
+    TCGEN_ENVIRONMENT_MAPPED_WATER,
 	TCGEN_ENVIRONMENT_CELSHADE_MAPPED,
+    TCGEN_ENVIRONMENT_CELSHADE_LEILEI,
 	TCGEN_FOG,
 	TCGEN_VECTOR			// S and T from world coordinates
 } texCoordGen_t;
@@ -938,16 +940,16 @@ typedef struct {
 	viewParms_t	viewParms;
 	orientationr_t	or;
 	backEndCounters_t	pc;
-	qboolean	isHyperspace;
-	trRefEntity_t	*currentEntity;
-	qboolean	skyRenderedThisView;	// flag for drawing sun
-
-	qboolean	projection2D;	// if qtrue, drawstretchpic doesn't need to change modes
-	unsigned char color2D[4];
-	qboolean	vertexes2D;		// shader needs to be finished
-
-
 	trRefEntity_t	entity2D;	// currentEntity will point at this when doing 2D rendering
+   	trRefEntity_t* currentEntity; 
+    qboolean	skyRenderedThisView;	// flag for drawing sun
+	qboolean	isHyperspace;
+	qboolean	projection2D;	// if qtrue, drawstretchpic doesn't need to change modes
+	qboolean	vertexes2D;		// shader needs to be finished
+    qboolean doneSunFlare;
+
+	unsigned char color2D[4];
+
 } backEndState_t;
 
 /*
@@ -1345,7 +1347,7 @@ void R_InitShade(void);
 //////////////////////////// tr_sky.c /////////////////////////////////
 void R_InitSkyTexCoords( float cloudLayerHeight );
 void R_InitCloudAndSky(void);
-
+void RB_DrawSun( float scale, shader_t *shader );
 void RB_StageIteratorSky( void );
 
 
@@ -1504,8 +1506,7 @@ void	RB_CalcWaveColor( const waveForm_t *wf, unsigned int *dstColors );
 void	RB_CalcStretchTexCoords( const waveForm_t *wf, float *texCoords );
 void	RB_CalcLightscaleTexCoords( float *texCoords );
 void	RB_CalcSpecularAlpha( unsigned char *alphas );
-
-
+void    RB_CalcEnvironmentTexCoordsJO(float *st);
 
 ///////////////////////////// tr_init.c  //////////////////////////////
 //void GLimp_InitExtraExtensions(void);
@@ -1532,5 +1533,6 @@ void R_LoadJPG( const char *name, byte **pic, int *width, int *height );
 void R_LoadPCX( const char *name, byte **pic, int *width, int *height );
 void R_LoadPNG( const char *name, byte **pic, int *width, int *height );
 void R_LoadTGA( const char *name, byte **pic, int *width, int *height );
+
 
 #endif //TR_LOCAL_H

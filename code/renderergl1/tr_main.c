@@ -25,13 +25,11 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
 #include <string.h> // memcpy
 
-trGlobals_t		tr;
+trGlobals_t	tr;
 refimport_t	ri;
 
 
-
-
-static float	s_flipMatrix[16] = {
+static float s_flipMatrix[16] = {
 	// convert from our coordinate system (looking down X)
 	// to OpenGL's coordinate system (looking down -Z)
 	0, 0, -1, 0,
@@ -719,8 +717,10 @@ qboolean R_GetPortalOrientations( drawSurf_t *drawSurf, int entityNum,
 	}
 
 	VectorCopy( plane.normal, surface->axis[0] );
-	PerpendicularVector( surface->axis[1], surface->axis[0] );
-	CrossProduct( surface->axis[0], surface->axis[1], surface->axis[2] );
+	MakeNormalVectors( plane.normal, surface->axis[1], surface->axis[2]);
+
+    //PerpendicularVector( surface->axis[1], surface->axis[0] );
+	//CrossProduct( surface->axis[0], surface->axis[1], surface->axis[2] );
 
 	// locate the portal entity closest to this plane.
 	// origin will be the origin of the portal, origin2 will be

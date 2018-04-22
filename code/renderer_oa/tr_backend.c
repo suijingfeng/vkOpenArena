@@ -44,7 +44,7 @@ static cvar_t* r_showImages;
 static cvar_t* r_finish;
 static cvar_t* r_screenshotJpegQuality;
 static cvar_t* r_aviMotionJpegQuality;
-
+static cvar_t* r_drawSun;
 // https://zerowing.idsoftware.com/bugzilla/show_bug.cgi?id=516
 //extern const void* RB_TakeScreenshotCmd( const void *data );
 //extern const void* RB_TakeVideoFrameCmd( const void *data );
@@ -382,10 +382,11 @@ static void RB_RenderDrawSurfList( drawSurf_t *drawSurfs, int numDrawSurfs )
 		qglDepthRange (0, 1);
 	}
 
-
+	if (r_drawSun->integer) {
+		RB_DrawSun(0.1, tr.sunShader);
+	}
 	// add light flares on lights that aren't obscured
 	RB_RenderFlares();
-
 }
 
 
@@ -1426,6 +1427,7 @@ void R_InitBackend(void)
 	r_measureOverdraw = ri.Cvar_Get("r_measureOverdraw", "0", CVAR_CHEAT );
 
 	r_speeds = ri.Cvar_Get("r_speeds", "0", CVAR_CHEAT);
+    r_drawSun = ri.Cvar_Get( "r_drawSun", "0", CVAR_ARCHIVE);
 
     if(r_finish->integer)
     {

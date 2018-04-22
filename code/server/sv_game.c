@@ -276,12 +276,44 @@ void SV_GetUsercmd( int clientNum, usercmd_t *cmd ) {
 
 //==============================================
 
-static int	FloatAsInt( float f ) {
+static int	FloatAsInt( float f )
+{
 	floatint_t fi;
 	fi.f = f;
 	return fi.i;
 }
 
+
+/*
+** assumes "src" is normalized
+*/
+static void PerpendicularVector( vec3_t dst, const vec3_t src )
+{
+	int	pos = 0;
+	int i;
+	float minelem = 1.0F;
+	vec3_t tempvec = {0.0f, 0.0f, 0.0f};
+
+	// find the smallest magnitude axially aligned vector
+	for (i = 0; i < 3; i++ )
+	{
+        float len = fabs( src[i] );
+		if ( len < minelem )
+		{
+			pos = i;
+			minelem = len;
+		}
+	}
+	//tempvec[0] = tempvec[1] = tempvec[2] = 0.0F;
+	tempvec[pos] = 1.0F;
+
+	//project the point onto the plane defined by src
+	//float d = -DotProduct( tempvec, src );
+	VectorMA( tempvec, -src[pos], src, dst );
+
+    //normalize the result
+	VectorNormalize( dst );
+}
 
 
 /*

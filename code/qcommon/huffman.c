@@ -155,27 +155,34 @@ static void swaplist(node_t *node1, node_t *node2) {
 	}
 }
 
+
 /* Do the increments */
-static void increment(huff_t* huff, node_t *node) {
-	node_t *lnode;
+static void increment(huff_t* huff, node_t *node)
+{
 
 	if (!node) {
 		return;
 	}
 
-	if (node->next != NULL && node->next->weight == node->weight) {
-	    lnode = *node->head;
-		if (lnode != node->parent) {
+	if (node->next != NULL && node->next->weight == node->weight)
+    {
+	    node_t* lnode = *node->head;
+		if (lnode != node->parent)
+        {
 			swap(huff, lnode, node);
 		}
 		swaplist(lnode, node);
 	}
-	if (node->prev && node->prev->weight == node->weight) {
+	if (node->prev && node->prev->weight == node->weight)
+    {
 		*node->head = node->prev;
-	} else {
+	}
+    else
+    {
 	    *node->head = NULL;
 		free_ppnode(huff, node->head);
 	}
+
 	node->weight++;
 	if (node->next && node->next->weight == node->weight) {
 		node->head = node->next->head;

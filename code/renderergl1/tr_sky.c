@@ -713,8 +713,11 @@ void RB_DrawSun( float scale, shader_t *shader ) {
 	size = dist * scale;
 
 	VectorScale( tr.sunDirection, dist, origin );
-	PerpendicularVector( vec1, tr.sunDirection );
-	CrossProduct( tr.sunDirection, vec1, vec2 );
+	
+    //PerpendicularVector( vec1, tr.sunDirection );
+	//CrossProduct( tr.sunDirection, vec1, vec2 );
+    //assume tr.sunDirection is normalized
+    MakeNormalVectors(tr.sunDirection, vec1, vec2);
 
 	VectorScale( vec1, size, vec1 );
 	VectorScale( vec2, size, vec2 );

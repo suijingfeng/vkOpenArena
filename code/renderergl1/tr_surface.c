@@ -286,40 +286,54 @@ RB_SurfaceBeam
 */
 static void RB_SurfaceBeam( void )
 {
-#define NUM_BEAM_SEGS 6
-	refEntity_t *e;
-	int	i;
+    #define NUM_BEAM_SEGS 6
+
 	vec3_t perpvec;
 	vec3_t direction, normalized_direction;
-	vec3_t	start_points[NUM_BEAM_SEGS], end_points[NUM_BEAM_SEGS];
-	vec3_t oldorigin, origin;
+	vec3_t start_points[NUM_BEAM_SEGS], end_points[NUM_BEAM_SEGS];
 
-	e = &backEnd.currentEntity->e;
 
-	oldorigin[0] = e->oldorigin[0];
-	oldorigin[1] = e->oldorigin[1];
-	oldorigin[2] = e->oldorigin[2];
+	direction[0] = backEnd.currentEntity->e.oldorigin[0] - backEnd.currentEntity->e.origin[0];
+	direction[1] = backEnd.currentEntity->e.oldorigin[1] - backEnd.currentEntity->e.origin[1];
+	direction[2] = backEnd.currentEntity->e.oldorigin[2] - backEnd.currentEntity->e.origin[2];
 
-	origin[0] = e->origin[0];
-	origin[1] = e->origin[1];
-	origin[2] = e->origin[2];
 
-	normalized_direction[0] = direction[0] = oldorigin[0] - origin[0];
-	normalized_direction[1] = direction[1] = oldorigin[1] - origin[1];
-	normalized_direction[2] = direction[2] = oldorigin[2] - origin[2];
 
-	if ( VectorNormalize( normalized_direction ) == 0 )
-		return;
+    float invLen = direction[0] * direction[0] + direction[1] * direction[1] + direction[2]*direction[2];
+    if(invLen == 0)
+        return;
 
-	PerpendicularVector( perpvec, normalized_direction );
+	invLen = 1.0f / sqrtf(invLen);
+
+	normalized_direction[0] = direction[0] * invLen;
+	normalized_direction[1] = direction[1] * invLen;
+	normalized_direction[2] = direction[2] * invLen;
+
+
+    // this rotate and negate guarantees a vector not colinear with the original
+	perpvec[1] = -normalized_direction[0];
+	perpvec[2] = normalized_direction[1];
+	perpvec[0] = normalized_direction[2];
+    // actually can not guarantee,
+    // assume forward = (1/sqrt(3), 1/sqrt(3), -1/sqrt(3)),
+    // then right = (-1/sqrt(3), -1/sqrt(3), 1/sqrt(3))
+
+	float d = DotProduct(perpvec, normalized_direction);
+
+	perpvec[0] -= d*normalized_direction[0];
+	perpvec[1] -= d*normalized_direction[1];
+	perpvec[2] -= d*normalized_direction[2];
+
+    FastVectorNormalize(perpvec);
+
+	/////////PerpendicularVector( perpvec, normalized_direction );
 
 	VectorScale( perpvec, 4, perpvec );
-
+	int	i;
 	for ( i = 0; i < NUM_BEAM_SEGS ; i++ )
 	{
 //		RotatePointAroundVector( start_points[i], normalized_direction, perpvec, (360.0/NUM_BEAM_SEGS)*i );
         PointRotateAroundVector( perpvec, normalized_direction, (360.0/NUM_BEAM_SEGS)*i, start_points[i] );
-
 //		VectorAdd( start_points[i], origin, start_points[i] );
 		VectorAdd( start_points[i], direction, end_points[i] );
 	}
@@ -331,7 +345,8 @@ static void RB_SurfaceBeam( void )
 	qglColor3f( 1, 0, 0 );
 
 	qglBegin( GL_TRIANGLE_STRIP );
-	for ( i = 0; i <= NUM_BEAM_SEGS; i++ ) {
+	for ( i = 0; i <= NUM_BEAM_SEGS; i++ )
+    {
 		qglVertex3fv( start_points[ i % NUM_BEAM_SEGS] );
 		qglVertex3fv( end_points[ i % NUM_BEAM_SEGS] );
 	}
@@ -476,7 +491,8 @@ static void RB_SurfaceRailRings( void ) {
 	len = VectorNormalize( vec );
 	MakeNormalVectors( vec, right, up );
 	numSegs = ( len ) / r_railSegmentLength->value;
-	if ( numSegs <= 0 ) {
+	if ( numSegs <= 0 )
+    {
 		numSegs = 1;
 	}
 

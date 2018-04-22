@@ -736,6 +736,44 @@ void RB_StageIteratorSky( void )
 	backEnd.skyRenderedThisView = qtrue;
 }
 
+
+void RB_DrawSun( float scale, shader_t *shader )
+{
+	vec3_t		origin, vec1, vec2;
+	unsigned char sunColor[4] = { 255, 255, 255, 255 };
+
+	if ( !backEnd.skyRenderedThisView ) {
+		return;
+	}
+
+	qglLoadMatrixf( backEnd.viewParms.world.modelMatrix );
+	qglTranslatef (backEnd.viewParms.or.origin[0], backEnd.viewParms.or.origin[1], backEnd.viewParms.or.origin[2]);
+
+	float dist = 	backEnd.viewParms.zFar / 1.75;		// div sqrt(3)
+	float size = dist * scale;
+
+	VectorScale( tr.sunDirection, dist, origin );
+
+    //assume tr.sunDirection is normalized
+    MakeNormalVectors(tr.sunDirection, vec1, vec2);
+
+	VectorScale( vec1, size, vec1 );
+	VectorScale( vec2, size, vec2 );
+
+	// farthest depth range
+	qglDepthRange( 1.0, 1.0 );
+
+	RB_BeginSurface( shader, 0 );
+
+	RB_AddQuadStamp(origin, vec1, vec2, sunColor);
+
+	RB_EndSurface();
+
+	// back to normal depth range
+	qglDepthRange( 0.0, 1.0 );
+}
+
+
 void R_InitCloudAndSky(void)
 {
     // controls whether sky should be cleared or drawn

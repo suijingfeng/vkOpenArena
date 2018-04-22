@@ -118,7 +118,6 @@ void RB_CalcLightscaleTexCoords(float *st )
 
 void RB_CalcWaveColor( const waveForm_t *wf, unsigned int *dstColors )
 {
-	int i;
 	float glow;
 
 
@@ -135,11 +134,12 @@ void RB_CalcWaveColor( const waveForm_t *wf, unsigned int *dstColors )
 
 	
     unsigned int color = ColorBytes4(glow, glow, glow, 1.0f);
-
+    int i;
 	for(i = 0; i < tess.numVertexes; i++)
 		dstColors[i] = color;
 
 }
+
 
 
 /*
@@ -932,28 +932,30 @@ void RB_CalcEnvironmentTexCoordsHW()
 */
 void RB_CalcEnvironmentTexCoordsJO( float *st ) 
 {
-	int			i;
 	vec3_t		viewer;
-	float		d;
 
 	float* v = tess.xyz[0];
 	float* normal = tess.normal[0];
 
 	if (backEnd.currentEntity && backEnd.currentEntity->e.renderfx&RF_FIRST_PERSON)	//this is a view model so we must use world lights instead of vieworg
 	{
+        int i;
 		for (i = 0 ; i < tess.numVertexes ; i++, v += 4, normal += 4, st += 2 ) 
 		{
-			d = DotProduct (normal, backEnd.currentEntity->lightDir);
+			float d = DotProduct (normal, backEnd.currentEntity->lightDir);
 			st[0] = normal[0]*d - backEnd.currentEntity->lightDir[0];
 			st[1] = normal[1]*d - backEnd.currentEntity->lightDir[1];
 		}
-	} else {	//the normal way
+	}
+    else
+    {	//the normal way
+        int i;
 		for (i = 0 ; i < tess.numVertexes ; i++, v += 4, normal += 4, st += 2 ) 
 		{
 			VectorSubtract (backEnd.or.viewOrigin, v, viewer);
 			FastVectorNormalize(viewer);
 
-			d = DotProduct (normal, viewer);
+			float d = DotProduct (normal, viewer);
 			st[0] = normal[0]*d - 0.5*viewer[0];
 			st[1] = normal[1]*d - 0.5*viewer[1];
 		}
@@ -968,7 +970,6 @@ void RB_CalcEnvironmentTexCoordsJO( float *st )
 void RB_CalcEnvironmentTexCoordsR( float *st ) 
 {
 	int			i;
-	float		*v, *normal;
 	vec3_t		viewer, reflected, sunned;
 	float		d;
 	vec3_t		sundy;
@@ -976,22 +977,20 @@ void RB_CalcEnvironmentTexCoordsR( float *st )
 	float		dist;
 	vec3_t		vec1, vec2;
 
-	v = tess.xyz[0];
-	normal = tess.normal[0];
-
 	dist = 	backEnd.viewParms.zFar / 1.75;		// div sqrt(3)
 	size = dist * 0.4;
 
 	VectorScale( tr.sunDirection, dist, sundy);
-	PerpendicularVector( vec1, tr.sunDirection );
-	CrossProduct( tr.sunDirection, vec1, vec2 );
+
+    //assume tr.sunDirection is normalized
+    MakeNormalVectors(tr.sunDirection, vec1, vec2);
 
 	VectorScale( vec1, size, vec1 );
 	VectorScale( vec2, size, vec2 );
 
 
-	v = tess.xyz[0];
-	normal = tess.normal[0];
+	float* v = tess.xyz[0];
+	float* normal = tess.normal[0];
 
 	for (i = 0 ; i < tess.numVertexes ; i++, v += 4, normal += 4, st += 2 ) 
 	{
@@ -1012,50 +1011,7 @@ void RB_CalcEnvironmentTexCoordsR( float *st )
 	}
 }
 
-/*
-** RB_CalcCelTexCoords
-	Butchered from JediOutcast source, note that this is not the same method as ZEQ2.
-*/
-void RB_CalcCelTexCoords( float *st ) 
-{
-	int			i;
-	float		*v, *normal;
-	vec3_t		viewer, reflected, lightdir, directedLight;
-	float		d, l, p;
 
-
-	v = tess.xyz[0];
-	normal = tess.normal[0];
-
-	VectorCopy(backEnd.currentEntity->lightDir, lightdir);
-	VectorCopy(backEnd.currentEntity->directedLight, directedLight);
-	float light = (directedLight[0] + directedLight[1] + directedLight[2] / 3);
-	p = 1.0f - (light / 255);
-
-	for (i = 0 ; i < tess.numVertexes ; i++, v += 4, normal += 4, st += 2 ) 
-	{
-		VectorSubtract (backEnd.or.viewOrigin, v, viewer);
-		FastVectorNormalize(viewer);
-
-		d = DotProduct (normal, viewer);
-
-		l = DotProduct (normal, backEnd.currentEntity->lightDir);
-
-		if (d < 0)d = 0;
-		if (l < 0)l = 0;
-
-		if (d < p)d = p;
-		if (l < p)l = p;
-
-		reflected[0] = normal[0]*1*(d+l) - (viewer[0] + lightdir[0] );
-		reflected[1] = normal[1]*1*(d+l) - (viewer[1] + lightdir[1] );
-		reflected[2] = normal[2]*1*(d+l) - (viewer[2] + lightdir[2] );
-
-		st[0] = 0.5 + reflected[1] * 0.5;
-		st[1] = 0.5 - reflected[2] * 0.5;
-
-	}
-}
 
 
 

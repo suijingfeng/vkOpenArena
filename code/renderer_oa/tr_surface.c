@@ -182,26 +182,42 @@ static void RB_SurfaceBeam( void )
 	vec3_t perpvec;
 	vec3_t direction, normalized_direction;
 	vec3_t	start_points[NUM_BEAM_SEGS], end_points[NUM_BEAM_SEGS];
-	vec3_t oldorigin, origin;
 
-	refEntity_t *e = &backEnd.currentEntity->e;
 
-	oldorigin[0] = e->oldorigin[0];
-	oldorigin[1] = e->oldorigin[1];
-	oldorigin[2] = e->oldorigin[2];
+	direction[0] = backEnd.currentEntity->e.oldorigin[0] - backEnd.currentEntity->e.origin[0];
+	direction[1] = backEnd.currentEntity->e.oldorigin[1] - backEnd.currentEntity->e.origin[1];
+	direction[2] = backEnd.currentEntity->e.oldorigin[2] - backEnd.currentEntity->e.origin[2];
 
-	origin[0] = e->origin[0];
-	origin[1] = e->origin[1];
-	origin[2] = e->origin[2];
 
-	normalized_direction[0] = direction[0] = oldorigin[0] - origin[0];
-	normalized_direction[1] = direction[1] = oldorigin[1] - origin[1];
-	normalized_direction[2] = direction[2] = oldorigin[2] - origin[2];
 
-	if ( VectorNormalize( normalized_direction ) == 0 )
-		return;
+    float invLen = direction[0] * direction[0] + direction[1] * direction[1] + direction[2]*direction[2];
+    if(invLen == 0)
+        return;
 
-	PerpendicularVector( perpvec, normalized_direction );
+	invLen = 1.0f / sqrtf(invLen);
+
+	normalized_direction[0] = direction[0] * invLen;
+	normalized_direction[1] = direction[1] * invLen;
+	normalized_direction[2] = direction[2] * invLen;
+
+
+    // this rotate and negate guarantees a vector not colinear with the original
+	perpvec[1] = -normalized_direction[0];
+	perpvec[2] = normalized_direction[1];
+	perpvec[0] = normalized_direction[2];
+    // actually can not guarantee,
+    // assume forward = (1/sqrt(3), 1/sqrt(3), -1/sqrt(3)),
+    // then right = (-1/sqrt(3), -1/sqrt(3), 1/sqrt(3))
+
+	float d = DotProduct(perpvec, normalized_direction);
+
+	perpvec[0] -= d*normalized_direction[0];
+	perpvec[1] -= d*normalized_direction[1];
+	perpvec[2] -= d*normalized_direction[2];
+
+    FastVectorNormalize(perpvec);
+
+	/////////PerpendicularVector( perpvec, normalized_direction );
 
 	VectorScale( perpvec, 4, perpvec );
 	int	i;
@@ -230,14 +246,15 @@ static void RB_SurfaceBeam( void )
 
 
 
-static void DoRailCore( const vec3_t start, const vec3_t end, const vec3_t up, float len, float spanWidth )
+static void DoLightningCore( const vec3_t start, const vec3_t end, const vec3_t up, float len)
 {
 	float t = len / 256.0f;
 
 	RB_CHECKOVERFLOW( 4, 6 );
 
 	int vbase = tess.numVertexes;
-	float spanWidth2 = -spanWidth;
+	
+    const int spanWidth = 8;
 
 	// FIXME: use quad stamp?
 	VectorMA( start, spanWidth, up, tess.xyz[tess.numVertexes] );
@@ -248,7 +265,7 @@ static void DoRailCore( const vec3_t start, const vec3_t end, const vec3_t up, f
 	tess.vertexColors[tess.numVertexes][2] = backEnd.currentEntity->e.shaderRGBA[2] * 0.25;
 	tess.numVertexes++;
 
-	VectorMA( start, spanWidth2, up, tess.xyz[tess.numVertexes] );
+	VectorMA( start, -spanWidth, up, tess.xyz[tess.numVertexes] );
 	tess.texCoords[tess.numVertexes][0][0] = 0;
 	tess.texCoords[tess.numVertexes][0][1] = 1;
 	tess.vertexColors[tess.numVertexes][0] = backEnd.currentEntity->e.shaderRGBA[0];
@@ -265,7 +282,7 @@ static void DoRailCore( const vec3_t start, const vec3_t end, const vec3_t up, f
 	tess.vertexColors[tess.numVertexes][2] = backEnd.currentEntity->e.shaderRGBA[2];
 	tess.numVertexes++;
 
-	VectorMA( end, spanWidth2, up, tess.xyz[tess.numVertexes] );
+	VectorMA( end, -spanWidth, up, tess.xyz[tess.numVertexes] );
 	tess.texCoords[tess.numVertexes][0][0] = t;
 	tess.texCoords[tess.numVertexes][0][1] = 1;
 	tess.vertexColors[tess.numVertexes][0] = backEnd.currentEntity->e.shaderRGBA[0];
@@ -345,10 +362,8 @@ static void RB_SurfaceRailRings( void )
 {
 	vec3_t start, end, vec, right, up;
 
-	refEntity_t* e = &backEnd.currentEntity->e;
-
-	VectorCopy( e->oldorigin, start );
-	VectorCopy( e->origin, end );
+	VectorCopy( backEnd.currentEntity->e.oldorigin, start );
+	VectorCopy( backEnd.currentEntity->e.origin, end );
 
 	// compute variables
 	VectorSubtract( end, start, vec );
@@ -356,42 +371,86 @@ static void RB_SurfaceRailRings( void )
     int len = VectorNormalize( vec );
 	MakeNormalVectors( vec, right, up );
 
-
-	int numSegs = ( len ) / r_railSegmentLength->value;
-	if ( numSegs <= 0 )
+	int numSegs =  len  / r_railSegmentLength->value;
+	if ( numSegs == 0 )
 		numSegs = 1;
 
 
 	VectorScale( vec, r_railSegmentLength->value, vec );
 
 	DoRailDiscs( numSegs, start, vec, right, up );
+	//ri.Printf( PRINT_ALL, "forward:(%f, %f, %f) \t right:(%f, %f, %f) \t numSegs: %d \n", vec[0], vec[1], vec[2], right[0], right[1], right[2], numSegs);
 }
 
 
 static void RB_SurfaceRailCore( void )
 {
-	vec3_t		right;
-	vec3_t		vec;
+	vec3_t		perp;
 	vec3_t		start, end;
 	vec3_t		v1, v2;
 
-	refEntity_t* e = &backEnd.currentEntity->e;
 
-	VectorCopy( e->oldorigin, start );
-	VectorCopy( e->origin, end );
-
-	VectorSubtract( end, start, vec );
-	int len = VectorNormalize( vec );
+	VectorCopy( backEnd.currentEntity->e.oldorigin, start );
+	VectorCopy( backEnd.currentEntity->e.origin, end );
 
 	// compute side vector
 	VectorSubtract( start, backEnd.viewParms.or.origin, v1 );
-	FastVectorNormalize( v1 );
+	//FastVectorNormalize( v1 );
 	VectorSubtract( end, backEnd.viewParms.or.origin, v2 );
-	FastVectorNormalize( v2 );
-	CrossProduct( v1, v2, right );
-	FastVectorNormalize( right );
+	//FastVectorNormalize( v2 );
+	CrossProduct( v1, v2, perp );
+	FastVectorNormalize( perp );
 
-	DoRailCore( start, end, right, len, r_railCoreWidth->integer );
+    //ri.Printf( PRINT_ALL, "right:(%f, %f, %f) \t \n", right[0], right[1], right[2]);
+
+    float t = VectorLength2(end, start) / 256.0f;
+
+	RB_CHECKOVERFLOW( 4, 6 );
+
+	int vbase = tess.numVertexes;
+    int spanWidth = r_railCoreWidth->integer;
+
+	// FIXME: use quad stamp?
+	VectorMA( start, spanWidth, perp, tess.xyz[tess.numVertexes] );
+	tess.texCoords[tess.numVertexes][0][0] = 0;
+	tess.texCoords[tess.numVertexes][0][1] = 0;
+	tess.vertexColors[tess.numVertexes][0] = backEnd.currentEntity->e.shaderRGBA[0] * 0.25;
+	tess.vertexColors[tess.numVertexes][1] = backEnd.currentEntity->e.shaderRGBA[1] * 0.25;
+	tess.vertexColors[tess.numVertexes][2] = backEnd.currentEntity->e.shaderRGBA[2] * 0.25;
+	tess.numVertexes++;
+
+	VectorMA( start, -spanWidth, perp, tess.xyz[tess.numVertexes] );
+	tess.texCoords[tess.numVertexes][0][0] = 0;
+	tess.texCoords[tess.numVertexes][0][1] = 1;
+	tess.vertexColors[tess.numVertexes][0] = backEnd.currentEntity->e.shaderRGBA[0];
+	tess.vertexColors[tess.numVertexes][1] = backEnd.currentEntity->e.shaderRGBA[1];
+	tess.vertexColors[tess.numVertexes][2] = backEnd.currentEntity->e.shaderRGBA[2];
+	tess.numVertexes++;
+
+	VectorMA( end, spanWidth, perp, tess.xyz[tess.numVertexes] );
+
+	tess.texCoords[tess.numVertexes][0][0] = t;
+	tess.texCoords[tess.numVertexes][0][1] = 0;
+	tess.vertexColors[tess.numVertexes][0] = backEnd.currentEntity->e.shaderRGBA[0];
+	tess.vertexColors[tess.numVertexes][1] = backEnd.currentEntity->e.shaderRGBA[1];
+	tess.vertexColors[tess.numVertexes][2] = backEnd.currentEntity->e.shaderRGBA[2];
+	tess.numVertexes++;
+
+	VectorMA( end, -spanWidth, perp, tess.xyz[tess.numVertexes] );
+	tess.texCoords[tess.numVertexes][0][0] = t;
+	tess.texCoords[tess.numVertexes][0][1] = 1;
+	tess.vertexColors[tess.numVertexes][0] = backEnd.currentEntity->e.shaderRGBA[0];
+	tess.vertexColors[tess.numVertexes][1] = backEnd.currentEntity->e.shaderRGBA[1];
+	tess.vertexColors[tess.numVertexes][2] = backEnd.currentEntity->e.shaderRGBA[2];
+	tess.numVertexes++;
+
+	tess.indexes[tess.numIndexes++] = vbase;
+	tess.indexes[tess.numIndexes++] = vbase + 1;
+	tess.indexes[tess.numIndexes++] = vbase + 2;
+
+	tess.indexes[tess.numIndexes++] = vbase + 2;
+	tess.indexes[tess.numIndexes++] = vbase + 1;
+	tess.indexes[tess.numIndexes++] = vbase + 3;
 }
 
 
@@ -403,10 +462,8 @@ static void RB_SurfaceLightningBolt( void )
 	vec3_t		v1, v2;
 	int			i;
 
-	refEntity_t *e = &backEnd.currentEntity->e;
-
-	VectorCopy( e->oldorigin, end );
-	VectorCopy( e->origin, start );
+	VectorCopy( backEnd.currentEntity->e.oldorigin, end );
+	VectorCopy( backEnd.currentEntity->e.origin, start );
 
 	// compute variables
 	VectorSubtract( end, start, vec );
@@ -414,19 +471,20 @@ static void RB_SurfaceLightningBolt( void )
 
 	// compute side vector
 	VectorSubtract( start, backEnd.viewParms.or.origin, v1 );
-	FastVectorNormalize( v1 );
+	//FastVectorNormalize( v1 );
 	VectorSubtract( end, backEnd.viewParms.or.origin, v2 );
-	FastVectorNormalize( v2 );
+	//FastVectorNormalize( v2 );
 	CrossProduct( v1, v2, right );
 	FastVectorNormalize( right );
+
 
 	for ( i = 0 ; i < 4 ; i++ )
     {
 		vec3_t	temp;
 
-		DoRailCore( start, end, right, len, 8 );
-		//RotatePointAroundVector( temp, vec, right, 45 );
-		PointRotateAroundVector( right, vec, 45, temp );
+		DoLightningCore( start, end, right, len);
+
+        PointRotateAroundVector( right, vec, 45, temp );
 
         VectorCopy( temp, right );
 	}
@@ -535,6 +593,7 @@ static void LerpMeshVertexes(md3Surface_t *surf, float backlerp)
 
    	}
 }
+
 
 
 static void RB_SurfaceMesh(md3Surface_t *surface)
@@ -856,24 +915,25 @@ Entities that have a single procedurally generated surface
 */
 static void RB_SurfaceEntity( surfaceType_t *surfType )
 {
-	switch( backEnd.currentEntity->e.reType ) {
-	case RT_SPRITE:
-		RB_SurfaceSprite();
-		break;
-	case RT_BEAM:
-		RB_SurfaceBeam();
-		break;
-	case RT_RAIL_CORE:
-		RB_SurfaceRailCore();
-		break;
-	case RT_RAIL_RINGS:
-		RB_SurfaceRailRings();
-		break;
-	case RT_LIGHTNING:
-		RB_SurfaceLightningBolt();
-		break;
-	default:
-		RB_SurfaceAxis();
+	switch( backEnd.currentEntity->e.reType )
+    {
+        case RT_SPRITE:
+            RB_SurfaceSprite();
+            break;
+        case RT_BEAM:
+            RB_SurfaceBeam();
+            break;
+        case RT_RAIL_CORE:
+            RB_SurfaceRailCore();
+            break;
+        case RT_RAIL_RINGS:
+            RB_SurfaceRailRings();
+            break;
+        case RT_LIGHTNING:
+            RB_SurfaceLightningBolt();
+            break;
+        default:
+            RB_SurfaceAxis();
 		break;
 	}
 }
@@ -1112,7 +1172,7 @@ void (*rb_surfaceTable[SF_NUM_SURFACE_TYPES])( void *) =
 void R_InitSurface(void)
 {
 	r_railWidth = ri.Cvar_Get( "r_railWidth", "16", CVAR_ARCHIVE );
-	r_railCoreWidth = ri.Cvar_Get( "r_railCoreWidth", "6", CVAR_ARCHIVE );
+	r_railCoreWidth = ri.Cvar_Get( "r_railCoreWidth", "8", CVAR_ARCHIVE );
 	r_railSegmentLength = ri.Cvar_Get( "r_railSegmentLength", "64", CVAR_ARCHIVE );
 
     

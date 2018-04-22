@@ -127,7 +127,7 @@ static cvar_t* r_flaresDlightShrink;
 static cvar_t* r_flaresDlightFade;
 static cvar_t* r_flaresDlightOpacity;
 static cvar_t* r_flaresDlightScale;
-
+static cvar_t* r_flareSun;		// type of flare to use for the sun
 
 
 static int flareCoeff;
@@ -1151,6 +1151,74 @@ void RB_SurfaceFlare(srfFlare_t *surf)
 }
 
 
+void RB_DrawSunFlare( void )
+{
+	vec3_t origin, vec1, vec2;
+
+	if ( !backEnd.skyRenderedThisView ) {
+		return;
+	}
+	if ( !r_flareSun->integer ) {
+		return;
+	}
+
+	if ( backEnd.doneSunFlare)	// leilei - only do sun once
+		return;
+
+	int fetype = r_flareSun->integer;
+
+	qglLoadMatrixf( backEnd.viewParms.world.modelMatrix );
+	qglTranslatef (backEnd.viewParms.or.origin[0], backEnd.viewParms.or.origin[1], backEnd.viewParms.or.origin[2]);
+
+	float dist = backEnd.viewParms.zFar / 1.75;		// div sqrt(3)
+	float size = dist * 0.4;
+
+    // assumed tr.sunDirection is normalized
+	VectorScale( tr.sunDirection, dist, origin );
+	MakeNormalVectors(tr.sunDirection, vec1, vec2);
+
+//  PerpendicularVector( vec1, tr.sunDirection );
+//	CrossProduct( tr.sunDirection, vec1, vec2 );
+
+	VectorScale( vec1, size, vec1 );
+	VectorScale( vec2, size, vec2 );
+
+	// farthest depth range
+	qglDepthRange( 1.0, 1.0 );
+
+
+    vec3_t	coll;
+    vec3_t	sunorg;		// sun flare hack
+    vec3_t	temp;
+    
+    coll[0]=tr.sunLight[0]/64;
+    coll[1]=tr.sunLight[1]/64;
+    coll[2]=tr.sunLight[2]/64;
+
+    int g;
+    for (g=0; g<3; g++)
+        if (coll[g] > 1)
+            coll[g] = 1;
+    
+    VectorCopy( origin, temp );
+    VectorSubtract( temp, vec1, temp );
+    VectorAdd( temp, vec2, temp );
+
+    VectorCopy( origin, sunorg );
+    VectorSubtract( sunorg, backEnd.viewParms.or.origin, sunorg );
+    VectorCopy( backEnd.viewParms.or.origin, sunorg );
+    VectorAdd( origin, sunorg, sunorg );
+
+    size = coll[0] + coll[1] + coll[2] * 805;
+
+    RB_AddFlare( (void *)NULL, 0, sunorg, coll, NULL, size, fetype, 1.0f, 2);
+
+	// back to normal depth range
+	qglDepthRange( 0.0, 1.0 );
+
+	backEnd.doneSunFlare = qtrue;
+}
+
 // Init and Flares
 void R_InitFlares( void )
 {
@@ -1189,4 +1257,5 @@ void R_InitFlares( void )
 	r_flaresDlightFade = ri.Cvar_Get( "r_flaresDlightFade", "0" , CVAR_ARCHIVE | CVAR_CHEAT );	// dynamic light flares fading (workaround clipping bug)
 	r_flaresDlightOpacity = ri.Cvar_Get( "r_flaresDlightOpacity", "0.5" , CVAR_ARCHIVE );	// dynamic light flares (workaround poor visibility)
 	r_flaresDlightScale = ri.Cvar_Get( "r_flaresDlightScale", "0.7" , CVAR_ARCHIVE );	// dynamic light flares (workaround poor visibility)
+    r_flareSun = ri.Cvar_Get( "r_flareSun", "0" , CVAR_ARCHIVE);	// it's 0 because mappers expect 0.
 }

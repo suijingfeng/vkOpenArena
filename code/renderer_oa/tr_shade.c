@@ -332,7 +332,6 @@ static void DrawMultitextured( shaderCommands_t *input, int stage )
 // Perform dynamic lighting with another rendering pass
 static void ProjectDlightTexture( void )
 {
-	int		i, l;
 	unsigned char clipBits[SHADER_MAX_VERTEXES];
 	float	texCoordsArray[SHADER_MAX_VERTEXES][2];
 	unsigned char colorArray[SHADER_MAX_VERTEXES][4];
@@ -341,7 +340,8 @@ static void ProjectDlightTexture( void )
 	if ( !backEnd.refdef.num_dlights ) {
 		return;
 	}
-
+	
+    int l;
 	for( l = 0 ; l < backEnd.refdef.num_dlights ; l++ )
     {
 		if ( !( tess.dlightBits & ( 1 << l ) ) )
@@ -352,7 +352,7 @@ static void ProjectDlightTexture( void )
 
 		dlight_t* dl = &backEnd.refdef.dlights[l];
 
-        
+        int i; 
 		for ( i = 0 ; i < tess.numVertexes ; i++)
         {
 			int	clip = 0;
@@ -614,8 +614,8 @@ static void RB_CalcColorFromEntity(unsigned int *dstColors)
 	if ( !backEnd.currentEntity )
 		return;
 
-	int c = * ( int * ) backEnd.currentEntity->e.shaderRGBA;
-    int i;
+	unsigned int c = * (unsigned int *) backEnd.currentEntity->e.shaderRGBA;
+    unsigned int i;
 	for( i = 0; i < tess.numVertexes; i++)
 	{
 		dstColors[i] = c;
@@ -629,7 +629,7 @@ static void RB_CalcColorFromOneMinusEntity(unsigned int *dstColors)
 		return;
 
     // this trashes alpha, but the AGEN block fixes it
-	unsigned int c = ~(*(int *)backEnd.currentEntity->e.shaderRGBA);
+	unsigned int c = ~(*(unsigned int *)backEnd.currentEntity->e.shaderRGBA);
     int i;
 	for( i = 0; i < tess.numVertexes; i++)
 	{
@@ -824,7 +824,7 @@ static void ComputeColors( shaderStage_t *pStage )
 
 				for( i = 0; i < tess.numVertexes; i++ )
                 {
-					*( int * )&tess.svars.colors[i] = fog->colorInt;
+					*( unsigned int * )tess.svars.colors[i] = fog->colorInt;
 				}
 			}
 			break;
@@ -965,6 +965,49 @@ static void RB_CalcEnvironmentCelShadeTexCoords( float (*st)[2] )
 }
 
 
+/*
+** RB_CalcCelTexCoords
+	Butchered from JediOutcast source, note that this is not the same method as ZEQ2.
+*/
+static void RB_CalcCelTexCoords( float *st ) 
+{
+	int			i;
+	vec3_t		viewer, reflected, lightdir, directedLight;
+
+
+	float* v = tess.xyz[0];
+	float* normal = tess.normal[0];
+
+	VectorCopy(backEnd.currentEntity->lightDir, lightdir);
+	VectorCopy(backEnd.currentEntity->directedLight, directedLight);
+	float light = (directedLight[0] + directedLight[1] + directedLight[2] / 3);
+	float p = 1.0f - (light / 255);
+
+	for (i = 0 ; i < tess.numVertexes ; i++, v += 4, normal += 4, st += 2 ) 
+	{
+		VectorSubtract (backEnd.or.viewOrigin, v, viewer);
+		FastVectorNormalize(viewer);
+
+		float d = DotProduct (normal, viewer);
+
+		float l = DotProduct (normal, backEnd.currentEntity->lightDir);
+
+		if (d < 0)d = 0;
+		if (l < 0)l = 0;
+
+		if (d < p)d = p;
+		if (l < p)l = p;
+
+		reflected[0] = normal[0]*1*(d+l) - (viewer[0] + lightdir[0] );
+		reflected[1] = normal[1]*1*(d+l) - (viewer[1] + lightdir[1] );
+		reflected[2] = normal[2]*1*(d+l) - (viewer[2] + lightdir[2] );
+
+		st[0] = 0.5 + reflected[1] * 0.5;
+		st[1] = 0.5 - reflected[2] * 0.5;
+
+	}
+}
+
 static void RB_CalcEnvironmentTexCoords( float (*st)[2] ) 
 {
     int i;
@@ -1023,8 +1066,14 @@ static void ComputeTexCoords( shaderStage_t *pStage )
             case TCGEN_ENVIRONMENT_MAPPED:
                 RB_CalcEnvironmentTexCoords( tess.svars.texcoords[b] ); 
                 break;
+            case TCGEN_ENVIRONMENT_MAPPED_WATER:
+                RB_CalcEnvironmentTexCoordsJO( ( float * ) tess.svars.texcoords[b] ); 			
+                break;
             case TCGEN_ENVIRONMENT_CELSHADE_MAPPED:
                 RB_CalcEnvironmentCelShadeTexCoords( tess.svars.texcoords[b] );
+                break;
+            case TCGEN_ENVIRONMENT_CELSHADE_LEILEI:
+                RB_CalcCelTexCoords( ( float * ) tess.svars.texcoords[b] );
                 break;
             case TCGEN_BAD:
                 return;
@@ -1179,16 +1228,13 @@ void RB_BeginSurface( shader_t *shader, int fogNum )
 */
 void RB_StageIteratorGeneric( void )
 {
-	shaderCommands_t* input = &tess;
-	shader_t* shader = input->shader;
-
 	RB_DeformTessGeometry();
 
 	// set face culling appropriately
-	GL_Cull( shader->cullType );
+	GL_Cull( tess.shader->cullType );
 
 	// set polygon offset if necessary
-	if( shader->polygonOffset )
+	if( tess.shader->polygonOffset )
 	{
 		qglEnable( GL_POLYGON_OFFSET_FILL );
 		qglPolygonOffset( r_offsetFactor->value, r_offsetUnits->value );
@@ -1199,7 +1245,7 @@ void RB_StageIteratorGeneric( void )
     // otherwise we need to avoid compiling those arrays 
     // since they will change during multipass rendering
 	
-    if( tess.numPasses > 1 || shader->multitextureEnv )
+    if( tess.numPasses > 1 || tess.shader->multitextureEnv )
 	{
 		setArraysOnce = qfalse;
 		qglDisableClientState(GL_COLOR_ARRAY);
@@ -1218,7 +1264,7 @@ void RB_StageIteratorGeneric( void )
 
     
 	// lock XYZ
-	qglVertexPointer (3, GL_FLOAT, 16, input->xyz);	// padded for SIMD
+	qglVertexPointer (3, GL_FLOAT, 16, tess.xyz);	// padded for SIMD
 /*
     if (qglLockArraysEXT)
 	{
@@ -1227,14 +1273,14 @@ void RB_StageIteratorGeneric( void )
 */
 
 	// enable color and texcoord arrays after the lock if necessary
-	if ( !setArraysOnce )
+	if( !setArraysOnce )
 	{
 		qglEnableClientState( GL_TEXTURE_COORD_ARRAY );
 		qglEnableClientState( GL_COLOR_ARRAY );
 	}
 
 	// call shader function
-	RB_IterateStagesGeneric( input );
+	RB_IterateStagesGeneric( &tess );
 
 	// now do any dynamic lighting needed
 	if( tess.dlightBits && (tess.shader->sort <= SS_OPAQUE) && !(tess.shader->surfaceFlags & (SURF_NODLIGHT | SURF_SKY) ) )
@@ -1250,7 +1296,7 @@ void RB_StageIteratorGeneric( void )
 	}
 
 	// reset polygon offset
-	if ( shader->polygonOffset )
+	if ( tess.shader->polygonOffset )
 	{
 		qglDisable( GL_POLYGON_OFFSET_FILL );
 	}

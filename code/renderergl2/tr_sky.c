@@ -772,8 +772,8 @@ void R_InitSkyTexCoords( float heightCloud )
 				// compute vector from world origin to intersection point 'v'
 				VectorNormalize( v );
 
-				sRad = Q_acos( v[0] );
-				tRad = Q_acos( v[1] );
+				sRad = acos( v[0] );
+				tRad = acos( v[1] );
 
 				s_cloudTexCoords[i][t][s][0] = sRad;
 				s_cloudTexCoords[i][t][s][1] = tRad;
@@ -811,8 +811,8 @@ void RB_DrawSun( float scale, shader_t *shader ) {
 	size = dist * scale;
 
 	VectorScale( tr.sunDirection, dist, origin );
-	PerpendicularVector( vec1, tr.sunDirection );
-	CrossProduct( tr.sunDirection, vec1, vec2 );
+    //assume tr.sunDirection is normalized
+    MakeNormalVectors(tr.sunDirection, vec1, vec2);
 
 	VectorScale( vec1, size, vec1 );
 	VectorScale( vec2, size, vec2 );

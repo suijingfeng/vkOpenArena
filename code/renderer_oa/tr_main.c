@@ -318,7 +318,8 @@ static void R_PlaneForSurface(surfaceType_t *surfType, cplane_t *plane)
 	srfPoly_t		*poly;
 	drawVert_t		*v1, *v2, *v3;
 
-	if (!surfType) {
+	if (!surfType)
+    {
 		memset (plane, 0, sizeof(*plane));
 		plane->normal[0] = 1;
 		return;
@@ -357,8 +358,9 @@ which may be moving and rotating.
 Returns qtrue if it should be mirrored
 =================
 */
-static qboolean R_GetPortalOrientations( drawSurf_t *drawSurf, int entityNum, 
-							 orientation_t *surface, orientation_t *camera, vec3_t pvsOrigin, qboolean *mirror )
+
+
+static qboolean R_GetPortalOrientations( drawSurf_t *drawSurf, int entityNum, orientation_t *surface, orientation_t *camera, vec3_t pvsOrigin, qboolean *mirror )
 {
 	int			i;
 	cplane_t	originalPlane, plane;
@@ -392,8 +394,12 @@ static qboolean R_GetPortalOrientations( drawSurf_t *drawSurf, int entityNum,
 	}
 
 	VectorCopy( plane.normal, surface->axis[0] );
-	PerpendicularVector( surface->axis[1], surface->axis[0] );
-	CrossProduct( surface->axis[0], surface->axis[1], surface->axis[2] );
+    MakeNormalVectors( plane.normal, surface->axis[1], surface->axis[2]);
+    
+    //VectorPerp( surface->axis[1], surface->axis[0] );
+	//CrossProduct( surface->axis[0], surface->axis[1], surface->axis[2] );
+
+
 
 	// locate the portal entity closest to this plane.
 	// origin will be the origin of the portal, 

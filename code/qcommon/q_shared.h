@@ -599,12 +599,9 @@ void AxisClear( vec3_t axis[3] );
 void SetPlaneSignbits( struct cplane_s *out );
 int BoxOnPlaneSide (vec3_t emins, vec3_t emaxs, struct cplane_s *plane);
 
-qboolean BoundsIntersect(const vec3_t mins, const vec3_t maxs,
-		const vec3_t mins2, const vec3_t maxs2);
-qboolean BoundsIntersectSphere(const vec3_t mins, const vec3_t maxs,
-		const vec3_t origin, vec_t radius);
-qboolean BoundsIntersectPoint(const vec3_t mins, const vec3_t maxs,
-		const vec3_t origin);
+qboolean BoundsIntersect(const vec3_t mins, const vec3_t maxs, const vec3_t mins2, const vec3_t maxs2);
+qboolean BoundsIntersectSphere(const vec3_t mins, const vec3_t maxs, const vec3_t origin, vec_t radius);
+qboolean BoundsIntersectPoint(const vec3_t mins, const vec3_t maxs,	const vec3_t origin);
 
 float	AngleMod(float a);
 float	LerpAngle (float from, float to, float frac);
@@ -615,10 +612,9 @@ float AngleNormalize360 ( float angle );
 float AngleNormalize180 ( float angle );
 float AngleDelta ( float angle1, float angle2 );
 
-void PerpendicularVector( vec3_t dst, const vec3_t src );
+//void PerpendicularVector( vec3_t dst, const vec3_t src );
 
-void MakeNormalVectors( const vec3_t forward, vec3_t right, vec3_t up );
-// perpendicular vector could be replaced by this
+//void MakeNormalVectors( const vec3_t forward, vec3_t right, vec3_t up );
 
 qboolean Matrix4Compare(const float a[16], const float b[16]);
 
@@ -675,7 +671,7 @@ typedef struct pc_token_s
 
 // data is an in/out parm, returns a parsed out token
 
-void	COM_MatchToken( char**buf_p, char *match );
+void COM_MatchToken( char**buf_p, char *match );
 
 qboolean SkipBracedSection (char **program, int depth);
 void SkipRestOfLine ( char **data );
@@ -693,14 +689,17 @@ char *Com_SkipCharset( char *s, char *sep );
 void Com_RandomBytes( byte *string, int len );
 
 // mode parm for FS_FOpenFile
-typedef enum {
+typedef enum
+{
 	FS_READ,
 	FS_WRITE,
 	FS_APPEND,
 	FS_APPEND_SYNC
 } fsMode_t;
 
-typedef enum {
+
+typedef enum
+{
 	FS_SEEK_CUR,
 	FS_SEEK_END,
 	FS_SEEK_SET
@@ -716,21 +715,20 @@ qboolean Q_isanumber( const char *s );
 qboolean Q_isintegral( float f );
 
 // portable case insensitive compare
-int		Q_stricmp (const char *s1, const char *s2);
-//int		Q_strncmp (const char *s1, const char *s2, int n);
-int		Q_stricmpn (const char *s1, const char *s2, int n);
-char	*Q_strlwr( char *s1 );
-char	*Q_strupr( char *s1 );
-const char	*Q_stristr( const char *s, const char *find);
+int	Q_stricmp (const char *s1, const char *s2);
+int	Q_stricmpn (const char *s1, const char *s2, int n);
+char* Q_strlwr( char *s1 );
+char* Q_strupr( char *s1 );
+const char* Q_stristr( const char *s, const char *find);
 
 // buffer size safe library replacements
-void	Q_strncpyz( char *dest, const char *src, int destsize );
-void	Q_strcat( char *dest, int size, const char *src );
+void Q_strncpyz( char *dest, const char *src, int destsize );
+void Q_strcat( char *dest, int size, const char *src );
 
 // strlen that discounts Quake color sequences
 int Q_PrintStrlen( const char *string );
 // removes color sequences from string
-char *Q_CleanStr( char *string );
+char* Q_CleanStr( char *string );
 // Count the number of char tocount encountered in string
 int Q_CountChar(const char *string, char tocount);
 

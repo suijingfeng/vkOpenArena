@@ -477,33 +477,44 @@ RB_SurfaceBeam
 static void RB_SurfaceBeam( void )
 {
 #define NUM_BEAM_SEGS 6
-	refEntity_t *e;
 	shaderProgram_t *sp = &tr.textureColorShader;
 	int	i;
 	vec3_t perpvec;
 	vec3_t direction, normalized_direction;
 	vec3_t	start_points[NUM_BEAM_SEGS], end_points[NUM_BEAM_SEGS];
-	vec3_t oldorigin, origin;
 
-	e = &backEnd.currentEntity->e;
+	direction[0] = backEnd.currentEntity->e.oldorigin[0] - backEnd.currentEntity->e.origin[0];
+	direction[1] = backEnd.currentEntity->e.oldorigin[1] - backEnd.currentEntity->e.origin[1];
+	direction[2] = backEnd.currentEntity->e.oldorigin[2] - backEnd.currentEntity->e.origin[2];
 
-	oldorigin[0] = e->oldorigin[0];
-	oldorigin[1] = e->oldorigin[1];
-	oldorigin[2] = e->oldorigin[2];
+//
+    float invLen = direction[0] * direction[0] + direction[1] * direction[1] + direction[2]*direction[2];
+    if(invLen == 0)
+        return;
 
-	origin[0] = e->origin[0];
-	origin[1] = e->origin[1];
-	origin[2] = e->origin[2];
+	invLen = 1.0f / sqrtf(invLen);
 
-	normalized_direction[0] = direction[0] = oldorigin[0] - origin[0];
-	normalized_direction[1] = direction[1] = oldorigin[1] - origin[1];
-	normalized_direction[2] = direction[2] = oldorigin[2] - origin[2];
+	normalized_direction[0] = direction[0] * invLen;
+	normalized_direction[1] = direction[1] * invLen;
+	normalized_direction[2] = direction[2] * invLen;
 
-	if ( VectorNormalize( normalized_direction ) == 0 )
-		return;
 
-	PerpendicularVector( perpvec, normalized_direction );
+    // this rotate and negate guarantees a vector not colinear with the original
+	perpvec[1] = -normalized_direction[0];
+	perpvec[2] = normalized_direction[1];
+	perpvec[0] = normalized_direction[2];
+    // actually can not guarantee,
+    // assume forward = (1/sqrt(3), 1/sqrt(3), -1/sqrt(3)),
+    // then right = (-1/sqrt(3), -1/sqrt(3), 1/sqrt(3))
 
+	float d = DotProduct(perpvec, normalized_direction);
+
+	perpvec[0] -= d*normalized_direction[0];
+	perpvec[1] -= d*normalized_direction[1];
+	perpvec[2] -= d*normalized_direction[2];
+
+    FastVectorNormalize(perpvec);
+//
 	VectorScale( perpvec, 4, perpvec );
 
 	for ( i = 0; i < NUM_BEAM_SEGS ; i++ )
@@ -680,7 +691,8 @@ static void DoRailDiscs( int numSegs, const vec3_t start, const vec3_t dir, cons
 /*
 ** RB_SurfaceRailRinges
 */
-static void RB_SurfaceRailRings( void ) {
+static void RB_SurfaceRailRings( void )
+{
 	refEntity_t *e;
 	int			numSegs;
 	int			len;
@@ -698,9 +710,8 @@ static void RB_SurfaceRailRings( void ) {
 	len = VectorNormalize( vec );
 	MakeNormalVectors( vec, right, up );
 	numSegs = ( len ) / r_railSegmentLength->value;
-	if ( numSegs <= 0 ) {
+	if ( numSegs <= 0 )
 		numSegs = 1;
-	}
 
 	VectorScale( vec, r_railSegmentLength->value, vec );
 

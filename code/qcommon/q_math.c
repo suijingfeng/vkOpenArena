@@ -243,12 +243,11 @@ void RotateAroundDirection( vec3_t axis[3], float yaw )
 	// cross to get axis[2]
 	CrossProduct( axis[0], axis[1], axis[2] );
 }
-*/
 
+*/
 
 void vectoangles( const vec3_t value1, vec3_t angles )
 {
-	float	forward;
 	float	yaw, pitch;
 	
 	if( (value1[1] == 0) && (value1[0] == 0) )
@@ -261,24 +260,22 @@ void vectoangles( const vec3_t value1, vec3_t angles )
 	}
 	else
     {
-		if ( value1[0] ) {
+		if ( value1[0] )
+        {
 			yaw = ( atan2 ( value1[1], value1[0] ) * 180 / M_PI );
-		}
-		else if ( value1[1] > 0 ) {
-			yaw = 90;
-		}
-		else {
-			yaw = 270;
-		}
-		if ( yaw < 0 ) {
+        	if ( yaw < 0 )
 			yaw += 360;
-		}
+        }
+		else if ( value1[1] > 0 )
+			yaw = 90;
+		else
+			yaw = 270;
+	
 
-		forward = sqrt ( value1[0]*value1[0] + value1[1]*value1[1] );
+		float forward = sqrt ( value1[0]*value1[0] + value1[1]*value1[1] );
 		pitch = ( atan2(value1[2], forward) * 180 / M_PI );
-		if ( pitch < 0 ) {
+		if ( pitch < 0 )
 			pitch += 360;
-		}
 	}
 
 	angles[PITCH] = -pitch;
@@ -317,35 +314,7 @@ void AxisClear( vec3_t axis[3] )
 
 
 
-/*
-================
-MakeNormalVectors
 
-Given a normalized forward vector, create two other perpendicular vectors
-================
-*/
-void MakeNormalVectors( const vec3_t forward, vec3_t right, vec3_t up)
-{
-	// this rotate and negate guarantees a vector
-	// not colinear with the original
-	right[1] = -forward[0];
-	right[2] = forward[1];
-	right[0] = forward[2];
-
-	float d = DotProduct(right, forward);
-	VectorMA(right, -d, forward, right);
-	VectorNormalize(right);
-	CrossProduct(right, forward, up);
-}
-
-
-
-ID_INLINE void VectorRotate( vec3_t in, vec3_t matrix[3], vec3_t out )
-{
-	out[0] = DotProduct( in, matrix[0] );
-	out[1] = DotProduct( in, matrix[1] );
-	out[2] = DotProduct( in, matrix[2] );
-}
 
 
 /*
@@ -768,38 +737,7 @@ void AngleVectors( const vec3_t angles, vec3_t forward, vec3_t right, vec3_t up)
 	}
 }
 
-/*
-** assumes "src" is normalized
-*/
 
-
-void PerpendicularVector( vec3_t dst, const vec3_t src )
-{
-	int	pos = 0;
-	int i;
-	float minelem = 1.0F;
-	vec3_t tempvec = {0.0f, 0.0f, 0.0f};
-
-	// find the smallest magnitude axially aligned vector
-	for (i = 0; i < 3; i++ )
-	{
-        float len = fabs( src[i] );
-		if ( len < minelem )
-		{
-			pos = i;
-			minelem = len;
-		}
-	}
-	//tempvec[0] = tempvec[1] = tempvec[2] = 0.0F;
-	tempvec[pos] = 1.0F;
-
-	//project the point onto the plane defined by src
-	float d = -DotProduct( tempvec, src );
-	VectorMA( tempvec, d, src, dst );
-
-    //normalize the result
-	VectorNormalize( dst );
-}
 
 
 /*

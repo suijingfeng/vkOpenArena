@@ -1036,8 +1036,6 @@ qboolean R_GetPortalOrientations( drawSurf_t *drawSurf, int entityNum,
 							 vec3_t pvsOrigin, qboolean *mirror ) {
 	int			i;
 	cplane_t	originalPlane, plane;
-	trRefEntity_t	*e;
-	float		d;
 	vec3_t		transformed;
 
 	// create plane axis for the portal we are seeing
@@ -1063,19 +1061,18 @@ qboolean R_GetPortalOrientations( drawSurf_t *drawSurf, int entityNum,
 	}
 
 	VectorCopy( plane.normal, surface->axis[0] );
-	PerpendicularVector( surface->axis[1], surface->axis[0] );
-	CrossProduct( surface->axis[0], surface->axis[1], surface->axis[2] );
+    MakeNormalVectors( plane.normal, surface->axis[1], surface->axis[2]);
 
 	// locate the portal entity closest to this plane.
-	// origin will be the origin of the portal, origin2 will be
-	// the origin of the camera
-	for ( i = 0 ; i < tr.refdef.num_entities ; i++ ) {
-		e = &tr.refdef.entities[i];
+	// origin will be the origin of the portal, origin2 will be the origin of the camera
+	for ( i = 0 ; i < tr.refdef.num_entities ; i++ )
+    {
+		trRefEntity_t* e = &tr.refdef.entities[i];
 		if ( e->e.reType != RT_PORTALSURFACE ) {
 			continue;
 		}
 
-		d = DotProduct( e->e.origin, originalPlane.normal ) - originalPlane.dist;
+		float d = DotProduct( e->e.origin, originalPlane.normal ) - originalPlane.dist;
 		if ( d > 64 || d < -64) {
 			continue;
 		}
@@ -1156,6 +1153,7 @@ qboolean R_GetPortalOrientations( drawSurf_t *drawSurf, int entityNum,
 	return qfalse;
 }
 
+
 static qboolean IsMirror( const drawSurf_t *drawSurf, int entityNum )
 {
 	int			i;
@@ -1187,22 +1185,22 @@ static qboolean IsMirror( const drawSurf_t *drawSurf, int entityNum )
 	// locate the portal entity closest to this plane.
 	// origin will be the origin of the portal, origin2 will be
 	// the origin of the camera
-	for ( i = 0 ; i < tr.refdef.num_entities ; i++ ) 
+	for(i = 0 ; i < tr.refdef.num_entities ; i++)
 	{
 		e = &tr.refdef.entities[i];
-		if ( e->e.reType != RT_PORTALSURFACE ) {
+		if ( e->e.reType != RT_PORTALSURFACE )
+        {
 			continue;
 		}
 
 		d = DotProduct( e->e.origin, originalPlane.normal ) - originalPlane.dist;
-		if ( d > 64 || d < -64) {
+		if ( d > 64 || d < -64)
+        {
 			continue;
 		}
 
 		// if the entity is just a mirror, don't use as a camera point
-		if ( e->e.oldorigin[0] == e->e.origin[0] && 
-			e->e.oldorigin[1] == e->e.origin[1] && 
-			e->e.oldorigin[2] == e->e.origin[2] ) 
+		if ( e->e.oldorigin[0] == e->e.origin[0] && e->e.oldorigin[1] == e->e.origin[1] && e->e.oldorigin[2] == e->e.origin[2] ) 
 		{
 			return qtrue;
 		}
@@ -1212,12 +1210,14 @@ static qboolean IsMirror( const drawSurf_t *drawSurf, int entityNum )
 	return qfalse;
 }
 
+
 /*
 ** SurfIsOffscreen
 **
 ** Determines if a surface is completely offscreen.
 */
-static qboolean SurfIsOffscreen( const drawSurf_t *drawSurf, vec4_t clipDest[128] ) {
+static qboolean SurfIsOffscreen( const drawSurf_t *drawSurf, vec4_t clipDest[128] )
+{
 	float shortest = 100000000;
 	int entityNum;
 	int numTriangles;
@@ -1277,11 +1277,9 @@ static qboolean SurfIsOffscreen( const drawSurf_t *drawSurf, vec4_t clipDest[128
 	{
 		vec3_t normal, tNormal;
 
-		float len;
-
 		VectorSubtract( tess.xyz[tess.indexes[i]], tr.viewParms.or.origin, normal );
 
-		len = VectorLengthSquared( normal );			// lose the sqrt
+		float len = VectorLengthSquared( normal );			// lose the sqrt
 		if ( len < shortest )
 		{
 			shortest = len;
@@ -1294,6 +1292,7 @@ static qboolean SurfIsOffscreen( const drawSurf_t *drawSurf, vec4_t clipDest[128
 			numTriangles--;
 		}
 	}
+
 	if ( !numTriangles )
 	{
 		return qtrue;

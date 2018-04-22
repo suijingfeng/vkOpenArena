@@ -2240,6 +2240,14 @@ static qboolean ParseStage( shaderStage_t *stage, char **text )
 			{
 				stage->bundle[0].tcGen = TCGEN_ENVIRONMENT_CELSHADE_MAPPED;
 			}
+            else if ( !Q_stricmp( token, "celshading" ) )		// leilei - my technique is different
+			{
+			    stage->bundle[0].tcGen = TCGEN_ENVIRONMENT_CELSHADE_LEILEI;
+			}
+            else if ( !Q_stricmp( token, "environmentWater" ) )
+			{
+				stage->bundle[0].tcGen = TCGEN_ENVIRONMENT_MAPPED_WATER;	// leilei - water's envmaps
+			}
 			else if ( !Q_stricmp( token, "lightmap" ) )
 			{
 				stage->bundle[0].tcGen = TCGEN_LIGHTMAP;
