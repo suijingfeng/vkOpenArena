@@ -2723,7 +2723,7 @@ void RE_LoadWorldMap( const char *name ) {
 	tr.sunDirection[1] = 0.3f;
 	tr.sunDirection[2] = 0.9f;
 
-	VectorNormalize( tr.sunDirection );
+	FastVectorNormalize( tr.sunDirection );
 
 	// set default autoexposure settings
 	tr.autoExposureMinMax[0] = -2.0f;
@@ -2753,7 +2753,7 @@ void RE_LoadWorldMap( const char *name ) {
 	Q_strncpyz( s_worldData.name, name, sizeof( s_worldData.name ) );
 
 	Q_strncpyz( s_worldData.baseName, COM_SkipPath( s_worldData.name ), sizeof( s_worldData.name ) );
-	COM_StripExtension(s_worldData.baseName, s_worldData.baseName, sizeof(s_worldData.baseName));
+	stripExtension(s_worldData.baseName, s_worldData.baseName, sizeof(s_worldData.baseName));
 
 	startMarker = ri.Hunk_Alloc(0, h_low);
 	c_gridVerts = 0;

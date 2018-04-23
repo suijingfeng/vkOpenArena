@@ -37,6 +37,7 @@ static shader_t*		hashTable[FILE_HASH_SIZE];
 #define MAX_SHADERTEXT_HASH		2048
 static char **shaderTextHashTable[MAX_SHADERTEXT_HASH];
 
+
 /*
 ================
 return a hash value for the filename
@@ -45,6 +46,8 @@ return a hash value for the filename
 #ifdef __GNUCC__
   #warning TODO: check if long is ok here 
 #endif
+
+
 static long generateHashValue( const char *fname, const int size ) {
 	int		i;
 	long	hash;
@@ -64,6 +67,29 @@ static long generateHashValue( const char *fname, const int size ) {
 	hash &= (size-1);
 	return hash;
 }
+
+
+void stripExtension(const char *in, char *out, int destsize)
+{
+	const char *dot = strrchr(in, '.');
+    const char *slash = strrchr(in, '/');
+
+
+	if ((dot != NULL) && ( (slash < dot) || (slash == NULL) ) )
+    {
+        int len = dot-in+1;
+        if(len <= destsize)
+            destsize = len;
+        else
+		    ri.Printf( PRINT_WARNING, "stripExtension: dest size not enough!\n");
+    }
+
+    if(in != out)
+    	strncpy(out, in, destsize-1);
+	
+    out[destsize-1] = '\0';
+}
+
 
 void R_RemapShader(const char *shaderName, const char *newShaderName, const char *timeOffset) {
 	char		strippedName[MAX_QPATH];
@@ -94,7 +120,7 @@ void R_RemapShader(const char *shaderName, const char *newShaderName, const char
 
 	// remap all the shaders with the given name
 	// even tho they might have different lightmaps
-	COM_StripExtension(shaderName, strippedName, sizeof(strippedName));
+	stripExtension(shaderName, strippedName, sizeof(strippedName));
 	hash = generateHashValue(strippedName, FILE_HASH_SIZE);
 	for (sh = hashTable[hash]; sh; sh = sh->next) {
 		if (Q_stricmp(sh->name, strippedName) == 0) {
@@ -1498,7 +1524,7 @@ static qboolean ParseShader( char **text )
 			token = COM_ParseExt( text, qfalse );
 			tr.sunLight[2] = atof( token );
 			
-			VectorNormalize( tr.sunLight );
+			FastVectorNormalize( tr.sunLight );
 
 			token = COM_ParseExt( text, qfalse );
 			a = atof( token );
@@ -2452,7 +2478,7 @@ shader_t *R_FindShaderByName( const char *name ) {
 		return tr.defaultShader;
 	}
 
-	COM_StripExtension(name, strippedName, sizeof(strippedName));
+	stripExtension(name, strippedName, sizeof(strippedName));
 
 	hash = generateHashValue(strippedName, FILE_HASH_SIZE);
 
@@ -2518,7 +2544,7 @@ shader_t *R_FindShader( const char *name, int lightmapIndex, qboolean mipRawImag
 		lightmapIndex = LIGHTMAP_BY_VERTEX;
 	}
 
-	COM_StripExtension(name, strippedName, sizeof(strippedName));
+	stripExtension(name, strippedName, sizeof(strippedName));
 
 	hash = generateHashValue(strippedName, FILE_HASH_SIZE);
 

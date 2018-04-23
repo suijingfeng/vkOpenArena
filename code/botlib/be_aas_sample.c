@@ -524,7 +524,7 @@ aas_trace_t AAS_TraceClientBBox(vec3_t start, vec3_t end, int presencetype,
 					trace.startsolid = qfalse;
 					VectorSubtract(end, start, v1);
 					VectorSubtract(tstack_p->start, start, v2);
-					trace.fraction = VectorLength(v2) / VectorNormalize(v1);
+					trace.fraction = VectorLength(v2) / BE_VectorNormalize(v1);
 					VectorMA(tstack_p->start, -0.125, v1, tstack_p->start);
 				} //end else
 				VectorCopy(tstack_p->start, trace.endpos);
@@ -577,7 +577,7 @@ aas_trace_t AAS_TraceClientBBox(vec3_t start, vec3_t end, int presencetype,
 				trace.startsolid = qfalse;
 				VectorSubtract(end, start, v1);
 				VectorSubtract(tstack_p->start, start, v2);
-				trace.fraction = VectorLength(v2) / VectorNormalize(v1);
+				trace.fraction = VectorLength(v2) / BE_VectorNormalize(v1);
 				VectorMA(tstack_p->start, -0.125, v1, tstack_p->start);
 			} //end else
 			VectorCopy(tstack_p->start, trace.endpos);

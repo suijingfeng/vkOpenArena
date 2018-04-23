@@ -87,7 +87,7 @@ static long int generateHashValue( const char *fname, const int size )
 }
 
 
-static void stripExtension(const char *in, char *out, int destsize)
+void stripExtension(const char *in, char *out, int destsize)
 {
 	const char *dot = strrchr(in, '.');
     const char *slash = strrchr(in, '/');
@@ -779,6 +779,12 @@ static qboolean ParseStage( shaderStage_t *stage, char **text )
 				if (!token[0])
 					break;
 			}
+		}
+		else if ( !Q_stricmp( token, "mipOffset" ) ){
+			token = COM_ParseExt(text,qfalse);
+		}
+		else if ( !Q_stricmp( token, "nomipmaps" ) ){
+			stageMipmaps = qfalse;
 		}
 		else if ( !Q_stricmp( token, "map" ) )
 		{   // map <name>
@@ -2064,6 +2070,7 @@ static qboolean ParseStage( shaderStage_t *stage, char **text )
 				blendDstBits = NameToDstBlendMode( token );
 			}
 			
+
 			// clear depth mask for blended surfaces
 			if ( !depthMaskExplicit )
 			{
@@ -2126,6 +2133,20 @@ static qboolean ParseStage( shaderStage_t *stage, char **text )
 			else if ( !Q_stricmp( token, "exactVertex" ) )
 			{
 				stage->rgbGen = CGEN_EXACT_VERTEX;
+			}
+			else if ( !Q_stricmp( token, "vertexLighting" ) )	// leilei - vertex WITH a lighting pass after
+			{
+				stage->rgbGen = CGEN_VERTEX_LIT;
+				if ( stage->alphaGen == 0 ) {
+					stage->alphaGen = AGEN_VERTEX;
+				}
+			}
+			else if ( !Q_stricmp( token, "vertexLighting2" ) )	// leilei - second vertex color
+			{
+				stage->rgbGen = CGEN_VERTEX_LIT;
+				if ( stage->alphaGen == 0 ) {
+					stage->alphaGen = AGEN_VERTEX;
+				}
 			}
 			else if ( !Q_stricmp( token, "lightingDiffuse" ) )
 			{
@@ -2240,11 +2261,11 @@ static qboolean ParseStage( shaderStage_t *stage, char **text )
 			{
 				stage->bundle[0].tcGen = TCGEN_ENVIRONMENT_CELSHADE_MAPPED;
 			}
-            else if ( !Q_stricmp( token, "celshading" ) )		// leilei - my technique is different
+			else if ( !Q_stricmp( token, "celshading" ) )		// leilei - my technique is different
 			{
-			    stage->bundle[0].tcGen = TCGEN_ENVIRONMENT_CELSHADE_LEILEI;
+				stage->bundle[0].tcGen = TCGEN_ENVIRONMENT_CELSHADE_LEILEI;
 			}
-            else if ( !Q_stricmp( token, "environmentWater" ) )
+			else if ( !Q_stricmp( token, "environmentWater" ) )
 			{
 				stage->bundle[0].tcGen = TCGEN_ENVIRONMENT_MAPPED_WATER;	// leilei - water's envmaps
 			}
@@ -2771,7 +2792,7 @@ static qboolean ParseShader( char **text )
 			token = COM_ParseExt( text, qfalse );
 			tr.sunLight[2] = atof( token );
 			
-			VectorNormalize( tr.sunLight );
+			FastVectorNormalize( tr.sunLight );
 
 			token = COM_ParseExt( text, qfalse );
 			a = atof( token );

@@ -170,6 +170,7 @@ typedef enum {
 	AGEN_CONST
 } alphaGen_t;
 
+
 typedef enum {
 	CGEN_BAD,
 	CGEN_IDENTITY_LIGHTING,	// tr.identityLight
@@ -185,7 +186,9 @@ typedef enum {
 	CGEN_LIGHTING_DYNAMIC,
 	CGEN_FOG,				// standard fog
 	CGEN_CONST,				// fixed color
+	CGEN_VERTEX_LIT,			// leilei - tess.vertexColors * tr.identityLight * ambientlight*directlight
 } colorGen_t;
+
 
 typedef enum {
 	TCGEN_BAD,
@@ -1480,6 +1483,8 @@ qhandle_t RE_RegisterShader( const char *name );
 qhandle_t RE_RegisterShaderNoMip( const char *name );
 qhandle_t RE_RegisterShaderFromImage(const char *name, int lightmapIndex, image_t *image, qboolean mipRawImage);
 
+
+void stripExtension(const char *in, char *out, int destsize);
 
 ////////////////////////////////  tr_marks.c ////////////////////////////////////////
 //      MARKERS, POLYGON PROJECTION ON WORLD POLYGONS

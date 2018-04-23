@@ -342,8 +342,19 @@ void R_SetupEntityLighting( const trRefdef_t *refdef, trRefEntity_t *ent )
     {
 		dlight_t* dl = &refdef->dlights[i];
 		VectorSubtract( dl->origin, lightOrigin, dir );
-		d = VectorNormalize( dir );
+		//d = VectorLength(dir);
+        //FastVectorNormalize( dir );
+        d = dir[0]*dir[0] + dir[1]*dir[1] + dir[2]*dir[2];
+        if(d != 0)
+        {
+            float invLen = 1.0f / sqrtf(d);
 
+	        dir[0] *= invLen;
+	        dir[1] *= invLen;
+	        dir[2] *= invLen;
+            d *=  invLen;
+        }
+        //
 		float power = DLIGHT_AT_RADIUS * ( dl->radius * dl->radius );
 		if ( d < DLIGHT_MINIMUM_RADIUS )
         {
@@ -378,7 +389,7 @@ void R_SetupEntityLighting( const trRefdef_t *refdef, trRefEntity_t *ent )
 	((unsigned char *)&ent->ambientLightInt)[3] = 0xff;
 	
 	// transform the direction to local space
-	VectorNormalize( lightDir );
+	FastVectorNormalize( lightDir );
 	ent->lightDir[0] = DotProduct( lightDir, ent->e.axis[0] );
 	ent->lightDir[1] = DotProduct( lightDir, ent->e.axis[1] );
 	ent->lightDir[2] = DotProduct( lightDir, ent->e.axis[2] );

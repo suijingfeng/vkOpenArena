@@ -115,7 +115,7 @@ vec_t R_CalcTangentSpace(vec3_t tangent, vec3_t bitangent, const vec3_t normal, 
 	// Gram-Schmidt orthogonalize
 	n_dot_t = DotProduct(normal, sdir);
 	VectorMA(sdir, -n_dot_t, normal, tangent);
-	VectorNormalize(tangent);
+	FastVectorNormalize(tangent);
 
 	// Calculate handedness
 	CrossProduct(normal, sdir, n_cross_t);
@@ -158,7 +158,7 @@ qboolean R_CalcTangentVectors(srfVert_t * dv[3])
 		tangent[2] = bary[0] * dv[0]->xyz[2] + bary[1] * dv[1]->xyz[2] + bary[2] * dv[2]->xyz[2];
 
 		VectorSubtract(tangent, dv[i]->xyz, tangent);
-		VectorNormalize(tangent);
+		FastVectorNormalize(tangent);
 
 		// calculate t tangent vector
 		s = dv[i]->st[0];
@@ -172,7 +172,7 @@ qboolean R_CalcTangentVectors(srfVert_t * dv[3])
 		bitangent[2] = bary[0] * dv[0]->xyz[2] + bary[1] * dv[1]->xyz[2] + bary[2] * dv[2]->xyz[2];
 
 		VectorSubtract(bitangent, dv[i]->xyz, bitangent);
-		VectorNormalize(bitangent);
+		FastVectorNormalize(bitangent);
 
 		// store bitangent handedness
 		R_VaoUnpackNormal(normal, dv[i]->normal);
@@ -2083,7 +2083,7 @@ void R_RenderPshadowMaps(const refdef_t *fd)
 		}
 
 		CrossProduct(shadow->lightViewAxis[0], up, shadow->lightViewAxis[1]);
-		VectorNormalize(shadow->lightViewAxis[1]);
+		FastVectorNormalize(shadow->lightViewAxis[1]);
 		CrossProduct(shadow->lightViewAxis[0], shadow->lightViewAxis[1], shadow->lightViewAxis[2]);
 
 		VectorCopy(shadow->lightViewAxis[0], shadow->cullPlane.normal);
@@ -2342,7 +2342,7 @@ void R_RenderSunShadowMaps(const refdef_t *fd, int level)
 
 	// clean axes
 	CrossProduct(lightViewAxis[2], lightViewAxis[0], lightViewAxis[1]);
-	VectorNormalize(lightViewAxis[1]);
+	FastVectorNormalize(lightViewAxis[1]);
 	CrossProduct(lightViewAxis[0], lightViewAxis[1], lightViewAxis[2]);
 
 	// Create bounds for light projection using slice of view projection

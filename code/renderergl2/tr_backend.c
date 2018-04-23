@@ -1699,7 +1699,7 @@ const void *RB_ExportCubemaps(const void *data)
 
 			if (cubemap->name[0])
 			{
-				COM_StripExtension(cubemap->name, filename, MAX_QPATH);
+				stripExtension(cubemap->name, filename, MAX_QPATH);
 				Q_strcat(filename, MAX_QPATH, ".dds");
 			}
 			else

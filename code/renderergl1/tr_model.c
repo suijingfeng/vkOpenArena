@@ -327,7 +327,7 @@ qhandle_t RE_RegisterModel( const char *name ) {
 				// try again without the extension
 				orgNameFailed = qtrue;
 				orgLoader = i;
-				COM_StripExtension( name, localName, MAX_QPATH );
+				stripExtension( name, localName, MAX_QPATH );
 			}
 			else
 			{
@@ -1058,9 +1058,9 @@ int R_LerpTag( orientation_t *tag, qhandle_t handle, int startFrame, int endFram
 		tag->axis[1][i] = start->axis[1][i] * backLerp +  end->axis[1][i] * frontLerp;
 		tag->axis[2][i] = start->axis[2][i] * backLerp +  end->axis[2][i] * frontLerp;
 	}
-	VectorNormalize( tag->axis[0] );
-	VectorNormalize( tag->axis[1] );
-	VectorNormalize( tag->axis[2] );
+	FastVectorNormalize( tag->axis[0] );
+	FastVectorNormalize( tag->axis[1] );
+	FastVectorNormalize( tag->axis[2] );
 	return qtrue;
 }
 

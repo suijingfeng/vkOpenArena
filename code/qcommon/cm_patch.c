@@ -35,8 +35,8 @@ void CM_DrawDebugSurface( void (*drawPoly)(int color, int numPoints, flaot *poin
 
 
 WARNING: this may misbehave with meshes that have rows or columns that only
-degenerate a few triangles.  Completely degenerate rows and columns are handled
-properly.
+degenerate a few triangles. 
+Completely degenerate rows and columns are handled properly.
 */
 
 /*
@@ -80,6 +80,7 @@ typedef struct {
 #define	WRAP_POINT_EPSILON	0.1
 */
 
+
 int	c_totalPatchBlocks;
 int	c_totalPatchSurfaces;
 int	c_totalPatchEdges;
@@ -116,6 +117,7 @@ static int CM_SignbitsForNormal( vec3_t normal ) {
 	return bits;
 }
 
+
 /*
 =====================
 CM_PlaneFromPoints
@@ -124,18 +126,27 @@ Returns false if the triangle is degenrate.
 The normal will point out of the clock for clockwise ordered points
 =====================
 */
-static qboolean CM_PlaneFromPoints( vec4_t plane, vec3_t a, vec3_t b, vec3_t c ) {
+static qboolean CM_PlaneFromPoints( vec4_t plane, vec3_t a, vec3_t b, vec3_t c )
+{
 	vec3_t	d1, d2;
 
 	VectorSubtract( b, a, d1 );
 	VectorSubtract( c, a, d2 );
 	CrossProduct( d2, d1, plane );
-	if ( VectorNormalize( plane ) == 0 ) {
-		return qfalse;
+
+	float length = plane[0]*plane[0] + plane[1]*plane[1] + plane[2]*plane[2];
+	if ( length != 0)
+    {
+		float invLen = 1.0f / sqrtf(length);
+		plane[0] *= invLen;
+		plane[1] *= invLen;
+		plane[2] *= invLen;
+	    plane[3] = DotProduct( a, plane );
+
+        return qtrue;
 	}
 
-	plane[3] = DotProduct( a, plane );
-	return qtrue;
+	return qfalse;
 }
 
 
@@ -354,10 +365,9 @@ CM_ComparePoints
 ======================
 */
 #define	POINT_EPSILON	0.1
-static qboolean CM_ComparePoints( float *a, float *b ) {
-	float		d;
-
-	d = a[0] - b[0];
+static qboolean CM_ComparePoints( float *a, float *b )
+{
+	float d = a[0] - b[0];
 	if ( d < -POINT_EPSILON || d > POINT_EPSILON ) {
 		return qfalse;
 	}
@@ -428,7 +438,8 @@ static	facet_t			facets[MAX_FACETS];
 CM_PlaneEqual
 ==================
 */
-int CM_PlaneEqual(patchPlane_t *p, float plane[4], int *flipped) {
+int CM_PlaneEqual(patchPlane_t *p, float plane[4], int *flipped)
+{
 	float invplane[4];
 
 	if (
@@ -462,7 +473,8 @@ int CM_PlaneEqual(patchPlane_t *p, float plane[4], int *flipped) {
 CM_SnapVector
 ==================
 */
-void CM_SnapVector(vec3_t normal) {
+void CM_SnapVector(vec3_t normal)
+{
 	int		i;
 
 	for (i=0 ; i<3 ; i++)
@@ -818,6 +830,10 @@ static qboolean CM_ValidateFacet( facet_t *facet ) {
 	return qtrue;		// winding is fine
 }
 
+
+
+
+
 /*
 ==================
 CM_AddFacetBevels
@@ -896,7 +912,7 @@ void CM_AddFacetBevels( facet_t *facet ) {
 		k = (j+1)%w->numpoints;
 		VectorSubtract (w->p[j], w->p[k], vec);
 		//if it's a degenerate edge
-		if (VectorNormalize (vec) < 0.5)
+		if (CM_VectorNormalize(vec) < 0.5)
 			continue;
 		CM_SnapVector(vec);
 		for ( k = 0; k < 3 ; k++ )
@@ -914,7 +930,7 @@ void CM_AddFacetBevels( facet_t *facet ) {
 				VectorClear (vec2);
 				vec2[axis] = dir;
 				CrossProduct (vec, vec2, plane);
-				if (VectorNormalize (plane) < 0.5)
+				if (CM_VectorNormalize(plane) < 0.5)
 					continue;
 				plane[3] = DotProduct (w->p[j], plane);
 

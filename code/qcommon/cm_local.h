@@ -190,7 +190,23 @@ qboolean CM_BoundsIntersectPoint( const vec3_t mins, const vec3_t maxs, const ve
 
 // cm_patch.c
 
-struct patchCollide_s	*CM_GeneratePatchCollide( int width, int height, vec3_t *points );
+struct patchCollide_s* CM_GeneratePatchCollide( int width, int height, vec3_t *points );
 void CM_TraceThroughPatchCollide( traceWork_t *tw, const struct patchCollide_s *pc );
 qboolean CM_PositionTestInPatchCollide( traceWork_t *tw, const struct patchCollide_s *pc );
 void CM_ClearLevelPatches( void );
+
+static ID_INLINE float CM_VectorNormalize( vec3_t v )
+{
+	float length = v[0]*v[0] + v[1]*v[1] + v[2]*v[2];
+
+	if ( length != 0)
+    {
+		float invLen = 1.0f / sqrtf(length);
+		v[0] *= invLen;
+		v[1] *= invLen;
+		v[2] *= invLen;
+        return length*invLen;
+	}
+		
+	return length;
+}

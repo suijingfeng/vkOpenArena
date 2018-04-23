@@ -508,7 +508,7 @@ static void Autosprite2Deform( void ) {
 
 		// cross this with the view direction to get minor axis
 		CrossProduct( major, forward, minor );
-		VectorNormalize( minor );
+		FastVectorNormalize( minor );
 		
 		// re-project the points
 		for ( j = 0 ; j < 2 ; j++ ) {

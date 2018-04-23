@@ -2312,7 +2312,7 @@ void R_LoadImage( const char *name, byte **pic, int *width, int *height, GLenum 
 	{
 		char ddsName[MAX_QPATH];
 
-		COM_StripExtension(name, ddsName, MAX_QPATH);
+		stripExtension(name, ddsName, MAX_QPATH);
 		Q_strcat(ddsName, MAX_QPATH, ".dds");
 
 		R_LoadDDS(ddsName, pic, width, height, picFormat, numMips);
@@ -2344,7 +2344,7 @@ void R_LoadImage( const char *name, byte **pic, int *width, int *height, GLenum 
 				// try again without the extension
 				orgNameFailed = qtrue;
 				orgLoader = i;
-				COM_StripExtension( name, localName, MAX_QPATH );
+				stripExtension( name, localName, MAX_QPATH );
 			}
 			else
 			{
@@ -2439,7 +2439,7 @@ image_t	*R_FindImageFile( const char *name, imgType_t type, imgFlags_t flags )
 
 		normalFlags = (flags & ~IMGFLAG_GENNORMALMAP) | IMGFLAG_NOLIGHTSCALE;
 
-		COM_StripExtension(name, normalName, MAX_QPATH);
+		stripExtension(name, normalName, MAX_QPATH);
 		Q_strcat(normalName, MAX_QPATH, "_n");
 
 		// find normalmap in case it's there

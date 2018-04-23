@@ -157,16 +157,20 @@ static void MakeMeshNormals( int width, int height, drawVert_t ctrl[MAX_GRID_SIZ
 
 
 
-	for ( i = 0 ; i < width ; i++ ) {
-		for ( j = 0 ; j < height ; j++ ) {
+	for ( i = 0 ; i < width ; i++ )
+    {
+		for ( j = 0 ; j < height ; j++ )
+        {
 			count = 0;
 			dv = &ctrl[j][i];
 			VectorCopy( dv->xyz, base );
-			for ( k = 0 ; k < 8 ; k++ ) {
+			for ( k = 0 ; k < 8 ; k++ )
+            {
 				VectorClear( around[k] );
 				good[k] = qfalse;
 
-				for ( dist = 1 ; dist <= 3 ; dist++ ) {
+				for ( dist = 1 ; dist <= 3 ; dist++ )
+                {
 					x = i + neighbors[k][0] * dist;
 					y = j + neighbors[k][1] * dist;
 					if ( wrapWidth ) {
@@ -188,9 +192,13 @@ static void MakeMeshNormals( int width, int height, drawVert_t ctrl[MAX_GRID_SIZ
 						break;					// edge of patch
 					}
 					VectorSubtract( ctrl[y][x].xyz, base, temp );
-					if ( VectorNormalize( temp ) == 0 ) {
+					
+                    if ( VectorLength( temp ) == 0 )
+                    {
 						continue;				// degenerate edge, get more dist
-					} else {
+					}
+                    else
+                    {
 						good[k] = qtrue;
 						VectorCopy( temp, around[k] );
 						break;					// good edge
@@ -205,10 +213,12 @@ static void MakeMeshNormals( int width, int height, drawVert_t ctrl[MAX_GRID_SIZ
 					continue;	// didn't get two points
 				}
 				CrossProduct( around[(k+1)&7], around[k], normal );
-				if ( VectorNormalize( normal ) == 0 )
+                
+                if ( VectorLength( normal ) == 0 )
                 {
 					continue;
 				}
+                FastVectorNormalize(normal);
 				VectorAdd( normal, sum, sum );
 				count++;
 			}
@@ -391,7 +401,7 @@ srfGridMesh_t *R_SubdividePatchToGrid( int width, int height, drawVert_t points[
 				// dist-from-midpoint
 				VectorSubtract( midxyz, ctrl[i][j].xyz, midxyz );
 				VectorSubtract( ctrl[i][j+2].xyz, ctrl[i][j].xyz, dir );
-				VectorNormalize( dir );
+				FastVectorNormalize( dir );
 
 				d = DotProduct( midxyz, dir );
 				VectorScale( dir, d, projected );

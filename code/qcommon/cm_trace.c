@@ -36,6 +36,7 @@ BASIC MATH
 ===============================================================================
 */
 
+
 /*
 ================
 RotatePoint
@@ -756,7 +757,7 @@ void CM_TraceThroughSphere( traceWork_t *tw, vec3_t origin, float radius, vec3_t
 	}
 	//
 	VectorSubtract(end, start, dir);
-	length = VectorNormalize(dir);
+	length = CM_VectorNormalize(dir);
 	//
 	l1 = CM_DistanceFromLineSquared(origin, start, end, dir);
 	VectorSubtract(end, origin, v1);
@@ -852,7 +853,7 @@ void CM_TraceThroughVerticalCylinder( traceWork_t *tw, vec3_t origin, float radi
 	}
 	//
 	VectorSubtract(end2d, start2d, dir);
-	length = VectorNormalize(dir);
+	length = CM_VectorNormalize(dir);
 	//
 	l1 = CM_DistanceFromLineSquared(org2d, start2d, end2d, dir);
 	VectorSubtract(end2d, org2d, v1);

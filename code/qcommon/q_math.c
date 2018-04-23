@@ -221,30 +221,6 @@ void ByteToDir( int b, vec3_t dir )
 }
 
 
-/*
-===============
-RotateAroundDirection
-===============
-
-void RotateAroundDirection( vec3_t axis[3], float yaw )
-{
-	// create an arbitrary axis[1] 
-	PerpendicularVector( axis[1], axis[0] );
-
-	// rotate it around axis[0] by yaw
-	if ( yaw )
-    {
-		vec3_t	temp;
-
-		VectorCopy( axis[1], temp );
-		RotatePointAroundVector( axis[1], axis[0], temp, yaw );
-	}
-
-	// cross to get axis[2]
-	CrossProduct( axis[0], axis[1], axis[2] );
-}
-
-*/
 
 void vectoangles( const vec3_t value1, vec3_t angles )
 {
@@ -359,7 +335,7 @@ AngleSubtract
 Always returns a value from -180 to 180
 =================
 */
-float	AngleSubtract( float a1, float a2 )
+float AngleSubtract( float a1, float a2 )
 {
 	float a = a1 - a2;
 	while ( a > 180 )
@@ -596,23 +572,7 @@ ID_INLINE qboolean BoundsIntersectPoint(const vec3_t mins, const vec3_t maxs, co
 	return qtrue;
 }
 
-
-ID_INLINE vec_t VectorNormalize( vec3_t v )
-{
-	float length = v[0]*v[0] + v[1]*v[1] + v[2]*v[2];
-
-	if ( length != 0)
-    {
-		float invLen = 1.0f / sqrtf(length);
-		v[0] *= invLen;
-		v[1] *= invLen;
-		v[2] *= invLen;
-        return length*invLen;
-	}
-		
-	return length;
-}
-
+/*
 
 
 ID_INLINE void _VectorMA( const vec3_t veca, float scale, const vec3_t vecb, vec3_t vecc)
@@ -666,6 +626,7 @@ ID_INLINE int Q_log2( int val )
 	}
 	return answer;
 }
+*/
 
 
 
@@ -673,7 +634,7 @@ ID_INLINE int Q_log2( int val )
 =================
 Matrix4Compare
 =================
-*/
+
 ID_INLINE qboolean Matrix4Compare(const float a[16], const float b[16])
 {
 	int i;
@@ -684,9 +645,9 @@ ID_INLINE qboolean Matrix4Compare(const float a[16], const float b[16])
 
 	return qtrue;
 }
+*/
 
-
-
+/*
 
 ID_INLINE void MatrixMultiply(const float in1[3][3],const float in2[3][3], float out[3][3])
 {
@@ -702,18 +663,21 @@ ID_INLINE void MatrixMultiply(const float in1[3][3],const float in2[3][3], float
 }
 
 
+*/
 void AngleVectors( const vec3_t angles, vec3_t forward, vec3_t right, vec3_t up)
 {
 	static float sr, sp, sy, cr, cp, cy;
 	// static to help MS compiler fp bugs
 
-	float angle = angles[YAW] * (M_PI*2 / 360);
+	float angle = angles[YAW] * (M_PI / 180);
 	sy = sin(angle);
 	cy = cos(angle);
-	angle = angles[PITCH] * (M_PI*2 / 360);
+
+	angle = angles[PITCH] * (M_PI / 180);
 	sp = sin(angle);
 	cp = cos(angle);
-	angle = angles[ROLL] * (M_PI*2 / 360);
+	
+    angle = angles[ROLL] * (M_PI / 180);
 	sr = sin(angle);
 	cr = cos(angle);
 

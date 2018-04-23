@@ -368,10 +368,23 @@ static void RB_SurfaceRailRings( void )
 	// compute variables
 	VectorSubtract( end, start, vec );
 	
-    int len = VectorNormalize( vec );
+    //int len = VectorNormalize( vec );
+
+    float len = vec[0]*vec[0] + vec[1]*vec[1] + vec[2]*vec[2];
+    if(len == 0)
+        return;
+
+	float invLen = 1.0f / sqrtf(len);
+
+	vec[0] *= invLen;
+	vec[1] *= invLen;
+	vec[2] *= invLen;
+    len *= invLen; 
+
+////
 	MakeNormalVectors( vec, right, up );
 
-	int numSegs =  len  / r_railSegmentLength->value;
+	int numSegs =  len / r_railSegmentLength->value;
 	if ( numSegs == 0 )
 		numSegs = 1;
 
@@ -467,7 +480,6 @@ static void RB_SurfaceLightningBolt( void )
 
 	// compute variables
 	VectorSubtract( end, start, vec );
-	int len = VectorNormalize( vec );
 
 	// compute side vector
 	VectorSubtract( start, backEnd.viewParms.or.origin, v1 );
@@ -482,7 +494,7 @@ static void RB_SurfaceLightningBolt( void )
     {
 		vec3_t	temp;
 
-		DoLightningCore( start, end, right, len);
+		DoLightningCore( start, end, right, VectorLength(vec) );
 
         PointRotateAroundVector( right, vec, 45, temp );
 

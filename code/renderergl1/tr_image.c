@@ -983,7 +983,7 @@ void R_LoadImage( const char *name, byte **pic, int *width, int *height )
 				// try again without the extension
 				orgNameFailed = qtrue;
 				orgLoader = i;
-				COM_StripExtension( name, localName, MAX_QPATH );
+				stripExtension( name, localName, MAX_QPATH );
 			}
 			else
 			{

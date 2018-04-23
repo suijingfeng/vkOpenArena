@@ -694,8 +694,6 @@ static void DoRailDiscs( int numSegs, const vec3_t start, const vec3_t dir, cons
 static void RB_SurfaceRailRings( void )
 {
 	refEntity_t *e;
-	int			numSegs;
-	int			len;
 	vec3_t		vec;
 	vec3_t		right, up;
 	vec3_t		start, end;
@@ -707,9 +705,20 @@ static void RB_SurfaceRailRings( void )
 
 	// compute variables
 	VectorSubtract( end, start, vec );
-	len = VectorNormalize( vec );
+	//len = VectorNormalize( vec );
+    float len = vec[0]*vec[0] + vec[1]*vec[1] + vec[2]*vec[2];
+    if(len != 0)
+    {
+	    float invLen = 1.0f / sqrtf(len);
+
+	    vec[0] *= invLen;
+	    vec[1] *= invLen;
+	    vec[2] *= invLen;
+        len *= invLen; 
+    }
+    
 	MakeNormalVectors( vec, right, up );
-	numSegs = ( len ) / r_railSegmentLength->value;
+	int numSegs = ( len ) / r_railSegmentLength->value;
 	if ( numSegs <= 0 )
 		numSegs = 1;
 
@@ -721,9 +730,9 @@ static void RB_SurfaceRailRings( void )
 /*
 ** RB_SurfaceRailCore
 */
-static void RB_SurfaceRailCore( void ) {
+static void RB_SurfaceRailCore( void )
+{
 	refEntity_t *e;
-	int			len;
 	vec3_t		right;
 	vec3_t		vec;
 	vec3_t		start, end;
@@ -735,15 +744,24 @@ static void RB_SurfaceRailCore( void ) {
 	VectorCopy( e->origin, end );
 
 	VectorSubtract( end, start, vec );
-	len = VectorNormalize( vec );
+	//len = VectorNormalize( vec );
+    float len = vec[0]*vec[0] + vec[1]*vec[1] + vec[2]*vec[2];
+    if(len != 0)
+    {
+	    float invLen = 1.0f / sqrtf(len);
 
+	    vec[0] *= invLen;
+	    vec[1] *= invLen;
+	    vec[2] *= invLen;
+        len *= invLen; 
+    }
 	// compute side vector
 	VectorSubtract( start, backEnd.viewParms.or.origin, v1 );
-	VectorNormalize( v1 );
+	FastVectorNormalize( v1 );
 	VectorSubtract( end, backEnd.viewParms.or.origin, v2 );
-	VectorNormalize( v2 );
+	FastVectorNormalize( v2 );
 	CrossProduct( v1, v2, right );
-	VectorNormalize( right );
+	FastVectorNormalize( right );
 
 	DoRailCore( start, end, right, len, r_railCoreWidth->integer );
 }
@@ -753,7 +771,6 @@ static void RB_SurfaceRailCore( void ) {
 */
 static void RB_SurfaceLightningBolt( void ) {
 	refEntity_t *e;
-	int			len;
 	vec3_t		right;
 	vec3_t		vec;
 	vec3_t		start, end;
@@ -767,15 +784,24 @@ static void RB_SurfaceLightningBolt( void ) {
 
 	// compute variables
 	VectorSubtract( end, start, vec );
-	len = VectorNormalize( vec );
+	//len = VectorNormalize( vec );
+    float len = vec[0]*vec[0] + vec[1]*vec[1] + vec[2]*vec[2];
+    if(len != 0)
+    {
+	    float invLen = 1.0f / sqrtf(len);
 
+	    vec[0] *= invLen;
+	    vec[1] *= invLen;
+	    vec[2] *= invLen;
+        len *= invLen; 
+    }
 	// compute side vector
 	VectorSubtract( start, backEnd.viewParms.or.origin, v1 );
-	VectorNormalize( v1 );
+	FastVectorNormalize( v1 );
 	VectorSubtract( end, backEnd.viewParms.or.origin, v2 );
-	VectorNormalize( v2 );
+	FastVectorNormalize( v2 );
 	CrossProduct( v1, v2, right );
-	VectorNormalize( right );
+	FastVectorNormalize( right );
 
 	for ( i = 0 ; i < 4 ; i++ ) {
 		vec3_t	temp;

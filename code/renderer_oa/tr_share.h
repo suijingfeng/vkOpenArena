@@ -29,6 +29,9 @@ static ID_INLINE void AxisCopy( vec3_t in[3], vec3_t out[3] )
 }
 
 
+// fast vector normalize routine that does not check to make sure
+// that length != 0, nor does it return length, uses rsqrt approximation
+
 static ID_INLINE void FastVectorNormalize( float* v )
 {
 	// writing it this way allows gcc to recognize that rsqrt can be used
@@ -177,6 +180,9 @@ static ID_INLINE void MakeNormalVectors( const vec3_t forward, vec3_t right, vec
     FastVectorNormalize(right);
 	CrossProduct(forward, right, up);
 }
+
+
+
 
 /*
 static void VectorPerp(const vec3_t src, vec3_t dst1, vec3_t dst2 )

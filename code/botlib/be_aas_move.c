@@ -35,6 +35,7 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #include "l_precomp.h"
 #include "l_struct.h"
 #include "l_libvar.h"
+#include "l_utils.h"
 #include "aasfile.h"
 #include "botlib.h"
 #include "be_aas.h"
@@ -504,7 +505,7 @@ int AAS_ClientMovementPrediction(struct aas_clientmove_s *move,
 	float phys_walkaccelerate, phys_airaccelerate, phys_swimaccelerate;
 	float phys_maxwalkvelocity, phys_maxcrouchvelocity, phys_maxswimvelocity;
 	float phys_maxstep, phys_maxsteepness, phys_jumpvel, friction;
-	float gravity, delta, maxvel, wishspeed, accelerate;
+	float gravity, delta, maxvel, wishspeed = 0, accelerate;
 	//float velchange, newvel;
 	//int ax;
 	int n, i, j, pc, step, swimming, crouch, event, jump_frame, areanum;
@@ -600,9 +601,26 @@ int AAS_ClientMovementPrediction(struct aas_clientmove_s *move,
 				wishdir[2] = 0;
 			} //end else
 			//
-			wishspeed = VectorNormalize(wishdir);
-			if (wishspeed > maxvel) wishspeed = maxvel;
-			VectorScale(frame_test_vel, 1/frametime, frame_test_vel);
+            
+            	// writing it this way allows gcc to recognize that rsqrt can be used
+            float Len = wishdir[0]*wishdir[0] + wishdir[1]*wishdir[1] + wishdir[2]*wishdir[2];
+            if(Len != 0)
+            {
+                float invLen = 1.0f / sqrtf(Len);
+
+                wishdir[0] *= invLen;
+                wishdir[1] *= invLen;
+                wishdir[2] *= invLen;
+
+                wishspeed = Len * invLen;
+
+                if (wishspeed > maxvel)
+                wishspeed = maxvel;
+            }
+        
+
+			
+            VectorScale(frame_test_vel, 1/frametime, frame_test_vel);
 			AAS_Accelerate(frame_test_vel, frametime, wishdir, wishspeed, accelerate);
 			VectorScale(frame_test_vel, frametime, frame_test_vel);
 			/*

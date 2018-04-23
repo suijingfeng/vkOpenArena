@@ -713,7 +713,7 @@ static void RB_CalcAlphaFromOneMinusEntity( unsigned char (*dstColors)[4] )
 **
 ** MDave; Vertex color dynamic lighting for cel shading
 */
-void RB_CalcDynamicColor( unsigned char (*colors)[4] )
+static void RB_CalcDynamicColor( unsigned char (*colors)[4] )
 {
 	int				i;
 	vec3_t			dynamic;
@@ -743,7 +743,7 @@ void RB_CalcDynamicColor( unsigned char (*colors)[4] )
 static void ComputeColors( shaderStage_t *pStage )
 {
 	int	i;
-
+    unsigned int c;
 	// rgbGen
 	switch ( pStage->rgbGen )
 	{
@@ -775,12 +775,11 @@ static void ComputeColors( shaderStage_t *pStage )
 			memcpy( tess.svars.colors, tess.vertexColors, tess.numVertexes * sizeof( tess.vertexColors[0] ) );
 			break;
 		case CGEN_CONST:
-            /*
+            c = *(unsigned int *)pStage->constantColor;
 			for ( i = 0; i < tess.numVertexes; i++ )
             {
-				*(int *)tess.svars.colors[i] = *(int *)pStage->constantColor;
- 			}*/
-            memcpy(tess.svars.colors, pStage->constantColor, 4*tess.numVertexes);
+				*(int *)tess.svars.colors[i] = c;
+ 			}
 			break;
 		case CGEN_VERTEX:
 			if ( tr.identityLight == 1 )
@@ -837,6 +836,36 @@ static void ComputeColors( shaderStage_t *pStage )
 		case CGEN_ONE_MINUS_ENTITY:
 			RB_CalcColorFromOneMinusEntity( (unsigned int *)tess.svars.colors );
 			break;
+        case CGEN_VERTEX_LIT:	// leilei - mixing vertex colors with lighting through a glorious light hack
+		{			            // should only be used for entity models, not map assets!
+			vec3_t	dcolor, acolor;	// to save the color from actual light
+			vec3_t	vcolor;
+
+			// Backup our colors
+			VectorCopy( backEnd.currentEntity->ambientLight, acolor );			
+			VectorCopy( backEnd.currentEntity->directedLight, dcolor );			
+			
+            VectorCopy( backEnd.currentEntity->e.shaderRGBA, vcolor );			
+
+			// Make our vertex color take over 
+			int y;
+			for(y=0;y<3;y++)
+            {
+				backEnd.currentEntity->ambientLight[y] *= (vcolor[y] / 255);
+
+				if (backEnd.currentEntity->ambientLight[y] < 1)   
+                    backEnd.currentEntity->ambientLight[y] = 1; // black!!!
+                else if (backEnd.currentEntity->ambientLight[y] > 255)
+                    backEnd.currentEntity->ambientLight[y] = 255; // white!!!!!
+			}
+		
+			// run it through our favorite preferred lighting calculation functions
+			RB_CalcDiffuseColor( tess.svars.colors );
+
+			// Restore light color for any other stage that doesn't do it
+			VectorCopy( acolor, backEnd.currentEntity->ambientLight);			
+			VectorCopy( dcolor, backEnd.currentEntity->directedLight);			
+		}break;
 	}
 
 	//

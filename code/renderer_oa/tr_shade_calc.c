@@ -590,7 +590,7 @@ static void Autosprite2Deform( void )
 
 		// cross this with the view direction to get minor axis
 		CrossProduct( major, forward, minor );
-		VectorNormalize( minor );
+		FastVectorNormalize( minor );
 		
 		// re-project the points
 		for ( j = 0 ; j < 2 ; j++ ) {
@@ -1198,7 +1198,7 @@ void RB_CalcAtlasTexCoords( const atlas_t *at, float *st )
 
 // leilei celsperiment
 
-
+/*
 
 void RB_CalcFlatDirect( unsigned char *colors )
 {
@@ -1255,4 +1255,4 @@ void RB_CalcFlatDirect( unsigned char *colors )
 		colors[i*4+3] = 255;
 	}
 }
-
+*/

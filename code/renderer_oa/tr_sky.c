@@ -664,7 +664,7 @@ void R_InitSkyTexCoords( float heightCloud )
 				v[2] += radiusWorld;
 
 				// compute vector from world origin to intersection point 'v'
-				VectorNormalize( v );
+				FastVectorNormalize( v );
 
 				s_cloudTexCoords[i][t][s][0] = acos( v[0] );
 				s_cloudTexCoords[i][t][s][1] = acos( v[1] );

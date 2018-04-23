@@ -312,9 +312,31 @@ static void PerpendicularVector( vec3_t dst, const vec3_t src )
 	VectorMA( tempvec, -src[pos], src, dst );
 
     //normalize the result
-	VectorNormalize( dst );
+	float length = dst[0]*dst[0] + dst[1]*dst[1] + dst[2]*dst[2];
+
+	if( length == 0)
+        return;
+    
+    length = 1.0f / sqrtf(length);
+    
+    dst[0] *= length;
+    dst[1] *= length;
+    dst[2] *= length;
 }
 
+
+static ID_INLINE void MatrixMultiply(const float in1[3][3],const float in2[3][3], float out[3][3])
+{
+	out[0][0] = in1[0][0] * in2[0][0] + in1[0][1] * in2[1][0] +	in1[0][2] * in2[2][0];
+	out[0][1] = in1[0][0] * in2[0][1] + in1[0][1] * in2[1][1] +	in1[0][2] * in2[2][1];
+	out[0][2] = in1[0][0] * in2[0][2] + in1[0][1] * in2[1][2] +	in1[0][2] * in2[2][2];
+	out[1][0] = in1[1][0] * in2[0][0] + in1[1][1] * in2[1][0] +	in1[1][2] * in2[2][0];
+	out[1][1] = in1[1][0] * in2[0][1] + in1[1][1] * in2[1][1] + in1[1][2] * in2[2][1];
+	out[1][2] = in1[1][0] * in2[0][2] + in1[1][1] * in2[1][2] +	in1[1][2] * in2[2][2];
+	out[2][0] = in1[2][0] * in2[0][0] + in1[2][1] * in2[1][0] +	in1[2][2] * in2[2][0];
+	out[2][1] = in1[2][0] * in2[0][1] + in1[2][1] * in2[1][1] +	in1[2][2] * in2[2][1];
+	out[2][2] = in1[2][0] * in2[0][2] + in1[2][1] * in2[1][2] +	in1[2][2] * in2[2][2];
+}
 
 /*
 ====================
