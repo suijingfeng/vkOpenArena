@@ -37,7 +37,7 @@ extern aas_settings_t aassettings;
 int AAS_PredictClientMovement(struct aas_clientmove_s *move,
 							int entnum, vec3_t origin,
 							int presencetype, int onground,
-							vec3_t velocity, vec3_t cmdmove,
+							const vec3_t velocity, vec3_t cmdmove,
 							int cmdframes,
 							int maxframes, float frametime,
 							int stopevent, int stopareanum, int visualize);

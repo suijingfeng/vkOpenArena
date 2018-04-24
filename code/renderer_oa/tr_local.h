@@ -26,14 +26,14 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
 #include "../qcommon/q_shared.h"
 #include "../qcommon/qfiles.h"
-#include "../qcommon/qcommon.h"
+//#include "../qcommon/qcommon.h"
 
 #include "../sdl/tr_public.h"
 #include "../sdl/qgl.h"
 
 
 #include "iqm.h"
-#include "tr_share.h"
+#include "tr_shared.h"
 
 
 // any change in the LIGHTMAP_* defines here MUST be reflected in

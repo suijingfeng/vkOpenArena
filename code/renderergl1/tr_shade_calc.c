@@ -1026,14 +1026,13 @@ vec3_t lightOrigin = { -960, 1980, 96 };		// FIXME: track dynamically
 void RB_CalcSpecularAlpha( unsigned char *alphas )
 {
 	int			i;
-	float		*v, *normal;
 	vec3_t		viewer,  reflected;
 	int			b;
 	vec3_t		lightDir;
 	int			numVertexes;
 
-	v = tess.xyz[0];
-	normal = tess.normal[0];
+	float* v = tess.xyz[0];
+	float* normal = tess.normal[0];
 
 	alphas += 3;
 
@@ -1056,9 +1055,8 @@ void RB_CalcSpecularAlpha( unsigned char *alphas )
 		reflected[2] = normal[2]*2*d - lightDir[2];
 
 		VectorSubtract (backEnd.or.viewOrigin, v, viewer);
-		float ilength = Q_rsqrt( DotProduct( viewer, viewer ) );
-		float l = DotProduct (reflected, viewer);
-		l *= ilength;
+		float ilength = 1.0f / sqrtf( DotProduct( viewer, viewer ) );
+		float l = DotProduct (reflected, viewer) * ilength;
 
 		if (l < 0) {
 			b = 0;

@@ -374,17 +374,7 @@ typedef	int	fixed16_t;
 #define	GIANTCHAR_WIDTH		32
 #define	GIANTCHAR_HEIGHT	48
 
-extern	vec4_t		colorBlack;
-extern	vec4_t		colorRed;
-extern	vec4_t		colorGreen;
-extern	vec4_t		colorBlue;
-extern	vec4_t		colorYellow;
-extern	vec4_t		colorMagenta;
-extern	vec4_t		colorCyan;
-extern	vec4_t		colorWhite;
-extern	vec4_t		colorLtGrey;
-extern	vec4_t		colorMdGrey;
-extern	vec4_t		colorDkGrey;
+
 
 
 #define Q_COLOR_ESCAPE	'^'
@@ -414,7 +404,7 @@ extern	vec4_t		colorDkGrey;
 #define S_COLOR_WHITE	"^7"
 #define S_COLOR_MENU	"^8"
 
-extern vec4_t	g_color_table[NUMBER_OF_COLORS];
+
 
 #define	MAKERGB( v, r, g, b ) v[0]=r;v[1]=g;v[2]=b
 #define	MAKERGBA( v, r, g, b, a ) v[0]=r;v[1]=g;v[2]=b;v[3]=a
@@ -424,8 +414,8 @@ extern vec4_t	g_color_table[NUMBER_OF_COLORS];
 
 struct cplane_s;
 
-extern	vec3_t	vec3_origin;
-extern	vec3_t	axisDefault[3];
+extern const vec3_t	vec3_origin;
+extern const vec3_t	axisDefault[3];
 
 #define	nanmask (255<<23)
 
@@ -459,16 +449,14 @@ extern	vec3_t	axisDefault[3];
 #endif
 */
 
-float Q_rsqrt( float f );		// reciprocal square root
 
-#define SQRTFAST( x ) ( (x) * Q_rsqrt( x ) )
 
-signed char ClampChar( int i );
-signed short ClampShort( int i );
+// #define SQRTFAST( x ) ( (x) * Q_rsqrt( x ) )
 
-// this isn't a real cheap function to call!
-int DirToByte( vec3_t dir );
-void ByteToDir( int b, vec3_t dir );
+// signed char ClampChar( int i );
+//signed short ClampShort( int i );
+
+
 
 #if	1
 
@@ -571,17 +559,17 @@ int Q_log2(int val);
 
 //float Q_acos(float c);
 
-int		Q_rand( int *seed );
-float	Q_random( int *seed );
-float	Q_crandom( int *seed );
+//int		Q_rand( int *seed );
+//float	Q_random( int *seed );
+//float	Q_crandom( int *seed );
 
 #define random()	((rand () & 0x7fff) / ((float)0x7fff))
 #define crandom()	(2.0 * (random() - 0.5))
 
-void vectoangles( const vec3_t value1, vec3_t angles);
-void AnglesToAxis( const vec3_t angles, vec3_t axis[3] );
+// void vectoangles( const vec3_t value1, vec3_t angles);
 
-void AxisClear( vec3_t axis[3] );
+
+
 
 
 void SetPlaneSignbits( struct cplane_s *out );
@@ -600,14 +588,6 @@ float AngleNormalize360 ( float angle );
 float AngleNormalize180 ( float angle );
 float AngleDelta ( float angle1, float angle2 );
 
-//void PerpendicularVector( vec3_t dst, const vec3_t src );
-
-//void MakeNormalVectors( const vec3_t forward, vec3_t right, vec3_t up );
-
-//qboolean Matrix4Compare(const float a[16], const float b[16]);
-
-
-//void MatrixMultiply(const float in1[3][3],const float in2[3][3], float out[3][3]);
 void AngleVectors( const vec3_t angles, vec3_t forward, vec3_t right, vec3_t up);
 
 #ifndef MAX

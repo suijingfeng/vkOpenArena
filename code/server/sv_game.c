@@ -224,8 +224,7 @@ qboolean	SV_EntityContact( vec3_t mins, vec3_t maxs, const sharedEntity_t *gEnt,
 	angles = gEnt->r.currentAngles;
 
 	ch = SV_ClipHandleForEntity( gEnt );
-	CM_TransformedBoxTrace ( &trace, vec3_origin, vec3_origin, mins, maxs,
-		ch, -1, origin, angles, capsule );
+	CM_TransformedBoxTrace ( &trace, vec3_origin, vec3_origin, mins, maxs, ch, -1, origin, angles, capsule );
 
 	return trace.startsolid;
 }

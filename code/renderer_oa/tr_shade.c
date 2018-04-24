@@ -666,7 +666,7 @@ static void RB_CalcSpecularAlphaNew( unsigned char (*alphas)[4] )
 
 		VectorSubtract(backEnd.or.viewOrigin, tess.xyz[i], viewer);
 		
-        float l = DotProduct(reflected, viewer) * Q_rsqrt( DotProduct( viewer, viewer ) );
+        float l = DotProduct(reflected, viewer) / sqrtf( DotProduct( viewer, viewer ) );
 
 		if (l < 0)
 			alphas[i][3] = 0;

@@ -32,7 +32,8 @@ given entity.  If the entity is a bsp model, the headnode will
 be returned, otherwise a custom box tree will be constructed.
 ================
 */
-clipHandle_t SV_ClipHandleForEntity( const sharedEntity_t *ent ) {
+clipHandle_t SV_ClipHandleForEntity( const sharedEntity_t *ent )
+{
 	if ( ent->r.bmodel ) {
 		// explicit hulls in the BSP model
 		return CM_InlineModel( ent->s.modelindex );
@@ -461,12 +462,12 @@ SV_ClipToEntity
 
 ====================
 */
-void SV_ClipToEntity( trace_t *trace, const vec3_t start, const vec3_t mins, const vec3_t maxs, const vec3_t end, int entityNum, int contentmask, int capsule ) {
-	sharedEntity_t	*touch;
-	clipHandle_t	clipHandle;
-	float			*origin, *angles;
+void SV_ClipToEntity( trace_t *trace, const vec3_t start, const vec3_t mins, const vec3_t maxs, const vec3_t end, int entityNum, int contentmask, int capsule )
+{
+	clipHandle_t clipHandle;
+    ;
 
-	touch = SV_GentityNum( entityNum );
+	sharedEntity_t* touch = SV_GentityNum( entityNum );
 
 	memset(trace, 0, sizeof(trace_t));
 
@@ -480,8 +481,8 @@ void SV_ClipToEntity( trace_t *trace, const vec3_t start, const vec3_t mins, con
 	// might intersect, so do an exact clip
 	clipHandle = SV_ClipHandleForEntity (touch);
 
-	origin = touch->r.currentOrigin;
-	angles = touch->r.currentAngles;
+	float* origin = touch->r.currentOrigin;
+	const float* angles = touch->r.currentAngles;
 
 	if ( !touch->r.bmodel ) {
 		angles = vec3_origin;	// boxes don't rotate
@@ -510,7 +511,8 @@ static void SV_ClipMoveToEntities( moveclip_t *clip ) {
 	int			passOwnerNum;
 	trace_t		trace;
 	clipHandle_t	clipHandle;
-	float		*origin, *angles;
+	float		*origin;
+    const float *angles;
 
 	num = SV_AreaEntities( clip->boxmins, clip->boxmaxs, touchlist, MAX_GENTITIES);
 
@@ -593,16 +595,16 @@ Moves the given mins/maxs volume through the world from start to end.
 passEntityNum and entities owned by passEntityNum are explicitly not checked.
 ==================
 */
-void SV_Trace( trace_t *results, const vec3_t start, vec3_t mins, vec3_t maxs, const vec3_t end, int passEntityNum, int contentmask, int capsule ) {
+void SV_Trace( trace_t *results, const vec3_t start, const vec3_t mins, const vec3_t maxs, const vec3_t end, int passEntityNum, int contentmask, int capsule ) {
 	moveclip_t	clip;
 	int			i;
 
-	if ( !mins ) {
+	if ( !mins )
 		mins = vec3_origin;
-	}
-	if ( !maxs ) {
+
+	if ( !maxs )
 		maxs = vec3_origin;
-	}
+
 
 	memset ( &clip, 0, sizeof ( moveclip_t ) );
 
@@ -650,7 +652,8 @@ void SV_Trace( trace_t *results, const vec3_t start, vec3_t mins, vec3_t maxs, c
 SV_PointContents
 =============
 */
-int SV_PointContents( const vec3_t p, int passEntityNum ) {
+int SV_PointContents( const vec3_t p, int passEntityNum )
+{
 	int			touch[MAX_GENTITIES];
 	sharedEntity_t *hit;
 	int			i, num;

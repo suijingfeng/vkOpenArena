@@ -858,7 +858,6 @@ Q3OBJ = \
   $(B)/client/sv_snapshot.o \
   $(B)/client/sv_world.o \
   \
-  $(B)/client/q_math.o \
   $(B)/client/q_shared.o \
   \
   $(B)/client/unzip.o \
@@ -946,6 +945,7 @@ Q3R2OBJ = \
   $(B)/renderergl2/tr_surface.o \
   $(B)/renderergl2/tr_vbo.o \
   $(B)/renderergl2/tr_world.o \
+  $(B)/renderergl2/tr_shared.o \
   $(B)/renderergl1/sdl_glimp.o
 
 
@@ -1009,6 +1009,7 @@ Q3ROBJ = \
   $(B)/renderergl1/tr_sky.o \
   $(B)/renderergl1/tr_surface.o \
   $(B)/renderergl1/tr_world.o \
+  $(B)/renderergl2/tr_shared.o \
   $(B)/renderergl1/sdl_glimp.o
 
 
@@ -1041,23 +1042,15 @@ Q3ROAOBJ = \
   $(B)/renderer_oa/tr_sky.o \
   $(B)/renderer_oa/tr_surface.o \
   $(B)/renderer_oa/tr_world.o \
+  $(B)/renderergl2/tr_shared.o \
   $(B)/renderer_oa/sdl_glimp.o
 
 ifneq ($(USE_RENDERER_DLOPEN), 0)
-  Q3ROBJ += \
-    $(B)/renderergl1/q_shared.o \
-    $(B)/renderergl1/q_math.o \
-    $(B)/renderergl1/tr_subs.o
+  Q3ROBJ += $(B)/renderergl1/q_shared.o
   
-  Q3ROAOBJ += \
-    $(B)/renderer_oa/q_shared.o \
-    $(B)/renderer_oa/q_math.o \
-    $(B)/renderer_oa/tr_subs.o 
+  Q3ROAOBJ += $(B)/renderer_oa/q_shared.o
 
-  Q3R2OBJ += \
-    $(B)/renderergl2/q_shared.o \
-    $(B)/renderergl2/q_math.o \
-    $(B)/renderergl2/tr_subs.o
+  Q3R2OBJ += $(B)/renderergl2/q_shared.o 
 endif
 
 
@@ -1185,7 +1178,6 @@ Q3DOBJ = \
   $(B)/ded/net_ip.o \
   $(B)/ded/huffman.o \
   \
-  $(B)/ded/q_math.o \
   $(B)/ded/q_shared.o \
   \
   $(B)/ded/unzip.o \
@@ -1303,7 +1295,6 @@ Q3CGOBJ_ = \
   $(B)/$(BASEGAME)/cgame/cg_view.o \
   $(B)/$(BASEGAME)/cgame/cg_weapons.o \
   \
-  $(B)/$(BASEGAME)/qcommon/q_math.o \
   $(B)/$(BASEGAME)/qcommon/q_shared.o
 
 Q3CGOBJ = $(Q3CGOBJ_) $(B)/$(BASEGAME)/cgame/cg_syscalls.o
@@ -1346,7 +1337,6 @@ MPCGOBJ_ = \
   $(B)/$(MISSIONPACK)/cgame/cg_weapons.o \
   $(B)/$(MISSIONPACK)/ui/ui_shared.o \
   \
-  $(B)/$(MISSIONPACK)/qcommon/q_math.o \
   $(B)/$(MISSIONPACK)/qcommon/q_shared.o
 
 MPCGOBJ = $(MPCGOBJ_) $(B)/$(MISSIONPACK)/cgame/cg_syscalls.o
@@ -1394,7 +1384,6 @@ Q3GOBJ_ = \
   $(B)/$(BASEGAME)/game/g_utils.o \
   $(B)/$(BASEGAME)/game/g_weapon.o \
   \
-  $(B)/$(BASEGAME)/qcommon/q_math.o \
   $(B)/$(BASEGAME)/qcommon/q_shared.o
 
 Q3GOBJ = $(Q3GOBJ_) $(B)/$(BASEGAME)/game/g_syscalls.o
@@ -1442,7 +1431,6 @@ MPGOBJ_ = \
   $(B)/$(MISSIONPACK)/game/g_utils.o \
   $(B)/$(MISSIONPACK)/game/g_weapon.o \
   \
-  $(B)/$(MISSIONPACK)/qcommon/q_math.o \
   $(B)/$(MISSIONPACK)/qcommon/q_shared.o
 
 MPGOBJ = $(MPGOBJ_) $(B)/$(MISSIONPACK)/game/g_syscalls.o
@@ -1501,7 +1489,6 @@ Q3UIOBJ_ = \
   $(B)/$(BASEGAME)/ui/ui_teamorders.o \
   $(B)/$(BASEGAME)/ui/ui_video.o \
   \
-  $(B)/$(BASEGAME)/qcommon/q_math.o \
   $(B)/$(BASEGAME)/qcommon/q_shared.o
 
 Q3UIOBJ = $(Q3UIOBJ_) $(B)/$(MISSIONPACK)/ui/ui_syscalls.o
@@ -1525,7 +1512,6 @@ MPUIOBJ_ = \
   $(B)/$(MISSIONPACK)/ui/bg_misc.o \
   $(B)/$(MISSIONPACK)/ui/bg_lib.o \
   \
-  $(B)/$(MISSIONPACK)/qcommon/q_math.o \
   $(B)/$(MISSIONPACK)/qcommon/q_shared.o
 
 MPUIOBJ = $(MPUIOBJ_) $(B)/$(MISSIONPACK)/ui/ui_syscalls.o

@@ -30,6 +30,21 @@ int g_console_field_width = 78;
 #define	DEFAULT_CONSOLE_WIDTH	78
 
 
+
+const vec4_t g_color_table[9] =
+{
+	{0.0, 0.0, 0.0, 1.0},
+	{1.0, 0.0, 0.0, 1.0},
+	{0.0, 1.0, 0.0, 1.0},
+	{1.0, 1.0, 0.0, 1.0},
+	{0.0, 0.0, 1.0, 1.0},
+	{0.0, 1.0, 1.0, 1.0},
+	{1.0, 0.0, 1.0, 1.0},
+	{1.0, 1.0, 1.0, 1.0},
+    {1.00f, 0.43f, 0.00f, 1.00f},
+};
+
+
 typedef struct
 {
 	qboolean initialized;

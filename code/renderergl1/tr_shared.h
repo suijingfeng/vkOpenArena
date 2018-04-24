@@ -1,6 +1,12 @@
 #ifndef TR_SHARE_H_
 #define TR_SHARE_H_
 
+void AnglesToAxis( const vec3_t angles, vec3_t axis[3] );
+void ByteToDir( int b, vec3_t dir );
+void AxisClear( vec3_t axis[3] );
+
+
+
 union uInt4bytes{
     int i;
     unsigned char uc[4];

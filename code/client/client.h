@@ -546,6 +546,7 @@ void CL_SaveConsoleHistory( void );
 //
 // cl_scrn.c
 //
+extern const vec4_t	g_color_table[NUMBER_OF_COLORS];
 void SCR_Init (void);
 void SCR_UpdateScreen (void);
 

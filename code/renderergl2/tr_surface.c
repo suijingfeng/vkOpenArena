@@ -86,7 +86,7 @@ void RB_CheckVao(vao_t *vao)
 RB_AddQuadStampExt
 ==============
 */
-void RB_AddQuadStampExt( vec3_t origin, vec3_t left, vec3_t up, float color[4], float s1, float t1, float s2, float t2 ) {
+void RB_AddQuadStampExt( vec3_t origin, vec3_t left, vec3_t up,const float color[4], float s1, float t1, float s2, float t2 ) {
 	vec3_t		normal;
 	int16_t     iNormal[4];
 	uint16_t    iColor[4];
@@ -166,7 +166,7 @@ void RB_AddQuadStampExt( vec3_t origin, vec3_t left, vec3_t up, float color[4], 
 RB_AddQuadStamp
 ==============
 */
-void RB_AddQuadStamp( vec3_t origin, vec3_t left, vec3_t up, float color[4] ) {
+void RB_AddQuadStamp( vec3_t origin, vec3_t left, vec3_t up, const float color[4] ) {
 	RB_AddQuadStampExt( origin, left, up, color, 0, 0, 1, 1 );
 }
 

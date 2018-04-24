@@ -62,6 +62,18 @@ kbutton_t	in_buttons[16];
 qboolean	in_mlooking;
 
 
+static ID_INLINE signed char ClampChar( int i )
+{
+	if ( i < -128 )
+		return -128;
+    else if ( i > 127 )
+		return 127;
+
+	return i;
+}
+
+
+
 void IN_MLookDown( void ) {
 	in_mlooking = qtrue;
 }

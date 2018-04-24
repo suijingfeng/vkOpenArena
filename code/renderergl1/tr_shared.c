@@ -23,26 +23,29 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
 #include "tr_local.h"
 
-void QDECL Com_Printf( const char *msg, ... )
+const vec4_t		colorBlack	= {0, 0, 0, 1};
+const vec4_t		colorRed	= {1, 0, 0, 1};
+const vec4_t		colorGreen	= {0, 1, 0, 1};
+const vec4_t		colorBlue	= {0, 0, 1, 1};
+const vec4_t		colorYellow	= {1, 1, 0, 1};
+const vec4_t		colorMagenta= {1, 0, 1, 1};
+const vec4_t		colorCyan	= {0, 1, 1, 1};
+const vec4_t		colorWhite	= {1, 1, 1, 1};
+const vec4_t		colorLtGrey	= {0.75, 0.75, 0.75, 1};
+const vec4_t		colorMdGrey	= {0.5, 0.5, 0.5, 1};
+const vec4_t		colorDkGrey	= {0.25, 0.25, 0.25, 1};
+
+
+void AxisClear( vec3_t axis[3] )
 {
-	va_list         argptr;
-	char            text[1024];
-
-	va_start(argptr, msg);
-	Q_vsnprintf(text, sizeof(text), msg, argptr);
-	va_end(argptr);
-
-	ri.Printf(PRINT_ALL, "%s", text);
+	axis[0][0] = 1;
+	axis[0][1] = 0;
+	axis[0][2] = 0;
+	axis[1][0] = 0;
+	axis[1][1] = 1;
+	axis[1][2] = 0;
+	axis[2][0] = 0;
+	axis[2][1] = 0;
+	axis[2][2] = 1;
 }
 
-void QDECL Com_Error( int level, const char *error, ... )
-{
-	va_list         argptr;
-	char            text[1024];
-
-	va_start(argptr, error);
-	Q_vsnprintf(text, sizeof(text), error, argptr);
-	va_end(argptr);
-
-	ri.Error(level, "%s", text);
-}

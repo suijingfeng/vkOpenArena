@@ -25,7 +25,6 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #define TR_LOCAL_H
 
 #include "../qcommon/q_shared.h"
-#include "../qcommon/qfiles.h"
 #include "../qcommon/qcommon.h"
 #include "../sdl/qgl.h"
 #include "../sdl/tr_public.h"
@@ -35,7 +34,7 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #include "tr_fbo.h"
 #include "tr_postprocess.h"
 #include "iqm.h"
-#include "tr_share.h"
+#include "tr_shared.h"
 
 extern refimport_t ri;
 extern glconfig_t glConfig;
@@ -2060,8 +2059,8 @@ void RB_StageIteratorSky( void );
 void RB_StageIteratorVertexLitTexture( void );
 void RB_StageIteratorLightmappedMultitexture( void );
 
-void RB_AddQuadStamp( vec3_t origin, vec3_t left, vec3_t up, float color[4] );
-void RB_AddQuadStampExt( vec3_t origin, vec3_t left, vec3_t up, float color[4], float s1, float t1, float s2, float t2 );
+void RB_AddQuadStamp( vec3_t origin, vec3_t left, vec3_t up, const float color[4] );
+void RB_AddQuadStampExt( vec3_t origin, vec3_t left, vec3_t up, const float color[4], float s1, float t1, float s2, float t2 );
 void RB_InstantQuad( vec4_t quadVerts[4] );
 //void RB_InstantQuad2(vec4_t quadVerts[4], vec2_t texCoords[4], vec4_t color, shaderProgram_t *sp, vec2_t invTexRes);
 void RB_InstantQuad2(vec4_t quadVerts[4], vec2_t texCoords[4]);
@@ -2175,7 +2174,7 @@ VERTEX BUFFER OBJECTS
 
 void R_VaoPackTangent(int16_t *out, vec4_t v);
 void R_VaoPackNormal(int16_t *out, vec3_t v);
-void R_VaoPackColor(uint16_t *out, vec4_t c);
+void R_VaoPackColor(uint16_t *out, const vec4_t c);
 void R_VaoUnpackTangent(vec4_t v, int16_t *pack);
 void R_VaoUnpackNormal(vec3_t v, int16_t *pack);
 

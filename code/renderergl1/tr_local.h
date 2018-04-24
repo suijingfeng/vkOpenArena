@@ -25,14 +25,13 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #define TR_LOCAL_H
 
 #include "../qcommon/q_shared.h"
-#include "../qcommon/qfiles.h"
 #include "../qcommon/qcommon.h"
 
 #include "../sdl/tr_public.h"
 #include "../sdl/qgl.h"
 
 #include "iqm.h"
-#include "tr_share.h"
+#include "tr_shared.h"
 
 
 #define GL_INDEX_TYPE		GL_UNSIGNED_INT

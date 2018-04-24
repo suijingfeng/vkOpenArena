@@ -773,7 +773,7 @@ const void *RB_TakeVideoFrameCmd( const void *data )
 	padwidth = PAD(linelen, packAlign);
 	padlen = padwidth - linelen;
 	// AVI line padding
-	avipadwidth = PAD(linelen, AVI_LINE_PADDING);
+	avipadwidth = PAD(linelen, 4);
 	avipadlen = avipadwidth - linelen;
 
 	cBuf = PADP(cmd->captureBuffer, packAlign);

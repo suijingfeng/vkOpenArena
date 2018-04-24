@@ -1495,24 +1495,24 @@ static	void R_LoadPlanes( lump_t *l ) {
 
 
 
-static	void R_LoadFogs( lump_t *l, lump_t *brushesLump, lump_t *sidesLump ) {
+static	void R_LoadFogs( lump_t *l, lump_t *brushesLump, lump_t *sidesLump )
+{
 	int			i;
 	fog_t		*out;
-	dfog_t		*fogs;
 	dbrush_t 	*brushes, *brush;
 	dbrushside_t	*sides;
-	int			count, brushesCount, sidesCount;
+	int			brushesCount, sidesCount;
 	int			sideNum;
 	int			planeNum;
 	shader_t	*shader;
 	float		d;
 	int			firstSide;
 
-	fogs = (void *)(fileBase + l->fileofs);
+	dfog_t* fogs = (void *)(fileBase + l->fileofs);
 	if (l->filelen % sizeof(*fogs)) {
 		ri.Error (ERR_DROP, "LoadMap: funny lump size in %s",s_worldData.name);
 	}
-	count = l->filelen / sizeof(*fogs);
+	int count = l->filelen / sizeof(*fogs);
 
 	// create fog strucutres for them
 	s_worldData.numfogs = count + 1;
@@ -1591,7 +1591,8 @@ static	void R_LoadFogs( lump_t *l, lump_t *brushesLump, lump_t *sidesLump ) {
 
 		if ( sideNum == -1 ) {
 			out->hasSurface = qfalse;
-		} else {
+		}
+        else {
 			out->hasSurface = qtrue;
 			planeNum = LittleLong( sides[ firstSide + sideNum ].planeNum );
 			VectorSubtract( vec3_origin, s_worldData.planes[ planeNum ].normal, out->surface );

@@ -23,6 +23,169 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 // q_shared.c -- stateless support routines that are included in each code dll
 #include "q_shared.h"
 
+// q_math.c -- stateless support routines that are included in each code module
+
+// Some of the vector functions are static inline in q_shared.h. q3asm
+// doesn't understand static functions though, so we only want them in
+// one file. That's what this is about.
+const vec3_t vec3_origin = {0,0,0};
+const vec3_t axisDefault[3] = { { 1, 0, 0 }, { 0, 1, 0 }, { 0, 0, 1 } };
+
+ID_INLINE void ClearBounds( vec3_t mins, vec3_t maxs )
+{
+	mins[0] = mins[1] = mins[2] = 99999;
+	maxs[0] = maxs[1] = maxs[2] = -99999;
+}
+
+ID_INLINE void AddPointToBounds( const vec3_t v, vec3_t mins, vec3_t maxs )
+{
+	if ( v[0] < mins[0] )
+		mins[0] = v[0];
+
+	if ( v[0] > maxs[0])
+		maxs[0] = v[0];
+
+
+	if ( v[1] < mins[1] )
+		mins[1] = v[1];
+
+	if ( v[1] > maxs[1])
+		maxs[1] = v[1];
+
+
+	if ( v[2] < mins[2] )
+		mins[2] = v[2];
+
+	if ( v[2] > maxs[2])
+		maxs[2] = v[2];
+}
+
+
+
+/*
+=================
+SetPlaneSignbits
+=================
+*/
+ID_INLINE void SetPlaneSignbits (cplane_t *out)
+{
+	int	bits = 0, j = 0;
+
+	// for fast box on planeside test
+	for (j=0 ; j<3 ; j++)
+    {
+		if (out->normal[j] < 0)
+        {
+			bits |= 1<<j;
+		}
+	}
+	out->signbits = bits;
+}
+
+/*
+==================
+BoxOnPlaneSide
+
+Returns 1, 2, or 1 + 2
+==================
+*/
+int BoxOnPlaneSide(vec3_t emins, vec3_t emaxs, struct cplane_s *p)
+{
+	float	dist[2];
+	int		sides, b, i;
+
+	// fast axial cases
+	if (p->type < 3)
+	{
+		if (p->dist <= emins[p->type])
+			return 1;
+		if (p->dist >= emaxs[p->type])
+			return 2;
+		return 3;
+	}
+
+	// general case
+	dist[0] = dist[1] = 0;
+	if (p->signbits < 8) // >= 8: default case is original code (dist[0]=dist[1]=0)
+	{
+		for (i=0 ; i<3 ; i++)
+		{
+			b = (p->signbits >> i) & 1;
+			dist[ b] += p->normal[i]*emaxs[i];
+			dist[!b] += p->normal[i]*emins[i];
+		}
+	}
+
+	sides = 0;
+	if (dist[0] >= p->dist)
+		sides = 1;
+	if (dist[1] < p->dist)
+		sides |= 2;
+
+	return sides;
+}
+
+/*
+=================
+RadiusFromBounds
+=================
+*/
+ID_INLINE float RadiusFromBounds( const vec3_t mins, const vec3_t maxs )
+{
+	int		i;
+	vec3_t	v;
+
+	for (i=0 ; i<3 ; i++)
+    {
+		float a = fabs( mins[i] );
+		float b = fabs( maxs[i] );
+		v[i] = a > b ? a : b;
+	}
+
+	return sqrtf(v[0]*v[0] + v[1]*v[1] + v[2]*v[2]);
+}
+
+
+void AngleVectors( const vec3_t angles, vec3_t forward, vec3_t right, vec3_t up)
+{
+	static float sr, sp, sy, cr, cp, cy;
+	// static to help MS compiler fp bugs
+
+	float angle = angles[YAW] * (M_PI / 180);
+	sy = sin(angle);
+	cy = cos(angle);
+
+	angle = angles[PITCH] * (M_PI / 180);
+	sp = sin(angle);
+	cp = cos(angle);
+	
+    angle = angles[ROLL] * (M_PI / 180);
+	sr = sin(angle);
+	cr = cos(angle);
+
+	if (forward)
+	{
+		forward[0] = cp*cy;
+		forward[1] = cp*sy;
+		forward[2] = -sp;
+	}
+	if (right)
+	{
+		right[0] = (-1*sr*sp*cy+-1*cr*-sy);
+		right[1] = (-1*sr*sp*sy+-1*cr*cy);
+		right[2] = -1*sr*cp;
+	}
+	if (up)
+	{
+		up[0] = (cr*sp*cy+-sr*-sy);
+		up[1] = (cr*sp*sy+-sr*cy);
+		up[2] = cr*cp;
+	}
+}
+
+//////////////////////////////////////////////////////
+//////////////////////////////////////////////////////
+//////////////////////////////////////////////////////
 float Com_Clamp( float min, float max, float value )
 {
 	if ( value < min )
@@ -90,7 +253,7 @@ void Q_strcat( char *dest, int size, const char *src )
 {
 	int	l1 = strlen( dest );
 	if( l1 >= size )
-		Com_Error( ERR_FATAL, "Q_strcat: already overflowed" );
+		fprintf( stderr, "Q_strcat: already overflowed" );
 
 	Q_strncpyz( dest + l1, src, size - l1 );
 }
@@ -663,7 +826,7 @@ void COM_MatchToken( char **buf_p, char *match )
 {
 	char* token = COM_Parse( buf_p );
 	if ( strcmp( token, match ) )
-		Com_Error( ERR_DROP, "MatchToken: %s != %s", token, match );
+		fprintf( stderr, "MatchToken: %s != %s", token, match );
 }
 
 void Parse1DMatrix (char **buf_p, int x, float *m) {

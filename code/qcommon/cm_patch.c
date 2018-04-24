@@ -801,7 +801,8 @@ static qboolean CM_ValidateFacet( facet_t *facet ) {
 			return qfalse;
 		}
 		Vector4Copy( planes[ facet->borderPlanes[j] ].plane, plane );
-		if ( !facet->borderInward[j] ) {
+		if ( !facet->borderInward[j] )
+        {
 			VectorSubtract( vec3_origin, plane, plane );
 			plane[3] = -plane[3];
 		}

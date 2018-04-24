@@ -25,6 +25,8 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #include "tr_dsa.h"
 #include "../sdl/sdl_glimp.h"
 
+
+
 glconfig_t  glConfig;
 glRefConfig_t glRefConfig;
 qboolean    textureFilterAnisotropic = qfalse;
@@ -876,7 +878,7 @@ const void *RB_TakeVideoFrameCmd( const void *data )
 	padwidth = PAD(linelen, packAlign);
 	padlen = padwidth - linelen;
 	// AVI line padding
-	avipadwidth = PAD(linelen, AVI_LINE_PADDING);
+	avipadwidth = PAD(linelen, 4);
 	avipadlen = avipadwidth - linelen;
 
 	cBuf = PADP(cmd->captureBuffer, packAlign);

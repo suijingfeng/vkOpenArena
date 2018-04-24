@@ -454,7 +454,6 @@ typedef struct {
 	vec3_t      normal;
 	unsigned char color[4];
 } drawVert_t;
-
 #define drawVert_t_cleared(x) drawVert_t (x) = {{0, 0, 0}, {0, 0}, {0, 0}, {0, 0, 0}, {0, 0, 0, 0}}
 
 typedef enum {

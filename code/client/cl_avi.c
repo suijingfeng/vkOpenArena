@@ -351,7 +351,7 @@ qboolean CL_OpenAVIForWriting( const char *fileName )
   #define MAX_PACK_LEN 16
   afd.cBuffer = Z_Malloc((afd.width * 3 + MAX_PACK_LEN - 1) * afd.height + MAX_PACK_LEN - 1);
   // raw avi files have pixel lines start on 4-byte boundaries
-  afd.eBuffer = Z_Malloc(PAD(afd.width * 3, AVI_LINE_PADDING) * afd.height);
+  afd.eBuffer = Z_Malloc(PAD(afd.width * 3, 4) * afd.height);
 
   afd.a.rate = dma.speed;
   afd.a.format = WAV_FORMAT_PCM;
