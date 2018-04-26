@@ -421,40 +421,13 @@ extern const vec3_t	axisDefault[3];
 
 #define	IS_NAN(x) (((*(int *)&x)&nanmask)==nanmask)
 
-//int Q_isnan(float x);
 
+extern int QDECL qvmftolsse(void);
+extern void QDECL qsnapvectorx87(vec3_t vec);
+extern void QDECL qsnapvectorsse(vec3_t vec);
 
-    extern int QDECL qvmftolsse(void);
-    extern void QDECL qsnapvectorx87(vec3_t vec);
-    extern void QDECL qsnapvectorsse(vec3_t vec);
-
-    extern int (QDECL *Q_VMftol)(void);
-    extern void (QDECL *Q_SnapVector)(vec3_t vec);
-
-/*
-// if your system does not have lrintf() and round() you can try this block. Please also open a bug report at bugzilla.icculus.org
-// or write a mail to the ioq3 mailing list.
-#else
-  #define Q_ftol(v) ((long) (v))
-  #define Q_round(v) do { if((v) < 0) (v) -= 0.5f; else (v) += 0.5f; (v) = Q_ftol((v)); } while(0)
-  #define Q_SnapVector(vec) \
-	do\
-	{\
-		vec3_t *temp = (vec);\
-		\
-		Q_round((*temp)[0]);\
-		Q_round((*temp)[1]);\
-		Q_round((*temp)[2]);\
-	} while(0)
-#endif
-*/
-
-
-
-// #define SQRTFAST( x ) ( (x) * Q_rsqrt( x ) )
-
-// signed char ClampChar( int i );
-//signed short ClampShort( int i );
+extern int (QDECL *Q_VMftol)(void);
+extern void (QDECL *Q_SnapVector)(vec3_t vec);
 
 
 
@@ -467,6 +440,16 @@ extern const vec3_t	axisDefault[3];
 #define	VectorScale(v, s, o)	((o)[0]=(v)[0]*(s),(o)[1]=(v)[1]*(s),(o)[2]=(v)[2]*(s))
 #define	VectorMA(v, s, b, o)	((o)[0]=(v)[0]+(b)[0]*(s),(o)[1]=(v)[1]+(b)[1]*(s),(o)[2]=(v)[2]+(b)[2]*(s))
 
+#define VectorClear(a)			((a)[0]=(a)[1]=(a)[2]=0)
+#define VectorNegate(a,b)		((b)[0]=-(a)[0],(b)[1]=-(a)[1],(b)[2]=-(a)[2])
+#define VectorSet(v, x, y, z)	((v)[0]=(x), (v)[1]=(y), (v)[2]=(z))
+#define Vector4Copy(a,b)		((b)[0]=(a)[0],(b)[1]=(a)[1],(b)[2]=(a)[2],(b)[3]=(a)[3])
+#define Byte4Copy(a,b)			((b)[0]=(a)[0],(b)[1]=(a)[1],(b)[2]=(a)[2],(b)[3]=(a)[3])
+#define	SnapVector(v) {v[0]=((int)(v[0]));v[1]=((int)(v[1]));v[2]=((int)(v[2]));}
+#define Square(x) ((x)*(x))
+
+#define LERP( a, b, w )     ( ( a ) * ( 1.0f - ( w ) ) + ( b ) * ( w ) )
+#define LUMA( red, green, blue ) ( 0.296875f * ( red ) + 0.5859375f * ( green ) + 0.109375f * ( blue ) )
 #else
 
 #define DotProduct(x,y)			_DotProduct(x,y)
@@ -476,18 +459,6 @@ extern const vec3_t	axisDefault[3];
 #define	VectorScale(v, s, o)	_VectorScale(v,s,o)
 #define	VectorMA(v, s, b, o)	_VectorMA(v,s,b,o)
 
-#endif
-
-
-
-#define VectorClear(a)			((a)[0]=(a)[1]=(a)[2]=0)
-#define VectorNegate(a,b)		((b)[0]=-(a)[0],(b)[1]=-(a)[1],(b)[2]=-(a)[2])
-#define VectorSet(v, x, y, z)	((v)[0]=(x), (v)[1]=(y), (v)[2]=(z))
-#define Vector4Copy(a,b)		((b)[0]=(a)[0],(b)[1]=(a)[1],(b)[2]=(a)[2],(b)[3]=(a)[3])
-
-#define Byte4Copy(a,b)			((b)[0]=(a)[0],(b)[1]=(a)[1],(b)[2]=(a)[2],(b)[3]=(a)[3])
-
-#define	SnapVector(v) {v[0]=((int)(v[0]));v[1]=((int)(v[1]));v[2]=((int)(v[2]));}
 // just in case you don't want to use the macros
 vec_t _DotProduct( const vec3_t v1, const vec3_t v2 );
 void _VectorSubtract( const vec3_t veca, const vec3_t vecb, vec3_t out );
@@ -496,15 +467,18 @@ void _VectorCopy( const vec3_t in, vec3_t out );
 void _VectorScale( const vec3_t in, float scale, vec3_t out );
 void _VectorMA( const vec3_t veca, float scale, const vec3_t vecb, vec3_t vecc );
 
-//unsigned ColorBytes3 (float r, float g, float b);
-//unsigned ColorBytes4 (float r, float g, float b, float a);
+#endif
 
-//float NormalizeColor( const vec3_t in, vec3_t out );
+
+
+
 
 float RadiusFromBounds( const vec3_t mins, const vec3_t maxs );
 void ClearBounds( vec3_t mins, vec3_t maxs );
 void AddPointToBounds( const vec3_t v, vec3_t mins, vec3_t maxs );
-
+void SetPlaneSignbits( struct cplane_s *out );
+int BoxOnPlaneSide (vec3_t emins, vec3_t emaxs, struct cplane_s *plane);
+void AngleVectors( const vec3_t angles, vec3_t forward, vec3_t right, vec3_t up);
 
 static ID_INLINE int VectorCompare( const vec3_t v1, const vec3_t v2 )
 {
@@ -515,11 +489,11 @@ static ID_INLINE int VectorCompare( const vec3_t v1, const vec3_t v2 )
 }
 
 
-
 static ID_INLINE vec_t VectorLengthSquared( const vec3_t v )
 {
 	return (v[0]*v[0] + v[1]*v[1] + v[2]*v[2]);
 }
+
 
 static ID_INLINE vec_t Distance( const vec3_t p1, const vec3_t p2 )
 {
@@ -529,7 +503,9 @@ static ID_INLINE vec_t Distance( const vec3_t p1, const vec3_t p2 )
 	return sqrtf(v[0]*v[0] + v[1]*v[1] + v[2]*v[2]);
 }
 
-static ID_INLINE vec_t DistanceSquared( const vec3_t p1, const vec3_t p2 ) {
+
+static ID_INLINE vec_t DistanceSquared( const vec3_t p1, const vec3_t p2 )
+{
 	vec3_t	v;
 
 	VectorSubtract (p2, p1, v);
@@ -537,58 +513,26 @@ static ID_INLINE vec_t DistanceSquared( const vec3_t p1, const vec3_t p2 ) {
 }
 
 
-
-static ID_INLINE void VectorInverse( vec3_t v ){
+static ID_INLINE void VectorInverse( vec3_t v )
+{
 	v[0] = -v[0];
 	v[1] = -v[1];
 	v[2] = -v[2];
 }
 
-static ID_INLINE void CrossProduct( const vec3_t v1, const vec3_t v2, vec3_t cross ) {
+
+static ID_INLINE void CrossProduct( const vec3_t v1, const vec3_t v2, vec3_t cross )
+{
 	cross[0] = v1[1]*v2[2] - v1[2]*v2[1];
 	cross[1] = v1[2]*v2[0] - v1[0]*v2[2];
 	cross[2] = v1[0]*v2[1] - v1[1]*v2[0];
 }
 
 
-//vec_t VectorNormalize (vec3_t v);		// returns vector length
-//vec_t VectorNormalize2( const vec3_t v, vec3_t out );
-void Vector4Scale( const vec4_t in, vec_t scale, vec4_t out );
-void VectorRotate( vec3_t in, vec3_t matrix[3], vec3_t out );
-int Q_log2(int val);
-
-//float Q_acos(float c);
-
-//int		Q_rand( int *seed );
-//float	Q_random( int *seed );
-//float	Q_crandom( int *seed );
-
 #define random()	((rand () & 0x7fff) / ((float)0x7fff))
 #define crandom()	(2.0 * (random() - 0.5))
 
-// void vectoangles( const vec3_t value1, vec3_t angles);
 
-
-
-
-
-void SetPlaneSignbits( struct cplane_s *out );
-int BoxOnPlaneSide (vec3_t emins, vec3_t emaxs, struct cplane_s *plane);
-
-qboolean BoundsIntersect(const vec3_t mins, const vec3_t maxs, const vec3_t mins2, const vec3_t maxs2);
-qboolean BoundsIntersectSphere(const vec3_t mins, const vec3_t maxs, const vec3_t origin, vec_t radius);
-qboolean BoundsIntersectPoint(const vec3_t mins, const vec3_t maxs,	const vec3_t origin);
-
-float	AngleMod(float a);
-float	LerpAngle (float from, float to, float frac);
-float	AngleSubtract( float a1, float a2 );
-void	AnglesSubtract( vec3_t v1, vec3_t v2, vec3_t v3 );
-
-float AngleNormalize360 ( float angle );
-float AngleNormalize180 ( float angle );
-float AngleDelta ( float angle1, float angle2 );
-
-void AngleVectors( const vec3_t angles, vec3_t forward, vec3_t right, vec3_t up);
 
 #ifndef MAX
 #define MAX(x,y) ((x)>(y)?(x):(y))
@@ -600,9 +544,6 @@ void AngleVectors( const vec3_t angles, vec3_t forward, vec3_t right, vec3_t up)
 
 //=============================================
 
-float Com_Clamp( float min, float max, float value );
-
-char*   COM_SkipPath( char *pathname );
 const char* COM_GetExtension( const char *name );
 
 qboolean COM_CompareExtension(const char *in, const char *ext);
@@ -613,9 +554,10 @@ int		COM_GetCurrentParseLine( void );
 char*   COM_Parse( char **data_p );
 char*   COM_ParseExt( char **data_p, qboolean allowLineBreak );
 int		COM_Compress( char *data_p );
-//void	COM_ParseError( char *format, ... ) __attribute__ ((format (printf, 1, 2)));
-//void	COM_ParseWarning( char *format, ... ) __attribute__ ((format (printf, 1, 2)));
-//int		COM_ParseInfos( char *buf, int max, char infos[][MAX_INFO_STRING] );
+// data is an in/out parm, returns a parsed out token
+void COM_MatchToken( char**buf_p, char *match );
+
+
 
 #define MAX_TOKENLENGTH		1024
 
@@ -637,12 +579,9 @@ typedef struct pc_token_s
 	char string[MAX_TOKENLENGTH];
 } pc_token_t;
 
-// data is an in/out parm, returns a parsed out token
 
-void COM_MatchToken( char**buf_p, char *match );
 
-qboolean SkipBracedSection (char **program, int depth);
-void SkipRestOfLine ( char **data );
+
 
 void Parse1DMatrix (char **buf_p, int x, float *m);
 void Parse2DMatrix (char **buf_p, int y, int x, float *m);
@@ -651,9 +590,10 @@ int Com_HexStrToInt( const char *str );
 
 int QDECL Com_sprintf (char *dest, int size, const char *fmt, ...) __attribute__ ((format (printf, 3, 4)));
 
+qboolean SkipBracedSection (char **program, int depth);
+void SkipRestOfLine ( char **data );
 char *Com_SkipTokens( char *s, int numTokens, char *sep );
 char *Com_SkipCharset( char *s, char *sep );
-
 void Com_RandomBytes( byte *string, int len );
 
 // mode parm for FS_FOpenFile
@@ -1209,7 +1149,7 @@ typedef struct {
   char name[MAX_QPATH];
 } fontInfo_t;
 
-#define Square(x) ((x)*(x))
+
 
 // real time
 //=============================================
@@ -1268,7 +1208,6 @@ typedef enum _flag_status {
 #define CDKEY_LEN       16
 #define CDCHKSUM_LEN    2
 
-#define LERP( a, b, w )     ( ( a ) * ( 1.0f - ( w ) ) + ( b ) * ( w ) )
-#define LUMA( red, green, blue ) ( 0.296875f * ( red ) + 0.5859375f * ( green ) + 0.109375f * ( blue ) )
+
 
 #endif	// __Q_SHARED_H

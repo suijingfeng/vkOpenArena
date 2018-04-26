@@ -194,7 +194,6 @@ static qhandle_t R_RegisterIQM(const char *name, model_t *mod)
 static qboolean R_LoadMD3(model_t *mod, int lod, void *buffer, const char *mod_name )
 {
 	int					i, j;
-	md3Header_t			*pinmodel;
     md3Frame_t			*frame;
 	md3Surface_t		*surf;
 	md3Shader_t			*shader;
@@ -202,12 +201,11 @@ static qboolean R_LoadMD3(model_t *mod, int lod, void *buffer, const char *mod_n
 	md3St_t				*st;
 	md3XyzNormal_t		*xyz;
 	md3Tag_t			*tag;
-	int					version;
 	int					size;
 
-	pinmodel = (md3Header_t *)buffer;
+	md3Header_t* pinmodel = (md3Header_t *)buffer;
 
-	version = LittleLong(pinmodel->version);
+	int version = LittleLong(pinmodel->version);
 	if (version != MD3_VERSION)
     {
 		ri.Printf( PRINT_WARNING, "R_LoadMD3: %s has wrong version (%i should be %i)\n", mod_name, version, MD3_VERSION);
@@ -806,14 +804,17 @@ static md3Tag_t *R_GetTag(md3Header_t *mod, int frame, const char *tagName)
 	md3Tag_t *tag;
 	int	i;
 
-	if ( frame >= mod->numFrames ) {
+	if( frame >= mod->numFrames )
+    {
 		// it is possible to have a bad frame while changing models, so don't error
 		frame = mod->numFrames - 1;
 	}
 
 	tag = (md3Tag_t *)((byte *)mod + mod->ofsTags) + frame * mod->numTags;
-	for ( i = 0 ; i < mod->numTags ; i++, tag++ ) {
-		if ( !strcmp( tag->name, tagName ) ) {
+	for ( i = 0 ; i < mod->numTags ; i++, tag++ )
+    {
+		if ( !strcmp( tag->name, tagName ) )
+        {
 			return tag;	// found it
 		}
 	}
@@ -862,7 +863,7 @@ static void R_GetAnimTag( mdrHeader_t *mod, int framenum, const char *tagName, m
 
 	AxisClear( dest->axis );
 	VectorClear( dest->origin );
-	strcpy(dest->name,"");
+	strcpy(dest->name, "");
 }
 
 
@@ -873,9 +874,8 @@ static void R_GetAnimTag( mdrHeader_t *mod, int framenum, const char *tagName, m
 model_t	*R_GetModelByHandle( qhandle_t index )
 {
 	// out of range gets the defualt model
-	if ( index < 1 || index >= tr.numModels ) {
+	if ( index < 1 || index >= tr.numModels )
 		return tr.models[0];
-	}
 
 	return tr.models[index];
 }
@@ -908,9 +908,9 @@ void R_Modellist_f( void )
     {
 		model_t	*mod = tr.models[i];
 		int lods = 1;
-		for ( j = 1 ; j < MD3_MAX_LODS ; j++ )
+		for(j = 1; j < MD3_MAX_LODS; j++)
         {
-			if ( mod->md3[j] && mod->md3[j] != mod->md3[j-1] )
+			if( mod->md3[j] && mod->md3[j] != mod->md3[j-1] )
             {
 				lods++;
 			}
@@ -944,12 +944,14 @@ qhandle_t RE_RegisterModel( const char *name )
 
 
 
-	if ( !name || !name[0] ) {
+	if ( !name || !name[0] )
+    {
 		ri.Printf( PRINT_ALL, "RE_RegisterModel: NULL name\n" );
 		return 0;
 	}
 
-	if ( strlen( name ) >= MAX_QPATH ) {
+	if ( strlen( name ) >= MAX_QPATH )
+    {
 		ri.Printf( PRINT_ALL, "Model name exceeds MAX_QPATH\n" );
 		return 0;
 	}
@@ -957,11 +959,13 @@ qhandle_t RE_RegisterModel( const char *name )
 	//
 	// search the currently loaded models
 	//
-	for ( hModel = 1 ; hModel < tr.numModels; hModel++ )
+	for(hModel = 1 ; hModel < tr.numModels; hModel++)
     {
 		mod = tr.models[hModel];
-		if ( !strcmp( mod->name, name ) ) {
-			if( mod->type == MOD_BAD ) {
+		if ( !strcmp( mod->name, name ) )
+        {
+			if( mod->type == MOD_BAD )
+            {
 				return 0;
 			}
 			return hModel;
@@ -970,7 +974,7 @@ qhandle_t RE_RegisterModel( const char *name )
 
 	// allocate a new model_t
 
-	if ( ( mod = R_AllocModel() ) == NULL )
+	if( ( mod = R_AllocModel() ) == NULL )
     {
 		ri.Printf( PRINT_WARNING, "RE_RegisterModel: R_AllocModel() failed for '%s'\n", name);
 		return 0;
@@ -989,7 +993,7 @@ qhandle_t RE_RegisterModel( const char *name )
 	//
 	Q_strncpyz( localName, name, MAX_QPATH );
 
-	const char* ext = COM_GetExtension( localName );
+	const char* ext = getExtension( localName );
 
 	if( *ext )
 	{
@@ -1039,8 +1043,7 @@ qhandle_t RE_RegisterModel( const char *name )
 		{
 			if( orgNameFailed )
 			{
-				ri.Printf( PRINT_DEVELOPER, "WARNING: %s not present, using %s instead\n",
-						name, altName );
+				ri.Printf( PRINT_DEVELOPER, "WARNING: %s not present, using %s instead\n", name, altName );
 			}
 
 			break;

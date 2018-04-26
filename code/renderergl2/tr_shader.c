@@ -66,27 +66,6 @@ static long generateHashValue( const char *fname, const int size ) {
 }
 
 
-void stripExtension(const char *in, char *out, int destsize)
-{
-	const char *dot = strrchr(in, '.');
-    const char *slash = strrchr(in, '/');
-
-
-	if ((dot != NULL) && ( (slash < dot) || (slash == NULL) ) )
-    {
-        int len = dot-in+1;
-        if(len <= destsize)
-            destsize = len;
-        else
-		    ri.Printf( PRINT_WARNING, "stripExtension: dest size not enough!\n");
-    }
-
-    if(in != out)
-    	strncpy(out, in, destsize-1);
-	
-    out[destsize-1] = '\0';
-}
-
 void R_RemapShader(const char *shaderName, const char *newShaderName, const char *timeOffset) {
 	char		strippedName[MAX_QPATH];
 	int			hash;

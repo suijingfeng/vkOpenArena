@@ -186,28 +186,6 @@ void AngleVectors( const vec3_t angles, vec3_t forward, vec3_t right, vec3_t up)
 //////////////////////////////////////////////////////
 //////////////////////////////////////////////////////
 //////////////////////////////////////////////////////
-float Com_Clamp( float min, float max, float value )
-{
-	if ( value < min )
-		return min;
-    else if( value > max )
-		return max;
-
-	return value;
-}
-
-
-char *COM_SkipPath(char *pathname)
-{
-	char *last = pathname;
-	while (*pathname)
-	{
-		if (*pathname == '/')
-			last = pathname+1;
-		pathname++;
-	}
-	return last;
-}
 
 
 const char *COM_GetExtension( const char *name )
@@ -220,7 +198,6 @@ const char *COM_GetExtension( const char *name )
 	else
 		return "";
 }
-
 
 
 
@@ -798,17 +775,18 @@ qboolean SkipBracedSection (char **program, int depth)
 SkipRestOfLine
 =================
 */
-void SkipRestOfLine ( char **data ) {
-	char	*p;
-	int		c;
-
-	p = *data;
+void SkipRestOfLine ( char **data )
+{
+	char* p = *data;
+	int	c;
 
 	if ( !*p )
 		return;
 
-	while ( (c = *p++) != 0 ) {
-		if ( c == '\n' ) {
+	while ( (c = *p++) != 0 )
+    {
+		if ( c == '\n' )
+        {
 			com_lines++;
 			break;
 		}
@@ -829,7 +807,8 @@ void COM_MatchToken( char **buf_p, char *match )
 		fprintf( stderr, "MatchToken: %s != %s", token, match );
 }
 
-void Parse1DMatrix (char **buf_p, int x, float *m) {
+void Parse1DMatrix (char **buf_p, int x, float *m)
+{
 	char	*token;
 	int		i;
 

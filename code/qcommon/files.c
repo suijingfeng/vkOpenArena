@@ -572,17 +572,20 @@ FS_CheckFilenameIsMutable
 
 ERR_FATAL if trying to maniuplate a file with the platform library, QVM, or pk3 extension
 =================
- */
-static void FS_CheckFilenameIsMutable( const char *filename,
-		const char *function )
+*/
+static void FS_CheckFilenameIsMutable( const char *filename, const char *function )
 {
+    const char* dot = strrchr(filename, '.');
+    const char* slash = strrchr(filename, '/');
+    const char* res = "";
+
+	if ((dot != NULL) && ((slash == NULL) || (slash < dot) ))
+		res = dot + 1;
+
 	// Check if the filename ends with the library, QVM, or pk3 extension
-	if( COM_CompareExtension( filename, DLL_EXT )
-		|| COM_CompareExtension( filename, ".qvm" )
-		|| COM_CompareExtension( filename, ".pk3" ) )
+	if( COM_CompareExtension( filename, DLL_EXT ) || COM_CompareExtension( filename, ".qvm" ) || COM_CompareExtension( filename, ".pk3" ) )
 	{
-		Com_Error( ERR_FATAL, "%s: Not allowed to manipulate '%s' due "
-			"to %s extension", function, filename, COM_GetExtension( filename ) );
+		Com_Error( ERR_FATAL, "%s: Not allowed to manipulate '%s' due to %s extension", function, filename, res );
 	}
 }
 

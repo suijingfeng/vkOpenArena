@@ -36,7 +36,7 @@ srfGridMesh_t *R_SubdividePatchToGrid( int width, int height, drawVert_t points[
 
 #include "tr_local.h"
 
-#define PATCH_STITCHING
+
 
 extern refimport_t ri;
 

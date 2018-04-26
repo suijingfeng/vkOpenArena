@@ -450,9 +450,9 @@ static void RB_VBlur(FBO_t *srcFbo, FBO_t *dstFbo, float strength)
 void RB_GaussianBlur(float blur)
 {
 	//float mul = 1.f;
-	float factor = Com_Clamp(0.f, 1.f, blur);
-
-	if (factor <= 0.f)
+    if(blur > 1.0f)
+        blur = 1.0f;
+    else if (blur <= 0.f)
 		return;
 
 	{
@@ -471,13 +471,13 @@ void RB_GaussianBlur(float blur)
 		qglColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE);
 
 		// blur the tiny buffer horizontally and vertically
-		RB_HBlur(tr.textureScratchFbo[0], tr.textureScratchFbo[1], factor);
-		RB_VBlur(tr.textureScratchFbo[1], tr.textureScratchFbo[0], factor);
+		RB_HBlur(tr.textureScratchFbo[0], tr.textureScratchFbo[1], blur);
+		RB_VBlur(tr.textureScratchFbo[1], tr.textureScratchFbo[0], blur);
 
 		// finally, merge back to framebuffer
 		VectorSet4(srcBox, 0, 0, tr.textureScratchFbo[0]->width, tr.textureScratchFbo[0]->height);
 		VectorSet4(dstBox, 0, 0, glConfig.vidWidth,              glConfig.vidHeight);
-		color[3] = factor;
+		color[3] = blur;
 		FBO_Blit(tr.textureScratchFbo[0], srcBox, NULL, NULL, dstBox, NULL, color, GLS_SRCBLEND_SRC_ALPHA | GLS_DSTBLEND_ONE_MINUS_SRC_ALPHA);
 	}
 }

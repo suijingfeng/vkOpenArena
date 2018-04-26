@@ -387,9 +387,9 @@ S_MasterGain
 */
 void S_MasterGain( float gain )
 {
-	if( si.MasterGain ) {
+	if( si.MasterGain )
 		si.MasterGain( gain );
-	}
+
 }
 #endif
 

@@ -303,7 +303,7 @@ qhandle_t RE_RegisterModel( const char *name ) {
 	//
 	Q_strncpyz( localName, name, MAX_QPATH );
 
-	ext = COM_GetExtension( localName );
+	ext = getExtension( localName );
 
 	if( *ext )
 	{

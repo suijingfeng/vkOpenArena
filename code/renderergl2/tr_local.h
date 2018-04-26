@@ -2507,4 +2507,12 @@ void R_InitFreeType( void );
 void R_DoneFreeType( void );
 void RE_RegisterFont(const char *fontName, int pointSize, fontInfo_t *font);
 
+
+///////////////////////////// tr_shared.c  //////////////////////////////
+void AnglesToAxis( const vec3_t angles, vec3_t axis[3] );
+void ByteToDir( int b, vec3_t dir );
+void AxisClear( vec3_t axis[3] );
+char *SkipPath(char *pathname);
+void stripExtension(const char *in, char *out, int destsize);
+const char *getExtension( const char *name );
 #endif //TR_LOCAL_H

@@ -809,30 +809,19 @@ static const void *RB_TakeVideoFrameCmd( const void *data )
 
 void GL_Bind(image_t *image)
 {
-	int texnum;
-
-	if ( !image )
+	if ( glState.currenttextures[glState.currenttmu] != image->texnum )
     {
-		ri.Printf( PRINT_WARNING, "GL_Bind: NULL image\n" );
-		texnum = tr.defaultImage->texnum;
-	}
-    else
-    {
-		texnum = image->texnum;
-	}
-
-	if ( glState.currenttextures[glState.currenttmu] != texnum )
-    {
-		if ( image )
-			image->frameUsed = tr.frameCount;
-	
-		glState.currenttextures[glState.currenttmu] = texnum;
-		qglBindTexture(GL_TEXTURE_2D, texnum);
+		image->frameUsed = tr.frameCount;
+		qglBindTexture(GL_TEXTURE_2D, image->texnum);
+        glState.currenttextures[glState.currenttmu] = image->texnum;
 	}
 }
 
 
-void GL_SelectTexture(int unit)
+/*
+** GL_SelectTexture
+*/
+void GL_SelectTexture( int unit )
 {
 	if ( glState.currenttmu == unit )
 	{
@@ -841,71 +830,21 @@ void GL_SelectTexture(int unit)
 
 	if ( unit == 0 )
 	{
-		qglActiveTextureARB( GL_TEXTURE0_ARB );
-		qglClientActiveTextureARB( GL_TEXTURE0_ARB );
+		glActiveTextureARB( GL_TEXTURE0_ARB );
+		glClientActiveTextureARB( GL_TEXTURE0_ARB );
 	}
 	else if ( unit == 1 )
-	{
-		qglActiveTextureARB( GL_TEXTURE1_ARB );
-		qglClientActiveTextureARB( GL_TEXTURE1_ARB );
-	}
-	else if ( unit == 2 )
-	{
-		qglActiveTextureARB( GL_TEXTURE2_ARB );
-		qglClientActiveTextureARB( GL_TEXTURE2_ARB );
-	}
-	else if ( unit == 3 )
-	{
-		qglActiveTextureARB( GL_TEXTURE3_ARB );
-		qglClientActiveTextureARB( GL_TEXTURE3_ARB );
-	}
-	else if ( unit == 4 )
-	{
-		qglActiveTextureARB( GL_TEXTURE4_ARB );
-		qglClientActiveTextureARB( GL_TEXTURE4_ARB );
-	} 
-	else if ( unit == 5 )
-	{
-		qglActiveTextureARB( GL_TEXTURE5_ARB );
-		qglClientActiveTextureARB( GL_TEXTURE5_ARB );
-	}
-	else if ( unit == 6 )
-	{
-		qglActiveTextureARB( GL_TEXTURE6_ARB );
-		qglClientActiveTextureARB( GL_TEXTURE6_ARB );
-	}
-	else if ( unit == 7 )
-	{
-		qglActiveTextureARB( GL_TEXTURE7_ARB );
-		qglClientActiveTextureARB( GL_TEXTURE7_ARB );
-	}
-	else if ( unit == 11 )
-	{
-		qglActiveTextureARB( GL_TEXTURE11_ARB );
-		qglClientActiveTextureARB( GL_TEXTURE11_ARB );
-	}
-	else if ( unit == 12 )
-	{
-		qglActiveTextureARB( GL_TEXTURE12_ARB );
-		qglClientActiveTextureARB( GL_TEXTURE12_ARB );
-	}
-	else if ( unit == 13 )
-	{
-		qglActiveTextureARB( GL_TEXTURE13_ARB );
-		qglClientActiveTextureARB( GL_TEXTURE13_ARB );
-	}
-	else if ( unit == 14 )
-	{
-		qglActiveTextureARB( GL_TEXTURE14_ARB );
-		qglClientActiveTextureARB( GL_TEXTURE14_ARB );
-	}
-    else
     {
+		glActiveTextureARB( GL_TEXTURE1_ARB );
+		glClientActiveTextureARB( GL_TEXTURE1_ARB );
+    }
+    else
 		ri.Error( ERR_DROP, "GL_SelectTexture: unit = %i", unit );
-	}
+
 
 	glState.currenttmu = unit;
 }
+
 
 
 void GL_Cull( int cullType )

@@ -569,7 +569,6 @@ static void Upload32( unsigned *data, int width, int height, qboolean mipmap, qb
 			internalFormat = GL_LUMINANCE;
 		else
 			internalFormat = GL_RGB;
-
 	}
 	else
 	{
@@ -812,7 +811,7 @@ static void R_LoadImage(const char *name, unsigned char **pic, int *width, int *
 
 	Q_strncpyz( localName, name, MAX_QPATH );
 
-	const char *ext = COM_GetExtension( localName );
+	const char *ext = getExtension( localName );
 
 
 	if( *ext )
@@ -956,7 +955,42 @@ static void R_CreateDlightImage( void )
 			data[y][x][3] = 255;			
 		}
 	}
-	tr.dlightImage = R_CreateImage("*dlight", (unsigned char *)data, DLIGHT_SIZE, DLIGHT_SIZE, IMGTYPE_COLORALPHA, IMGFLAG_CLAMPTOEDGE, 0 );
+	tr.dlightImage = R_CreateImage("*dlight", (unsigned char *)data, DLIGHT_SIZE, DLIGHT_SIZE, IMGTYPE_COLORALPHA, IMGFLAG_CLAMPTOEDGE);
+}
+
+
+/*
+================
+R_FogFactor
+
+Returns a 0.0 to 1.0 fog density value
+This is called for each texel of the fog texture on startup
+and for each vertex of transparent shaders in fog dynamically
+================
+*/
+float R_FogFactor(float s, float t)
+{
+	s -= 1.0/512;
+	if ( s < 0 )
+		return 0;
+
+	if ( t < 1.0/32 )
+		return 0;
+
+	if ( t < 31.0/32 )
+		s *= (t - 1.0f/32.0f) / (30.0f/32.0f);
+
+
+	// we need to leave a lot of clamp range
+	s *= 8;
+
+	if ( s > 1.0 )
+		s = 1.0;
+
+
+	float d = tr.fogTable[ (int)(s * (FOG_TABLE_SIZE-1)) ];
+
+	return d;
 }
 
 
@@ -986,7 +1020,7 @@ static void R_CreateFogImage( void )
 
 	// standard openGL clamping doesn't really do what we want -- it includes
 	// the border color at the edges.  OpenGL 1.2 has clamp-to-edge, which does what we want.
-	tr.fogImage = R_CreateImage("*fog", (unsigned char *)data, FOG_S, FOG_T, IMGTYPE_COLORALPHA, IMGFLAG_CLAMPTOEDGE, 0 );
+	tr.fogImage = R_CreateImage("*fog", (unsigned char *)data, FOG_S, FOG_T, IMGTYPE_COLORALPHA, IMGFLAG_CLAMPTOEDGE);
 	ri.Hunk_FreeTempMemory( data );
 
 	borderColor[0] = 1.0;
@@ -1017,7 +1051,7 @@ static void R_CreateDefaultImage( void )
 
 		data[x][DEFAULT_SIZE-1][0] = data[x][DEFAULT_SIZE-1][1] = data[x][DEFAULT_SIZE-1][2] = data[x][DEFAULT_SIZE-1][3] = 255;
 	}
-	tr.defaultImage = R_CreateImage("*default", (unsigned char *)data, DEFAULT_SIZE, DEFAULT_SIZE, IMGTYPE_COLORALPHA, IMGFLAG_MIPMAP, 0);
+	tr.defaultImage = R_CreateImage("*default", (unsigned char *)data, DEFAULT_SIZE, DEFAULT_SIZE, IMGTYPE_COLORALPHA, IMGFLAG_MIPMAP);
 }
 
 
@@ -1032,7 +1066,7 @@ static void R_CreateBuiltinImages( void )
 	// we use a solid white image instead of disabling texturing
 	memset( data, 255, sizeof( data ) );
 	
-    tr.whiteImage = R_CreateImage("*white", (unsigned char *)data, 8, 8, IMGTYPE_COLORALPHA, IMGFLAG_NONE, 0);
+    tr.whiteImage = R_CreateImage("*white", (unsigned char *)data, 8, 8, IMGTYPE_COLORALPHA, IMGFLAG_NONE);
 
 	// with overbright bits active, we need an image which is some fraction of full color,
 	// for default lightmaps, etc
@@ -1044,13 +1078,13 @@ static void R_CreateBuiltinImages( void )
 		}
 	}
 
-	tr.identityLightImage = R_CreateImage("*identityLight", (unsigned char *)data, 8, 8, IMGTYPE_COLORALPHA, IMGFLAG_NONE, 0);
+	tr.identityLightImage = R_CreateImage("*identityLight", (unsigned char *)data, 8, 8, IMGTYPE_COLORALPHA, IMGFLAG_NONE);
 
 
 	for(x=0;x<32;x++)
     {
 		// scratchimage is usually used for cinematic drawing
-		tr.scratchImage[x] = R_CreateImage("*scratch", (unsigned char *)data, DEFAULT_SIZE, DEFAULT_SIZE, IMGTYPE_COLORALPHA, IMGFLAG_PICMIP | IMGFLAG_CLAMPTOEDGE, 0);
+		tr.scratchImage[x] = R_CreateImage("*scratch", (unsigned char *)data, DEFAULT_SIZE, DEFAULT_SIZE, IMGTYPE_COLORALPHA, IMGFLAG_PICMIP | IMGFLAG_CLAMPTOEDGE);
 	}
 
 
@@ -1137,7 +1171,7 @@ int R_SumOfUsedImages( void )
 R_CreateImage: This is the only way any image_t are created
 ================
 */
-image_t *R_CreateImage(const char *name, unsigned char* pic, int width, int height, imgType_t type, imgFlags_t flags, int internalFormat)
+image_t *R_CreateImage(const char *name, unsigned char* pic, int width, int height, imgType_t type, imgFlags_t flags)
 {
 	qboolean isLightmap = qfalse;
 	int glWrapClampMode;
@@ -1157,16 +1191,15 @@ image_t *R_CreateImage(const char *name, unsigned char* pic, int width, int heig
 	}
 
 	image_t	*image = tr.images[tr.numImages] = ri.Hunk_Alloc( sizeof( image_t ), h_low );
-	image->texnum = 1024 + tr.numImages;
+	qglGenTextures(1, &image->texnum);
 	tr.numImages++;
 
 	image->type = type;
 	image->flags = flags;
-
-	strcpy(image->imgName, name);
-
 	image->width = width;
 	image->height = height;
+	strcpy(image->imgName, name);
+
 
 
     if (flags & IMGFLAG_CLAMPTOEDGE)
@@ -1176,31 +1209,30 @@ image_t *R_CreateImage(const char *name, unsigned char* pic, int width, int heig
 
 
 	// lightmaps are always allocated on TMU 1
-	if ( qglActiveTextureARB && isLightmap ) {
-		image->TMU = 1;
-	} else {
-		image->TMU = 0;
+	GL_SelectTexture( isLightmap );
+
+	if ( glState.currenttextures[glState.currenttmu] != image->texnum )
+    {
+		image->frameUsed = tr.frameCount;
+		qglBindTexture(GL_TEXTURE_2D, image->texnum);
+        glState.currenttextures[glState.currenttmu] = image->texnum;
 	}
 
-	if ( qglActiveTextureARB ) {
-		GL_SelectTexture( image->TMU );
-	}
-
-	GL_Bind(image);
+	qglTexParameterf( GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, glWrapClampMode );
+	qglTexParameterf( GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, glWrapClampMode );
 
     Upload32( (unsigned *)pic, image->width, image->height, image->flags & IMGFLAG_MIPMAP, image->flags & IMGFLAG_PICMIP,
 								isLightmap,	&image->internalFormat,	&image->uploadWidth, &image->uploadHeight );
 
-	qglTexParameterf( GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, glWrapClampMode );
-	qglTexParameterf( GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, glWrapClampMode );
+
 
 	// FIXME: this stops fog from setting border color?
 	glState.currenttextures[glState.currenttmu] = 0;
 	qglBindTexture( GL_TEXTURE_2D, 0 );
 
-	if ( image->TMU == 1 ) {
-		GL_SelectTexture( isLightmap );
-	}
+	if ( isLightmap)
+		GL_SelectTexture( 0 );
+
 
 	long hash = generateHashValue(name);
 	image->next = hashTable[hash];
@@ -1256,7 +1288,7 @@ image_t	*R_FindImageFile( const char *name, imgType_t type, imgFlags_t flags )
         return NULL;
     }
 
-    image = R_CreateImage( ( char * ) name, pic, width, height, type, flags, 0 );
+    image = R_CreateImage( ( char * ) name, pic, width, height, type, flags);
     ri.Free( pic );
     return image;
 }
@@ -1550,39 +1582,6 @@ void R_InitFogTable( void )
 	}
 }
 
-/*
-================
-R_FogFactor
-
-Returns a 0.0 to 1.0 fog density value
-This is called for each texel of the fog texture on startup
-and for each vertex of transparent shaders in fog dynamically
-================
-*/
-float R_FogFactor( float s, float t )
-{
-	s -= 1.0/512;
-	if ( s < 0 ) {
-		return 0;
-	}
-	if ( t < 1.0/32 ) {
-		return 0;
-	}
-	if ( t < 31.0/32 ) {
-		s *= (t - 1.0f/32.0f) / (30.0f/32.0f);
-	}
-
-	// we need to leave a lot of clamp range
-	s *= 8;
-
-	if ( s > 1.0 ) {
-		s = 1.0;
-	}
-
-	float d = tr.fogTable[ (int)(s * (FOG_TABLE_SIZE-1)) ];
-
-	return d;
-}
 
 
 void R_InitImages(void)

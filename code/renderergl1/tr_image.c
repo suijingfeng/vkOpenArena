@@ -950,7 +950,6 @@ void R_LoadImage( const char *name, byte **pic, int *width, int *height )
 	int orgLoader = -1;
 	int i;
 	char localName[ MAX_QPATH ];
-	const char *ext;
 	char *altName;
 
 	*pic = NULL;
@@ -959,7 +958,7 @@ void R_LoadImage( const char *name, byte **pic, int *width, int *height )
 
 	Q_strncpyz( localName, name, MAX_QPATH );
 
-	ext = COM_GetExtension( localName );
+	const char * ext = getExtension( localName );
 
 	if( *ext )
 	{

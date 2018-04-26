@@ -171,6 +171,36 @@ void CL_CDDialog( void )
 	cls.cddialog = qtrue;	// start it next frame
 }
 
+
+
+static float Clamp( float min, float max, float value )
+{
+	if ( value < min )
+		return min;
+    else if( value > max )
+		return max;
+
+	return value;
+}
+
+
+
+static char *SkipPath(char *pathname)
+{
+	char *last = pathname;
+    char c;
+    do{
+        c = *pathname;
+    	if (c == '/')
+		    last = pathname+1;
+        pathname++;
+    }while(c);
+
+	return last;
+}
+
+
+
 #ifdef USE_MUMBLE
 static void CL_UpdateMumble(void)
 {
@@ -471,8 +501,9 @@ static void CL_CaptureVoip(void)
 
 	// try to get more audio data from the sound card...
 
-	if (initialFrame) {
-		S_MasterGain(Com_Clamp(0.0f, 1.0f, cl_voipGainDuringCapture->value));
+	if (initialFrame)
+    {
+		S_MasterGain(Clamp(0.0f, 1.0f, cl_voipGainDuringCapture->value));
 		S_StartCapture();
 		CL_VoipNewGeneration();
 		CL_VoipParseTargets();
@@ -2981,7 +3012,7 @@ void CL_Frame ( int msec )
 				*p = '.';
 			}
 
-			Q_strncpyz( mapName, COM_SkipPath( cl.mapname ), sizeof( cl.mapname ) );
+			Q_strncpyz( mapName, SkipPath( cl.mapname ), sizeof( cl.mapname ) );
 			COM_StripExtension(mapName, mapName, sizeof(mapName));
 
 			Cbuf_ExecuteText( EXEC_NOW, va( "record %s-%s-%s", nowString, serverName, mapName ) );

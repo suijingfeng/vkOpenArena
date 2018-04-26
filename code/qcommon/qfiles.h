@@ -361,7 +361,8 @@ typedef struct {
 
 
 typedef struct {
-	int		fileofs, filelen;
+	int	fileofs;
+    int filelen;
 } lump_t;
 
 #define	LUMP_ENTITIES		0
@@ -383,10 +384,10 @@ typedef struct {
 #define	LUMP_VISIBILITY		16
 #define	HEADER_LUMPS		17
 
-typedef struct {
-	int			ident;
+typedef struct
+{
+    int			ident;
 	int			version;
-
 	lump_t		lumps[HEADER_LUMPS];
 } dheader_t;
 

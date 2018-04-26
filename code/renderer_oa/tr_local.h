@@ -35,6 +35,8 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #include "iqm.h"
 #include "tr_shared.h"
 
+#define PATCH_STITCHING
+
 
 // any change in the LIGHTMAP_* defines here MUST be reflected in
 // R_FindShader() in tr_bsp.c
@@ -243,19 +245,18 @@ typedef enum
 
 typedef struct image_s {
 	char		imgName[MAX_QPATH];		// game path, including extension
-	int			width, height;				// source image
-	int			uploadWidth, uploadHeight;	// after power of two and picmip but not including clamp to MAX_TEXTURE_SIZE
+    struct image_s*	next;
+	
+    int			width;
+    int         height;				// source image
+	int			uploadWidth;
+    int         uploadHeight;	// after power of two and picmip but not including clamp to MAX_TEXTURE_SIZE
 	GLuint		texnum;					// gl texture binding
 
 	int			frameUsed;			// for texture usage in frame statistics
-
 	int			internalFormat;
-	int			TMU;				// only needed for voodoo2
-
 	imgType_t   type;
 	imgFlags_t  flags;
-
-	struct image_s*	next;
 } image_t;
 
 
@@ -472,7 +473,7 @@ typedef struct {
 	int			rdflags;			// RDF_NOWORLDMODEL, etc
 
 	// 1 bits will prevent the associated area from rendering at all
-	byte		areamask[MAX_MAP_AREA_BYTES];
+	unsigned char areamask[MAX_MAP_AREA_BYTES];
 	qboolean	areamaskModified;	// qtrue if areamask changed since last scene
 
 	float		floatTime;			// tr.refdef.time / 1000.0
@@ -772,24 +773,23 @@ typedef struct {
 	char		baseName[MAX_QPATH];	// ie: tim_dm2
 
 	int			dataSize;
-
 	int			numShaders;
 	dshader_t	*shaders;
 
 	bmodel_t	*bmodels;
 
-	int			numplanes;
 	cplane_t	*planes;
-
+	int			numplanes;
+    
 	int			numnodes;		// includes leafs
-	int			numDecisionNodes;
 	mnode_t		*nodes;
+	int			numDecisionNodes;
 
 	int			numsurfaces;
 	msurface_t	*surfaces;
 
-	int			nummarksurfaces;
 	msurface_t	**marksurfaces;
+	int			nummarksurfaces;
 
 	int			numfogs;
 	fog_t		*fogs;
@@ -801,7 +801,6 @@ typedef struct {
 
 
 	unsigned char* lightGridData;
-
 
 
 	int			numClusters;
@@ -963,99 +962,89 @@ typedef struct {
 ** but may read fields that aren't dynamically modified by the frontend.
 */
 typedef struct {
-	qboolean				registered;		// cleared at shutdown, set at beginRegistration
+	qboolean	registered;		// cleared at shutdown, set at beginRegistration
 
-	int						visCount;		// incremented every time a new vis cluster is entered
-	int						frameCount;		// incremented every frame
-	int						sceneCount;		// incremented every scene
-	int						viewCount;		// incremented every view (twice a scene if portaled)
+	int			visCount;		// incremented every time a new vis cluster is entered
+	int			frameCount;		// incremented every frame
+	int			sceneCount;		// incremented every scene
+	int			viewCount;		// incremented every view (twice a scene if portaled)
 											// and every R_MarkFragments call
 
-	int						frameSceneNum;	// zeroed at RE_BeginFrame
+	int			frameSceneNum;	// zeroed at RE_BeginFrame
 
-	qboolean				worldMapLoaded;
-	world_t					*world;
+	qboolean	worldMapLoaded;
+	world_t*    world;
 
-	const unsigned char		*externalVisData;	// from RE_SetWorldVisData, shared with CM_Load
+	const unsigned char*    externalVisData;	// from RE_SetWorldVisData, shared with CM_Load
 
-	image_t					*defaultImage;
-	image_t					*scratchImage[32];
-	image_t					*fogImage;
-	image_t					*dlightImage;	// inverse-quare highlight for projective adding
-	image_t					*waterImage;
-	image_t					*flareImage;
-	image_t					*whiteImage;			// full of 0xff
-	image_t					*identityLightImage;	// full of tr.identityLightByte
+	image_t*    defaultImage;
+	image_t*    scratchImage[32];
+	image_t*    fogImage;
+	image_t*    dlightImage;	// inverse-quare highlight for projective adding
+	image_t*    waterImage;
+	image_t*    flareImage;
+	image_t*    whiteImage;			// full of 0xff
+	image_t*    identityLightImage;	// full of tr.identityLightByte
 
-	shader_t				*defaultShader;
-	shader_t				*shadowShader;
-	shader_t				*projectionShadowShader;
+	shader_t*   defaultShader;
+	shader_t*   shadowShader;
+	shader_t*   projectionShadowShader;
+	shader_t*   flareShader;
+	shader_t*   sunShader;
 
-	shader_t				*flareShader;
-	shader_t				*sunShader;
+	int					numLightmaps;
+	image_t**           lightmaps;
 
-	qhandle_t				defaultProgram;
-	qhandle_t				vertexLitProgram;
-	qhandle_t				lightmappedMultitextureProgram;
-	qhandle_t				skyProgram;
-	qhandle_t				postprocessingProgram;
+	trRefEntity_t*      currentEntity;
+	trRefEntity_t		worldEntity;		// point currentEntity at this when rendering world
+	int					currentEntityNum;
+	int					shiftedEntityNum;	// currentEntityNum << QSORT_REFENTITYNUM_SHIFT
+	model_t*            currentModel;
 
-	int						numPrograms;
+	viewParms_t			viewParms;
 
-	int						numLightmaps;
-	image_t					**lightmaps;
+	float				identityLight;		// 1.0 / ( 1 << overbrightBits )
+	int					identityLightByte;	// identityLight * 255
+	int					overbrightBits;		// r_overbrightBits->integer, but set to 0 if no hw gamma
 
-	trRefEntity_t			*currentEntity;
-	trRefEntity_t			worldEntity;		// point currentEntity at this when rendering world
-	int						currentEntityNum;
-	int						shiftedEntityNum;	// currentEntityNum << QSORT_REFENTITYNUM_SHIFT
-	model_t					*currentModel;
+	orientationr_t		or;					// for current entity
 
-	viewParms_t				viewParms;
+	trRefdef_t			refdef;
 
-	float					identityLight;		// 1.0 / ( 1 << overbrightBits )
-	int						identityLightByte;	// identityLight * 255
-	int						overbrightBits;		// r_overbrightBits->integer, but set to 0 if no hw gamma
+	int					viewCluster;
 
-	orientationr_t			or;					// for current entity
+	vec3_t				sunLight;			// from the sky shader for this level
+	vec3_t				sunDirection;
 
-	trRefdef_t				refdef;
-
-	int						viewCluster;
-
-	vec3_t					sunLight;			// from the sky shader for this level
-	vec3_t					sunDirection;
-
-	frontEndCounters_t		pc;
-	int						frontEndMsec;		// not in pc due to clearing issue
+	frontEndCounters_t	pc;
+	int					frontEndMsec;		// not in pc due to clearing issue
 
 	// put large tables at the end, so most elements will be
 	// within the +/32K indexed range on risc processors
 	//
-	model_t					*models[MAX_MOD_KNOWN];
-	int						numModels;
+	model_t*            models[MAX_MOD_KNOWN];
+	int					numModels;
 
-	int						numAnimations;
 
-	int						numImages;
-	image_t					*images[MAX_DRAWIMAGES];
+	int					numImages;
+	image_t*            images[MAX_DRAWIMAGES];
 
 	// shader indexes from other modules will be looked up in tr.shaders[]
 	// shader indexes from drawsurfs will be looked up in sortedShaders[]
 	// lower indexed sortedShaders must be rendered first (opaque surfaces before translucent)
-	int						numShaders;
-	shader_t				*shaders[MAX_SHADERS];
-	shader_t				*sortedShaders[MAX_SHADERS];
+	int					numShaders;
+	shader_t*           shaders[MAX_SHADERS];
+	shader_t*           sortedShaders[MAX_SHADERS];
 
-	int						numSkins;
-	skin_t					*skins[MAX_SKINS];
+	int					numSkins;
+	skin_t*             skins[MAX_SKINS];
 
-	float					sinTable[FUNCTABLE_SIZE];
-	float					squareTable[FUNCTABLE_SIZE];
-	float					triangleTable[FUNCTABLE_SIZE];
-	float					sawToothTable[FUNCTABLE_SIZE];
-	float					inverseSawToothTable[FUNCTABLE_SIZE];
-	float					fogTable[FOG_TABLE_SIZE];
+	float				sinTable[FUNCTABLE_SIZE];
+	float				squareTable[FUNCTABLE_SIZE];
+	float				triangleTable[FUNCTABLE_SIZE];
+	float				sawToothTable[FUNCTABLE_SIZE];
+	float				inverseSawToothTable[FUNCTABLE_SIZE];
+	float				fogTable[FOG_TABLE_SIZE];
 
 } trGlobals_t;
 
@@ -1305,7 +1294,7 @@ void RE_TakeVideoFrame( int width, int height, unsigned char *captureBuffer, uns
 /////////////////////////// tr_image.c //////////////////////////////////
 void    GL_TextureMode( const char *string );
 int		R_SumOfUsedImages( void );
-image_t *R_CreateImage( const char *name, unsigned char *pic, int width, int height, imgType_t type, imgFlags_t flags, int internalFormat );
+image_t *R_CreateImage( const char *name, unsigned char *pic, int width, int height, imgType_t type, imgFlags_t flags);
 image_t *R_FindImageFile( const char *name, imgType_t type, imgFlags_t flags );
 void	R_ImageListMapOnly_f( void ); // leilei - stuff hack
 void	R_ImageList_f( void );
@@ -1513,7 +1502,16 @@ void	RB_CalcLightscaleTexCoords( float *texCoords );
 void	RB_CalcSpecularAlpha( unsigned char *alphas );
 void    RB_CalcEnvironmentTexCoordsJO(float *st);
 
-///////////////////////////// tr_init.c  //////////////////////////////
+///////////////////////////// tr_shared.c  //////////////////////////////
+void AnglesToAxis( const vec3_t angles, vec3_t axis[3] );
+void ByteToDir( int b, vec3_t dir );
+void AxisClear( vec3_t axis[3] );
+char *SkipPath(char *pathname);
+void stripExtension(const char *in, char *out, int destsize);
+const char* getExtension( const char *name );
+
+
+
 //void GLimp_InitExtraExtensions(void);
 /////////////////////////// rendercommon.h //////////////////////////////
 
@@ -1529,7 +1527,7 @@ void RE_RegisterFont(const char *fontName, int pointSize, fontInfo_t *font);
 
 //tr_image_jpg.c
 void RE_SaveJPG(char * filename, int quality, int image_width, int image_height, unsigned char *image_buffer, int padding);
-size_t RE_SaveJPGToBuffer(byte *buffer, size_t bufSize, int quality, int image_width, int image_height, byte *image_buffer, int padding);
+size_t RE_SaveJPGToBuffer(unsigned char *buffer, size_t bufSize, int quality, int image_width, int image_height, unsigned char* image_buffer, int padding);
 
 
 // IMAGE LOADERS

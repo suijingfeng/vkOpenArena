@@ -229,9 +229,7 @@ static void R_ModeList_f( void )
 static void R_TakeScreenshot(int x, int y, int width, int height, char *name, qboolean jpeg )
 {
 	static char	fileName[MAX_OSPATH]; // bad things if two screenshots per frame?
-	screenshotCommand_t	*cmd;
-
-	cmd = R_GetCommandBuffer( sizeof( *cmd ) );
+	screenshotCommand_t	*cmd = R_GetCommandBuffer( sizeof( *cmd ) );
 	if ( !cmd ) {
 		return;
 	}

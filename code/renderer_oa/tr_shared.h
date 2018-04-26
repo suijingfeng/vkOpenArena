@@ -13,9 +13,7 @@ extern const vec4_t	colorLtGrey;
 extern const vec4_t	colorMdGrey;
 extern const vec4_t	colorDkGrey;
 
-void AnglesToAxis( const vec3_t angles, vec3_t axis[3] );
-void ByteToDir( int b, vec3_t dir );
-void AxisClear( vec3_t axis[3] );
+
 
 
 union uInt4bytes{
@@ -197,6 +195,7 @@ static ID_INLINE void MakeNormalVectors( const vec3_t forward, vec3_t right, vec
     FastVectorNormalize(right);
 	CrossProduct(forward, right, up);
 }
+
 
 
 

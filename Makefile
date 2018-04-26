@@ -29,7 +29,7 @@ ifndef BUILD_RENDERER_OPENGL2
 endif
 
 ifndef USE_RENDERER_DLOPEN
-USE_RENDERER_DLOPEN=1
+USE_RENDERER_DLOPEN=0
 endif
 
 
@@ -1009,7 +1009,7 @@ Q3ROBJ = \
   $(B)/renderergl1/tr_sky.o \
   $(B)/renderergl1/tr_surface.o \
   $(B)/renderergl1/tr_world.o \
-  $(B)/renderergl2/tr_shared.o \
+  $(B)/renderergl1/tr_shared.o \
   $(B)/renderergl1/sdl_glimp.o
 
 
@@ -1042,7 +1042,7 @@ Q3ROAOBJ = \
   $(B)/renderer_oa/tr_sky.o \
   $(B)/renderer_oa/tr_surface.o \
   $(B)/renderer_oa/tr_world.o \
-  $(B)/renderergl2/tr_shared.o \
+  $(B)/renderer_oa/tr_shared.o \
   $(B)/renderer_oa/sdl_glimp.o
 
 ifneq ($(USE_RENDERER_DLOPEN), 0)

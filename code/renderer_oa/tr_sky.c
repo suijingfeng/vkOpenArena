@@ -781,5 +781,13 @@ void R_InitCloudAndSky(void)
     r_drawSun = ri.Cvar_Get( "r_drawSun", "0", CVAR_ARCHIVE );
 
     r_showsky = ri.Cvar_Get ("r_showsky", "0", CVAR_CHEAT);
+
+    	// set default sun direction to be used if it isn't overridden by a shader
+	tr.sunDirection[0] = 0.45f;
+	tr.sunDirection[1] = 0.3f;
+	tr.sunDirection[2] = 0.9f;
+
+	FastVectorNormalize( tr.sunDirection );
+
 }
 

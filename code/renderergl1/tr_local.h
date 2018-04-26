@@ -34,6 +34,8 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #include "tr_shared.h"
 
 
+
+
 #define GL_INDEX_TYPE		GL_UNSIGNED_INT
 typedef unsigned int glIndex_t;
 
@@ -1671,7 +1673,13 @@ qhandle_t RE_RegisterShaderFromImage(const char *name, int lightmapIndex, image_
 image_t *R_FindImageFile( const char *name, imgType_t type, imgFlags_t flags );
 
 
-
+///////////////////////////// tr_shared.c  //////////////////////////////
+void AnglesToAxis( const vec3_t angles, vec3_t axis[3] );
+void ByteToDir( int b, vec3_t dir );
+void AxisClear( vec3_t axis[3] );
+char *SkipPath(char *pathname);
+void stripExtension(const char *in, char *out, int destsize);
+const char *getExtension( const char *name );
 
 
 

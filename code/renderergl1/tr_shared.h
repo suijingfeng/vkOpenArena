@@ -1,9 +1,18 @@
 #ifndef TR_SHARE_H_
 #define TR_SHARE_H_
 
-void AnglesToAxis( const vec3_t angles, vec3_t axis[3] );
-void ByteToDir( int b, vec3_t dir );
-void AxisClear( vec3_t axis[3] );
+extern const vec4_t	colorBlack;
+extern const vec4_t	colorRed;
+extern const vec4_t	colorGreen;
+extern const vec4_t	colorBlue;
+extern const vec4_t	colorYellow;
+extern const vec4_t	colorMagenta;
+extern const vec4_t	colorCyan;
+extern const vec4_t	colorWhite;
+extern const vec4_t	colorLtGrey;
+extern const vec4_t	colorMdGrey;
+extern const vec4_t	colorDkGrey;
+
 
 
 
@@ -34,6 +43,9 @@ static ID_INLINE void AxisCopy( vec3_t in[3], vec3_t out[3] )
 	VectorCopy( in[2], out[2] );
 }
 
+
+// fast vector normalize routine that does not check to make sure
+// that length != 0, nor does it return length, uses rsqrt approximation
 
 static ID_INLINE void FastVectorNormalize( float* v )
 {
@@ -183,6 +195,9 @@ static ID_INLINE void MakeNormalVectors( const vec3_t forward, vec3_t right, vec
     FastVectorNormalize(right);
 	CrossProduct(forward, right, up);
 }
+
+
+
 
 /*
 static void VectorPerp(const vec3_t src, vec3_t dst1, vec3_t dst2 )

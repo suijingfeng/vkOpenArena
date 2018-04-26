@@ -716,6 +716,7 @@ void RB_CalcModulateColorsByFog( unsigned char (*colors)[4] )
 	}
 }
 
+
 void RB_CalcModulateAlphasByFog( unsigned char (*colors)[4] )
 {
 	float texCoords[SHADER_MAX_VERTEXES][2];

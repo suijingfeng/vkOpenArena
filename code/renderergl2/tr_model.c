@@ -257,7 +257,7 @@ qhandle_t RE_RegisterModel( const char *name ) {
 	int			orgLoader = -1;
 	int			i;
 	char		localName[ MAX_QPATH ];
-	const char	*ext;
+
 	char		altName[ MAX_QPATH ];
 
 	if ( !name || !name[0] ) {
@@ -304,7 +304,7 @@ qhandle_t RE_RegisterModel( const char *name ) {
 	//
 	Q_strncpyz( localName, name, MAX_QPATH );
 
-	ext = COM_GetExtension( localName );
+	const char* ext = getExtension( localName );
 
 	if( *ext )
 	{

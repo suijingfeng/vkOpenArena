@@ -58,7 +58,6 @@ static cvar_t* r_stencilbits;
 static cvar_t* r_depthbits;
 static cvar_t* r_colorbits;
 
-static cvar_t* r_ext_multitexture;
 static cvar_t* r_ext_compiled_vertex_array;
 
 
@@ -774,34 +773,29 @@ static void GLimp_InitExtensions( void )
 	qglClientActiveTextureARB = NULL;
 	if ( SDL_GL_ExtensionSupported( "GL_ARB_multitexture" ) )
 	{
-		if ( r_ext_multitexture->value )
-		{
-			qglMultiTexCoord2fARB = SDL_GL_GetProcAddress( "glMultiTexCoord2fARB" );
-			qglActiveTextureARB = SDL_GL_GetProcAddress( "glActiveTextureARB" );
-			qglClientActiveTextureARB = SDL_GL_GetProcAddress( "glClientActiveTextureARB" );
 
-			if ( qglActiveTextureARB )
-			{
-				GLint glint = 0;
-				qglGetIntegerv( GL_MAX_TEXTURE_UNITS_ARB, &glint );
-				glConfig.numTextureUnits = (int) glint;
-				if ( glConfig.numTextureUnits > 1 )
-				{
-					ri.Printf( PRINT_ALL, "...using GL_ARB_multitexture\n" );
-				}
-				else
-				{
-					qglMultiTexCoord2fARB = NULL;
-					qglActiveTextureARB = NULL;
-					qglClientActiveTextureARB = NULL;
-					ri.Printf( PRINT_ALL, "...not using GL_ARB_multitexture, < 2 texture units\n" );
-				}
-			}
-		}
-		else
-		{
-			ri.Printf( PRINT_ALL, "...ignoring GL_ARB_multitexture\n" );
-		}
+        qglMultiTexCoord2fARB = SDL_GL_GetProcAddress( "glMultiTexCoord2fARB" );
+        qglActiveTextureARB = SDL_GL_GetProcAddress( "glActiveTextureARB" );
+        qglClientActiveTextureARB = SDL_GL_GetProcAddress( "glClientActiveTextureARB" );
+
+        if ( qglActiveTextureARB )
+        {
+            GLint glint = 0;
+            qglGetIntegerv( GL_MAX_TEXTURE_UNITS_ARB, &glint );
+            glConfig.numTextureUnits = (int) glint;
+            if ( glConfig.numTextureUnits > 1 )
+            {
+                ri.Printf( PRINT_ALL, "...using GL_ARB_multitexture\n" );
+            }
+            else
+            {
+                qglMultiTexCoord2fARB = NULL;
+                qglActiveTextureARB = NULL;
+                qglClientActiveTextureARB = NULL;
+                ri.Printf( PRINT_ALL, "...not using GL_ARB_multitexture, < 2 texture units\n" );
+            }
+        }
+
 	}
 	else
 	{
@@ -891,7 +885,6 @@ void GLimp_Init(qboolean coreContext)
 
 
 	r_ext_compressed_textures = ri.Cvar_Get( "r_ext_compressed_textures", "0", CVAR_ARCHIVE | CVAR_LATCH );
-	r_ext_multitexture = ri.Cvar_Get( "r_ext_multitexture", "1", CVAR_ARCHIVE | CVAR_LATCH );
 	r_ext_compiled_vertex_array = ri.Cvar_Get( "r_ext_compiled_vertex_array", "1", CVAR_ARCHIVE | CVAR_LATCH);
 	r_ext_texture_filter_anisotropic = ri.Cvar_Get( "r_ext_texture_filter_anisotropic", "0", CVAR_ARCHIVE | CVAR_LATCH );
 	r_ext_max_anisotropy = ri.Cvar_Get( "r_ext_max_anisotropy", "2", CVAR_ARCHIVE | CVAR_LATCH );
