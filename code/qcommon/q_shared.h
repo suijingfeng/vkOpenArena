@@ -551,7 +551,6 @@ void	COM_DefaultExtension( char *path, int maxSize, const char *extension );
 
 void	COM_BeginParseSession( const char *name );
 int		COM_GetCurrentParseLine( void );
-char*   COM_Parse( char **data_p );
 char*   COM_ParseExt( char **data_p, qboolean allowLineBreak );
 int		COM_Compress( char *data_p );
 // data is an in/out parm, returns a parsed out token

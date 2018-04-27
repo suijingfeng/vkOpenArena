@@ -399,9 +399,9 @@ static void ParseFace( dsurface_t *ds, drawVert_t *verts, msurface_t *surf, int 
 ParseMesh
 ===============
 */
-static void ParseMesh ( dsurface_t *ds, drawVert_t *verts, msurface_t *surf )
+static void ParseMesh( dsurface_t *ds, drawVert_t *verts, msurface_t *surf )
 {
-	int				i, j;
+	int	i, j;
 	drawVert_t points[MAX_PATCH_SIZE*MAX_PATCH_SIZE];
 	vec3_t			bounds[2];
 	vec3_t			tmpVec;
@@ -461,11 +461,7 @@ static void ParseMesh ( dsurface_t *ds, drawVert_t *verts, msurface_t *surf )
 	grid->lodRadius = VectorLength( tmpVec );
 }
 
-/*
-===============
-ParseTriSurf
-===============
-*/
+
 static void ParseTriSurf( dsurface_t *ds, drawVert_t *verts, msurface_t *surf, int *indexes )
 {
 	// get fog volume
@@ -493,12 +489,14 @@ static void ParseTriSurf( dsurface_t *ds, drawVert_t *verts, msurface_t *surf, i
     int	i, j;
 	for ( i = 0 ; i < numVerts ; i++ )
     {
-		for ( j = 0 ; j < 3 ; j++ ) {
+		for ( j = 0 ; j < 3 ; j++ )
+        {
 			tri->verts[i].xyz[j] = LittleFloat( verts[i].xyz[j] );
 			tri->verts[i].normal[j] = LittleFloat( verts[i].normal[j] );
 		}
 		AddPointToBounds( tri->verts[i].xyz, tri->bounds[0], tri->bounds[1] );
-		for ( j = 0 ; j < 2 ; j++ ) {
+		for ( j = 0 ; j < 2 ; j++ )
+        {
 			tri->verts[i].st[j] = LittleFloat( verts[i].st[j] );
 			tri->verts[i].lightmap[j] = LittleFloat( verts[i].lightmap[j] );
 		}
@@ -517,6 +515,7 @@ static void ParseTriSurf( dsurface_t *ds, drawVert_t *verts, msurface_t *surf, i
 		}
 	}
 }
+
 
 /*
 ===============
@@ -582,7 +581,8 @@ int R_MergedHeightPoints(srfGridMesh_t *grid, int offset)
 
 	for (i = 1; i < grid->height-1; i++)
     {
-		for (j = i + 1; j < grid->height-1; j++) {
+		for (j = i + 1; j < grid->height-1; j++)
+        {
 			if ( fabs(grid->verts[grid->width * i + offset].xyz[0] - grid->verts[grid->width * j + offset].xyz[0]) > .1) continue;
 			if ( fabs(grid->verts[grid->width * i + offset].xyz[1] - grid->verts[grid->width * j + offset].xyz[1]) > .1) continue;
 			if ( fabs(grid->verts[grid->width * i + offset].xyz[2] - grid->verts[grid->width * j + offset].xyz[2]) > .1) continue;
@@ -1172,15 +1172,14 @@ of the patch (on the same row or column) the vertices will not be joined and cra
 might still appear at that side.
 ===============
 */
-int R_TryStitchingPatch( int grid1num ) {
-	int j, numstitches;
-	srfGridMesh_t *grid1, *grid2;
+int R_TryStitchingPatch( int grid1num )
+{
+	int j, numstitches = 0;
 
-	numstitches = 0;
-	grid1 = (srfGridMesh_t *) s_worldData.surfaces[grid1num].data;
+	srfGridMesh_t * grid1 = (srfGridMesh_t *) s_worldData.surfaces[grid1num].data;
 	for ( j = 0; j < s_worldData.numsurfaces; j++ ) {
 		//
-		grid2 = (srfGridMesh_t *) s_worldData.surfaces[j].data;
+		srfGridMesh_t * grid2 = (srfGridMesh_t *) s_worldData.surfaces[j].data;
 		// if this surface is not a grid
 		if ( grid2->surfaceType != SF_GRID ) continue;
 		// grids in the same LOD group should have the exact same lod radius
@@ -1338,22 +1337,21 @@ static	void R_LoadSurfaces( lump_t *surfs, lump_t *verts, lump_t *indexLump )
 R_LoadSubmodels
 =================
 */
-static	void R_LoadSubmodels( lump_t *l ) {
-	dmodel_t	*in;
+static	void R_LoadSubmodels( lump_t *l )
+{
 	bmodel_t	*out;
-	int			i, j, count;
+	int			i;
 
-	in = (void *)(fileBase + l->fileofs);
+	dmodel_t* in = (dmodel_t *)(fileBase + l->fileofs);
 	if (l->filelen % sizeof(*in))
 		ri.Error (ERR_DROP, "LoadMap: funny lump size in %s",s_worldData.name);
-	count = l->filelen / sizeof(*in);
+	int count = l->filelen / sizeof(*in);
 
 	s_worldData.bmodels = out = ri.Hunk_Alloc( count * sizeof(*out), h_low );
 
-	for ( i=0 ; i<count ; i++, in++, out++ ) {
-		model_t *model;
-
-		model = R_AllocModel();
+	for ( i=0 ; i<count ; i++, in++, out++ )
+    {
+		model_t *model = R_AllocModel();
 
 		assert( model != NULL );			// this should never happen
 		if ( model == NULL ) {
@@ -1364,7 +1362,9 @@ static	void R_LoadSubmodels( lump_t *l ) {
 		model->bmodel = out;
 		Com_sprintf( model->name, sizeof( model->name ), "*%d", i );
 
-		for (j=0 ; j<3 ; j++) {
+        int j = 0;
+		for (j=0 ; j<3 ; j++)
+        {
 			out->bounds[0][j] = LittleFloat (in->mins[j]);
 			out->bounds[1][j] = LittleFloat (in->maxs[j]);
 		}
@@ -1397,7 +1397,8 @@ static	void R_SetParent (mnode_t *node, mnode_t *parent)
 R_LoadNodesAndLeafs
 =================
 */
-static	void R_LoadNodesAndLeafs (lump_t *nodeLump, lump_t *leafLump) {
+static	void R_LoadNodesAndLeafs (lump_t *nodeLump, lump_t *leafLump)
+{
 	int			i, j, p;
 	dnode_t		*in;
 	dleaf_t		*inLeaf;
@@ -1785,22 +1786,20 @@ void R_LoadEntities( lump_t *l ) {
 	}
 }
 
-/*
-=================
-R_GetEntityToken
-=================
-*/
-qboolean R_GetEntityToken( char *buffer, int size ) {
-	const char	*s;
 
-	s = COM_Parse( &s_worldData.entityParsePoint );
+
+qboolean R_GetEntityToken( char *buffer, int size )
+{
+	const char* s = COM_ParseExt( &s_worldData.entityParsePoint, qtrue );
 	Q_strncpyz( buffer, s, size );
-	if ( !s_worldData.entityParsePoint || !s[0] ) {
+	if ( !s_worldData.entityParsePoint || !s[0] )
+    {
 		s_worldData.entityParsePoint = s_worldData.entityString;
 		return qfalse;
-	} else {
-		return qtrue;
 	}
+    
+
+	return qtrue;
 }
 
 void R_InitBSP(void)

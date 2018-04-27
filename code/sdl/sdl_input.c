@@ -115,7 +115,7 @@ static qboolean IN_IsConsoleKey( keyNum_t key, int character )
 			consoleKey_t *c = &consoleKeys[ numConsoleKeys ];
 			int charCode = 0;
 
-			token = COM_Parse( &text_p );
+			token = COM_ParseExt( &text_p, qtrue );
 			if( !token[ 0 ] )
 				break;
 

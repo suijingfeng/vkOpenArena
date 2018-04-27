@@ -192,7 +192,7 @@ void VM_LoadSymbols( vm_t *vm )
 
 	while ( 1 )
     {
-		char* token = COM_Parse( &text_p );
+		char* token = COM_ParseExt( &text_p, qtrue );
 		if ( !token[0] ) {
 			break;
 		}
@@ -200,19 +200,19 @@ void VM_LoadSymbols( vm_t *vm )
 		
         if ( segment )
         {
-			COM_Parse( &text_p );
-			COM_Parse( &text_p );
+			COM_ParseExt( &text_p, qtrue );
+			COM_ParseExt( &text_p, qtrue );
 			continue;		// only load code segment values
 		}
 
-		token = COM_Parse( &text_p );
+		token = COM_ParseExt( &text_p, qtrue );
 		if ( !token[0] ) {
 			Com_Printf( "WARNING: incomplete line at end of file\n" );
 			break;
 		}
 		value = ParseHex( token );
 
-		token = COM_Parse( &text_p );
+		token = COM_ParseExt( &text_p, qtrue );
 		if ( !token[0] ) {
 			Com_Printf( "WARNING: incomplete line at end of file\n" );
 			break;

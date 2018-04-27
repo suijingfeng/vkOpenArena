@@ -462,15 +462,13 @@ intptr_t SV_GameSystemCalls( intptr_t *args ) {
 		return 0;
 	case G_GET_ENTITY_TOKEN:
 		{
-			const char	*s;
+			const char* s = COM_ParseExt( &sv.entityParsePoint, qtrue);
 
-			s = COM_Parse( &sv.entityParsePoint );
 			Q_strncpyz( VMA(1), s, args[2] );
-			if ( !sv.entityParsePoint && !s[0] ) {
+			if ( !sv.entityParsePoint && !s[0] )
 				return qfalse;
-			} else {
+			else
 				return qtrue;
-			}
 		}
 
 	case G_DEBUG_POLYGON_CREATE:

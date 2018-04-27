@@ -227,8 +227,11 @@ void BotInterbreedGoalFuzzyLogic(int parent1, int parent2, int child)
 	p2 = BotGoalStateFromHandle(parent2);
 	c = BotGoalStateFromHandle(child);
 
-	InterbreedWeightConfigs(p1->itemweightconfig, p2->itemweightconfig,
-									c->itemweightconfig);
+	if (!p1 || !p2 || !c)
+		return;
+
+
+	InterbreedWeightConfigs(p1->itemweightconfig, p2->itemweightconfig, c->itemweightconfig);
 } //end of the function BotInterbreedingGoalFuzzyLogic
 //===========================================================================
 //
@@ -252,10 +255,9 @@ void BotSaveGoalFuzzyLogic(int goalstate, char *filename)
 //===========================================================================
 void BotMutateGoalFuzzyLogic(int goalstate, float range)
 {
-	bot_goalstate_t *gs;
-
-	gs = BotGoalStateFromHandle(goalstate);
-
+	bot_goalstate_t *gs = BotGoalStateFromHandle(goalstate);
+    if (!gs)
+        return;
 	EvolveWeightConfig(gs->itemweightconfig);
 } //end of the function BotMutateGoalFuzzyLogic
 //===========================================================================
@@ -858,7 +860,8 @@ int BotGetLevelItemGoal(int index, char *name, bot_goal_t *goal)
 {
 	levelitem_t *li;
 
-	if (!itemconfig) return -1;
+	if (!itemconfig)
+        return -1;
 	li = levelitems;
 	if (index >= 0)
 	{
@@ -894,7 +897,9 @@ int BotGetLevelItemGoal(int index, char *name, bot_goal_t *goal)
 			VectorCopy(itemconfig->iteminfo[li->iteminfo].maxs, goal->maxs);
 			goal->number = li->number;
 			goal->flags = GFL_ITEM;
-			if (li->timeout) goal->flags |= GFL_DROPPED;
+			if (li->timeout)
+                goal->flags |= GFL_DROPPED;
+            goal->iteminfo = li->iteminfo;
 			//botimport.Print(PRT_MESSAGE, "found li %s\n", itemconfig->iteminfo[li->iteminfo].name);
 			return li->number;
 		} //end if
@@ -921,6 +926,10 @@ int BotGetMapLocationGoal(char *name, bot_goal_t *goal)
 			goal->entitynum = 0;
 			VectorCopy(mins, goal->mins);
 			VectorCopy(maxs, goal->maxs);
+            
+            goal->number = 0;
+		    goal->flags = 0;
+		    goal->iteminfo = 0;
 			return qtrue;
 		} //end if
 	} //end for
@@ -949,6 +958,11 @@ int BotGetNextCampSpotGoal(int num, bot_goal_t *goal)
 			goal->entitynum = 0;
 			VectorCopy(mins, goal->mins);
 			VectorCopy(maxs, goal->maxs);
+
+			goal->number = 0;
+			goal->flags = 0;
+			goal->iteminfo = 0;
+
 			return num+1;
 		} //end if
 	} //end for

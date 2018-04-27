@@ -376,10 +376,7 @@ int COM_GetCurrentParseLine( void )
 	return com_lines;
 }
 
-char *COM_Parse( char **data_p )
-{
-	return COM_ParseExt( data_p, qtrue );
-}
+
 
 /*
 void COM_ParseError( char *format, ... )
@@ -407,18 +404,7 @@ void COM_ParseWarning( char *format, ... )
 	Com_Printf("WARNING: %s, line %d: %s\n", com_parsename, COM_GetCurrentParseLine(), string);
 }
 */
-/*
-==============
-COM_Parse
 
-Parse a token out of a string
-Will never return NULL, just empty strings
-
-If "allowLineBreaks" is qtrue then an empty
-string will be returned if the next token is
-a newline.
-==============
-*/
 static char* SkipWhitespace(char* data, qboolean *hasNewLines)
 {
 	unsigned char c;
@@ -512,23 +498,33 @@ int COM_Compress( char *data_p )
 	return out - data_p;
 }
 
+
+/*
+==============
+COM_Parse
+
+Parse a token out of a string
+Will never return NULL, just empty strings
+
+If "allowLineBreaks" is qtrue then an empty
+string will be returned if the next token is
+a newline.
+==============
+*/
+
 char *COM_ParseExt( char **data_p, qboolean allowLineBreaks )
 {
-	int c = 0, len;
+	int c = 0, len = 0;
 	qboolean hasNewLines = qfalse;
-	char *data;
-
-	data = *data_p;
-	len = 0;
+	char *data = *data_p;
+	
 	com_token[0] = 0;
 	com_tokenline = 0;
 
 	// make sure incoming data is valid
-	if ( !data )
-	{
-		*data_p = NULL;
+	if ( *data_p == NULL)
 		return com_token;
-	}
+
 
 	while ( 1 )
 	{
@@ -627,117 +623,6 @@ char *COM_ParseExt( char **data_p, qboolean allowLineBreaks )
 
 
 
-char *COM_ParseExt2(char **data_p, qboolean allowLineBreaks)
-{
-	int c = 0, len = 0;
-	qboolean hasNewLines = qfalse;
-	char *data = *data_p;
-
-	com_token[0] = 0;
-	com_tokenline = 0;
-
-	// make sure incoming data is valid
-	if ( !data )
-	{
-		*data_p = NULL;
-		return com_token;
-	}
-
-	while ( 1 )
-	{
-		// skip whitespace
-		data = SkipWhitespace(data, &hasNewLines);
-		if ( !data )
-		{
-			*data_p = NULL;
-			return com_token;
-		}
-		if ( hasNewLines && !allowLineBreaks )
-		{
-			*data_p = data;
-			return com_token;
-		}
-
-		c = *data;
-
-		// skip double slash comments
-		if ( c == '/' && data[1] == '/' )
-		{
-			data += 2;
-			while (*data && *data != '\n')
-            {
-				data++;
-			}
-		}
-		else if ( c=='/' && data[1] == '*' ) 
-		{   // skip /* */ comments
-			data += 2;
-			while ( *data && ( *data != '*' || data[1] != '/' ) ) 
-			{
-				if ( *data == '\n' )
-				{
-					com_lines++;
-				}
-				data++;
-			}
-			if ( *data ) 
-			{
-				data += 2;
-			}
-		}
-		else
-		{
-			break;
-		}
-	}
-
-	// token starts on this line
-	com_tokenline = com_lines;
-
-	// handle quoted strings
-	if (c == '\"')
-	{
-		data++;
-		while (1)
-		{
-			c = *data++;
-			if (c=='\"' || !c)
-			{
-				com_token[len] = 0;
-				*data_p = ( char * ) data;
-				return com_token;
-			}
-			if ( c == '\n' )
-			{
-				com_lines++;
-			}
-			if (len < MAX_TOKEN_CHARS - 1)
-			{
-				com_token[len] = c;
-				len++;
-			}
-		}
-	}
-
-	// parse a regular word
-	do
-	{
-		if (len < MAX_TOKEN_CHARS - 1)
-		{
-			com_token[len] = c;
-			len++;
-		}
-		data++;
-		c = *data;
-	} while (c>32);
-
-	com_token[len] = 0;
-
-	*data_p = ( char * ) data;
-	return com_token;
-}
-
-
 
 
 /*
@@ -802,20 +687,20 @@ COM_MatchToken
 */
 void COM_MatchToken( char **buf_p, char *match )
 {
-	char* token = COM_Parse( buf_p );
+	char* token = COM_ParseExt( buf_p, qtrue );
 	if ( strcmp( token, match ) )
 		fprintf( stderr, "MatchToken: %s != %s", token, match );
 }
 
 void Parse1DMatrix (char **buf_p, int x, float *m)
 {
-	char	*token;
 	int		i;
 
 	COM_MatchToken( buf_p, "(" );
 
-	for (i = 0 ; i < x ; i++) {
-		token = COM_Parse(buf_p);
+	for (i = 0 ; i < x ; i++)
+    {
+		char* token = COM_ParseExt(buf_p, qtrue);
 		m[i] = atof(token);
 	}
 
