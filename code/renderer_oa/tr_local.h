@@ -345,9 +345,6 @@ typedef struct
 	int				videoMapHandle;
 	qboolean		isLightmap;
 	qboolean		isVideoMap;
-
-	char            *texname;
-	int             alphahack;
 } textureBundle_t;
 
 #define NUM_TEXTURE_BUNDLES 8

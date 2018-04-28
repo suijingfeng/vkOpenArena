@@ -1112,8 +1112,6 @@ void Com_TruncateLongString( char *buffer, const char *s )
 
 
 
-
-
 /*
 ==================
 Info_Validate

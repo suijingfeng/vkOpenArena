@@ -432,7 +432,7 @@ static void RB_SetGL2D (void)
 
 
 
-static const void *RB_SetColor( const void *data )
+static const void *RB_SetColor(const void *data)
 {
 	const setColorCommand_t	*cmd= (const setColorCommand_t *)data;
 
@@ -454,15 +454,14 @@ static const void *RB_StretchPic( const void *data )
 		RB_SetGL2D();
 	}
 
-	shader_t* shader = cmd->shader;
-	if ( shader != tess.shader )
+	if ( cmd->shader != tess.shader )
     {
 		if ( tess.numIndexes )
         {
 			RB_EndSurface();
 		}
 		backEnd.currentEntity = &backEnd.entity2D;
-		RB_BeginSurface( shader, 0 );
+		RB_BeginSurface( cmd->shader, 0 );
 	}
 
 	//RB_CHECKOVERFLOW( 4, 6 );
@@ -615,9 +614,8 @@ static const void* RB_SwapBuffers(const void *data)
 		qglReadPixels( 0, 0, glConfig.vidWidth, glConfig.vidHeight, GL_STENCIL_INDEX, GL_UNSIGNED_BYTE, stencilReadback );
         
         int i;
-		for( i = 0; i < glConfig.vidWidth * glConfig.vidHeight; i++ ) {
+		for( i = 0; i < glConfig.vidWidth * glConfig.vidHeight; i++ )
 			sum += stencilReadback[i];
-		}
 
 		backEnd.pc.c_overDraw += sum;
 		ri.Hunk_FreeTempMemory( stencilReadback );
@@ -631,8 +629,6 @@ static const void* RB_SwapBuffers(const void *data)
 	GLimp_EndFrame();
 
 	backEnd.projection2D = qfalse;
-
-
 	
 
 	return (const void *)(cmd + 1);
@@ -1315,35 +1311,26 @@ void RB_ExecuteRenderCommands(const void *data)
 		switch( *(const int *)data )
         {
             case RC_SET_COLOR:
-                data = RB_SetColor( data );
-                break;
+                data = RB_SetColor( data ); break;
             case RC_STRETCH_PIC:
                 //Check if it's time for BLOOM!
-                data = RB_StretchPic( data );
-                break;
+                data = RB_StretchPic( data ); break;
             case RC_SWAP_BUFFERS:
-                data = RB_SwapBuffers( data );
-                break;
+                data = RB_SwapBuffers( data ); break;
 
             case RC_DRAW_SURFS:
-                data = RB_DrawSurfs( data );
-                break;
+                data = RB_DrawSurfs( data ); break;
             case RC_DRAW_BUFFER:
-                data = RB_DrawBuffer( data );
-                break;
+                data = RB_DrawBuffer( data ); break;
 
             case RC_SCREENSHOT:
-                data = RB_TakeScreenshotCmd( data );
-                break;
+                data = RB_TakeScreenshotCmd( data ); break;
             case RC_VIDEOFRAME:
-                data = RB_TakeVideoFrameCmd( data );
-                break;
+                data = RB_TakeVideoFrameCmd( data ); break;
             case RC_COLORMASK:
-                data = RB_ColorMask(data);
-                break;
+                data = RB_ColorMask(data); break;
             case RC_CLEARDEPTH:
-                data = RB_ClearDepth(data);
-                break;
+                data = RB_ClearDepth(data); break;
             case RC_END_OF_LIST:
             default:
                 // stop rendering

@@ -117,17 +117,17 @@ void R_IssuePendingRenderCommands( void )
 	if ( !tr.registered ) 
 		return;
 	
-	renderCommandList_t	*cmdList = &backEndData->commands;
-	assert(cmdList);
+//	renderCommandList_t	*cmdList = &backEndData->commands;
+//	assert(cmdList);
 	// add an end-of-list command
-	*(int *)(cmdList->cmds + cmdList->used) = RC_END_OF_LIST;
+	*(int *)(backEndData->commands.cmds + backEndData->commands.used) = RC_END_OF_LIST;
 
 	// clear it out, in case this is a sync and not a buffer flip
-	cmdList->used = 0;
+	backEndData->commands.used = 0;
 
 	// actually start the commands going
 	// let it start on the new batch
-	RB_ExecuteRenderCommands( cmdList->cmds );
+	RB_ExecuteRenderCommands( backEndData->commands.cmds );
 }
 
 /*
@@ -137,14 +137,14 @@ void *R_GetCommandBuffer(int bytes)
 {
 	renderCommandList_t	*cmdList = &backEndData->commands;
 	
-    bytes = (bytes+sizeof(void *)-1) & ~(sizeof(void *)-1);
+	bytes = PAD(bytes, sizeof(void *));
 
 	// always leave room for the end of list command
 	if ( cmdList->used + bytes + 4 > MAX_RENDER_COMMANDS )
     {
-		if ( bytes > MAX_RENDER_COMMANDS - 4 ) {
+		if ( bytes > MAX_RENDER_COMMANDS - 4 ) 
 			ri.Error( ERR_FATAL, "R_GetCommandBuffer: bad size %i", bytes );
-		}
+	
 		// if we run out of room, just start dropping commands
 		return NULL;
 	}
@@ -181,22 +181,12 @@ Passing NULL will set the color to white
 void RE_SetColor( const float *rgba )
 {
 	setColorCommand_t *cmd = R_GetCommandBuffer( sizeof(*cmd) );
-    if( !cmd ) {
+    if( (cmd == NULL) || (tr.registered == qfalse))
 		return;
-	}
-
-    if( !tr.registered )
-    {
-        return;
-    }
 
 	cmd->commandId = RC_SET_COLOR;
 	if ( !rgba )
-    {
-		static float colorWhite[4] = { 1, 1, 1, 1 };
-
 		rgba = colorWhite;
-	}
 
 	cmd->color[0] = rgba[0];
 	cmd->color[1] = rgba[1];
@@ -318,13 +308,13 @@ void RE_EndFrame( int *frontEndMsec, int *backEndMsec )
 
 	R_InitNextFrame();
 
-	if ( frontEndMsec ) {
+	if( frontEndMsec )
 		*frontEndMsec = tr.frontEndMsec;
-	}
+
 	tr.frontEndMsec = 0;
-	if ( backEndMsec ) {
+	if( backEndMsec )
 		*backEndMsec = backEnd.pc.msec;
-	}
+
 	backEnd.pc.msec = 0;
 }
 
@@ -337,7 +327,6 @@ void RE_TakeVideoFrame( int width, int height, unsigned char *captureBuffer, uns
 
 	if( !tr.registered )
 		return;
-
 
 	cmd->commandId = RC_VIDEOFRAME;
 

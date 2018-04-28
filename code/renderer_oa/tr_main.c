@@ -124,7 +124,6 @@ static void R_SetFarClip( void )
 	for ( i = 0; i < 8; i++ )
 	{
 		vec3_t v;
-		vec3_t vecTo;
 
 		if ( i & 1 )
 		{
@@ -153,9 +152,9 @@ static void R_SetFarClip( void )
 			v[2] = tr.viewParms.visBounds[1][2];
 		}
 
-		VectorSubtract( v, tr.viewParms.or.origin, vecTo );
+		VectorSubtract( v, tr.viewParms.or.origin, v );
 
-		float distance = vecTo[0] * vecTo[0] + vecTo[1] * vecTo[1] + vecTo[2] * vecTo[2];
+		float distance = v[0] * v[0] + v[1] * v[1] + v[2] * v[2];
 
 		if( distance > farthestCornerDistance )
 		{
@@ -170,8 +169,8 @@ static void R_SetFarClip( void )
 =================
 R_SetupFrustum
 
-Set up the culling frustum planes for the current view using the results we got from computing the first two rows of
-the projection matrix.
+Set up the culling frustum planes for the current view using the results
+we got from computing the first two rows of the projection matrix.
 =================
 */
 static void R_SetupFrustum(viewParms_t *dest, float xmin, float xmax, float ymax, float zProj)
@@ -207,7 +206,8 @@ static void R_SetupFrustum(viewParms_t *dest, float xmin, float xmax, float ymax
 	VectorScale(dest->or.axis[0], oppleg, dest->frustum[3].normal);
 	VectorMA(dest->frustum[3].normal, -adjleg, dest->or.axis[2], dest->frustum[3].normal);
 	
-	for (i=0 ; i<4 ; i++) {
+	for (i=0 ; i<4 ; i++)
+    {
 		dest->frustum[i].type = PLANE_NON_AXIAL;
 		dest->frustum[i].dist = DotProduct (ofsorigin, dest->frustum[i].normal);
 		SetPlaneSignbits( &dest->frustum[i] );

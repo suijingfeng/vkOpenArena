@@ -187,7 +187,7 @@ RE_SetColor
 Passing NULL will set the color to white
 =============
 */
-void	RE_SetColor( const float *rgba ) {
+void RE_SetColor( const float *rgba ) {
 	setColorCommand_t	*cmd;
 
   if ( !tr.registered ) {
