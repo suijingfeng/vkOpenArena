@@ -45,7 +45,7 @@ static ID_INLINE float BE_VectorNormalize( vec3_t v )
 	float length = v[0]*v[0] + v[1]*v[1] + v[2]*v[2];
 
 	if ( length != 0)
-    {
+	{
 		float invLen = 1.0f / sqrtf(length);
 		v[0] *= invLen;
 		v[1] *= invLen;
@@ -60,14 +60,15 @@ static ID_INLINE void VectorNormalize( float* v )
 {
 	// writing it this way allows gcc to recognize that rsqrt can be used
     float invLen = v[0] * v[0] + v[1] * v[1] + v[2]*v[2];
-    if(invLen == 0)
-        return;
+    if(invLen != 0)
+	{
 
 	invLen = 1.0f / sqrtf(invLen);
 
 	v[0] *= invLen;
 	v[1] *= invLen;
 	v[2] *= invLen;
+	}
 }
 
 static ID_INLINE void VectorNormalize2( const float* v, float* out)

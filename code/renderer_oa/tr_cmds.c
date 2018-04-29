@@ -114,20 +114,18 @@ static void R_IssueRenderCommands(qboolean runPerformanceCounters)
 */
 void R_IssuePendingRenderCommands( void )
 {
-	if ( !tr.registered ) 
-		return;
-	
-//	renderCommandList_t	*cmdList = &backEndData->commands;
-//	assert(cmdList);
-	// add an end-of-list command
-	*(int *)(backEndData->commands.cmds + backEndData->commands.used) = RC_END_OF_LIST;
+	if( tr.registered ) 
+	{
+		// add an end-of-list command
+		*(int *)(backEndData->commands.cmds + backEndData->commands.used) = RC_END_OF_LIST;
 
-	// clear it out, in case this is a sync and not a buffer flip
-	backEndData->commands.used = 0;
+		// clear it out, in case this is a sync and not a buffer flip
+		backEndData->commands.used = 0;
 
-	// actually start the commands going
-	// let it start on the new batch
-	RB_ExecuteRenderCommands( backEndData->commands.cmds );
+		// actually start the commands going
+		// let it start on the new batch
+		RB_ExecuteRenderCommands( backEndData->commands.cmds );
+	}
 }
 
 /*
@@ -197,23 +195,23 @@ void RE_SetColor( const float *rgba )
 
 void RE_StretchPic(float x, float y, float w, float h, float s1, float t1, float s2, float t2, qhandle_t hShader)
 {    
-    if (!tr.registered)
-        return;
-
-	stretchPicCommand_t* cmd = R_GetCommandBuffer( sizeof( *cmd ) );
-	if ( !cmd )
-	    return;
-
-	cmd->commandId = RC_STRETCH_PIC;
-	cmd->shader = R_GetShaderByHandle( hShader );
-	cmd->x = x;
-	cmd->y = y;
-	cmd->w = w;
-	cmd->h = h;
-	cmd->s1 = s1;
-	cmd->t1 = t1;
-	cmd->s2 = s2;
-	cmd->t2 = t2;
+    if(tr.registered)
+	{
+		stretchPicCommand_t* cmd = R_GetCommandBuffer( sizeof( *cmd ) );
+		if ( cmd != NULL )
+	    {
+			cmd->commandId = RC_STRETCH_PIC;
+			cmd->shader = R_GetShaderByHandle( hShader );
+			cmd->x = x;
+			cmd->y = y;
+			cmd->w = w;
+			cmd->h = h;
+			cmd->s1 = s1;
+			cmd->t1 = t1;
+			cmd->s2 = s2;
+			cmd->t2 = t2;
+		}
+	}
 }
 
 

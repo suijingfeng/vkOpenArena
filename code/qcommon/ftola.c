@@ -24,7 +24,6 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
 #include "q_platform.h"
 
-static const unsigned short fpucw = 0x0C7F;
 
 /*
  * GNU inline asm ftol conversion functions using SSE or FPU

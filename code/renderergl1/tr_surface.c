@@ -289,7 +289,7 @@ static void RB_SurfaceBeam( void )
     #define NUM_BEAM_SEGS 6
 
 	vec3_t perpvec;
-	vec3_t direction, normalized_direction;
+	vec3_t direction = {0}, normalized_direction = {0};
 	vec3_t start_points[NUM_BEAM_SEGS], end_points[NUM_BEAM_SEGS];
 
 
@@ -300,15 +300,14 @@ static void RB_SurfaceBeam( void )
 
 
     float invLen = direction[0] * direction[0] + direction[1] * direction[1] + direction[2]*direction[2];
-    if(invLen == 0)
-        return;
+    if(invLen != 0)
+    {
+		invLen = 1.0f / sqrtf(invLen);
 
-	invLen = 1.0f / sqrtf(invLen);
-
-	normalized_direction[0] = direction[0] * invLen;
-	normalized_direction[1] = direction[1] * invLen;
-	normalized_direction[2] = direction[2] * invLen;
-
+		normalized_direction[0] = direction[0] * invLen;
+		normalized_direction[1] = direction[1] * invLen;
+		normalized_direction[2] = direction[2] * invLen;
+	}
 
     // this rotate and negate guarantees a vector not colinear with the original
 	perpvec[1] = -normalized_direction[0];
@@ -476,7 +475,7 @@ static void DoRailDiscs( int numSegs, const vec3_t start, const vec3_t dir, cons
 static void RB_SurfaceRailRings( void ) {
 	refEntity_t *e;
 	int			numSegs;
-	int			len;
+	int			len = 0;
 	vec3_t		vec;
 	vec3_t		right, up;
 	vec3_t		start, end;
@@ -500,10 +499,8 @@ static void RB_SurfaceRailRings( void ) {
 		vec[2] *= invLen;
         len = length*invLen;
 	}
-    else
-        len = 0;
-		
 
+	
 	MakeNormalVectors( vec, right, up );
 	numSegs = ( len ) / r_railSegmentLength->value;
 	if ( numSegs <= 0 )

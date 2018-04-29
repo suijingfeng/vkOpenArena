@@ -8,8 +8,8 @@ This project is a fork of OpenArena with specific changes to the client and serv
 If you are on Ubuntu or Debian, the easiest way to compile this is to install the build dependencies.
 
 ```sh
-$ sudo apt-get install libgl1-mesa-dev libsdl2-dev libopus-dev libopusfile-dev libogg-dev zlib1g-dev libvorbis-dev libopenal-dev libjpeg-dev libfreetype6-dev libxmp-dev
-$ git clone git://github.com/OpenArena/engine.git
+$ sudo apt-get install libcurl4-gnutls-dev libgl1-mesa-dev libsdl2-dev libopus-dev libopusfile-dev libogg-dev zlib1g-dev libvorbis-dev libopenal-dev libjpeg-dev libfreetype6-dev libxmp-dev
+$ git clone https://github.com/suijingfeng/sepol.git
 $ cd engine
 $ make
 ```

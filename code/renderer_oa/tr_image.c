@@ -1203,10 +1203,13 @@ image_t *R_CreateImage(const char *name, unsigned char* pic, int width, int heig
 
 
     if (flags & IMGFLAG_CLAMPTOEDGE)
+	{
         glWrapClampMode = GL_CLAMP_TO_EDGE; 
-    else
+	}
+	else
+	{
         glWrapClampMode = GL_REPEAT;
-
+	}
 
 	// lightmaps are always allocated on TMU 1
 	GL_SelectTexture( isLightmap );

@@ -479,8 +479,7 @@ static void RB_SurfaceBeam( void )
 #define NUM_BEAM_SEGS 6
 	shaderProgram_t *sp = &tr.textureColorShader;
 	int	i;
-	vec3_t perpvec;
-	vec3_t direction, normalized_direction;
+	vec3_t direction={0}, normalized_direction = {0};
 	vec3_t	start_points[NUM_BEAM_SEGS], end_points[NUM_BEAM_SEGS];
 
 	direction[0] = backEnd.currentEntity->e.oldorigin[0] - backEnd.currentEntity->e.origin[0];
@@ -489,17 +488,18 @@ static void RB_SurfaceBeam( void )
 
 //
     float invLen = direction[0] * direction[0] + direction[1] * direction[1] + direction[2]*direction[2];
-    if(invLen == 0)
-        return;
+    if(invLen != 0)
+    {
+		invLen = 1.0f / sqrtf(invLen);
 
-	invLen = 1.0f / sqrtf(invLen);
-
-	normalized_direction[0] = direction[0] * invLen;
-	normalized_direction[1] = direction[1] * invLen;
-	normalized_direction[2] = direction[2] * invLen;
-
+		normalized_direction[0] = direction[0] * invLen;
+		normalized_direction[1] = direction[1] * invLen;
+		normalized_direction[2] = direction[2] * invLen;
+	}
 
     // this rotate and negate guarantees a vector not colinear with the original
+	vec3_t perpvec;
+	
 	perpvec[1] = -normalized_direction[0];
 	perpvec[2] = normalized_direction[1];
 	perpvec[0] = normalized_direction[2];
@@ -514,7 +514,6 @@ static void RB_SurfaceBeam( void )
 	perpvec[2] -= d*normalized_direction[2];
 
     FastVectorNormalize(perpvec);
-//
 	VectorScale( perpvec, 4, perpvec );
 
 	for ( i = 0; i < NUM_BEAM_SEGS ; i++ )

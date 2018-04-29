@@ -655,31 +655,29 @@ SV_PointContents
 int SV_PointContents( const vec3_t p, int passEntityNum )
 {
 	int			touch[MAX_GENTITIES];
-	sharedEntity_t *hit;
-	int			i, num;
-	int			contents, c2;
-	clipHandle_t	clipHandle;
-	float		*angles;
+	int			i;
 
 	// get base contents from world
-	contents = CM_PointContents( p, 0 );
+	int contents = CM_PointContents( p, 0 );
 
 	// or in contents from all the other entities
-	num = SV_AreaEntities( p, p, touch, MAX_GENTITIES );
+	int num = SV_AreaEntities( p, p, touch, MAX_GENTITIES );
 
-	for ( i=0 ; i<num ; i++ ) {
+	for ( i=0 ; i<num ; i++ )
+	{
 		if ( touch[i] == passEntityNum ) {
 			continue;
 		}
-		hit = SV_GentityNum( touch[i] );
+		sharedEntity_t* hit = SV_GentityNum( touch[i] );
 		// might intersect, so do an exact clip
-		clipHandle = SV_ClipHandleForEntity( hit );
-		angles = hit->r.currentAngles;
-		if ( !hit->r.bmodel ) {
+		clipHandle_t clipHandle = SV_ClipHandleForEntity( hit );
+		const float* angles = hit->r.currentAngles;
+		if ( !hit->r.bmodel )
+		{
 			angles = vec3_origin;	// boxes don't rotate
 		}
 
-		c2 = CM_TransformedPointContents (p, clipHandle, hit->r.currentOrigin, angles);
+		int c2 = CM_TransformedPointContents (p, clipHandle, hit->r.currentOrigin, angles);
 
 		contents |= c2;
 	}

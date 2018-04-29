@@ -51,15 +51,16 @@ static ID_INLINE void FastVectorNormalize( float* v )
 {
 	// writing it this way allows gcc to recognize that rsqrt can be used
     float invLen = v[0] * v[0] + v[1] * v[1] + v[2]*v[2];
-    if(invLen == 0)
-        return;
+    if(invLen != 0)
+	{
+		invLen = 1.0f / sqrtf(invLen);
 
-	invLen = 1.0f / sqrtf(invLen);
-
-	v[0] *= invLen;
-	v[1] *= invLen;
-	v[2] *= invLen;
+		v[0] *= invLen;
+		v[1] *= invLen;
+		v[2] *= invLen;
+	}
 }
+
 
 
 static ID_INLINE void FastVectorNormalize2( const float* v, float* out)

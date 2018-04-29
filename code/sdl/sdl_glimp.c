@@ -898,22 +898,19 @@ void GLimp_Init(qboolean coreContext)
 		ri.Cvar_Set( "com_abnormalExit", "0" );
 	}
 
-
 	// Create the window and set up the context
 	if(GLimp_StartDriverAndSetMode(r_fullscreen->integer, r_noborder->integer, coreContext))
 		goto success;
 
 	if(GLimp_StartDriverAndSetMode(r_fullscreen->integer, qfalse, coreContext))
 		goto success;
-
-	// Finally, try the default screen resolution
 	
-    ri.Printf( PRINT_ALL, "Setting mode failed, trying fall back mode.\n");
-
+	//Finally, try the default screen resolution
     if(GLimp_StartDriverAndSetMode(qfalse, qfalse, coreContext))
+	{
         goto success;
-
-
+	}
+	
 	// Nothing worked, give up
 	ri.Error( ERR_FATAL, "GLimp_Init() - could not load OpenGL subsystem" );
 
