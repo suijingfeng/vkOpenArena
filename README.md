@@ -63,7 +63,7 @@ for non-Linux platforms to compile the game. This isn't changing.
 
 ## Status ##
 
-* Initial testing on Ubuntu16.04, Need help testing on other platforms
+* Initial testing on Ubuntu16.04 and Ubuntu18.04
 
 
 
