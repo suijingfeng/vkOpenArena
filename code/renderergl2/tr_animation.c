@@ -24,25 +24,19 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
 /*
 
-All bones should be an identity orientation to display the mesh exactly
-as it is specified.
+All bones should be an identity orientation to display the mesh exactly as it is specified.
 
 For all other frames, the bones represent the transformation from the 
-orientation of the bone in the base frame to the orientation in this
-frame.
+orientation of the bone in the base frame to the orientation in this frame.
 
 */
+
 
 
 // copied and adapted from tr_mesh.c
 
-/*
-=============
-R_MDRCullModel
-=============
-*/
-
-static int R_MDRCullModel( mdrHeader_t *header, trRefEntity_t *ent ) {
+static int R_MDRCullModel( mdrHeader_t *header, trRefEntity_t *ent )
+{
 	vec3_t		bounds[2];
 	mdrFrame_t	*oldFrame, *newFrame;
 	int			i, frameSize;
@@ -108,7 +102,8 @@ static int R_MDRCullModel( mdrHeader_t *header, trRefEntity_t *ent ) {
 	}
 	
 	// calculate a bounding box in the current coordinate system
-	for (i = 0 ; i < 3 ; i++) {
+	for (i = 0 ; i < 3 ; i++)
+    {
 		bounds[0][i] = oldFrame->bounds[0][i] < newFrame->bounds[0][i] ? oldFrame->bounds[0][i] : newFrame->bounds[0][i];
 		bounds[1][i] = oldFrame->bounds[1][i] > newFrame->bounds[1][i] ? oldFrame->bounds[1][i] : newFrame->bounds[1][i];
 	}
@@ -128,14 +123,9 @@ static int R_MDRCullModel( mdrHeader_t *header, trRefEntity_t *ent ) {
 	}
 }
 
-/*
-=================
-R_MDRComputeFogNum
 
-=================
-*/
-
-int R_MDRComputeFogNum( mdrHeader_t *header, trRefEntity_t *ent ) {
+static int R_MDRComputeFogNum( mdrHeader_t *header, trRefEntity_t *ent )
+{
 	int				i, j;
 	fog_t			*fog;
 	mdrFrame_t		*mdrFrame;

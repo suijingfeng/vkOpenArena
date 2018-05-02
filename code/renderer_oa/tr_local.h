@@ -79,7 +79,7 @@ typedef struct
 	qboolean	lightingCalculated;
 	vec3_t		lightDir;		// normalized direction towards light
 	vec3_t		ambientLight;	// color normalized to 0-255
-	int			ambientLightInt;	// 32 bit rgba packed
+	unsigned int ambientLightInt;	// 32 bit rgba packed
 	vec3_t		directedLight;
 	vec3_t		dynamicLight;
 	float		lightDistance;
@@ -730,11 +730,11 @@ BRUSH MODELS
 #define	SIDE_ON		2
 
 typedef struct msurface_s {
-	int				    viewCount;		// if == tr.viewCount, already added
-	struct shader_s*    shader;
-	int					fogIndex;
-
 	surfaceType_t*      data;			// any of srf*_t
+    struct shader_s*    shader;
+
+    int					fogIndex;
+	int				    viewCount;		// if == tr.viewCount, already added
 } msurface_t;
 
 
@@ -825,17 +825,19 @@ typedef enum {
 	MOD_IQM
 } modtype_t;
 
+
 typedef struct model_s {
 	char		name[MAX_QPATH];
-	modtype_t	type;
 	int			index;		// model = tr.models[model->index]
 
 	int			dataSize;	// just for listing purposes
-	bmodel_t	*bmodel;		// only if type == MOD_BRUSH
-	md3Header_t	*md3[MD3_MAX_LODS];	// only if type == MOD_MESH
-	void	*modelData;			// only if type == (MOD_MDR | MOD_IQM )
+	bmodel_t*   bmodel;		// only if type == MOD_BRUSH
+	md3Header_t* md3[MD3_MAX_LODS];	// only if type == MOD_MESH
+	void*       modelData;			// only if type == (MOD_MDR | MOD_IQM )
 
-	int			 numLods;
+	int         numLods;
+    modtype_t	type;
+
 } model_t;
 
 

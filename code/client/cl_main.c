@@ -122,7 +122,7 @@ clientActive_t		cl;
 clientConnection_t	clc;
 clientStatic_t		cls;
 vm_t* cgvm;
-refexport_t	re;
+
 
 char				cl_reconnectArgs[MAX_OSPATH];
 char				cl_oldGame[MAX_QPATH];
@@ -130,7 +130,7 @@ qboolean			cl_oldGameSet;
 
 // Structure containing functions exported from refresh DLL
 
-
+refexport_t	re;
 #ifdef USE_RENDERER_DLOPEN
 static void	*rendererLib = NULL;
 #endif
@@ -2965,8 +2965,8 @@ void CL_Frame ( int msec )
 		cls.cddialog = qfalse;
 		VM_Call( uivm, UI_SET_ACTIVE_MENU, UIMENU_NEED_CD );
 	}
-    else if( (clc.state == CA_DISCONNECTED) && !( Key_GetCatcher( ) & KEYCATCH_UI ) && !com_sv_running->integer && uivm )
-    {
+	else if( (clc.state == CA_DISCONNECTED) && !( Key_GetCatcher( ) & KEYCATCH_UI ) && !com_sv_running->integer && uivm )
+ 	{
 		// if disconnected, bring up the menu
 		S_StopAllSounds();
 		VM_Call( uivm, UI_SET_ACTIVE_MENU, UIMENU_MAIN );
@@ -3134,68 +3134,6 @@ static void CL_SetModel_f( void )
 }
 
 
-/*
-===============
-CL_Video_f
-
-video
-video [filename]
-===============
-*/
-static void CL_Video_f( void )
-{
-  char filename[ MAX_OSPATH ];
-  int i, last;
-
-  if( !clc.demoplaying )
-  {
-    Com_Printf( "The video command can only be used when playing back demos\n" );
-    return;
-  }
-
-  if( Cmd_Argc( ) == 2 )
-  {
-    // explicit filename
-    Com_sprintf( filename, MAX_OSPATH, "videos/%s.avi", Cmd_Argv( 1 ) );
-  }
-  else
-  {
-    // scan for a free filename
-    for( i = 0; i <= 9999; i++ )
-    {
-      int a, b, c, d;
-
-      last = i;
-
-      a = last / 1000;
-      last -= a * 1000;
-      b = last / 100;
-      last -= b * 100;
-      c = last / 10;
-      last -= c * 10;
-      d = last;
-
-      Com_sprintf( filename, MAX_OSPATH, "videos/video%d%d%d%d.avi", a, b, c, d );
-
-      if( !FS_FileExists( filename ) )
-        break; // file doesn't exist
-    }
-
-    if( i > 9999 )
-    {
-      Com_Printf( S_COLOR_RED "ERROR: no free file names to create video\n" );
-      return;
-    }
-  }
-
-  CL_OpenAVIForWriting( filename );
-}
-
-
-//===========================================================================================
-
-
-
 
 void *CL_RefMalloc( int size )
 {
@@ -3214,10 +3152,8 @@ void CL_InitRef(void)
 	refimport_t	ri;
 	refexport_t	*ret;
 #ifdef USE_RENDERER_DLOPEN
-
 	GetRefAPI_t	GetRefAPI;
 	char dllName[MAX_OSPATH];
-    
 #endif
 
 	Com_Printf(" CL_InitRef(). \n");
@@ -3299,7 +3235,6 @@ void CL_InitRef(void)
 	ri.IN_Shutdown = IN_Shutdown;
 	ri.IN_Restart = IN_Restart;
 
-//	ri.ftol = Q_ftol;
 
 	ri.Sys_SetEnv = Sys_SetEnv;
 	ri.Sys_LowPhysicalMemory = Sys_LowPhysicalMemory;
@@ -3327,6 +3262,63 @@ void CL_InitRef(void)
 }
 
 
+//===========================================================================================
+/*
+===============
+CL_Video_f
+
+video
+video [filename]
+===============
+*/
+static void CL_Video_f( void )
+{
+  char filename[ MAX_OSPATH ];
+  int i, last;
+
+  if( !clc.demoplaying )
+  {
+    Com_Printf( "The video command can only be used when playing back demos\n" );
+    return;
+  }
+
+  if( Cmd_Argc( ) == 2 )
+  {
+    // explicit filename
+    Com_sprintf( filename, MAX_OSPATH, "videos/%s.avi", Cmd_Argv( 1 ) );
+  }
+  else
+  {
+    // scan for a free filename
+    for( i = 0; i <= 9999; i++ )
+    {
+      int a, b, c, d;
+
+      last = i;
+
+      a = last / 1000;
+      last -= a * 1000;
+      b = last / 100;
+      last -= b * 100;
+      c = last / 10;
+      last -= c * 10;
+      d = last;
+
+      Com_sprintf( filename, MAX_OSPATH, "videos/video%d%d%d%d.avi", a, b, c, d );
+
+      if( !FS_FileExists( filename ) )
+        break; // file doesn't exist
+    }
+
+    if( i > 9999 )
+    {
+      Com_Printf( S_COLOR_RED "ERROR: no free file names to create video\n" );
+      return;
+    }
+  }
+
+  CL_OpenAVIForWriting( filename );
+}
 
 /*
 ============================

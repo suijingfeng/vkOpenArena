@@ -306,13 +306,12 @@ void RE_EndFrame( int *frontEndMsec, int *backEndMsec )
 
 	R_InitNextFrame();
 
-	if( frontEndMsec )
+	if( frontEndMsec != NULL )
 		*frontEndMsec = tr.frontEndMsec;
-
 	tr.frontEndMsec = 0;
-	if( backEndMsec )
-		*backEndMsec = backEnd.pc.msec;
 
+	if( backEndMsec != NULL )
+		*backEndMsec = backEnd.pc.msec;
 	backEnd.pc.msec = 0;
 }
 

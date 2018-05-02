@@ -17,7 +17,7 @@ extern const vec4_t	colorDkGrey;
 
 
 union uInt4bytes{
-    int i;
+    unsigned int i;
     unsigned char uc[4];
 };
 

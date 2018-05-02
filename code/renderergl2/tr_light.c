@@ -29,7 +29,9 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #define	DLIGHT_MINIMUM_RADIUS	16		
 // never calculate a range less than this to prevent huge light numbers
 
-
+extern	cvar_t	*r_ambientScale;
+extern	cvar_t	*r_directedScale;
+extern	cvar_t	*r_debugLight;
 /*
 ===============
 R_TransformDlights
@@ -39,11 +41,12 @@ Used by both the front end (for DlightBmodel) and
 the back end (before doing the lighting calculation)
 ===============
 */
-void R_TransformDlights( int count, dlight_t *dl, orientationr_t *or) {
-	int		i;
-	vec3_t	temp;
-
-	for ( i = 0 ; i < count ; i++, dl++ ) {
+void R_TransformDlights( int count, dlight_t *dl, orientationr_t *or)
+{
+	int	i;
+	for ( i = 0 ; i < count ; i++, dl++ )
+    {
+        vec3_t temp;
 		VectorSubtract( dl->origin, or->origin, temp );
 		dl->transformed[0] = DotProduct( temp, or->axis[0] );
 		dl->transformed[1] = DotProduct( temp, or->axis[1] );
@@ -58,31 +61,30 @@ R_DlightBmodel
 Determine which dynamic lights may effect this bmodel
 =============
 */
-void R_DlightBmodel( bmodel_t *bmodel ) {
-	int			i, j;
-	dlight_t	*dl;
-	int			mask;
-	msurface_t	*surf;
+void R_DlightBmodel( bmodel_t *bmodel )
+{
+	int	i, j;
+	int	mask = 0;
 
 	// transform all the lights
 	R_TransformDlights( tr.refdef.num_dlights, tr.refdef.dlights, &tr.or );
 
-	mask = 0;
-	for ( i=0 ; i<tr.refdef.num_dlights ; i++ ) {
-		dl = &tr.refdef.dlights[i];
+	for ( i=0 ; i<tr.refdef.num_dlights ; i++ )
+	{
+		dlight_t* dl = &tr.refdef.dlights[i];
 
 		// see if the point is close enough to the bounds to matter
-		for ( j = 0 ; j < 3 ; j++ ) {
-			if ( dl->transformed[j] - bmodel->bounds[1][j] > dl->radius ) {
+		for ( j = 0 ; j < 3 ; j++ )
+		{
+			if ( dl->transformed[j] - bmodel->bounds[1][j] > dl->radius )
 				break;
-			}
-			if ( bmodel->bounds[0][j] - dl->transformed[j] > dl->radius ) {
+
+			if ( bmodel->bounds[0][j] - dl->transformed[j] > dl->radius )
 				break;
-			}
 		}
-		if ( j < 3 ) {
+
+		if ( j < 3 )
 			continue;
-		}
 
 		// we need to check this light
 		mask |= 1 << i;
@@ -91,8 +93,9 @@ void R_DlightBmodel( bmodel_t *bmodel ) {
 	tr.currentEntity->needDlights = (mask != 0);
 
 	// set the dlight bits in all the surfaces
-	for ( i = 0 ; i < bmodel->numSurfaces ; i++ ) {
-		surf = tr.world->surfaces + bmodel->firstSurface + i;
+	for ( i = 0 ; i < bmodel->numSurfaces ; i++ )
+	{
+		msurface_t* surf = tr.world->surfaces + bmodel->firstSurface + i;
 
 		switch(*surf->data)
 		{
@@ -116,18 +119,8 @@ LIGHT SAMPLING
 
 =============================================================================
 */
-
-extern	cvar_t	*r_ambientScale;
-extern	cvar_t	*r_directedScale;
-extern	cvar_t	*r_debugLight;
-
-/*
-=================
-R_SetupEntityLightingGrid
-
-=================
-*/
-static void R_SetupEntityLightingGrid( trRefEntity_t *ent, world_t *world ) {
+static void R_SetupEntityLightingGrid( trRefEntity_t *ent, world_t *world )
+{
 	vec3_t	lightOrigin;
 	int		pos[3];
 	int		i, j;
@@ -147,17 +140,16 @@ static void R_SetupEntityLightingGrid( trRefEntity_t *ent, world_t *world ) {
 	}
 
 	VectorSubtract( lightOrigin, world->lightGridOrigin, lightOrigin );
-	for ( i = 0 ; i < 3 ; i++ ) {
-		float	v;
-
-		v = lightOrigin[i]*world->lightGridInverseSize[i];
+	for ( i = 0 ; i < 3 ; i++ )
+	{
+		float	v = lightOrigin[i] * world->lightGridInverseSize[i];
 		pos[i] = floor( v );
 		frac[i] = v - pos[i];
-		if ( pos[i] < 0 ) {
+		if ( pos[i] < 0 )
 			pos[i] = 0;
-		} else if ( pos[i] > world->lightGridBounds[i] - 1 ) {
+		else if ( pos[i] > world->lightGridBounds[i] - 1 )
 			pos[i] = world->lightGridBounds[i] - 1;
-		}
+
 	}
 
 	VectorClear( ent->ambientLight );
@@ -170,20 +162,18 @@ static void R_SetupEntityLightingGrid( trRefEntity_t *ent, world_t *world ) {
 	gridStep[0] = 8;
 	gridStep[1] = 8 * world->lightGridBounds[0];
 	gridStep[2] = 8 * world->lightGridBounds[0] * world->lightGridBounds[1];
-	gridData = world->lightGridData + pos[0] * gridStep[0]
-		+ pos[1] * gridStep[1] + pos[2] * gridStep[2];
+	gridData = world->lightGridData + pos[0] * gridStep[0] + pos[1] * gridStep[1] + pos[2] * gridStep[2];
 
 	totalFactor = 0;
 	for ( i = 0 ; i < 8 ; i++ ) {
 		float	factor;
 		byte	*data;
-		int		lat, lng;
-		vec3_t	normal;
 		#if idppc
 		float d0, d1, d2, d3, d4, d5;
 		#endif
 		factor = 1.0;
 		data = gridData;
+		int lat, lng;
 		for ( j = 0 ; j < 3 ; j++ ) {
 			if ( i & (1<<j) ) {
 				if ( pos[j] + 1 > world->lightGridBounds[j] - 1 ) {
@@ -258,7 +248,7 @@ static void R_SetupEntityLightingGrid( trRefEntity_t *ent, world_t *world ) {
 		// decode X as cos( lat ) * sin( long )
 		// decode Y as sin( lat ) * sin( long )
 		// decode Z as cos( long )
-
+		vec3_t	normal;
 		normal[0] = tr.sinTable[(lat+(FUNCTABLE_SIZE/4))&FUNCTABLE_MASK] * tr.sinTable[lng];
 		normal[1] = tr.sinTable[lat] * tr.sinTable[lng];
 		normal[2] = tr.sinTable[(lng+(FUNCTABLE_SIZE/4))&FUNCTABLE_MASK];
@@ -266,7 +256,8 @@ static void R_SetupEntityLightingGrid( trRefEntity_t *ent, world_t *world ) {
 		VectorMA( direction, factor, normal, direction );
 	}
 
-	if ( totalFactor > 0 && totalFactor < 0.99 ) {
+	if ( totalFactor > 0 && totalFactor < 0.99 )
+	{
 		totalFactor = 1.0f / totalFactor;
 		VectorScale( ent->ambientLight, totalFactor, ent->ambientLight );
 		VectorScale( ent->directedLight, totalFactor, ent->directedLight );
@@ -279,11 +270,7 @@ static void R_SetupEntityLightingGrid( trRefEntity_t *ent, world_t *world ) {
 }
 
 
-/*
-===============
-LogLight
-===============
-*/
+
 static void LogLight( trRefEntity_t *ent ) {
 	int	max1, max2;
 
@@ -312,11 +299,11 @@ static void LogLight( trRefEntity_t *ent ) {
 =================
 R_SetupEntityLighting
 
-Calculates all the lighting values that will be used
-by the Calc_* functions
+Calculates all the lighting values that will be used by the Calc_* functions
 =================
 */
-void R_SetupEntityLighting( const trRefdef_t *refdef, trRefEntity_t *ent ) {
+void R_SetupEntityLighting( const trRefdef_t *refdef, trRefEntity_t *ent )
+{
 	int				i;
 	dlight_t		*dl;
 	float			power;

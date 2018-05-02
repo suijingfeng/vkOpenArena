@@ -479,8 +479,7 @@ static void LAN_MarkServerVisible(int source, int n, qboolean visible ) {
 		serverInfo_t *server = NULL;
 		switch (source) {
 			case AS_LOCAL :
-				server = &cls.localServers[0];
-				break;
+				server = &cls.localServers[0]; break;
 			case AS_MPLAYER:
 			case AS_GLOBAL :
 				server = &cls.globalServers[0];
@@ -572,7 +571,6 @@ CL_GetGlConfig
 static void CL_GetGlconfig( glconfig_t *config ) {
 	*config = cls.glconfig;
 }
-
 
 
 static void CL_GetClipboardData( char *buf, int buflen )

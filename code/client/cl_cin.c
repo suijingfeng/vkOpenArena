@@ -53,8 +53,6 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #define MAX_VIDEO_HANDLES	16
 
 
-
-
 static void RoQ_init( void );
 
 /******************************************************************************
@@ -96,8 +94,8 @@ typedef struct {
 	qboolean			looping, holdAtEnd, dirty, alterGameState, silent, shader;
 	fileHandle_t		iFile;
 	e_status			status;
-	int					startTime;
-	int					lastTime;
+	unsigned int		startTime;
+	unsigned int		lastTime;
 	long				tfps;
 	long				RoQPlayed;
 	long				ROQSize;
@@ -1341,6 +1339,7 @@ e_status CIN_RunCinematic (int handle)
 	int	start = 0;
 	int thisTime = 0;
 
+
 	if (handle < 0 || handle>= MAX_VIDEO_HANDLES || cinTable[handle].status == FMV_EOF) return FMV_EOF;
 
 	if (cin.currentHandle != handle) {
@@ -1611,16 +1610,6 @@ void CIN_DrawCinematic (int handle)
 	cinTable[handle].dirty = qfalse;
 }
 
-
-void SCR_RunCinematic (void)
-{
-	if (CL_handle >= 0 && CL_handle < MAX_VIDEO_HANDLES)
-    {
-		CIN_RunCinematic(CL_handle);
-	}
-}
-
-
 void CL_PlayCinematic_f(void)
 {
 	int bits = CIN_system;
@@ -1650,8 +1639,8 @@ void CL_PlayCinematic_f(void)
         {
 			SCR_RunCinematic();
 		}
-        while (cinTable[currentHandle].buf == NULL && cinTable[currentHandle].status == FMV_PLAY);
-        // wait for first frame (load codebook and sound)
+		while (cinTable[currentHandle].buf == NULL && cinTable[currentHandle].status == FMV_PLAY);
+		// wait for first frame (load codebook and sound)
 	}
 }
 
@@ -1664,12 +1653,17 @@ void SCR_DrawCinematic (void)
 	}
 }
 
+void SCR_RunCinematic (void)
+{
+	if (CL_handle >= 0 && CL_handle < MAX_VIDEO_HANDLES)
+		CIN_RunCinematic(CL_handle);
+}
 
 
 void SCR_StopCinematic(void)
 {
 	if (CL_handle >= 0 && CL_handle < MAX_VIDEO_HANDLES)
-    {
+	{
 		CIN_StopCinematic(CL_handle);
 		S_StopAllSounds ();
 		CL_handle = -1;

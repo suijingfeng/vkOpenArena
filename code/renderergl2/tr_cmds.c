@@ -84,10 +84,9 @@ void R_PerformanceCounters( void ) {
 R_IssueRenderCommands
 ====================
 */
-void R_IssueRenderCommands( qboolean runPerformanceCounters ) {
-	renderCommandList_t	*cmdList;
-
-	cmdList = &backEndData->commands;
+void R_IssueRenderCommands( qboolean runPerformanceCounters )
+{
+	renderCommandList_t	*cmdList = &backEndData->commands;
 	assert(cmdList);
 	// add an end-of-list command
 	*(int *)(cmdList->cmds + cmdList->used) = RC_END_OF_LIST;
@@ -100,10 +99,8 @@ void R_IssueRenderCommands( qboolean runPerformanceCounters ) {
 	}
 
 	// actually start the commands going
-	if ( !r_skipBackEnd->integer ) {
-		// let it start on the new batch
-		RB_ExecuteRenderCommands( cmdList->cmds );
-	}
+    // let it start on the new batch
+    RB_ExecuteRenderCommands( cmdList->cmds );
 }
 
 

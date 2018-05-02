@@ -40,7 +40,7 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
     #define GAMENAME_FOR_MASTER       "Quake3Arena"
     // OA still uses the legacy protocol
     #define LEGACY_PROTOCOL           1
-    #define CINEMATICS_LOGO           "foologo.roq"
+    #define CINEMATICS_LOGO           "idlogo.RoQ"
     #define CINEMATICS_INTRO          "intro.roq"
 #else
     #define PRODUCT_NAME				"ioq3"

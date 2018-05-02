@@ -26,22 +26,23 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
 #define	REF_API_VERSION		8
 
-
-
 //
 // these are the functions exported by the refresh module
 //
 typedef struct
 {
-	// called before the library is unloaded,
-	// if the system is just reconfiguring, pass destroyWindow = qfalse, which will keep the screen from flashing to the desktop.
+	// called before the library is unloaded
+	// if the system is just reconfiguring, pass destroyWindow = qfalse, 
+	//which will keep the screen from flashing to the desktop.
 	void (*Shutdown)( qboolean destroyWindow );
 
-	// All data that will be used in a level should be registered before rendering any frames to prevent disk hits,
+	// All data that will be used in a level should be
+	// registered before rendering any frames to prevent disk hits,
 	// but they can still be registered at a later time if necessary.
 	//
-	// BeginRegistration makes any existing media pointers invalid and returns the current gl configuration, 
-    // including screen width and height, which can be used by the client to intelligently size display elements
+	// BeginRegistration makes any existing media pointers invalid
+	// and returns the current gl configuration, including screen width and height, 
+	//which can be used by the client to intelligently size display elements
 	void (*BeginRegistration)( glconfig_t *config );
 	qhandle_t (*RegisterModel)( const char *name );
 	qhandle_t (*RegisterSkin)( const char *name );
@@ -93,7 +94,6 @@ typedef struct
 	void (*TakeVideoFrame)( int h, int w, byte* captureBuffer, byte *encodeBuffer, qboolean motionJpeg );
 } refexport_t;
 
-
 //
 // these are the functions imported by the refresh module
 //
@@ -104,16 +104,17 @@ typedef struct {
 	// abort the game
 	void	(QDECL *Error)( int errorLevel, const char *fmt, ...) __attribute__ ((noreturn, format (printf, 2, 3)));
 
-	// milliseconds should only be used for profiling, never for anything game related. Get time from the refdef
+	// milliseconds should only be used for profiling, 
+	// never for anything game related. Get time from the refdef
 	int		(*Milliseconds)( void );
 
 	// stack based memory allocation for per-level things that won't be freed
 #ifdef HUNK_DEBUG
-	void*   (*Hunk_AllocDebug)( int size, ha_pref pref, char *label, char *file, int line );
+	void*	(*Hunk_AllocDebug)( int size, ha_pref pref, char *label, char *file, int line );
 #else
-	void*   (*Hunk_Alloc)( int size, ha_pref pref );
+	void*	(*Hunk_Alloc)( int size, ha_pref pref );
 #endif
-	void*   (*Hunk_AllocateTempMemory)( int size );
+	void*	(*Hunk_AllocateTempMemory)( int size );
 	void	(*Hunk_FreeTempMemory)( void *block );
 
 	// dynamic memory allocator for things that need to be freed
@@ -142,7 +143,7 @@ typedef struct {
 	void	(*CM_DrawDebugSurface)( void (*drawPoly)(int color, int numPoints, float *points) );
 
 	// a -1 return means the file does not exist
-	// NULL can be passed for buf to just determine existance
+	// NULL can be passed for buf to just determine existence
 	int		(*FS_FileIsInPAK)( const char *name, int *pCheckSum );
 	long	(*FS_ReadFile)( const char *name, void **buf );
 	void	(*FS_FreeFile)( void *buf );
@@ -164,7 +165,7 @@ typedef struct {
 	void	(*IN_Restart)(void);
 
 	// math
-//	long    (*ftol)(float f);
+	// long    (*ftol)(float f);
 
 	// system stuff
 	void	(*Sys_SetEnv)( const char *name, const char *value );

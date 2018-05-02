@@ -968,6 +968,7 @@ refexport_t* GetRefAPI(int apiVersion, refimport_t *rimp)
     
 	// the RE_ functions are Renderer Entry points
 	re.Shutdown = RE_Shutdown;
+
 	re.BeginRegistration = RE_BeginRegistration;
 	re.RegisterModel = RE_RegisterModel;
 	re.RegisterSkin = RE_RegisterSkin;
@@ -976,28 +977,30 @@ refexport_t* GetRefAPI(int apiVersion, refimport_t *rimp)
 	re.LoadWorld = RE_LoadWorldMap;
 	re.SetWorldVisData = RE_SetWorldVisData;
 	re.EndRegistration = RE_EndRegistration;
-    re.ClearScene = RE_ClearScene;
-    re.AddRefEntityToScene = RE_AddRefEntityToScene;
-    re.AddPolyToScene = RE_AddPolyToScene;
-	re.LightForPoint = R_LightForPoint;
-    re.AddLightToScene = RE_AddLightToScene;
-    re.AddAdditiveLightToScene = RE_AddAdditiveLightToScene;
 
-	re.RenderScene = RE_RenderScene;
-	re.SetColor = RE_SetColor;
-	re.DrawStretchPic = RE_StretchPic;
-	re.DrawStretchRaw = RE_StretchRaw;
-	re.UploadCinematic = RE_UploadCinematic;
-    
 	re.BeginFrame = RE_BeginFrame;
 	re.EndFrame = RE_EndFrame;
 	re.MarkFragments = R_MarkFragments;
 	re.LerpTag = R_LerpTag;
 	re.ModelBounds = R_ModelBounds;
+	re.ClearScene = RE_ClearScene;
+	re.AddRefEntityToScene = RE_AddRefEntityToScene;
+	re.AddPolyToScene = RE_AddPolyToScene;
+	re.LightForPoint = R_LightForPoint;
+	re.AddLightToScene = RE_AddLightToScene;
+	re.AddAdditiveLightToScene = RE_AddAdditiveLightToScene;
+	re.RenderScene = RE_RenderScene;
+
+	re.SetColor = RE_SetColor;
+	re.DrawStretchPic = RE_StretchPic;
+	re.DrawStretchRaw = RE_StretchRaw;
+	re.UploadCinematic = RE_UploadCinematic;
+
 	re.RegisterFont = RE_RegisterFont;
 	re.RemapShader = R_RemapShader;
 	re.GetEntityToken = R_GetEntityToken;
 	re.inPVS = R_inPVS;
+
 	re.TakeVideoFrame = RE_TakeVideoFrame;
 
 	return &re;

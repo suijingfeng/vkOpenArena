@@ -735,14 +735,13 @@ static qboolean ParseStage( shaderStage_t *stage, char **text )
 			stage->bundle[0].imageAnimationSpeed = atof( token );
 
 			// parse up to MAX_IMAGE_ANIMATIONS animations
-			while ( 1 ) {
-				int		num;
-
+			while ( 1 )
+            {
 				token = COM_ParseExt( text, qfalse );
 				if ( !token[0] ) {
 					break;
 				}
-				num = stage->bundle[0].numImageAnimations;
+				int num = stage->bundle[0].numImageAnimations;
 				if ( num < MAX_IMAGE_ANIMATIONS ) {
 					imgFlags_t flags = IMGFLAG_NONE;
 
@@ -1139,10 +1138,10 @@ static qboolean ParseStage( shaderStage_t *stage, char **text )
 
 	// decide which agens we can skip
 	if ( stage->alphaGen == AGEN_IDENTITY ) {
-		if ( stage->rgbGen == CGEN_IDENTITY
-			|| stage->rgbGen == CGEN_LIGHTING_DIFFUSE 
+		if ( (stage->rgbGen == CGEN_IDENTITY) || (stage->rgbGen == CGEN_LIGHTING_DIFFUSE)
 			|| stage->rgbGen == CGEN_LIGHTING_UNIFORM 
-			|| stage->rgbGen == CGEN_LIGHTING_DYNAMIC) {
+			|| stage->rgbGen == CGEN_LIGHTING_DYNAMIC)
+		{
 			stage->alphaGen = AGEN_SKIP;
 		}
 	}
@@ -1552,7 +1551,7 @@ static qboolean ParseShader( char **text )
 			continue;
 		}
 		// sun parms
-		else if ( !Q_stricmp( token, "q3map_sun" ) ) {
+		else if ( !Q_stricmp( token, "q3map_sun" ) || !Q_stricmp( token, "q3map_sunExt" ) ) {
 			float	a, b;
 
 			token = COM_ParseExt( text, qfalse );
@@ -1579,6 +1578,9 @@ static qboolean ParseShader( char **text )
 			tr.sunDirection[0] = cos( a ) * cos( b );
 			tr.sunDirection[1] = sin( a ) * cos( b );
 			tr.sunDirection[2] = sin( b );
+
+			SkipRestOfLine( text );
+			continue;
 		}
 		else if ( !Q_stricmp( token, "deformVertexes" ) ) {
 			ParseDeform( text );

@@ -230,8 +230,6 @@ static void RB_BeginDrawingView(void)
 }
 
 
-
-
 static void RB_RenderDrawSurfList( drawSurf_t *drawSurfs, int numDrawSurfs )
 {
 	shader_t* shader;

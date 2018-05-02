@@ -513,27 +513,16 @@ This is called every frame, and can also be called explicitly to flush text to t
 */
 void SCR_UpdateScreen( void )
 {
-	static int recursive;
-
-
-	if ( ++recursive > 2 ) {
-		Com_Error( ERR_FATAL, "SCR_UpdateScreen: recursively called" );
-	}
-	recursive = 1;
-
 	// If there is no VM, there are also no rendering commands issued. Stop the renderer in that case.
 	if( uivm || com_dedicated->integer )
 	{
 		SCR_DrawScreenField();
 
-		if ( com_speeds->integer ) {
+		if ( com_speeds->integer )
 			re.EndFrame( &time_frontend, &time_backend );
-		}
-        else {
+        else
 			re.EndFrame( NULL, NULL );
-		}
 	}
 	
-	recursive = 0;
 }
 

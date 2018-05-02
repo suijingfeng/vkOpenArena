@@ -393,11 +393,11 @@ work around different calling conventions
 =================
 */
 
-int vm_syscallNum;
-int vm_programStack;
-int *vm_opStackBase;
-uint8_t vm_opStackOfs;
-intptr_t vm_arg;
+static int vm_syscallNum;
+static int vm_programStack;
+static int *vm_opStackBase;
+static uint8_t vm_opStackOfs;
+static intptr_t vm_arg;
 
 static void DoSyscall(void)
 {
@@ -430,17 +430,15 @@ static void DoSyscall(void)
 		switch(vm_syscallNum)
 		{
             case VM_JMP_VIOLATION:
-                ErrJump();
-            break;
+                ErrJump();break;
             case VM_BLOCK_COPY: 
                 if(vm_opStackOfs < 1)
                     Com_Error(ERR_DROP, "VM_BLOCK_COPY failed due to corrupted opStack");
                 
                 VM_BlockCopy(vm_opStackBase[(vm_opStackOfs - 1)], vm_opStackBase[vm_opStackOfs], vm_arg);
-            break;
+                break;
             default:
-                Com_Error(ERR_DROP, "Unknown VM operation %d", vm_syscallNum);
-            break;
+                Com_Error(ERR_DROP, "Unknown VM operation %d", vm_syscallNum);break;
 		}
 	}
 	currentVM = savedVM;
