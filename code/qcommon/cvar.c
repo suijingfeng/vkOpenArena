@@ -570,6 +570,20 @@ void Cvar_Set( const char *var_name, const char *value) {
 	Cvar_Set2 (var_name, value, qtrue);
 }
 
+
+/*
+============
+Cvar_SetIntegerValue
+============
+*/
+void Cvar_SetIntegerValue( const char *var_name, int value ) {
+	char	val[32];
+
+	sprintf( val, "%i", value );
+	Cvar_Set( var_name, val );
+}
+
+
 /*
 ============
 Cvar_SetSafe
@@ -614,6 +628,27 @@ void Cvar_SetValue( const char *var_name, float value)
 		Com_sprintf (val, sizeof(val), "%f",value);
 	}
 	Cvar_Set (var_name, val);
+}
+
+/*
+============
+Cvar_SetModified
+============
+*/
+qboolean Cvar_SetModified( const char *var_name, qboolean modified )
+{
+	cvar_t	*var;
+
+	var = Cvar_FindVar( var_name );
+	if ( var ) 
+	{
+		var->modified = modified;
+		return qtrue;
+	}
+	else 
+	{
+		return qfalse;
+	}
 }
 
 /*

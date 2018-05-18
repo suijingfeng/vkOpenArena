@@ -23,7 +23,7 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
 #include "q_shared.h"
 #include "qcommon.h"
-#include "../sdl/sdl_input.h"
+#include "../sys/inputs.h"
 #include <setjmp.h>
 #ifndef _WIN32
 #include <netinet/in.h>
@@ -114,7 +114,6 @@ char com_errorMessage[MAXPRINTMSG];
 void CIN_CloseAllVideos( void );
 
 
-int (QDECL *Q_VMftol)(void);
 void (QDECL *Q_SnapVector)(vec3_t vec);
 
 
@@ -361,10 +360,8 @@ void Com_Quit_f( void )
 	char *p = Cmd_Args( );
 	if ( !com_errorEntered )
     {
-		// Some VMs might execute "quit" command directly,
-		// which would trigger an unload of active VM error.
-		// Sys_Quit will kill this process anyways, so
-		// a corrupt call stack makes no difference
+		// Some VMs might execute "quit" command directly, which would trigger an unload of active VM error.
+		// Sys_Quit will kill this process anyways, so a corrupt call stack makes no difference
 		VM_Forced_Unload_Start();
 		SV_Shutdown(p[0] ? p : "Server quit");
 		CL_Shutdown(p[0] ? p : "Client quit", qtrue, qtrue);
@@ -1976,8 +1973,10 @@ sysEvent_t Com_GetSystemEvent( void )
 		eventTail++;
 		return eventQueue[ ( eventTail - 1 ) & MASK_QUEUED_EVENTS ];
 	}
-
-	// check for console commands
+#ifndef DEDICATED	
+    Sys_SendKeyEvents();
+#endif	
+    // check for console commands
 	char *s = Sys_ConsoleInput();
 	if ( s )
 	{
@@ -2219,12 +2218,13 @@ Com_Error_f
 Just throw a fatal error to test error shutdown procedures
 =============
 */
-static void __attribute__((__noreturn__)) Com_Error_f (void) {
-	if ( Cmd_Argc() > 1 ) {
+static void Com_Error_f (void)
+{
+	if ( Cmd_Argc() > 1 )
 		Com_Error( ERR_DROP, "Testing drop error" );
-	} else {
+	else
 		Com_Error( ERR_FATAL, "Testing fatal error" );
-	}
+
 }
 
 
@@ -2538,8 +2538,6 @@ static void Com_DetectSSE(void)
         else
 			Q_SnapVector = qsnapvectorx87;
 
-		Q_VMftol = qvmftolsse;
-
 		Com_Printf(" Have SSE support\n");
 	}
 	else
@@ -2756,7 +2754,9 @@ void Com_Init(char *commandLine )
 #endif
 	Cvar_Get("protocol", com_protocol->string, CVAR_ROM);
 
-	Sys_Init();
+	Cvar_Set( "arch", OS_STRING " " ARCH_STRING );
+	Cvar_Set( "username", Sys_GetCurrentUser( ) );
+
 
 	if( Sys_WritePIDFile( ) ) {
 #ifndef DEDICATED
@@ -2800,7 +2800,7 @@ void Com_Init(char *commandLine )
 	}
 
 	// start in full screen ui mode
-	Cvar_Set("r_uiFullScreen", "1");
+	Cvar_Set("r_uiFullScreen", "0");
 
 	CL_StartHunkUsers( qfalse );
 
@@ -3044,9 +3044,9 @@ void Com_Frame(void)
 		else
 			NET_Sleep(timeVal - 1);
 	} while(Com_TimeVal(minMsec));
-	
+#ifndef DEDICATED	
 	IN_Frame(); // youurayy input lag fix
-
+#endif
 	lastTime = com_frameTime;
 	com_frameTime = Com_EventLoop();
 	

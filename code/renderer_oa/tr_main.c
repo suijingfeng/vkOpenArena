@@ -24,6 +24,7 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #include "tr_local.h"
 
 
+#define	DRAWSURF_MASK			(MAX_DRAWSURFS-1)
 ///////// globals ///////////
 
 
@@ -843,12 +844,10 @@ static int R_SpriteFogNum( trRefEntity_t *ent )
 
 static void R_AddEntitySurfaces (void)
 {
-	trRefEntity_t	*ent;
-	shader_t		*shader;
 
 	for ( tr.currentEntityNum = 0; tr.currentEntityNum < tr.refdef.num_entities; tr.currentEntityNum++ )
     {
-		ent = tr.currentEntity = &tr.refdef.entities[tr.currentEntityNum];
+		trRefEntity_t* ent = tr.currentEntity = &tr.refdef.entities[tr.currentEntityNum];
 
 		ent->needDlights = qfalse;
 
@@ -877,10 +876,11 @@ static void R_AddEntitySurfaces (void)
                 // self blood sprites, talk balloons, etc should not be drawn in the primary
                 // view.  We can't just do this check for all entities, because md3
                 // entities may still want to cast shadows from them
-                if ( (ent->e.renderfx & RF_THIRD_PERSON) && !tr.viewParms.isPortal) {
+                if ( (ent->e.renderfx & RF_THIRD_PERSON) && !tr.viewParms.isPortal)
+                {
                     continue;
                 }
-                shader = R_GetShaderByHandle( ent->e.customShader );
+                shader_t* shader = R_GetShaderByHandle( ent->e.customShader );
                 R_AddDrawSurf( &entitySurface, shader, R_SpriteFogNum( ent ), 0 );
                 break;
 
@@ -889,10 +889,14 @@ static void R_AddEntitySurfaces (void)
                 R_RotateForEntity( ent, &tr.viewParms, &tr.or );
 
                 tr.currentModel = R_GetModelByHandle( ent->e.hModel );
-                if (!tr.currentModel) {
+                if (tr.currentModel == NULL)
+                {
                     R_AddDrawSurf( &entitySurface, tr.defaultShader, 0, 0 );
-                } else {
-                    switch ( tr.currentModel->type ) {
+                }
+                else
+                {
+                    switch ( tr.currentModel->type )
+                    {
                     case MOD_MESH:
                         R_AddMD3Surfaces( ent );
                         break;
@@ -961,23 +965,23 @@ static void R_DebugPolygon( int color, int numPoints, float *points )
 
 	// draw solid shade
 
-	qglColor3f( color&1, (color>>1)&1, (color>>2)&1 );
-	qglBegin( GL_POLYGON );
+	glColor3f( color&1, (color>>1)&1, (color>>2)&1 );
+	glBegin( GL_POLYGON );
 	for ( i = 0 ; i < numPoints ; i++ ) {
-		qglVertex3fv( points + i * 3 );
+		glVertex3fv( points + i * 3 );
 	}
-	qglEnd();
+	glEnd();
 
 	// draw wireframe outline
 	GL_State( GLS_POLYMODE_LINE | GLS_DEPTHMASK_TRUE | GLS_SRCBLEND_ONE | GLS_DSTBLEND_ONE );
-	qglDepthRange( 0, 0 );
-	qglColor3f( 1, 1, 1 );
-	qglBegin( GL_POLYGON );
+	glDepthRange( 0, 0 );
+	glColor3f( 1, 1, 1 );
+	glBegin( GL_POLYGON );
 	for ( i = 0 ; i < numPoints ; i++ ) {
-		qglVertex3fv( points + i * 3 );
+		glVertex3fv( points + i * 3 );
 	}
-	qglEnd();
-	qglDepthRange( 0, 1 );
+	glEnd();
+	glDepthRange( 0, 1 );
 }
 
 /*
@@ -1036,6 +1040,8 @@ static void R_SetupProjection(viewParms_t *dest, float zProj)
 
 void R_AddDrawSurf( surfaceType_t *surface, shader_t *shader, int fogIndex, int dlightMap )
 {
+
+
 	int	index = tr.refdef.numDrawSurfs & DRAWSURF_MASK;
 
 	// instead of checking for overflow, we just mask the index, so it wraps around

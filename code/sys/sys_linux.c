@@ -22,9 +22,8 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
 #include "../qcommon/q_shared.h"
 #include "../qcommon/qcommon.h"
-#include "sys_local.h"
+#include "local.h"
 
-#include <signal.h>
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <errno.h>
@@ -388,19 +387,7 @@ FILE *Sys_Mkfifo(const char *ospath)
 }
 
 
-char *Sys_Cwd( void )
-{
-    Com_Printf(" Sys_Cwd()\n");
-	static char cwd[MAX_OSPATH];
 
-	char *result = getcwd( cwd, sizeof( cwd ) - 1 );
-	if( result != cwd )
-		return NULL;
-
-	cwd[MAX_OSPATH-1] = 0;
-
-	return cwd;
-}
 
 /*
 ==============================================================
@@ -916,16 +903,12 @@ void Sys_PlatformInit( void )
 {
 	const char* term = getenv( "TERM" );
 
-	signal( SIGHUP, Sys_SigHandler );
-	signal( SIGQUIT, Sys_SigHandler );
-	signal( SIGTRAP, Sys_SigHandler );
-	signal( SIGABRT, Sys_SigHandler );
-	signal( SIGBUS, Sys_SigHandler );
-
 	// rounding toward nearest
 	fesetround(FE_TONEAREST);
 
 	stdinIsATTY = isatty( STDIN_FILENO ) &&	!( term && ( !strcmp( term, "raw" ) || !strcmp( term, "dumb" ) ) );
+	
+    Com_Printf("TERM: %s\n",term);
 }
 
 

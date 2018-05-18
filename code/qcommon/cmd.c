@@ -345,6 +345,11 @@ int	Cmd_Argc( void )
 	return cmd_argc;
 }
 
+void Cmd_Clear( void )
+{
+	cmd_argc = 0;
+}
+
 char *Cmd_Argv( int arg )
 {
 	if( (unsigned)arg >= cmd_argc )

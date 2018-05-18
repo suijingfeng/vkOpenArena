@@ -422,11 +422,9 @@ extern const vec3_t	axisDefault[3];
 #define	IS_NAN(x) (((*(int *)&x)&nanmask)==nanmask)
 
 
-extern int QDECL qvmftolsse(void);
 extern void QDECL qsnapvectorx87(vec3_t vec);
 extern void QDECL qsnapvectorsse(vec3_t vec);
 
-extern int (QDECL *Q_VMftol)(void);
 extern void (QDECL *Q_SnapVector)(vec3_t vec);
 
 
@@ -675,7 +673,7 @@ qboolean Info_Validate( const char *s );
 void Info_NextPair( const char **s, char *key, char *value );
 
 // this is only here so the functions in q_shared.c and bg_*.c can link
-void QDECL Com_Error( int level, const char *error, ... ) __attribute__ ((noreturn, format(printf, 2, 3)));
+void QDECL Com_Error( int level, const char *error, ... ) __attribute__ ((format(printf, 2, 3)));
 void QDECL Com_Printf( const char *msg, ... ) __attribute__ ((format (printf, 1, 2)));
 
 

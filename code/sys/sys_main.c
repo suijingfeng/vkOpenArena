@@ -20,7 +20,6 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 ===========================================================================
 */
 
-#include <signal.h>
 #include <stdlib.h>
 #include <limits.h>
 #include <sys/types.h>
@@ -30,28 +29,34 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #include <string.h>
 #include <ctype.h>
 #include <errno.h>
+#include <unistd.h>
 
-#ifndef DEDICATED
-    #ifdef USE_LOCAL_HEADERS
-        #include "SDL.h"
-        #include "SDL_cpuinfo.h"
-    #else
-        #include <SDL.h>
-        #include <SDL_cpuinfo.h>
-    #endif
-#endif
+#include "local.h"
+#include "inputs.h"
 
-#include "sys_local.h"
-#include "sys_loadlib.h"
 
 #include "../qcommon/q_shared.h"
 #include "../qcommon/qcommon.h"
-#include "../sdl/sdl_input.h"
-
 
 
 static char binaryPath[ MAX_OSPATH ] = { 0 };
 static char installPath[ MAX_OSPATH ] = { 0 };
+
+
+char *Sys_Cwd( void )
+{
+    Com_Printf(" Sys_Cwd()\n");
+	static char cwd[MAX_OSPATH];
+
+	char *result = getcwd( cwd, sizeof( cwd ) - 1 );
+	if( result != cwd )
+		return NULL;
+
+	cwd[MAX_OSPATH-1] = 0;
+
+	return cwd;
+}
+
 
 /*
 =================
@@ -68,7 +73,7 @@ void Sys_SetBinaryPath(const char *path)
 Sys_BinaryPath
 =================
 */
-char *Sys_BinaryPath(void)
+char* Sys_BinaryPath(void)
 {
 	return binaryPath;
 }
@@ -88,7 +93,7 @@ void Sys_SetDefaultInstallPath(const char *path)
 Sys_DefaultInstallPath
 =================
 */
-char *Sys_DefaultInstallPath(void)
+char* Sys_DefaultInstallPath(void)
 {
 	if (*installPath)
     {
@@ -110,6 +115,7 @@ char *Sys_DefaultAppPath(void)
 }
 
 
+
 /*
 =================
 Sys_ConsoleInput
@@ -122,36 +128,6 @@ char *Sys_ConsoleInput(void)
 	return CON_Input();
 }
 
-
-/*
- * This makes pasting in client console and UI edit fields work on X11 and OS X.
- * Sys_GetClipboardData is only used by client, so returning NULL in dedicated is fine.
- */
-char *Sys_GetClipboardData(void)
-{
-#ifdef DEDICATED
-	return NULL;
-#else
-	char *data = NULL;
-	char *cliptext = SDL_GetClipboardText();
-
-	if( cliptext != NULL )
-    {
-		if ( cliptext[0] != '\0' )
-        {
-			size_t bufsize = strlen( cliptext ) + 1;
-
-			data = Z_Malloc( bufsize );
-			Q_strncpyz( data, cliptext, bufsize );
-
-			// find first listed char and set to '\0'
-			strtok( data, "\n\r\b" );
-		}
-		SDL_free( cliptext );
-	}
-	return data;
-#endif
-}
 
 #ifdef DEDICATED
 #	define PID_FILENAME PRODUCT_NAME "_server.pid"
@@ -225,13 +201,9 @@ Sys_Exit
 Single exit point (regular exit or in case of error)
 =================
 */
-static __attribute__ ((noreturn)) void Sys_Exit( int exitCode )
+void Sys_Exit( int exitCode )
 {
 	CON_Shutdown( );
-
-#ifndef DEDICATED
-	SDL_Quit( );
-#endif
 
 	if( exitCode < 2 )
 	{
@@ -259,27 +231,14 @@ cpuFeatures_t Sys_GetProcessorFeatures( void )
 	cpuFeatures_t features = 0;
 
 #ifndef DEDICATED
-	if( SDL_HasRDTSC( ) )      features |= CF_RDTSC;
-	if( SDL_Has3DNow( ) )      features |= CF_3DNOW;
-	if( SDL_HasMMX( ) )        features |= CF_MMX;
-	if( SDL_HasSSE( ) )        features |= CF_SSE;
-	if( SDL_HasSSE2( ) )       features |= CF_SSE2;
-    if( SDL_HasSSE3( ) )       features |= CF_SSE3;
-	if( SDL_HasSSE41( ) )       features |= CF_SSE41;
-    if( SDL_HasSSE42( ) )       features |= CF_SSE42;
-	if( SDL_HasAltiVec( ) )    features |= CF_ALTIVEC;
+	features |= CF_MMX;
+	features |= CF_SSE;
+	features |= CF_SSE2;
 #endif
 
 	return features;
 }
 
-
-void Sys_Init(void)
-{
-	Cmd_AddCommand( "in_restart", IN_Restart );
-	Cvar_Set( "arch", OS_STRING " " ARCH_STRING );
-	Cvar_Set( "username", Sys_GetCurrentUser( ) );
-}
 
 /*
  * Transform Q3 colour codes to ANSI escape sequences
@@ -361,11 +320,7 @@ void Sys_Print( const char *msg )
 //	CON_Print( msg );
 }
 
-/*
-=================
-Sys_Error
-=================
-*/
+
 void Sys_Error( const char *error, ... )
 {
 	va_list argptr;
@@ -416,70 +371,6 @@ int Sys_FileTime( char *path )
 	return buf.st_mtime;
 }
 
-/*
-=================
-Sys_UnloadDll
-=================
-*/
-void Sys_UnloadDll( void *dllHandle )
-{
-	if( !dllHandle )
-	{
-		Com_Printf("Sys_UnloadDll(NULL)\n");
-		return;
-	}
-
-	Sys_UnloadLibrary(dllHandle);
-}
-
-/*
-=================
-Sys_LoadDll
-
-First try to load library name from system library path,
-from executable path, then fs_basepath.
-=================
-*/
-
-void *Sys_LoadDll(const char *name, qboolean useSystemLib)
-{
-	void *dllhandle;
-	
-	if(useSystemLib)
-		Com_Printf(" Trying to load \"%s\"...\n", name);
-	
-	if(!useSystemLib || !(dllhandle = Sys_LoadLibrary(name)))
-	{
-		const char *topDir = Sys_BinaryPath();
-		char libPath[MAX_OSPATH];
-
-		if(!*topDir)
-			topDir = ".";
-
-		Com_Printf(" Trying to load \"%s\" from \"%s\"...\n", name, topDir);
-		Com_sprintf(libPath, sizeof(libPath), "%s%c%s", topDir, PATH_SEP, name);
-
-		if(!(dllhandle = Sys_LoadLibrary(libPath)))
-		{
-			const char *basePath = Cvar_VariableString("fs_basepath");
-			
-			if(!basePath || !*basePath)
-				basePath = ".";
-			
-			if(FS_FilenameCompare(topDir, basePath))
-			{
-				Com_Printf("Trying to load \"%s\" from \"%s\"...\n", name, basePath);
-				Com_sprintf(libPath, sizeof(libPath), "%s%c%s", basePath, PATH_SEP, name);
-				dllhandle = Sys_LoadLibrary(libPath);
-			}
-			
-			if(!dllhandle)
-				Com_Printf("Loading \"%s\" failed\n", name);
-		}
-	}
-	
-	return dllhandle;
-}
 
 /*
 =================
@@ -547,74 +438,16 @@ void Sys_ParseArgs( int argc, char **argv )
 #endif
 
 
-
-void Sys_SigHandler( int signal )
-{
-	static qboolean signalcaught = qfalse;
-
-	if( signalcaught )
-	{
-		fprintf( stderr, "DOUBLE SIGNAL FAULT: Received signal %d, exiting...\n", signal );
-	}
-	else
-	{
-		signalcaught = qtrue;
-		VM_Forced_Unload_Start();
-#ifndef DEDICATED
-		CL_Shutdown(va("Received signal %d", signal), qtrue, qtrue);
-#endif
-		SV_Shutdown(va("Received signal %d", signal) );
-		VM_Forced_Unload_Done();
-	}
-
-	if( signal == SIGTERM || signal == SIGINT )
-		Sys_Exit( 1 );
-	else
-		Sys_Exit( 2 );
-}
-
-
 int main( int argc, char **argv )
 {
 	int   i;
 	char  commandLine[ MAX_STRING_CHARS ] = { 0 };
-
-#ifndef DEDICATED
-	// Compile time SDL version check, require a minimum version of SDL
-    #define MINSDL_MAJOR 2
-    #define MINSDL_MINOR 0
-    #define MINSDL_PATCH 0
-
-#	if !SDL_VERSION_ATLEAST(MINSDL_MAJOR, MINSDL_MINOR, MINSDL_PATCH)
-#		error A more recent version of SDL is required
-#	endif
-
-	// Run time
-	SDL_version ver;
-	SDL_GetVersion( &ver );
-
-    #define MINSDL_VERSION   XSTRING(MINSDL_MAJOR) "." XSTRING(MINSDL_MINOR) "." XSTRING(MINSDL_PATCH)
-
-	if( SDL_VERSIONNUM( ver.major, ver.minor, ver.patch ) <	SDL_VERSIONNUM( MINSDL_MAJOR, MINSDL_MINOR, MINSDL_PATCH ) )
-	{
-		Sys_Dialog( DT_ERROR, va( "SDL version " MINSDL_VERSION " or greater is required, "
-			"but only version %d.%d.%d was found. You may be able to obtain a more recent copy "
-			"from http://www.libsdl.org/.", ver.major, ver.minor, ver.patch ), "SDL Library Too Old" );
-
-		Sys_Exit(1);
-	}
-#endif
 
 	Sys_PlatformInit();
 
 	// Set the initial time base
 	Sys_Milliseconds();
 
-#ifdef MACOS_X
-	// This is passed if we are launched by double-clicking
-	if ( argc >= 2 && Q_strncmp( argv[1], "-psn", 4 ) == 0 )
-		argc = 1;
-#endif
 
 	Sys_ParseArgs( argc, argv );
 	Sys_SetBinaryPath( Sys_Dirname( argv[ 0 ] ) );
@@ -640,14 +473,10 @@ int main( int argc, char **argv )
 
 	CON_Init();
 
-	signal( SIGILL, Sys_SigHandler );
-	signal( SIGFPE, Sys_SigHandler );
-	signal( SIGSEGV, Sys_SigHandler );
-	signal( SIGTERM, Sys_SigHandler );
-	signal( SIGINT, Sys_SigHandler );
+    Sys_InitSignal();
 
 	while( 1 )
-	{
+	{  	
 		Com_Frame();
 	}
 

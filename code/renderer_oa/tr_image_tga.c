@@ -159,7 +159,7 @@ void R_LoadTGA ( const char *name, byte **pic, int *width, int *height)
 			pixbuf = targa_rgba + row*columns*4;
 			for(column=0; column<columns; column++) 
 			{
-				unsigned char red,green,blue,alphabyte;
+				unsigned char red = 0, green = 0, blue = 0, alphabyte = 0;
 				switch (targa_header.pixel_size) 
 				{
 					
@@ -199,20 +199,28 @@ void R_LoadTGA ( const char *name, byte **pic, int *width, int *height)
 			}
 		}
 	}
-	else if (targa_header.image_type==10) {   // Runlength encoded RGB images
-		unsigned char red,green,blue,alphabyte,packetHeader,packetSize,j;
+	else if (targa_header.image_type==10)
+    {   // Runlength encoded RGB images
+		unsigned char red = 0, green = 0, blue = 0, alphabyte = 0;
 
-		for(row=rows-1; row>=0; row--) {
+		for(row=rows-1; row>=0; row--)
+        {
 			pixbuf = targa_rgba + row*columns*4;
-			for(column=0; column<columns; ) {
+			for(column=0; column<columns; )
+            {
 				if(buf_p + 1 > end)
 					ri.Error (ERR_DROP, "LoadTGA: file truncated (%s)", name);
-				packetHeader= *buf_p++;
-				packetSize = 1 + (packetHeader & 0x7f);
-				if (packetHeader & 0x80) {        // run-length packet
+				
+                unsigned char packetHeader = *buf_p++;
+				unsigned char packetSize = 1 + (packetHeader & 0x7f);
+
+				if (packetHeader & 0x80)
+                {        // run-length packet
 					if(buf_p + targa_header.pixel_size/8 > end)
 						ri.Error (ERR_DROP, "LoadTGA: file truncated (%s)", name);
-					switch (targa_header.pixel_size) {
+
+					switch (targa_header.pixel_size)
+                    {
 						case 24:
 								blue = *buf_p++;
 								green = *buf_p++;
@@ -229,14 +237,17 @@ void R_LoadTGA ( const char *name, byte **pic, int *width, int *height)
 							ri.Error( ERR_DROP, "LoadTGA: illegal pixel_size '%d' in file '%s'", targa_header.pixel_size, name );
 							break;
 					}
-	
-					for(j=0;j<packetSize;j++) {
+
+	                unsigned char j;
+					for(j=0;j<packetSize;j++)
+                    {
 						*pixbuf++=red;
 						*pixbuf++=green;
 						*pixbuf++=blue;
 						*pixbuf++=alphabyte;
 						column++;
-						if (column==columns) { // run spans across rows
+						if (column==columns)
+                        { // run spans across rows
 							column=0;
 							if (row>0)
 								row--;
@@ -250,6 +261,8 @@ void R_LoadTGA ( const char *name, byte **pic, int *width, int *height)
 
 					if(buf_p + targa_header.pixel_size/8*packetSize > end)
 						ri.Error (ERR_DROP, "LoadTGA: file truncated (%s)", name);
+                    
+                    unsigned char j;
 					for(j=0;j<packetSize;j++) {
 						switch (targa_header.pixel_size) {
 							case 24:

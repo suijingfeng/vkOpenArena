@@ -22,6 +22,7 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
 #include "tr_local.h"
 
+
 extern shaderCommands_t tess;
 extern cvar_t* r_nocull;
 extern refimport_t ri;

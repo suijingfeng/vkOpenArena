@@ -451,6 +451,8 @@ void Cmd_CompleteCfgName( char *args, int argNum );
 
 int		Cmd_Argc (void);
 char	*Cmd_Argv (int arg);
+void    Cmd_Clear( void );
+
 void	Cmd_ArgvBuffer( int arg, char *buffer, int bufferLength );
 char	*Cmd_Args (void);
 char	*Cmd_ArgsFrom( int arg );
@@ -516,8 +518,11 @@ void 	Cvar_Set( const char *var_name, const char *value );
 cvar_t	*Cvar_Set2(const char *var_name, const char *value, qboolean force);
 // same as Cvar_Set, but allows more control over setting of cvar
 
+void Cvar_SetIntegerValue( const char *var_name, int value );
+
 void	Cvar_SetSafe( const char *var_name, const char *value );
 // sometimes we set variables from an untrusted source: fail if flags & CVAR_PROTECTED
+qboolean Cvar_SetModified( const char *var_name, qboolean modified );
 
 void Cvar_SetLatched( const char *var_name, const char *value);
 // don't set the cvar immediately
@@ -819,8 +824,8 @@ void		Com_BeginRedirect (char *buffer, int buffersize, void (*flush)(char *));
 void		Com_EndRedirect( void );
 void 		QDECL Com_Printf( const char *fmt, ... ) __attribute__ ((format (printf, 1, 2)));
 void 		QDECL Com_DPrintf( const char *fmt, ... ) __attribute__ ((format (printf, 1, 2)));
-void 		QDECL Com_Error( int code, const char *fmt, ... ) __attribute__ ((noreturn, format(printf, 2, 3)));
-void 		Com_Quit_f( void ) __attribute__ ((noreturn));
+void 		QDECL Com_Error( int code, const char *fmt, ... ) __attribute__ ((format(printf, 2, 3)));
+void 		Com_Quit_f( void );
 void		Com_GameRestart(int checksumFeed, qboolean disconnect);
 
 int			Com_Milliseconds( void );	// will be journaled properly
@@ -1070,8 +1075,8 @@ void	Sys_UnloadDll( void *dllHandle );
 
 char	*Sys_GetCurrentUser( void );
 
-void	QDECL Sys_Error( const char *error, ...) __attribute__ ((noreturn, format (printf, 1, 2)));
-void	Sys_Quit (void) __attribute__ ((noreturn));
+void	QDECL Sys_Error( const char *error, ...) __attribute__ ((format (printf, 1, 2)));
+void	Sys_Quit (void);
 char	*Sys_GetClipboardData( void );	// note that this isn't journaled...
 
 void	Sys_Print( const char *msg );

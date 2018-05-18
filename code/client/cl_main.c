@@ -24,9 +24,9 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #include "client.h"
 #include <limits.h>
 
-#include "../sys/sys_local.h"
-#include "../sys/sys_loadlib.h"
-#include "../sdl/sdl_input.h"
+#include "../sys/inputs.h"
+#include "../sys/glimpl.h"
+#include "../sys/public.h"
 #include "../qcommon/puff.h"
 
 #ifdef USE_MUMBLE
@@ -3231,18 +3231,18 @@ void CL_InitRef(void)
   
 	ri.CL_WriteAVIVideoFrame = CL_WriteAVIVideoFrame;
 
-	ri.IN_Init = IN_Init;
-	ri.IN_Shutdown = IN_Shutdown;
-	ri.IN_Restart = IN_Restart;
-
-
 	ri.Sys_SetEnv = Sys_SetEnv;
 	ri.Sys_LowPhysicalMemory = Sys_LowPhysicalMemory;
 
-    // extra
+
+    ////// extra ///////
     ri.Puff = puff;
+    ri.GLimpInit = GLimp_Init;
+	ri.GLimpEndFrame = GLimp_EndFrame;
+	ri.GLimpShutdown = GLimp_Shutdown;
 
-
+    ri.InitGamma = InitGammaImpl;
+	ri.SetGamma = SetGammaImpl;
 
 	ret = GetRefAPI(REF_API_VERSION, &ri);
 

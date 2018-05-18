@@ -22,7 +22,7 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 // tr_init.c -- functions that are not called every frame
 
 #include "tr_local.h"
-#include "../sdl/sdl_glimp.h"
+
 
 glconfig_t  glConfig;
 qboolean    textureFilterAnisotropic = qfalse;
@@ -193,13 +193,13 @@ static void InitOpenGL( void )
 	{
 		GLint		temp;
 		
-		GLimp_Init( qfalse );
+		ri.GLimpInit( qfalse );
 
 		strcpy( renderer_buffer, glConfig.renderer_string );
 		Q_strlwr( renderer_buffer );
 
 		// OpenGL driver constants
-		qglGetIntegerv( GL_MAX_TEXTURE_SIZE, &temp );
+		glGetIntegerv( GL_MAX_TEXTURE_SIZE, &temp );
 		glConfig.maxTextureSize = temp;
 
 		// stubbed or broken drivers may have reported 0...
@@ -222,7 +222,7 @@ void GL_CheckErrors( void ) {
 	int		err;
 	char	s[64];
 
-	err = qglGetError();
+	err = glGetError();
 	if ( err == GL_NO_ERROR ) {
 		return;
 	}
@@ -370,7 +370,7 @@ byte *RB_ReadPixels(int x, int y, int width, int height, size_t *offset, int *pa
 	int padwidth, linelen;
 	GLint packAlign;
 	
-	qglGetIntegerv(GL_PACK_ALIGNMENT, &packAlign);
+	glGetIntegerv(GL_PACK_ALIGNMENT, &packAlign);
 	
 	linelen = width * 3;
 	padwidth = PAD(linelen, packAlign);
@@ -379,7 +379,7 @@ byte *RB_ReadPixels(int x, int y, int width, int height, size_t *offset, int *pa
 	buffer = ri.Hunk_AllocateTempMemory(padwidth * height + *offset + packAlign - 1);
 	
 	bufstart = PADP((intptr_t) buffer + *offset, packAlign);
-	qglReadPixels(x, y, width, height, GL_RGB, GL_UNSIGNED_BYTE, bufstart);
+	glReadPixels(x, y, width, height, GL_RGB, GL_UNSIGNED_BYTE, bufstart);
 	
 	*offset = bufstart - buffer;
 	*padlen = padwidth - linelen;
@@ -765,7 +765,7 @@ const void *RB_TakeVideoFrameCmd( const void *data )
 	
 	cmd = (const videoFrameCommand_t *)data;
 	
-	qglGetIntegerv(GL_PACK_ALIGNMENT, &packAlign);
+	glGetIntegerv(GL_PACK_ALIGNMENT, &packAlign);
 
 	linelen = cmd->width * 3;
 
@@ -778,7 +778,7 @@ const void *RB_TakeVideoFrameCmd( const void *data )
 
 	cBuf = PADP(cmd->captureBuffer, packAlign);
 		
-	qglReadPixels(0, 0, cmd->width, cmd->height, GL_RGB,
+	glReadPixels(0, 0, cmd->width, cmd->height, GL_RGB,
 		GL_UNSIGNED_BYTE, cBuf);
 
 	memcount = padwidth * cmd->height;
@@ -834,44 +834,44 @@ const void *RB_TakeVideoFrameCmd( const void *data )
 */
 void GL_SetDefaultState( void )
 {
-	qglClearDepth( 1.0f );
+	glClearDepth( 1.0f );
 
-	qglCullFace(GL_FRONT);
+	glCullFace(GL_FRONT);
 
-	qglColor4f (1,1,1,1);
+	glColor4f (1,1,1,1);
 
 	// initialize downstream texture unit if we're running
 	// in a multitexture environment
-	if ( qglActiveTextureARB ) {
+	if ( glActiveTextureARB ) {
 		GL_SelectTexture( 1 );
 		GL_TextureMode( r_textureMode->string );
 		GL_TexEnv( GL_MODULATE );
-		qglDisable( GL_TEXTURE_2D );
+		glDisable( GL_TEXTURE_2D );
 		GL_SelectTexture( 0 );
 	}
 
-	qglEnable(GL_TEXTURE_2D);
+	glEnable(GL_TEXTURE_2D);
 	GL_TextureMode( r_textureMode->string );
 	GL_TexEnv( GL_MODULATE );
 
-	qglShadeModel( GL_SMOOTH );
-	qglDepthFunc( GL_LEQUAL );
+	glShadeModel( GL_SMOOTH );
+	glDepthFunc( GL_LEQUAL );
 
 	// the vertex array is always enabled, but the color and texture
 	// arrays are enabled and disabled around the compiled vertex array call
-	qglEnableClientState (GL_VERTEX_ARRAY);
+	glEnableClientState (GL_VERTEX_ARRAY);
 
 	//
 	// make sure our GL state vector is set correctly
 	//
 	glState.glStateBits = GLS_DEPTHTEST_DISABLE | GLS_DEPTHMASK_TRUE;
 
-	qglPolygonMode (GL_FRONT_AND_BACK, GL_FILL);
-	qglDepthMask( GL_TRUE );
-	qglDisable( GL_DEPTH_TEST );
-	qglEnable( GL_SCISSOR_TEST );
-	qglDisable( GL_CULL_FACE );
-	qglDisable( GL_BLEND );
+	glPolygonMode (GL_FRONT_AND_BACK, GL_FILL);
+	glDepthMask( GL_TRUE );
+	glDisable( GL_DEPTH_TEST );
+	glEnable( GL_SCISSOR_TEST );
+	glDisable( GL_CULL_FACE );
+	glDisable( GL_BLEND );
 }
 
 /*
@@ -918,21 +918,9 @@ void GfxInfo_f( void )
 	ri.Printf( PRINT_ALL, "GL_RENDERER: %s\n", glConfig.renderer_string );
 	ri.Printf( PRINT_ALL, "GL_VERSION: %s\n", glConfig.version_string );
 	ri.Printf( PRINT_ALL, "GL_EXTENSIONS: " );
-	if ( qglGetStringi )
-	{
-		GLint numExtensions;
-		int i;
 
-		qglGetIntegerv( GL_NUM_EXTENSIONS, &numExtensions );
-		for ( i = 0; i < numExtensions; i++ )
-		{
-			ri.Printf( PRINT_ALL, "%s ", qglGetStringi( GL_EXTENSIONS, i ) );
-		}
-	}
-	else    
-	{
+
 		R_PrintLongString( glConfig.extensions_string );
-	}
 	ri.Printf( PRINT_ALL, "\n" );
 	ri.Printf( PRINT_ALL, "GL_MAX_TEXTURE_SIZE: %d\n", glConfig.maxTextureSize );
 	ri.Printf( PRINT_ALL, "GL_MAX_TEXTURE_UNITS_ARB: %d\n", glConfig.numTextureUnits );
@@ -963,11 +951,7 @@ void GfxInfo_f( void )
 		ri.Printf( PRINT_ALL, "rendering primitives: " );
 		primitives = r_primitives->integer;
 		if ( primitives == 0 ) {
-			if ( qglLockArraysEXT ) {
-				primitives = 2;
-			} else {
 				primitives = 1;
-			}
 		}
 		if ( primitives == -1 ) {
 			ri.Printf( PRINT_ALL, "none\n" );
@@ -983,8 +967,7 @@ void GfxInfo_f( void )
 	ri.Printf( PRINT_ALL, "texturemode: %s\n", r_textureMode->string );
 	ri.Printf( PRINT_ALL, "picmip: %d\n", r_picmip->integer );
 	ri.Printf( PRINT_ALL, "texture bits: %d\n", r_texturebits->integer );
-	ri.Printf( PRINT_ALL, "multitexture: %s\n", enablestrings[qglActiveTextureARB != 0] );
-	ri.Printf( PRINT_ALL, "compiled vertex arrays: %s\n", enablestrings[qglLockArraysEXT != 0 ] );
+	ri.Printf( PRINT_ALL, "multitexture: %s\n", enablestrings[glActiveTextureARB != 0] );
 	ri.Printf( PRINT_ALL, "texenv add: %s\n", enablestrings[glConfig.textureEnvAddAvailable != 0] );
 	ri.Printf( PRINT_ALL, "compressed textures: %s\n", enablestrings[glConfig.textureCompression!=TC_NONE] );
 
@@ -1150,7 +1133,7 @@ void R_Register( void )
 	ri.Cmd_AddCommand( "screenshot", R_ScreenShot_f );
 	ri.Cmd_AddCommand( "screenshotJPEG", R_ScreenShotJPEG_f );
 	ri.Cmd_AddCommand( "gfxinfo", GfxInfo_f );
-	ri.Cmd_AddCommand( "minimize", GLimp_Minimize );
+//	ri.Cmd_AddCommand( "minimize", GLimp_Minimize );
 }
 
 /*
@@ -1240,7 +1223,7 @@ void R_Init( void ) {
 	R_InitFreeType();
 
 
-	err = qglGetError();
+	err = glGetError();
 	if ( err != GL_NO_ERROR )
 		ri.Printf (PRINT_ALL, "glGetError() = 0x%x\n", err);
 
@@ -1254,7 +1237,8 @@ void R_Init( void ) {
 RE_Shutdown
 ===============
 */
-void RE_Shutdown( qboolean destroyWindow ) {	
+void RE_Shutdown( qboolean destroyWindow )
+{	
 
 	ri.Printf( PRINT_ALL, "RE_Shutdown( %i )\n", destroyWindow );
 
@@ -1277,8 +1261,9 @@ void RE_Shutdown( qboolean destroyWindow ) {
 	R_DoneFreeType();
 
 	// shut down platform specific OpenGL stuff
-	if ( destroyWindow ) {
-		GLimp_Shutdown();
+	if ( destroyWindow )
+    {
+		ri.GLimpShutdown(destroyWindow);
 
 		memset( &glConfig, 0, sizeof( glConfig ) );
 		memset( &glState, 0, sizeof( glState ) );

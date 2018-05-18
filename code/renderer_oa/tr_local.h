@@ -26,13 +26,10 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
 #include "../qcommon/q_shared.h"
 #include "../qcommon/qfiles.h"
-//#include "../qcommon/qcommon.h"
-
-#include "../sdl/tr_public.h"
-#include "../sdl/qgl.h"
-
-
+#include "GL/gl.h"
 #include "iqm.h"
+
+#include "tr_public.h"
 #include "tr_shared.h"
 
 #define PATCH_STITCHING
@@ -847,14 +844,15 @@ typedef struct model_s {
 
 
 //====================================================
+#define	MAX_DRAWSURFS			0x10000
+
 
 #define	MAX_DRAWIMAGES			2048
 #define	MAX_LIGHTMAPS			256
 #define	MAX_SKINS				1024
 
 
-#define	MAX_DRAWSURFS			0x10000
-#define	DRAWSURF_MASK			(MAX_DRAWSURFS-1)
+
 
 /*
 
@@ -908,11 +906,6 @@ typedef struct {
 typedef struct {
 	int			currenttextures[2];
 	int			currenttmu;
-	float		currentModelViewMatrix[16];
-	float		currentModelViewProjectionMatrix[16];
-	float		currentProjectionMatrix[16];
-	qhandle_t	currentProgram;
-	qhandle_t	postprocessingProgram;
 	qboolean	finishCalled;
 	int			texEnv[2];
 	int			faceCulling;
@@ -1536,5 +1529,23 @@ void R_LoadPCX( const char *name, byte **pic, int *width, int *height );
 void R_LoadPNG( const char *name, byte **pic, int *width, int *height );
 void R_LoadTGA( const char *name, byte **pic, int *width, int *height );
 
+/////////////////////////////// /////////////////////////////////////
+/*
+void (APIENTRYP qglActiveTextureARB) (GLenum texture);
+void (APIENTRYP qglClientActiveTextureARB) (GLenum texture);
+void (APIENTRYP qglMultiTexCoord2fARB) (GLenum target, GLfloat s, GLfloat t);
+
+void (APIENTRYP qglLockArraysEXT) (GLint first, GLsizei count);
+void (APIENTRYP qglUnlockArraysEXT) (void);
+
+#define GLE(ret, name, ...) name##proc * qgl##name;
+QGL_1_1_PROCS;
+QGL_DESKTOP_1_1_PROCS;
+QGL_ES_1_1_PROCS;
+QGL_1_3_PROCS;
+QGL_1_5_PROCS;
+QGL_3_0_PROCS;
+#undef GLE
+*/
 
 #endif //TR_LOCAL_H

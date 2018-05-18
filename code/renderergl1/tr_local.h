@@ -25,10 +25,10 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #define TR_LOCAL_H
 
 #include "../qcommon/q_shared.h"
-#include "../qcommon/qcommon.h"
+#include "../qcommon/qfiles.h"
 
-#include "../sdl/tr_public.h"
-#include "../sdl/qgl.h"
+#include "../renderer_oa/tr_public.h"
+#include "GL/gl.h"
 
 #include "iqm.h"
 #include "tr_shared.h"
@@ -1680,7 +1680,6 @@ void AxisClear( vec3_t axis[3] );
 char *SkipPath(char *pathname);
 void stripExtension(const char *in, char *out, int destsize);
 const char *getExtension( const char *name );
-
 
 
 #endif //TR_LOCAL_H

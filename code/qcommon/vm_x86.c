@@ -379,7 +379,7 @@ Error handler for jump/call to invalid instruction number
 =================
 */
 
-static void __attribute__((__noreturn__)) ErrJump(void)
+static void ErrJump(void)
 { 
 	Com_Error(ERR_DROP, "program tried to execute code outside VM");
 }
@@ -1046,7 +1046,33 @@ qboolean ConstOptimize(vm_t *vm, int callProcOfsSyscall)
 	return qfalse;
 }
 
+#if idx64
+  #define EAX "%%rax"
+  #define EBX "%%rbx"
+  #define ESP "%%rsp"
+  #define EDI "%%rdi"
+#else
+  #define EAX "%%eax"
+  #define EBX "%%ebx"
+  #define ESP "%%esp"
+  #define EDI "%%edi"
+#endif
 
+static inline int Q_VMftol(void)
+{
+    int retval;
+
+    __asm__ volatile
+        (
+         "movss (" EDI ", " EBX ", 4), %%xmm0\n"
+         "cvttss2si %%xmm0, %0\n"
+         : "=r" (retval)
+         :
+         : "%xmm0"
+        );
+
+    return retval;
+}
 
 void VM_Compile(vm_t *vm, vmHeader_t *header)
 {

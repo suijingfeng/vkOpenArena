@@ -21,9 +21,8 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 */
 // tr_init.c -- functions that are not called every frame
 #include "tr_local.h"
-
 #include "tr_dsa.h"
-#include "../sdl/sdl_glimp.h"
+
 
 
 
@@ -256,7 +255,7 @@ static void InitOpenGL( void )
 	{
 		GLint		temp;
 		
-		GLimp_Init( qtrue );
+		ri.GLimpInit( &glConfig );
 		GLimp_InitExtraExtensions();
 
 		strcpy( renderer_buffer, glConfig.renderer_string );

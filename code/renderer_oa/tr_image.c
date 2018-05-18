@@ -21,7 +21,6 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 */
 // tr_image.c
 #include "tr_local.h"
-#include "../sdl/sdl_glimp.h"
 
 extern trGlobals_t	tr;
 extern backEndState_t backEnd;
@@ -31,8 +30,8 @@ extern glconfig_t glConfig;
 extern glstate_t glState;
 
 
-extern cvar_t *r_ext_texture_filter_anisotropic;
-extern cvar_t *r_ext_max_anisotropy;
+//extern cvar_t *r_ext_texture_filter_anisotropic;
+//extern cvar_t *r_ext_max_anisotropy;
 
 
 cvar_t* r_ignoreGLErrors;
@@ -425,7 +424,7 @@ static void GL_CheckErrors( void )
 {
 	char s[64];
 
-	int err = qglGetError();
+	int err = glGetError();
 	if ( err == GL_NO_ERROR )
 		return;
 
@@ -664,7 +663,7 @@ static void Upload32( unsigned *data, int width, int height, qboolean mipmap, qb
     {
 		if (!mipmap)
 		{
-			qglTexImage2D (GL_TEXTURE_2D, 0, internalFormat, scaled_width, scaled_height, 0, GL_RGBA, GL_UNSIGNED_BYTE, data);
+			glTexImage2D (GL_TEXTURE_2D, 0, internalFormat, scaled_width, scaled_height, 0, GL_RGBA, GL_UNSIGNED_BYTE, data);
 			*pUploadWidth = scaled_width;
 			*pUploadHeight = scaled_height;
 			*format = internalFormat;
@@ -696,7 +695,7 @@ static void Upload32( unsigned *data, int width, int height, qboolean mipmap, qb
 	*pUploadHeight = scaled_height;
 	*format = internalFormat;
 
-	qglTexImage2D(GL_TEXTURE_2D, 0, internalFormat, scaled_width, scaled_height, 0, GL_RGBA, GL_UNSIGNED_BYTE, scaledBuffer );
+	glTexImage2D(GL_TEXTURE_2D, 0, internalFormat, scaled_width, scaled_height, 0, GL_RGBA, GL_UNSIGNED_BYTE, scaledBuffer );
 
 
 	if (mipmap)
@@ -738,27 +737,29 @@ static void Upload32( unsigned *data, int width, int height, qboolean mipmap, qb
 				R_BlendOverTexture( (unsigned char *)scaledBuffer, scaled_width * scaled_height, mipBlendColors[miplevel] );
 			}
 
-			qglTexImage2D (GL_TEXTURE_2D, miplevel, internalFormat, scaled_width, scaled_height, 0, GL_RGBA, GL_UNSIGNED_BYTE, scaledBuffer );
+			glTexImage2D (GL_TEXTURE_2D, miplevel, internalFormat, scaled_width, scaled_height, 0, GL_RGBA, GL_UNSIGNED_BYTE, scaledBuffer );
 		}
 	}
 done:
 
 
 	if (mipmap)
-	{   
+	{
+        /*
         if ( r_ext_texture_filter_anisotropic->integer )
-		    qglTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MAX_ANISOTROPY_EXT, r_ext_max_anisotropy->integer );
-		
-        qglTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, gl_filter_min);
-		qglTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, gl_filter_max);
+		    glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MAX_ANISOTROPY_EXT, r_ext_max_anisotropy->integer );
+		*/
+        glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, gl_filter_min);
+		glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, gl_filter_max);
 	}
 	else
 	{
+        /*
 		if ( r_ext_texture_filter_anisotropic->integer )
-            qglTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MAX_ANISOTROPY_EXT, 1 );
-		
-        qglTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR );
-		qglTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR );
+            glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MAX_ANISOTROPY_EXT, 1 );
+		*/
+        glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR );
+		glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR );
 	}
 
     if ( !r_ignoreGLErrors->integer )
@@ -1028,7 +1029,7 @@ static void R_CreateFogImage( void )
 	borderColor[2] = 1.0;
 	borderColor[3] = 1;
 
-	qglTexParameterfv( GL_TEXTURE_2D, GL_TEXTURE_BORDER_COLOR, borderColor );
+	glTexParameterfv( GL_TEXTURE_2D, GL_TEXTURE_BORDER_COLOR, borderColor );
 	force32upload = 0;		// leilei - paletted fog fix
 }
 
@@ -1141,8 +1142,8 @@ void GL_TextureMode( const char *string )
 		if ( glt->flags & IMGFLAG_MIPMAP )
         {
 			GL_Bind(glt);
-			qglTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, gl_filter_min);
-			qglTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, gl_filter_max);
+			glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, gl_filter_min);
+			glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, gl_filter_max);
 		}
 	}
 }
@@ -1191,7 +1192,7 @@ image_t *R_CreateImage(const char *name, unsigned char* pic, int width, int heig
 	}
 
 	image_t	*image = tr.images[tr.numImages] = ri.Hunk_Alloc( sizeof( image_t ), h_low );
-	qglGenTextures(1, &image->texnum);
+	glGenTextures(1, &image->texnum);
 	tr.numImages++;
 
 	image->type = type;
@@ -1217,12 +1218,12 @@ image_t *R_CreateImage(const char *name, unsigned char* pic, int width, int heig
 	if ( glState.currenttextures[glState.currenttmu] != image->texnum )
     {
 		image->frameUsed = tr.frameCount;
-		qglBindTexture(GL_TEXTURE_2D, image->texnum);
+		glBindTexture(GL_TEXTURE_2D, image->texnum);
         glState.currenttextures[glState.currenttmu] = image->texnum;
 	}
 
-	qglTexParameterf( GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, glWrapClampMode );
-	qglTexParameterf( GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, glWrapClampMode );
+	glTexParameterf( GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, glWrapClampMode );
+	glTexParameterf( GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, glWrapClampMode );
 
     Upload32( (unsigned *)pic, image->width, image->height, image->flags & IMGFLAG_MIPMAP, image->flags & IMGFLAG_PICMIP,
 								isLightmap,	&image->internalFormat,	&image->uploadWidth, &image->uploadHeight );
@@ -1231,7 +1232,7 @@ image_t *R_CreateImage(const char *name, unsigned char* pic, int width, int heig
 
 	// FIXME: this stops fog from setting border color?
 	glState.currenttextures[glState.currenttmu] = 0;
-	qglBindTexture( GL_TEXTURE_2D, 0 );
+	glBindTexture( GL_TEXTURE_2D, 0 );
 
 	if ( isLightmap)
 		GL_SelectTexture( 0 );
@@ -1524,9 +1525,9 @@ void R_SetColorMappings(void)
     {
 		ri.Cvar_Set( "r_gamma", "0.4" );
 	}
-    else if ( r_gamma->value > 4.0f )
+    else if ( r_gamma->value > 3.0f )
     {
-		ri.Cvar_Set( "r_gamma", "4.0" );
+		ri.Cvar_Set( "r_gamma", "3.0" );
 	}
 
 	float g = r_gamma->value;
@@ -1558,7 +1559,7 @@ void R_SetColorMappings(void)
 
 	if ( glConfig.deviceSupportsGamma)
 	{
-		GLimp_SetGamma( s_gammatable, s_gammatable, s_gammatable );
+		ri.SetGamma( s_gammatable, s_gammatable, s_gammatable );
 	}
 }
 

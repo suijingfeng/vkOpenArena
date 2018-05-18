@@ -360,7 +360,7 @@ static void RB_TestFlare( flare_t *f, int dotrace )
 */
 	// read back the z buffer contents
 
-	qglReadPixels( f->windowX, f->windowY, 1, 1, GL_DEPTH_COMPONENT, GL_FLOAT, &depth );
+	glReadPixels( f->windowX, f->windowY, 1, 1, GL_DEPTH_COMPONENT, GL_FLOAT, &depth );
 
 
 	screenZ = backEnd.viewParms.projectionMatrix[14] /
@@ -1114,15 +1114,15 @@ void RB_RenderFlares(void)
 	}
 
 	if ( backEnd.viewParms.isPortal )
-		qglDisable (GL_CLIP_PLANE0);
+		glDisable (GL_CLIP_PLANE0);
 
 
-	qglPushMatrix();
-	qglLoadIdentity();
-	qglMatrixMode( GL_PROJECTION );
-	qglPushMatrix();
-	qglLoadIdentity();
-	qglOrtho( backEnd.viewParms.viewportX, backEnd.viewParms.viewportX + backEnd.viewParms.viewportWidth,
+	glPushMatrix();
+	glLoadIdentity();
+	glMatrixMode( GL_PROJECTION );
+	glPushMatrix();
+	glLoadIdentity();
+	glOrtho( backEnd.viewParms.viewportX, backEnd.viewParms.viewportX + backEnd.viewParms.viewportWidth,
 	          backEnd.viewParms.viewportY, backEnd.viewParms.viewportY + backEnd.viewParms.viewportHeight, -99999, 99999 );
 
 	for( f = r_activeFlares ; f ; f = f->next )
@@ -1133,9 +1133,9 @@ void RB_RenderFlares(void)
 		}
 	}
 
-	qglPopMatrix();
-	qglMatrixMode( GL_MODELVIEW );
-	qglPopMatrix();
+	glPopMatrix();
+	glMatrixMode( GL_MODELVIEW );
+	glPopMatrix();
 }
 
 
@@ -1167,8 +1167,8 @@ void RB_DrawSunFlare( void )
 
 	int fetype = r_flareSun->integer;
 
-	qglLoadMatrixf( backEnd.viewParms.world.modelMatrix );
-	qglTranslatef (backEnd.viewParms.or.origin[0], backEnd.viewParms.or.origin[1], backEnd.viewParms.or.origin[2]);
+	glLoadMatrixf( backEnd.viewParms.world.modelMatrix );
+	glTranslatef (backEnd.viewParms.or.origin[0], backEnd.viewParms.or.origin[1], backEnd.viewParms.or.origin[2]);
 
 	float dist = backEnd.viewParms.zFar / 1.75;		// div sqrt(3)
 	float size = dist * 0.4;
@@ -1184,7 +1184,7 @@ void RB_DrawSunFlare( void )
 	VectorScale( vec2, size, vec2 );
 
 	// farthest depth range
-	qglDepthRange( 1.0, 1.0 );
+	glDepthRange( 1.0, 1.0 );
 
 
     vec3_t	coll;
@@ -1214,7 +1214,7 @@ void RB_DrawSunFlare( void )
     RB_AddFlare( (void *)NULL, 0, sunorg, coll, NULL, size, fetype, 1.0f, 2);
 
 	// back to normal depth range
-	qglDepthRange( 0.0, 1.0 );
+	glDepthRange( 0.0, 1.0 );
 
 	backEnd.doneSunFlare = qtrue;
 }

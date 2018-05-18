@@ -22,14 +22,13 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
 #include "../qcommon/q_shared.h"
 #include "../qcommon/qcommon.h"
-#include "sys_local.h"
+#include "local.h"
 
 #ifndef DEDICATED
 #include "../client/client.h"
 #endif
 
 #include <unistd.h>
-#include <signal.h>
 #include <termios.h>
 #include <fcntl.h>
 #include <sys/time.h>
@@ -244,19 +243,6 @@ field_t *Hist_Next( void )
 }
 
 
-/*
-==================
-CON_SigCont
-Reinitialize console input after receiving SIGCONT, 
-as on Linux the terminal seems to lose all set attributes
-if user did CTRL+Z and then does fg again.
-==================
-*/
-void CON_SigCont(int signum)
-{
-	CON_Init();
-}
-
 
 /*
 ==================
@@ -268,13 +254,6 @@ void CON_Init( void )
     Com_Printf("-------- CON_Init() --------\n");
 	struct termios tc;
 
-	// If the process is backgrounded (running non interactively)
-	// then SIGTTIN or SIGTOU is emitted, if not caught, turns into a SIGSTP
-	signal(SIGTTIN, SIG_IGN);
-	signal(SIGTTOU, SIG_IGN);
-
-	// If SIGCONT is received, reinitialize console
-	signal(SIGCONT, CON_SigCont);
 
 	// Make stdin reads non-blocking
 	fcntl(STDIN_FILENO, F_SETFL, fcntl(STDIN_FILENO, F_GETFL, 0) | O_NONBLOCK );

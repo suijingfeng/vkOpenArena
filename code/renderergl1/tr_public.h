@@ -102,7 +102,7 @@ typedef struct {
 	void	(QDECL *Printf)( int printLevel, const char *fmt, ...) __attribute__ ((format (printf, 2, 3)));
 
 	// abort the game
-	void	(QDECL *Error)( int errorLevel, const char *fmt, ...) __attribute__ ((noreturn, format (printf, 2, 3)));
+	void	(QDECL *Error)( int errorLevel, const char *fmt, ...) __attribute__ ((format (printf, 2, 3)));
 
 	// milliseconds should only be used for profiling, 
 	// never for anything game related. Get time from the refdef
@@ -160,10 +160,10 @@ typedef struct {
 	void	(*CL_WriteAVIVideoFrame)( const unsigned char *buffer, int size );
 
 	// input event handling
-	void	(*IN_Init)(void *windowData);
+	void	(*IN_Init)(void);
 	void	(*IN_Shutdown)(void);
 	void	(*IN_Restart)(void);
-
+    
 	// math
 	// long    (*ftol)(float f);
 
@@ -171,11 +171,23 @@ typedef struct {
 	void	(*Sys_SetEnv)( const char *name, const char *value );
 	qboolean (*Sys_LowPhysicalMemory)( void );
 
+	// platform-dependent functions
+	void	(*GLimp_Init)( glconfig_t *config );
+	void	(*GLimp_Shutdown)( qboolean unloadDLL );
+	void	(*GLimp_EndFrame)( void );
+    void	(*GLimp_Minimize)( void );
+	void	(*GLimp_InitGamma)( glconfig_t *config );
+	void	(*GLimp_SetGamma)( unsigned char red[256], unsigned char green[256], unsigned char blue[256] );
+
+	void*	(*GL_GetProcAddress)( const char *name );
+
+
     // extra
     int32_t ( *Puff)(uint8_t  *dest,		/* pointer to destination pointer */
              uint32_t *destlen,		/* amount of output space */
              uint8_t  *source,		/* pointer to source data pointer */
              uint32_t *sourcelen);	/* amount of input available */
+
 
 } refimport_t;
 

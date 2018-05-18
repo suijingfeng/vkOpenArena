@@ -56,18 +56,16 @@ static qhandle_t R_RegisterMD3(const char *name, model_t *mod)
 		unsigned *u;
 		void *v;
 	} buf;
-	int			lod;
-	int			ident;
-	qboolean	loaded = qfalse;
-	int			numLoaded;
-	char filename[MAX_QPATH], namebuf[MAX_QPATH+20];
-	char *fext, defex[] = "md3";
 
-	numLoaded = 0;
+    qboolean loaded = qfalse;
+	char filename[MAX_QPATH], namebuf[MAX_QPATH+20];
+	char defex[] = "md3";
+
+	int numLoaded = 0;
 
 	strcpy(filename, name);
 
-	fext = strchr(filename, '.');
+	char* fext = strchr(filename, '.');
 	if(!fext)
 		fext = defex;
 	else
@@ -76,7 +74,9 @@ static qhandle_t R_RegisterMD3(const char *name, model_t *mod)
 		fext++;
 	}
 
-	for (lod = MD3_MAX_LODS - 1 ; lod >= 0 ; lod--)
+    int	lod = MD3_MAX_LODS - 1;
+
+	for (; lod >= 0 ; lod--)
 	{
 		if(lod)
 			Com_sprintf(namebuf, sizeof(namebuf), "%s_%d.%s", filename, lod, fext);
@@ -87,7 +87,7 @@ static qhandle_t R_RegisterMD3(const char *name, model_t *mod)
 		if(!buf.u)
 			continue;
 		
-		ident = LittleLong(* (unsigned *) buf.u);
+		int ident = LittleLong(* (unsigned *) buf.u);
 		if (ident == MD3_IDENT)
 			loaded = R_LoadMD3(mod, lod, buf.u, name);
 		else
@@ -201,7 +201,7 @@ static qboolean R_LoadMD3(model_t *mod, int lod, void *buffer, const char *mod_n
 	md3St_t				*st;
 	md3XyzNormal_t		*xyz;
 	md3Tag_t			*tag;
-	int					size;
+
 
 	md3Header_t* pinmodel = (md3Header_t *)buffer;
 
@@ -213,7 +213,7 @@ static qboolean R_LoadMD3(model_t *mod, int lod, void *buffer, const char *mod_n
 	}
 
 	mod->type = MOD_MESH;
-	size = LittleLong(pinmodel->ofsEnd);
+	int size = LittleLong(pinmodel->ofsEnd);
 	mod->dataSize += size;
 	mod->md3[lod] = ri.Hunk_Alloc( size, h_low );
     pinmodel->ofsEnd = LittleLong(pinmodel->ofsEnd);

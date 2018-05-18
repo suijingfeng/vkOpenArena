@@ -73,7 +73,6 @@ extern void (APIENTRYP qglUnlockArraysEXT) (void);
 	GLE(void, GetBooleanv, GLenum pname, GLboolean *params) \
 	GLE(GLenum, GetError, void) \
 	GLE(void, GetIntegerv, GLenum pname, GLint *params) \
-	GLE(void, GetFloatv, GLenum pname, GLfloat *params) \
 	GLE(const GLubyte *, GetString, GLenum name) \
 	GLE(void, LineWidth, GLfloat width) \
 	GLE(void, LoadIdentity, void) \
@@ -82,8 +81,6 @@ extern void (APIENTRYP qglUnlockArraysEXT) (void);
 	GLE(void, PolygonOffset, GLfloat factor, GLfloat units) \
 	GLE(void, PopMatrix, void) \
 	GLE(void, PushMatrix, void) \
-	GLE(void, PushClientAttrib, GLbitfield mask) \
-	GLE(void, PopClientAttrib, void) \
 	GLE(void, ReadPixels, GLint x, GLint y, GLsizei width, GLsizei height, GLenum format, GLenum type, GLvoid *pixels) \
 	GLE(void, Scissor, GLint x, GLint y, GLsizei width, GLsizei height) \
 	GLE(void, ShadeModel, GLenum mode) \
@@ -94,7 +91,6 @@ extern void (APIENTRYP qglUnlockArraysEXT) (void);
 	GLE(void, TexEnvf, GLenum target, GLenum pname, GLfloat param) \
 	GLE(void, TexImage2D, GLenum target, GLint level, GLint internalFormat, GLsizei width, GLsizei height, GLint border, GLenum format, GLenum type, const GLvoid *pixels) \
 	GLE(void, TexParameterf, GLenum target, GLenum pname, GLfloat param) \
-	GLE(void, TexParameterfv, GLenum target, GLenum pname, GLfloat* param) \
 	GLE(void, TexParameteri, GLenum target, GLenum pname, GLint param) \
 	GLE(void, TexSubImage2D, GLenum target, GLint level, GLint xoffset, GLint yoffset, GLsizei width, GLsizei height, GLenum format, GLenum type, const GLvoid *pixels) \
 	GLE(void, Translatef, GLfloat x, GLfloat y, GLfloat z) \

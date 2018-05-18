@@ -1782,7 +1782,7 @@ static qboolean CollapseMultitexture( void ) {
 	int i;
 	textureBundle_t tmpBundle;
 
-	if ( !qglActiveTextureARB ) {
+	if ( !glActiveTextureARB ) {
 		return qfalse;
 	}
 

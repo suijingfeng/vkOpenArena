@@ -26,8 +26,8 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
 #include "../qcommon/q_shared.h"
 #include "../qcommon/qcommon.h"
-#include "../sdl/qgl.h"
-#include "../sdl/tr_public.h"
+#include "qgl.h"
+#include "../renderer_oa/tr_public.h"
 
 #include "tr_extratypes.h"
 #include "tr_extramath.h"
@@ -2515,4 +2515,21 @@ void AxisClear( vec3_t axis[3] );
 char *SkipPath(char *pathname);
 void stripExtension(const char *in, char *out, int destsize);
 const char *getExtension( const char *name );
+
+///////////////////////////////////////////////////////////////////////////
+
+void (APIENTRYP qglActiveTextureARB) (GLenum texture);
+void (APIENTRYP qglClientActiveTextureARB) (GLenum texture);
+void (APIENTRYP qglMultiTexCoord2fARB) (GLenum target, GLfloat s, GLfloat t);
+
+void (APIENTRYP qglLockArraysEXT) (GLint first, GLsizei count);
+void (APIENTRYP qglUnlockArraysEXT) (void);
+
+#define GLE(ret, name, ...) name##proc * qgl##name;
+QGL_1_1_PROCS;
+QGL_DESKTOP_1_1_PROCS;
+QGL_ES_1_1_PROCS;
+QGL_3_0_PROCS;
+#undef GLE
+
 #endif //TR_LOCAL_H

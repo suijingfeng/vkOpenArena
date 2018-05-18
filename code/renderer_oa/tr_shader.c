@@ -1855,7 +1855,7 @@ static qboolean CollapseMultitexture( void ) {
 	int i;
 	textureBundle_t tmpBundle;
 
-	if ( !qglActiveTextureARB ) {
+	if ( !glActiveTextureARB ) {
 		return qfalse;
 	}
 
@@ -2825,14 +2825,9 @@ it and returns a valid (possibly default) shader_t to be used internally.
 */
 shader_t *R_GetShaderByHandle( qhandle_t hShader )
 {
-	if ( hShader < 0 )
+	if ( hShader < 0 || hShader >= tr.numShaders )
     {
 	    ri.Printf( PRINT_WARNING, "R_GetShaderByHandle: out of range hShader '%d'\n", hShader );
-		return tr.defaultShader;
-	}
-    else if ( hShader >= tr.numShaders )
-    {
-		ri.Printf( PRINT_WARNING, "R_GetShaderByHandle: out of range hShader '%d'\n", hShader );
 		return tr.defaultShader;
 	}
 	return tr.shaders[hShader];

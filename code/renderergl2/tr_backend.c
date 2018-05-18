@@ -22,7 +22,7 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #include "tr_local.h"
 #include "tr_fbo.h"
 #include "tr_dsa.h"
-#include "../sdl/sdl_glimp.h"
+
 
 backEndData_t	*backEndData;
 backEndState_t	backEnd;
@@ -1388,9 +1388,7 @@ const void	*RB_SwapBuffers( const void *data ) {
 		qglFinish();
 	}
 
-	GLimp_LogComment( "***************** RB_SwapBuffers *****************\n\n\n" );
-
-	GLimp_EndFrame();
+	ri.GLimpEndFrame();
 
 	backEnd.framePostProcessed = qfalse;
 	backEnd.projection2D = qfalse;

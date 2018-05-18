@@ -29,6 +29,7 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #include "q_shared.h"
 #include "qcommon.h"
 #include "unzip.h"
+#include "../sys/public.h"
 
 /*
 =============================================================================
@@ -1642,28 +1643,29 @@ FS_Seek
 
 =================
 */
-int FS_Seek( fileHandle_t f, long offset, int origin ) {
-	int		_origin;
+int FS_Seek( fileHandle_t f, long offset, int origin )
+{
 
 	if ( !fs_searchpaths ) {
 		Com_Error( ERR_FATAL, "Filesystem call made without initialization" );
 		return -1;
 	}
 
-	if (fsh[f].streamed) {
-		int r;
+	if (fsh[f].streamed)
+    {
 		fsh[f].streamed = qfalse;
-		r = FS_Seek( f, offset, origin );
+		int r = FS_Seek( f, offset, origin );
 		fsh[f].streamed = qtrue;
 		return r;
 	}
 
-	if (fsh[f].zipFile == qtrue) {
+	if (fsh[f].zipFile == qtrue)
+    {
 		//FIXME: this is really, really crappy
 		//(but better than what was here before)
-		byte	buffer[PK3_SEEK_BUFFER_SIZE];
-		int		remainder;
-		int		currentPosition = FS_FTell( f );
+		unsigned char buffer[PK3_SEEK_BUFFER_SIZE];
+		int	currentPosition = FS_FTell( f );
+		int	remainder;
 
 		// change negative offsets into FS_SEEK_SET
 		if ( offset < 0 ) {
@@ -1717,10 +1719,14 @@ int FS_Seek( fileHandle_t f, long offset, int origin ) {
 				Com_Error( ERR_FATAL, "Bad origin in FS_Seek" );
 				return -1;
 		}
-	} else {
-		FILE *file;
-		file = FS_FileForHandle(f);
-		switch( origin ) {
+	}
+    else
+    {
+		FILE *file = FS_FileForHandle(f);
+        int	_origin = 0;
+
+		switch( origin )
+        {
 		case FS_SEEK_CUR:
 			_origin = SEEK_CUR;
 			break;

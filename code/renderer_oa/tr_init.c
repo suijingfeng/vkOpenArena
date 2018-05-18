@@ -22,7 +22,6 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 // tr_init.c -- functions that are not called every frame
 
 #include "tr_local.h"
-#include "../sdl/sdl_glimp.h"
 
 extern shaderCommands_t tess;
 extern backEndData_t* backEndData;	// the second one may not be allocated
@@ -84,44 +83,44 @@ static const int s_numVidModes = ARRAY_LEN( r_vidModes );
 
 static void GL_SetDefaultState(void)
 {
-	qglClearDepth( 1.0f );
+	glClearDepth( 1.0f );
 
-	qglCullFace(GL_FRONT);
+	glCullFace(GL_FRONT);
 
-	qglColor4f(1,1,1,1);
+	glColor4f(1,1,1,1);
 
 	// initialize downstream texture unit if we're running in a multitexture environment
-	if ( qglActiveTextureARB )
+	if ( glActiveTextureARB )
     {
 		GL_SelectTexture( 1 );
 		GL_TextureMode( r_textureMode->string );
 		GL_TexEnv( GL_MODULATE );
-		qglDisable( GL_TEXTURE_2D );
+		glDisable( GL_TEXTURE_2D );
 		GL_SelectTexture( 0 );
 	}
 
-	qglEnable(GL_TEXTURE_2D);
+	glEnable(GL_TEXTURE_2D);
 	GL_TextureMode( r_textureMode->string );
 	GL_TexEnv( GL_MODULATE );
 
-	qglShadeModel( GL_SMOOTH );
-	qglDepthFunc( GL_LEQUAL );
+	glShadeModel( GL_SMOOTH );
+	glDepthFunc( GL_LEQUAL );
 
 	// the vertex array is always enabled, but the color and texture
 	// arrays are enabled and disabled around the compiled vertex array call
-	qglEnableClientState(GL_VERTEX_ARRAY);
+	glEnableClientState(GL_VERTEX_ARRAY);
 
 	//
 	// make sure our GL state vector is set correctly
 	//
 	glState.glStateBits = GLS_DEPTHTEST_DISABLE | GLS_DEPTHMASK_TRUE;
 
-	qglPolygonMode (GL_FRONT_AND_BACK, GL_FILL);
-	qglDepthMask( GL_TRUE );
-	qglDisable( GL_DEPTH_TEST );
-	qglEnable( GL_SCISSOR_TEST );
-	qglDisable( GL_CULL_FACE );
-	qglDisable( GL_BLEND );
+	glPolygonMode (GL_FRONT_AND_BACK, GL_FILL);
+	glDepthMask( GL_TRUE );
+	glDisable( GL_DEPTH_TEST );
+	glEnable( GL_SCISSOR_TEST );
+	glDisable( GL_CULL_FACE );
+	glDisable( GL_BLEND );
 }
 
 
@@ -170,8 +169,8 @@ static void GfxInfo_f( void )
 
 
 	ri.Printf( PRINT_ALL, "texturemode: %s\n", r_textureMode->string );
-	ri.Printf( PRINT_ALL, "multitexture: %s\n", enablestrings[qglActiveTextureARB != 0] );
-//	ri.Printf( PRINT_ALL, "compiled vertex arrays: %s\n", enablestrings[qglLockArraysEXT != 0 ] );
+	ri.Printf( PRINT_ALL, "multitexture: %s\n", enablestrings[glActiveTextureARB != 0] );
+//	ri.Printf( PRINT_ALL, "compiled vertex arrays: %s\n", enablestrings[glLockArraysEXT != 0 ] );
 	ri.Printf( PRINT_ALL, "texenv add: %s\n", enablestrings[glConfig.textureEnvAddAvailable != 0] );
 	ri.Printf( PRINT_ALL, "compressed textures: %s\n", enablestrings[glConfig.textureCompression!=TC_NONE] );
 
@@ -191,12 +190,45 @@ static void InitOpenGL(void)
 	//		- r_fullscreen
 	//		- r_mode
 	//		- r_(color|depth|stencil)bits
+	ri.Printf( PRINT_ALL, "-------- InitOpenGL --------\n");
 
-    GLimp_Init(qfalse);
-    // GLimp_InitExtraExtensions();
+	if ( glConfig.vidWidth == 0 )
+	{
+		GLint max_texture_size;
+		GLint max_shader_units = -1;
+		GLint max_bind_units = -1;
+        ri.GLimpInit(&glConfig);
+        // GLimp_InitExtraExtensions();
 
-    // OpenGL driver constants
-    qglGetIntegerv( GL_MAX_TEXTURE_SIZE, &glConfig.maxTextureSize );
+		// OpenGL driver constants
+		glGetIntegerv( GL_MAX_TEXTURE_SIZE, &max_texture_size );
+		glConfig.maxTextureSize = max_texture_size;
+
+		// stubbed or broken drivers may have reported 0...
+		if ( glConfig.maxTextureSize <= 0 ) 
+			glConfig.maxTextureSize = 0;
+
+		glGetIntegerv( GL_MAX_TEXTURE_IMAGE_UNITS, &max_shader_units );
+		glGetIntegerv( GL_MAX_COMBINED_TEXTURE_IMAGE_UNITS, &max_bind_units );
+
+		if ( max_bind_units > max_shader_units )
+			max_bind_units = max_shader_units;
+		if ( max_bind_units > 16 )
+			max_bind_units = 16;
+
+		if ( glConfig.numTextureUnits && max_bind_units > 0 )
+			glConfig.numTextureUnits = max_bind_units;
+
+	    //	QGL_InitARB();
+
+		glConfig.deviceSupportsGamma = qfalse;
+
+		//if ( !r_ignorehwgamma->integer )
+		{
+			ri.InitGamma( &glConfig );
+		}
+
+    }
 
     // stubbed or broken drivers may have reported 0...
     if( glConfig.maxTextureSize < 0 )
@@ -749,23 +781,23 @@ static void R_DeleteTextures( void )
 
 	for(i=0; i<tr.numImages ; i++)
     {
-		qglDeleteTextures( 1, &tr.images[i]->texnum );
+		glDeleteTextures( 1, &tr.images[i]->texnum );
 	}
 	memset( tr.images, 0, sizeof( tr.images ) );
 
 	tr.numImages = 0;
 
 	memset( glState.currenttextures, 0, sizeof( glState.currenttextures ) );
-	if ( qglActiveTextureARB )
+	if ( glActiveTextureARB )
     {
 		GL_SelectTexture( 1 );
-		qglBindTexture( GL_TEXTURE_2D, 0 );
+		glBindTexture( GL_TEXTURE_2D, 0 );
 		GL_SelectTexture( 0 );
-		qglBindTexture( GL_TEXTURE_2D, 0 );
+		glBindTexture( GL_TEXTURE_2D, 0 );
 	}
     else
     {
-		qglBindTexture( GL_TEXTURE_2D, 0 );
+		glBindTexture( GL_TEXTURE_2D, 0 );
 	}
 }
 
@@ -795,7 +827,7 @@ void RE_Shutdown( qboolean destroyWindow )
 	// shut down platform specific OpenGL stuff
 	if( destroyWindow )
     {
-		GLimp_Shutdown();
+		ri.GLimpShutdown( destroyWindow );
 
 		memset(&glConfig, 0, sizeof( glConfig ));
 		memset(&glState, 0, sizeof( glState ));
@@ -852,12 +884,6 @@ void R_Init(void)
 
 	R_NoiseInit();
 
-#if defined( _WIN32 )
-	// leilei -  Get some version info first, code torn from quake
-	OSVERSIONINFO vinfo;
-	vinfo.dwOSVersionInfoSize = sizeof(vinfo);
-#endif
-
 	//
 	// latched and archived variables
 	// temporary latched variables that can only change over a restart
@@ -901,7 +927,7 @@ void R_Init(void)
     R_InitMain();
     R_InitWorld();
 
-    int err = qglGetError();
+    int err = glGetError();
 	if ( err != GL_NO_ERROR )
 		ri.Printf( PRINT_ALL, "glGetError() = 0x%x\n", err);
 
@@ -911,12 +937,11 @@ void R_Init(void)
 	ri.Cmd_AddCommand( "shaderlist", R_ShaderList_f );
 	ri.Cmd_AddCommand( "skinlist", R_SkinList_f );
 	ri.Cmd_AddCommand( "modellist", R_Modellist_f );
-//	ri.Cmd_AddCommand( "modelist", R_ModeList_f );
 	ri.Cmd_AddCommand( "imagelistmaponly", R_ImageListMapOnly_f );
 	ri.Cmd_AddCommand( "screenshot", R_ScreenShot_f );
 	ri.Cmd_AddCommand( "screenshotJPEG", R_ScreenShotJPEG_f );
 	ri.Cmd_AddCommand( "gfxinfo", GfxInfo_f );
-	ri.Cmd_AddCommand( "minimize", GLimp_Minimize );
+//	ri.Cmd_AddCommand( "minimize", GLimp_Minimize );
 
 	ri.Printf( PRINT_ALL, "------- R_Init() finished -------\n\n");
 }
@@ -1000,8 +1025,9 @@ refexport_t* GetRefAPI(int apiVersion, refimport_t *rimp)
 	re.RemapShader = R_RemapShader;
 	re.GetEntityToken = R_GetEntityToken;
 	re.inPVS = R_inPVS;
-
 	re.TakeVideoFrame = RE_TakeVideoFrame;
+
+    re.SetColorMappings = R_SetColorMappings;
 
 	return &re;
 }

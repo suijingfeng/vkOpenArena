@@ -1041,12 +1041,10 @@ void RB_CalcSpecularAlpha( unsigned char *alphas )
     {
 
 		VectorSubtract( lightOrigin, v, lightDir );
-//		ilength = Q_rsqrt( DotProduct( lightDir, lightDir ) );
 		FastVectorNormalize( lightDir );
 
 		// calculate the specular color
 		float d = DotProduct (normal, lightDir);
-//		d *= ilength;
 
 		// we don't optimize for the d < 0 case since this tends to
 		// cause visual artifacts such as faceted "snapping"
