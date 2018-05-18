@@ -459,7 +459,6 @@ static void Upload32( unsigned *data, int width, int height, qboolean mipmap, qb
 	unsigned *resampledBuffer = NULL;
 	GLenum	internalFormat = GL_RGB;
 
-	int		forceBits = 0; 
 	int		scaled_width, scaled_height;
 	int		i;
 

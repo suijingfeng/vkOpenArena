@@ -50,7 +50,7 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #include <unistd.h>
 
 #include <GL/glx.h>
-
+#include <GL/glxext.h> 
 #include <X11/keysym.h>
 #include <X11/cursorfont.h>
 #include <X11/Xatom.h>
@@ -710,7 +710,6 @@ void GLimp_Init( glconfig_t *config )
 	// This values force the UI to disable driver selection
 	config->driverType = GLDRV_ICD;
 	config->hardwareType = GLHW_GENERIC;
-   
 }
 
 
@@ -723,22 +722,6 @@ void GLimp_Init( glconfig_t *config )
 */
 void GLimp_EndFrame( void )
 {
-/*  
-    //
-	// swapinterval stuff
-	//
-	if ( r_swapInterval->modified ) {
-		r_swapInterval->modified = qfalse;
-
-		if ( qglXSwapIntervalEXT ) {
-			qglXSwapIntervalEXT( dpy, win, r_swapInterval->integer );
-		} else if ( qglXSwapIntervalMESA ) {
-			qglXSwapIntervalMESA( r_swapInterval->integer );
-		} else if ( qglXSwapIntervalSGI ) {
-			qglXSwapIntervalSGI( r_swapInterval->integer );
-		}
-	}
-*/
 	// don't flip if drawing to front buffer
 	if ( Q_stricmp( r_drawBuffer->string, "GL_FRONT" ) != 0 )
 	{
