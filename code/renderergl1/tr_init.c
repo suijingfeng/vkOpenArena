@@ -174,43 +174,64 @@ int		max_polyverts;
 ** setting variables, checking GL constants, and reporting the gfx system config
 ** to the user.
 */
-static void InitOpenGL( void )
+static void InitOpenGL(void)
 {
-	char renderer_buffer[1024];
-
-	//
 	// initialize OS specific portions of the renderer
 	//
 	// GLimp_Init directly or indirectly references the following cvars:
 	//		- r_fullscreen
 	//		- r_mode
 	//		- r_(color|depth|stencil)bits
-	//		- r_ignorehwgamma
-	//		- r_gamma
-	//
-	
+	ri.Printf( PRINT_ALL, "-------- InitOpenGL --------\n");
+
 	if ( glConfig.vidWidth == 0 )
 	{
-		GLint		temp;
-		
-		ri.GLimpInit( qfalse );
-
-		strcpy( renderer_buffer, glConfig.renderer_string );
-		Q_strlwr( renderer_buffer );
+		GLint max_texture_size;
+		GLint max_shader_units = -1;
+		GLint max_bind_units = -1;
+        ri.GLimpInit(&glConfig);
+        // GLimp_InitExtraExtensions();
 
 		// OpenGL driver constants
-		glGetIntegerv( GL_MAX_TEXTURE_SIZE, &temp );
-		glConfig.maxTextureSize = temp;
+		glGetIntegerv( GL_MAX_TEXTURE_SIZE, &max_texture_size );
+		glConfig.maxTextureSize = max_texture_size;
 
 		// stubbed or broken drivers may have reported 0...
 		if ( glConfig.maxTextureSize <= 0 ) 
-		{
 			glConfig.maxTextureSize = 0;
+
+		glGetIntegerv( GL_MAX_TEXTURE_IMAGE_UNITS, &max_shader_units );
+		glGetIntegerv( GL_MAX_COMBINED_TEXTURE_IMAGE_UNITS, &max_bind_units );
+
+		if ( max_bind_units > max_shader_units )
+			max_bind_units = max_shader_units;
+		if ( max_bind_units > 16 )
+			max_bind_units = 16;
+
+		if ( glConfig.numTextureUnits && max_bind_units > 0 )
+			glConfig.numTextureUnits = max_bind_units;
+
+	    //	QGL_InitARB();
+
+		glConfig.deviceSupportsGamma = qfalse;
+
+		//if ( !r_ignorehwgamma->integer )
+		{
+			ri.InitGamma( &glConfig );
 		}
-	}
+    }
+
+    // stubbed or broken drivers may have reported 0...
+    if( glConfig.maxTextureSize < 0 )
+    {
+        glConfig.maxTextureSize = 0;
+    }
 
 	// set default state
 	GL_SetDefaultState();
+    
+    // print info
+	GfxInfo_f();
 }
 
 /*
@@ -256,76 +277,6 @@ void GL_CheckErrors( void ) {
 	ri.Error( ERR_FATAL, "GL_CheckErrors: %s", s );
 }
 
-
-/*
-** R_GetModeInfo
-*/
-typedef struct vidmode_s
-{
-	const char *description;
-	int width, height;
-	float pixelAspect;		// pixel width / height
-} vidmode_t;
-
-vidmode_t r_vidModes[] =
-{
-	{ "Mode  0: 320x240",		320,	240,	1 },
-	{ "Mode  1: 400x300",		400,	300,	1 },
-	{ "Mode  2: 512x384",		512,	384,	1 },
-	{ "Mode  3: 640x480",		640,	480,	1 },
-	{ "Mode  4: 800x600",		800,	600,	1 },
-	{ "Mode  5: 960x720",		960,	720,	1 },
-	{ "Mode  6: 1024x768",		1024,	768,	1 },
-	{ "Mode  7: 1152x864",		1152,	864,	1 },
-	{ "Mode  8: 1280x1024",		1280,	1024,	1 },
-	{ "Mode  9: 1600x1200",		1600,	1200,	1 },
-	{ "Mode 10: 2048x1536",		2048,	1536,	1 },
-	{ "Mode 11: 856x480 (wide)",856,	480,	1 }
-};
-static int	s_numVidModes = ARRAY_LEN( r_vidModes );
-
-qboolean R_GetModeInfo( int *width, int *height, float *windowAspect, int mode ) {
-	vidmode_t	*vm;
-	float			pixelAspect;
-
-	if ( mode < -1 ) {
-		return qfalse;
-	}
-	if ( mode >= s_numVidModes ) {
-		return qfalse;
-	}
-
-	if ( mode == -1 ) {
-		*width = r_customwidth->integer;
-		*height = r_customheight->integer;
-		pixelAspect = r_customPixelAspect->value;
-	} else {
-		vm = &r_vidModes[mode];
-
-		*width  = vm->width;
-		*height = vm->height;
-		pixelAspect = vm->pixelAspect;
-	}
-
-	*windowAspect = (float)*width / ( *height * pixelAspect );
-
-	return qtrue;
-}
-
-/*
-** R_ModeList_f
-*/
-static void R_ModeList_f( void )
-{
-	int i;
-
-	ri.Printf( PRINT_ALL, "\n" );
-	for ( i = 0; i < s_numVidModes; i++ )
-	{
-		ri.Printf( PRINT_ALL, "%s\n", r_vidModes[i].description );
-	}
-	ri.Printf( PRINT_ALL, "\n" );
-}
 
 
 /* 
@@ -1129,7 +1080,6 @@ void R_Register( void )
 	ri.Cmd_AddCommand( "shaderlist", R_ShaderList_f );
 	ri.Cmd_AddCommand( "skinlist", R_SkinList_f );
 	ri.Cmd_AddCommand( "modellist", R_Modellist_f );
-	ri.Cmd_AddCommand( "modelist", R_ModeList_f );
 	ri.Cmd_AddCommand( "screenshot", R_ScreenShot_f );
 	ri.Cmd_AddCommand( "screenshotJPEG", R_ScreenShotJPEG_f );
 	ri.Cmd_AddCommand( "gfxinfo", GfxInfo_f );

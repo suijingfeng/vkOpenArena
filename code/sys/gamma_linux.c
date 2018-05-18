@@ -1,20 +1,5 @@
 #include "local.h"
-#include <stdarg.h>
-#include <stdio.h>
-#include <signal.h>
-#include <pthread.h>
-#include <semaphore.h>
 
-#include <sys/time.h>
-#include <sys/types.h>
-#include <unistd.h>
-
-#include <GL/glx.h>
-
-#include <X11/keysym.h>
-#include <X11/cursorfont.h>
-#include <X11/Xatom.h>
-#include <X11/XKBlib.h>
 
 extern glwstate_t glw_state;
 ////////////////////////////////////////////////////

@@ -25,6 +25,7 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #define __TR_FBO_H__
 
 #include "tr_local.h"
+#include <GL/gl.h>
 
 struct image_s;
 struct shaderProgram_s;

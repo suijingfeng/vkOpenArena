@@ -1,14 +1,4 @@
-#include <termios.h>
-#include <sys/ioctl.h>
-#ifdef __linux__
-  #include <sys/stat.h>
-  #include <sys/vt.h>
-#endif
-#include <stdarg.h>
 #include <stdio.h>
-#include <signal.h>
-#include <pthread.h>
-#include <semaphore.h>
 
 #include <sys/time.h>
 #include <sys/types.h>
@@ -20,11 +10,6 @@
 #include <X11/cursorfont.h>
 #include <X11/Xatom.h>
 #include <X11/XKBlib.h>
-
-#if !defined(__sun)
-#include <X11/extensions/Xxf86dga.h>
-#endif
-
 
 #include "inputs.h"
 #include "local.h"

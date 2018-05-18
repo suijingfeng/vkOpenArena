@@ -26,7 +26,6 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
 #include "../qcommon/q_shared.h"
 #include "../qcommon/qcommon.h"
-#include "qgl.h"
 #include "../renderer_oa/tr_public.h"
 
 #include "tr_extratypes.h"
@@ -35,6 +34,7 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #include "tr_postprocess.h"
 #include "iqm.h"
 #include "tr_shared.h"
+#include <GL/gl.h>
 
 extern refimport_t ri;
 extern glconfig_t glConfig;
@@ -2518,6 +2518,8 @@ const char *getExtension( const char *name );
 
 ///////////////////////////////////////////////////////////////////////////
 
+/*
+
 void (APIENTRYP qglActiveTextureARB) (GLenum texture);
 void (APIENTRYP qglClientActiveTextureARB) (GLenum texture);
 void (APIENTRYP qglMultiTexCoord2fARB) (GLenum target, GLfloat s, GLfloat t);
@@ -2531,5 +2533,7 @@ QGL_DESKTOP_1_1_PROCS;
 QGL_ES_1_1_PROCS;
 QGL_3_0_PROCS;
 #undef GLE
+
+*/
 
 #endif //TR_LOCAL_H

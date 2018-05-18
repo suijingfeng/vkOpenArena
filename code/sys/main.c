@@ -43,9 +43,8 @@ static char binaryPath[ MAX_OSPATH ] = { 0 };
 static char installPath[ MAX_OSPATH ] = { 0 };
 
 
-char *Sys_Cwd( void )
+static char *Sys_Cwd( void )
 {
-    Com_Printf(" Sys_Cwd()\n");
 	static char cwd[MAX_OSPATH];
 
 	char *result = getcwd( cwd, sizeof( cwd ) - 1 );
@@ -58,22 +57,14 @@ char *Sys_Cwd( void )
 }
 
 
-/*
-=================
-Sys_SetBinaryPath
-=================
-*/
+
 void Sys_SetBinaryPath(const char *path)
 {
-	Q_strncpyz(binaryPath, path, sizeof(binaryPath));
+	strcpy(binaryPath, path);
 }
 
-/*
-=================
-Sys_BinaryPath
-=================
-*/
-char* Sys_BinaryPath(void)
+
+char* Sys_GetBinaryPath(void)
 {
 	return binaryPath;
 }
@@ -111,7 +102,7 @@ Sys_DefaultAppPath
 */
 char *Sys_DefaultAppPath(void)
 {
-	return Sys_BinaryPath();
+	return Sys_GetBinaryPath();
 }
 
 
@@ -189,7 +180,7 @@ qboolean Sys_WritePIDFile( void )
 		fclose( f );
 	}
 	else
-		Com_Printf( S_COLOR_YELLOW "Couldn't write %s.\n", pidFile );
+		fprintf(stderr, "Couldn't write %s.\n", pidFile );
 
 	return stale;
 }
@@ -335,25 +326,6 @@ void Sys_Error( const char *error, ... )
 	Sys_Exit( 3 );
 }
 
-#if 0
-/*
-=================
-Sys_Warn
-=================
-*/
-static __attribute__ ((format (printf, 1, 2))) void Sys_Warn( char *warning, ... )
-{
-	va_list argptr;
-	char    string[1024];
-
-	va_start (argptr,warning);
-	Q_vsnprintf (string, sizeof(string), warning, argptr);
-	va_end (argptr);
-
-	CON_Print( va( "Warning: %s", string ) );
-}
-#endif
-
 /*
 ============
 Sys_FileTime
@@ -383,12 +355,12 @@ void *Sys_LoadGameDll(const char *name,	intptr_t (QDECL **entryPoint)(int, ...),
 {
 
 	assert(name);
-	Com_Printf( "Loading DLL file: %s\n", name);
+	printf( "Loading DLL file: %s\n", name);
 	
     void* libHandle = Sys_LoadLibrary(name);
 	if(!libHandle)
 	{
-		Com_Printf("Sys_LoadGameDll(%s) failed:\n\"%s\"\n", name, Sys_LibraryError());
+		printf("Sys_LoadGameDll(%s) failed:\n\"%s\"\n", name, Sys_LibraryError());
 		return NULL;
 	}
 
@@ -399,13 +371,14 @@ void *Sys_LoadGameDll(const char *name,	intptr_t (QDECL **entryPoint)(int, ...),
 
 	if ( !*entryPoint || !dllEntry )
 	{
-		Com_Printf ( "Sys_LoadGameDll(%s) failed to find vmMain function:\n\"%s\" !\n", name, Sys_LibraryError( ) );
+		printf ( "Sys_LoadGameDll(%s) failed to find vmMain function:\n\"%s\" !\n", name, Sys_LibraryError( ) );
 		Sys_UnloadLibrary(libHandle);
 
 		return NULL;
 	}
 
-	Com_Printf ( "Sys_LoadGameDll(%s) found vmMain function at %p\n", name, *entryPoint );
+	printf( "Sys_LoadGameDll(%s) found vmMain function at %p\n", name, *entryPoint );
+
 	dllEntry( systemcalls );
 
 	return libHandle;
@@ -431,9 +404,9 @@ void Sys_ParseArgs( int argc, char **argv )
 
 #ifndef DEFAULT_BASEDIR
 #	ifdef MACOS_X
-#		define DEFAULT_BASEDIR Sys_StripAppBundle(Sys_BinaryPath())
+#		define DEFAULT_BASEDIR Sys_StripAppBundle(Sys_GetBinaryPath())
 #	else
-#		define DEFAULT_BASEDIR Sys_BinaryPath()
+#		define DEFAULT_BASEDIR Sys_GetBinaryPath()
 #	endif
 #endif
 

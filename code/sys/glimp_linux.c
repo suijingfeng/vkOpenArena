@@ -130,12 +130,12 @@ typedef struct vidmode_s
 
 static const vidmode_t cl_vidModes[] =
 {
-	{ "Mode  0: 320x240",			320,	240,	1 },
-	{ "Mode  1: 400x300",			400,	300,	1 },
-	{ "Mode  2: 512x384",			512,	384,	1 },
+	{ "Mode  0: 1920x1080",			1920,	1080,	1 },
+	{ "Mode  1: 1440x900 (16:10)",	1440,	900,	1 },
+	{ "Mode  2: 1366x768",			1366,	768,	1 },
 	{ "Mode  3: 640x480",			640,	480,	1 },
 	{ "Mode  4: 800x600",			800,	600,	1 },
-	{ "Mode  5: 960x720",			960,	720,	1 },
+	{ "Mode  5: 1280x800 (16:10)",	1280,	800,	1 },
 	{ "Mode  6: 1024x768",			1024,	768,	1 },
 	{ "Mode  7: 1152x864",			1152,	864,	1 },
 	{ "Mode  8: 1280x1024 (5:4)",	1280,	1024,	1 },
@@ -189,6 +189,17 @@ qboolean CL_GetModeInfo( int *width, int *height, int mode, int dw, int dh, qboo
 }
 
 
+static void ModeList_f( void )
+{
+	int i;
+
+	Com_Printf("\n" );
+	for ( i = 0; i < s_numVidModes; i++ )
+	{
+		Com_Printf( "%s\n", cl_vidModes[i].description );
+	}
+	Com_Printf("\n" );
+}
 
 ////////////////////////////////////////////////////////////////////////////////////////
 
@@ -208,7 +219,8 @@ qboolean GL_Init( const char *dllname )
 	
     vid_xpos = Cvar_Get( "vid_xpos", "3", CVAR_ARCHIVE );
 	vid_ypos = Cvar_Get( "vid_ypos", "22", CVAR_ARCHIVE );
-
+	
+    Cmd_AddCommand( "modelist", ModeList_f );
 
 	if ( glw_state.OpenGLLib == NULL )
 	{
@@ -349,7 +361,7 @@ void GLimp_LogComment( char *comment )
 }
 
 
-int GLW_SetMode( const char *drivername, int mode, qboolean fullscreen )
+static int GLW_SetMode( const char *drivername, int mode, qboolean fullscreen )
 {
 	// these match in the array
 	#define ATTR_RED_IDX 2

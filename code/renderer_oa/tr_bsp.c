@@ -37,10 +37,8 @@ extern refimport_t ri;
 
 
 cvar_t* r_lightmap;
-
-// avoid lightmap pass
-static cvar_t* r_fullbright;
 static cvar_t* r_mapOverBrightBits;
+// avoid lightmap pass
 static world_t	s_worldData;
 static unsigned char* fileBase;
 
@@ -95,13 +93,16 @@ static void HSVtoRGB( float h, float s, float v, float rgb[3] )
 
 static void R_ColorShiftLightingBytes(unsigned char in[4], unsigned char out[4])
 {
+	int	shift = r_mapOverBrightBits->integer;
+    int r, g, b;
+
 	// shift the color data based on overbright range
-	int shift = r_mapOverBrightBits->integer - tr.overbrightBits;
+//	shift = r_mapOverBrightBits->integer - tr.overbrightBits;
 
 	// shift the data based on overbright range
-	int r = in[0] << shift;
-	int g = in[1] << shift;
-	int b = in[2] << shift;
+	r = in[0] << shift;
+	g = in[1] << shift;
+	b = in[2] << shift;
 	
 	// normalize by color instead of saturating to white
 	if ( ( r | g | b ) > 255 )
@@ -187,40 +188,10 @@ static	void R_LoadLightmaps( lump_t *l )
 		}
         else
         {
-            int shift = r_mapOverBrightBits->integer - tr.overbrightBits;
-            int j = 0;
-			for(j = 0; j < LIGHTMAP_SIZE * LIGHTMAP_SIZE; j++)
-            {
-                //R_ColorShiftLightingBytes( &pBuf[j*3], &image[j*4] );
-
-                // shift the data based on overbright range
-                unsigned int r = pBuf[j*3] << shift;
-                unsigned int g = pBuf[j*3+1] << shift;
-                unsigned int b = pBuf[j*3+2] << shift;
-                
-                if ( ( r | g | b ) > 255 )
-                {
-                    unsigned int max = r;
-
-                    if(max<g)
-                        max = g;
-                    
-                    if(max<b)
-                        max = b;
-                
-                    image[j*4]   = r * 255 / max;
-				    image[j*4+1] = g * 255 / max;
-				    image[j*4+2] = b * 255 / max;
-				    image[j*4+3] = 255;
-                }
-                else
-                {
-                    image[j*4]   = r;
-				    image[j*4+1] = g;
-				    image[j*4+2] = b;
-				    image[j*4+3] = 255;
-
-                }
+            int j;
+			for ( j = 0 ; j < LIGHTMAP_SIZE * LIGHTMAP_SIZE; j++ ) {
+				R_ColorShiftLightingBytes( &pBuf[j*3], &image[j*4] );
+				image[j*4+3] = 255;
 			}
 		}
 
@@ -295,11 +266,6 @@ static shader_t *ShaderForShaderNum( int shaderNum, int lightmapNum )
 		ri.Error( ERR_DROP, "ShaderForShaderNum: bad num %i", _shaderNum );
 	}
 	dshader_t* dsh = &s_worldData.shaders[ _shaderNum ];
-
-	if ( r_fullbright->integer )
-    {
-		lightmapNum = LIGHTMAP_WHITEIMAGE;
-	}
 
 	shader_t* shader = R_FindShader( dsh->shader, lightmapNum, qtrue );
 
@@ -1702,11 +1668,6 @@ void R_LoadLightGrid( lump_t *l )
 	w->lightGridData = ri.Hunk_Alloc( l->filelen, h_low );
 	memcpy( w->lightGridData, (void *)(fileBase + l->fileofs), l->filelen );
 
-	// deal with overbright bits
-	for ( i = 0 ; i < numGridPoints ; i++ ) {
-		R_ColorShiftLightingBytes( &w->lightGridData[i*8], &w->lightGridData[i*8] );
-		R_ColorShiftLightingBytes( &w->lightGridData[i*8+3], &w->lightGridData[i*8+3] );
-	}
 }
 
 /*
@@ -1804,9 +1765,8 @@ qboolean R_GetEntityToken( char *buffer, int size )
 
 void R_InitBSP(void)
 {
-	r_fullbright = ri.Cvar_Get ("r_fullbright", "0", CVAR_LATCH|CVAR_CHEAT );
-	r_mapOverBrightBits = ri.Cvar_Get ("r_mapOverBrightBits", "3", CVAR_LATCH );
 	r_lightmap = ri.Cvar_Get ("r_lightmap", "0", 0 );
+    r_mapOverBrightBits = ri.Cvar_Get ("r_mapOverBrightBits", "1", CVAR_LATCH );
 }
 
 /*

@@ -33,7 +33,7 @@ void *Sys_LoadDll(const char *name, qboolean useSystemLib)
 	
 	if(!useSystemLib || !(dllhandle = Sys_LoadLibrary(name)))
 	{
-		const char *topDir = Sys_BinaryPath();
+		const char *topDir = Sys_GetBinaryPath();
 		char libPath[MAX_OSPATH];
 
 		if(!*topDir)

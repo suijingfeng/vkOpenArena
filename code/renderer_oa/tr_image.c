@@ -44,9 +44,6 @@ static int gl_filter_max = GL_LINEAR;
 
 static int force32upload;		// leilei - hack to get bloom/post to always do 32bit texture
 
-static cvar_t* r_texturebits;
-static cvar_t* r_greyscale;
-static cvar_t* r_overBrightBits;
 static cvar_t* r_simpleMipMaps;
 static cvar_t* r_picmip;						// controls picmip values
 static cvar_t* r_colorMipLevels;				// development aid to see texture mip usage
@@ -543,31 +540,9 @@ static void Upload32( unsigned *data, int width, int height, qboolean mipmap, qb
 	int	samples = 3;
 
 
-    if( r_greyscale->value )
-	{
-		// leilei - replaced with saturation processing
-		for ( i = 0; i < width*height; i++ )
-		{
-            float saturated = 0.333 * (scan[i*4] + scan[i*4 + 1] + scan[i*4 + 2]);
-            scan[i*4]       = saturated + (scan[i*4] - saturated) 	  * (1-r_greyscale->value);
-            scan[i*4 + 1] 	= saturated + (scan[i*4 + 1] - saturated) * (1-r_greyscale->value);
-            scan[i*4 + 2] 	= saturated + (scan[i*4 + 2] - saturated) * (1-r_greyscale->value);
-
-            if (scan[i*4] > 255)
-                scan[i*4]= 255;
-            if (scan[i*4 + 1] > 255)
-                scan[i*4 + 1] = 255;
-            if (scan[i*4 + 2] > 255)
-                scan[i*4 + 2] = 255;
-		}
-	}
-
 	if(lightMap)
 	{
-		if(r_greyscale->integer)
-			internalFormat = GL_LUMINANCE;
-		else
-			internalFormat = GL_RGB;
+		internalFormat = GL_RGB;
 	}
 	else
 	{
@@ -584,15 +559,6 @@ static void Upload32( unsigned *data, int width, int height, qboolean mipmap, qb
 		// select proper internal format
 		if ( samples == 3 )
 		{
-			if(r_greyscale->integer)
-			{
-				if(r_texturebits->integer == 32 || forceBits == 32)
-					internalFormat = GL_LUMINANCE16;
-				else
-					internalFormat = GL_LUMINANCE;
-			}
-			else
-			{
 				if ( glConfig.textureCompression == TC_S3TC_ARB )
 				{
 					internalFormat = GL_COMPRESSED_RGBA_S3TC_DXT1_EXT;
@@ -601,59 +567,29 @@ static void Upload32( unsigned *data, int width, int height, qboolean mipmap, qb
 				{
 					internalFormat = GL_RGB4_S3TC;
 				}
-				else if ( r_texturebits->integer == 32 || forceBits == 32)
-				{
+				else{
 					internalFormat = GL_RGB8;
 				}
-				else
-				{
-					internalFormat = GL_RGB;
-				}
+
                 
                 if (force32upload)
                     internalFormat = GL_RGB8;   // leilei - gets bloom and postproc working on s3tc & 8bit & palettes
-			}
+
 		}
 		else if ( samples == 4 )
 		{
-			if(r_greyscale->integer)
-			{
-				if(r_texturebits->integer == 32 || forceBits == 32)
-					internalFormat = GL_LUMINANCE16_ALPHA16;
-				else
-					internalFormat = GL_LUMINANCE_ALPHA;
-			}
-			else
-			{
+
 				if ( glConfig.textureCompression == TC_S3TC_ARB )
 				{
 					internalFormat = GL_COMPRESSED_RGBA_S3TC_DXT5_EXT; // leilei - this was missing
 				}
 				else 
-				if ( r_texturebits->integer == 16 || forceBits == 16)
-				{
-					internalFormat = GL_RGBA4;
-				}
-				else if ( r_texturebits->integer == 15 || forceBits == 15)
-				{
-					internalFormat = GL_RGB5_A1;
-				}
-				else if ( r_texturebits->integer == 12 || forceBits == 12)
-				{
-					internalFormat = GL_RGBA4;
-				}
-				else if ( r_texturebits->integer == 32 || forceBits == 32)
 				{
 					internalFormat = GL_RGBA8;
-				}
-				else
-				{
-					internalFormat = GL_RGBA;
 				}
                 
                 if (force32upload)
                     internalFormat = GL_RGBA8;   // leilei - gets bloom and postproc working on s3tc & 8bit & palettes
-			}
 		}
 	}
 
@@ -1494,29 +1430,7 @@ void R_SetColorMappings(void)
 	{
 		tr.overbrightBits = 0;
 	}
-    else
-    {
-    	// setup the overbright lighting
-	    tr.overbrightBits = r_overBrightBits->integer;
-    }
-
-	// allow 2 overbright bits in 24 bit, but only 1 in 16 bit
-	if( glConfig.colorBits > 16 )
-    {
-		if( tr.overbrightBits > 2 )
-			tr.overbrightBits = 2;
-	}
-    else
-    {
-		if ( tr.overbrightBits > 1 )
-			tr.overbrightBits = 1;
-	}
-
-
-	if( tr.overbrightBits < 0 )
-    {
-		tr.overbrightBits = 0;
-	}
+    tr.overbrightBits = 1;
 
 	tr.identityLight = 1.0f / ( 1 << tr.overbrightBits );
 	tr.identityLightByte = 255 * tr.identityLight;
@@ -1593,11 +1507,7 @@ void R_InitImages(void)
 	memset(hashTable, 0, sizeof(hashTable));
 	// build brightness translation tables
 	
-    r_texturebits = ri.Cvar_Get( "r_texturebits", "0", CVAR_ARCHIVE | CVAR_LATCH );
-    ri.Printf( PRINT_ALL, "texture bits: %d\n", r_texturebits->integer );
 
-    r_overBrightBits = ri.Cvar_Get ("r_overBrightBits", "1", CVAR_ARCHIVE | CVAR_LATCH );
-    
 	r_simpleMipMaps = ri.Cvar_Get( "r_simpleMipMaps", "1", CVAR_ARCHIVE | CVAR_LATCH );
 
 	r_ignoreGLErrors = ri.Cvar_Get( "r_ignoreGLErrors", "1", CVAR_ARCHIVE );
@@ -1605,9 +1515,6 @@ void R_InitImages(void)
     r_picmip = ri.Cvar_Get("r_picmip", "1", CVAR_ARCHIVE | CVAR_LATCH );
 	ri.Cvar_CheckRange(r_picmip, 0, 16, qtrue );
 	ri.Printf( PRINT_ALL, "picmip: %d\n", r_picmip->integer );
-
-    r_greyscale = ri.Cvar_Get("r_greyscale", "0", CVAR_ARCHIVE | CVAR_LATCH);
-	ri.Cvar_CheckRange(r_greyscale, 0, 1, qfalse);
 
 	r_roundImagesDown = ri.Cvar_Get ("r_roundImagesDown", "1", CVAR_ARCHIVE | CVAR_LATCH ); 
 	r_gamma = ri.Cvar_Get( "r_gamma", "1", CVAR_ARCHIVE );

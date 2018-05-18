@@ -58,20 +58,24 @@ static float ProjectRadius( float r, vec3_t location )
 	p[2] = -dist;
 
 	float projected[4];
-	projected[0] = p[0] * tr.viewParms.projectionMatrix[0] + 
+
+/*   
+    projected[0] = p[0] * tr.viewParms.projectionMatrix[0] + 
 		           p[1] * tr.viewParms.projectionMatrix[4] +
 				   p[2] * tr.viewParms.projectionMatrix[8] +
 				   tr.viewParms.projectionMatrix[12];
+
+    projected[2] = p[0] * tr.viewParms.projectionMatrix[2] + 
+		           p[1] * tr.viewParms.projectionMatrix[6] +
+				   p[2] * tr.viewParms.projectionMatrix[10] +
+				   tr.viewParms.projectionMatrix[14];
+*/
 
 	projected[1] = p[0] * tr.viewParms.projectionMatrix[1] + 
 		           p[1] * tr.viewParms.projectionMatrix[5] +
 				   p[2] * tr.viewParms.projectionMatrix[9] +
 				   tr.viewParms.projectionMatrix[13];
 
-	projected[2] = p[0] * tr.viewParms.projectionMatrix[2] + 
-		           p[1] * tr.viewParms.projectionMatrix[6] +
-				   p[2] * tr.viewParms.projectionMatrix[10] +
-				   tr.viewParms.projectionMatrix[14];
 
 	projected[3] = p[0] * tr.viewParms.projectionMatrix[3] + 
 		           p[1] * tr.viewParms.projectionMatrix[7] +

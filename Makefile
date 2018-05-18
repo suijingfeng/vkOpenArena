@@ -882,7 +882,7 @@ Q3OBJ = \
   \
   $(B)/client/sys_linux.o \
   $(B)/client/sys_loadlib.o \
-  $(B)/client/sys_main.o
+  $(B)/client/main.o
 
 
 Q3R2OBJ = \
@@ -1170,7 +1170,7 @@ Q3DOBJ = \
   $(B)/ded/null_snddma.o \
   \
   $(B)/ded/con_log.o \
-  $(B)/ded/sys_main.o
+  $(B)/ded/main.o
 
 ifeq ($(ARCH),x86)
   Q3DOBJ += \

@@ -60,7 +60,7 @@ typedef struct
 
 ////////////// path.c /////////////////
 void Sys_SetBinaryPath(const char *path);
-char* Sys_BinaryPath(void);
+char* Sys_GetBinaryPath(void);
 char* Sys_DefaultInstallPath(void);
 
 void* QDECL Sys_LoadDll(const char* name, qboolean useSystemLib);

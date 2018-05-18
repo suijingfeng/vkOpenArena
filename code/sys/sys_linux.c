@@ -908,7 +908,7 @@ void Sys_PlatformInit( void )
 
 	stdinIsATTY = isatty( STDIN_FILENO ) &&	!( term && ( !strcmp( term, "raw" ) || !strcmp( term, "dumb" ) ) );
 	
-    Com_Printf("TERM: %s\n",term);
+    printf("TERM: %s\n",term);
 }
 
 
