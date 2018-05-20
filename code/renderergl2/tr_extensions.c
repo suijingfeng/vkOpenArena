@@ -21,26 +21,28 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 */
 // tr_extensions.c - extensions needed by the renderer not in sdl_glimp.c
 
-#ifdef USE_LOCAL_HEADERS
-#	include "SDL.h"
-#else
-#	include <SDL.h>
-#endif
-
 #include "tr_local.h"
 #include "tr_dsa.h"
+#include <stdio.h>
 
-#define GLE(ret, name, ...) name##proc * qgl##name;
-QGL_1_3_PROCS;
-QGL_1_5_PROCS;
-QGL_2_0_PROCS;
-QGL_ARB_framebuffer_object_PROCS;
-QGL_ARB_vertex_array_object_PROCS;
-QGL_EXT_direct_state_access_PROCS;
-#undef GLE
+extern int qglMajorVersion;
+extern int qglMinorVersion;
 
+#define QGL_VERSION_ATLEAST( major, minor ) ( qglMajorVersion > major || ( qglMajorVersion == major && qglMinorVersion >= minor ) )
+#define QGLES_VERSION_ATLEAST( major, minor ) ( qglesMajorVersion > major || ( qglesMajorVersion == major && qglesMinorVersion >= minor ) )
+
+static qboolean SDL_GL_ExtensionSupported(const char* extension )
+{
+	void *adr = ri.GLimpGetProcAddress( extension );
+	if(adr != NULL)
+		return qtrue;
+	else
+		return qfalse;
+	return qfalse;
+}
 
 extern cvar_t *r_ext_compressed_textures;// these control use of specific extensions, tr2
+
 
 void GLimp_InitExtraExtensions()
 {
@@ -67,8 +69,9 @@ void GLimp_InitExtraExtensions()
 	QGL_EXT_direct_state_access_PROCS;
 #undef GLE
 
+#define GLE(ret, name, ...) qgl##name = (name##proc *) ri.GLimpGetProcAddress("gl" #name);
 	// GL function loader, based on https://gist.github.com/rygorous/16796a0c876cf8a5f542caddb55bce8a
-#define GLE(ret, name, ...) qgl##name = (name##proc *) SDL_GL_GetProcAddress("gl" #name);
+
 
 	// OpenGL 1.3, was GL_ARB_texture_compression
 	QGL_1_3_PROCS;
@@ -85,7 +88,7 @@ void GLimp_InitExtraExtensions()
 	glRefConfig.framebufferObject = qfalse;
 	glRefConfig.framebufferBlit = qfalse;
 	glRefConfig.framebufferMultisample = qfalse;
-	if (q_gl_version_at_least_3_0 || SDL_GL_ExtensionSupported(extension))
+	if (q_gl_version_at_least_3_0 )
 	{
 		glRefConfig.framebufferObject = !!r_ext_framebuffer_object->integer;
 		glRefConfig.framebufferBlit = qtrue;
@@ -106,7 +109,7 @@ void GLimp_InitExtraExtensions()
 	// OpenGL 3.0 - GL_ARB_vertex_array_object
 	extension = "GL_ARB_vertex_array_object";
 	glRefConfig.vertexArrayObject = qfalse;
-	if (q_gl_version_at_least_3_0 || SDL_GL_ExtensionSupported(extension))
+	if (q_gl_version_at_least_3_0 )
 	{
 		if (q_gl_version_at_least_3_0)
 		{
@@ -130,7 +133,7 @@ void GLimp_InitExtraExtensions()
 	// OpenGL 3.0 - GL_ARB_texture_float
 	extension = "GL_ARB_texture_float";
 	glRefConfig.textureFloat = qfalse;
-	if (q_gl_version_at_least_3_0 || SDL_GL_ExtensionSupported(extension))
+	if (q_gl_version_at_least_3_0 )
 	{
 		glRefConfig.textureFloat = !!r_ext_texture_float->integer;
 
@@ -144,7 +147,7 @@ void GLimp_InitExtraExtensions()
 	// OpenGL 3.2 - GL_ARB_depth_clamp
 	extension = "GL_ARB_depth_clamp";
 	glRefConfig.depthClamp = qfalse;
-	if (q_gl_version_at_least_3_2 || SDL_GL_ExtensionSupported(extension))
+	if (q_gl_version_at_least_3_2 )
 	{
 		glRefConfig.depthClamp = qtrue;
 
@@ -158,7 +161,7 @@ void GLimp_InitExtraExtensions()
 	// OpenGL 3.2 - GL_ARB_seamless_cube_map
 	extension = "GL_ARB_seamless_cube_map";
 	glRefConfig.seamlessCubeMap = qfalse;
-	if (q_gl_version_at_least_3_2 || SDL_GL_ExtensionSupported(extension))
+	if (q_gl_version_at_least_3_2 )
 	{
 		glRefConfig.seamlessCubeMap = !!r_arb_seamless_cube_map->integer;
 
@@ -169,6 +172,7 @@ void GLimp_InitExtraExtensions()
 		ri.Printf(PRINT_ALL, result[2], extension);
 	}
 
+	
 	// Determine GLSL version
 	if (1)
 	{
@@ -185,6 +189,7 @@ void GLimp_InitExtraExtensions()
 
 	// GL_NVX_gpu_memory_info
 	extension = "GL_NVX_gpu_memory_info";
+
 	if( SDL_GL_ExtensionSupported( extension ) )
 	{
 		glRefConfig.memInfo = MI_NVX;
@@ -274,3 +279,4 @@ void GLimp_InitExtraExtensions()
 
 #undef GLE
 }
+

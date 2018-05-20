@@ -37,8 +37,6 @@ cvar_t* r_maxpolys;
 cvar_t* r_maxpolyverts;
 
 
-static cvar_t* r_textureMode;
-
 
 static void GL_SetDefaultState(void)
 {
@@ -49,17 +47,15 @@ static void GL_SetDefaultState(void)
 	glColor4f(1,1,1,1);
 
 	// initialize downstream texture unit if we're running in a multitexture environment
-	if ( glActiveTextureARB )
-    {
-		GL_SelectTexture( 1 );
-		GL_TextureMode( r_textureMode->string );
-		GL_TexEnv( GL_MODULATE );
-		glDisable( GL_TEXTURE_2D );
-		GL_SelectTexture( 0 );
-	}
+	GL_SelectTexture( 1 );
+	GL_TextureMode( "GL_LINEAR_MIPMAP_NEAREST" );
+	GL_TexEnv( GL_MODULATE );
 
+	glDisable( GL_TEXTURE_2D );
+	
+	GL_SelectTexture( 0 );
 	glEnable(GL_TEXTURE_2D);
-	GL_TextureMode( r_textureMode->string );
+	GL_TextureMode( "GL_LINEAR_MIPMAP_NEAREST" );
 	GL_TexEnv( GL_MODULATE );
 
 	glShadeModel( GL_SMOOTH );
@@ -127,8 +123,6 @@ static void GfxInfo_f( void )
 		ri.Printf( PRINT_ALL, "GAMMA: software w/ %d overbright bits\n", tr.overbrightBits );
 
 
-	ri.Printf( PRINT_ALL, "texturemode: %s\n", r_textureMode->string );
-	ri.Printf( PRINT_ALL, "multitexture: %s\n", enablestrings[glActiveTextureARB != 0] );
 //	ri.Printf( PRINT_ALL, "compiled vertex arrays: %s\n", enablestrings[glLockArraysEXT != 0 ] );
 	ri.Printf( PRINT_ALL, "texenv add: %s\n", enablestrings[glConfig.textureEnvAddAvailable != 0] );
 	ri.Printf( PRINT_ALL, "compressed textures: %s\n", enablestrings[glConfig.textureCompression!=TC_NONE] );
@@ -177,8 +171,6 @@ static void InitOpenGL(void)
 
 		if ( glConfig.numTextureUnits && max_bind_units > 0 )
 			glConfig.numTextureUnits = max_bind_units;
-
-	    //	QGL_InitARB();
 
 		glConfig.deviceSupportsGamma = qfalse;
 
@@ -734,17 +726,11 @@ static void R_DeleteTextures( void )
 	tr.numImages = 0;
 
 	memset( glState.currenttextures, 0, sizeof( glState.currenttextures ) );
-	if ( glActiveTextureARB )
-    {
-		GL_SelectTexture( 1 );
-		glBindTexture( GL_TEXTURE_2D, 0 );
-		GL_SelectTexture( 0 );
-		glBindTexture( GL_TEXTURE_2D, 0 );
-	}
-    else
-    {
-		glBindTexture( GL_TEXTURE_2D, 0 );
-	}
+
+	GL_SelectTexture( 1 );
+	glBindTexture( GL_TEXTURE_2D, 0 );
+	GL_SelectTexture( 0 );
+	glBindTexture( GL_TEXTURE_2D, 0 );
 }
 
 
@@ -835,7 +821,6 @@ void R_Init(void)
 	// archived variables that can change at any time
 	//
 
-	r_textureMode = ri.Cvar_Get( "r_textureMode", "GL_LINEAR_MIPMAP_NEAREST", CVAR_ARCHIVE | CVAR_LATCH );
 
     r_maxpolys = ri.Cvar_Get( "r_maxpolys", va("%d", MAX_POLYS), 0);
 	r_maxpolyverts = ri.Cvar_Get( "r_maxpolyverts", va("%d", MAX_POLYVERTS), 0);

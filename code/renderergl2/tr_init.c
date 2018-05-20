@@ -163,7 +163,6 @@ cvar_t	*r_logFile;
 cvar_t	*r_stencilbits;
 cvar_t	*r_depthbits;
 cvar_t	*r_colorbits;
-cvar_t	*r_texturebits;
 cvar_t  *r_ext_multisample;
 
 cvar_t	*r_drawBuffer;
@@ -228,6 +227,63 @@ int		max_polys;
 cvar_t	*r_maxpolyverts;
 int		max_polyverts;
 
+int qglMajorVersion = 0, qglMinorVersion = 0;
+#define QGL_VERSION_ATLEAST( major, minor ) ( qglMajorVersion > major || ( qglMajorVersion == major && qglMinorVersion >= minor ) )
+#define QGLES_VERSION_ATLEAST( major, minor ) ( qglesMajorVersion > major || ( qglesMajorVersion == major && qglesMinorVersion >= minor ) )
+
+
+
+static void myGLimp_GetProcAddresses( void )
+{
+
+	const char *version;
+
+#ifdef __SDL_NOGETPROCADDR__
+#define GLE( ret, name, ... ) qgl##name = gl#name;
+#else
+#define GLE( ret, name, ... ) qgl##name = (name##proc *) ri.GLimpGetProcAddress("gl" #name); \
+	if ( qgl##name == NULL ) { \
+		fprintf( stderr, "ERROR: Missing OpenGL function %s\n", "gl" #name ); \
+	}
+#endif
+
+	// OpenGL 1.0 
+	GLE(const GLubyte *, GetString, GLenum name)
+
+	if ( !qglGetString ) {
+		Com_Error( ERR_FATAL, "glGetString is NULL" );
+	}
+
+	version = (const char *)qglGetString( GL_VERSION );
+
+	if ( !version ) {
+		Com_Error( ERR_FATAL, "GL_VERSION is NULL\n" );
+	}
+
+	sscanf( version, "%d.%d", &qglMajorVersion, &qglMinorVersion );
+	
+
+	if ( QGL_VERSION_ATLEAST( 1, 1 ) ) {
+		QGL_1_1_PROCS;
+		QGL_DESKTOP_1_1_PROCS;
+	}
+	else
+	{
+		fprintf( stderr, "Unsupported OpenGL Version: %s\n", version );
+		exit(0);
+	}
+
+	if ( QGL_VERSION_ATLEAST( 3, 0 ) ) {
+		QGL_3_0_PROCS;
+	}
+
+#undef GLE
+
+	return;
+}
+
+
+
 /*
 ** InitOpenGL
 **
@@ -238,8 +294,7 @@ int		max_polyverts;
 */
 static void InitOpenGL( void )
 {
-	char renderer_buffer[1024];
-
+////////////////////////////////////////////////////////////
 	//
 	// initialize OS specific portions of the renderer
 	//
@@ -250,30 +305,48 @@ static void InitOpenGL( void )
 	//		- r_ignorehwgamma
 	//		- r_gamma
 	//
-	
+
+
 	if ( glConfig.vidWidth == 0 )
 	{
-		GLint		temp;
-		
-		ri.GLimpInit( &glConfig );
-		GLimp_InitExtraExtensions();
+		GLint max_texture_size;
+		GLint max_shader_units = -1;
+		GLint max_bind_units = -1;
+        ri.GLimpInit(&glConfig);
 
-		strcpy( renderer_buffer, glConfig.renderer_string );
-		Q_strlwr( renderer_buffer );
-
+		myGLimp_GetProcAddresses();
+        GLimp_InitExtraExtensions();
 		// OpenGL driver constants
-		qglGetIntegerv( GL_MAX_TEXTURE_SIZE, &temp );
-		glConfig.maxTextureSize = temp;
+		glGetIntegerv( GL_MAX_TEXTURE_SIZE, &max_texture_size );
+		glConfig.maxTextureSize = max_texture_size;
 
 		// stubbed or broken drivers may have reported 0...
 		if ( glConfig.maxTextureSize <= 0 ) 
-		{
 			glConfig.maxTextureSize = 0;
-		}
-	}
 
+		glGetIntegerv( GL_MAX_TEXTURE_IMAGE_UNITS, &max_shader_units );
+		glGetIntegerv( GL_MAX_COMBINED_TEXTURE_IMAGE_UNITS, &max_bind_units );
+
+		if ( max_bind_units > max_shader_units )
+			max_bind_units = max_shader_units;
+		if ( max_bind_units > 16 )
+			max_bind_units = 16;
+
+		if ( glConfig.numTextureUnits && max_bind_units > 0 )
+			glConfig.numTextureUnits = max_bind_units;
+
+		glConfig.deviceSupportsGamma = qfalse;
+
+		//if ( !r_ignorehwgamma->integer )
+		{
+			ri.InitGamma( &glConfig );
+		}
+
+	}
 	// set default state
 	GL_SetDefaultState();
+
+	printf("--------InitOpenGL() success! --------\n");
 }
 
 /*
@@ -874,6 +947,7 @@ void GL_SetDefaultState( void )
 
 	GL_BindNullTextures();
 
+
 	if (glRefConfig.framebufferObject)
 		GL_BindNullFramebuffers();
 
@@ -999,8 +1073,6 @@ void GfxInfo_f( void )
 
 	ri.Printf( PRINT_ALL, "texturemode: %s\n", r_textureMode->string );
 	ri.Printf( PRINT_ALL, "picmip: %d\n", r_picmip->integer );
-	ri.Printf( PRINT_ALL, "texture bits: %d\n", r_texturebits->integer );
-	ri.Printf( PRINT_ALL, "compiled vertex arrays: %s\n", enablestrings[qglLockArraysEXT != 0 ] );
 	ri.Printf( PRINT_ALL, "texenv add: %s\n", enablestrings[glConfig.textureEnvAddAvailable != 0] );
 	ri.Printf( PRINT_ALL, "compressed textures: %s\n", enablestrings[glConfig.textureCompression!=TC_NONE] );
 
@@ -1097,7 +1169,6 @@ void R_Register( void )
 	r_colorMipLevels = ri.Cvar_Get ("r_colorMipLevels", "0", CVAR_LATCH );
 	ri.Cvar_CheckRange( r_picmip, 0, 16, qtrue );
 	r_detailTextures = ri.Cvar_Get( "r_detailtextures", "1", CVAR_ARCHIVE | CVAR_LATCH );
-	r_texturebits = ri.Cvar_Get( "r_texturebits", "0", CVAR_ARCHIVE | CVAR_LATCH );
 	r_colorbits = ri.Cvar_Get( "r_colorbits", "0", CVAR_ARCHIVE | CVAR_LATCH );
 	r_stencilbits = ri.Cvar_Get( "r_stencilbits", "8", CVAR_ARCHIVE | CVAR_LATCH );
 	r_depthbits = ri.Cvar_Get( "r_depthbits", "0", CVAR_ARCHIVE | CVAR_LATCH );
@@ -1277,7 +1348,6 @@ void R_Register( void )
 	ri.Cmd_AddCommand( "screenshot", R_ScreenShot_f );
 	ri.Cmd_AddCommand( "screenshotJPEG", R_ScreenShotJPEG_f );
 	ri.Cmd_AddCommand( "gfxinfo", GfxInfo_f );
-	ri.Cmd_AddCommand( "minimize", GLimp_Minimize );
 	ri.Cmd_AddCommand( "gfxmeminfo", GfxMemInfo_f );
 	ri.Cmd_AddCommand( "exportCubemaps", R_ExportCubemaps_f );
 }
@@ -1422,7 +1492,6 @@ void RE_Shutdown( qboolean destroyWindow ) {
 	ri.Cmd_RemoveCommand( "screenshot" );
 	ri.Cmd_RemoveCommand( "screenshotJPEG" );
 	ri.Cmd_RemoveCommand( "gfxinfo" );
-	ri.Cmd_RemoveCommand( "minimize" );
 	ri.Cmd_RemoveCommand( "gfxmeminfo" );
 	ri.Cmd_RemoveCommand( "exportCubemaps" );
 
@@ -1441,7 +1510,7 @@ void RE_Shutdown( qboolean destroyWindow ) {
 
 	// shut down platform specific OpenGL stuff
 	if ( destroyWindow ) {
-		GLimp_Shutdown();
+		ri.GLimpShutdown(qtrue);
 
 		memset( &glConfig, 0, sizeof( glConfig ) );
 		memset( &glState, 0, sizeof( glState ) );

@@ -172,7 +172,7 @@ typedef struct {
 	void	(*InitGamma)( glconfig_t *config );
 	void	(*SetGamma)(unsigned char red[256], unsigned char green[256], unsigned char blue[256]);
 
-
+	void*	(*GLimpGetProcAddress)(const char * fun);
     // extra
     int32_t ( *Puff)(uint8_t  *dest,		/* pointer to destination pointer */
              uint32_t *destlen,		/* amount of output space */

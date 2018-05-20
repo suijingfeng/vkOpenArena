@@ -800,13 +800,13 @@ void GL_SelectTexture( int unit )
 
 	if ( unit == 0 )
 	{
-		glActiveTextureARB( GL_TEXTURE0_ARB );
-		glClientActiveTextureARB( GL_TEXTURE0_ARB );
+		glActiveTextureARB( GL_TEXTURE0 );
+		glClientActiveTextureARB( GL_TEXTURE0 );
 	}
 	else if ( unit == 1 )
     {
-		glActiveTextureARB( GL_TEXTURE1_ARB );
-		glClientActiveTextureARB( GL_TEXTURE1_ARB );
+		glActiveTextureARB( GL_TEXTURE1 );
+		glClientActiveTextureARB( GL_TEXTURE1 );
     }
     else
 		ri.Error( ERR_DROP, "GL_SelectTexture: unit = %i", unit );

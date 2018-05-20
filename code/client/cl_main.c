@@ -3240,6 +3240,8 @@ void CL_InitRef(void)
     ri.GLimpInit = GLimp_Init;
 	ri.GLimpEndFrame = GLimp_EndFrame;
 	ri.GLimpShutdown = GLimp_Shutdown;
+	
+	ri.GLimpGetProcAddress = GLimp_GetProcAddress;
 
     ri.InitGamma = InitGammaImpl;
 	ri.SetGamma = SetGammaImpl;

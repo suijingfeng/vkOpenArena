@@ -2898,7 +2898,7 @@ void R_SetColorMappings( void ) {
 
 	if ( glConfig.deviceSupportsGamma )
 	{
-		ri.GLimpSetGamma( s_gammatable, s_gammatable, s_gammatable );
+		ri.SetGamma( s_gammatable, s_gammatable, s_gammatable );
 	}
 }
 

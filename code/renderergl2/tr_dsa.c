@@ -22,6 +22,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
 #include "tr_dsa.h"
 
+
 static struct
 {
 	GLuint textures[NUM_TEXTURE_BUNDLES];

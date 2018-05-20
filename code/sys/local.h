@@ -32,6 +32,8 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
 #include <X11/Xlib.h>
 #include <X11/Xfuncproto.h>
+#include <GL/glx.h>
+#include <GL/glxext.h> 
 
 
 #if defined(_WIN32)
@@ -42,14 +44,24 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #define OPENGL_DRIVER_NAME	"libGL.so.1"
 #endif
 
+#ifndef APIENTRY
+#define APIENTRY
+#endif
+#ifndef APIENTRYP
+#define APIENTRYP APIENTRY *
+#endif
+#ifndef GLAPI
+#define GLAPI extern
+#endif
 
 
 qboolean BuildGammaRampTable( unsigned char *red, unsigned char *green, unsigned char *blue, int gammaRampSize, unsigned short table[3][4096] );
-
+/*
 // DGA extension
 qboolean DGA_Init( Display *_dpy );
 void DGA_Mouse( qboolean enable );
 void DGA_Done( void );
+*/
 
 // VidMode extension
 qboolean VidMode_Init( void );
@@ -100,7 +112,52 @@ void Sys_Exit( int exitCode );
 
 qboolean Sys_PIDIsRunning( int pid );
 
+////////////////// GLX /////////////////////////
 
+#ifdef _WIN32
+
+#define QGL_Win32_PROCS \
+	GLE( HGLRC, wglCreateContext, HDC ) \
+	GLE( BOOL,  wglDeleteContext ,HGLRC ) \
+	GLE( HGLRC, wglGetCurrentContext, VOID ) \
+	GLE( PROC,  wglGetProcAddress, LPCSTR ) \
+	GLE( BOOL,  wglMakeCurrent, HDC, HGLRC )
+
+#define QGL_Swp_PROCS \
+	GLE( BOOL,	wglSwapIntervalEXT, int interval )
+
+#else
+
+#define QGL_LinX11_PROCS \
+	GLE( XVisualInfo*, glXChooseVisual, Display *dpy, int screen, int *attribList ) \
+	GLE( GLXContext, glXCreateContext, Display *dpy, XVisualInfo *vis, GLXContext shareList, Bool direct ) \
+	GLE( void, glXDestroyContext, Display *dpy, GLXContext ctx ) \
+	GLE( Bool, glXMakeCurrent, Display *dpy, GLXDrawable drawable, GLXContext ctx) \
+	GLE( void, glXCopyContext, Display *dpy, GLXContext src, GLXContext dst, GLuint mask ) \
+	GLE( void, glXSwapBuffers, Display *dpy, GLXDrawable drawable )
+
+
+#define QGL_Swp_PROCS \
+	GLE( void,	glXSwapIntervalEXT, Display *dpy, GLXDrawable drawable, int interval ) \
+	GLE( int,	glXSwapIntervalMESA, unsigned interval ) \
+	GLE( int,	glXSwapIntervalSGI, int interval )
+
+#endif
+
+
+
+#define GLE(ret, name, ...)	extern ret (* q##name )( __VA_ARGS__ );
+	QGL_Swp_PROCS;
+
+#ifdef _WIN32
+	QGL_Win32_PROCS;
+//#endif
+//#if ( (defined __linux__ )  || (defined __FreeBSD__ ) || (defined __sun) )
+#else // assume in opposition to win32
+	QGL_LinX11_PROCS;
+#endif
+
+#undef GLE
 
 
 #endif

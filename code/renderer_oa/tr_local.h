@@ -1529,23 +1529,4 @@ void R_LoadPCX( const char *name, byte **pic, int *width, int *height );
 void R_LoadPNG( const char *name, byte **pic, int *width, int *height );
 void R_LoadTGA( const char *name, byte **pic, int *width, int *height );
 
-/////////////////////////////// /////////////////////////////////////
-/*
-void (APIENTRYP qglActiveTextureARB) (GLenum texture);
-void (APIENTRYP qglClientActiveTextureARB) (GLenum texture);
-void (APIENTRYP qglMultiTexCoord2fARB) (GLenum target, GLfloat s, GLfloat t);
-
-void (APIENTRYP qglLockArraysEXT) (GLint first, GLsizei count);
-void (APIENTRYP qglUnlockArraysEXT) (void);
-
-#define GLE(ret, name, ...) name##proc * qgl##name;
-QGL_1_1_PROCS;
-QGL_DESKTOP_1_1_PROCS;
-QGL_ES_1_1_PROCS;
-QGL_1_3_PROCS;
-QGL_1_5_PROCS;
-QGL_3_0_PROCS;
-#undef GLE
-*/
-
 #endif //TR_LOCAL_H

@@ -49,16 +49,17 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #include <sys/types.h>
 #include <unistd.h>
 
-#include <GL/glx.h>
-#include <GL/glxext.h> 
 #include <X11/keysym.h>
 #include <X11/cursorfont.h>
 #include <X11/Xatom.h>
 #include <X11/XKBlib.h>
 
+/*
 #if !defined(__sun)
 #include <X11/extensions/Xxf86dga.h>
 #endif
+*/
+
 
 #include <dlfcn.h>
 
@@ -70,11 +71,17 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #include "../client/client.h"
 #include "local.h"
 #include "inputs.h"
+
+#define GLE( ret, name, ... ) ret ( APIENTRY * q##name )( __VA_ARGS__ );
+QGL_LinX11_PROCS;
+QGL_Swp_PROCS;
+#undef GLE
+
+
 /////////////////////////////
 
 
 static cvar_t* r_fullscreen;
-static cvar_t* r_displayRefresh;
 
 static cvar_t* r_customwidth;
 static cvar_t* r_customheight;
@@ -203,6 +210,13 @@ static void ModeList_f( void )
 
 ////////////////////////////////////////////////////////////////////////////////////////
 
+void* GLimp_GetProcAddress( const char *symbol )
+{
+	void *sym = dlsym( glw_state.OpenGLLib, symbol );
+	return sym;
+}
+
+
 /*
 ** GL_Init
 **
@@ -215,7 +229,7 @@ static void ModeList_f( void )
 */
 qboolean GL_Init( const char *dllname )
 {
-	Com_Printf( "-------- GL_Init() --------\n" );
+	printf( "-------- GL_Init() --------\n" );
 	
     vid_xpos = Cvar_Get( "vid_xpos", "3", CVAR_ARCHIVE );
 	vid_ypos = Cvar_Get( "vid_ypos", "22", CVAR_ARCHIVE );
@@ -224,21 +238,28 @@ qboolean GL_Init( const char *dllname )
 
 	if ( glw_state.OpenGLLib == NULL )
 	{
-		Com_Printf( "...loading '%s' : ", dllname );
+		printf( "...loading '%s' : ", dllname );
 ///////////
 		glw_state.OpenGLLib = Sys_LoadLibrary( dllname );
 ////////////
 		if ( glw_state.OpenGLLib == NULL )
 		{
 			{
-				Com_Printf( "failed\n" );
-				Com_Printf( "GL_Init: Can't load %s from /etc/ld.so.conf: %s\n", dllname, dlerror());
+				fprintf(stderr, "failed\n" );
+				fprintf(stderr, "GL_Init: Can't load %s from /etc/ld.so.conf: %s\n", dllname, dlerror());
 				return qfalse;
 			}
 		}
 
-		Com_Printf( "succeeded\n" );
+		printf( "succeeded\n" );
 	}
+#define STRING(s)			#s
+// expand constants before stringifying them
+#define XSTRING(s)			STRING(s)	
+#define GLE( ret, name, ... ) q##name = GLimp_GetProcAddress( XSTRING( name ) ); if ( !q##name ) { Com_Printf( "Error resolving core X11 functions\n" ); return qfalse; }
+	QGL_LinX11_PROCS;
+#undef GLE
+
 
 	return qtrue;
 }
@@ -284,83 +305,9 @@ static void GL_Shutdown( qboolean unloadDLL )
 
 
 
-/*
-** GLimp_Shutdown
-**
-** This routine does all OS specific shutdown procedures for the OpenGL
-** subsystem.  Under OpenGL this means NULLing out the current DC and
-** HGLRC, deleting the rendering context, and releasing the DC acquired
-** for the window.  The state structure is also nulled out.
-**
-*/
-void GLimp_Shutdown( qboolean unloadDLL )
-{
-	IN_DeactivateMouse();
 
-	if ( dpy )
-	{
-		if ( glw_state.randr_gamma && glw_state.gammaSet )
-		{
-			RandR_RestoreGamma();
-			glw_state.gammaSet = qfalse;
-		}
-
-		RandR_RestoreMode();
-
-		if ( ctx )
-			glXDestroyContext( dpy, ctx );
-
-		if ( win )
-			XDestroyWindow( dpy, win );
-
-		if ( glw_state.gammaSet )
-		{
-			VidMode_RestoreGamma();
-			glw_state.gammaSet = qfalse;
-		}
-
-		if ( glw_state.vidmode_active )
-			VidMode_RestoreMode();
-
-		// NOTE TTimo opening/closing the display should be necessary only once per run
-		// but it seems GL_Shutdown gets called in a lot of occasion
-		// in some cases, this XCloseDisplay is known to raise some X errors
-		// ( https://zerowing.idsoftware.com/bugzilla/show_bug.cgi?id=33 )
-		XCloseDisplay( dpy );
-	}
-
-	RandR_Done();
-	VidMode_Done();
-
-	glw_state.desktop_ok = qfalse;
-
-	dpy = NULL;
-	win = 0;
-	ctx = NULL;
-
-	unsetenv( "vblank_mode" );
-	
-	//if ( glw_state.cdsFullscreen )
-	{
-		glw_state.cdsFullscreen = qfalse;
-	}
-
-	GL_Shutdown( unloadDLL );
-}
-
-
-/*
-** GLimp_LogComment
-*/
-void GLimp_LogComment( char *comment )
-{
-	if ( glw_state.log_fp )
-	{
-		fprintf( glw_state.log_fp, "%s", comment );
-	}
-}
-
-
+////////////////////////////////////////////////////////////////////////////////
+//about glw
 static int GLW_SetMode( const char *drivername, int mode, qboolean fullscreen )
 {
 	// these match in the array
@@ -429,17 +376,16 @@ static int GLW_SetMode( const char *drivername, int mode, qboolean fullscreen )
 		}
 	}
 #endif
-	Com_Printf( "...setting mode %d:", mode );
+	printf( "...setting mode %d:", mode );
 
 	if ( !CL_GetModeInfo( &config->vidWidth, &config->vidHeight, mode, glw_state.desktop_width, glw_state.desktop_height, fullscreen ) )
 	{
-		Com_Printf( " invalid mode\n" );
+		printf( " invalid mode\n" );
 		return RSERR_INVALID_MODE;
 	}
 
 	actualWidth = config->vidWidth;
 	actualHeight = config->vidHeight;
-	actualRate = r_displayRefresh->integer;
 
 	if ( actualRate )
 		Com_Printf( " %d %d @%iHz\n", actualWidth, actualHeight, actualRate );
@@ -466,13 +412,13 @@ static int GLW_SetMode( const char *drivername, int mode, qboolean fullscreen )
     attrib[ATTR_RED_IDX] = 8;
     attrib[ATTR_GREEN_IDX] = 8;
     attrib[ATTR_BLUE_IDX] = 8;
-    visinfo = glXChooseVisual( dpy, scrnum, attrib );
+    visinfo = qglXChooseVisual( dpy, scrnum, attrib );
 	if ( !visinfo )
 	{
 		Com_Printf( "Couldn't get a visual\n" );
 	}
 
-    Com_Printf( "Using %d/%d/%d Color bits, %d depth, %d stencil display.\n", 
+    printf( "Using %d/%d/%d Color bits, %d depth, %d stencil display.\n", 
         attrib[ATTR_RED_IDX], attrib[ATTR_GREEN_IDX], attrib[ATTR_BLUE_IDX],
         attrib[ATTR_DEPTH_IDX], attrib[ATTR_STENCIL_IDX]);
 
@@ -542,13 +488,13 @@ static int GLW_SetMode( const char *drivername, int mode, qboolean fullscreen )
 
 	XFlush( dpy );
 	XSync( dpy, False );
-	ctx = glXCreateContext( dpy, visinfo, NULL, True );
+	ctx = qglXCreateContext( dpy, visinfo, NULL, True );
 	XSync( dpy, False );
 
 	/* GH: Free the visinfo after we're done with it */
 	XFree( visinfo );
 
-	glXMakeCurrent( dpy, win, ctx );
+	qglXMakeCurrent( dpy, win, ctx );
 
 
 	Key_ClearStates();
@@ -566,11 +512,11 @@ static qboolean GLW_StartDriverAndSetMode( const char *drivername, int mode, qbo
 	switch ( err )
 	{
 	case RSERR_INVALID_FULLSCREEN:
-		Com_Printf( "...WARNING: fullscreen unavailable in this mode\n" );
+		printf( "...WARNING: fullscreen unavailable in this mode\n" );
 		return qfalse;
 
 	case RSERR_INVALID_MODE:
-		Com_Printf( "...WARNING: could not set the given mode (%d)\n", mode );
+		printf( "...WARNING: could not set the given mode (%d)\n", mode );
 		return qfalse;
 
 	default:
@@ -630,7 +576,7 @@ static qboolean GLW_LoadOpenGL( const char *name )
 static qboolean GLW_StartOpenGL( void )
 {
 
-	Com_Printf( "...GLW_StartOpenGL...\n" );
+	printf( "...GLW_StartOpenGL...\n" );
 	// load and initialize the specific OpenGL driver
 	if ( !GLW_LoadOpenGL( r_glDriver->string ) )
 	{
@@ -664,13 +610,14 @@ static int qXErrorHandler( Display *dpy, XErrorEvent *ev )
 {
 	static char buf[1024];
 	XGetErrorText( dpy, ev->error_code, buf, sizeof( buf ) );
-	Com_Printf( "X Error of failed request: %s\n", buf) ;
-	Com_Printf( "  Major opcode of failed request: %d\n", ev->request_code );
-	Com_Printf( "  Minor opcode of failed request: %d\n", ev->minor_code );
-	Com_Printf( "  Serial number of failed request: %d\n", (int)ev->serial );
+	printf( "X Error of failed request: %s\n", buf) ;
+	printf( "  Major opcode of failed request: %d\n", ev->request_code );
+	printf( "  Minor opcode of failed request: %d\n", ev->minor_code );
+	printf( "  Serial number of failed request: %d\n", (int)ev->serial );
 	return 0;
 }
 
+///////////////////////////////////////////////////////////////////////////////////////////////
 
 /*
 ** GLimp_Init
@@ -681,7 +628,6 @@ static int qXErrorHandler( Display *dpy, XErrorEvent *ev )
 void GLimp_Init( glconfig_t *config )
 {
     r_fullscreen = Cvar_Get( "r_fullscreen", "0", CVAR_ARCHIVE | CVAR_LATCH);
-	r_displayRefresh = Cvar_Get( "r_displayRefresh", "0", CVAR_LATCH );
 	r_mode = Cvar_Get( "r_mode", "-2", CVAR_ARCHIVE | CVAR_LATCH );
     
     r_drawBuffer = Cvar_Get( "r_drawBuffer", "GL_BACK", CVAR_CHEAT );
@@ -710,6 +656,22 @@ void GLimp_Init( glconfig_t *config )
 	// This values force the UI to disable driver selection
 	config->driverType = GLDRV_ICD;
 	config->hardwareType = GLHW_GENERIC;
+
+		// optional
+#define GLE( ret, name, ... ) q##name = GLimp_GetProcAddress( XSTRING( name ) );
+QGL_LinX11_PROCS;
+QGL_Swp_PROCS;
+#undef GLE
+
+	if ( qglXSwapIntervalEXT || qglXSwapIntervalMESA || qglXSwapIntervalSGI )
+	{
+		printf( "...using GLX_EXT_swap_control\n" );
+		Cvar_SetModified( "r_swapInterval", qtrue ); // force a set next frame
+	}
+	else
+	{
+		printf( "...GLX_EXT_swap_control not found\n" );
+	}
 }
 
 
@@ -725,12 +687,105 @@ void GLimp_EndFrame( void )
 	// don't flip if drawing to front buffer
 	if ( Q_stricmp( r_drawBuffer->string, "GL_FRONT" ) != 0 )
 	{
-		glXSwapBuffers( dpy, win );
+		qglXSwapBuffers( dpy, win );
+	}
+
+	//
+	// swapinterval stuff
+	//
+	if ( r_swapInterval->modified ) {
+		r_swapInterval->modified = qfalse;
+
+		if ( qglXSwapIntervalEXT ) {
+			qglXSwapIntervalEXT( dpy, win, r_swapInterval->integer );
+		} else if ( qglXSwapIntervalMESA ) {
+			qglXSwapIntervalMESA( r_swapInterval->integer );
+		} else if ( qglXSwapIntervalSGI ) {
+			qglXSwapIntervalSGI( r_swapInterval->integer );
+		}
+	}
+}
+
+
+/*
+** GLimp_Shutdown
+**
+** This routine does all OS specific shutdown procedures for the OpenGL
+** subsystem.  Under OpenGL this means NULLing out the current DC and
+** HGLRC, deleting the rendering context, and releasing the DC acquired
+** for the window.  The state structure is also nulled out.
+**
+*/
+void GLimp_Shutdown( qboolean unloadDLL )
+{
+	IN_DeactivateMouse();
+
+	if ( dpy )
+	{
+		if ( glw_state.randr_gamma && glw_state.gammaSet )
+		{
+			RandR_RestoreGamma();
+			glw_state.gammaSet = qfalse;
+		}
+
+		RandR_RestoreMode();
+
+		if ( ctx )
+			qglXDestroyContext( dpy, ctx );
+
+		if ( win )
+			XDestroyWindow( dpy, win );
+
+		if ( glw_state.gammaSet )
+		{
+			VidMode_RestoreGamma();
+			glw_state.gammaSet = qfalse;
+		}
+
+		if ( glw_state.vidmode_active )
+			VidMode_RestoreMode();
+
+		// NOTE TTimo opening/closing the display should be necessary only once per run
+		// but it seems GL_Shutdown gets called in a lot of occasion
+		// in some cases, this XCloseDisplay is known to raise some X errors
+		// ( https://zerowing.idsoftware.com/bugzilla/show_bug.cgi?id=33 )
+		XCloseDisplay( dpy );
+	}
+
+	RandR_Done();
+	VidMode_Done();
+
+	glw_state.desktop_ok = qfalse;
+
+	dpy = NULL;
+	win = 0;
+	ctx = NULL;
+
+	unsetenv( "vblank_mode" );
+	
+	//if ( glw_state.cdsFullscreen )
+	{
+		glw_state.cdsFullscreen = qfalse;
+	}
+
+	GL_Shutdown( unloadDLL );
+}
+
+
+/*
+** GLimp_LogComment
+*/
+void GLimp_LogComment( char *comment )
+{
+	if ( glw_state.log_fp )
+	{
+		fprintf( glw_state.log_fp, "%s", comment );
 	}
 }
 
 
 
+//////////////////////////////////////////////////////////////////////////////////////////////////
 
 
 /*

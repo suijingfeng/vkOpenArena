@@ -25,7 +25,7 @@ ifndef BUILD_MISSIONPACK
   BUILD_MISSIONPACK= 0
 endif
 ifndef BUILD_RENDERER_OPENGL2
-  BUILD_RENDERER_OPENGL2=0
+  BUILD_RENDERER_OPENGL2=1
 endif
 
 ifndef USE_RENDERER_DLOPEN
@@ -874,7 +874,6 @@ Q3OBJ = \
   $(B)/client/inputs_linux.o \
   $(B)/client/gamma_linux.o \
   $(B)/client/sound_linux.o	\
-  $(B)/client/x11_dga.o \
   $(B)/client/x11_randr.o \
   $(B)/client/x11_vidmode.o \
   $(B)/client/con_tty.o	\
