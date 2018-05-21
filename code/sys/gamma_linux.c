@@ -53,14 +53,14 @@ void InitGammaImpl( glconfig_t *config )
 
 	if ( glw_state.randr_gamma )
 	{
-		Com_Printf( "...using xrandr gamma extension\n" );
+		printf( "...using xrandr gamma extension\n" );
 		config->deviceSupportsGamma = qtrue;
 		return;
 	}
 
 	if ( glw_state.vidmode_gamma )
 	{
-		Com_Printf( "...using vidmode gamma extension\n" );
+		printf( "...using vidmode gamma extension\n" );
 		config->deviceSupportsGamma = qtrue;
 		return;
 	}

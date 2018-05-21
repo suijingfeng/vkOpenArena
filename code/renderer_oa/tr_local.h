@@ -26,12 +26,12 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
 #include "../qcommon/q_shared.h"
 #include "../qcommon/qfiles.h"
-#include "GL/gl.h"
-#include "iqm.h"
 
-#include "tr_public.h"
-#include "tr_shared.h"
-
+#include "../renderercommon/iqm.h"
+#include "../renderercommon/tr_image.h"
+#include "../renderercommon/tr_public.h"
+#include "../renderercommon/tr_shared.h"
+#include <GL/gl.h>
 #define PATCH_STITCHING
 
 
@@ -216,46 +216,6 @@ typedef struct {
 	float frequency;
     genFunc_t func;
 } waveForm_t;
-
-
-////////////////////// image_t  ////////////////////////////// 
-typedef enum
-{
-	IMGTYPE_COLORALPHA, // for color, lightmap, diffuse, and specular
-	IMGTYPE_NORMAL,
-	IMGTYPE_NORMALHEIGHT,
-	IMGTYPE_DELUXE, // normals are swizzled, deluxe are not
-} imgType_t;
-
-typedef enum
-{
-	IMGFLAG_NONE           = 0x0000,
-	IMGFLAG_MIPMAP         = 0x0001,
-	IMGFLAG_PICMIP         = 0x0002,
-	IMGFLAG_CUBEMAP        = 0x0004,
-	IMGFLAG_NO_COMPRESSION = 0x0010,
-	IMGFLAG_NOLIGHTSCALE   = 0x0020,
-	IMGFLAG_CLAMPTOEDGE    = 0x0040,
-	IMGFLAG_SRGB           = 0x0080,
-	IMGFLAG_GENNORMALMAP   = 0x0100,
-} imgFlags_t;
-
-typedef struct image_s {
-	char		imgName[MAX_QPATH];		// game path, including extension
-    struct image_s*	next;
-	
-    int			width;
-    int         height;				// source image
-	int			uploadWidth;
-    int         uploadHeight;	// after power of two and picmip but not including clamp to MAX_TEXTURE_SIZE
-	GLuint		texnum;					// gl texture binding
-
-	int			frameUsed;			// for texture usage in frame statistics
-	int			internalFormat;
-	imgType_t   type;
-	imgFlags_t  flags;
-} image_t;
-
 
 
 

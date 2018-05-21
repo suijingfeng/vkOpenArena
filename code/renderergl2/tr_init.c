@@ -60,9 +60,6 @@ cvar_t	*r_znear;
 cvar_t	*r_zproj;
 cvar_t	*r_stereoSeparation;
 
-cvar_t	*r_greyscale;
-
-cvar_t	*r_ignorehwgamma;
 cvar_t	*r_measureOverdraw;
 
 cvar_t	*r_inGameVideo;
@@ -302,7 +299,6 @@ static void InitOpenGL( void )
 	//		- r_fullscreen
 	//		- r_mode
 	//		- r_(color|depth|stencil)bits
-	//		- r_ignorehwgamma
 	//		- r_gamma
 	//
 
@@ -334,15 +330,8 @@ static void InitOpenGL( void )
 
 		if ( glConfig.numTextureUnits && max_bind_units > 0 )
 			glConfig.numTextureUnits = max_bind_units;
-
-		glConfig.deviceSupportsGamma = qfalse;
-
-		//if ( !r_ignorehwgamma->integer )
-		{
-			ri.InitGamma( &glConfig );
-		}
-
 	}
+
 	// set default state
 	GL_SetDefaultState();
 
@@ -1175,7 +1164,6 @@ void R_Register( void )
 	r_ext_multisample = ri.Cvar_Get( "r_ext_multisample", "0", CVAR_ARCHIVE | CVAR_LATCH );
 	ri.Cvar_CheckRange( r_ext_multisample, 0, 4, qtrue );
 	r_overBrightBits = ri.Cvar_Get ("r_overBrightBits", "1", CVAR_ARCHIVE | CVAR_LATCH );
-	r_ignorehwgamma = ri.Cvar_Get( "r_ignorehwgamma", "0", CVAR_ARCHIVE | CVAR_LATCH);
 	r_mode = ri.Cvar_Get( "r_mode", "-2", CVAR_ARCHIVE | CVAR_LATCH );
 	r_fullscreen = ri.Cvar_Get( "r_fullscreen", "1", CVAR_ARCHIVE );
 	r_noborder = ri.Cvar_Get("r_noborder", "0", CVAR_ARCHIVE | CVAR_LATCH);
@@ -1186,8 +1174,6 @@ void R_Register( void )
 	r_vertexLight = ri.Cvar_Get( "r_vertexLight", "0", CVAR_ARCHIVE | CVAR_LATCH );
 	r_uiFullScreen = ri.Cvar_Get( "r_uifullscreen", "0", 0);
 	r_subdivisions = ri.Cvar_Get ("r_subdivisions", "4", CVAR_ARCHIVE | CVAR_LATCH);
-	r_greyscale = ri.Cvar_Get("r_greyscale", "0", CVAR_ARCHIVE | CVAR_LATCH);
-	ri.Cvar_CheckRange(r_greyscale, 0, 1, qfalse);
 
 	r_externalGLSL = ri.Cvar_Get( "r_externalGLSL", "0", CVAR_LATCH );
 
@@ -1598,6 +1584,6 @@ refexport_t *GetRefAPI ( int apiVersion, refimport_t *rimp ) {
 	re.inPVS = R_inPVS;
 
 	re.TakeVideoFrame = RE_TakeVideoFrame;
-
+    re.SetColorMappings = R_SetColorMappings;
 	return &re;
 }

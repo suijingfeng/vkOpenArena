@@ -67,9 +67,10 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 // defined out. To pre-render new fonts you need enable the define ( BUILD_FREETYPE ) and 
 // uncheck the exclude from build check box in the FreeType2 area of the Renderer project. 
 
-
-#include "tr_local.h"
-#include "../qcommon/qcommon.h"
+//#include "../qcommon/q_shared.h"
+#include "tr_font.h"
+#include "tr_public.h"
+#include "tr_shared.h"
 
 #ifdef BUILD_FREETYPE
 #include <ft2build.h>
@@ -94,7 +95,8 @@ static int registeredFontCount = 0;
 static fontInfo_t registeredFont[MAX_FONTS];
 
 #ifdef BUILD_FREETYPE
-void R_GetGlyphInfo(FT_GlyphSlot glyph, int *left, int *right, int *width, int *top, int *bottom, int *height, int *pitch) {
+void R_GetGlyphInfo(FT_GlyphSlot glyph, int *left, int *right, int *width, int *top, int *bottom, int *height, int *pitch)
+{
 	*left  = _FLOOR( glyph->metrics.horiBearingX );
 	*right = _CEIL( glyph->metrics.horiBearingX + glyph->metrics.width );
 	*width = _TRUNC(*right - *left);
@@ -106,7 +108,8 @@ void R_GetGlyphInfo(FT_GlyphSlot glyph, int *left, int *right, int *width, int *
 }
 
 
-FT_Bitmap *R_RenderGlyph(FT_GlyphSlot glyph, glyphInfo_t* glyphOut) {
+FT_Bitmap *R_RenderGlyph(FT_GlyphSlot glyph, glyphInfo_t* glyphOut)
+{
 	FT_Bitmap  *bit2;
 	int left, right, width, top, bottom, height, pitch, size;
 

@@ -60,9 +60,7 @@ cvar_t	*r_stereoSeparation;
 
 cvar_t	*r_skipBackEnd;
 
-cvar_t	*r_greyscale;
 
-cvar_t	*r_ignorehwgamma;
 cvar_t	*r_measureOverdraw;
 
 cvar_t	*r_inGameVideo;
@@ -101,7 +99,6 @@ cvar_t	*r_stencilbits;
 cvar_t	*r_depthbits;
 cvar_t	*r_colorbits;
 cvar_t	*r_primitives;
-cvar_t	*r_texturebits;
 cvar_t  *r_ext_multisample;
 
 cvar_t	*r_drawBuffer;
@@ -215,10 +212,7 @@ static void InitOpenGL(void)
 
 		glConfig.deviceSupportsGamma = qfalse;
 
-		//if ( !r_ignorehwgamma->integer )
-		{
 			ri.InitGamma( &glConfig );
-		}
     }
 
     // stubbed or broken drivers may have reported 0...
@@ -793,13 +787,12 @@ void GL_SetDefaultState( void )
 
 	// initialize downstream texture unit if we're running
 	// in a multitexture environment
-	if ( glActiveTextureARB ) {
+
 		GL_SelectTexture( 1 );
 		GL_TextureMode( r_textureMode->string );
 		GL_TexEnv( GL_MODULATE );
 		glDisable( GL_TEXTURE_2D );
 		GL_SelectTexture( 0 );
-	}
 
 	glEnable(GL_TEXTURE_2D);
 	GL_TextureMode( r_textureMode->string );
@@ -917,8 +910,6 @@ void GfxInfo_f( void )
 
 	ri.Printf( PRINT_ALL, "texturemode: %s\n", r_textureMode->string );
 	ri.Printf( PRINT_ALL, "picmip: %d\n", r_picmip->integer );
-	ri.Printf( PRINT_ALL, "texture bits: %d\n", r_texturebits->integer );
-	ri.Printf( PRINT_ALL, "multitexture: %s\n", enablestrings[glActiveTextureARB != 0] );
 	ri.Printf( PRINT_ALL, "texenv add: %s\n", enablestrings[glConfig.textureEnvAddAvailable != 0] );
 	ri.Printf( PRINT_ALL, "compressed textures: %s\n", enablestrings[glConfig.textureCompression!=TC_NONE] );
 
@@ -956,14 +947,12 @@ void R_Register( void )
 	r_colorMipLevels = ri.Cvar_Get ("r_colorMipLevels", "0", CVAR_LATCH );
 	ri.Cvar_CheckRange( r_picmip, 0, 16, qtrue );
 	r_detailTextures = ri.Cvar_Get( "r_detailtextures", "1", CVAR_ARCHIVE | CVAR_LATCH );
-	r_texturebits = ri.Cvar_Get( "r_texturebits", "0", CVAR_ARCHIVE | CVAR_LATCH );
 	r_colorbits = ri.Cvar_Get( "r_colorbits", "0", CVAR_ARCHIVE | CVAR_LATCH );
 	r_stencilbits = ri.Cvar_Get( "r_stencilbits", "8", CVAR_ARCHIVE | CVAR_LATCH );
 	r_depthbits = ri.Cvar_Get( "r_depthbits", "0", CVAR_ARCHIVE | CVAR_LATCH );
 	r_ext_multisample = ri.Cvar_Get( "r_ext_multisample", "0", CVAR_ARCHIVE | CVAR_LATCH );
 	ri.Cvar_CheckRange( r_ext_multisample, 0, 4, qtrue );
 	r_overBrightBits = ri.Cvar_Get ("r_overBrightBits", "1", CVAR_ARCHIVE | CVAR_LATCH );
-	r_ignorehwgamma = ri.Cvar_Get( "r_ignorehwgamma", "0", CVAR_ARCHIVE | CVAR_LATCH);
 	r_mode = ri.Cvar_Get( "r_mode", "3", CVAR_ARCHIVE | CVAR_LATCH );
 	r_fullscreen = ri.Cvar_Get( "r_fullscreen", "1", CVAR_ARCHIVE );
 	r_noborder = ri.Cvar_Get("r_noborder", "0", CVAR_ARCHIVE | CVAR_LATCH);
@@ -975,8 +964,6 @@ void R_Register( void )
 	r_uiFullScreen = ri.Cvar_Get( "r_uifullscreen", "0", 0);
 	r_subdivisions = ri.Cvar_Get ("r_subdivisions", "4", CVAR_ARCHIVE | CVAR_LATCH);
 	r_ignoreFastPath = ri.Cvar_Get( "r_ignoreFastPath", "1", CVAR_ARCHIVE | CVAR_LATCH );
-	r_greyscale = ri.Cvar_Get("r_greyscale", "0", CVAR_ARCHIVE | CVAR_LATCH);
-	ri.Cvar_CheckRange(r_greyscale, 0, 1, qfalse);
 
 	//
 	// temporary latched variables that can only change over a restart
@@ -1301,6 +1288,6 @@ refexport_t *GetRefAPI ( int apiVersion, refimport_t *rimp ) {
 	re.inPVS = R_inPVS;
 
 	re.TakeVideoFrame = RE_TakeVideoFrame;
-
+    re.SetColorMappings = R_SetColorMappings;
 	return &re;
 }

@@ -251,12 +251,6 @@ typedef enum {
 } cbufExec_t;
 
 
-//
-// these aren't needed by any of the VMs.  put in another header?
-//
-#define	MAX_MAP_AREA_BYTES		    32		// bit vector of area visibility
-
-
 
 // print levels from renderer (FIXME: set up for game / cgame?)
 typedef enum {
@@ -1205,6 +1199,6 @@ typedef enum _flag_status {
 #define CDKEY_LEN       16
 #define CDCHKSUM_LEN    2
 
-
+#define	MAX_MAP_AREA_BYTES		    32		// bit vector of area visibility
 
 #endif	// __Q_SHARED_H

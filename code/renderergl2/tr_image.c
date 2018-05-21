@@ -28,7 +28,6 @@ extern cvar_t *r_ext_texture_filter_anisotropic;
 extern cvar_t *r_ext_max_anisotropy;
 extern cvar_t *r_ext_compressed_textures;// these control use of specific extensions, tr2
 
-static cvar_t* r_texturebits;
 static unsigned char s_intensitytable[256];
 static unsigned char s_gammatable[256];
 
@@ -1667,14 +1666,6 @@ static GLenum RawImage_GetFormat(const byte *data, int numPixels, GLenum picForm
 			{
 				internalFormat = GL_COMPRESSED_RGBA_S3TC_DXT5_EXT;
 			}
-			else if ( r_texturebits->integer == 16 )
-			{
-				internalFormat = GL_RGBA4;
-			}
-			else if ( r_texturebits->integer == 32 )
-			{
-				internalFormat = GL_RGBA8;
-			}
 			else
 			{
 				internalFormat = GL_RGBA;
@@ -1694,14 +1685,6 @@ static GLenum RawImage_GetFormat(const byte *data, int numPixels, GLenum picForm
 			{
 				internalFormat = GL_COMPRESSED_RGBA_S3TC_DXT5_EXT;
 			}
-			else if (r_texturebits->integer == 16)
-			{
-				internalFormat = GL_RGB5;
-			}
-			else if (r_texturebits->integer == 32)
-			{
-				internalFormat = GL_RGB8;
-			}
 			else
 			{
 				internalFormat = GL_RGB;
@@ -1710,9 +1693,6 @@ static GLenum RawImage_GetFormat(const byte *data, int numPixels, GLenum picForm
 	}
 	else if(lightMap)
 	{
-		if(r_greyscale->integer)
-			internalFormat = GL_LUMINANCE;
-		else
 			internalFormat = GL_RGBA;
 	}
 	else
@@ -1725,17 +1705,7 @@ static GLenum RawImage_GetFormat(const byte *data, int numPixels, GLenum picForm
 		// select proper internal format
 		if ( samples == 3 )
 		{
-			if(r_greyscale->integer)
-			{
-				if(r_texturebits->integer == 16)
-					internalFormat = GL_LUMINANCE8;
-				else if(r_texturebits->integer == 32)
-					internalFormat = GL_LUMINANCE16;
-				else
-					internalFormat = GL_LUMINANCE;
-			}
-			else
-			{
+
 				if ( !forceNoCompression && (glRefConfig.textureCompression & TCR_BPTC) )
 				{
 					internalFormat = GL_COMPRESSED_RGBA_BPTC_UNORM_ARB;
@@ -1748,55 +1718,26 @@ static GLenum RawImage_GetFormat(const byte *data, int numPixels, GLenum picForm
 				{
 					internalFormat = GL_RGB4_S3TC;
 				}
-				else if ( r_texturebits->integer == 16 )
-				{
-					internalFormat = GL_RGB5;
-				}
-				else if ( r_texturebits->integer == 32 )
-				{
-					internalFormat = GL_RGB8;
-				}
 				else
 				{
 					internalFormat = GL_RGB;
 				}
-			}
 		}
 		else if ( samples == 4 )
 		{
-			if(r_greyscale->integer)
-			{
-				if(r_texturebits->integer == 16)
-					internalFormat = GL_LUMINANCE8_ALPHA8;
-				else if(r_texturebits->integer == 32)
-					internalFormat = GL_LUMINANCE16_ALPHA16;
-				else
-					internalFormat = GL_LUMINANCE_ALPHA;
-			}
-			else
-			{
-				if ( !forceNoCompression && (glRefConfig.textureCompression & TCR_BPTC) )
-				{
-					internalFormat = GL_COMPRESSED_RGBA_BPTC_UNORM_ARB;
-				}
-				else if ( !forceNoCompression && glConfig.textureCompression == TC_S3TC_ARB )
-				{
-					internalFormat = GL_COMPRESSED_RGBA_S3TC_DXT5_EXT;
-				}
-				else if ( r_texturebits->integer == 16 )
-				{
-					internalFormat = GL_RGBA4;
-				}
-				else if ( r_texturebits->integer == 32 )
-				{
-					internalFormat = GL_RGBA8;
-				}
-				else
-				{
-					internalFormat = GL_RGBA;
-				}
-			}
-		}
+            if ( !forceNoCompression && (glRefConfig.textureCompression & TCR_BPTC) )
+            {
+                internalFormat = GL_COMPRESSED_RGBA_BPTC_UNORM_ARB;
+            }
+            else if ( !forceNoCompression && glConfig.textureCompression == TC_S3TC_ARB )
+            {
+                internalFormat = GL_COMPRESSED_RGBA_S3TC_DXT5_EXT;
+            }
+            else
+            {
+                internalFormat = GL_RGBA;
+            }
+        }
 	}
 
 	return internalFormat;
@@ -2033,31 +1974,9 @@ static void Upload32(unsigned char *data, int x, int y, int width, int height, G
 	if (rgba8 && !cubemap)
 	{
 		c = width*height;
-		unsigned char *scan = data;
 
 		if (type == IMGTYPE_COLORALPHA)
 		{
-			if( r_greyscale->integer )
-			{
-				for ( i = 0; i < c; i++ )
-				{
-					byte luma = LUMA(scan[i*4], scan[i*4 + 1], scan[i*4 + 2]);
-					scan[i*4] = luma;
-					scan[i*4 + 1] = luma;
-					scan[i*4 + 2] = luma;
-				}
-			}
-			else if( r_greyscale->value )
-			{
-				for ( i = 0; i < c; i++ )
-				{
-					float luma = LUMA(scan[i*4], scan[i*4 + 1], scan[i*4 + 2]);
-					scan[i*4] = LERP(scan[i*4], luma, r_greyscale->value);
-					scan[i*4 + 1] = LERP(scan[i*4 + 1], luma, r_greyscale->value);
-					scan[i*4 + 2] = LERP(scan[i*4 + 2], luma, r_greyscale->value);
-				}
-			}
-
 			// This corresponds to what the OpenGL1 renderer does.
 			if (!(flags & IMGFLAG_NOLIGHTSCALE) && (scaled || mipmap))
 				R_LightScaleTexture(data, width, height, !mipmap);
@@ -2908,9 +2827,6 @@ void R_InitImages( void )
 	memset(hashTable, 0, sizeof(hashTable));
 	// build brightness translation tables
 	
-    r_texturebits = ri.Cvar_Get( "r_texturebits", "0", CVAR_ARCHIVE | CVAR_LATCH );
-    ri.Printf( PRINT_ALL, "texture bits: %d\n", r_texturebits->integer );
-
     R_SetColorMappings();
 
 	// create default texture and white texture

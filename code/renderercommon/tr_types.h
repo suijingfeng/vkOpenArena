@@ -121,6 +121,7 @@ typedef struct {
 #define	MAX_RENDER_STRINGS			8
 #define	MAX_RENDER_STRING_LENGTH	32
 
+
 typedef struct {
 	int			x, y, width, height;
 	float		fov_x, fov_y;

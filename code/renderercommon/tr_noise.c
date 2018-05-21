@@ -19,8 +19,11 @@ along with Quake III Arena source code; if not, write to the Free Software
 Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 ===========================================================================
 */
-// tr_noise.c
-#include "tr_local.h"
+
+#include <math.h>
+#include <stdlib.h>
+#include "tr_noise.h"
+
 
 #define NOISE_SIZE 256
 #define NOISE_MASK ( NOISE_SIZE - 1 )
@@ -31,7 +34,7 @@ static int s_noise_perm[NOISE_SIZE];
 
 #define VAL( a )                s_noise_perm[ ( a ) & ( NOISE_MASK )]
 #define INDEX( x, y, z, t )     VAL( x + VAL( y + VAL( z + VAL( t ) ) ) )
-
+#define LERP( a, b, w )     ( ( a ) * ( 1.0f - ( w ) ) + ( b ) * ( w ) )
 
 static float GetNoiseValue( int x, int y, int z, int t )
 {

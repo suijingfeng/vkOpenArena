@@ -256,7 +256,7 @@ qboolean GL_Init( const char *dllname )
 #define STRING(s)			#s
 // expand constants before stringifying them
 #define XSTRING(s)			STRING(s)	
-#define GLE( ret, name, ... ) q##name = GLimp_GetProcAddress( XSTRING( name ) ); if ( !q##name ) { Com_Printf( "Error resolving core X11 functions\n" ); return qfalse; }
+#define GLE( ret, name, ... ) q##name = GLimp_GetProcAddress( XSTRING( name ) ); if ( !q##name ) { printf( "Error resolving core X11 functions\n" ); return qfalse; }
 	QGL_LinX11_PROCS;
 #undef GLE
 
@@ -272,11 +272,11 @@ qboolean GL_Init( const char *dllname )
 */
 static void GL_Shutdown( qboolean unloadDLL )
 {
-	Com_Printf( "...shutting down GL\n" );
+	printf( "...shutting down GL\n" );
 
 	if ( glw_state.OpenGLLib && unloadDLL )
 	{
-		Com_Printf( "...unloading OpenGL DLL\n" );
+		printf( "...unloading OpenGL DLL\n" );
 		// 25/09/05 Tim Angus <tim@ngus.net>
 		// Certain combinations of hardware and software, specifically
 		// Linux/SMP/Nvidia/agpgart (OK, OK. MY combination of hardware and
@@ -388,9 +388,9 @@ static int GLW_SetMode( const char *drivername, int mode, qboolean fullscreen )
 	actualHeight = config->vidHeight;
 
 	if ( actualRate )
-		Com_Printf( " %d %d @%iHz\n", actualWidth, actualHeight, actualRate );
+		printf( " %d %d @%iHz\n", actualWidth, actualHeight, actualRate );
 	else
-		Com_Printf( " %d %d\n", actualWidth, actualHeight );
+		printf( " %d %d\n", actualWidth, actualHeight );
 
 	if ( fullscreen ) // try randr first
 	{
@@ -402,7 +402,7 @@ static int GLW_SetMode( const char *drivername, int mode, qboolean fullscreen )
 		if ( fullscreen )
 			VidMode_SetMode( &actualWidth, &actualHeight, &actualRate );
 		else
-			Com_Printf( "XFree86-VidModeExtension: Ignored on non-fullscreen\n" );
+			printf( "XFree86-VidModeExtension: Ignored on non-fullscreen\n" );
 	}
 
 
@@ -415,7 +415,7 @@ static int GLW_SetMode( const char *drivername, int mode, qboolean fullscreen )
     visinfo = qglXChooseVisual( dpy, scrnum, attrib );
 	if ( !visinfo )
 	{
-		Com_Printf( "Couldn't get a visual\n" );
+		printf( "Couldn't get a visual\n" );
 	}
 
     printf( "Using %d/%d/%d Color bits, %d depth, %d stencil display.\n", 
@@ -636,7 +636,12 @@ void GLimp_Init( glconfig_t *config )
 	r_customheight = Cvar_Get( "r_customheight", "1080", CVAR_ARCHIVE | CVAR_LATCH );
    	r_swapInterval = Cvar_Get( "r_swapInterval", "0", CVAR_ARCHIVE );
 	r_glDriver = Cvar_Get( "r_glDriver", OPENGL_DRIVER_NAME, CVAR_ARCHIVE | CVAR_LATCH );
-	
+		// optional
+    #define GLE( ret, name, ... ) q##name = GLimp_GetProcAddress( XSTRING( name ) );
+    QGL_LinX11_PROCS;
+    QGL_Swp_PROCS;
+    #undef GLE	
+
     IN_Init();   // rcg08312005 moved into glimp.
 
 	// set up our custom error handler for X failures
@@ -657,11 +662,6 @@ void GLimp_Init( glconfig_t *config )
 	config->driverType = GLDRV_ICD;
 	config->hardwareType = GLHW_GENERIC;
 
-		// optional
-#define GLE( ret, name, ... ) q##name = GLimp_GetProcAddress( XSTRING( name ) );
-QGL_LinX11_PROCS;
-QGL_Swp_PROCS;
-#undef GLE
 
 	if ( qglXSwapIntervalEXT || qglXSwapIntervalMESA || qglXSwapIntervalSGI )
 	{
@@ -672,6 +672,14 @@ QGL_Swp_PROCS;
 	{
 		printf( "...GLX_EXT_swap_control not found\n" );
 	}
+
+
+    	// get our config strings
+	Q_strncpyz( config->vendor_string, (char *) glGetString (GL_VENDOR), sizeof( config->vendor_string ) );
+	Q_strncpyz( config->renderer_string, (char *) glGetString (GL_RENDERER), sizeof( config->renderer_string ) );
+	Q_strncpyz( config->version_string, (char *) glGetString (GL_VERSION), sizeof( config->version_string ) );
+    
+
 }
 
 

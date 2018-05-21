@@ -809,61 +809,6 @@ static void R_LoadImage(const char *name, unsigned char **pic, int *width, int *
 
 
 /*
-===============
-R_FindImageFileIfItsThere
-leilei Finds the given image and does not load it.
-==============
-
-static image_t	*R_FindImageFileIfItsThere( const char *name, imgType_t type, imgFlags_t flags )
-{
-	image_t	*image;
-	int	width, height;
-	unsigned char *pic;
-
-	if (!name) {
-		return NULL;
-	}
-
-	long hash = generateHashValue(name);
-
-	//
-	// see if the image is already loaded
-	//
-	for (image=hashTable[hash]; image; image=image->next)
-    {
-		if ( !strcmp( name, image->imgName ) )
-        {
-			// the white image can be used with any set of parms, but other mismatches are errors
-			if ( strcmp( name, "*white" ) ) {
-				if ( image->flags != flags ) {
-					ri.Printf( PRINT_DEVELOPER, "WARNING: reused image %s with mixed flags (%i vs %i)\n", name, image->flags, flags );
-				}
-			}
-			return image;
-		}
-	}
-
-	// leilei - Detail texture hack to kill artifacts of shimmer of pattern of terrible
-	if ( !Q_strncmp( name, "textures/detail/", 16 )  || !Q_strncmp( name, "gfx/fx/detail/", 14 ))
-    {
-		ri.Printf( PRINT_ALL, "DETAILHACK: %s - mips will be gray\n", name );
-	}
-
-	//
-	// load the pic from disk
-	//
-	R_LoadImage( name, &pic, &width, &height );
-	if ( pic == NULL ) {
-		return NULL;
-	}
-
-	image = R_CreateImage( ( char * ) name, pic, width, height, type, flags, 0 );
-	ri.Free( pic );
-	return image;
-}
-*/
-
-/*
 ================
 R_CreateDlightImage
 ================
@@ -1438,9 +1383,9 @@ void R_SetColorMappings(void)
     {
 		ri.Cvar_Set( "r_gamma", "0.4" );
 	}
-    else if ( r_gamma->value > 3.0f )
+    else if ( r_gamma->value > 2.0f )
     {
-		ri.Cvar_Set( "r_gamma", "3.0" );
+		ri.Cvar_Set( "r_gamma", "2.0" );
 	}
 
 	float g = r_gamma->value;

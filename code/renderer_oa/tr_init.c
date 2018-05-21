@@ -110,20 +110,19 @@ static void GfxInfo_f( void )
 	ri.Printf( PRINT_ALL, "GL_RENDERER: %s\n", glConfig.renderer_string );
 	ri.Printf( PRINT_ALL, "GL_VERSION: %s\n", glConfig.version_string );
 	ri.Printf( PRINT_ALL, "GL_EXTENSIONS: " );
-//	R_PrintLongString( glConfig.extensions_string );
     ri.Printf( PRINT_ALL, "\n" );
 	ri.Printf( PRINT_ALL, "GL_MAX_TEXTURE_SIZE: %d\n", glConfig.maxTextureSize );
 	ri.Printf( PRINT_ALL, "GL_MAX_TEXTURE_UNITS_ARB: %d\n", glConfig.numTextureUnits );
 	ri.Printf( PRINT_ALL, "\nPIXELFORMAT: color(%d-bits) Z(%d-bit) stencil(%d-bits)\n", glConfig.colorBits, glConfig.depthBits, glConfig.stencilBits );
+    ri.Printf( PRINT_ALL, "Overbright bits: %d\n", tr.overbrightBits );
 
 
 	if( glConfig.deviceSupportsGamma )
-		ri.Printf( PRINT_ALL, "GAMMA: hardware w/ %d overbright bits\n", tr.overbrightBits );
+		ri.Printf( PRINT_ALL, "GAMMA: hardware\n");
 	else
-		ri.Printf( PRINT_ALL, "GAMMA: software w/ %d overbright bits\n", tr.overbrightBits );
+		ri.Printf( PRINT_ALL, "GAMMA: software\n");
+	
 
-
-//	ri.Printf( PRINT_ALL, "compiled vertex arrays: %s\n", enablestrings[glLockArraysEXT != 0 ] );
 	ri.Printf( PRINT_ALL, "texenv add: %s\n", enablestrings[glConfig.textureEnvAddAvailable != 0] );
 	ri.Printf( PRINT_ALL, "compressed textures: %s\n", enablestrings[glConfig.textureCompression!=TC_NONE] );
 
@@ -174,7 +173,6 @@ static void InitOpenGL(void)
 
 		glConfig.deviceSupportsGamma = qfalse;
 
-		//if ( !r_ignorehwgamma->integer )
 		{
 			ri.InitGamma( &glConfig );
 		}

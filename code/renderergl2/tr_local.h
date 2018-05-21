@@ -26,15 +26,15 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
 #include "../qcommon/q_shared.h"
 #include "../qcommon/qcommon.h"
-#include "../renderer_oa/tr_public.h"
+#include "../renderercommon/tr_public.h"
 
 #include "tr_extratypes.h"
 #include "tr_extramath.h"
 #include "tr_fbo.h"
 #include "tr_postprocess.h"
-#include "iqm.h"
-#include "qgl.h"
-#include "tr_shared.h"
+#include "../renderercommon/iqm.h"
+#include "../renderercommon/qgl.h"
+#include "../renderercommon/tr_shared.h"
 
 extern refimport_t ri;
 extern glconfig_t glConfig;
@@ -1795,8 +1795,6 @@ extern  cvar_t  *r_shadowCascadeZNear;
 extern  cvar_t  *r_shadowCascadeZFar;
 extern  cvar_t  *r_shadowCascadeZBias;
 extern  cvar_t  *r_ignoreDstAlpha;
-
-extern	cvar_t	*r_greyscale;
 
 extern	cvar_t	*r_ignoreGLErrors;
 

@@ -63,13 +63,6 @@ ifeq ($(COMPILE_ARCH),x64)
   COMPILE_ARCH=x86_64
 endif
 
-ifeq ($(COMPILE_ARCH),powerpc)
-  COMPILE_ARCH=ppc
-endif
-ifeq ($(COMPILE_ARCH),powerpc64)
-  COMPILE_ARCH=ppc64
-endif
-
 
 ifndef ARCH
 ARCH=$(COMPILE_ARCH)
@@ -215,6 +208,7 @@ BD=$(BUILD_DIR)/debug-$(PLATFORM)-$(ARCH)
 BR=$(BUILD_DIR)/release-$(PLATFORM)-$(ARCH)
 CDIR=$(MOUNT_DIR)/client
 SDIR=$(MOUNT_DIR)/server
+RCOMMONDIR=$(MOUNT_DIR)/renderercommon
 RGL1DIR=$(MOUNT_DIR)/renderergl1
 RGL2DIR=$(MOUNT_DIR)/renderergl2
 ROADIR=$(MOUNT_DIR)/renderer_oa
@@ -278,12 +272,10 @@ ifneq (,$(findstring "$(PLATFORM)", "linux" "gnu_kfreebsd" "kfreebsd-gnu" "gnu")
   ifeq ($(ARCH),x86_64)
     OPTIMIZEVM = -O3 -fomit-frame-pointer -funroll-loops -mmmx -msse2
     OPTIMIZE = $(OPTIMIZEVM) -ffast-math
-    HAVE_VM_COMPILED=true
   else
   ifeq ($(ARCH),x86)
     OPTIMIZEVM = -O3 -march=i586 -fomit-frame-pointer -funroll-loops
     OPTIMIZE = $(OPTIMIZEVM) -ffast-math
-    HAVE_VM_COMPILED=true
   else
   
 
@@ -339,10 +331,6 @@ ifndef RANLIB
   RANLIB=ranlib
 endif
 
-ifneq ($(HAVE_VM_COMPILED),true)
-  BASE_CFLAGS += -DNO_VM_COMPILED
-  BUILD_GAME_QVM=0
-endif
 
 TARGETS =
 
@@ -701,7 +689,6 @@ targets: makedirs
 	@echo "  VERSION: $(VERSION)"
 	@echo "  COMPILE_PLATFORM: $(COMPILE_PLATFORM)"
 	@echo "  COMPILE_ARCH: $(COMPILE_ARCH)"
-	@echo "  HAVE_VM_COMPILED: $(HAVE_VM_COMPILED)"
 	@echo "  CC: $(CC)"
 ifeq ($(PLATFORM),mingw32)
 	@echo "  WINDRES: $(WINDRES)"
@@ -1033,19 +1020,15 @@ ifeq ($(ARCH),x86)
   Q3OBJ += \
     $(B)/client/snd_mixa.o \
     $(B)/client/matha.o \
-    $(B)/client/snapvector.o \
-    $(B)/client/ftola.o
+    $(B)/client/snapvector.o 
 endif
 ifeq ($(ARCH),x86_64)
   Q3OBJ += \
-    $(B)/client/snapvector.o \
-    $(B)/client/ftola.o
+    $(B)/client/snapvector.o
 endif
 
 
-ifeq ($(HAVE_VM_COMPILED),true)
     Q3OBJ += $(B)/client/vm_x86.o
-endif
 
 
 
@@ -1183,12 +1166,7 @@ ifeq ($(ARCH),x86_64)
 endif
 
 
-ifeq ($(HAVE_VM_COMPILED),true)
-
-    Q3DOBJ += \
-      $(B)/ded/vm_x86.o
-
-endif
+    Q3DOBJ += $(B)/ded/vm_x86.o
 
 
   Q3DOBJ += \
@@ -1517,11 +1495,17 @@ $(B)/renderer_oa/%.o: $(CMDIR)/%.c
 $(B)/renderer_oa/%.o: $(ROADIR)/%.c
 	$(DO_REF_CC)
 
+$(B)/renderer_oa/%.o: $(RCOMMONDIR)/%.c
+	$(DO_REF_CC)
+
 
 $(B)/renderergl1/%.o: $(CMDIR)/%.c
 	$(DO_REF_CC)
 
 $(B)/renderergl1/%.o: $(RGL1DIR)/%.c
+	$(DO_REF_CC)
+
+$(B)/renderergl1/%.o: $(RCOMMONDIR)/%.c
 	$(DO_REF_CC)
 
 
@@ -1536,6 +1520,10 @@ $(B)/renderergl2/%.o: $(RGL2DIR)/%.c
 
 $(B)/renderergl2/%.o: $(CMDIR)/%.c
 	$(DO_REF_CC)
+
+$(B)/renderergl2/%.o: $(RCOMMONDIR)/%.c
+	$(DO_REF_CC)
+
 
 
 $(B)/ded/%.o: $(CMDIR)/%.c

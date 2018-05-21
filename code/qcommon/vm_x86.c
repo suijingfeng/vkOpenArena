@@ -441,6 +441,7 @@ static void DoSyscall(void)
                 Com_Error(ERR_DROP, "Unknown VM operation %d", vm_syscallNum);break;
 		}
 	}
+
 	currentVM = savedVM;
 }
 
