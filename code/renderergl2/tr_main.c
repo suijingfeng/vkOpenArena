@@ -2347,7 +2347,7 @@ void R_RenderSunShadowMaps(const refdef_t *fd, int level)
 
 	// Create bounds for light projection using slice of view projection
 	{
-		mat4_t lightViewMatrix;
+		float lightViewMatrix[16];
 		vec4_t point, base, lightViewPoint;
 		float lx, ly;
 
@@ -2565,7 +2565,7 @@ void R_RenderSunShadowMaps(const refdef_t *fd, int level)
 			R_SortDrawSurfs( tr.refdef.drawSurfs + firstDrawSurf, tr.refdef.numDrawSurfs - firstDrawSurf );
 		}
 
-		Mat4Multiply(tr.viewParms.projectionMatrix, tr.viewParms.world.modelMatrix, tr.refdef.sunShadowMvp[level]);
+		MatrixMultiply4x4(tr.viewParms.world.modelMatrix, tr.viewParms.projectionMatrix, tr.refdef.sunShadowMvp[level]);
 	}
 }
 

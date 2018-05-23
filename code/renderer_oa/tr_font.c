@@ -67,10 +67,8 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 // defined out. To pre-render new fonts you need enable the define ( BUILD_FREETYPE ) and 
 // uncheck the exclude from build check box in the FreeType2 area of the Renderer project. 
 
-//#include "../qcommon/q_shared.h"
-#include "tr_font.h"
-#include "tr_public.h"
-#include "tr_shared.h"
+
+#include "tr_local.h"
 
 #ifdef BUILD_FREETYPE
 #include <ft2build.h>

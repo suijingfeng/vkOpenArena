@@ -957,7 +957,6 @@ typedef struct {
 
 	float				identityLight;		// 1.0 / ( 1 << overbrightBits )
 	int					identityLightByte;	// identityLight * 255
-	int					overbrightBits;		// r_overbrightBits->integer, but set to 0 if no hw gamma
 
 	orientationr_t		or;					// for current entity
 
@@ -1467,10 +1466,6 @@ const char* getExtension( const char *name );
 //void GLimp_InitExtraExtensions(void);
 /////////////////////////// rendercommon.h //////////////////////////////
 
-//tr_noise
-float R_NoiseGet4f( float x, float y, float z, float t );
-void  R_NoiseInit( void );
-
 
 //tr_font
 void R_InitFreeType( void );
@@ -1482,11 +1477,6 @@ void RE_SaveJPG(char * filename, int quality, int image_width, int image_height,
 size_t RE_SaveJPGToBuffer(unsigned char *buffer, size_t bufSize, int quality, int image_width, int image_height, unsigned char* image_buffer, int padding);
 
 
-// IMAGE LOADERS
-void R_LoadBMP( const char *name, byte **pic, int *width, int *height );
-void R_LoadJPG( const char *name, byte **pic, int *width, int *height );
-void R_LoadPCX( const char *name, byte **pic, int *width, int *height );
-void R_LoadPNG( const char *name, byte **pic, int *width, int *height );
-void R_LoadTGA( const char *name, byte **pic, int *width, int *height );
+
 
 #endif //TR_LOCAL_H

@@ -29,7 +29,7 @@ ifndef BUILD_RENDERER_OPENGL2
 endif
 
 ifndef USE_RENDERER_DLOPEN
-USE_RENDERER_DLOPEN=0
+USE_RENDERER_DLOPEN=1
 endif
 
 
@@ -288,8 +288,7 @@ endif
   SHLIBLDFLAGS=-shared $(LDFLAGS)
 
   THREAD_LIBS=-lpthread
-  LIBS=-ldl -lm -lX11
-
+  LIBS=-ldl -lm -lX11 -lGL
   RENDERER_LIBS = -lGL
 
   ifeq ($(USE_OPENAL),1)
@@ -524,8 +523,6 @@ else
 echo_cmd=@echo
 Q=@
 endif
-
-CFLAGS+="-std=gnu11"
 
 
 define DO_CC
@@ -863,6 +860,7 @@ Q3OBJ = \
   $(B)/client/sound_linux.o	\
   $(B)/client/x11_randr.o \
   $(B)/client/x11_vidmode.o \
+  $(B)/client/x11_dga.o \
   $(B)/client/con_tty.o	\
   $(B)/client/con_log.o \
   \
@@ -878,7 +876,6 @@ Q3R2OBJ = \
   $(B)/renderergl2/tr_cmds.o \
   $(B)/renderergl2/tr_curve.o \
   $(B)/renderergl2/tr_dsa.o \
-  $(B)/renderergl2/tr_extramath.o \
   $(B)/renderergl2/tr_extensions.o \
   $(B)/renderergl2/tr_fbo.o \
   $(B)/renderergl2/tr_flares.o \
@@ -898,7 +895,6 @@ Q3R2OBJ = \
   $(B)/renderergl2/tr_mesh.o \
   $(B)/renderergl2/tr_model.o \
   $(B)/renderergl2/tr_model_iqm.o \
-  $(B)/renderergl2/tr_noise.o \
   $(B)/renderergl2/tr_postprocess.o \
   $(B)/renderergl2/tr_scene.o \
   $(B)/renderergl2/tr_shade.o \
@@ -963,7 +959,6 @@ Q3ROBJ = \
   $(B)/renderergl1/tr_mesh.o \
   $(B)/renderergl1/tr_model.o \
   $(B)/renderergl1/tr_model_iqm.o \
-  $(B)/renderergl1/tr_noise.o \
   $(B)/renderergl1/tr_scene.o \
   $(B)/renderergl1/tr_shade.o \
   $(B)/renderergl1/tr_shade_calc.o \
@@ -995,7 +990,6 @@ Q3ROAOBJ = \
   $(B)/renderer_oa/tr_marks.o \
   $(B)/renderer_oa/tr_model.o \
   $(B)/renderer_oa/tr_model_iqm.o \
-  $(B)/renderer_oa/tr_noise.o \
   $(B)/renderer_oa/tr_scene.o \
   $(B)/renderer_oa/tr_shade.o \
   $(B)/renderer_oa/tr_shade_calc.o \
@@ -1027,14 +1021,10 @@ ifeq ($(ARCH),x86_64)
     $(B)/client/snapvector.o
 endif
 
-
     Q3OBJ += $(B)/client/vm_x86.o
 
-
-
 ifeq ($(USE_MUMBLE),1)
-  Q3OBJ += \
-    $(B)/client/libmumblelink.o
+  Q3OBJ += $(B)/client/libmumblelink.o
 endif
 
 ifneq ($(USE_RENDERER_DLOPEN),0)

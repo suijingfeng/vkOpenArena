@@ -486,15 +486,16 @@ void R_FBOList_f(void)
 	ri.Printf(PRINT_ALL, " %i FBOs\n", tr.numFBOs);
 }
 
-void FBO_BlitFromTexture(struct image_s *src, vec4_t inSrcTexCorners, vec2_t inSrcTexScale, FBO_t *dst, ivec4_t inDstBox, struct shaderProgram_s *shaderProgram, vec4_t inColor, int blend)
+void FBO_BlitFromTexture(struct image_s *src, float inSrcTexCorners[4], float inSrcTexScale[2], 
+        FBO_t *dst, int inDstBox[4], struct shaderProgram_s *shaderProgram, float inColor[4], int blend)
 {
-	ivec4_t dstBox;
+	int dstBox[4];
 	vec4_t color;
 	vec4_t quadVerts[4];
 	vec2_t texCoords[4];
 	vec2_t invTexRes;
 	FBO_t *oldFbo = glState.currentFBO;
-	mat4_t projection;
+	float projection[16];
 	int width, height;
 
 	if (!src)
@@ -591,7 +592,7 @@ void FBO_BlitFromTexture(struct image_s *src, vec4_t inSrcTexCorners, vec2_t inS
 	FBO_Bind(oldFbo);
 }
 
-void FBO_Blit(FBO_t *src, ivec4_t inSrcBox, vec2_t srcTexScale, FBO_t *dst, ivec4_t dstBox, struct shaderProgram_s *shaderProgram, vec4_t color, int blend)
+void FBO_Blit(FBO_t *src, int inSrcBox[4], vec2_t srcTexScale, FBO_t *dst, int dstBox[4], struct shaderProgram_s *shaderProgram, float color[4], int blend)
 {
 	vec4_t srcTexCorners;
 
@@ -616,9 +617,11 @@ void FBO_Blit(FBO_t *src, ivec4_t inSrcBox, vec2_t srcTexScale, FBO_t *dst, ivec
 	FBO_BlitFromTexture(src->colorImage[0], srcTexCorners, srcTexScale, dst, dstBox, shaderProgram, color, blend | GLS_DEPTHTEST_DISABLE);
 }
 
-void FBO_FastBlit(FBO_t *src, ivec4_t srcBox, FBO_t *dst, ivec4_t dstBox, int buffers, int filter)
+
+void FBO_FastBlit(FBO_t *src, int srcBox[4], FBO_t *dst, int dstBox[4], int buffers, int filter)
 {
-	ivec4_t srcBoxFinal, dstBoxFinal;
+	int srcBoxFinal[4];
+    int dstBoxFinal[4];
 	GLuint srcFb, dstFb;
 
 	if (!glRefConfig.framebufferBlit)

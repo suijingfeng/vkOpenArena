@@ -2750,43 +2750,19 @@ void R_CreateBuiltinImages( void ) {
 }
 
 
-/*
-===============
-R_SetColorMappings
-===============
-*/
-void R_SetColorMappings( void ) {
-	int		i, j;
+void R_SetColorMappings( void )
+{
+	int		i;
 	float	g;
 	int		inf;
 
-	// setup the overbright lighting
-	tr.overbrightBits = r_overBrightBits->integer;
-
-	// allow 2 overbright bits
-	if ( tr.overbrightBits > 2 ) {
-		tr.overbrightBits = 2;
-	} else if ( tr.overbrightBits < 0 ) {
-		tr.overbrightBits = 0;
-	}
-
-	// don't allow more overbright bits than map overbright bits
-	if ( tr.overbrightBits > r_mapOverBrightBits->integer ) {
-		tr.overbrightBits = r_mapOverBrightBits->integer;
-	}
-
-	tr.identityLight = 1.0f / ( 1 << tr.overbrightBits );
+	tr.identityLight = 1.0f / ( 2 );
 	tr.identityLightByte = 255 * tr.identityLight;
-
-
-	if ( r_intensity->value <= 1 ) {
-		ri.Cvar_Set( "r_intensity", "1" );
-	}
 
 	if ( r_gamma->value < 0.5f ) {
 		ri.Cvar_Set( "r_gamma", "0.5" );
-	} else if ( r_gamma->value > 3.0f ) {
-		ri.Cvar_Set( "r_gamma", "3.0" );
+	} else if ( r_gamma->value > 2.0f ) {
+		ri.Cvar_Set( "r_gamma", "2.0" );
 	}
 
 	g = r_gamma->value;
@@ -2807,12 +2783,9 @@ void R_SetColorMappings( void ) {
 		s_gammatable[i] = inf;
 	}
 
-	for (i=0 ; i<256 ; i++) {
-		j = i * r_intensity->value;
-		if (j > 255) {
-			j = 255;
-		}
-		s_intensitytable[i] = j;
+	for (i=0 ; i<256 ; i++)
+    {
+		s_intensitytable[i] = i;
 	}
 
 	if ( glConfig.deviceSupportsGamma )

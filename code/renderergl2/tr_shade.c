@@ -409,7 +409,7 @@ static void ComputeShaderColors( shaderStage_t *pStage, vec4_t baseColor, vec4_t
 
 	qboolean is2DDraw = backEnd.currentEntity == &backEnd.entity2D;
 
-	float overbright = (isBlend || is2DDraw) ? 1.0f : (float)(1 << tr.overbrightBits);
+	float overbright = (isBlend || is2DDraw) ? 1.0f : 2;
 
 	fog_t *fog;
 

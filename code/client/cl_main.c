@@ -24,9 +24,7 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #include "client.h"
 #include <limits.h>
 
-#include "../sys/inputs.h"
-#include "../sys/glimpl.h"
-#include "../sys/public.h"
+#include "../sys/sys_public.h"
 #include "../qcommon/puff.h"
 
 #ifdef USE_MUMBLE
@@ -3102,13 +3100,6 @@ void CL_ShutdownRef(void)
 	}
 
 	memset(&re, 0, sizeof(re));
-
-#ifdef USE_RENDERER_DLOPEN
-	if ( rendererLib ) {
-		Sys_UnloadLibrary( rendererLib );
-		rendererLib = NULL;
-	}
-#endif
 }
 
 
@@ -3168,7 +3159,6 @@ void CL_InitRef(void)
 
 	if(!(rendererLib = Sys_LoadDll(dllName, qfalse)) && strcmp(cl_renderer->string, cl_renderer->resetString))
 	{
-		Com_Printf("failed:\n\"%s\"\n", Sys_LibraryError());
 		Cvar_ForceReset("cl_renderer");
 
 		Com_sprintf(dllName, sizeof(dllName), "renderer_openarena_" ARCH_STRING DLL_EXT);
@@ -3177,14 +3167,13 @@ void CL_InitRef(void)
 
 	if(!rendererLib)
 	{
-		Com_Printf("failed:\n\"%s\"\n", Sys_LibraryError());
 		Com_Error(ERR_FATAL, "Failed to load renderer");
 	}
 
-	GetRefAPI = Sys_LoadFunction(rendererLib, "GetRefAPI");
+	GetRefAPI = Sys_GetFunAddr(rendererLib, "GetRefAPI");
 	if(!GetRefAPI)
 	{
-		Com_Error(ERR_FATAL, "Can't load symbol GetRefAPI: '%s'",  Sys_LibraryError());
+		Com_Error(ERR_FATAL, "Can't load symbol GetRefAPI.");
 	}
 #endif
 

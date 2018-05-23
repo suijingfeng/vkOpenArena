@@ -31,7 +31,7 @@ and one exported function: Perform
 */
 
 #include "vm_local.h"
-#include "../sys/public.h"
+#include "../sys/sys_public.h"
 
 
 ////////// globals //////////////

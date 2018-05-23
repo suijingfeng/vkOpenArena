@@ -240,14 +240,7 @@ void RE_StretchPic ( float x, float y, float w, float h,
 }
 
 
-/*
-====================
-RE_BeginFrame
 
-If running in stereo, RE_BeginFrame will be called twice
-for each RE_EndFrame
-====================
-*/
 void RE_BeginFrame( void ) {
 	drawBufferCommand_t	*cmd = NULL;
 
@@ -257,7 +250,6 @@ void RE_BeginFrame( void ) {
 	glState.finishCalled = qfalse;
 
 	tr.frameCount++;
-	tr.frameSceneNum = 0;
 
 	//
 	// do overdraw measurement

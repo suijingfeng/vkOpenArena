@@ -1199,54 +1199,25 @@ R_SetColorMappings
 ===============
 */
 void R_SetColorMappings( void ) {
-	int		i, j;
+	int		i;
 	float	g;
 	int		inf;
-	int		shift;
+	int		shift = 1; // OverBrightBits
 
-	// setup the overbright lighting
-	tr.overbrightBits = r_overBrightBits->integer;
-	if ( !glConfig.deviceSupportsGamma ) {
-		tr.overbrightBits = 0;		// need hardware gamma for overbright
-	}
 
-	// never overbright in windowed mode
-	if ( !glConfig.isFullscreen ) 
-	{
-		tr.overbrightBits = 0;
-	}
 
-	// allow 2 overbright bits in 24 bit, but only 1 in 16 bit
-	if ( glConfig.colorBits > 16 ) {
-		if ( tr.overbrightBits > 2 ) {
-			tr.overbrightBits = 2;
-		}
-	} else {
-		if ( tr.overbrightBits > 1 ) {
-			tr.overbrightBits = 1;
-		}
-	}
-	if ( tr.overbrightBits < 0 ) {
-		tr.overbrightBits = 0;
-	}
-
-	tr.identityLight = 1.0f / ( 1 << tr.overbrightBits );
+	tr.identityLight = 1.0f / ( 1 << shift );
 	tr.identityLightByte = 255 * tr.identityLight;
 
 
-	if ( r_intensity->value <= 1 ) {
-		ri.Cvar_Set( "r_intensity", "1" );
-	}
 
 	if ( r_gamma->value < 0.5f ) {
 		ri.Cvar_Set( "r_gamma", "0.5" );
-	} else if ( r_gamma->value > 3.0f ) {
-		ri.Cvar_Set( "r_gamma", "3.0" );
+	} else if ( r_gamma->value > 2.0f ) {
+		ri.Cvar_Set( "r_gamma", "2.0" );
 	}
 
 	g = r_gamma->value;
-
-	shift = tr.overbrightBits;
 
 	for ( i = 0; i < 256; i++ ) {
 		if ( g == 1 ) {
@@ -1265,11 +1236,7 @@ void R_SetColorMappings( void ) {
 	}
 
 	for (i=0 ; i<256 ; i++) {
-		j = i * r_intensity->value;
-		if (j > 255) {
-			j = 255;
-		}
-		s_intensitytable[i] = j;
+		s_intensitytable[i] = i;
 	}
 
 	if ( glConfig.deviceSupportsGamma )

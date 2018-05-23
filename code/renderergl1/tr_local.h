@@ -28,11 +28,11 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #include "../qcommon/qfiles.h"
 
 #include "../renderercommon/tr_public.h"
-#include "GL/gl.h"
+#include "../renderercommon/qgl.h"
 
 #include "../renderercommon/iqm.h"
 #include "../renderercommon/tr_shared.h"
-
+#include "../renderercommon/tr_image.h"
 
 
 
@@ -71,47 +71,6 @@ void  R_NoiseInit( void );
 void R_InitFreeType( void );
 void R_DoneFreeType( void );
 void RE_RegisterFont(const char *fontName, int pointSize, fontInfo_t *font);
-
-////////////////////// image_t  ////////////////////////////// 
-typedef enum
-{
-	IMGTYPE_COLORALPHA, // for color, lightmap, diffuse, and specular
-	IMGTYPE_NORMAL,
-	IMGTYPE_NORMALHEIGHT,
-	IMGTYPE_DELUXE, // normals are swizzled, deluxe are not
-} imgType_t;
-
-typedef enum
-{
-	IMGFLAG_NONE           = 0x0000,
-	IMGFLAG_MIPMAP         = 0x0001,
-	IMGFLAG_PICMIP         = 0x0002,
-	IMGFLAG_CUBEMAP        = 0x0004,
-	IMGFLAG_NO_COMPRESSION = 0x0010,
-	IMGFLAG_NOLIGHTSCALE   = 0x0020,
-	IMGFLAG_CLAMPTOEDGE    = 0x0040,
-	IMGFLAG_SRGB           = 0x0080,
-	IMGFLAG_GENNORMALMAP   = 0x0100,
-} imgFlags_t;
-
-typedef struct image_s {
-	char		imgName[MAX_QPATH];		// game path, including extension
-	int			width, height;				// source image
-	int			uploadWidth, uploadHeight;	// after power of two and picmip but not including clamp to MAX_TEXTURE_SIZE
-	GLuint		texnum;					// gl texture binding
-
-	int			frameUsed;			// for texture usage in frame statistics
-
-	int			internalFormat;
-	int			TMU;				// only needed for voodoo2
-
-	imgType_t   type;
-	imgFlags_t  flags;
-
-	struct image_s*	next;
-
-	qboolean	maptexture;	// leilei - map texture listing hack
-} image_t;
 
 
 
@@ -943,7 +902,7 @@ typedef struct {
 	int						viewCount;		// incremented every view (twice a scene if portaled)
 											// and every R_MarkFragments call
 
-	int						frameSceneNum;	// zeroed at RE_BeginFrame
+//	int						frameSceneNum;	// zeroed at RE_BeginFrame
 
 	qboolean				worldMapLoaded;
 	world_t					*world;
@@ -978,7 +937,6 @@ typedef struct {
 
 	float					identityLight;		// 1.0 / ( 1 << overbrightBits )
 	int						identityLightByte;	// identityLight * 255
-	int						overbrightBits;		// r_overbrightBits->integer, but set to 0 if no hw gamma
 
 	orientationr_t			or;					// for current entity
 

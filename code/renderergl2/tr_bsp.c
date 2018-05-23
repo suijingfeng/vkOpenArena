@@ -40,9 +40,6 @@ void RE_LoadWorldMap( const char *name );
 static	world_t		s_worldData;
 static	byte		*fileBase;
 
-int			c_subdivisions;
-int			c_gridVerts;
-
 //===============================================================================
 
 static void HSVtoRGB( float h, float s, float v, float rgb[3] )
@@ -95,26 +92,18 @@ static void HSVtoRGB( float h, float s, float v, float rgb[3] )
 	}
 }
 
-/*
-===============
-R_ColorShiftLightingBytes
-
-===============
-*/
-static	void R_ColorShiftLightingBytes( byte in[4], byte out[4] ) {
-	int		shift, r, g, b;
-
-	// shift the color data based on overbright range
-	shift = r_mapOverBrightBits->integer - tr.overbrightBits;
-
+static void R_ColorShiftLightingBytes( byte in[4], byte out[4] )
+{
+    // hardcoded
 	// shift the data based on overbright range
-	r = in[0] << shift;
-	g = in[1] << shift;
-	b = in[2] << shift;
+	int r = in[0] << 1;
+	int g = in[1] << 1;
+	int b = in[2] << 1;
 	
 	// normalize by color instead of saturating to white
-	if ( ( r | g | b ) > 255 ) {
-		int		max;
+	if ( ( r | g | b ) > 255 )
+    {
+		int	max;
 
 		max = r > g ? r : g;
 		max = max > b ? max : b;
@@ -138,12 +127,12 @@ R_ColorShiftLightingFloats
 */
 static void R_ColorShiftLightingFloats(float in[4], float out[4])
 {
-	float	r, g, b;
-	float   scale = (1 << (r_mapOverBrightBits->integer - tr.overbrightBits)) / 255.0f;
 
-	r = in[0] * scale;
-	g = in[1] * scale;
-	b = in[2] * scale;
+	float   scale = 2 / 255.0f;
+
+	float r = in[0] * scale;
+	float g = in[1] * scale;
+	float b = in[2] * scale;
 
 	// normalize by color instead of saturating to white
 	if ( r > 1 || g > 1 || b > 1 ) {
@@ -2754,7 +2743,6 @@ void RE_LoadWorldMap( const char *name ) {
 	stripExtension(s_worldData.baseName, s_worldData.baseName, sizeof(s_worldData.baseName));
 
 	startMarker = ri.Hunk_Alloc(0, h_low);
-	c_gridVerts = 0;
 
 	header = (dheader_t *)buffer.b;
 	fileBase = (byte *)header;

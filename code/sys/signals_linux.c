@@ -20,7 +20,7 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 ===========================================================================
 */
 #include <signal.h>
-#include "local.h"
+#include "sys_local.h"
 
 
 void Sys_SigHandler( int signal )

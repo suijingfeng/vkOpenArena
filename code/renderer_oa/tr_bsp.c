@@ -93,16 +93,10 @@ static void HSVtoRGB( float h, float s, float v, float rgb[3] )
 
 static void R_ColorShiftLightingBytes(unsigned char in[4], unsigned char out[4])
 {
-	int	shift = r_mapOverBrightBits->integer;
-    int r, g, b;
-
 	// shift the color data based on overbright range
-//	shift = r_mapOverBrightBits->integer - tr.overbrightBits;
-
-	// shift the data based on overbright range
-	r = in[0] << shift;
-	g = in[1] << shift;
-	b = in[2] << shift;
+	int r = in[0] << 1;
+	int g = in[1] << 1;
+	int b = in[2] << 1;
 	
 	// normalize by color instead of saturating to white
 	if ( ( r | g | b ) > 255 )

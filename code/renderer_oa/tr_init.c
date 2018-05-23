@@ -106,6 +106,12 @@ static void GfxInfo_f( void )
 		"enabled"
 	};
 
+
+    	// get our config strings
+	Q_strncpyz( glConfig.vendor_string, (char *) glGetString (GL_VENDOR), sizeof( glConfig.vendor_string ) );
+	Q_strncpyz( glConfig.renderer_string, (char *) glGetString (GL_RENDERER), sizeof( glConfig.renderer_string ) );
+	Q_strncpyz( glConfig.version_string, (char *) glGetString (GL_VERSION), sizeof( glConfig.version_string ) );
+
 	ri.Printf( PRINT_ALL, "\nGL_VENDOR: %s\n", glConfig.vendor_string );
 	ri.Printf( PRINT_ALL, "GL_RENDERER: %s\n", glConfig.renderer_string );
 	ri.Printf( PRINT_ALL, "GL_VERSION: %s\n", glConfig.version_string );
@@ -114,7 +120,6 @@ static void GfxInfo_f( void )
 	ri.Printf( PRINT_ALL, "GL_MAX_TEXTURE_SIZE: %d\n", glConfig.maxTextureSize );
 	ri.Printf( PRINT_ALL, "GL_MAX_TEXTURE_UNITS_ARB: %d\n", glConfig.numTextureUnits );
 	ri.Printf( PRINT_ALL, "\nPIXELFORMAT: color(%d-bits) Z(%d-bit) stencil(%d-bits)\n", glConfig.colorBits, glConfig.depthBits, glConfig.stencilBits );
-    ri.Printf( PRINT_ALL, "Overbright bits: %d\n", tr.overbrightBits );
 
 
 	if( glConfig.deviceSupportsGamma )
@@ -149,7 +154,7 @@ static void InitOpenGL(void)
 		GLint max_texture_size;
 		GLint max_shader_units = -1;
 		GLint max_bind_units = -1;
-        ri.GLimpInit(&glConfig);
+        ri.GLimpInit(&glConfig, qfalse);
         // GLimp_InitExtraExtensions();
 
 		// OpenGL driver constants

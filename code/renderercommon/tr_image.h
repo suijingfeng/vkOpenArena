@@ -34,7 +34,7 @@ typedef struct image_s {
 	int			uploadWidth;
     int         uploadHeight;	// after power of two and picmip but not including clamp to MAX_TEXTURE_SIZE
 	unsigned int texnum;					// gl texture binding
-
+	int			TMU;
 	int			frameUsed;			// for texture usage in frame statistics
 	int			internalFormat;
 	imgType_t   type;

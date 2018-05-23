@@ -830,7 +830,7 @@ void GLSL_SetUniformFloat5(shaderProgram_t *program, int uniformNum, const vec5_
 	qglProgramUniform1fvEXT(program->program, uniforms[uniformNum], 5, v);
 }
 
-void GLSL_SetUniformMat4(shaderProgram_t *program, int uniformNum, const mat4_t matrix)
+void GLSL_SetUniformMat4(shaderProgram_t *program, int uniformNum, const float matrix[16])
 {
 	GLint *uniforms = program->uniforms;
 	vec_t *compare = (float *)(program->uniformBuffer + program->uniformBufferOffsets[uniformNum]);

@@ -7,7 +7,7 @@
 #include <X11/extensions/Xrandr.h>
 #include <X11/extensions/Xrender.h>
 
-#include "local.h"
+#include "sys_local.h"
 
 #define MAX_MONITORS 16
 
@@ -166,7 +166,7 @@ qboolean RandR_SetMode( int *width, int *height, int *rate )
 
 	if ( *width == m->w && *height == m->h )
 	{
-		Com_Printf( "...using desktop display mode\n" );
+		printf( "...using desktop display mode\n" );
 		glw_state.randr_active = qtrue;
 		return glw_state.randr_active;
 	}
@@ -219,7 +219,7 @@ qboolean RandR_SetMode( int *width, int *height, int *rate )
 	
 	if ( best_fit != -1 )
 	{
-		//Com_Printf( "...setting new mode 0x%x via xrandr \n", (int)newMode );
+		//printf( "...setting new mode 0x%x via xrandr \n", (int)newMode );
 		_XRRSetCrtcConfig( dpy, sr, m->crtcn, CurrentTime, crtc_info->x, crtc_info->y,
 			newMode, crtc_info->rotation, crtc_info->outputs, crtc_info->noutput );
 
@@ -253,7 +253,7 @@ void RandR_RestoreMode( void )
 	if ( m->curMode == m->oldMode )
 		return;
 
-	Com_Printf( "...restoring desktop display mode\n" );
+	printf( "...restoring desktop display mode\n" );
 
 	sr = _XRRGetScreenResources( dpy, DefaultRootWindow( dpy ) );
 
@@ -418,7 +418,7 @@ void RandR_UpdateMonitor( int x, int y, int w, int h )
 
 		glw_state.desktop_ok = qtrue;
 
-		Com_Printf( "...current monitor: %ix%i@%i,%i %s\n",
+		printf( "...current monitor: %ix%i@%i,%i %s\n",
 			glw_state.desktop_width, glw_state.desktop_height,
 			glw_state.desktop_x, glw_state.desktop_y,
 			desktop_monitor.name );
@@ -486,10 +486,12 @@ static void SetMonitorGamma( unsigned short *red, unsigned short *green, unsigne
 
 void RandR_RestoreGamma( void )
 {
-	if ( glw_state.randr_gamma && old_gamma_size )
+	if ( glw_state.randr_gamma && glw_state.gammaSet && old_gamma_size )
+    {
 		SetMonitorGamma( old_gamma[0], old_gamma[1], old_gamma[2], old_gamma_size );
-
-	old_gamma_size = 0;
+		glw_state.gammaSet = qfalse;
+	    old_gamma_size = 0;
+    }
 }
 
 
@@ -522,35 +524,35 @@ qboolean RandR_Init( int x, int y, int w, int h )
 
 	if ( r_lib == NULL )
 	{
-		r_lib = Sys_LoadLibrary( "libXrandr.so.2" );
+		r_lib = Sys_LoadDll( "libXrandr.so.2", qtrue);
 		if ( r_lib == NULL )
 		{
-			r_lib = Sys_LoadLibrary( "libXrandr.so" );
+			r_lib = Sys_LoadDll( "libXrandr.so", qtrue);
 		}
 		if ( r_lib == NULL )
 		{
-			Com_Printf( "...error loading libXrandr\n" );
+			printf( "...error loading libXrandr\n" );
 			goto __fail;
 		}
 	}
 
 	for ( i = 0 ; i < ARRAY_LEN( r_list ); i++ )
 	{
-		*r_list[ i ].symbol = Sys_LoadFunction( r_lib, r_list[ i ].name );
+		*r_list[ i ].symbol =  Sys_GetFunAddr( r_lib, r_list[ i ].name );
 		if ( *r_list[ i ].symbol == NULL )
 		{
-			Com_Printf( "...couldn't find '%s' in libXrandr\n", r_list[ i ].name );
+			printf( "...couldn't find '%s' in libXrandr\n", r_list[ i ].name );
 			goto __fail;
 		}
 	}
 
 	if ( !_XRRQueryExtension( dpy, &event_base, &error_base ) || !_XRRQueryVersion( dpy, &ver_major, &ver_minor ) )
 	{
-		Com_Printf( "...RandR extension is not available.\n" );
+		printf( "...RandR extension is not available.\n" );
 		goto __fail;
 	}
 
-	Com_Printf( "...RandR extension version %i.%i detected.\n", ver_major, ver_minor );
+	printf( "...RandR extension version %i.%i detected.\n", ver_major, ver_minor );
 
 	glw_state.randr_ext = qtrue;
 
@@ -572,7 +574,7 @@ void RandR_Done( void )
 {
 	if ( r_lib )
 	{
-		Sys_UnloadLibrary( r_lib );
+		Sys_UnloadDll( r_lib );
 		r_lib = NULL;
 	}
 	glw_state.randr_ext = qfalse;

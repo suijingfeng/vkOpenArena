@@ -325,7 +325,7 @@ void RE_BeginScene(const refdef_t *fd)
 	}
 	else
 	{
-		float scale = (1 << r_mapOverBrightBits->integer) / 255.0f;
+		float scale = 2 / 255.0f;
 
 		if (r_forceSun->integer)
 			VectorScale(tr.sunLight, scale * r_forceSunLightScale->value, tr.refdef.sunCol);

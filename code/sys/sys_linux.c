@@ -22,7 +22,7 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
 #include "../qcommon/q_shared.h"
 #include "../qcommon/qcommon.h"
-#include "local.h"
+#include "sys_local.h"
 
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -88,7 +88,7 @@ static void Sys_SetXdgDataHomePath(char* dest, size_t n)
     
 	if (xdgDataPath != NULL)
     {
-		Com_sprintf(dest, n, "%s/", xdgDataPath);
+		snprintf(dest, n, "%s/", xdgDataPath);
 		FS_CreatePath(dest);
 		Sys_ConcatXdgHomepathName(dest, n);
 		return;
@@ -98,7 +98,7 @@ static void Sys_SetXdgDataHomePath(char* dest, size_t n)
         const char* homeFolder = getHome();
         if (homeFolder != NULL)
         {
-            Com_sprintf(dest, n, "%s/.local/share/", homeFolder);
+            snprintf(dest, n, "%s/.local/share/", homeFolder);
             FS_CreatePath(dest);
             Sys_ConcatXdgHomepathName(dest, n);
         }
@@ -112,7 +112,7 @@ static void Sys_SetHomePaths( void )
 {
 	Sys_SetXdgDataHomePath(homeXdg, sizeof(homeXdg));
 	const char* p = getHome();
-	Com_sprintf(homeClassic, sizeof(homeClassic), "%s%c", p, PATH_SEP);
+	snprintf(homeClassic, sizeof(homeClassic), "%s%c", p, PATH_SEP);
 	Q_strcat(homeClassic, sizeof(homeClassic), HOMEPATH_NAME_UNIX);
 }
 
@@ -172,7 +172,7 @@ static void CreateXDGPathAndMisc( void )
 		//Try to move the old home dir to the new location.
 		int errCode = rename(homeClassic, homeXdg);
 		if (errCode) {
-			Com_Printf("Failed to move \"%s\" to \"%s\". Error code: %d. Non fatal.", homeClassic, homeXdg, errCode);
+			printf("Failed to move \"%s\" to \"%s\". Error code: %d. Non fatal.", homeClassic, homeXdg, errCode);
 		}
 	}
 	if (!Sys_IsDir(homeXdg) && Sys_IsDir(homeClassic)) {
@@ -180,19 +180,19 @@ static void CreateXDGPathAndMisc( void )
 		//Link it istead
 		int errCode = symlink(homeClassic, homeXdg);
 		if (errCode) {
-			Com_Printf("Failed to create symbolic link \"%s\". Error code: %d. This is quite bad.", homeXdg, errCode);
+			printf("Failed to create symbolic link \"%s\". Error code: %d. This is quite bad.", homeXdg, errCode);
 		}
 	}
 	if (!Sys_IsDir(homeXdg)) {
 		int errCode = Sys_Mkdir(homeXdg);
 		if (errCode) {
-			Com_Printf("Failed to create \"%s\". Error code: %d. This is quite bad.", homeXdg, errCode);
+			printf("Failed to create \"%s\". Error code: %d. This is quite bad.", homeXdg, errCode);
 		}
 	}
 	if (Sys_IsDir(homeXdg) && !Sys_IsDir(homeClassic)) {
 		int errCode = symlink(homeXdg, homeClassic);
 		if (errCode) {
-			Com_Printf("Failed to create symbolic link \"%s\". Error code: %d. This is quite bad.", homeClassic, errCode);
+			printf("Failed to create symbolic link \"%s\". Error code: %d. This is quite bad.", homeClassic, errCode);
 		}
 	}
 }
@@ -207,7 +207,7 @@ const char *Sys_DefaultHomePath(void)
 
 		if( p != NULL )
 		{
-			Com_sprintf(homePath, sizeof(homePath), "%s%c", p, PATH_SEP);
+			snprintf(homePath, sizeof(homePath), "%s%c", p, PATH_SEP);
 #ifdef MACOS_X
 			Q_strcat(homePath, sizeof(homePath), "Library/Application Support/");
 
@@ -217,7 +217,7 @@ const char *Sys_DefaultHomePath(void)
 				Q_strcat(homePath, sizeof(homePath), HOMEPATH_NAME_MACOSX);
 #else
 			CreateXDGPathAndMisc();
-			Com_sprintf(homePath, sizeof(homePath), "%s", homeXdg);
+			snprintf(homePath, sizeof(homePath), "%s", homeXdg);
 #endif
 		}
 	}
@@ -417,10 +417,10 @@ void Sys_ListFilteredFiles( const char *basedir, char *subdirs, char *filter, ch
 	}
 
 	if (strlen(subdirs)) {
-		Com_sprintf( search, sizeof(search), "%s/%s", basedir, subdirs );
+		snprintf( search, sizeof(search), "%s/%s", basedir, subdirs );
 	}
 	else {
-		Com_sprintf( search, sizeof(search), "%s", basedir );
+		snprintf( search, sizeof(search), "%s", basedir );
 	}
 
 	if ((fdir = opendir(search)) == NULL) {
@@ -429,17 +429,17 @@ void Sys_ListFilteredFiles( const char *basedir, char *subdirs, char *filter, ch
 
 	while ((d = readdir(fdir)) != NULL)
     {
-		Com_sprintf(filename, sizeof(filename), "%s/%s", search, d->d_name);
+		snprintf(filename, sizeof(filename), "%s/%s", search, d->d_name);
 		if (stat(filename, &st) == -1)
 			continue;
 
 		if (st.st_mode & S_IFDIR) {
 			if (Q_stricmp(d->d_name, ".") && Q_stricmp(d->d_name, "..")) {
 				if (strlen(subdirs)) {
-					Com_sprintf( newsubdirs, sizeof(newsubdirs), "%s/%s", subdirs, d->d_name);
+					snprintf( newsubdirs, sizeof(newsubdirs), "%s/%s", subdirs, d->d_name);
 				}
 				else {
-					Com_sprintf( newsubdirs, sizeof(newsubdirs), "%s", d->d_name);
+					snprintf( newsubdirs, sizeof(newsubdirs), "%s", d->d_name);
 				}
 				Sys_ListFilteredFiles( basedir, newsubdirs, filter, list, numfiles );
 			}
@@ -447,7 +447,7 @@ void Sys_ListFilteredFiles( const char *basedir, char *subdirs, char *filter, ch
 		if ( *numfiles >= MAX_FOUND_FILES - 1 ) {
 			break;
 		}
-		Com_sprintf( filename, sizeof(filename), "%s/%s", subdirs, d->d_name );
+		snprintf( filename, sizeof(filename), "%s/%s", subdirs, d->d_name );
 		if (!Com_FilterPath( filter, filename, qfalse ))
 			continue;
 		list[ *numfiles ] = CopyString( filename );
@@ -513,7 +513,7 @@ char **Sys_ListFiles( const char *directory, const char *extension, char *filter
 
 	while ((d = readdir(fdir)) != NULL)
     {
-		Com_sprintf(search, sizeof(search), "%s/%s", directory, d->d_name);
+		snprintf(search, sizeof(search), "%s/%s", directory, d->d_name);
 		if (stat(search, &st) == -1)
 			continue;
 		if ((dironly && !(st.st_mode & S_IFDIR)) || (!dironly && (st.st_mode & S_IFDIR)))
@@ -646,13 +646,13 @@ void Sys_ErrorDialog( const char *error )
 
 	if(!Sys_Mkdir(homepath))
 	{
-		Com_Printf("ERROR: couldn't create path '%s' for crash log.\n", homepath);
+		printf("ERROR: couldn't create path '%s' for crash log.\n", homepath);
 		return;
 	}
 
 	if(!Sys_Mkdir(dirpath))
 	{
-		Com_Printf("ERROR: couldn't create path '%s' for crash log.\n", dirpath);
+		printf("ERROR: couldn't create path '%s' for crash log.\n", dirpath);
 		return;
 	}
 
@@ -662,14 +662,14 @@ void Sys_ErrorDialog( const char *error )
 	f = open( ospath, O_CREAT | O_TRUNC | O_WRONLY, 0640 );
 	if( f == -1 )
 	{
-		Com_Printf( "ERROR: couldn't open %s\n", fileName );
+		printf( "ERROR: couldn't open %s\n", fileName );
 		return;
 	}
 
 	// We're crashing, so we don't care much if write() or close() fails.
 	while( ( size = CON_LogRead( buffer, sizeof( buffer ) ) ) > 0 ) {
 		if( write( f, buffer, size ) != size ) {
-			Com_Printf( "ERROR: couldn't fully write to %s\n", fileName );
+			printf( "ERROR: couldn't fully write to %s\n", fileName );
 			break;
 		}
 	}

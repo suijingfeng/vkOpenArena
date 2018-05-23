@@ -1,4 +1,4 @@
-#include "local.h"
+#include "sys_local.h"
 
 
 extern glwstate_t glw_state;
@@ -19,7 +19,7 @@ qboolean BuildGammaRampTable( unsigned char *red, unsigned char *green, unsigned
 		case 2048: shift = 3; break;
 		case 4096: shift = 4; break;
 		default:
-			Com_Printf( "Unsupported gamma ramp size: %d\n", gammaRampSize );
+			printf( "Unsupported gamma ramp size: %d\n", gammaRampSize );
 		return qfalse;
 	};
 	

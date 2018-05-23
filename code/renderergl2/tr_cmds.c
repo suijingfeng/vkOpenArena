@@ -84,7 +84,7 @@ void R_PerformanceCounters( void ) {
 R_IssueRenderCommands
 ====================
 */
-void R_IssueRenderCommands( qboolean runPerformanceCounters )
+static void R_IssueRenderCommands( qboolean runPerformanceCounters )
 {
 	renderCommandList_t	*cmdList = &backEndData->commands;
 	assert(cmdList);
@@ -279,15 +279,9 @@ void RE_StretchPic ( float x, float y, float w, float h,
 }
 
 
-/*
-====================
-RE_BeginFrame
 
-If running in stereo, RE_BeginFrame will be called twice
-for each RE_EndFrame
-====================
-*/
-void RE_BeginFrame( void ) {
+void RE_BeginFrame( void )
+{
 	drawBufferCommand_t	*cmd = NULL;
 
 	if ( !tr.registered ) {
@@ -348,7 +342,8 @@ void RE_BeginFrame( void ) {
 	//
 	// gamma stuff
 	//
-	if ( r_gamma->modified ) {
+	if ( r_gamma->modified )
+    {
 		r_gamma->modified = qfalse;
 
 		R_IssuePendingRenderCommands();

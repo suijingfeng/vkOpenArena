@@ -856,7 +856,7 @@ static void LerpMeshVertexes(mdvSurface_t *surf, float backlerp)
 
 		for (vertNum=0 ; vertNum < surf->numVerts ; vertNum++)
 		{
-			VectorLerp(newVerts->xyz,    oldVerts->xyz,    backlerp, outXyz);
+			VecLerp(newVerts->xyz,    oldVerts->xyz,    backlerp, outXyz);
 
 			outNormal[0] = (int16_t)(newVerts->normal[0] * (1.0f - backlerp) + oldVerts->normal[0] * backlerp);
 			outNormal[1] = (int16_t)(newVerts->normal[1] * (1.0f - backlerp) + oldVerts->normal[1] * backlerp);

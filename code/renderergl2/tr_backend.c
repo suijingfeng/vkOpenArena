@@ -22,17 +22,7 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #include "tr_local.h"
 #include "tr_fbo.h"
 #include "tr_dsa.h"
-
-#define GLE(ret, name, ...) name##proc * qgl##name;
-QGL_1_1_PROCS;
-QGL_1_3_PROCS;
-QGL_1_5_PROCS;
-QGL_3_0_PROCS;
-QGL_ARB_framebuffer_object_PROCS;
-QGL_ARB_vertex_array_object_PROCS;
-QGL_EXT_direct_state_access_PROCS;
-#undef GLE
-
+#include "../renderercommon/tr_shared.h"
 
 
 backEndData_t	*backEndData;
@@ -279,17 +269,18 @@ void GL_State( unsigned long stateBits )
 }
 
 
-void GL_SetProjectionMatrix(mat4_t matrix)
+void GL_SetProjectionMatrix(float matrix[16])
 {
 	Mat4Copy(matrix, glState.projection);
-	Mat4Multiply(glState.projection, glState.modelview, glState.modelviewProjection);	
+	MatrixMultiply4x4(glState.modelview,  glState.projection, glState.modelviewProjection);
+    
 }
 
 
-void GL_SetModelviewMatrix(mat4_t matrix)
+void GL_SetModelviewMatrix(float matrix[16])
 {
 	Mat4Copy(matrix, glState.modelview);
-	Mat4Multiply(glState.projection, glState.modelview, glState.modelviewProjection);	
+	MatrixMultiply4x4(glState.modelview, glState.projection, glState.modelviewProjection);	
 }
 
 
@@ -599,14 +590,10 @@ RENDER BACK END FUNCTIONS
 ============================================================================
 */
 
-/*
-================
-RB_SetGL2D
 
-================
-*/
-void	RB_SetGL2D (void) {
-	mat4_t matrix;
+void RB_SetGL2D (void)
+{
+	float matrix[16];
 	int width, height;
 
 	if (backEnd.projection2D && backEnd.last2DFBO == glState.currentFBO)
@@ -1449,7 +1436,8 @@ const void *RB_PostProcess(const void *data)
 {
 	const postProcessCommand_t *cmd = data;
 	FBO_t *srcFbo;
-	ivec4_t srcBox, dstBox;
+	int srcBox[4];
+    int dstBox[4];
 	qboolean autoExposure;
 
 	// finish any 2D drawing if needed
@@ -1596,7 +1584,7 @@ const void *RB_PostProcess(const void *data)
 
 	if (0 && r_sunlightMode->integer)
 	{
-		ivec4_t dstBox;
+		int dstBox[4];
 		VectorSet4(dstBox, 0, glConfig.vidHeight - 128, 128, 128);
 		FBO_BlitFromTexture(tr.sunShadowDepthImage[0], NULL, NULL, NULL, dstBox, NULL, NULL, 0);
 		VectorSet4(dstBox, 128, glConfig.vidHeight - 128, 128, 128);
@@ -1609,7 +1597,7 @@ const void *RB_PostProcess(const void *data)
 
 	if (0 && r_shadows->integer == 4)
 	{
-		ivec4_t dstBox;
+		int dstBox[4];
 		VectorSet4(dstBox, 512 + 0, glConfig.vidHeight - 128, 128, 128);
 		FBO_BlitFromTexture(tr.pshadowMaps[0], NULL, NULL, NULL, dstBox, NULL, NULL, 0);
 		VectorSet4(dstBox, 512 + 128, glConfig.vidHeight - 128, 128, 128);
@@ -1622,7 +1610,7 @@ const void *RB_PostProcess(const void *data)
 
 	if (0)
 	{
-		ivec4_t dstBox;
+		int dstBox[16];
 		VectorSet4(dstBox, 256, glConfig.vidHeight - 256, 256, 256);
 		FBO_BlitFromTexture(tr.renderDepthImage, NULL, NULL, NULL, dstBox, NULL, NULL, 0);
 		VectorSet4(dstBox, 512, glConfig.vidHeight - 256, 256, 256);
@@ -1631,7 +1619,7 @@ const void *RB_PostProcess(const void *data)
 
 	if (0)
 	{
-		ivec4_t dstBox;
+		int dstBox[4];
 		VectorSet4(dstBox, 256, glConfig.vidHeight - 256, 256, 256);
 		FBO_BlitFromTexture(tr.sunRaysImage, NULL, NULL, NULL, dstBox, NULL, NULL, 0);
 	}

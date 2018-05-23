@@ -25,11 +25,20 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #include "tr_dsa.h"
 #include <stdio.h>
 
+
+#define GLE(ret, name, ...) name##proc * qgl##name;
+QGL_1_3_PROCS;
+QGL_1_5_PROCS;
+QGL_2_0_PROCS;
+QGL_ARB_framebuffer_object_PROCS;
+QGL_ARB_vertex_array_object_PROCS;
+QGL_EXT_direct_state_access_PROCS;
+#undef GLE
+
 extern int qglMajorVersion;
 extern int qglMinorVersion;
 
 #define QGL_VERSION_ATLEAST( major, minor ) ( qglMajorVersion > major || ( qglMajorVersion == major && qglMinorVersion >= minor ) )
-#define QGLES_VERSION_ATLEAST( major, minor ) ( qglesMajorVersion > major || ( qglesMajorVersion == major && qglesMinorVersion >= minor ) )
 
 static qboolean SDL_GL_ExtensionSupported(const char* extension )
 {
@@ -41,11 +50,12 @@ static qboolean SDL_GL_ExtensionSupported(const char* extension )
 	return qfalse;
 }
 
-extern cvar_t *r_ext_compressed_textures;// these control use of specific extensions, tr2
+cvar_t *r_ext_compressed_textures;// these control use of specific extensions, tr2
 
 
 void GLimp_InitExtraExtensions()
 {
+    r_ext_compressed_textures = ri.Cvar_Get( "r_ext_compressed_textures", "0", CVAR_ARCHIVE | CVAR_LATCH );
 	char *extension;
 	const char* result[3] = { "...ignoring %s\n", "...using %s\n", "...%s not found\n" };
 	qboolean q_gl_version_at_least_3_0;

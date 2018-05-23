@@ -1368,10 +1368,9 @@ int R_LerpTag( orientation_t *tag, qhandle_t handle, int startFrame, int endFram
 R_ModelBounds
 ====================
 */
-void R_ModelBounds( qhandle_t handle, vec3_t mins, vec3_t maxs ) {
-	model_t		*model;
-
-	model = R_GetModelByHandle( handle );
+void R_ModelBounds( qhandle_t handle, vec3_t mins, vec3_t maxs )
+{
+	model_t* model = R_GetModelByHandle( handle );
 
 	if(model->type == MOD_BRUSH) {
 		VectorCopy( model->bmodel->bounds[0], mins );
@@ -1401,9 +1400,7 @@ void R_ModelBounds( qhandle_t handle, vec3_t mins, vec3_t maxs ) {
 		
 		return;
 	} else if(model->type == MOD_IQM) {
-		iqmData_t *iqmData;
-		
-		iqmData = model->modelData;
+		iqmData_t *iqmData = model->modelData;
 
 		if(iqmData->bounds)
 		{

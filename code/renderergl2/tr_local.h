@@ -26,15 +26,16 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
 #include "../qcommon/q_shared.h"
 #include "../qcommon/qcommon.h"
-#include "../renderercommon/tr_public.h"
+
 
 #include "tr_extratypes.h"
-#include "tr_extramath.h"
 #include "tr_fbo.h"
 #include "tr_postprocess.h"
 #include "../renderercommon/iqm.h"
 #include "../renderercommon/qgl.h"
 #include "../renderercommon/tr_shared.h"
+#include "../renderercommon/tr_public.h"
+#include "../renderercommon/tr_image.h"
 
 extern refimport_t ri;
 extern glconfig_t glConfig;
@@ -64,48 +65,6 @@ typedef unsigned int glIndex_t;
 #define MAX_CALC_PSHADOWS       64
 #define MAX_DRAWN_PSHADOWS      16 // do not increase past 32, because bit flags are used on surfaces
 #define PSHADOW_MAP_SIZE        512
-
-
-typedef enum
-{
-	IMGTYPE_COLORALPHA, // for color, lightmap, diffuse, and specular
-	IMGTYPE_NORMAL,
-	IMGTYPE_NORMALHEIGHT,
-	IMGTYPE_DELUXE, // normals are swizzled, deluxe are not
-} imgType_t;
-
-typedef enum
-{
-	IMGFLAG_NONE           = 0x0000,
-	IMGFLAG_MIPMAP         = 0x0001,
-	IMGFLAG_PICMIP         = 0x0002,
-	IMGFLAG_CUBEMAP        = 0x0004,
-	IMGFLAG_NO_COMPRESSION = 0x0010,
-	IMGFLAG_NOLIGHTSCALE   = 0x0020,
-	IMGFLAG_CLAMPTOEDGE    = 0x0040,
-	IMGFLAG_SRGB           = 0x0080,
-	IMGFLAG_GENNORMALMAP   = 0x0100,
-} imgFlags_t;
-
-
-typedef struct image_s {
-	char		imgName[MAX_QPATH];		// game path, including extension
-	int			width, height;				// source image
-	int			uploadWidth, uploadHeight;	// after power of two and picmip but not including clamp to MAX_TEXTURE_SIZE
-	GLuint		texnum;					// gl texture binding
-
-	int			frameUsed;			// for texture usage in frame statistics
-
-	int			internalFormat;
-	int			TMU;				// only needed for voodoo2
-
-	imgType_t   type;
-	imgFlags_t  flags;
-
-	struct image_s*	next;
-
-	qboolean	maptexture;	// leilei - map texture listing hack
-} image_t;
 
 
 
@@ -1366,9 +1325,9 @@ typedef struct {
 	uint32_t        vertexAttribsEnabled;  // global if no VAOs, tess only otherwise
 	FBO_t          *currentFBO;
 	vao_t          *currentVao;
-	mat4_t        modelview;
-	mat4_t        projection;
-	mat4_t		modelviewProjection;
+	float        modelview[16];
+	float        projection[16];
+	float		modelviewProjection[16];
 } glstate_t;
 
 typedef enum {
@@ -1590,7 +1549,6 @@ typedef struct {
 
 	float					identityLight;		// 1.0 / ( 1 << overbrightBits )
 	int						identityLightByte;	// identityLight * 255
-	int						overbrightBits;		// r_overbrightBits->integer, but set to 0 if no hw gamma
 
 	orientationr_t			or;					// for current entity
 
@@ -1889,8 +1847,8 @@ void	GL_TextureMode( const char *string );
 void	GL_CheckErrs( char *file, int line );
 #define GL_CheckErrors(...) GL_CheckErrs(__FILE__, __LINE__)
 void	GL_State( unsigned long stateVector );
-void    GL_SetProjectionMatrix(mat4_t matrix);
-void    GL_SetModelviewMatrix(mat4_t matrix);
+void    GL_SetProjectionMatrix(float matrix[16]);
+void    GL_SetModelviewMatrix(float matrix[16]);
 void	GL_Cull( int cullType );
 
 #define GLS_SRCBLEND_ZERO						0x00000001
@@ -2218,7 +2176,7 @@ void GLSL_SetUniformFloat5(shaderProgram_t *program, int uniformNum, const vec5_
 void GLSL_SetUniformVec2(shaderProgram_t *program, int uniformNum, const vec2_t v);
 void GLSL_SetUniformVec3(shaderProgram_t *program, int uniformNum, const vec3_t v);
 void GLSL_SetUniformVec4(shaderProgram_t *program, int uniformNum, const vec4_t v);
-void GLSL_SetUniformMat4(shaderProgram_t *program, int uniformNum, const mat4_t matrix);
+void GLSL_SetUniformMat4(shaderProgram_t *program, int uniformNum, const float matrix[16]);
 
 shaderProgram_t *GLSL_GetGenericShaderProgram(int stage);
 
@@ -2479,40 +2437,17 @@ void RE_TakeVideoFrame( int width, int height,
 		byte *captureBuffer, byte *encodeBuffer, qboolean motionJpeg );
 
 
-
-/*
-=============================================================
-
-IMAGE LOADERS
-
-=============================================================
-*/
-
-void R_LoadBMP( const char *name, byte **pic, int *width, int *height );
-void R_LoadJPG( const char *name, byte **pic, int *width, int *height );
-void R_LoadPCX( const char *name, byte **pic, int *width, int *height );
-void R_LoadPNG( const char *name, byte **pic, int *width, int *height );
-void R_LoadTGA( const char *name, byte **pic, int *width, int *height );
 image_t *R_FindImageFile( const char *name, imgType_t type, imgFlags_t flags );
 qhandle_t RE_RegisterShaderLightMap( const char *name, int lightmapIndex );
 qhandle_t RE_RegisterShader( const char *name );
 qhandle_t RE_RegisterShaderNoMip( const char *name );
 qhandle_t RE_RegisterShaderFromImage(const char *name, int lightmapIndex, image_t *image, qboolean mipRawImage);
-float R_NoiseGet4f( float x, float y, float z, float t );
-void  R_NoiseInit( void );
+
 // font stuff
 void R_InitFreeType( void );
 void R_DoneFreeType( void );
 void RE_RegisterFont(const char *fontName, int pointSize, fontInfo_t *font);
 
-
-///////////////////////////// tr_shared.c  //////////////////////////////
-void AnglesToAxis( const vec3_t angles, vec3_t axis[3] );
-void ByteToDir( int b, vec3_t dir );
-void AxisClear( vec3_t axis[3] );
-char *SkipPath(char *pathname);
-void stripExtension(const char *in, char *out, int destsize);
-const char *getExtension( const char *name );
 
 ///////////////////////////////////////////////////////////////////////////
 

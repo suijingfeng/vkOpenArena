@@ -28,7 +28,7 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #define SYS_LOCAL_H_
 
 
-#include "public.h"
+#include "sys_public.h"
 
 #include <X11/Xlib.h>
 #include <X11/Xfuncproto.h>
@@ -44,24 +44,53 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #define OPENGL_DRIVER_NAME	"libGL.so.1"
 #endif
 
-#ifndef APIENTRY
-#define APIENTRY
-#endif
-#ifndef APIENTRYP
-#define APIENTRYP APIENTRY *
-#endif
-#ifndef GLAPI
-#define GLAPI extern
-#endif
+
+
+
+typedef struct sym_s
+{
+	void **symbol;
+	const char *name;
+} sym_t;
+
+typedef struct
+{
+	void *OpenGLLib; // instance of OpenGL library
+	FILE *log_fp;
+
+	int	monitorCount;
+
+	qboolean gammaSet;
+
+	qboolean cdsFullscreen;
+
+//	glconfig_t *config; // feedback to renderer module
+
+	qboolean dga_ext;
+
+	qboolean vidmode_ext;
+	qboolean vidmode_active;
+	qboolean vidmode_gamma;
+
+	qboolean randr_ext;
+	qboolean randr_active;
+	qboolean randr_gamma;
+
+	qboolean desktop_ok;
+	int desktop_width;
+	int desktop_height;
+	int desktop_x;
+	int desktop_y;
+} glwstate_t;
 
 
 qboolean BuildGammaRampTable( unsigned char *red, unsigned char *green, unsigned char *blue, int gammaRampSize, unsigned short table[3][4096] );
-/*
+
 // DGA extension
 qboolean DGA_Init( Display *_dpy );
 void DGA_Mouse( qboolean enable );
 void DGA_Done( void );
-*/
+
 
 // VidMode extension
 qboolean VidMode_Init( void );
@@ -112,7 +141,7 @@ void Sys_Exit( int exitCode );
 
 qboolean Sys_PIDIsRunning( int pid );
 
-////////////////// GLX /////////////////////////
+////////////////// GLX or GLW function load helper /////////////////////////
 
 #ifdef _WIN32
 
@@ -134,7 +163,8 @@ qboolean Sys_PIDIsRunning( int pid );
 	GLE( void, glXDestroyContext, Display *dpy, GLXContext ctx ) \
 	GLE( Bool, glXMakeCurrent, Display *dpy, GLXDrawable drawable, GLXContext ctx) \
 	GLE( void, glXCopyContext, Display *dpy, GLXContext src, GLXContext dst, GLuint mask ) \
-	GLE( void, glXSwapBuffers, Display *dpy, GLXDrawable drawable )
+	GLE( void, glXSwapBuffers, Display *dpy, GLXDrawable drawable ) \
+    GLE( Bool, glXQueryExtension, Display *dpy, int *errorb, int *event) \
 
 
 #define QGL_Swp_PROCS \
