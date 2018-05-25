@@ -1946,8 +1946,9 @@ IMPLEMENTATION SPECIFIC FUNCTIONS
 
 ====================================================================
 */
+void GLimp_InitExtensions( void );
 
-void		GLimp_InitExtraExtensions( void );
+void GLimp_InitExtraExtensions( void );
 
 /*
 ====================================================================

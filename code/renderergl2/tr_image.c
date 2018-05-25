@@ -24,7 +24,6 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
 #include "tr_dsa.h"
 
-extern cvar_t *r_ext_texture_filter_anisotropic;
 extern cvar_t *r_ext_max_anisotropy;
 extern cvar_t *r_ext_compressed_textures;// these control use of specific extensions, tr2
 
@@ -2123,9 +2122,6 @@ image_t *R_CreateImage2( const char *name, byte *pic, int width, int height, GLe
 	if (cubemap)
 		qglTextureParameteriEXT(image->texnum, textureTarget, GL_TEXTURE_WRAP_R, glWrapClampMode);
 
-	if (r_ext_texture_filter_anisotropic->integer && !cubemap)
-		qglTextureParameteriEXT(image->texnum, textureTarget, GL_TEXTURE_MAX_ANISOTROPY_EXT,
-			mipmap ? r_ext_max_anisotropy->integer : 1);
 
 	switch(internalFormat)
 	{

@@ -155,39 +155,13 @@ qboolean Sys_PIDIsRunning( int pid );
 #define QGL_Swp_PROCS \
 	GLE( BOOL,	wglSwapIntervalEXT, int interval )
 
-#else
-
-#define QGL_LinX11_PROCS \
-	GLE( XVisualInfo*, glXChooseVisual, Display *dpy, int screen, int *attribList ) \
-	GLE( GLXContext, glXCreateContext, Display *dpy, XVisualInfo *vis, GLXContext shareList, Bool direct ) \
-	GLE( void, glXDestroyContext, Display *dpy, GLXContext ctx ) \
-	GLE( Bool, glXMakeCurrent, Display *dpy, GLXDrawable drawable, GLXContext ctx) \
-	GLE( void, glXCopyContext, Display *dpy, GLXContext src, GLXContext dst, GLuint mask ) \
-	GLE( void, glXSwapBuffers, Display *dpy, GLXDrawable drawable ) \
-    GLE( Bool, glXQueryExtension, Display *dpy, int *errorb, int *event) \
-
-
-#define QGL_Swp_PROCS \
-	GLE( void,	glXSwapIntervalEXT, Display *dpy, GLXDrawable drawable, int interval ) \
-	GLE( int,	glXSwapIntervalMESA, unsigned interval ) \
-	GLE( int,	glXSwapIntervalSGI, int interval )
-
-#endif
-
-
-
 #define GLE(ret, name, ...)	extern ret (* q##name )( __VA_ARGS__ );
 	QGL_Swp_PROCS;
-
-#ifdef _WIN32
 	QGL_Win32_PROCS;
-//#endif
-//#if ( (defined __linux__ )  || (defined __FreeBSD__ ) || (defined __sun) )
-#else // assume in opposition to win32
-	QGL_LinX11_PROCS;
-#endif
-
 #undef GLE
+
+
+#endif
 
 
 #endif

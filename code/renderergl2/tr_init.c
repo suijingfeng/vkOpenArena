@@ -28,7 +28,6 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
 glconfig_t  glConfig;
 glRefConfig_t glRefConfig;
-qboolean    textureFilterAnisotropic = qfalse;
 int         maxAnisotropy = 0;
 float       displayAspect = 0.0f;
 
@@ -87,7 +86,6 @@ cvar_t	*r_allowExtensions;
 cvar_t	*r_ext_multitexture;
 cvar_t	*r_ext_compiled_vertex_array;
 cvar_t	*r_ext_texture_env_add;
-cvar_t	*r_ext_texture_filter_anisotropic;
 cvar_t	*r_ext_max_anisotropy;
 
 cvar_t  *r_ext_framebuffer_object;
@@ -231,15 +229,11 @@ static qboolean GLimp_GetProcAddresses( void )
 	qboolean success = qtrue;
 	const char *version;
 
-#ifdef __SDL_NOGETPROCADDR__
-#define GLE( ret, name, ... ) qgl##name = gl#name;
-#else
 #define GLE( ret, name, ... ) qgl##name = (name##proc *) ri.GLimpGetProcAddress("gl" #name); \
 	if ( qgl##name == NULL ) { \
 		ri.Printf( PRINT_ALL, "ERROR: Missing OpenGL function %s\n", "gl" #name ); \
 		success = qfalse; \
 	}
-#endif
 
 	// OpenGL 1.0 and OpenGL ES 1.0
 	GLE(const GLubyte *, GetString, GLenum name)
@@ -256,14 +250,15 @@ static qboolean GLimp_GetProcAddresses( void )
     else {
 		sscanf( version, "%d.%d", &qglMajorVersion, &qglMinorVersion );
 	}
-/*
+
 	if ( QGL_VERSION_ATLEAST( 1, 1 ) ) {
 		QGL_1_1_PROCS;
 		QGL_DESKTOP_1_1_PROCS;
 	} else {
 		ri.Error( ERR_FATAL, "Unsupported OpenGL Version: %s\n", version );
 	}
-*/
+
+    
 	if ( QGL_VERSION_ATLEAST( 3, 0 ) ) {
 		QGL_3_0_PROCS;
 	}
@@ -331,13 +326,15 @@ static void InitOpenGL( void )
 			renderer = NULL;
 		}
 
-            
+        Q_strncpyz( glConfig.vendor_string, (char *) glGetString (GL_VENDOR), sizeof( glConfig.vendor_string ) );
+	    Q_strncpyz( glConfig.renderer_string, (char *) glGetString (GL_RENDERER), sizeof( glConfig.renderer_string ) );
+	    Q_strncpyz( glConfig.version_string, (char *) glGetString (GL_VERSION), sizeof( glConfig.version_string ) );
+        
+        
+        //GLimp_InitExtensions( );
+   
         GLimp_InitExtraExtensions();
 		// OpenGL driver constants
-
-        qglClearColor( 0, 0, 0, 1 );
-		qglClear( GL_COLOR_BUFFER_BIT );
-            	// get our config strings
 
 
 		glGetIntegerv( GL_MAX_TEXTURE_SIZE, &max_texture_size );
@@ -352,8 +349,6 @@ static void InitOpenGL( void )
 
 		if ( max_bind_units > max_shader_units )
 			max_bind_units = max_shader_units;
-		if ( max_bind_units > 16 )
-			max_bind_units = 16;
 
 		if ( glConfig.numTextureUnits && max_bind_units > 0 )
 			glConfig.numTextureUnits = max_bind_units;
@@ -1041,11 +1036,6 @@ void GfxInfo_f( void )
 		"fullscreen"
 	};
 
-	Q_strncpyz( glConfig.vendor_string, (char *) glGetString (GL_VENDOR), sizeof( glConfig.vendor_string ) );
-	Q_strncpyz( glConfig.renderer_string, (char *) glGetString (GL_RENDERER), sizeof( glConfig.renderer_string ) );
-	Q_strncpyz( glConfig.version_string, (char *) glGetString (GL_VERSION), sizeof( glConfig.version_string ) );
-
-
 	ri.Printf( PRINT_ALL, "\nGL_VENDOR: %s\n", glConfig.vendor_string );
 	ri.Printf( PRINT_ALL, "GL_RENDERER: %s\n", glConfig.renderer_string );
 	ri.Printf( PRINT_ALL, "GL_VERSION: %s\n", glConfig.version_string );
@@ -1168,9 +1158,6 @@ void R_Register( void )
 	r_arb_vertex_array_object = ri.Cvar_Get( "r_arb_vertex_array_object", "1", CVAR_ARCHIVE | CVAR_LATCH);
 	r_ext_direct_state_access = ri.Cvar_Get("r_ext_direct_state_access", "1", CVAR_ARCHIVE | CVAR_LATCH);
 
-	r_ext_texture_filter_anisotropic = ri.Cvar_Get( "r_ext_texture_filter_anisotropic",
-			"0", CVAR_ARCHIVE | CVAR_LATCH );
-	r_ext_max_anisotropy = ri.Cvar_Get( "r_ext_max_anisotropy", "2", CVAR_ARCHIVE | CVAR_LATCH );
 
 	r_picmip = ri.Cvar_Get ("r_picmip", "1", CVAR_ARCHIVE | CVAR_LATCH );
 	r_roundImagesDown = ri.Cvar_Get ("r_roundImagesDown", "1", CVAR_ARCHIVE | CVAR_LATCH );

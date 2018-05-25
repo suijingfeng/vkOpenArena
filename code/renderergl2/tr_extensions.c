@@ -25,8 +25,18 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #include "tr_dsa.h"
 #include <stdio.h>
 
+void (APIENTRYP qglActiveTextureARB) (GLenum texture);
+void (APIENTRYP qglClientActiveTextureARB) (GLenum texture);
+void (APIENTRYP qglMultiTexCoord2fARB) (GLenum target, GLfloat s, GLfloat t);
+
+void (APIENTRYP qglLockArraysEXT) (GLint first, GLsizei count);
+void (APIENTRYP qglUnlockArraysEXT) (void);
+
+
 
 #define GLE(ret, name, ...) name##proc * qgl##name;
+QGL_1_1_PROCS;
+QGL_DESKTOP_1_1_PROCS;
 QGL_1_3_PROCS;
 QGL_1_5_PROCS;
 QGL_2_0_PROCS;
@@ -37,20 +47,209 @@ QGL_EXT_direct_state_access_PROCS;
 
 extern int qglMajorVersion;
 extern int qglMinorVersion;
-
+qboolean    textureFilterAnisotropic = qfalse;
 #define QGL_VERSION_ATLEAST( major, minor ) ( qglMajorVersion > major || ( qglMajorVersion == major && qglMinorVersion >= minor ) )
 
-static qboolean SDL_GL_ExtensionSupported(const char* extension )
+static qboolean isAtLeastGL3(const char *verstr)
 {
-	void *adr = ri.GLimpGetProcAddress( extension );
-	if(adr != NULL)
-		return qtrue;
-	else
-		return qfalse;
-	return qfalse;
+    return (verstr && (atoi(verstr) >= 3));
 }
 
+void* SDL_GL_GetProcAddress(const char* name)
+{
+    return ri.GLimpGetProcAddress(name);
+}
+
+
+qboolean SDL_GL_ExtensionSupported(const char *extension)
+{
+
+    const char *extensions;
+    const char* terminator;
+
+    /* Extension names should not have spaces. */
+    const char* where = strchr(extension, ' ');
+    if (where || *extension == '\0') {
+        return qfalse;
+    }
+
+    /* See if there's an environment variable override */
+    const char* start = getenv(extension);
+    if (start && *start == '0') {
+        return qfalse;
+    }
+
+    /* Lookup the available extensions */
+
+    if (isAtLeastGL3((const char *) qglGetString(GL_VERSION)))
+    {
+        GLint num_exts = 0;
+        GLint i;
+
+        #ifndef GL_NUM_EXTENSIONS
+        #define GL_NUM_EXTENSIONS 0x821D
+        #endif
+        
+        qglGetIntegerv(GL_NUM_EXTENSIONS, &num_exts);
+        for (i = 0; i < num_exts; i++)
+        {
+            const char *thisext = (const char *) qglGetStringi(GL_EXTENSIONS, i);
+            if (strcmp(thisext, extension) == 0)
+            {
+                return qtrue;
+            }
+        }
+
+        return qfalse;
+    }
+
+    /* Try the old way with glGetString(GL_EXTENSIONS) ... */
+
+    extensions = (const char *) qglGetString(GL_EXTENSIONS);
+    if (!extensions) {
+        return qfalse;
+    }
+    /*
+     * It takes a bit of care to be fool-proof about parsing the OpenGL
+     * extensions string. Don't be fooled by sub-strings, etc.
+     */
+
+    start = extensions;
+
+    for (;;) {
+        where = strstr(start, extension);
+        if (!where)
+            break;
+
+        terminator = where + strlen(extension);
+        if (where == extensions || *(where - 1) == ' ')
+            if (*terminator == ' ' || *terminator == '\0')
+                return qtrue;
+
+        start = terminator;
+    }
+    return qfalse;
+
+}
+
+
 cvar_t *r_ext_compressed_textures;// these control use of specific extensions, tr2
+
+void GLimp_InitExtensions( void )
+{
+
+	ri.Printf( PRINT_ALL, "Initializing OpenGL extensions\n" );
+/*  
+	glConfig.textureCompression = TC_NONE;
+
+	// GL_EXT_texture_compression_s3tc
+	if ( SDL_GL_ExtensionSupported( "GL_ARB_texture_compression" ) &&
+	     SDL_GL_ExtensionSupported( "GL_EXT_texture_compression_s3tc" ) )
+	{
+		if ( r_ext_compressed_textures->value )
+		{
+			glConfig.textureCompression = TC_S3TC_ARB;
+			ri.Printf( PRINT_ALL, "...using GL_EXT_texture_compression_s3tc\n" );
+		}
+		else
+		{
+			ri.Printf( PRINT_ALL, "...ignoring GL_EXT_texture_compression_s3tc\n" );
+		}
+	}
+	else
+	{
+		ri.Printf( PRINT_ALL, "...GL_EXT_texture_compression_s3tc not found\n" );
+	}
+
+	// GL_S3_s3tc ... legacy extension before GL_EXT_texture_compression_s3tc.
+	if (glConfig.textureCompression == TC_NONE)
+	{
+		if ( SDL_GL_ExtensionSupported( "GL_S3_s3tc" ) )
+		{
+			if ( r_ext_compressed_textures->value )
+			{
+				glConfig.textureCompression = TC_S3TC;
+				ri.Printf( PRINT_ALL, "...using GL_S3_s3tc\n" );
+			}
+			else
+			{
+				ri.Printf( PRINT_ALL, "...ignoring GL_S3_s3tc\n" );
+			}
+		}
+		else
+		{
+			ri.Printf( PRINT_ALL, "...GL_S3_s3tc not found\n" );
+		}
+	}
+
+
+	// GL_EXT_texture_env_add
+	glConfig.textureEnvAddAvailable = qfalse;
+	if ( SDL_GL_ExtensionSupported( "GL_EXT_texture_env_add" ) )
+	{
+			glConfig.textureEnvAddAvailable = qtrue;
+			ri.Printf( PRINT_ALL, "...using GL_EXT_texture_env_add\n" );
+	}
+	else
+	{
+		ri.Printf( PRINT_ALL, "...GL_EXT_texture_env_add not found\n" );
+	}
+*/
+	// GL_ARB_multitexture
+	qglMultiTexCoord2fARB = NULL;
+	qglActiveTextureARB = NULL;
+	qglClientActiveTextureARB = NULL;
+	if ( SDL_GL_ExtensionSupported( "GL_ARB_multitexture" ) )
+	{
+			qglMultiTexCoord2fARB = SDL_GL_GetProcAddress( "glMultiTexCoord2fARB" );
+			qglActiveTextureARB = SDL_GL_GetProcAddress( "glActiveTextureARB" );
+			qglClientActiveTextureARB = SDL_GL_GetProcAddress( "glClientActiveTextureARB" );
+
+			if ( qglActiveTextureARB )
+			{
+				GLint glint = 0;
+				qglGetIntegerv( GL_MAX_TEXTURE_UNITS_ARB, &glint );
+				glConfig.numTextureUnits = (int) glint;
+				if ( glConfig.numTextureUnits > 1 )
+				{
+					ri.Printf( PRINT_ALL, "...using GL_ARB_multitexture\n" );
+				}
+				else
+				{
+					qglMultiTexCoord2fARB = NULL;
+					qglActiveTextureARB = NULL;
+					qglClientActiveTextureARB = NULL;
+					ri.Printf( PRINT_ALL, "...not using GL_ARB_multitexture, < 2 texture units\n" );
+				}
+			}
+
+	}
+	else
+	{
+		ri.Printf( PRINT_ALL, "...GL_ARB_multitexture not found\n" );
+	}
+
+	// GL_EXT_compiled_vertex_array
+	if ( SDL_GL_ExtensionSupported( "GL_EXT_compiled_vertex_array" ) )
+	{
+
+			ri.Printf( PRINT_ALL, "...using GL_EXT_compiled_vertex_array\n" );
+			qglLockArraysEXT = ( void ( APIENTRY * )( GLint, GLint ) ) SDL_GL_GetProcAddress( "glLockArraysEXT" );
+			qglUnlockArraysEXT = ( void ( APIENTRY * )( void ) ) SDL_GL_GetProcAddress( "glUnlockArraysEXT" );
+			if (!qglLockArraysEXT || !qglUnlockArraysEXT)
+			{
+				ri.Error (ERR_FATAL, "bad getprocaddress");
+			}
+
+	}
+	else
+	{
+		ri.Printf( PRINT_ALL, "...GL_EXT_compiled_vertex_array not found\n" );
+	}
+
+
+}
+
 
 
 void GLimp_InitExtraExtensions()
@@ -64,6 +263,7 @@ void GLimp_InitExtraExtensions()
 	// Check OpenGL version
 	if ( !QGL_VERSION_ATLEAST( 2, 0 ) )
 		ri.Error(ERR_FATAL, "OpenGL 2.0 required!");
+
 	ri.Printf(PRINT_ALL, "...using OpenGL %s\n", glConfig.version_string);
 
 	q_gl_version_at_least_3_0 = QGL_VERSION_ATLEAST( 3, 0 );
