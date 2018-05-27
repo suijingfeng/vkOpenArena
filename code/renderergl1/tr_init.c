@@ -33,9 +33,6 @@ glstate_t	glState;
 
 static void GfxInfo_f( void );
 
-#ifdef USE_RENDERER_DLOPEN
-cvar_t  *com_altivec;
-#endif
 
 cvar_t	*r_flareSize;
 cvar_t	*r_flareFade;
@@ -76,7 +73,6 @@ cvar_t	*r_norefresh;
 cvar_t	*r_drawentities;
 cvar_t	*r_drawworld;
 cvar_t	*r_speeds;
-cvar_t	*r_fullbright;
 cvar_t	*r_novis;
 cvar_t	*r_nocull;
 cvar_t	*r_facePlaneCull;
@@ -138,7 +134,6 @@ cvar_t	*r_customheight;
 cvar_t	*r_customPixelAspect;
 
 cvar_t	*r_overBrightBits;
-cvar_t	*r_mapOverBrightBits;
 
 cvar_t	*r_debugSurface;
 cvar_t	*r_simpleMipMaps;
@@ -917,9 +912,6 @@ R_Register
 */
 void R_Register( void ) 
 {
-	#ifdef USE_RENDERER_DLOPEN
-	com_altivec = ri.Cvar_Get("com_altivec", "1", CVAR_ARCHIVE);
-	#endif	
 
 	//
 	// latched and archived variables
@@ -962,8 +954,6 @@ void R_Register( void )
 	//
 	r_displayRefresh = ri.Cvar_Get( "r_displayRefresh", "0", CVAR_LATCH );
 	ri.Cvar_CheckRange( r_displayRefresh, 0, 200, qtrue );
-	r_fullbright = ri.Cvar_Get ("r_fullbright", "0", CVAR_LATCH|CVAR_CHEAT );
-	r_mapOverBrightBits = ri.Cvar_Get ("r_mapOverBrightBits", "2", CVAR_LATCH );
 	r_singleShader = ri.Cvar_Get ("r_singleShader", "0", CVAR_CHEAT | CVAR_LATCH );
 
 	//

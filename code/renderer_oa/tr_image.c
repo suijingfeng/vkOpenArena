@@ -1363,10 +1363,10 @@ void R_InitSkins( void )
 
 void R_SetColorMappings(void)
 {
-	int	i, inf,	shift = 1;
+	int	i, inf;
 
-	tr.identityLight = 1.0f / ( 1 << shift );
-	tr.identityLightByte = 255 * tr.identityLight;
+	tr.identityLight = 1.0f;
+	tr.identityLightByte = 255;
 
 	if( r_gamma->value < 0.5f )
     {
@@ -1390,7 +1390,7 @@ void R_SetColorMappings(void)
         {
 			inf = 255 * pow ( i/255.0f, 1.0f / g ) + 0.5f;
 		}
-		inf <<= shift;
+		//inf <<= shift;
 		if (inf < 0)
         {
 			inf = 0;
@@ -1404,7 +1404,7 @@ void R_SetColorMappings(void)
 
 	if ( glConfig.deviceSupportsGamma)
 	{
-		ri.SetGamma( s_gammatable, s_gammatable, s_gammatable );
+		//ri.SetGamma( s_gammatable, s_gammatable, s_gammatable );
 	}
 }
 

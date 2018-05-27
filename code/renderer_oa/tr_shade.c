@@ -40,10 +40,6 @@ extern cvar_t* r_lightmap;
 
 
 
-#ifdef USE_RENDERER_DLOPEN
-static cvar_t* com_altivec;
-#endif
-
 #ifdef DEBUG_NORMAL
 static cvar_t* r_shownormals;
 #endif
@@ -1516,10 +1512,6 @@ void RB_EndSurface( void )
 
 void R_InitShade(void)
 {
-    #ifdef USE_RENDERER_DLOPEN
-	    com_altivec = ri.Cvar_Get("com_altivec", "0", CVAR_ARCHIVE);
-    #endif
-
 	r_showtris = ri.Cvar_Get ("r_showtris", "0", CVAR_CHEAT);
 #ifdef DEBUG_NORMAL    
     // draws wireframe normals

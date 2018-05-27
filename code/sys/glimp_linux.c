@@ -53,9 +53,9 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #include <X11/XKBlib.h>
 
 
+
+#ifdef HAVE_XF86DGA
 #include <X11/extensions/Xxf86dga.h>
-#ifdef _XF86DGA_H_
-#define HAVE_XF86DGA
 #endif
 
 #include "../client/client.h"
@@ -75,7 +75,6 @@ static cvar_t* r_customwidth;
 static cvar_t* r_customheight;
 
 static cvar_t* r_mode;
-static cvar_t* r_glDriver;
 cvar_t* r_drawBuffer;
 
 ///////////////////////////
@@ -376,7 +375,7 @@ static int GLW_SetMode(int mode, qboolean fullscreen, glconfig_t* config, qboole
           GLX_BLUE_SIZE       , 8,
           GLX_ALPHA_SIZE      , 8,
           GLX_DEPTH_SIZE      , 24,
-          GLX_STENCIL_SIZE    , 8,
+          GLX_STENCIL_SIZE    , 0,
           GLX_DOUBLEBUFFER    , True, 
           //GLX_SAMPLE_BUFFERS  , 1,
           //GLX_SAMPLES         , 4,
@@ -762,7 +761,7 @@ static int qXErrorHandler( Display *dpy, XErrorEvent *ev )
 ** This routine is responsible for initializing the OS specific portions
 ** of OpenGL.
 */
-void GLimp_Init( glconfig_t *config, qboolean context )
+void GLimp_Init(glconfig_t *config, qboolean context )
 {
     r_fullscreen = Cvar_Get( "r_fullscreen", "0", CVAR_ARCHIVE | CVAR_LATCH);
 	r_mode = Cvar_Get( "r_mode", "-2", CVAR_ARCHIVE | CVAR_LATCH );
@@ -771,18 +770,16 @@ void GLimp_Init( glconfig_t *config, qboolean context )
     
 	r_customwidth = Cvar_Get( "r_customwidth", "1920", CVAR_ARCHIVE | CVAR_LATCH );
 	r_customheight = Cvar_Get( "r_customheight", "1080", CVAR_ARCHIVE | CVAR_LATCH );
-	r_glDriver = Cvar_Get( "r_glDriver", OPENGL_DRIVER_NAME, CVAR_ARCHIVE | CVAR_LATCH );
     
     
     vid_xpos = Cvar_Get( "vid_xpos", "3", CVAR_ARCHIVE );
 	vid_ypos = Cvar_Get( "vid_ypos", "22", CVAR_ARCHIVE );
-	setenv( "vblank_mode", "1", 1 );
     Cmd_AddCommand( "modelist", ModeList_f );
 
 
     IN_Init();   // rcg08312005 moved into glimp.
     //load opengl dll
-	glw_state.OpenGLLib = Sys_LoadDll(r_glDriver->string, qtrue);
+	glw_state.OpenGLLib = Sys_LoadDll(OPENGL_DRIVER_NAME, qtrue);
 
     
 	// set up our custom error handler for X failures
@@ -889,7 +886,6 @@ void GLimp_Shutdown( qboolean unloadDLL )
 	win = 0;
 	ctx = NULL;
 
-	unsetenv( "vblank_mode" );
 	
     if ( glw_state.cdsFullscreen )
 	{

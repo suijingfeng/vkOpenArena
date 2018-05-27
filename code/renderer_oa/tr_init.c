@@ -79,23 +79,8 @@ static void GL_SetDefaultState(void)
 }
 
 
-/*
-** Workaround for ri.Printf's 1024 characters buffer limit.
-static void R_PrintLongString(const char *string)
-{
-	char buffer[1024];
-	int size = strlen(string);
-	const char *p = string;
-	
-    while(size > 0)
-    {
-		Q_strncpyz(buffer, p, sizeof(buffer) );
-		ri.Printf(PRINT_ALL, "%s", buffer);
-		p += 1023;
-		size -= 1023;
-	}
-}
-*/
+
+
 
 
 static void GfxInfo_f( void )
@@ -106,11 +91,6 @@ static void GfxInfo_f( void )
 		"enabled"
 	};
 
-
-    	// get our config strings
-	Q_strncpyz( glConfig.vendor_string, (char *) glGetString (GL_VENDOR), sizeof( glConfig.vendor_string ) );
-	Q_strncpyz( glConfig.renderer_string, (char *) glGetString (GL_RENDERER), sizeof( glConfig.renderer_string ) );
-	Q_strncpyz( glConfig.version_string, (char *) glGetString (GL_VERSION), sizeof( glConfig.version_string ) );
 
 	ri.Printf( PRINT_ALL, "\nGL_VENDOR: %s\n", glConfig.vendor_string );
 	ri.Printf( PRINT_ALL, "GL_RENDERER: %s\n", glConfig.renderer_string );
@@ -178,9 +158,7 @@ static void InitOpenGL(void)
 
 		glConfig.deviceSupportsGamma = qfalse;
 
-		{
-			ri.InitGamma( &glConfig );
-		}
+		ri.InitGamma( &glConfig );
     }
 
     // stubbed or broken drivers may have reported 0...

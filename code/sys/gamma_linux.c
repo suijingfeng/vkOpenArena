@@ -68,8 +68,6 @@ void InitGammaImpl( glconfig_t *config )
 
 
 /*
-** GLimp_SetGamma
-**
 ** This routine should only be called if glConfig.deviceSupportsGamma is TRUE
 */
 void SetGammaImpl( unsigned char red[256], unsigned char green[256], unsigned char blue[256] )
