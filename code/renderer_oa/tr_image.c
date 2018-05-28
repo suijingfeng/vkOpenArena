@@ -30,10 +30,6 @@ extern glconfig_t glConfig;
 extern glstate_t glState;
 
 
-//extern cvar_t *r_ext_texture_filter_anisotropic;
-//extern cvar_t *r_ext_max_anisotropy;
-
-
 cvar_t* r_ignoreGLErrors;
 cvar_t* r_gamma;
 
@@ -972,8 +968,6 @@ static void R_CreateBuiltinImages( void )
 	R_CreateDlightImage();
 
 	R_CreateFogImage();
-	//tr.fogImage = R_FindImageFile( "gfx/engine/fog.tga", 0, IMGFLAG_CLAMPTOEDGE )
-	//tr.dlightImage = R_FindImageFile( "gfx/engine/dlight.tga", 0, IMGFLAG_CLAMPTOEDGE );
 }
 
 

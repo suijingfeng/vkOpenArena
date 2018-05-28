@@ -22,9 +22,6 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #include "tr_local.h"
 
 
-extern cvar_t *r_drawBuffer;
-
-
 
 
 /*
@@ -125,14 +122,14 @@ R_GetCommandBufferReserved
 make sure there is enough command space
 ============
 */
-void *R_GetCommandBufferReserved( int bytes, int reservedBytes ) {
-	renderCommandList_t	*cmdList;
-
-	cmdList = &backEndData->commands;
+void* R_GetCommandBufferReserved( int bytes, int reservedBytes )
+{
+	renderCommandList_t	*cmdList = &backEndData->commands;
 	bytes = PAD(bytes, sizeof(void *));
 
 	// always leave room for the end of list command
-	if ( cmdList->used + bytes + sizeof( int ) + reservedBytes > MAX_RENDER_COMMANDS ) {
+	if ( cmdList->used + bytes + sizeof( int ) + reservedBytes > MAX_RENDER_COMMANDS )
+    {
 		if ( bytes > MAX_RENDER_COMMANDS - sizeof( int ) ) {
 			ri.Error( ERR_FATAL, "R_GetCommandBuffer: bad size %i", bytes );
 		}
@@ -152,8 +149,26 @@ R_GetCommandBuffer
 returns NULL if there is not enough space for important commands
 =============
 */
-void *R_GetCommandBuffer( int bytes ) {
-	return R_GetCommandBufferReserved( bytes, PAD( sizeof( swapBuffersCommand_t ), sizeof(void *) ) );
+void *R_GetCommandBuffer( int bytes )
+{
+    int reservedBytes = PAD( sizeof( swapBuffersCommand_t ), sizeof(void *) );
+
+	renderCommandList_t	*cmdList = &backEndData->commands;
+	bytes = PAD(bytes, sizeof(void *));
+
+	// always leave room for the end of list command
+	if ( cmdList->used + bytes + sizeof( int ) + reservedBytes > MAX_RENDER_COMMANDS )
+    {
+		if ( bytes > MAX_RENDER_COMMANDS - sizeof( int ) ) {
+			ri.Error( ERR_FATAL, "R_GetCommandBuffer: bad size %i", bytes );
+		}
+		// if we run out of room, just start dropping commands
+		return NULL;
+	}
+
+	cmdList->used += bytes;
+
+	return cmdList->cmds + cmdList->used - bytes;
 }
 
 
@@ -242,7 +257,6 @@ void RE_StretchPic ( float x, float y, float w, float h,
 
 
 void RE_BeginFrame( void ) {
-	drawBufferCommand_t	*cmd = NULL;
 
 	if ( !tr.registered ) {
 		return;
@@ -319,17 +333,12 @@ void RE_BeginFrame( void ) {
 	}
 
 	
-    if( !(cmd = R_GetCommandBuffer(sizeof(*cmd))) )
-        return;
+    drawBufferCommand_t	* cmd = R_GetCommandBuffer(sizeof(*cmd));
 
     if(cmd)
     {
         cmd->commandId = RC_DRAW_BUFFER;
-
-        if (!Q_stricmp(r_drawBuffer->string, "GL_FRONT"))
-            cmd->buffer = (int)GL_FRONT;
-        else
-            cmd->buffer = (int)GL_BACK;
+        cmd->buffer = (int)GL_BACK;
     }
 	
 }
@@ -342,13 +351,12 @@ RE_EndFrame
 Returns the number of msec spent in the back end
 =============
 */
-void RE_EndFrame( int *frontEndMsec, int *backEndMsec ) {
-	swapBuffersCommand_t	*cmd;
-
+void RE_EndFrame( int *frontEndMsec, int *backEndMsec )
+{
 	if ( !tr.registered ) {
 		return;
 	}
-	cmd = R_GetCommandBufferReserved( sizeof( *cmd ), 0 );
+	swapBuffersCommand_t* cmd = R_GetCommandBufferReserved( sizeof( *cmd ), 0 );
 	if ( !cmd ) {
 		return;
 	}
@@ -368,21 +376,14 @@ void RE_EndFrame( int *frontEndMsec, int *backEndMsec ) {
 	backEnd.pc.msec = 0;
 }
 
-/*
-=============
-RE_TakeVideoFrame
-=============
-*/
-void RE_TakeVideoFrame( int width, int height,
-		byte *captureBuffer, byte *encodeBuffer, qboolean motionJpeg )
-{
-	videoFrameCommand_t	*cmd;
 
+void RE_TakeVideoFrame( int width, int height, byte *captureBuffer, byte *encodeBuffer, qboolean motionJpeg )
+{
 	if( !tr.registered ) {
 		return;
 	}
 
-	cmd = R_GetCommandBuffer( sizeof( *cmd ) );
+	videoFrameCommand_t* cmd = R_GetCommandBuffer( sizeof( *cmd ) );
 	if( !cmd ) {
 		return;
 	}

@@ -70,12 +70,10 @@ static GLXContext ctx = NULL;
 static qboolean ctxErrorOccurred = qfalse;
 
 static cvar_t* r_fullscreen;
-
 static cvar_t* r_customwidth;
 static cvar_t* r_customheight;
 
 static cvar_t* r_mode;
-cvar_t* r_drawBuffer;
 
 ///////////////////////////
  
@@ -766,8 +764,6 @@ void GLimp_Init(glconfig_t *config, qboolean context )
     r_fullscreen = Cvar_Get( "r_fullscreen", "0", CVAR_ARCHIVE | CVAR_LATCH);
 	r_mode = Cvar_Get( "r_mode", "-2", CVAR_ARCHIVE | CVAR_LATCH );
     
-    r_drawBuffer = Cvar_Get( "r_drawBuffer", "GL_BACK", CVAR_CHEAT );
-    
 	r_customwidth = Cvar_Get( "r_customwidth", "1920", CVAR_ARCHIVE | CVAR_LATCH );
 	r_customheight = Cvar_Get( "r_customheight", "1080", CVAR_ARCHIVE | CVAR_LATCH );
     
@@ -831,11 +827,7 @@ void GLimp_Init(glconfig_t *config, qboolean context )
 void GLimp_EndFrame( void )
 {
 	// don't flip if drawing to front buffer
-	if ( Q_stricmp( r_drawBuffer->string, "GL_FRONT" ) != 0 )
-	{
-		glXSwapBuffers( dpy, win );
-	}
-
+	glXSwapBuffers( dpy, win );
 }
 
 

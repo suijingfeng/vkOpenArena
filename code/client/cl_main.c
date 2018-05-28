@@ -1394,9 +1394,6 @@ void CL_Disconnect( qboolean showMainMenu )
 		return;
 	}
 
-	// shutting down the client so enter full screen ui mode
-	Cvar_Set("r_uiFullScreen", "1");
-
 	if ( clc.demorecording )
     {
 		CL_StopRecord_f ();
@@ -2147,8 +2144,6 @@ void CL_DownloadsComplete( void ) {
 		return;
 	}
 
-	// starting to load a map so we get out of full screen ui mode
-	Cvar_Set("r_uiFullScreen", "0");
 
 	// flush client memory and start loading stuff
 	// this will also (re)load the UI

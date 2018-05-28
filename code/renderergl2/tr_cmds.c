@@ -21,7 +21,6 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 */
 #include "tr_local.h"
 
-extern cvar_t *r_drawBuffer;
 
 /*
 =====================
@@ -366,12 +365,7 @@ void RE_BeginFrame( void )
     if(cmd)
     {
         cmd->commandId = RC_DRAW_BUFFER;
-
-
-        if (!Q_stricmp(r_drawBuffer->string, "GL_FRONT"))
-            cmd->buffer = (int)GL_FRONT;
-        else
-            cmd->buffer = (int)GL_BACK;
+        cmd->buffer = (int)GL_BACK;
     }
 	
 }

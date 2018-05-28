@@ -2797,9 +2797,6 @@ void Com_Init(char *commandLine )
 		}
 	}
 
-	// start in full screen ui mode
-	Cvar_Set("r_uiFullScreen", "0");
-
 	CL_StartHunkUsers( qfalse );
 
 	// make sure single player is off by default
