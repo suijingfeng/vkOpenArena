@@ -92,7 +92,7 @@ static void HSVtoRGB( float h, float s, float v, float rgb[3] )
 static void R_ColorShiftLightingBytes(unsigned char in[4], unsigned char out[4])
 {
 	// shift the color data based on overbright range
-	int shift = 2;
+	float shift = 3;
 	int r = in[0] * shift;
 	int g = in[1] * shift;
 	int b = in[2] * shift;
