@@ -80,41 +80,27 @@ void R_PerformanceCounters( void ) {
 
 /*
 ====================
-R_IssueRenderCommands
-====================
-*/
-static void R_IssueRenderCommands( qboolean runPerformanceCounters )
-{
-	renderCommandList_t	*cmdList = &backEndData->commands;
-	assert(cmdList);
-	// add an end-of-list command
-	*(int *)(cmdList->cmds + cmdList->used) = RC_END_OF_LIST;
-
-	// clear it out, in case this is a sync and not a buffer flip
-	cmdList->used = 0;
-
-	if ( runPerformanceCounters ) {
-		R_PerformanceCounters();
-	}
-
-	// actually start the commands going
-    // let it start on the new batch
-    RB_ExecuteRenderCommands( cmdList->cmds );
-}
-
-
-/*
-====================
 R_IssuePendingRenderCommands
 
 Issue any pending commands and wait for them to complete.
 ====================
 */
-void R_IssuePendingRenderCommands( void ) {
-	if ( !tr.registered ) {
-		return;
+void R_IssuePendingRenderCommands( void )
+{
+	if ( tr.registered )
+    {
+        renderCommandList_t	*cmdList = &backEndData->commands;
+        assert(cmdList);
+        // add an end-of-list command
+        *(int *)(cmdList->cmds + cmdList->used) = RC_END_OF_LIST;
+
+        // clear it out, in case this is a sync and not a buffer flip
+        cmdList->used = 0;
+
+        // actually start the commands going
+        // let it start on the new batch
+        RB_ExecuteRenderCommands( cmdList->cmds );
 	}
-	R_IssueRenderCommands( qfalse );
 }
 
 /*
@@ -151,7 +137,8 @@ R_GetCommandBuffer
 returns NULL if there is not enough space for important commands
 =============
 */
-void *R_GetCommandBuffer( int bytes ) {
+void *R_GetCommandBuffer( int bytes )
+{
 	return R_GetCommandBufferReserved( bytes, PAD( sizeof( swapBuffersCommand_t ), sizeof(void *) ) );
 }
 
@@ -378,30 +365,42 @@ RE_EndFrame
 Returns the number of msec spent in the back end
 =============
 */
-void RE_EndFrame( int *frontEndMsec, int *backEndMsec ) {
-	swapBuffersCommand_t	*cmd;
+void RE_EndFrame( int *frontEndMsec, int *backEndMsec )
+{
+	if ( tr.registered )
+    {
+        swapBuffersCommand_t* cmd;
+        cmd = R_GetCommandBufferReserved( sizeof( *cmd ), 0 );
+        if ( !cmd ) {
+            return;
+        }
+        cmd->commandId = RC_SWAP_BUFFERS;
 
-	if ( !tr.registered ) {
-		return;
-	}
-	cmd = R_GetCommandBufferReserved( sizeof( *cmd ), 0 );
-	if ( !cmd ) {
-		return;
-	}
-	cmd->commandId = RC_SWAP_BUFFERS;
+        renderCommandList_t	*cmdList = &backEndData->commands;
+        assert(cmdList);
+        // add an end-of-list command
+        *(int *)(cmdList->cmds + cmdList->used) = RC_END_OF_LIST;
 
-	R_IssueRenderCommands( qtrue );
+        // clear it out, in case this is a sync and not a buffer flip
+        cmdList->used = 0;
 
-	R_InitNextFrame();
+        R_PerformanceCounters();
 
-	if ( frontEndMsec ) {
-		*frontEndMsec = tr.frontEndMsec;
+        // actually start the commands going
+        // let it start on the new batch
+        RB_ExecuteRenderCommands( cmdList->cmds );
+
+        R_InitNextFrame();
+
+        if ( frontEndMsec ) {
+            *frontEndMsec = tr.frontEndMsec;
+        }
+        tr.frontEndMsec = 0;
+        if ( backEndMsec ) {
+            *backEndMsec = backEnd.pc.msec;
+        }
+        backEnd.pc.msec = 0;
 	}
-	tr.frontEndMsec = 0;
-	if ( backEndMsec ) {
-		*backEndMsec = backEnd.pc.msec;
-	}
-	backEnd.pc.msec = 0;
 }
 
 /*

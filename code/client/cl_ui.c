@@ -1122,7 +1122,8 @@ UI_GameCommand
 See if the current console command is claimed by the ui
 ====================
 */
-qboolean UI_GameCommand( void ) {
+qboolean UI_GameCommand( void )
+{
 	if ( !uivm ) {
 		return qfalse;
 	}

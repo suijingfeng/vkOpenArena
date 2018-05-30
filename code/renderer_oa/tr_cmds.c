@@ -87,25 +87,6 @@ static void R_PerformanceCounters(void)
 }
 
 
-static void R_IssueRenderCommands(qboolean runPerformanceCounters)
-{
-	renderCommandList_t	*cmdList = &backEndData->commands;
-	assert(cmdList);
-	// add an end-of-list command
-	*(int *)(cmdList->cmds + cmdList->used) = RC_END_OF_LIST;
-
-	// clear it out, in case this is a sync and not a buffer flip
-	cmdList->used = 0;
-
-	if( runPerformanceCounters )
-		R_PerformanceCounters();
-
-
-	// actually start the commands going
-    // let it start on the new batch
-    RB_ExecuteRenderCommands( cmdList->cmds );
-}
-
 
 //////////////////////////////////////////////////////////////////////////
 
@@ -293,26 +274,42 @@ Returns the number of msec spent in the back end
 */
 void RE_EndFrame( int *frontEndMsec, int *backEndMsec )
 {
-	swapBuffersCommand_t *cmd = R_GetCommandBuffer( sizeof( *cmd ) );
+    if ( tr.registered )
+    {
+        swapBuffersCommand_t *cmd = R_GetCommandBuffer( sizeof( *cmd ) );
 
-	if ( !cmd )
-		return;
-    if ( !tr.registered )
-		return;
+	    if ( !cmd )
+		    return;
 
-	cmd->commandId = RC_SWAP_BUFFERS;
+        cmd->commandId = RC_SWAP_BUFFERS;
 
-	R_IssueRenderCommands( qtrue );
+        renderCommandList_t	*cmdList = &backEndData->commands;
+        assert(cmdList);
+        // add an end-of-list command
+        *(int *)(cmdList->cmds + cmdList->used) = RC_END_OF_LIST;
 
-	R_InitNextFrame();
+        // clear it out, in case this is a sync and not a buffer flip
+        cmdList->used = 0;
 
-	if( frontEndMsec != NULL )
-		*frontEndMsec = tr.frontEndMsec;
-	tr.frontEndMsec = 0;
 
-	if( backEndMsec != NULL )
-		*backEndMsec = backEnd.pc.msec;
-	backEnd.pc.msec = 0;
+        R_PerformanceCounters();
+
+
+        // actually start the commands going
+        // let it start on the new batch
+        RB_ExecuteRenderCommands( cmdList->cmds );
+
+
+        R_InitNextFrame();
+
+        if( frontEndMsec != NULL )
+            *frontEndMsec = tr.frontEndMsec;
+        tr.frontEndMsec = 0;
+
+        if( backEndMsec != NULL )
+            *backEndMsec = backEnd.pc.msec;
+        backEnd.pc.msec = 0;
+    }
 }
 
 

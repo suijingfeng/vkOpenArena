@@ -81,6 +81,9 @@ typedef struct
 	int desktop_height;
 	int desktop_x;
 	int desktop_y;
+
+
+    qboolean gw_minimized;
 } glwstate_t;
 
 

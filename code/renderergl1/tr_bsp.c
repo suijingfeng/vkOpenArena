@@ -147,11 +147,6 @@ static	void R_LoadLightmaps( lump_t *l ) {
 		tr.numLightmaps++;
 	}
 
-	// if we are in r_vertexLight mode, we don't need the lightmaps at all
-	if ( r_vertexLight->integer ) {
-		return;
-	}
-
 	tr.lightmaps = ri.Hunk_Alloc( tr.numLightmaps * sizeof(image_t *), h_low );
 	for ( i = 0 ; i < tr.numLightmaps ; i++ ) {
 		// expand the 24 bit on-disk to 32 bit
@@ -268,10 +263,6 @@ static shader_t *ShaderForShaderNum( int shaderNum, int lightmapNum ) {
 		ri.Error( ERR_DROP, "ShaderForShaderNum: bad num %i", _shaderNum );
 	}
 	dsh = &s_worldData.shaders[ _shaderNum ];
-
-	if ( r_vertexLight->integer ) {
-		lightmapNum = LIGHTMAP_BY_VERTEX;
-	}
 
 
 	shader = R_FindShader( dsh->shader, lightmapNum, qtrue );
@@ -1728,9 +1719,6 @@ void R_LoadEntities( lump_t *l ) {
 				break;
 			}
 			*s++ = 0;
-			if (r_vertexLight->integer) {
-				R_RemapShader(value, s, "0");
-			}
 			continue;
 		}
 		// check for remapping of shaders

@@ -3056,13 +3056,6 @@ static shader_t *FinishShader( void ) {
 		shader.sort = SS_OPAQUE;
 	}
 
-	//
-	// if we are in r_vertexLight mode, never use a lightmap texture
-	//
-	if ( stage > 1 && (r_vertexLight->integer && !r_uiFullScreen->integer)  ) {
-		VertexLightingCollapse();
-		hasLightmapStage = qfalse;
-	}
 
 	//
 	// look for multitexture potential

@@ -50,7 +50,6 @@ static const char s_keytochar[ 128 ] =
  '"',  0x0,  0x0,  '|',  'Z',  'X',  'C',  'V',  'B',  'N',  'M',  '<',  '>',  '?',  0x0,  '*',  // 7
 };
 
-static qboolean gw_minimized = qfalse; // this will be always true for dedicated servers
 
 // Time mouse was reset, we ignore the first 50ms of the mouse to allow settling of events
 static int mouseResetTime = 0;
@@ -473,40 +472,6 @@ static qboolean repeated_press( XEvent *event )
 }
 
 
-static qboolean WindowMinimized( Display *dpy, Window win )
-{
-	unsigned long i, num_items, bytes_after;
-	Atom actual_type, *atoms, nws, nwsh;
-	int actual_format;
-
-	nws = XInternAtom( dpy, "_NET_WM_STATE", True );
-	if ( nws == BadValue || nws == None )
-		return qfalse;
-
-	nwsh = XInternAtom( dpy, "_NET_WM_STATE_HIDDEN", True );
-	if ( nwsh == BadValue || nwsh == None )
-		return qfalse;
-
-	atoms = NULL;
-
-	XGetWindowProperty( dpy, win, nws, 0, 0x7FFFFFFF, False, XA_ATOM,
-		&actual_type, &actual_format, &num_items,
-		&bytes_after, (unsigned char**)&atoms );
-
-	for ( i = 0; i < num_items; i++ )
-	{
-		if ( atoms[i] == nwsh )
-		{
-			XFree( atoms );
-			return qtrue;
-		}
-	}
-
-	XFree( atoms );
-	return qfalse;
-}
-
-
 static qboolean directMap( const byte chr )
 {
 	if ( !in_forceCharset->integer )
@@ -712,12 +677,10 @@ static void IN_ProcessEvents( void )
 			break;
 
 		case ConfigureNotify:
-			gw_minimized = WindowMinimized( dpy, win );
-			Com_DPrintf( "ConfigureNotify gw_minimized: %i\n", gw_minimized );
 			win_x = event.xconfigure.x;
 			win_y = event.xconfigure.y;
 			
-			if ( !glw_state.cdsFullscreen && window_created && !gw_minimized )
+			if ( !glw_state.cdsFullscreen && window_created && !glw_state.gw_minimized )
 			{
 				Cvar_SetIntegerValue( "vid_xpos", win_x );
 				Cvar_SetIntegerValue( "vid_ypos", win_y );
@@ -820,11 +783,6 @@ qboolean IN_MouseActive( void )
 	return ( (in_nograb->integer == 0) && mouse_active );
 }
 
-//////////////////
-void WinMinimize(void)
-{
-    WindowMinimized( dpy, win );
-}
 
 
 /*****************************************************************************/
@@ -850,7 +808,7 @@ void IN_Init( void )
 
 	in_forceCharset = Cvar_Get( "in_forceCharset", "1", CVAR_ARCHIVE );
 	Cmd_AddCommand( "in_restart", IN_Init );
-	Cmd_AddCommand( "minimize", WinMinimize );
+
 }
 
 
@@ -877,7 +835,7 @@ void IN_Frame(void)
 		// Loading in windowed mode
 		IN_DeactivateMouse( );
 	}
-	else if( !window_focused || gw_minimized || in_nograb->integer)
+	else if( !window_focused || glw_state.gw_minimized || in_nograb->integer)
 	{
 		// Window not got focus
 		IN_DeactivateMouse( );

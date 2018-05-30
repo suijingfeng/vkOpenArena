@@ -24,8 +24,6 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
 #include "tr_dsa.h"
 
-extern cvar_t *r_ext_max_anisotropy;
-extern cvar_t *r_ext_compressed_textures;// these control use of specific extensions, tr2
 
 static unsigned char s_intensitytable[256];
 static unsigned char s_gammatable[256];
@@ -2221,19 +2219,6 @@ void R_LoadImage( const char *name, byte **pic, int *width, int *height, GLenum 
 	const char* ext = getExtension( localName );
 
 	// If compressed textures are enabled, try loading a DDS first, it'll load fastest
-	if (r_ext_compressed_textures->integer)
-	{
-		char ddsName[MAX_QPATH];
-
-		stripExtension(name, ddsName, MAX_QPATH);
-		Q_strcat(ddsName, MAX_QPATH, ".dds");
-
-		R_LoadDDS(ddsName, pic, width, height, picFormat, numMips);
-
-		// If loaded, we're done.
-		if (*pic)
-			return;
-	}
 
 	if( *ext )
 	{

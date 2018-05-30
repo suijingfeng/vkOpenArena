@@ -22,7 +22,7 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 // tr_init.c -- functions that are not called every frame
 #include "tr_local.h"
 #include "tr_dsa.h"
-
+#include <unistd.h>
 
 glconfig_t  glConfig;
 glRefConfig_t glRefConfig;
@@ -96,7 +96,6 @@ cvar_t	*r_allowExtensions;
 
 cvar_t	*r_ext_compiled_vertex_array;
 cvar_t	*r_ext_texture_env_add;
-cvar_t	*r_ext_max_anisotropy;
 
 cvar_t  *r_ext_framebuffer_object;
 cvar_t  *r_ext_texture_float;
@@ -170,7 +169,6 @@ cvar_t	*r_colorbits;
 cvar_t  *r_ext_multisample;
 
 cvar_t	*r_lightmap;
-cvar_t	*r_vertexLight;
 cvar_t	*r_uiFullScreen;
 cvar_t	*r_shadows;
 cvar_t	*r_flares;
@@ -385,46 +383,9 @@ void GLimp_InitExtensions( void )
 {
 
 	ri.Printf( PRINT_ALL, "Initializing OpenGL extensions\n" );
-/*  
+ 
 	glConfig.textureCompression = TC_NONE;
-	// GL_EXT_texture_compression_s3tc
-	if ( SDL_GL_ExtensionSupported( "GL_ARB_texture_compression" ) &&
-	     SDL_GL_ExtensionSupported( "GL_EXT_texture_compression_s3tc" ) )
-	{
-		if ( r_ext_compressed_textures->value )
-		{
-			glConfig.textureCompression = TC_S3TC_ARB;
-			ri.Printf( PRINT_ALL, "...using GL_EXT_texture_compression_s3tc\n" );
-		}
-		else
-		{
-			ri.Printf( PRINT_ALL, "...ignoring GL_EXT_texture_compression_s3tc\n" );
-		}
-	}
-	else
-	{
-		ri.Printf( PRINT_ALL, "...GL_EXT_texture_compression_s3tc not found\n" );
-	}
-	// GL_S3_s3tc ... legacy extension before GL_EXT_texture_compression_s3tc.
-	if (glConfig.textureCompression == TC_NONE)
-	{
-		if ( SDL_GL_ExtensionSupported( "GL_S3_s3tc" ) )
-		{
-			if ( r_ext_compressed_textures->value )
-			{
-				glConfig.textureCompression = TC_S3TC;
-				ri.Printf( PRINT_ALL, "...using GL_S3_s3tc\n" );
-			}
-			else
-			{
-				ri.Printf( PRINT_ALL, "...ignoring GL_S3_s3tc\n" );
-			}
-		}
-		else
-		{
-			ri.Printf( PRINT_ALL, "...GL_S3_s3tc not found\n" );
-		}
-	}
+
 	// GL_EXT_texture_env_add
 	glConfig.textureEnvAddAvailable = qfalse;
 	if ( SDL_GL_ExtensionSupported( "GL_EXT_texture_env_add" ) )
@@ -436,7 +397,7 @@ void GLimp_InitExtensions( void )
 	{
 		ri.Printf( PRINT_ALL, "...GL_EXT_texture_env_add not found\n" );
 	}
-*/
+
 	// GL_ARB_multitexture
 	qglMultiTexCoord2fARB = NULL;
 	qglActiveTextureARB = NULL;
@@ -832,7 +793,6 @@ static void InitOpenGL( void )
 	//		- r_gamma
 	//
 
-
 	if ( glConfig.vidWidth == 0 )
 	{
 		GLint max_texture_size;
@@ -864,7 +824,12 @@ static void InitOpenGL( void )
 		if ( glConfig.maxTextureSize <= 0 ) 
 			glConfig.maxTextureSize = 0;
 
-		//glGetIntegerv( GL_MAX_COMBINED_TEXTURE_IMAGE_UNITS, &max_bind_units );
+
+    glClearColor ( 1, 0.5, 0, 1 );
+    glClear ( GL_COLOR_BUFFER_BIT );
+    ri.GLimpEndFrame();
+
+    sleep( 1 );;
 
 
 
@@ -1515,7 +1480,7 @@ void GL_SetDefaultState( void )
 	// GL_POLYGON_OFFSET_FILL will be glEnable()d when this is used
 	qglPolygonOffset( r_offsetFactor->value, r_offsetUnits->value );
 
-	qglClearColor( 0.0f, 0.0f, 0.0f, 1.0f );	// FIXME: get color of sky
+	qglClearColor( 1.0f, 0.0f, 0.0f, 1.0f );	// FIXME: get color of sky
 }
 
 
@@ -1611,7 +1576,6 @@ void R_Register( void )
 	r_fullscreen = ri.Cvar_Get( "r_fullscreen", "1", CVAR_ARCHIVE );
 	r_noborder = ri.Cvar_Get("r_noborder", "0", CVAR_ARCHIVE | CVAR_LATCH);
 	r_simpleMipMaps = ri.Cvar_Get( "r_simpleMipMaps", "1", CVAR_ARCHIVE | CVAR_LATCH );
-	r_vertexLight = ri.Cvar_Get( "r_vertexLight", "0", CVAR_ARCHIVE | CVAR_LATCH );
 	r_uiFullScreen = ri.Cvar_Get( "r_uifullscreen", "0", 0);
 	r_subdivisions = ri.Cvar_Get ("r_subdivisions", "4", CVAR_ARCHIVE | CVAR_LATCH);
 

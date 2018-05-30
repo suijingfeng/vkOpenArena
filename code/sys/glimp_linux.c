@@ -42,8 +42,8 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
-#include <X11/Xlib.h>
-#include <X11/Xutil.h>
+
+
 #include <GL/glx.h>
 
 
@@ -51,12 +51,25 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #include <X11/cursorfont.h>
 #include <X11/Xatom.h>
 #include <X11/XKBlib.h>
-
+#include <X11/Xlib.h>
+#include <X11/Xutil.h>
 
 
 #ifdef HAVE_XF86DGA
 #include <X11/extensions/Xxf86dga.h>
 #endif
+
+
+#include <X11/Xcursor/Xcursor.h>
+#include <X11/extensions/Xdbe.h>
+#include <X11/extensions/Xinerama.h>
+#include <X11/extensions/XInput2.h>
+#include <X11/extensions/Xrandr.h>
+#include <X11/extensions/scrnsaver.h>
+#include <X11/extensions/shape.h>
+#include <X11/extensions/xf86vmode.h>
+
+
 
 #include "../client/client.h"
 #include "sys_public.h"
@@ -413,10 +426,9 @@ static int GLW_SetMode(int mode, qboolean fullscreen, glconfig_t* config, qboole
                 glXGetFBConfigAttrib(dpy, fbc[i], GLX_SAMPLE_BUFFERS, &samp_buf );
                 glXGetFBConfigAttrib(dpy, fbc[i], GLX_SAMPLES       , &samples  );
           
-                printf( "  Matching fbconfig %d, visual ID 0x%2x: SAMPLE_BUFFERS = %d,"
-                  " SAMPLES = %d\n", i, vi -> visualid, samp_buf, samples );
+                printf("  Matching fbconfig %d, visual ID 0x%2x: SAMPLE_BUFFERS = %d, SAMPLES = %d\n", i, vi->visualid, samp_buf, samples );
             
-                if ( (best_fbc < 0) || samp_buf && (samples > best_num_samp) )
+                if ( (best_fbc < 0) || (samp_buf && (samples > best_num_samp)) )
                 {
                     best_fbc = i;
                     best_num_samp = samples;
@@ -439,15 +451,13 @@ static int GLW_SetMode(int mode, qboolean fullscreen, glconfig_t* config, qboole
         printf( "Chosen visual ID = 0x%x\n", vi->visualid );
 
         
-///////////        
- 
         XSetWindowAttributes attr;
         attr.colormap = XCreateColormap(dpy, root, vi->visual, AllocNone );
         attr.background_pixmap = None ;
-        attr.border_pixel = BlackPixel( dpy, scrnum );
-        attr.event_mask = (KeyPressMask | KeyReleaseMask)
-                | (ButtonPressMask | ButtonReleaseMask | PointerMotionMask | ButtonMotionMask )
-                | (VisibilityChangeMask | StructureNotifyMask | FocusChangeMask );        
+        attr.border_pixel = 0;
+        attr.event_mask = (KeyPressMask | KeyReleaseMask) |
+        (ButtonPressMask | ButtonReleaseMask | PointerMotionMask | ButtonMotionMask)
+                | (VisibilityChangeMask | StructureNotifyMask | FocusChangeMask );      
        
         // Be sure to free the FBConfig list allocated by glXChooseFBConfig()
         XFree( fbc );
@@ -585,8 +595,6 @@ static int GLW_SetMode(int mode, qboolean fullscreen, glconfig_t* config, qboole
         {
             XMoveWindow( dpy, win, vid_xpos->integer, vid_ypos->integer );
         }
-
-        XFlush( dpy );
         XSync( dpy, False );
 
 ///////////////////////////
@@ -689,7 +697,7 @@ static int GLW_SetMode(int mode, qboolean fullscreen, glconfig_t* config, qboole
 
         XFlush( dpy );
         XSync( dpy, False );
-        ctx = glXCreateContext( dpy, visinfo, NULL, True );
+        ctx = glXCreateContext(dpy, visinfo, NULL, True);
         XSync( dpy, False );
         	/* GH: Free the visinfo after we're done with it */
 	    XFree( visinfo );
@@ -700,8 +708,12 @@ static int GLW_SetMode(int mode, qboolean fullscreen, glconfig_t* config, qboole
     printf( "Making context current\n" );
 	glXMakeCurrent(dpy, win, ctx);
 
+    glClearColor( 0, 0.5, 1, 1 );
+    glClear( GL_COLOR_BUFFER_BIT );
     glXSwapBuffers ( dpy, win );
+    sleep( 1 );
 
+  
 	Key_ClearStates();
 
 	XSetInputFocus( dpy, win, RevertToParent, CurrentTime );
@@ -750,8 +762,14 @@ static int qXErrorHandler( Display *dpy, XErrorEvent *ev )
 	return 0;
 }
 
-///////////////////////////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////////////
 
+
+void MinimizeWindow(void)
+{
+    XIconifyWindow(dpy, win, scrnum);
+    XFlush(dpy);
+}
 
 /*
 ** GLimp_Init
@@ -770,8 +788,9 @@ void GLimp_Init(glconfig_t *config, qboolean context )
     
     vid_xpos = Cvar_Get( "vid_xpos", "3", CVAR_ARCHIVE );
 	vid_ypos = Cvar_Get( "vid_ypos", "22", CVAR_ARCHIVE );
-    Cmd_AddCommand( "modelist", ModeList_f );
 
+    Cmd_AddCommand( "modelist", ModeList_f );
+	Cmd_AddCommand( "minimize", MinimizeWindow );
 
     IN_Init();   // rcg08312005 moved into glimp.
     //load opengl dll
