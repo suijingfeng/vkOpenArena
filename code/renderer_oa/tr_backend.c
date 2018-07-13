@@ -603,7 +603,6 @@ static const void* RB_SwapBuffers(const void *data)
     /////////////////////////
 
 	backEnd.projection2D = qfalse;
-	
 
 	return (const void *)(cmd + 1);
 }
@@ -1226,7 +1225,7 @@ This is used to test for texture thrashing.
 Also called by RE_EndRegistration
 ===============
 */
-void RB_ShowImages( void )
+void RB_ShowImages(void)
 {
     if ( !backEnd.projection2D )
     {
@@ -1296,7 +1295,6 @@ void RB_ExecuteRenderCommands(const void *data)
                 data = RB_DrawSurfs( data ); break;
             case RC_DRAW_BUFFER:
                 data = RB_DrawBuffer( data ); break;
-
             case RC_SCREENSHOT:
                 data = RB_TakeScreenshotCmd( data ); break;
             case RC_VIDEOFRAME:

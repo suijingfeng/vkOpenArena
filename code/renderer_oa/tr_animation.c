@@ -22,7 +22,6 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
 #include "tr_local.h"
 
-
 extern shaderCommands_t tess;
 extern cvar_t* r_nocull;
 extern refimport_t ri;
@@ -90,8 +89,6 @@ static float ProjectRadius( float r, vec3_t location )
 
 	return pr;
 }
-
-
 
 
 
@@ -243,7 +240,7 @@ static int R_MDRCullModel( mdrHeader_t *header, trRefEntity_t *ent )
 	
 	// calculate a bounding box in the current coordinate system
 	for (i = 0 ; i < 3 ; i++)
-    {
+	{
 		bounds[0][i] = oldFrame->bounds[0][i] < newFrame->bounds[0][i] ? oldFrame->bounds[0][i] : newFrame->bounds[0][i];
 		bounds[1][i] = oldFrame->bounds[1][i] > newFrame->bounds[1][i] ? oldFrame->bounds[1][i] : newFrame->bounds[1][i];
 	}
@@ -276,8 +273,7 @@ static int R_MDRComputeFogNum( mdrHeader_t *header, trRefEntity_t *ent )
 
 	// FIXME: non-normalized axis issues
 	mdrFrame_t* mdrFrame = ( mdrFrame_t * ) ( ( byte * ) header + header->ofsFrames + frameSize * ent->e.frame);
-	
-    VectorAdd( ent->e.origin, mdrFrame->localOrigin, localOrigin );
+	VectorAdd( ent->e.origin, mdrFrame->localOrigin, localOrigin );
 
     int	i, j;
 	for ( i = 1 ; i < tr.world->numfogs ; i++ )
@@ -300,7 +296,6 @@ static int R_MDRComputeFogNum( mdrHeader_t *header, trRefEntity_t *ent )
 }
 
 
-
 static int R_ComputeFogNum( md3Header_t *header, trRefEntity_t *ent )
 {
 	int	i, j;
@@ -313,15 +308,15 @@ static int R_ComputeFogNum( md3Header_t *header, trRefEntity_t *ent )
 	// FIXME: non-normalized axis issues
 	md3Frame_t* md3Frame = ( md3Frame_t * ) ( ( unsigned char * ) header + header->ofsFrames ) + ent->e.frame;
 	VectorAdd( ent->e.origin, md3Frame->localOrigin, localOrigin );
-	
-    for ( i = 1 ; i < tr.world->numfogs ; i++ )
-    {
+
+	for ( i = 1 ; i < tr.world->numfogs ; i++ )
+	{
 		fog_t* fog = &tr.world->fogs[i];
 		for ( j = 0 ; j < 3 ; j++ )
-        {
+		{
 			if ( localOrigin[j] - md3Frame->radius >= fog->bounds[1][j] )
 				break;
-		
+
 			if ( localOrigin[j] + md3Frame->radius <= fog->bounds[0][j] )
 				break;
 		}
@@ -337,13 +332,6 @@ static int R_ComputeFogNum( md3Header_t *header, trRefEntity_t *ent )
 //////////////////////////////////////////////////////////////////////////
 
 
-/*
-=================
-R_CullLocalBox
-
-Returns CULL_IN, CULL_CLIP, or CULL_OUT
-=================
-*/
 int R_CullLocalBox(vec3_t bounds[2])
 {
 	int	i, j;
@@ -429,8 +417,9 @@ void R_MDRAddAnimSurfaces( trRefEntity_t *ent )
 	// This will write directly into the entity structure, 
     // so when the surfaces are rendered,
     // they don't need to be range checked again.
-	
-	if ((ent->e.frame >= header->numFrames)	|| (ent->e.frame < 0) || (ent->e.oldframe >= header->numFrames)	|| (ent->e.oldframe < 0) )
+
+	if ((ent->e.frame >= header->numFrames) || (ent->e.frame < 0) ||
+		(ent->e.oldframe >= header->numFrames) || (ent->e.oldframe < 0) )
 	{
 		ri.Printf( PRINT_ALL, "R_MDRAddAnimSurfaces: no such frame %d to %d for '%s'\n", ent->e.oldframe, ent->e.frame, tr.currentModel->name );
 		ent->e.frame = 0;
@@ -443,7 +432,7 @@ void R_MDRAddAnimSurfaces( trRefEntity_t *ent )
 	//
 	int cull = R_MDRCullModel(header, ent);
 	if ( cull == CULL_OUT )
-    {
+	{
 		return;
 	}	
 
@@ -476,14 +465,14 @@ void R_MDRAddAnimSurfaces( trRefEntity_t *ent )
 	{
 		if(ent->e.customShader)
 			shader = R_GetShaderByHandle(ent->e.customShader);
-		else if(ent->e.customSkin > 0 && ent->e.customSkin < tr.numSkins)
+		else if((ent->e.customSkin > 0) && (ent->e.customSkin < tr.numSkins))
 		{
 			skin_t* skin = tr.skins[ent->e.customSkin];
 			shader = tr.defaultShader;
 			
 			for(j = 0; j < skin->numSurfaces; j++)
 			{
-				if (!strcmp(skin->surfaces[j].name, surface->name))
+				if (0 == strcmp(skin->surfaces[j].name, surface->name))
 				{
 					shader = skin->surfaces[j].shader;
 					break;
@@ -513,7 +502,6 @@ void R_MDRAddAnimSurfaces( trRefEntity_t *ent )
 void R_AddMD3Surfaces( trRefEntity_t *ent )
 {
 	int	i;
-	md3Shader_t* md3Shader = NULL;
 	shader_t* shader = NULL;
 
 
@@ -583,7 +571,7 @@ void R_AddMD3Surfaces( trRefEntity_t *ent )
 			for(j = 0 ; j < skin->numSurfaces; j++ )
             {
 				// the names have both been lowercased
-				if ( !strcmp( skin->surfaces[j].name, surface->name ) )
+				if ( 0 == strcmp( skin->surfaces[j].name, surface->name ) )
                 {
 					shader = skin->surfaces[j].shader;
 					break;
@@ -606,7 +594,7 @@ void R_AddMD3Surfaces( trRefEntity_t *ent )
 		}
         else
         {
-			md3Shader = (md3Shader_t *) ( (byte *)surface + surface->ofsShaders );
+			md3Shader_t* md3Shader = (md3Shader_t *) ( (byte *)surface + surface->ofsShaders );
 			md3Shader += ent->e.skinNum % surface->numShaders;
 			shader = tr.shaders[ md3Shader->shaderIndex ];
 		}
@@ -677,7 +665,7 @@ int R_ComputeLOD( trRefEntity_t *ent )
 		}
 
 		flod *= tr.currentModel->numLods;
-		lod = (long)(flod);
+		lod = (int)(flod);
 
 		if ( lod < 0 )
 		{
@@ -693,7 +681,7 @@ int R_ComputeLOD( trRefEntity_t *ent )
 	
 	if ( lod >= tr.currentModel->numLods )
 		lod = tr.currentModel->numLods - 1;
-	if ( lod < 0 )
+    else if ( lod < 0 )
 		lod = 0;
 
 	return lod;
