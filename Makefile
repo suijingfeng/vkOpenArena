@@ -145,7 +145,7 @@ endif
 
 
 ifndef USE_OPENAL_DLOPEN
-USE_OPENAL_DLOPEN=0
+USE_OPENAL_DLOPEN=1
 endif
 
 ifndef USE_CURL

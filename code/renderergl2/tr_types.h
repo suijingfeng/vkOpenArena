@@ -164,10 +164,10 @@ typedef enum {
 } glHardwareType_t;
 
 typedef struct {
-	char					renderer_string[MAX_STRING_CHARS];
-	char					vendor_string[MAX_STRING_CHARS];
-	char					version_string[MAX_STRING_CHARS];
-	char					extensions_string[BIG_INFO_STRING];
+	char					renderer_string[256];
+	char					vendor_string[256];
+	char					version_string[512];
+	char					extensions_string[10240];
 
 	int						maxTextureSize;			// queried from GL
 	int						numTextureUnits;		// multitexture ability
