@@ -424,7 +424,6 @@ extern const vec3_t	axisDefault[3];
 
 extern void QDECL qsnapvectorx87(vec3_t vec);
 extern void QDECL qsnapvectorsse(vec3_t vec);
-
 extern void (QDECL *Q_SnapVector)(vec3_t vec);
 
 

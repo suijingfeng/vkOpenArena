@@ -1,6 +1,6 @@
 #ifndef TR_SHARE_H_
 #define TR_SHARE_H_
-
+/*  
 extern const vec4_t	colorBlack;
 extern const vec4_t	colorRed;
 extern const vec4_t	colorGreen;
@@ -12,12 +12,10 @@ extern const vec4_t	colorWhite;
 extern const vec4_t	colorLtGrey;
 extern const vec4_t	colorMdGrey;
 extern const vec4_t	colorDkGrey;
-
-
-
+*/
 
 union uInt4bytes{
-    int i;
+    unsigned int i;
     unsigned char uc[4];
 };
 
@@ -60,7 +58,6 @@ static ID_INLINE void FastVectorNormalize( float* v )
 		v[2] *= invLen;
 	}
 }
-
 
 
 static ID_INLINE void FastVectorNormalize2( const float* v, float* out)
@@ -198,7 +195,83 @@ static ID_INLINE void MakeNormalVectors( const vec3_t forward, vec3_t right, vec
 }
 
 
+///////////////////////////////////////////////////////////////////
 
+extern refimport_t ri;
+
+static const vec4_t	colorBlack	= {0, 0, 0, 1};
+static const vec4_t	colorRed	= {1, 0, 0, 1};
+static const vec4_t	colorGreen	= {0, 1, 0, 1};
+static const vec4_t	colorBlue	= {0, 0, 1, 1};
+static const vec4_t	colorYellow	= {1, 1, 0, 1};
+static const vec4_t	colorMagenta= {1, 0, 1, 1};
+static const vec4_t	colorCyan	= {0, 1, 1, 1};
+static const vec4_t	colorWhite	= {1, 1, 1, 1};
+static const vec4_t	colorLtGrey	= {0.75, 0.75, 0.75, 1};
+static const vec4_t	colorMdGrey	= {0.5, 0.5, 0.5, 1};
+static const vec4_t	colorDkGrey	= {0.25, 0.25, 0.25, 1};
+
+
+
+static ID_INLINE void AxisClear( vec3_t axis[3] )
+{
+	axis[0][0] = 1;
+	axis[0][1] = 0;
+	axis[0][2] = 0;
+	axis[1][0] = 0;
+	axis[1][1] = 1;
+	axis[1][2] = 0;
+	axis[2][0] = 0;
+	axis[2][1] = 0;
+	axis[2][2] = 1;
+}
+
+static ID_INLINE char *SkipPath(char *pathname)
+{
+	char *last = pathname;
+    char c;
+    do{
+        c = *pathname;
+    	if (c == '/')
+		    last = pathname+1;
+        pathname++;
+    }while(c);
+
+	return last;
+}
+
+
+static ID_INLINE void stripExtension(const char *in, char *out, int destsize)
+{
+	const char *dot = strrchr(in, '.');
+    const char *slash = strrchr(in, '/');
+
+
+	if ((dot != NULL) && ( (slash < dot) || (slash == NULL) ) )
+    {
+        int len = dot-in+1;
+        if(len <= destsize)
+            destsize = len;
+        else
+		    ri.Printf( PRINT_WARNING, "stripExtension: dest size not enough!\n");
+    }
+
+    if(in != out)
+    	strncpy(out, in, destsize-1);
+	
+    out[destsize-1] = '\0';
+}
+
+static ID_INLINE const char* getExtension( const char *name )
+{
+	const char* dot = strrchr(name, '.');
+    const char* slash = strrchr(name, '/');
+
+	if ((dot != NULL) && ((slash == NULL) || (slash < dot) ))
+		return dot + 1;
+	else
+		return "";
+}
 
 /*
 static void VectorPerp(const vec3_t src, vec3_t dst1, vec3_t dst2 )

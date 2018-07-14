@@ -296,6 +296,35 @@ static void EmitMovEAXStack(vm_t *vm, int andit)
 }
 
 
+#if idx64
+  #define EAX "%%rax"
+  #define EBX "%%rbx"
+  #define ESP "%%rsp"
+  #define EDI "%%rdi"
+#else
+  #define EAX "%%eax"
+  #define EBX "%%ebx"
+  #define ESP "%%esp"
+  #define EDI "%%edi"
+#endif
+
+
+static inline int Q_VMftol(void)
+{
+  int retval;
+  
+  __asm__ volatile
+  (
+    "movss (" EDI ", " EBX ", 4), %%xmm0\n"
+    "cvttss2si %%xmm0, %0\n"
+    : "=r" (retval)
+    :
+    : "%xmm0"
+  );
+
+  return retval;
+}
+
 void EmitMovECXStack(vm_t *vm)
 {
 	if(!jlabel)
@@ -1046,33 +1075,6 @@ qboolean ConstOptimize(vm_t *vm, int callProcOfsSyscall)
 	return qfalse;
 }
 
-#if idx64
-  #define EAX "%%rax"
-  #define EBX "%%rbx"
-  #define ESP "%%rsp"
-  #define EDI "%%rdi"
-#else
-  #define EAX "%%eax"
-  #define EBX "%%ebx"
-  #define ESP "%%esp"
-  #define EDI "%%edi"
-#endif
-
-static inline int Q_VMftol(void)
-{
-    int retval;
-
-    __asm__ volatile
-        (
-         "movss (" EDI ", " EBX ", 4), %%xmm0\n"
-         "cvttss2si %%xmm0, %0\n"
-         : "=r" (retval)
-         :
-         : "%xmm0"
-        );
-
-    return retval;
-}
 
 void VM_Compile(vm_t *vm, vmHeader_t *header)
 {

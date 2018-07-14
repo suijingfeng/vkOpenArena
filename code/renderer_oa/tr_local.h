@@ -29,8 +29,8 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #include "GL/gl.h"
 #include "iqm.h"
 
-#include "tr_public.h"
-#include "tr_shared.h"
+#include "../renderercommon/tr_public.h"
+#include "../renderercommon/tr_shared.h"
 
 #define PATCH_STITCHING
 

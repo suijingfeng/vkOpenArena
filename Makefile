@@ -215,6 +215,7 @@ BD=$(BUILD_DIR)/debug-$(PLATFORM)-$(ARCH)
 BR=$(BUILD_DIR)/release-$(PLATFORM)-$(ARCH)
 CDIR=$(MOUNT_DIR)/client
 SDIR=$(MOUNT_DIR)/server
+RCOMMONDIR=$(MOUNT_DIR)/renderercommom
 RGL1DIR=$(MOUNT_DIR)/renderergl1
 RGL2DIR=$(MOUNT_DIR)/renderergl2
 ROADIR=$(MOUNT_DIR)/renderer_oa
@@ -921,8 +922,7 @@ Q3R2OBJ = \
   $(B)/renderergl2/tr_sky.o \
   $(B)/renderergl2/tr_surface.o \
   $(B)/renderergl2/tr_vbo.o \
-  $(B)/renderergl2/tr_world.o \
-  $(B)/renderergl2/tr_shared.o
+  $(B)/renderergl2/tr_world.o
 
 
 Q3R2STRINGOBJ = \
@@ -984,8 +984,7 @@ Q3ROBJ = \
   $(B)/renderergl1/tr_shadows.o \
   $(B)/renderergl1/tr_sky.o \
   $(B)/renderergl1/tr_surface.o \
-  $(B)/renderergl1/tr_world.o \
-  $(B)/renderergl1/tr_shared.o
+  $(B)/renderergl1/tr_world.o
 
 
 Q3ROAOBJ = \
@@ -1016,8 +1015,7 @@ Q3ROAOBJ = \
   $(B)/renderer_oa/tr_shadows.o \
   $(B)/renderer_oa/tr_sky.o \
   $(B)/renderer_oa/tr_surface.o \
-  $(B)/renderer_oa/tr_world.o \
-  $(B)/renderer_oa/tr_shared.o
+  $(B)/renderer_oa/tr_world.o
 
 
 ifneq ($(USE_RENDERER_DLOPEN), 0)
@@ -1033,13 +1031,10 @@ ifeq ($(ARCH),x86)
   Q3OBJ += \
     $(B)/client/snd_mixa.o \
     $(B)/client/matha.o \
-    $(B)/client/snapvector.o \
-    $(B)/client/ftola.o
+    $(B)/client/snapvector.o
 endif
 ifeq ($(ARCH),x86_64)
-  Q3OBJ += \
-    $(B)/client/snapvector.o \
-    $(B)/client/ftola.o
+  Q3OBJ += $(B)/client/snapvector.o
 endif
 
 
@@ -1184,10 +1179,7 @@ endif
 
 
 ifeq ($(HAVE_VM_COMPILED),true)
-
-    Q3DOBJ += \
-      $(B)/ded/vm_x86.o
-
+    Q3DOBJ += $(B)/ded/vm_x86.o
 endif
 
 
@@ -1517,11 +1509,18 @@ $(B)/renderer_oa/%.o: $(CMDIR)/%.c
 $(B)/renderer_oa/%.o: $(ROADIR)/%.c
 	$(DO_REF_CC)
 
+$(B)/renderer_oa/%.o: $(RCOMMONDIR)/%.c
+	$(DO_REF_CC)
+
+
 
 $(B)/renderergl1/%.o: $(CMDIR)/%.c
 	$(DO_REF_CC)
 
 $(B)/renderergl1/%.o: $(RGL1DIR)/%.c
+	$(DO_REF_CC)
+
+$(B)/renderergl1/%.o: $(RCOMMONDIR)/%.c
 	$(DO_REF_CC)
 
 
@@ -1535,6 +1534,9 @@ $(B)/renderergl2/%.o: $(RGL2DIR)/%.c
 	$(DO_REF_CC)
 
 $(B)/renderergl2/%.o: $(CMDIR)/%.c
+	$(DO_REF_CC)
+
+$(B)/renderergl2/%.o: $(RCOMMONDIR)/%.c
 	$(DO_REF_CC)
 
 

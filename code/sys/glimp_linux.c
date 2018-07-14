@@ -54,6 +54,13 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #include <X11/Xatom.h>
 #include <X11/XKBlib.h>
 
+
+#include <GL/gl.h>
+#include <GL/glext.h>
+
+#include <GL/glx.h>
+#include <GL/glxext.h>
+
 /*
 #if !defined(__sun)
 #include <X11/extensions/Xxf86dga.h>
@@ -72,9 +79,27 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #include "local.h"
 #include "inputs.h"
 
+
+#define OPENGL_DRIVER_NAME	"libGL.so.1"
+
+#define QGL_LinX11_PROCS \
+	GLE( XVisualInfo*, glXChooseVisual, Display *dpy, int screen, int *attribList ) \
+	GLE( GLXContext, glXCreateContext, Display *dpy, XVisualInfo *vis, GLXContext shareList, Bool direct ) \
+	GLE( void, glXDestroyContext, Display *dpy, GLXContext ctx ) \
+	GLE( Bool, glXMakeCurrent, Display *dpy, GLXDrawable drawable, GLXContext ctx) \
+	GLE( void, glXCopyContext, Display *dpy, GLXContext src, GLXContext dst, GLuint mask ) \
+	GLE( void, glXSwapBuffers, Display *dpy, GLXDrawable drawable )
+
+
+#define QGL_Swp_PROCS \
+	GLE( void,	glXSwapIntervalEXT, Display *dpy, GLXDrawable drawable, int interval ) \
+	GLE( int,	glXSwapIntervalMESA, unsigned interval ) \
+	GLE( int,	glXSwapIntervalSGI, int interval )
+
+
 #define GLE( ret, name, ... ) ret ( APIENTRY * q##name )( __VA_ARGS__ );
-QGL_LinX11_PROCS;
-QGL_Swp_PROCS;
+    QGL_LinX11_PROCS;
+    QGL_Swp_PROCS;
 #undef GLE
 
 
@@ -92,16 +117,6 @@ static cvar_t* r_glDriver;
 cvar_t* r_drawBuffer;
 ///////////////////////////
  
-typedef enum
-{
-  RSERR_OK,
-
-  RSERR_INVALID_FULLSCREEN,
-  RSERR_INVALID_MODE,
-
-  RSERR_UNKNOWN
-} rserr_t;
-
 glwstate_t glw_state;
 
 Display *dpy = NULL;
@@ -135,42 +150,40 @@ typedef struct vidmode_s
 	float		pixelAspect;		// pixel width / height
 } vidmode_t;
 
-static const vidmode_t cl_vidModes[] =
-{
-	{ "Mode  0: 1920x1080",			1920,	1080,	1 },
-	{ "Mode  1: 1440x900 (16:10)",	1440,	900,	1 },
-	{ "Mode  2: 1366x768",			1366,	768,	1 },
-	{ "Mode  3: 640x480",			640,	480,	1 },
-	{ "Mode  4: 800x600",			800,	600,	1 },
-	{ "Mode  5: 1280x800 (16:10)",	1280,	800,	1 },
-	{ "Mode  6: 1024x768",			1024,	768,	1 },
-	{ "Mode  7: 1152x864",			1152,	864,	1 },
-	{ "Mode  8: 1280x1024 (5:4)",	1280,	1024,	1 },
-	{ "Mode  9: 1600x1200",			1600,	1200,	1 },
-	{ "Mode 10: 2048x1536",			2048,	1536,	1 },
-	{ "Mode 11: 856x480 (wide)",	856,	480,	1 },
-	// extra modes:
-	{ "Mode 12: 1280x960",			1280,	960,	1 },
-	{ "Mode 13: 1280x720",			1280,	720,	1 },
-	{ "Mode 14: 1280x800 (16:10)",	1280,	800,	1 },
-	{ "Mode 15: 1366x768",			1366,	768,	1 },
-	{ "Mode 16: 1440x900 (16:10)",	1440,	900,	1 },
-	{ "Mode 17: 1600x900",			1600,	900,	1 },
-	{ "Mode 18: 1680x1050 (16:10)",	1680,	1050,	1 },
-	{ "Mode 19: 1920x1080",			1920,	1080,	1 },
-	{ "Mode 20: 1920x1200 (16:10)",	1920,	1200,	1 },
-	{ "Mode 21: 2560x1080 (21:9)",	2560,	1080,	1 },
-	{ "Mode 22: 3440x1440 (21:9)",	3440,	1440,	1 },
-	{ "Mode 23: 3840x2160",			3840,	2160,	1 },
-	{ "Mode 24: 4096x2160 (4K)",	4096,	2160,	1 }
+static const vidmode_t r_vidModes[] = {
+	{ "Mode  0: 320x240",		320,	240,	1 },
+	{ "Mode  1: 400x300",		400,	300,	1 },
+	{ "Mode  2: 512x384",		512,	384,	1 },
+	{ "Mode  3: 640x480 (480p)",	640,	480,	1 },
+	{ "Mode  4: 800x600",		800,	600,	1 },
+	{ "Mode  5: 960x720",		960,	720,	1 },
+	{ "Mode  6: 1024x768",		1024,	768,	1 },
+	{ "Mode  7: 1152x864",		1152,	864,	1 },
+	{ "Mode  8: 1280x1024",		1280,	1024,	1 },
+	{ "Mode  9: 1600x1200",		1600,	1200,	1 },
+	{ "Mode 10: 2048x1536",		2048,	1536,	1 },
+	{ "Mode 11: 856x480",		856,	480,	1 },		// Q3 MODES END HERE AND EXTENDED MODES BEGIN
+	{ "Mode 12: 1280x720 (720p)",	1280,	720,	1 },
+	{ "Mode 13: 1280x768",		1280,	768,	1 },
+	{ "Mode 14: 1280x800",		1280,	800,	1 },
+	{ "Mode 15: 1280x960",		1280,	960,	1 },
+	{ "Mode 16: 1360x768",		1360,	768,	1 },
+	{ "Mode 17: 1366x768",		1366,	768,	1 }, // yes there are some out there on that extra 6
+	{ "Mode 18: 1360x1024",		1360,	1024,	1 },
+	{ "Mode 19: 1400x1050",		1400,	1050,	1 },
+	{ "Mode 20: 1400x900",		1400,	900,	1 },
+	{ "Mode 21: 1600x900",		1600,	900,	1 },
+	{ "Mode 22: 1680x1050",		1680,	1050,	1 },
+	{ "Mode 23: 1920x1080 (1080p)",	1920,	1080,	1 },
+	{ "Mode 24: 1920x1200",		1920,	1200,	1 },
+	{ "Mode 25: 1920x1440",		1920,	1440,	1 },
+	{ "Mode 26: 2560x1600",		2560,	1600,	1 },
+	{ "Mode 27: 3840x2160 (4K)",	3840,	2160,	1 }
 };
-static const int s_numVidModes = ARRAY_LEN( cl_vidModes );
+static const int s_numVidModes = ARRAY_LEN( r_vidModes );
 
 qboolean CL_GetModeInfo( int *width, int *height, int mode, int dw, int dh, qboolean fullscreen )
 {
-	const	vidmode_t *vm;
-
-
 	if ( mode < -2 )
 		return qfalse;
 
@@ -188,9 +201,8 @@ qboolean CL_GetModeInfo( int *width, int *height, int mode, int dw, int dh, qboo
 		*width = r_customwidth->integer;
 		*height = r_customheight->integer;
 	} else { // predefined resolution
-		vm = &cl_vidModes[ mode ];
-		*width  = vm->width;
-		*height = vm->height;
+		*width  = r_vidModes[ mode ].width;
+		*height = r_vidModes[ mode ].height;
 	}
 	return qtrue;
 }
@@ -203,7 +215,7 @@ static void ModeList_f( void )
 	Com_Printf("\n" );
 	for ( i = 0; i < s_numVidModes; i++ )
 	{
-		Com_Printf( "%s\n", cl_vidModes[i].description );
+		Com_Printf( "%s\n", r_vidModes[i].description );
 	}
 	Com_Printf("\n" );
 }
@@ -212,57 +224,12 @@ static void ModeList_f( void )
 
 void* GLimp_GetProcAddress( const char *symbol )
 {
-	void *sym = dlsym( glw_state.OpenGLLib, symbol );
-	return sym;
+	void *sym = dlsym(glw_state.OpenGLLib, symbol);
+//    void *sym = glXGetProcAddressARB(symbol);
+    return sym;
 }
 
 
-/*
-** GL_Init
-**
-** This is responsible for binding our qgl function pointers to 
-** the appropriate GL stuff.  In Windows this means doing a 
-** LoadLibrary and a bunch of calls to GetProcAddress.  On other
-** operating systems we need to do the right thing, whatever that
-** might be.
-** 
-*/
-qboolean GL_Init( const char *dllname )
-{
-	printf( "-------- GL_Init() --------\n" );
-	
-    vid_xpos = Cvar_Get( "vid_xpos", "3", CVAR_ARCHIVE );
-	vid_ypos = Cvar_Get( "vid_ypos", "22", CVAR_ARCHIVE );
-	
-    Cmd_AddCommand( "modelist", ModeList_f );
-
-	if ( glw_state.OpenGLLib == NULL )
-	{
-		printf( "...loading '%s' : ", dllname );
-///////////
-		glw_state.OpenGLLib = Sys_LoadLibrary( dllname );
-////////////
-		if ( glw_state.OpenGLLib == NULL )
-		{
-			{
-				fprintf(stderr, "failed\n" );
-				fprintf(stderr, "GL_Init: Can't load %s from /etc/ld.so.conf: %s\n", dllname, dlerror());
-				return qfalse;
-			}
-		}
-
-		printf( "succeeded\n" );
-	}
-#define STRING(s)			#s
-// expand constants before stringifying them
-#define XSTRING(s)			STRING(s)	
-#define GLE( ret, name, ... ) q##name = GLimp_GetProcAddress( XSTRING( name ) ); if ( !q##name ) { Com_Printf( "Error resolving core X11 functions\n" ); return qfalse; }
-	QGL_LinX11_PROCS;
-#undef GLE
-
-
-	return qtrue;
-}
 
 
 /*
@@ -301,8 +268,6 @@ static void GL_Shutdown( qboolean unloadDLL )
 		glw_state.OpenGLLib = NULL;
 	}
 }
-
-
 
 
 
@@ -352,8 +317,7 @@ static int GLW_SetMode( const char *drivername, int mode, qboolean fullscreen )
 
 	if ( dpy == NULL )
 	{
-		fprintf( stderr, "Error: couldn't open the X display\n" );
-		return RSERR_INVALID_MODE;
+		Com_Printf( "Couldn't open the X display\n" );
 	}
 
 	scrnum = DefaultScreen( dpy );
@@ -380,8 +344,7 @@ static int GLW_SetMode( const char *drivername, int mode, qboolean fullscreen )
 
 	if ( !CL_GetModeInfo( &config->vidWidth, &config->vidHeight, mode, glw_state.desktop_width, glw_state.desktop_height, fullscreen ) )
 	{
-		printf( " invalid mode\n" );
-		return RSERR_INVALID_MODE;
+        Com_Error( ERR_FATAL, " invalid mode\n" );
 	}
 
 	actualWidth = config->vidWidth;
@@ -501,41 +464,72 @@ static int GLW_SetMode( const char *drivername, int mode, qboolean fullscreen )
 
 	XSetInputFocus( dpy, win, RevertToParent, CurrentTime );
 
-	return RSERR_OK;
+	return 0;
 }
 
-
-static qboolean GLW_StartDriverAndSetMode( const char *drivername, int mode, qboolean fullscreen )
-{
-	rserr_t err = GLW_SetMode( drivername, mode, fullscreen );
-
-	switch ( err )
-	{
-	case RSERR_INVALID_FULLSCREEN:
-		printf( "...WARNING: fullscreen unavailable in this mode\n" );
-		return qfalse;
-
-	case RSERR_INVALID_MODE:
-		printf( "...WARNING: could not set the given mode (%d)\n", mode );
-		return qfalse;
-
-	default:
-	    break;
-	}
-
-	glw_state.config->isFullscreen = fullscreen;
-
-	return qtrue;
-}
 
 
 /*
 ** GLW_LoadOpenGL
 **
-** GLimp_win.c internal function that that attempts to load and use 
-** a specific OpenGL DLL.
+** GLimp_win.c internal function that that attempts to load and use a specific OpenGL DLL.
+**
+**                 https://www.khronos.org/registry/OpenGL/ABI/
+**
+** This is responsible for binding our qgl function pointers to the appropriate GL stuff.
+** In Windows this means doing a LoadLibrary and a bunch of calls to GetProcAddress.
+** On other operating systems we need to do the right thing, whatever that might be.
+** 
+** There are two link-level libraries. libGL includes the OpenGL and GLX entry points 
+** and in general depends on underlying hardware and/or X server dependent code that 
+** may or may not be incorporated into this library. 
+** The libraries must export all OpenGL 1.2, GLU 1.3, GLX 1.3, and ARB_multitexture 
+** entry points statically. It's possible (but unlikely) that additional ARB or vendor
+** extensions will be mandated before the ABI is finalized. Applications should not 
+** expect to link statically against any entry points not specified here. Because 
+** non-ARB extensions vary so widely and are constantly increasing in number, 
+** it's infeasible to require that they all be supported, and extensions can always 
+** be added to hardware drivers after the base link libraries are released. These 
+** drivers are dynamically loaded by libGL, so extensions not in the base library
+** must also be obtained dynamically. 
+** 
+** To perform the dynamic query, libGL also must export an entry point called 
+    void (*glXGetProcAddressARB(const GLubyte *))();
+** It takes the string name of a GL or GLX entry point and returns a pointer to
+** a function implementing that entry point. It is functionally identical to the 
+** wglGetProcAddress query defined by the Windows OpenGL library, except that the 
+** function pointers returned are context independent, unlike the WGL query. 
+** All OpenGL and GLX entry points may be queried with this extension; 
+
+** Thread safety (the ability to issue OpenGL calls to different graphics contexts
+** from different application threads) is required. Multithreaded applications must
+** use -lpthread. 
+** libGL must be transitively linked with any libraries they require in their own 
+** internal implementation, so that applications don't fail on some implementations
+** due to not pulling in libraries needed not by the app, but by the implementation. 
+** 
+** The following header files are required:
+
+    <GL/gl.h> --- OpenGL
+    <GL/glx.h> --- GLX
+    <GL/glext.h> --- OpenGL Extensions
+    <GL/glxext.h> --- GLX Extensions
+
+** All OpenGL 1.2 and ARB_multitexture, and GLX 1.3 entry points and enumerants
+** must be present in the corresponding header files gl.h, and glx.h, 
+** even if only OpenGL 1.1 is implemented at runtime by the associated runtime libraries. 
+** Non-ARB OpenGL extensions are defined in glext.h, and non-ARB GLX extensions in glxext.h.
+
+** gl.h must define the symbol GL_OGLBASE_VERSION. This symbol must be an integer
+** defining the version of the ABI supported by the headers. Its value is 
+** 1000 * major_version + minor_version where major_version and minor_version are
+** the major and minor revision numbers of this ABI standard. The primary purpose
+** of the symbol is to provide a compile-time test by which application code knows
+** whether the ABI guarantees are in force.
 */
-static qboolean GLW_LoadOpenGL( const char *name )
+
+
+static qboolean GLW_LoadOpenGL( const char * dllname )
 {
 	qboolean fullscreen;
 
@@ -545,57 +539,47 @@ static qboolean GLW_LoadOpenGL( const char *name )
 		setenv( "vblank_mode", "1", 1 );
 
 	// load the GL layer
-	if ( GL_Init( name ) )
+
+	printf( "-------- GL_Init() --------\n" );
+	
+    vid_xpos = Cvar_Get( "vid_xpos", "3", CVAR_ARCHIVE );
+	vid_ypos = Cvar_Get( "vid_ypos", "22", CVAR_ARCHIVE );
+	
+
+	if ( glw_state.OpenGLLib == NULL )
 	{
-		fullscreen = (r_fullscreen->integer != 0);
-		// create the window and set up the context
-		if ( !GLW_StartDriverAndSetMode( name, r_mode->integer, fullscreen ) )
+		printf( "...loading '%s' : ", dllname );
+///////////
+		glw_state.OpenGLLib = Sys_LoadLibrary( dllname );
+////////////
+		if ( glw_state.OpenGLLib == NULL )
 		{
-			if ( r_mode->integer != 3 )
-			{
-				if ( !GLW_StartDriverAndSetMode( name, 3, fullscreen ) )
-				{
-					goto fail;
-				}
-			}
-			else
-			{
-				goto fail;
-			}
-		}
-		return qtrue;
-	}
-	fail:
-
-	GL_Shutdown( qtrue );
-
-	return qfalse;
-}
-
-
-static qboolean GLW_StartOpenGL( void )
-{
-
-	printf( "...GLW_StartOpenGL...\n" );
-	// load and initialize the specific OpenGL driver
-	if ( !GLW_LoadOpenGL( r_glDriver->string ) )
-	{
-		if ( Q_stricmp( r_glDriver->string, OPENGL_DRIVER_NAME ) != 0 )
-		{
-			// try default driver
-			if ( GLW_LoadOpenGL( OPENGL_DRIVER_NAME ) )
-			{
-				Cvar_Set( "r_glDriver", OPENGL_DRIVER_NAME );
-				r_glDriver->modified = qfalse;
-				return qtrue;
-			}
+				Com_Error(ERR_FATAL, "GL_Init: failed to load %s from /etc/ld.so.conf: %s\n", dllname, dlerror());
 		}
 
-		Com_Error( ERR_FATAL, "GLW_StartOpenGL() - could not load OpenGL subsystem\n" );
-		return qfalse;
+		Com_Printf( "load %s from /etc/ld.so.conf: %s\n", dllname, dlerror() );
 	}
+		
+    // expand constants before stringifying them
+    // load the GLX funs
+    #define GLE( ret, name, ... ) \
+        q##name = GLimp_GetProcAddress( XSTRING( name ) ); if ( !q##name ) Com_Error(ERR_FATAL, "Error resolving core X11 functions\n" );
+	    QGL_LinX11_PROCS;
+    #undef GLE
 
-	return qtrue;
+    // create the window and set up the context
+    fullscreen = (r_fullscreen->integer != 0);
+    glw_state.config->isFullscreen = fullscreen;
+
+    if( 0 != GLW_SetMode( dllname, r_mode->integer, fullscreen ))
+    {
+        glw_state.config->isFullscreen = 0;
+        r_mode->integer = 3;
+        if(0 != GLW_SetMode( dllname, 3, qfalse ))
+            GL_Shutdown( qtrue );
+    }
+
+    return qtrue;
 }
 
 
@@ -636,7 +620,10 @@ void GLimp_Init( glconfig_t *config )
 	r_customheight = Cvar_Get( "r_customheight", "1080", CVAR_ARCHIVE | CVAR_LATCH );
    	r_swapInterval = Cvar_Get( "r_swapInterval", "0", CVAR_ARCHIVE );
 	r_glDriver = Cvar_Get( "r_glDriver", OPENGL_DRIVER_NAME, CVAR_ARCHIVE | CVAR_LATCH );
-	
+
+    Cmd_AddCommand( "modelist", ModeList_f );
+
+
     IN_Init();   // rcg08312005 moved into glimp.
 
 	// set up our custom error handler for X failures
@@ -648,20 +635,33 @@ void GLimp_Init( glconfig_t *config )
 	//
 	// load and initialize the specific OpenGL driver
 	//
-	if ( !GLW_StartOpenGL() )
+	printf( "...GLW_StartOpenGL...\n" );
+	// load and initialize the specific OpenGL driver
+	if ( !GLW_LoadOpenGL( r_glDriver->string ) )
 	{
-		return;
+		if ( Q_stricmp( r_glDriver->string, OPENGL_DRIVER_NAME ) != 0 )
+		{
+			// try default driver
+			if ( GLW_LoadOpenGL( OPENGL_DRIVER_NAME ) )
+			{
+				Cvar_Set( "r_glDriver", OPENGL_DRIVER_NAME );
+				r_glDriver->modified = qfalse;
+				return;
+			}
+		}
+
+		Com_Error( ERR_FATAL, "GLW_StartOpenGL() - could not load OpenGL subsystem\n" );
 	}
 
 	// This values force the UI to disable driver selection
 	config->driverType = GLDRV_ICD;
 	config->hardwareType = GLHW_GENERIC;
 
-		// optional
-#define GLE( ret, name, ... ) q##name = GLimp_GetProcAddress( XSTRING( name ) );
-QGL_LinX11_PROCS;
-QGL_Swp_PROCS;
-#undef GLE
+
+    #define GLE( ret, name, ... ) q##name = GLimp_GetProcAddress( XSTRING( name ) );
+    QGL_LinX11_PROCS;
+    QGL_Swp_PROCS;
+    #undef GLE
 
 	if ( qglXSwapIntervalEXT || qglXSwapIntervalMESA || qglXSwapIntervalSGI )
 	{
@@ -767,6 +767,7 @@ void GLimp_Shutdown( qboolean unloadDLL )
 	{
 		glw_state.cdsFullscreen = qfalse;
 	}
+    Cmd_RemoveCommand("modelist");
 
 	GL_Shutdown( unloadDLL );
 }

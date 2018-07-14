@@ -92,6 +92,8 @@ typedef struct
 	qboolean (*inPVS)( const vec3_t p1, const vec3_t p2 );
 
 	void (*TakeVideoFrame)( int h, int w, byte* captureBuffer, byte *encodeBuffer, qboolean motionJpeg );
+
+    void (*SetColorMappings)( void );
 } refexport_t;
 
 //
@@ -159,35 +161,23 @@ typedef struct {
 
 	void	(*CL_WriteAVIVideoFrame)( const unsigned char *buffer, int size );
 
-	// input event handling
-	void	(*IN_Init)(void);
-	void	(*IN_Shutdown)(void);
-	void	(*IN_Restart)(void);
-    
-	// math
-	// long    (*ftol)(float f);
-
 	// system stuff
 	void	(*Sys_SetEnv)( const char *name, const char *value );
 	qboolean (*Sys_LowPhysicalMemory)( void );
 
 	// platform-dependent functions
-	void	(*GLimp_Init)( glconfig_t *config );
-	void	(*GLimp_Shutdown)( qboolean unloadDLL );
-	void	(*GLimp_EndFrame)( void );
-    void	(*GLimp_Minimize)( void );
-	void	(*GLimp_InitGamma)( glconfig_t *config );
-	void	(*GLimp_SetGamma)( unsigned char red[256], unsigned char green[256], unsigned char blue[256] );
+	void	(*GLimpInit)( glconfig_t *config );
+	void	(*GLimpShutdown)( qboolean unloadDLL );
+	void	(*GLimpEndFrame)( void );
+	void	(*InitGamma)( glconfig_t *config );
+	void	(*SetGamma)(unsigned char red[256], unsigned char green[256], unsigned char blue[256]);
 
-	void*	(*GL_GetProcAddress)( const char *name );
-
-
+	void*	(*GLimpGetProcAddress)(const char * fun);
     // extra
     int32_t ( *Puff)(uint8_t  *dest,		/* pointer to destination pointer */
              uint32_t *destlen,		/* amount of output space */
              uint8_t  *source,		/* pointer to source data pointer */
              uint32_t *sourcelen);	/* amount of input available */
-
 
 } refimport_t;
 

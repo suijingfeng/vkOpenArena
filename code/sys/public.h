@@ -3,7 +3,7 @@
 
 #include "../qcommon/q_shared.h"
 #include "../qcommon/qcommon.h"
-#include "../renderer_oa/tr_types.h"
+#include "../renderercommon/tr_types.h"
 
 
 #ifdef _WIN32

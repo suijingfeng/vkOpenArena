@@ -2524,6 +2524,8 @@ Find out whether we have SSE support for Q_ftol function
 
 #if (id386 || idx64)
 
+
+
 static void Com_DetectSSE(void)
 {
 	cpuFeatures_t feat = Sys_GetProcessorFeatures();
@@ -2533,7 +2535,8 @@ static void Com_DetectSSE(void)
 		if(feat & CF_SSE2)
         {
 			Q_SnapVector = qsnapvectorsse;
-        	Com_Printf(" Have SSE2 support\n");
+        	
+            Com_Printf(" Have SSE2 support\n");
         }
         else
 			Q_SnapVector = qsnapvectorx87;

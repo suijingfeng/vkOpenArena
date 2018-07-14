@@ -26,15 +26,17 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
 #include "../qcommon/q_shared.h"
 #include "../qcommon/qcommon.h"
-#include "../renderer_oa/tr_public.h"
+
+#include "../renderercommon/tr_public.h"
+#include "../renderercommon/tr_shared.h"
+#include "../renderercommon/qgl.h"
+
 
 #include "tr_extratypes.h"
 #include "tr_extramath.h"
 #include "tr_fbo.h"
 #include "tr_postprocess.h"
 #include "iqm.h"
-#include "qgl.h"
-#include "tr_shared.h"
 
 extern refimport_t ri;
 extern glconfig_t glConfig;

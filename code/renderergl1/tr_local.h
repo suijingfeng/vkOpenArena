@@ -27,11 +27,12 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #include "../qcommon/q_shared.h"
 #include "../qcommon/qfiles.h"
 
-#include "../renderer_oa/tr_public.h"
+#include "../renderercommon/tr_public.h"
+#include "../renderercommon/tr_shared.h"
 #include "GL/gl.h"
 
 #include "iqm.h"
-#include "tr_shared.h"
+
 
 
 
