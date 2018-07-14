@@ -1008,10 +1008,10 @@ static void R_DebugGraphics( void )
 
 static void R_SetupProjection(viewParms_t *dest, float zProj)
 {
-	float ymax = zProj * tan(dest->fovY * M_PI / 360.0f);
+	float ymax = zProj * tan(dest->fovY * (M_PI / 360.0f));
 	float ymin = -ymax;
 
-	float xmax = zProj * tan(dest->fovX * M_PI / 360.0f);
+	float xmax = zProj * tan(dest->fovX * (M_PI / 360.0f));
 	float xmin = -xmax;
 
 	float width = xmax - xmin;

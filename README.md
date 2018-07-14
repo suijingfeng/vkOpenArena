@@ -72,3 +72,6 @@ Maintainers
 
   * Sui Jingfeng <18949883232@163.com>
 
+* r_greyscale and r_norefresh removed
+* r_overBrightBits and r_mapOverBrightbit removed, as functional not clear
+

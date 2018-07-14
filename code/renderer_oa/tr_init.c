@@ -185,7 +185,26 @@ static void InitOpenGL(void)
     {
         glConfig.maxTextureSize = 0;
     }
+            // get our config strings
+    Q_strncpyz( glConfig.vendor_string, (char *) glGetString (GL_VENDOR), sizeof( glConfig.vendor_string ) );
+    Q_strncpyz( glConfig.renderer_string, (char *) glGetString (GL_RENDERER), sizeof( glConfig.renderer_string ) );
+    if (*glConfig.renderer_string && glConfig.renderer_string[strlen(glConfig.renderer_string) - 1] == '\n')
+        glConfig.renderer_string[strlen(glConfig.renderer_string) - 1] = 0;
+    Q_strncpyz( glConfig.version_string, (char *) glGetString (GL_VERSION), sizeof( glConfig.version_string ) );
 
+/*
+	if ( qglGetStringi )
+	{
+		GLint numExtensions;
+		int i;
+
+		qglGetIntegerv( GL_NUM_EXTENSIONS, &numExtensions );
+		for ( i = 0; i < numExtensions; i++ )
+		{
+			ri.Printf( PRINT_ALL, "%s ", qglGetStringi( GL_EXTENSIONS, i ) );
+		}
+	}
+*/    
 	// set default state
 	GL_SetDefaultState();
     

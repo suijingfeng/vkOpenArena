@@ -325,7 +325,7 @@ void RE_BeginScene(const refdef_t *fd)
 	}
 	else
 	{
-		float scale = (1 << r_mapOverBrightBits->integer) / 255.0f;
+		float scale = (1 << 2) / 255.0f;
 
 		if (r_forceSun->integer)
 			VectorScale(tr.sunLight, scale * r_forceSunLightScale->value, tr.refdef.sunCol);
@@ -448,39 +448,35 @@ to handle mirrors,
 void RE_RenderScene( const refdef_t *fd ) {
 	viewParms_t		parms;
 	int				startTime;
-
+	qboolean	customscrn = !(fd->rdflags & RDF_NOWORLDMODEL);
 	if ( !tr.registered ) {
 		return;
 	}
 
 	//GLimp_LogComment( "====== RE_RenderScene =====\n" );
 
-	if ( r_norefresh->integer ) {
-		return;
-	}
-
 	startTime = ri.Milliseconds();
 
-	if (!tr.world && !( fd->rdflags & RDF_NOWORLDMODEL ) ) {
+	if (!tr.world && customscrn ) {
 		ri.Error (ERR_DROP, "R_RenderScene: NULL worldmodel");
 	}
 
 	RE_BeginScene(fd);
 
 	// SmileTheory: playing with shadow mapping
-	if (!( fd->rdflags & RDF_NOWORLDMODEL ) && tr.refdef.num_dlights && r_dlightMode->integer >= 2)
+	if (customscrn && tr.refdef.num_dlights && r_dlightMode->integer >= 2)
 	{
 		R_RenderDlightCubemaps(fd);
 	}
 
 	/* playing with more shadows */
-	if(glRefConfig.framebufferObject && !( fd->rdflags & RDF_NOWORLDMODEL ) && r_shadows->integer == 4)
+	if(glRefConfig.framebufferObject && customscrn && r_shadows->integer == 4)
 	{
 		R_RenderPshadowMaps(fd);
 	}
 
 	// playing with even more shadows
-	if(glRefConfig.framebufferObject && r_sunlightMode->integer && !( fd->rdflags & RDF_NOWORLDMODEL ) && (r_forceSun->integer || tr.sunShadows))
+	if(glRefConfig.framebufferObject && r_sunlightMode->integer && customscrn && (r_forceSun->integer || tr.sunShadows))
 	{
 		if (r_shadowCascadeZFar->integer != 0)
 		{
@@ -538,7 +534,32 @@ void RE_RenderScene( const refdef_t *fd ) {
 
 	parms.fovX = tr.refdef.fov_x;
 	parms.fovY = tr.refdef.fov_y;
+
+    if (customscrn) // don't affect interface refdefs
+	{
+		// figure out our zoom or changed fov magnitiude from cg_fov and cg_zoomfov
+		//float zoomfov = tr.refdef.fov_x / 90;
+		// find aspect to immediately match our vidwidth for perfect match with resized screens...
+		//float erspact = tr.refdef.width / tr.refdef.height;
+		//float aspact = glConfig.vidWidth / glConfig.vidHeight;
+
 	
+		// try not to recalculate fov of ui and hud elements
+		//if (((tr.refdef.fov_x /  tr.refdef.fov_y) > 1.3) && (tr.refdef.width > 320) && (tr.refdef.height > 240))
+		//if (((tr.refdef.fov_x /  tr.refdef.fov_y) > 1.3) && (tr.refdef.width > (320 * refdefscalex)) && (tr.refdef.height > (240 * refdefscaley)))
+		float x_div_y = tr.refdef.fov_x / tr.refdef.fov_y;
+
+		if ((x_div_y > 1.34) && ((tr.refdef.width / tr.refdef.height) == (glConfig.vidWidth / glConfig.vidHeight)))
+		{
+			// undo vert-
+			parms.fovY *= x_div_y * (73.739792 / 90.0);
+			
+			// recalculate the fov
+			parms.fovX = atan( tan(parms.fovY * (M_PI / 360.0f)) * glConfig.windowAspect ) * (360.0f / M_PI);
+			parms.fovY = atan( tan(parms.fovX * (M_PI / 360.0f)) / glConfig.windowAspect ) * (360.0f / M_PI);
+		}
+	}
+    
 	VectorCopy( fd->vieworg, parms.or.origin );
 	VectorCopy( fd->viewaxis[0], parms.or.axis[0] );
 	VectorCopy( fd->viewaxis[1], parms.or.axis[1] );
@@ -546,14 +567,14 @@ void RE_RenderScene( const refdef_t *fd ) {
 
 	VectorCopy( fd->vieworg, parms.pvsOrigin );
 
-	if(!( fd->rdflags & RDF_NOWORLDMODEL ) && r_depthPrepass->value && ((r_forceSun->integer) || tr.sunShadows))
+	if(customscrn && r_depthPrepass->value && ((r_forceSun->integer) || tr.sunShadows))
 	{
 		parms.flags = VPF_USESUNLIGHT;
 	}
 
 	R_RenderView( &parms );
 
-	if(!( fd->rdflags & RDF_NOWORLDMODEL ))
+	if(customscrn)
 		R_AddPostProcessCmd();
 
 	RE_EndScene();

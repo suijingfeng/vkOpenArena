@@ -37,7 +37,6 @@ extern refimport_t ri;
 
 
 cvar_t* r_lightmap;
-static cvar_t* r_mapOverBrightBits;
 // avoid lightmap pass
 static world_t	s_worldData;
 static unsigned char* fileBase;
@@ -93,12 +92,10 @@ static void HSVtoRGB( float h, float s, float v, float rgb[3] )
 
 static void R_ColorShiftLightingBytes(unsigned char in[4], unsigned char out[4])
 {
-	int	shift = r_mapOverBrightBits->integer;
+	int	shift = 1;
     int r, g, b;
 
 	// shift the color data based on overbright range
-//	shift = r_mapOverBrightBits->integer - tr.overbrightBits;
-
 	// shift the data based on overbright range
 	r = in[0] << shift;
 	g = in[1] << shift;
@@ -1766,7 +1763,6 @@ qboolean R_GetEntityToken( char *buffer, int size )
 void R_InitBSP(void)
 {
 	r_lightmap = ri.Cvar_Get ("r_lightmap", "0", 0 );
-    r_mapOverBrightBits = ri.Cvar_Get ("r_mapOverBrightBits", "1", CVAR_LATCH );
 }
 
 /*

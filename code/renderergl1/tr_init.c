@@ -60,8 +60,6 @@ cvar_t	*r_stereoSeparation;
 
 cvar_t	*r_skipBackEnd;
 
-cvar_t	*r_greyscale;
-
 cvar_t	*r_ignorehwgamma;
 cvar_t	*r_measureOverdraw;
 
@@ -74,7 +72,6 @@ cvar_t	*r_dlightBacks;
 cvar_t	*r_lodbias;
 cvar_t	*r_lodscale;
 
-cvar_t	*r_norefresh;
 cvar_t	*r_drawentities;
 cvar_t	*r_drawworld;
 cvar_t	*r_speeds;
@@ -126,7 +123,6 @@ cvar_t	*r_textureMode;
 cvar_t	*r_offsetFactor;
 cvar_t	*r_offsetUnits;
 cvar_t	*r_gamma;
-cvar_t	*r_intensity;
 cvar_t	*r_lockpvs;
 cvar_t	*r_noportals;
 cvar_t	*r_portalOnly;
@@ -140,9 +136,6 @@ cvar_t  *r_noborder;
 cvar_t	*r_customwidth;
 cvar_t	*r_customheight;
 cvar_t	*r_customPixelAspect;
-
-cvar_t	*r_overBrightBits;
-cvar_t	*r_mapOverBrightBits;
 
 cvar_t	*r_debugSurface;
 cvar_t	*r_simpleMipMaps;
@@ -877,15 +870,8 @@ void GfxInfo_f( void )
 	ri.Printf( PRINT_ALL, "GL_MAX_TEXTURE_UNITS_ARB: %d\n", glConfig.numTextureUnits );
 	ri.Printf( PRINT_ALL, "\nPIXELFORMAT: color(%d-bits) Z(%d-bit) stencil(%d-bits)\n", glConfig.colorBits, glConfig.depthBits, glConfig.stencilBits );
 	ri.Printf( PRINT_ALL, "MODE: %d, %d x %d %s hz:", r_mode->integer, glConfig.vidWidth, glConfig.vidHeight, fsstrings[r_fullscreen->integer == 1] );
-	if ( glConfig.refresh_rate )
-	{
-		ri.Printf( PRINT_ALL, "%d\n", glConfig.refresh_rate );
-	}
-	else
-	{
-		ri.Printf( PRINT_ALL, "N/A\n" );
-	}
-	if ( glConfig.deviceSupportsGamma )
+
+    if ( glConfig.deviceSupportsGamma )
 	{
 		ri.Printf( PRINT_ALL, "GAMMA: hardware w/ %d overbright bits\n", tr.overbrightBits );
 	}
@@ -962,7 +948,6 @@ void R_Register( void )
 	r_depthbits = ri.Cvar_Get( "r_depthbits", "0", CVAR_ARCHIVE | CVAR_LATCH );
 	r_ext_multisample = ri.Cvar_Get( "r_ext_multisample", "0", CVAR_ARCHIVE | CVAR_LATCH );
 	ri.Cvar_CheckRange( r_ext_multisample, 0, 4, qtrue );
-	r_overBrightBits = ri.Cvar_Get ("r_overBrightBits", "1", CVAR_ARCHIVE | CVAR_LATCH );
 	r_ignorehwgamma = ri.Cvar_Get( "r_ignorehwgamma", "0", CVAR_ARCHIVE | CVAR_LATCH);
 	r_mode = ri.Cvar_Get( "r_mode", "3", CVAR_ARCHIVE | CVAR_LATCH );
 	r_fullscreen = ri.Cvar_Get( "r_fullscreen", "1", CVAR_ARCHIVE );
@@ -975,8 +960,6 @@ void R_Register( void )
 	r_uiFullScreen = ri.Cvar_Get( "r_uifullscreen", "0", 0);
 	r_subdivisions = ri.Cvar_Get ("r_subdivisions", "4", CVAR_ARCHIVE | CVAR_LATCH);
 	r_ignoreFastPath = ri.Cvar_Get( "r_ignoreFastPath", "1", CVAR_ARCHIVE | CVAR_LATCH );
-	r_greyscale = ri.Cvar_Get("r_greyscale", "0", CVAR_ARCHIVE | CVAR_LATCH);
-	ri.Cvar_CheckRange(r_greyscale, 0, 1, qfalse);
 
 	//
 	// temporary latched variables that can only change over a restart
@@ -984,8 +967,7 @@ void R_Register( void )
 	r_displayRefresh = ri.Cvar_Get( "r_displayRefresh", "0", CVAR_LATCH );
 	ri.Cvar_CheckRange( r_displayRefresh, 0, 200, qtrue );
 	r_fullbright = ri.Cvar_Get ("r_fullbright", "0", CVAR_LATCH|CVAR_CHEAT );
-	r_mapOverBrightBits = ri.Cvar_Get ("r_mapOverBrightBits", "2", CVAR_LATCH );
-	r_intensity = ri.Cvar_Get ("r_intensity", "1", CVAR_LATCH );
+
 	r_singleShader = ri.Cvar_Get ("r_singleShader", "0", CVAR_CHEAT | CVAR_LATCH );
 
 	//
@@ -1044,7 +1026,6 @@ void R_Register( void )
 
 	r_measureOverdraw = ri.Cvar_Get( "r_measureOverdraw", "0", CVAR_CHEAT );
 	r_lodscale = ri.Cvar_Get( "r_lodscale", "5", CVAR_CHEAT );
-	r_norefresh = ri.Cvar_Get ("r_norefresh", "0", CVAR_CHEAT);
 	r_drawentities = ri.Cvar_Get ("r_drawentities", "1", CVAR_CHEAT );
 	r_ignore = ri.Cvar_Get( "r_ignore", "1", CVAR_CHEAT );
 	r_nocull = ri.Cvar_Get ("r_nocull", "0", CVAR_CHEAT);

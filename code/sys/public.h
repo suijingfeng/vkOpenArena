@@ -38,8 +38,6 @@ typedef struct
 
 	qboolean cdsFullscreen;
 
-	glconfig_t *config; // feedback to renderer module
-
 	qboolean dga_ext;
 
 	qboolean vidmode_ext;

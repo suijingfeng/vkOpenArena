@@ -107,6 +107,7 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
 
 static cvar_t* r_fullscreen;
+static cvar_t* r_availableModes;
 
 static cvar_t* r_customwidth;
 static cvar_t* r_customheight;
@@ -224,8 +225,8 @@ static void ModeList_f( void )
 
 void* GLimp_GetProcAddress( const char *symbol )
 {
-	void *sym = dlsym(glw_state.OpenGLLib, symbol);
-//    void *sym = glXGetProcAddressARB(symbol);
+//	void *sym = dlsym(glw_state.OpenGLLib, symbol);
+    void *sym = glXGetProcAddressARB((const unsigned char *)symbol);
     return sym;
 }
 
@@ -273,7 +274,7 @@ static void GL_Shutdown( qboolean unloadDLL )
 
 ////////////////////////////////////////////////////////////////////////////////
 //about glw
-static int GLW_SetMode( const char *drivername, int mode, qboolean fullscreen )
+static int GLW_SetMode(glconfig_t *config, int mode, qboolean fullscreen )
 {
 	// these match in the array
 	#define ATTR_RED_IDX 2
@@ -294,7 +295,6 @@ static int GLW_SetMode( const char *drivername, int mode, qboolean fullscreen )
 		None
 	};
 
-	glconfig_t *config = glw_state.config;
 
 	Window root;
 	XVisualInfo *visinfo;
@@ -369,7 +369,6 @@ static int GLW_SetMode( const char *drivername, int mode, qboolean fullscreen )
 	}
 
 
-
     attrib[ATTR_DEPTH_IDX] = 24; // default to 24 depth
     attrib[ATTR_STENCIL_IDX] = 0;
     attrib[ATTR_RED_IDX] = 8;
@@ -389,12 +388,15 @@ static int GLW_SetMode( const char *drivername, int mode, qboolean fullscreen )
     config->depthBits = 24;
     config->stencilBits = 0;
 
-    
 
-	window_width = actualWidth;
-	window_height = actualHeight;
+    config->vidWidth = window_width = actualWidth;
+    config->vidHeight = window_height = actualHeight;
+    config->displayFrequency = actualRate;
 
-	glw_state.cdsFullscreen = fullscreen;
+    config->windowAspect = (float) window_width / (float) window_height;
+    config->isFullscreen = glw_state.cdsFullscreen = fullscreen;
+
+
 
 	/* window attributes */
 	attr.background_pixel = BlackPixel( dpy, scrnum );
@@ -529,55 +531,41 @@ static int GLW_SetMode( const char *drivername, int mode, qboolean fullscreen )
 */
 
 
-static qboolean GLW_LoadOpenGL( const char * dllname )
+static qboolean GLW_LoadOpenGL(const char* dllname)
 {
-	qboolean fullscreen;
-
-	if ( r_swapInterval->integer )
-		setenv( "vblank_mode", "2", 1 );
-	else
-		setenv( "vblank_mode", "1", 1 );
-
-	// load the GL layer
-
-	printf( "-------- GL_Init() --------\n" );
-	
-    vid_xpos = Cvar_Get( "vid_xpos", "3", CVAR_ARCHIVE );
-	vid_ypos = Cvar_Get( "vid_ypos", "22", CVAR_ARCHIVE );
-	
-
 	if ( glw_state.OpenGLLib == NULL )
 	{
-		printf( "...loading '%s' : ", dllname );
-///////////
 		glw_state.OpenGLLib = Sys_LoadLibrary( dllname );
-////////////
-		if ( glw_state.OpenGLLib == NULL )
-		{
-				Com_Error(ERR_FATAL, "GL_Init: failed to load %s from /etc/ld.so.conf: %s\n", dllname, dlerror());
-		}
+		Com_Printf( "load %s\n", dllname);
 
-		Com_Printf( "load %s from /etc/ld.so.conf: %s\n", dllname, dlerror() );
+        if ( glw_state.OpenGLLib == NULL )
+		{
+			Com_Error(ERR_FATAL, "GL_Init: failed to load %s from /etc/ld.so.conf: %s\n", dllname, dlerror());
+		}
 	}
 		
     // expand constants before stringifying them
     // load the GLX funs
     #define GLE( ret, name, ... ) \
-        q##name = GLimp_GetProcAddress( XSTRING( name ) ); if ( !q##name ) Com_Error(ERR_FATAL, "Error resolving core X11 functions\n" );
+        q##name = GLimp_GetProcAddress( XSTRING( name ) ); if ( !q##name ) Com_Error(ERR_FATAL, "Error resolving glx core functions\n");
 	    QGL_LinX11_PROCS;
     #undef GLE
 
-    // create the window and set up the context
-    fullscreen = (r_fullscreen->integer != 0);
-    glw_state.config->isFullscreen = fullscreen;
 
-    if( 0 != GLW_SetMode( dllname, r_mode->integer, fullscreen ))
-    {
-        glw_state.config->isFullscreen = 0;
-        r_mode->integer = 3;
-        if(0 != GLW_SetMode( dllname, 3, qfalse ))
-            GL_Shutdown( qtrue );
-    }
+    #define GLE( ret, name, ... ) \
+        q##name = GLimp_GetProcAddress( XSTRING( name ) );
+        QGL_Swp_PROCS;
+    #undef GLE
+
+	if( qglXSwapIntervalEXT || qglXSwapIntervalMESA || qglXSwapIntervalSGI )
+	{
+		Com_Printf( "...using GLX_EXT_swap_control\n" );
+		Cvar_SetModified( "r_swapInterval", qtrue ); // force a set next frame
+	}
+	else
+	{
+		Com_Printf( "...GLX_EXT_swap_control not found\n" );
+	}
 
     return qtrue;
 }
@@ -621,16 +609,29 @@ void GLimp_Init( glconfig_t *config )
    	r_swapInterval = Cvar_Get( "r_swapInterval", "0", CVAR_ARCHIVE );
 	r_glDriver = Cvar_Get( "r_glDriver", OPENGL_DRIVER_NAME, CVAR_ARCHIVE | CVAR_LATCH );
 
+
+    vid_xpos = Cvar_Get( "vid_xpos", "3", CVAR_ARCHIVE );
+	vid_ypos = Cvar_Get( "vid_ypos", "22", CVAR_ARCHIVE );
+
+
+	if ( r_swapInterval->integer )
+		setenv( "vblank_mode", "2", 1 );
+	else
+		setenv( "vblank_mode", "1", 1 );
+
+	// load the GL layer
+
+
     Cmd_AddCommand( "modelist", ModeList_f );
 
+	// This values force the UI to disable driver selection
+	config->driverType = GLDRV_ICD;
+	config->hardwareType = GLHW_GENERIC;
 
     IN_Init();   // rcg08312005 moved into glimp.
 
 	// set up our custom error handler for X failures
 	XSetErrorHandler( &qXErrorHandler );
-
-	// feedback to renderer configuration
-	glw_state.config = config;
 
 	//
 	// load and initialize the specific OpenGL driver
@@ -653,25 +654,15 @@ void GLimp_Init( glconfig_t *config )
 		Com_Error( ERR_FATAL, "GLW_StartOpenGL() - could not load OpenGL subsystem\n" );
 	}
 
-	// This values force the UI to disable driver selection
-	config->driverType = GLDRV_ICD;
-	config->hardwareType = GLHW_GENERIC;
 
+    // create the window and set up the context
 
-    #define GLE( ret, name, ... ) q##name = GLimp_GetProcAddress( XSTRING( name ) );
-    QGL_LinX11_PROCS;
-    QGL_Swp_PROCS;
-    #undef GLE
-
-	if ( qglXSwapIntervalEXT || qglXSwapIntervalMESA || qglXSwapIntervalSGI )
-	{
-		printf( "...using GLX_EXT_swap_control\n" );
-		Cvar_SetModified( "r_swapInterval", qtrue ); // force a set next frame
-	}
-	else
-	{
-		printf( "...GLX_EXT_swap_control not found\n" );
-	}
+    if( 0 != GLW_SetMode( config, r_mode->integer, (r_fullscreen->integer != 0) ))
+    {
+        r_mode->integer = 3;
+        if(0 != GLW_SetMode( config, 3, qfalse ))
+            Com_Error(ERR_FATAL, "Error setting given display modes\n" );
+    }
 }
 
 
