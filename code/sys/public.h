@@ -21,39 +21,6 @@
 #endif
 
 
-typedef struct sym_s
-{
-	void **symbol;
-	const char *name;
-} sym_t;
-
-typedef struct
-{
-	void *OpenGLLib; // instance of OpenGL library
-	FILE *log_fp;
-
-	int	monitorCount;
-
-	qboolean gammaSet;
-
-	qboolean cdsFullscreen;
-
-	qboolean dga_ext;
-
-	qboolean vidmode_ext;
-	qboolean vidmode_active;
-	qboolean vidmode_gamma;
-
-	qboolean randr_ext;
-	qboolean randr_active;
-	qboolean randr_gamma;
-
-	qboolean desktop_ok;
-	int desktop_width;
-	int desktop_height;
-	int desktop_x;
-	int desktop_y;
-} glwstate_t;
 
 
 ////////////// path.c /////////////////

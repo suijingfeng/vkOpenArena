@@ -114,6 +114,16 @@ static cvar_t* r_customheight;
 
 static cvar_t* r_swapInterval;
 static cvar_t* r_mode;
+
+cvar_t	*r_stencilbits;
+cvar_t	*r_depthbits;
+cvar_t	*r_colorbits;
+
+cvar_t	*r_stereoSeparation;
+
+cvar_t   *vid_xpos;
+cvar_t   *vid_ypos;
+
 static cvar_t* r_glDriver;
 cvar_t* r_drawBuffer;
 ///////////////////////////
@@ -137,10 +147,6 @@ Atom wmDeleteEvent = None;
 
 qboolean window_created = qfalse;
 
-
-
-cvar_t   *vid_xpos;
-cvar_t   *vid_ypos;
 
 
 ////////////////////////////////////////////////////////////////////////////////////////
@@ -208,6 +214,95 @@ qboolean CL_GetModeInfo( int *width, int *height, int mode, int dw, int dh, qboo
 	return qtrue;
 }
 
+/*
+static void GLimp_DetectAvailableModes(void)
+{
+	int i, j;
+	char buf[ MAX_STRING_CHARS ] = { 0 };
+
+
+	SDL_DisplayMode windowMode;
+    
+	// If a window exists, note its display index
+	if( SDL_window != NULL )
+	{
+		r_displayIndex->integer = SDL_GetWindowDisplayIndex( SDL_window );
+		if( r_displayIndex->integer < 0 )
+		{
+			Com_Printf("SDL_GetWindowDisplayIndex() failed: %s\n", SDL_GetError() );
+            return;
+		}
+	}
+
+	int numSDLModes = SDL_GetNumDisplayModes( r_displayIndex->integer );
+
+	if( SDL_GetWindowDisplayMode( SDL_window, &windowMode ) < 0 || numSDLModes <= 0 )
+	{
+		Com_Printf("Couldn't get window display mode, no resolutions detected: %s\n", SDL_GetError() );
+		return;
+	}
+
+	int numModes = 0;
+	SDL_Rect* modes = SDL_calloc(numSDLModes, sizeof( SDL_Rect ));
+	if ( !modes )
+	{
+        ////////////////////////////////////
+		Com_Error(ERR_FATAL, "Out of memory" );
+        ////////////////////////////////////
+	}
+
+	for( i = 0; i < numSDLModes; i++ )
+	{
+		SDL_DisplayMode mode;
+
+		if( SDL_GetDisplayMode( r_displayIndex->integer, i, &mode ) < 0 )
+			continue;
+
+		if( !mode.w || !mode.h )
+		{
+			Com_Printf( "Display supports any resolution\n" );
+			SDL_free( modes );
+			return;
+		}
+
+		if( windowMode.format != mode.format )
+			continue;
+
+		// SDL can give the same resolution with different refresh rates.
+		// Only list resolution once.
+		for( j = 0; j < numModes; j++ )
+		{
+			if( (mode.w == modes[ j ].w) && (mode.h == modes[ j ].h) )
+				break;
+		}
+
+		if( j != numModes )
+			continue;
+
+		modes[ numModes ].w = mode.w;
+		modes[ numModes ].h = mode.h;
+		numModes++;
+	}
+
+	for( i = 0; i < numModes; i++ )
+	{
+		const char *newModeString = va( "%ux%u ", modes[ i ].w, modes[ i ].h );
+
+		if( strlen( newModeString ) < (int)sizeof( buf ) - strlen( buf ) )
+			Q_strcat( buf, sizeof( buf ), newModeString );
+		else
+			Com_Printf( "Skipping mode %ux%u, buffer too small\n", modes[ i ].w, modes[ i ].h );
+	}
+
+	if( *buf )
+	{
+		buf[ strlen( buf ) - 1 ] = 0;
+		Com_Printf("Available modes: '%s'\n", buf );
+		Cvar_Set( "r_availableModes", buf );
+	}
+	SDL_free( modes );
+}
+*/
 
 static void ModeList_f( void )
 {
@@ -225,8 +320,8 @@ static void ModeList_f( void )
 
 void* GLimp_GetProcAddress( const char *symbol )
 {
-//	void *sym = dlsym(glw_state.OpenGLLib, symbol);
-    void *sym = glXGetProcAddressARB((const unsigned char *)symbol);
+	void *sym = dlsym(glw_state.OpenGLLib, symbol);
+//    void *sym = glXGetProcAddressARB((const unsigned char *)symbol);
     return sym;
 }
 
@@ -439,8 +534,11 @@ static int GLW_SetMode(glconfig_t *config, int mode, qboolean fullscreen )
 	if ( wmDeleteEvent != None )
 		XSetWMProtocols( dpy, win, &wmDeleteEvent, 1 );
 
-	window_created = qtrue;
-
+    if(win)
+	{
+        window_created = qtrue;
+        //GLimp_DetectAvailableModes();
+    }
 	if ( fullscreen )
 	{
 		if ( glw_state.randr_active || glw_state.vidmode_active )
@@ -601,7 +699,11 @@ void GLimp_Init( glconfig_t *config )
 {
     r_fullscreen = Cvar_Get( "r_fullscreen", "0", CVAR_ARCHIVE | CVAR_LATCH);
 	r_mode = Cvar_Get( "r_mode", "-2", CVAR_ARCHIVE | CVAR_LATCH );
-    
+
+	r_colorbits = Cvar_Get( "r_colorbits", "24", CVAR_ARCHIVE | CVAR_LATCH );
+	r_stencilbits = Cvar_Get( "r_stencilbits", "0", CVAR_ARCHIVE | CVAR_LATCH );
+	r_depthbits = Cvar_Get( "r_depthbits", "24", CVAR_ARCHIVE | CVAR_LATCH ); 
+	r_stereoSeparation = Cvar_Get( "r_stereoSeparation", "64", CVAR_ARCHIVE );
     r_drawBuffer = Cvar_Get( "r_drawBuffer", "GL_BACK", CVAR_CHEAT );
     
 	r_customwidth = Cvar_Get( "r_customwidth", "1920", CVAR_ARCHIVE | CVAR_LATCH );

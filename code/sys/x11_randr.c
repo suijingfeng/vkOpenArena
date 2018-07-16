@@ -82,9 +82,9 @@ static qboolean monitor_in_list( int x, int y, int w, int h, RROutput outputn, R
 
 	for ( i = 0; i < glw_state.monitorCount; i++ )
 	{
-		if ( monitors[i].x != x || monitors[i].y != y )
+		if ( (monitors[i].x != x) || (monitors[i].y != y) )
 			continue;
-		if ( monitors[i].w != w || monitors[i].h != h )
+		if ( (monitors[i].w != w) || (monitors[i].h != h) )
 			continue;
 		if ( monitors[i].outputn != outputn )
 			continue;

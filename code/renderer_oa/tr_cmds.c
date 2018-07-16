@@ -131,7 +131,7 @@ void R_IssuePendingRenderCommands( void )
 /*
  make sure there is enough command space
 */
-void *R_GetCommandBuffer(int bytes)
+void* R_GetCommandBuffer(int bytes)
 {
 	renderCommandList_t	*cmdList = &backEndData->commands;
 	
@@ -280,6 +280,15 @@ void RE_BeginFrame(void)
 		if ((err = glGetError()) != GL_NO_ERROR)
 			ri.Error(ERR_FATAL, "RE_BeginFrame() - glGetError() failed (0x%x)!", err);
 	}
+    
+    drawBufferCommand_t	*cmd = R_GetCommandBuffer(sizeof(drawBufferCommand_t*));
+
+    if(cmd)
+    {
+        cmd->commandId = RC_DRAW_BUFFER;
+        cmd->buffer = (int)GL_BACK;
+    }
+
 
 }
 
