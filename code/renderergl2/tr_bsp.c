@@ -102,10 +102,7 @@ R_ColorShiftLightingBytes
 ===============
 */
 static	void R_ColorShiftLightingBytes( byte in[4], byte out[4] ) {
-	int		shift, r, g, b;
-
-	// shift the color data based on overbright range
-	shift = 2 - tr.overbrightBits;
+	int	shift = 1, r, g, b;
 
 	// shift the data based on overbright range
 	r = in[0] << shift;
@@ -139,7 +136,7 @@ R_ColorShiftLightingFloats
 static void R_ColorShiftLightingFloats(float in[4], float out[4])
 {
 	float	r, g, b;
-	float   scale = (1 << (2 - tr.overbrightBits)) / 255.0f;
+	float   scale = (1 << (2 - 1)) / 255.0f;
 
 	r = in[0] * scale;
 	g = in[1] * scale;

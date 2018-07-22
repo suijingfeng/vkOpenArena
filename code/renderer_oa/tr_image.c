@@ -1418,20 +1418,11 @@ void R_InitSkins( void )
 
 void R_SetColorMappings(void)
 {
-	int	i, inf,	shift;
-	if ( !glConfig.deviceSupportsGamma)
-    {
-		tr.overbrightBits = 0;		// need hardware gamma for overbright
-	}
+	int	i, inf;
 
-	// never overbright in windowed mode
-	if( !glConfig.isFullscreen)
-	{
-		tr.overbrightBits = 0;
-	}
     tr.overbrightBits = 1;
 
-	tr.identityLight = 1.0f / ( 1 << tr.overbrightBits );
+	tr.identityLight = 1.0f ;
 	tr.identityLightByte = 255 * tr.identityLight;
 
 	if( r_gamma->value < 0.4f )
@@ -1445,7 +1436,7 @@ void R_SetColorMappings(void)
 
 	float g = r_gamma->value;
 
-	shift = tr.overbrightBits;		// hardware gamma to work (if available) since we can't do alternate gamma via blends
+	// hardware gamma to work (if available) since we can't do alternate gamma via blends
 
 
 	for ( i = 0; i < 256; i++ )
@@ -1458,7 +1449,7 @@ void R_SetColorMappings(void)
         {
 			inf = 255 * pow ( i/255.0f, 1.0f / g ) + 0.5f;
 		}
-		inf <<= shift;
+		//inf <<= 1;
 		if (inf < 0)
         {
 			inf = 0;

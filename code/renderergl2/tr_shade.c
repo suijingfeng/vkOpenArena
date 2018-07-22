@@ -409,7 +409,7 @@ static void ComputeShaderColors( shaderStage_t *pStage, vec4_t baseColor, vec4_t
 
 	qboolean is2DDraw = backEnd.currentEntity == &backEnd.entity2D;
 
-	float overbright = (isBlend || is2DDraw) ? 1.0f : (float)(1 << tr.overbrightBits);
+	float overbright = (isBlend || is2DDraw) ? 1.0f : 2.0f;
 
 	fog_t *fog;
 
@@ -1176,13 +1176,6 @@ static void RB_IterateStagesGeneric( shaderCommands_t *input )
 			vec4_t specularScale;
 			Vector4Copy(pStage->specularScale, specularScale);
 
-			if (renderToCubemap)
-			{
-				// force specular to nonmetal if rendering cubemaps
-				if (r_pbr->integer)
-					specularScale[1] = 0.0f;
-			}
-
 			GLSL_SetUniformVec4(sp, UNIFORM_SPECULARSCALE, specularScale);
 		}
 
@@ -1209,19 +1202,7 @@ static void RB_IterateStagesGeneric( shaderCommands_t *input )
 				if (tr.screenShadowImage)
 					GL_BindToTMU(tr.screenShadowImage, TB_SHADOWMAP);
 				GLSL_SetUniformVec3(sp, UNIFORM_PRIMARYLIGHTAMBIENT, backEnd.refdef.sunAmbCol);
-				if (r_pbr->integer)
-				{
-					vec3_t color;
-
-					color[0] = backEnd.refdef.sunCol[0] * backEnd.refdef.sunCol[0];
-					color[1] = backEnd.refdef.sunCol[1] * backEnd.refdef.sunCol[1];
-					color[2] = backEnd.refdef.sunCol[2] * backEnd.refdef.sunCol[2];
-					GLSL_SetUniformVec3(sp, UNIFORM_PRIMARYLIGHTCOLOR, color);
-				}
-				else
-				{
-					GLSL_SetUniformVec3(sp, UNIFORM_PRIMARYLIGHTCOLOR, backEnd.refdef.sunCol);
-				}
+				GLSL_SetUniformVec3(sp, UNIFORM_PRIMARYLIGHTCOLOR, backEnd.refdef.sunCol);
 				GLSL_SetUniformVec4(sp, UNIFORM_PRIMARYLIGHTORIGIN,  backEnd.refdef.sunDir);
 			}
 

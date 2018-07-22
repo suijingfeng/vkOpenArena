@@ -347,9 +347,6 @@ static void GLSL_GetShaderHeader( GLenum shaderType, const GLchar *extra, char *
 	Q_strcat(dest, size,
 			 va("#ifndef r_FBufScale\n#define r_FBufScale vec2(%f, %f)\n#endif\n", fbufWidthScale, fbufHeightScale));
 
-	if (r_pbr->integer)
-		Q_strcat(dest, size, "#define USE_PBR\n");
-
 	if (r_cubeMapping->integer)
 	{
 		int cubeMipSize = r_cubemapSize->integer;

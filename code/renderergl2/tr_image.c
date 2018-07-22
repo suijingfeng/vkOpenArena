@@ -2797,7 +2797,7 @@ void R_SetColorMappings( void ) {
 	tr.overbrightBits = 1;
 
 
-	tr.identityLight = 2.0f;
+	tr.identityLight = 1.0f;
 	tr.identityLightByte = 255 * tr.identityLight;
 
 	if ( r_gamma->value < 0.5f ) {
@@ -2818,7 +2818,7 @@ void R_SetColorMappings( void ) {
 		if (inf < 0) {
 			inf = 0;
 		}
-		if (inf > 255) {
+		else if (inf > 255) {
 			inf = 255;
 		}
 		s_gammatable[i] = inf;
