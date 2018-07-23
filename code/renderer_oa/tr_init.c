@@ -168,10 +168,7 @@ static void InitOpenGL(void)
 
 		glConfig.deviceSupportsGamma = qfalse;
 
-		//if ( !r_ignorehwgamma->integer )
-		{
-			ri.InitGamma( &glConfig );
-		}
+		ri.InitGamma( &glConfig );
     }
 
     // stubbed or broken drivers may have reported 0...

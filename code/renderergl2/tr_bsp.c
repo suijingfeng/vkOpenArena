@@ -609,9 +609,9 @@ static shader_t *ShaderForShaderNum( int shaderNum, int lightmapNum ) {
 		lightmapNum = LIGHTMAP_BY_VERTEX;
 	}
 
-	if ( r_fullbright->integer ) {
-		lightmapNum = LIGHTMAP_WHITEIMAGE;
-	}
+	//if ( r_fullbright->integer ) {
+	//	lightmapNum = LIGHTMAP_WHITEIMAGE;
+	//}
 
 	shader = R_FindShader( dsh->shader, lightmapNum, qtrue );
 

@@ -40,10 +40,6 @@ extern cvar_t* r_lightmap;
 
 
 
-#ifdef USE_RENDERER_DLOPEN
-static cvar_t* com_altivec;
-#endif
-
 #ifdef DEBUG_NORMAL
 static cvar_t* r_shownormals;
 #endif
@@ -655,20 +651,24 @@ static void RB_CalcColorFromOneMinusEntity(unsigned int *dstColors)
 
 
 //Calculates specular coefficient and places it in the alpha channel
-static void RB_CalcSpecularAlphaNew( unsigned char (*alphas)[4] )
+static void RB_CalcSpecularAlphaNew(unsigned char (*alphas)[4])
 {
     vec3_t lightOrigin = { -960, 1980, 96 };		// FIXME: track dynamically
 	int numVertexes = tess.numVertexes;
-	int	i;
-
-    for (i = 0 ; i < numVertexes ; i++)
+	
+    int	i;
+    for (i = 0 ; i < numVertexes; i++)
     {
         vec3_t lightDir, viewer, reflected;
 		if ( backEnd.currentEntity == &tr.worldEntity )
-			VectorSubtract( lightOrigin, tess.xyz[i], lightDir );	// old compatibility with maps that use it on some models
-		else
+        {
+            // old compatibility with maps that use it on some models
+			VectorSubtract( lightOrigin, tess.xyz[i], lightDir );
+        }
+        else
+        {
 			VectorCopy( backEnd.currentEntity->lightDir, lightDir );
-
+        }
 		FastVectorNormalize( lightDir );
 
 		// calculate the specular color
@@ -682,11 +682,11 @@ static void RB_CalcSpecularAlphaNew( unsigned char (*alphas)[4] )
 
 		VectorSubtract(backEnd.or.viewOrigin, tess.xyz[i], viewer);
 		
-        float l = DotProduct(reflected, viewer) / sqrtf( DotProduct( viewer, viewer ) );
+        float l = DotProduct(reflected, viewer)/sqrtf(DotProduct(viewer, viewer));
 
-		if (l < 0)
+		if(l < 0)
 			alphas[i][3] = 0;
-        else if (l >= 1)
+        else if(l >= 1)
 			alphas[i][3] = 255;
         else
         {
@@ -1516,10 +1516,6 @@ void RB_EndSurface( void )
 
 void R_InitShade(void)
 {
-    #ifdef USE_RENDERER_DLOPEN
-	    com_altivec = ri.Cvar_Get("com_altivec", "0", CVAR_ARCHIVE);
-    #endif
-
 	r_showtris = ri.Cvar_Get ("r_showtris", "0", CVAR_CHEAT);
 #ifdef DEBUG_NORMAL    
     // draws wireframe normals

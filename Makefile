@@ -26,7 +26,7 @@ ifndef BUILD_MISSIONPACK
 endif
 
 ifndef USE_RENDERER_DLOPEN
-USE_RENDERER_DLOPEN=0
+USE_RENDERER_DLOPEN=1
 endif
 
 
@@ -212,7 +212,7 @@ BD=$(BUILD_DIR)/debug-$(PLATFORM)-$(ARCH)
 BR=$(BUILD_DIR)/release-$(PLATFORM)-$(ARCH)
 CDIR=$(MOUNT_DIR)/client
 SDIR=$(MOUNT_DIR)/server
-RCOMMONDIR=$(MOUNT_DIR)/renderercommom
+RCOMMONDIR=$(MOUNT_DIR)/renderercommon
 RGL1DIR=$(MOUNT_DIR)/renderergl1
 RGL2DIR=$(MOUNT_DIR)/renderergl2
 ROADIR=$(MOUNT_DIR)/renderer_oa

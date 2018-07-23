@@ -35,6 +35,7 @@ extern trGlobals_t tr;
 extern refimport_t ri;
 // render lightmaps only
 
+cvar_t* r_vertexLight;
 
 cvar_t* r_lightmap;
 // avoid lightmap pass

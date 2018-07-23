@@ -30,8 +30,8 @@ extern glconfig_t glConfig;
 extern glstate_t glState;
 
 
-//extern cvar_t *r_ext_texture_filter_anisotropic;
-//extern cvar_t *r_ext_max_anisotropy;
+static cvar_t *r_ext_texture_filter_anisotropic;
+static cvar_t *r_ext_max_anisotropy;
 
 
 cvar_t* r_ignoreGLErrors;
@@ -680,19 +680,18 @@ done:
 
 	if (mipmap)
 	{
-        /*
         if ( r_ext_texture_filter_anisotropic->integer )
 		    glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MAX_ANISOTROPY_EXT, r_ext_max_anisotropy->integer );
-		*/
+
         glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, gl_filter_min);
 		glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, gl_filter_max);
 	}
 	else
 	{
-        /*
+
 		if ( r_ext_texture_filter_anisotropic->integer )
             glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MAX_ANISOTROPY_EXT, 1 );
-		*/
+
         glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR );
 		glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR );
 	}
@@ -1496,7 +1495,8 @@ void R_InitImages(void)
 {
 	memset(hashTable, 0, sizeof(hashTable));
 	// build brightness translation tables
-	
+	r_ext_texture_filter_anisotropic = ri.Cvar_Get( "r_ext_texture_filter_anisotropic", "0", CVAR_ARCHIVE | CVAR_LATCH );
+	r_ext_max_anisotropy = ri.Cvar_Get( "r_ext_max_anisotropy", "2", CVAR_ARCHIVE | CVAR_LATCH );	
 
 	r_simpleMipMaps = ri.Cvar_Get( "r_simpleMipMaps", "1", CVAR_ARCHIVE | CVAR_LATCH );
 

@@ -2006,7 +2006,6 @@ static void Upload32(unsigned char *data, int x, int y, int width, int height, G
 	if (rgba8 && !cubemap)
 	{
 		c = width*height;
-		unsigned char *scan = data;
 
 		if (type == IMGTYPE_COLORALPHA)
 		{

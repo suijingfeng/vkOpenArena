@@ -967,8 +967,6 @@ static void RB_IterateStagesGeneric( shaderCommands_t *input )
 	int deformGen;
 	vec5_t deformParams;
 
-	qboolean renderToCubemap = tr.renderCubeFbo && glState.currentFBO == tr.renderCubeFbo;
-
 	ComputeDeformValues(&deformGen, deformParams);
 
 	ComputeFogValues(fogDistanceVector, fogDepthVector, &eyeT);
