@@ -79,8 +79,23 @@ static void GL_SetDefaultState(void)
 }
 
 
-
-
+/*
+** Workaround for ri.Printf's 1024 characters buffer limit.
+static void R_PrintLongString(const char *string)
+{
+	char buffer[1024];
+	int size = strlen(string);
+	const char *p = string;
+	
+    while(size > 0)
+    {
+		Q_strncpyz(buffer, p, sizeof(buffer) );
+		ri.Printf(PRINT_ALL, "%s", buffer);
+		p += 1023;
+		size -= 1023;
+	}
+}
+*/
 
 
 static void GfxInfo_f( void )
@@ -91,23 +106,18 @@ static void GfxInfo_f( void )
 		"enabled"
 	};
 
-
 	ri.Printf( PRINT_ALL, "\nGL_VENDOR: %s\n", glConfig.vendor_string );
 	ri.Printf( PRINT_ALL, "GL_RENDERER: %s\n", glConfig.renderer_string );
 	ri.Printf( PRINT_ALL, "GL_VERSION: %s\n", glConfig.version_string );
 	ri.Printf( PRINT_ALL, "GL_EXTENSIONS: " );
+//	R_PrintLongString( glConfig.extensions_string );
     ri.Printf( PRINT_ALL, "\n" );
 	ri.Printf( PRINT_ALL, "GL_MAX_TEXTURE_SIZE: %d\n", glConfig.maxTextureSize );
 	ri.Printf( PRINT_ALL, "GL_MAX_TEXTURE_UNITS_ARB: %d\n", glConfig.numTextureUnits );
 	ri.Printf( PRINT_ALL, "\nPIXELFORMAT: color(%d-bits) Z(%d-bit) stencil(%d-bits)\n", glConfig.colorBits, glConfig.depthBits, glConfig.stencilBits );
 
 
-	if( glConfig.deviceSupportsGamma )
-		ri.Printf( PRINT_ALL, "GAMMA: hardware\n");
-	else
-		ri.Printf( PRINT_ALL, "GAMMA: software\n");
-	
-
+//	ri.Printf( PRINT_ALL, "compiled vertex arrays: %s\n", enablestrings[glLockArraysEXT != 0 ] );
 	ri.Printf( PRINT_ALL, "texenv add: %s\n", enablestrings[glConfig.textureEnvAddAvailable != 0] );
 	ri.Printf( PRINT_ALL, "compressed textures: %s\n", enablestrings[glConfig.textureCompression!=TC_NONE] );
 
@@ -134,7 +144,7 @@ static void InitOpenGL(void)
 		GLint max_texture_size;
 		GLint max_shader_units = -1;
 		GLint max_bind_units = -1;
-        ri.GLimpInit(&glConfig, qfalse);
+        ri.GLimpInit(&glConfig);
         // GLimp_InitExtraExtensions();
 
 		// OpenGL driver constants
@@ -166,7 +176,26 @@ static void InitOpenGL(void)
     {
         glConfig.maxTextureSize = 0;
     }
+            // get our config strings
+    Q_strncpyz( glConfig.vendor_string, (char *) glGetString (GL_VENDOR), sizeof( glConfig.vendor_string ) );
+    Q_strncpyz( glConfig.renderer_string, (char *) glGetString (GL_RENDERER), sizeof( glConfig.renderer_string ) );
+    if (*glConfig.renderer_string && glConfig.renderer_string[strlen(glConfig.renderer_string) - 1] == '\n')
+        glConfig.renderer_string[strlen(glConfig.renderer_string) - 1] = 0;
+    Q_strncpyz( glConfig.version_string, (char *) glGetString (GL_VERSION), sizeof( glConfig.version_string ) );
 
+/*
+	if ( qglGetStringi )
+	{
+		GLint numExtensions;
+		int i;
+
+		qglGetIntegerv( GL_NUM_EXTENSIONS, &numExtensions );
+		for ( i = 0; i < numExtensions; i++ )
+		{
+			ri.Printf( PRINT_ALL, "%s ", qglGetStringi( GL_EXTENSIONS, i ) );
+		}
+	}
+*/    
 	// set default state
 	GL_SetDefaultState();
     

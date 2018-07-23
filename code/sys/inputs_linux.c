@@ -11,13 +11,9 @@
 #include <X11/Xatom.h>
 #include <X11/XKBlib.h>
 
-#include "sys_public.h"
-#include "sys_local.h"
+#include "inputs.h"
+#include "local.h"
 #include "../client/client.h"
-
-//#define KEY_MASK (KeyPressMask | KeyReleaseMask)
-#define MOUSE_MASK (ButtonPressMask | ButtonReleaseMask | PointerMotionMask | ButtonMotionMask )
-
 
 
 cvar_t *in_subframe;
@@ -50,15 +46,19 @@ static const char s_keytochar[ 128 ] =
  '"',  0x0,  0x0,  '|',  'Z',  'X',  'C',  'V',  'B',  'N',  'M',  '<',  '>',  '?',  0x0,  '*',  // 7
 };
 
+static qboolean gw_minimized = qfalse; // this will be always true for dedicated servers
 
 // Time mouse was reset, we ignore the first 50ms of the mouse to allow settling of events
 static int mouseResetTime = 0;
 #define MOUSE_RESET_DELAY 50
 
+static cvar_t *in_mouse;
+
 static cvar_t *in_shiftedKeys; // obey modifiers for certain keys in non-console (comma, numbers, etc)
 
 
 
+static qboolean mouse_avail;
 static qboolean mouse_active = qfalse;
 
 static int mouse_accel_numerator;
@@ -82,7 +82,7 @@ static char *XLateKey( XKeyEvent *ev, int *key )
 
   XLookupRet = XLookupString(ev, (char*)buf, sizeof(buf), &keysym, 0);
 #ifdef KBD_DBG
-  printf( "XLookupString ret: %d buf: %s keysym: %x\n", XLookupRet, buf, (int)keysym) ;
+  Com_Printf( "XLookupString ret: %d buf: %s keysym: %x\n", XLookupRet, buf, (int)keysym) ;
 #endif
 
   if (!in_shiftedKeys->integer) {
@@ -90,7 +90,7 @@ static char *XLateKey( XKeyEvent *ev, int *key )
     ev->state = 0;
     XLookupRet = XLookupString(ev, (char*)bufnomod, sizeof(bufnomod), &keysym, 0);
 #ifdef KBD_DBG
-    printf( "XLookupString (minus modifiers) ret: %d buf: %s keysym: %x\n", XLookupRet, buf, (int)keysym );
+    Com_Printf( "XLookupString (minus modifiers) ret: %d buf: %s keysym: %x\n", XLookupRet, buf, (int)keysym );
 #endif
   } else {
     bufnomod[0] = '\0';
@@ -240,12 +240,12 @@ static char *XLateKey( XKeyEvent *ev, int *key )
   case XK_backslash: *key = '\\'; break;
 
   default:
-    //printf( "unknown keysym: %08X\n", keysym );
+    //Com_Printf( "unknown keysym: %08X\n", keysym );
     if (XLookupRet == 0)
     {
       if (com_developer->value)
       {
-        printf( "Warning: XLookupString failed on KeySym %d\n", (int)keysym );
+        Com_Printf( "Warning: XLookupString failed on KeySym %d\n", (int)keysym );
       }
       buf[0] = '\0';
       return (char*)buf;
@@ -317,7 +317,7 @@ static void install_mouse_grab( void )
 	res = XGrabPointer( dpy, win, False, MOUSE_MASK, GrabModeAsync, GrabModeAsync, win, None, CurrentTime );
 	if ( res != GrabSuccess )
 	{
-		//printf( S_COLOR_YELLOW "Warning: XGrabPointer() failed\n" );
+		//Com_Printf( S_COLOR_YELLOW "Warning: XGrabPointer() failed\n" );
 	}
 	else
 	{
@@ -361,7 +361,7 @@ static void install_kb_grab( void )
 	res = XGrabKeyboard( dpy, win, False, GrabModeAsync, GrabModeAsync, CurrentTime );
 	if ( res != GrabSuccess )
 	{
-		//printf( S_COLOR_YELLOW "Warning: XGrabKeyboard() failed\n" );
+		//Com_Printf( S_COLOR_YELLOW "Warning: XGrabKeyboard() failed\n" );
 	}
 
 	XSync( dpy, False );
@@ -375,7 +375,7 @@ static void uninstall_mouse_grab( void )
 	{
 		if ( com_developer->integer )
 		{
-			printf( "DGA Mouse - Disabling DGA DirectVideo\n" );
+			Com_Printf( "DGA Mouse - Disabling DGA DirectVideo\n" );
 		}
 		DGA_Mouse( qfalse );
 	}
@@ -472,6 +472,40 @@ static qboolean repeated_press( XEvent *event )
 }
 
 
+static qboolean WindowMinimized( Display *dpy, Window win )
+{
+	unsigned long i, num_items, bytes_after;
+	Atom actual_type, *atoms, nws, nwsh;
+	int actual_format;
+
+	nws = XInternAtom( dpy, "_NET_WM_STATE", True );
+	if ( nws == BadValue || nws == None )
+		return qfalse;
+
+	nwsh = XInternAtom( dpy, "_NET_WM_STATE_HIDDEN", True );
+	if ( nwsh == BadValue || nwsh == None )
+		return qfalse;
+
+	atoms = NULL;
+
+	XGetWindowProperty( dpy, win, nws, 0, 0x7FFFFFFF, False, XA_ATOM,
+		&actual_type, &actual_format, &num_items,
+		&bytes_after, (unsigned char**)&atoms );
+
+	for ( i = 0; i < num_items; i++ )
+	{
+		if ( atoms[i] == nwsh )
+		{
+			XFree( atoms );
+			return qtrue;
+		}
+	}
+
+	XFree( atoms );
+	return qfalse;
+}
+
+
 static qboolean directMap( const byte chr )
 {
 	if ( !in_forceCharset->integer )
@@ -494,14 +528,14 @@ static qboolean directMap( const byte chr )
 }
 
 
-static void IN_ProcessEvents( void )
+void Sys_SendKeyEvents( void )
 {
 	XEvent event;
 	int b;
 	int key;
 	qboolean dowarp = qfalse;
 	char *p;
-
+	int dx, dy;
 	int t = 0; // default to 0 in case we don't set
 	qboolean btn_press;
 	char buf[2];
@@ -525,7 +559,7 @@ static void IN_ProcessEvents( void )
 			break;
 
 		case KeyPress:
-			// printf("^2K+^7 %08X\n", event.xkey.keycode );
+			// Com_Printf("^2K+^7 %08X\n", event.xkey.keycode );
 			//t = Sys_XTimeToSysTime( event.xkey.time );
             t = Sys_Milliseconds();
 			if ( event.xkey.keycode == 0x31 )
@@ -537,14 +571,15 @@ static void IN_ProcessEvents( void )
 			{
 				int shift = (event.xkey.state & 1);
 				p = XLateKey( &event.xkey, &key );
-
 				if ( *p && event.xkey.keycode == 0x5B )
 				{
 					p = ".";
 				}
-				else if ( !directMap( *p ) && event.xkey.keycode < 0x3F )
+				else
+				if ( !directMap( *p ) && event.xkey.keycode < 0x3F )
 				{
-					char ch = s_keytochar[ event.xkey.keycode ];
+					char ch;
+					ch = s_keytochar[ event.xkey.keycode ];
 					if ( ch >= 'a' && ch <= 'z' )
 					{
 						unsigned int capital;
@@ -564,12 +599,10 @@ static void IN_ProcessEvents( void )
 					p = buf;
 				}
 			}
-
 			if (key)
 			{
 				Com_QueueEvent( t, SE_KEY, key, qtrue, 0, NULL );
 			}
-
 			while (*p)
 			{
 				Com_QueueEvent( t, SE_CHAR, *p++, 0, 0, NULL );
@@ -584,7 +617,7 @@ static void IN_ProcessEvents( void )
 			//t = Sys_XTimeToSysTime( event.xkey.time );
             t = Sys_Milliseconds();
 #if 0
-			printf("^5K-^7 %08X %s\n",
+			Com_Printf("^5K-^7 %08X %s\n",
 				event.xkey.keycode,
 				X11_PendingInput()?"pending":"");
 #endif
@@ -625,8 +658,8 @@ static void IN_ProcessEvents( void )
 						break;
 					}
 
-					int dx = ((int)event.xmotion.x - mwx);
-					int dy = ((int)event.xmotion.y - mwy);
+					dx = ((int)event.xmotion.x - mwx);
+					dy = ((int)event.xmotion.y - mwy);
 					mx += dx;
 					my += dy;
 					mwx = event.xmotion.x;
@@ -677,10 +710,12 @@ static void IN_ProcessEvents( void )
 			break;
 
 		case ConfigureNotify:
+			gw_minimized = WindowMinimized( dpy, win );
+			Com_DPrintf( "ConfigureNotify gw_minimized: %i\n", gw_minimized );
 			win_x = event.xconfigure.x;
 			win_y = event.xconfigure.y;
 			
-			if ( !glw_state.cdsFullscreen && window_created && !glw_state.gw_minimized )
+			if ( !glw_state.cdsFullscreen && window_created && !gw_minimized )
 			{
 				Cvar_SetIntegerValue( "vid_xpos", win_x );
 				Cvar_SetIntegerValue( "vid_ypos", win_y );
@@ -730,7 +765,7 @@ void KBD_Close( void )
 
 void IN_ActivateMouse( void )
 {
-	if ( !dpy || !win )
+	if ( !mouse_avail || !dpy || !win )
 	{
 		return;
 	}
@@ -755,7 +790,7 @@ IN_DeactivateMouse
 */
 void IN_DeactivateMouse( void )
 {
-	if ( !dpy || !win )
+	if ( !mouse_avail || !dpy || !win )
 	{
 		return;
 	}
@@ -780,9 +815,14 @@ IN_MouseActive
 */
 qboolean IN_MouseActive( void )
 {
-	return ( (in_nograb->integer == 0) && mouse_active );
+	return ( in_nograb->integer == 0 && mouse_active );
 }
 
+//////////////////
+void WinMinimize(void)
+{
+    WindowMinimized( dpy, win );
+}
 
 
 /*****************************************************************************/
@@ -794,9 +834,10 @@ qboolean IN_MouseActive( void )
 
 void IN_Init( void )
 {
-	printf( "...Input Initialization...\n" );
+	Com_Printf( "...Input Initialization...\n" );
 
 	// mouse variables
+	in_mouse = Cvar_Get( "in_mouse", "1", CVAR_ARCHIVE );
 	in_dgamouse = Cvar_Get( "in_dgamouse", "1", CVAR_ARCHIVE );
 	in_shiftedKeys = Cvar_Get( "in_shiftedKeys", "0", CVAR_ARCHIVE );
 
@@ -808,14 +849,23 @@ void IN_Init( void )
 
 	in_forceCharset = Cvar_Get( "in_forceCharset", "1", CVAR_ARCHIVE );
 	Cmd_AddCommand( "in_restart", IN_Init );
+	Cmd_AddCommand( "minimize", WinMinimize );
+
+	if ( in_mouse->integer )
+	{
+		mouse_avail = qtrue;
+	}
+	else
+	{
+		mouse_avail = qfalse;
+	}
 
 }
 
 
 void IN_Shutdown( void )
 {
-    Cmd_RemoveCommand( "in_restart");
-	Cmd_RemoveCommand( "minimize");
+	mouse_avail = qfalse;
 }
 
 
@@ -835,7 +885,7 @@ void IN_Frame(void)
 		// Loading in windowed mode
 		IN_DeactivateMouse( );
 	}
-	else if( !window_focused || glw_state.gw_minimized || in_nograb->integer)
+	else if( !window_focused || gw_minimized || in_nograb->integer)
 	{
 		// Window not got focus
 		IN_DeactivateMouse( );
@@ -843,7 +893,15 @@ void IN_Frame(void)
 	else
 		IN_ActivateMouse( );
 
+/*     
+	// Set event time for next frame to earliest possible time an event could happen
+	in_eventTime = Sys_Milliseconds( );
 
-    IN_ProcessEvents();
-  
+	// In case we had to delay actual restart of video system
+    if( ( vidRestartTime != 0 ) && ( vidRestartTime < Sys_Milliseconds( ) ) )
+	{
+		vidRestartTime = 0;
+		Cbuf_AddText( "vid_restart\n" );
+	}
+*/    
 }

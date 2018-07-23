@@ -421,7 +421,6 @@ static void ProjectDlightTexture( void )
 		radius = dl->radius;
 		scale = 1.0f / radius;
 
-
         floatColor[0] = dl->color[0] * 255.0f;
         floatColor[1] = dl->color[1] * 255.0f;
         floatColor[2] = dl->color[2] * 255.0f;
@@ -752,7 +751,6 @@ static void ComputeColors( shaderStage_t *pStage )
 			break;
 		}
 	}
-	
 }
 
 /*

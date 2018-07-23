@@ -1,12 +1,12 @@
 #include "../client/client.h"
-
+#include "local.h"
 #include <X11/Xlib.h>
 #include <X11/Xutil.h>
 #include <X11/Xos.h>
 
 #include <X11/extensions/Xxf86dga.h>
 
-#include "sys_local.h"
+
 extern glwstate_t glw_state;
 extern Display *dpy;
 extern int scrnum;
@@ -37,24 +37,24 @@ qboolean DGA_Init( Display *_dpy )
 
 	if ( d_lib == NULL )
 	{
-		d_lib = Sys_LoadDll( "libXxf86dga.so.1", qtrue );
+		d_lib = Sys_LoadLibrary( "libXxf86dga.so.1" );
 		if ( d_lib == NULL )
 		{
-			d_lib = Sys_LoadDll( "libXxf86dga.so.1", qtrue );
+			d_lib = Sys_LoadLibrary( "libXxf86dga.so.1" );
 		}
 		if ( d_lib == NULL )
 		{
-			printf( "...error loading libXxf86dga\n" );
+			Com_Printf( "...error loading libXxf86dga\n" );
 			goto __fail;
 		}
 	}
 
 	for ( i = 0 ; i < ARRAY_LEN( d_list ); i++ )
 	{
-		*d_list[ i ].symbol = Sys_GetFunAddr( d_lib, d_list[ i ].name );
+		*d_list[ i ].symbol = Sys_LoadFunction( d_lib, d_list[ i ].name );
 		if ( *d_list[ i ].symbol == NULL )
 		{
-			printf( "...couldn't find '%s' in libXxf86dga\n", d_list[ i ].name );
+			Com_Printf( "...couldn't find '%s' in libXxf86dga\n", d_list[ i ].name );
 			goto __fail;
 		}
 	}
@@ -63,11 +63,11 @@ qboolean DGA_Init( Display *_dpy )
 
 	if ( !_XF86DGAQueryExtension( dpy, &event_base, &error_base ) || !_XF86DGAQueryVersion( dpy, &ver_major, &ver_minor ) )
 	{
-		printf( "...DGA extension is not available.\n" );
+		Com_Printf( "...DGA extension is not available.\n" );
 		goto __fail;
 	}
 
-	printf( "...DGA extension version %i.%i detected.\n", ver_major, ver_minor );
+	Com_Printf( "...DGA extension version %i.%i detected.\n", ver_major, ver_minor );
 
 	glw_state.dga_ext = qtrue;
 
@@ -83,7 +83,7 @@ void DGA_Done( void )
 {
 	if ( d_lib )
 	{
-		Sys_UnloadDll( d_lib );
+		Sys_UnloadLibrary( d_lib );
 		d_lib = NULL;
 	}
 	glw_state.dga_ext = qfalse;

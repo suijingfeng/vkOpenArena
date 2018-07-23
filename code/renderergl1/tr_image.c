@@ -23,9 +23,14 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #include "tr_local.h"
 
 
+extern cvar_t *r_ext_texture_filter_anisotropic;
+extern cvar_t *r_ext_max_anisotropy;
+
+
 
 static unsigned char s_intensitytable[256];
 static unsigned char s_gammatable[256];
+static cvar_t* r_texturebits;
 
 int		gl_filter_min = GL_LINEAR_MIPMAP_NEAREST;
 int		gl_filter_max = GL_LINEAR;
@@ -623,7 +628,6 @@ static void Upload32( unsigned *data,
 	scan = ((byte *)data);
 	samples = 3;
 
-
 	if(lightMap)
 	{
 		internalFormat = GL_RGB;
@@ -653,7 +657,6 @@ static void Upload32( unsigned *data,
 		// select proper internal format
 		if ( samples == 3 )
 		{
-
             if ( allowCompression && glConfig.textureCompression == TC_S3TC_ARB )
             {
                 internalFormat = GL_COMPRESSED_RGBA_S3TC_DXT1_EXT;
@@ -662,16 +665,33 @@ static void Upload32( unsigned *data,
             {
                 internalFormat = GL_RGB4_S3TC;
             }
+            else if ( r_texturebits->integer == 16 )
+            {
+                internalFormat = GL_RGB5;
+            }
+            else if ( r_texturebits->integer == 32 )
+            {
+                internalFormat = GL_RGB8;
+            }
             else
             {
                 internalFormat = GL_RGB;
             }
-
 		}
 		else if ( samples == 4 )
 		{
- 
+            if ( r_texturebits->integer == 16 )
+            {
+                internalFormat = GL_RGBA4;
+            }
+            else if ( r_texturebits->integer == 32 )
+            {
+                internalFormat = GL_RGBA8;
+            }
+            else
+            {
                 internalFormat = GL_RGBA;
+            }
 		}
 	}
 
@@ -741,11 +761,17 @@ done:
 
 	if (mipmap)
 	{
+		if ( r_ext_texture_filter_anisotropic->integer )
+			glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MAX_ANISOTROPY_EXT,	r_ext_max_anisotropy->integer);
+
 		glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, gl_filter_min);
 		glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, gl_filter_max);
 	}
 	else
 	{
+		if ( r_ext_texture_filter_anisotropic->integer )
+			glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MAX_ANISOTROPY_EXT, 1 );
+
 		glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR );
 		glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR );
 	}
@@ -801,13 +827,15 @@ image_t *R_CreateImage( const char *name, byte *pic, int width, int height, imgT
 		glWrapClampMode = GL_REPEAT;
 
 	// lightmaps are always allocated on TMU 1
-	if ( isLightmap ) {
+	if ( glActiveTextureARB && isLightmap ) {
 		image->TMU = 1;
 	} else {
 		image->TMU = 0;
 	}
 
+	if ( glActiveTextureARB ) {
 		GL_SelectTexture( image->TMU );
+	}
 
 	GL_Bind(image);
 
@@ -1189,25 +1217,50 @@ R_SetColorMappings
 ===============
 */
 void R_SetColorMappings( void ) {
-	int		i;
+	int		i, j;
 	float	g;
 	int		inf;
-	int		shift = 1; // OverBrightBits
+	int		shift;
 
+	// setup the overbright lighting
+	tr.overbrightBits = 1;
+	if ( !glConfig.deviceSupportsGamma ) {
+		tr.overbrightBits = 0;		// need hardware gamma for overbright
+	}
 
+	// never overbright in windowed mode
+	if ( !glConfig.isFullscreen ) 
+	{
+		tr.overbrightBits = 0;
+	}
 
-	tr.identityLight = 1.0f / ( 1 << shift );
+	// allow 2 overbright bits in 24 bit, but only 1 in 16 bit
+	if ( glConfig.colorBits > 16 ) {
+		if ( tr.overbrightBits > 2 ) {
+			tr.overbrightBits = 2;
+		}
+	} else {
+		if ( tr.overbrightBits > 1 ) {
+			tr.overbrightBits = 1;
+		}
+	}
+	if ( tr.overbrightBits < 0 ) {
+		tr.overbrightBits = 0;
+	}
+
+	tr.identityLight = 1.0f / ( 1 << tr.overbrightBits );
 	tr.identityLightByte = 255 * tr.identityLight;
-
 
 
 	if ( r_gamma->value < 0.5f ) {
 		ri.Cvar_Set( "r_gamma", "0.5" );
-	} else if ( r_gamma->value > 2.0f ) {
-		ri.Cvar_Set( "r_gamma", "2.0" );
+	} else if ( r_gamma->value > 3.0f ) {
+		ri.Cvar_Set( "r_gamma", "3.0" );
 	}
 
 	g = r_gamma->value;
+
+	shift = tr.overbrightBits;
 
 	for ( i = 0; i < 256; i++ ) {
 		if ( g == 1 ) {
@@ -1226,7 +1279,11 @@ void R_SetColorMappings( void ) {
 	}
 
 	for (i=0 ; i<256 ; i++) {
-		s_intensitytable[i] = i;
+		j = i;
+		if (j > 255) {
+			j = 255;
+		}
+		s_intensitytable[i] = j;
 	}
 
 	if ( glConfig.deviceSupportsGamma )
@@ -1241,6 +1298,9 @@ void R_InitImages( void )
 	memset(hashTable, 0, sizeof(hashTable));
 	// build brightness translation tables
     //
+    r_texturebits = ri.Cvar_Get( "r_texturebits", "0", CVAR_ARCHIVE | CVAR_LATCH );
+    ri.Printf( PRINT_ALL, "texture bits: %d\n", r_texturebits->integer );
+
 	R_SetColorMappings();
 
 	// create default texture and white texture
@@ -1264,13 +1324,16 @@ void R_DeleteTextures( void ) {
 	tr.numImages = 0;
 
 	memset( glState.currenttextures, 0, sizeof( glState.currenttextures ) );
-
+	if ( glActiveTextureARB ) {
 		GL_SelectTexture( 1 );
 		glBindTexture( GL_TEXTURE_2D, 0 );
 		GL_SelectTexture( 0 );
 		glBindTexture( GL_TEXTURE_2D, 0 );
-
+	} else {
+		glBindTexture( GL_TEXTURE_2D, 0 );
+	}
 }
+
 /*
 ============================================================================
 

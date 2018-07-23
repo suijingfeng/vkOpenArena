@@ -10,8 +10,8 @@
 #include "../client/snd_local.h"
 #include "../qcommon/q_shared.h"
 
-#include "sys_local.h"
-#include "sys_public.h"
+#include "local.h"
+
 #define USE_SPINLOCK
 
 #define NUM_SAMPLES 8192
@@ -247,8 +247,8 @@ void SNDDMA_Submit( void )
 static void UnloadLibs( void )
 {
 #ifndef USE_ALSA_STATIC
-	Sys_UnloadDll( a_lib );
-	Sys_UnloadDll( t_lib );
+	Sys_UnloadLibrary( a_lib );
+	Sys_UnloadLibrary( t_lib );
 	a_lib = NULL;
 	t_lib = NULL;
 #endif
@@ -276,24 +276,24 @@ qboolean SNDDMA_Init( void )
 #ifndef USE_ALSA_STATIC
 	if ( t_lib == NULL )
 	{
-		t_lib = Sys_LoadDll( "libpthread.so.0", qtrue );
+		t_lib = Sys_LoadLibrary( "libpthread.so.0" );
 		if ( t_lib == NULL )
 		{
-			t_lib = Sys_LoadDll( "libpthread.so", qtrue );
+			t_lib = Sys_LoadLibrary( "libpthread.so" );
 		}
 		if ( t_lib == NULL )
 		{
-			printf( "Error loading pthread library, disabling ALSA support.\n" );
+			Com_Printf( "Error loading pthread library, disabling ALSA support.\n" );
 			return qfalse;
 		}
 	}
 
 	for ( i = 0 ; i < ARRAY_LEN( t_list ) ; i++ )
 	{
-		*t_list[i].symbol =  Sys_GetFunAddr( t_lib, t_list[i].name );
+		*t_list[i].symbol = Sys_LoadFunction( t_lib, t_list[i].name );
 		if ( *t_list[i].symbol == NULL )
 		{
-			printf( "Couldn't find '%s' symbol, disabling ALSA support.\n",
+			Com_Printf( "Couldn't find '%s' symbol, disabling ALSA support.\n",
 				t_list[i].name );
 			UnloadLibs();
 			return qfalse;
@@ -302,24 +302,24 @@ qboolean SNDDMA_Init( void )
 
 	if ( a_lib == NULL )
 	{
-		a_lib = Sys_LoadDll( "libasound.so.2", qtrue );
+		a_lib = Sys_LoadLibrary( "libasound.so.2" );
 		if ( a_lib == NULL )
 		{
-			a_lib = Sys_LoadDll( "libasound.so", qtrue );
+			a_lib = Sys_LoadLibrary( "libasound.so" );
 		}
 		if ( a_lib == NULL )
 		{
-			printf( "Error loading ALSA library.\n" );
+			Com_Printf( "Error loading ALSA library.\n" );
 			goto __fail;
 		}
 	}
 
 	for ( i = 0 ; i < ARRAY_LEN( a_list ) ; i++ )
 	{
-		*a_list[i].symbol =  Sys_GetFunAddr( a_lib, a_list[i].name );
+		*a_list[i].symbol = Sys_LoadFunction( a_lib, a_list[i].name );
 		if ( *a_list[i].symbol == NULL )
 		{
-			printf( "Couldn't find '%s' symbol, disabling ALSA support.\n",
+			Com_Printf( "Couldn't find '%s' symbol, disabling ALSA support.\n",
 				a_list[i].name );
 			goto __fail;
 		}
@@ -335,7 +335,7 @@ qboolean SNDDMA_Init( void )
 	err = _snd_pcm_open( &handle, s_device->string, SND_PCM_STREAM_PLAYBACK, SND_PCM_NONBLOCK );
 	if ( err < 0 )
 	{
-		printf( "Playback device open error: %s\n", _snd_strerror( err ) );
+		Com_Printf( "Playback device open error: %s\n", _snd_strerror( err ) );
 		goto __fail;
 	}
 
@@ -345,7 +345,7 @@ qboolean SNDDMA_Init( void )
 	err = _snd_pcm_hw_params_any( handle, hwparams );
 	if ( err < 0 )
 	{
-		printf( "Broken configuration for playback: " \
+		Com_Printf( "Broken configuration for playback: " \
 			"no configurations available: %s\n", _snd_strerror( err ) );
 		goto __fail;
 	}
@@ -353,7 +353,7 @@ qboolean SNDDMA_Init( void )
 	err = _snd_async_add_pcm_handler( &ahandler, handle, async_proc, NULL );
 	if ( err >= 0 )
 	{
-		printf( "... using async sound handler\n" );
+		Com_Printf( "... using async sound handler\n" );
 		snd_async = qtrue;
 		err = _snd_pcm_hw_params_set_access( handle,
 			hwparams, SND_PCM_ACCESS_RW_INTERLEAVED );
@@ -375,7 +375,7 @@ qboolean SNDDMA_Init( void )
 
 	if ( err < 0 )
 	{
-		printf( "Access type not available for playback: %s\n",
+		Com_Printf( "Access type not available for playback: %s\n",
 			_snd_strerror( err ) );
 		goto __fail;
 	}
@@ -383,9 +383,9 @@ qboolean SNDDMA_Init( void )
 	if ( !snd_async )
 	{
 		if ( use_mmap ) {
-			printf( "Use mmap access\n" );
+			Com_Printf( "Use mmap access\n" );
 		} else {
-			printf( "Use direct access\n" );
+			Com_Printf( "Use direct access\n" );
 		}
 	}
 
@@ -393,7 +393,7 @@ qboolean SNDDMA_Init( void )
 	err = _snd_pcm_hw_params_set_rate_resample( handle, hwparams, 1 );
 	if ( err < 0 )
 	{
-		printf( "Resampling setup failed for playback: %s\n",
+		Com_Printf( "Resampling setup failed for playback: %s\n",
 			_snd_strerror( err ) );
 		goto __fail;
 	}
@@ -408,7 +408,7 @@ qboolean SNDDMA_Init( void )
 	}
 	if ( err < 0 )
 	{
-		printf( "Sample format not available for playback: " \
+		Com_Printf( "Sample format not available for playback: " \
 			"%s\n", _snd_strerror( err ) );
 		goto __fail;
 	}
@@ -425,7 +425,7 @@ qboolean SNDDMA_Init( void )
 	if ( err < 0 )
 	{
 		err = _snd_pcm_hw_params_set_channels( handle, hwparams, channels );
-		printf( "Channels count (%i) not available for playbacks: %s\n",
+		Com_Printf( "Channels count (%i) not available for playbacks: %s\n",
 			channels, _snd_strerror( err ) );
 		goto __fail;
 	}
@@ -445,13 +445,13 @@ qboolean SNDDMA_Init( void )
 	err = _snd_pcm_hw_params_set_rate_near( handle, hwparams, &rrate, 0 );
 	if ( err < 0 )
 	{
-		printf("Rate %iHz not available for playback: %s\n",
+		Com_Printf("Rate %iHz not available for playback: %s\n",
 			speed, _snd_strerror( err ) );
 		goto __fail;
 	}
 	if ( rrate != speed )
 	{
-		printf( "Rate doesn't match (requested %iHz, get %iHz)\n",
+		Com_Printf( "Rate doesn't match (requested %iHz, get %iHz)\n",
 			speed, err );
 		goto __fail;
 	}
@@ -462,7 +462,7 @@ qboolean SNDDMA_Init( void )
 		&period_time, &dir );
 	if ( err < 0 )
 	{
-		printf( "Unable to set period time %i for playback: %s\n",
+		Com_Printf( "Unable to set period time %i for playback: %s\n",
 			period_time, _snd_strerror( err ) );
 		goto __fail;
 	}
@@ -471,7 +471,7 @@ qboolean SNDDMA_Init( void )
 	err = _snd_pcm_hw_params_set_periods_near( handle, hwparams, &periods, &dir );
 	if ( err < 0 )
 	{
-		printf( "Unable to set periods (%i): %s",
+		Com_Printf( "Unable to set periods (%i): %s",
 			periods, _snd_strerror( err ) );
 		goto __fail;
 	}
@@ -480,7 +480,7 @@ qboolean SNDDMA_Init( void )
 	err = _snd_pcm_hw_params_get_period_size( hwparams, &period_size, &dir );
 	if ( err < 0 )
 	{
-		printf( "Unable to get period size for playback: %s\n",
+		Com_Printf( "Unable to get period size for playback: %s\n",
 			_snd_strerror( err ) );
 		goto __fail;
 	}
@@ -489,7 +489,7 @@ qboolean SNDDMA_Init( void )
 	err = _snd_pcm_hw_params( handle, hwparams );
 	if ( err < 0 )
 	{
-		printf( "Unable to set hw params for playback: %s\n",
+		Com_Printf( "Unable to set hw params for playback: %s\n",
 			_snd_strerror( err ) );
 		goto __fail;
 	}
@@ -497,7 +497,7 @@ qboolean SNDDMA_Init( void )
 	err = _snd_pcm_sw_params_current( handle, swparams );
 	if ( err < 0 )
 	{
-		printf( "Unable to determine current swparams for playback: %s\n",
+		Com_Printf( "Unable to determine current swparams for playback: %s\n",
 			_snd_strerror( err ) );
 		goto __fail;
 	}
@@ -505,7 +505,7 @@ qboolean SNDDMA_Init( void )
 	err = _snd_pcm_sw_params_set_start_threshold( handle, swparams, 1 /*period_size*/ );
 	if ( err < 0 )
 	{
-		printf( "Unable to set start threshold mode for playback: %s\n",
+		Com_Printf( "Unable to set start threshold mode for playback: %s\n",
 			_snd_strerror( err ) );
 		goto __fail;
 	}
@@ -514,7 +514,7 @@ qboolean SNDDMA_Init( void )
 	err = _snd_pcm_sw_params_set_stop_threshold( handle, swparams, -1 );
 	if ( err < 0 )
 	{
-		printf( "Unable to set stop threshold for playback: " \
+		Com_Printf( "Unable to set stop threshold for playback: " \
 			"%s\n", _snd_strerror( err ) );
 		goto __fail;
 	}
@@ -522,7 +522,7 @@ qboolean SNDDMA_Init( void )
 	err = _snd_pcm_sw_params_set_avail_min( handle, swparams, period_size );
 	if ( err < 0 )
 	{
-		printf( "Unable to set avail min for playback: %s\n",
+		Com_Printf( "Unable to set avail min for playback: %s\n",
 			_snd_strerror( err ) );
 		goto __fail;
 	}
@@ -530,14 +530,14 @@ qboolean SNDDMA_Init( void )
 	err = _snd_pcm_sw_params( handle, swparams );
 	if ( err < 0 )
 	{
-		printf( "Unable to set sw params for playback: %s\n",
+		Com_Printf( "Unable to set sw params for playback: %s\n",
 			_snd_strerror( err ) );
 		goto __fail;
 	}
 
 #ifdef INT
-	printf( "period_time=%i\n", period_time );
-	printf( "period_size=%i\n", (int)period_size );
+	Com_Printf( "period_time=%i\n", period_time );
+	Com_Printf( "period_size=%i\n", (int)period_size );
 #endif
 
 	dma.channels = channels;
@@ -566,12 +566,12 @@ qboolean SNDDMA_Init( void )
 		err = _snd_pcm_writei( handle, dma.buffer, period_size * 2 );
 		if ( err < 0 )
 		{
-			printf( S_COLOR_YELLOW "ALSA initial write error: %s\n", _snd_strerror( err ) );
+			Com_Printf( S_COLOR_YELLOW "ALSA initial write error: %s\n", _snd_strerror( err ) );
 			goto __fail;
 		}
 		if ( err != period_size * 2 )
 		{
-			printf( S_COLOR_YELLOW "ALSA initial write error: written %i expected %li\n", err,
+			Com_Printf( S_COLOR_YELLOW "ALSA initial write error: written %i expected %li\n", err,
 				period_size * 2 );
 			goto __fail;
 		}
@@ -580,7 +580,7 @@ qboolean SNDDMA_Init( void )
 			err = _snd_pcm_start( handle );
 			if ( err < 0 )
 			{
-				printf( "ALSA start error: %s\n", _snd_strerror( err ) );
+				Com_Printf( "ALSA start error: %s\n", _snd_strerror( err ) );
 				goto __fail;
 			}
 		}
@@ -603,7 +603,7 @@ qboolean SNDDMA_Init( void )
 
 		if ( err != 0 )
 		{
-			printf( "Error creating sound thread (%i)\n", err );
+			Com_Printf( "Error creating sound thread (%i)\n", err );
 #ifdef USE_SPINLOCK
 			_pthread_spin_unlock( &lock );
 #else
@@ -666,15 +666,15 @@ void print_state( snd_pcm_state_t state )
 {
 	switch( state )
 	{
-	case(SND_PCM_STATE_OPEN):     printf("SND_PCM_STATE_OPEN\n");     break;
-	case(SND_PCM_STATE_SETUP):    printf("SND_PCM_STATE_SETUP\n");    break;
-	case(SND_PCM_STATE_PREPARED): printf("SND_PCM_STATE_PREPARED\n"); break;
-	case(SND_PCM_STATE_RUNNING):  printf("SND_PCM_STATE_RUNNING\n");  break;
-	case(SND_PCM_STATE_XRUN): 	  printf("SND_PCM_STATE_XRUN\n");     break;
-	case(SND_PCM_STATE_DRAINING): printf("SND_PCM_STATE_DRAINING\n"); break;
-	case(SND_PCM_STATE_PAUSED):   printf("SND_PCM_STATE_PAUSED\n");   break;
-	case(SND_PCM_STATE_SUSPENDED):printf("SND_PCM_STATE_SUSPENDED\n");break;
-	case(SND_PCM_STATE_DISCONNECTED):printf("SND_PCM_STATE_DISCONNECTED\n");break;
+	case(SND_PCM_STATE_OPEN):     Com_Printf("SND_PCM_STATE_OPEN\n");     break;
+	case(SND_PCM_STATE_SETUP):    Com_Printf("SND_PCM_STATE_SETUP\n");    break;
+	case(SND_PCM_STATE_PREPARED): Com_Printf("SND_PCM_STATE_PREPARED\n"); break;
+	case(SND_PCM_STATE_RUNNING):  Com_Printf("SND_PCM_STATE_RUNNING\n");  break;
+	case(SND_PCM_STATE_XRUN): 	  Com_Printf("SND_PCM_STATE_XRUN\n");     break;
+	case(SND_PCM_STATE_DRAINING): Com_Printf("SND_PCM_STATE_DRAINING\n"); break;
+	case(SND_PCM_STATE_PAUSED):   Com_Printf("SND_PCM_STATE_PAUSED\n");   break;
+	case(SND_PCM_STATE_SUSPENDED):Com_Printf("SND_PCM_STATE_SUSPENDED\n");break;
+	case(SND_PCM_STATE_DISCONNECTED):Com_Printf("SND_PCM_STATE_DISCONNECTED\n");break;
 	};
 }
 
@@ -715,7 +715,7 @@ static int xrun_recovery( snd_pcm_t *handle, int err )
 		}
 		return 0;
 	}
-//	printf( "error: %i\n", err );
+//	Com_Printf( "error: %i\n", err );
 	return err;
 }
 

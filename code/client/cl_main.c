@@ -24,7 +24,9 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #include "client.h"
 #include <limits.h>
 
-#include "../sys/sys_public.h"
+#include "../sys/inputs.h"
+#include "../sys/glimpl.h"
+#include "../sys/public.h"
 #include "../qcommon/puff.h"
 
 #ifdef USE_MUMBLE
@@ -1394,6 +1396,9 @@ void CL_Disconnect( qboolean showMainMenu )
 		return;
 	}
 
+	// shutting down the client so enter full screen ui mode
+	Cvar_Set("r_uiFullScreen", "1");
+
 	if ( clc.demorecording )
     {
 		CL_StopRecord_f ();
@@ -2144,6 +2149,8 @@ void CL_DownloadsComplete( void ) {
 		return;
 	}
 
+	// starting to load a map so we get out of full screen ui mode
+	Cvar_Set("r_uiFullScreen", "0");
 
 	// flush client memory and start loading stuff
 	// this will also (re)load the UI
@@ -3095,6 +3102,13 @@ void CL_ShutdownRef(void)
 	}
 
 	memset(&re, 0, sizeof(re));
+
+#ifdef USE_RENDERER_DLOPEN
+	if ( rendererLib ) {
+		Sys_UnloadLibrary( rendererLib );
+		rendererLib = NULL;
+	}
+#endif
 }
 
 
@@ -3154,6 +3168,7 @@ void CL_InitRef(void)
 
 	if(!(rendererLib = Sys_LoadDll(dllName, qfalse)) && strcmp(cl_renderer->string, cl_renderer->resetString))
 	{
+		Com_Printf("failed:\n\"%s\"\n", Sys_LibraryError());
 		Cvar_ForceReset("cl_renderer");
 
 		Com_sprintf(dllName, sizeof(dllName), "renderer_openarena_" ARCH_STRING DLL_EXT);
@@ -3162,13 +3177,14 @@ void CL_InitRef(void)
 
 	if(!rendererLib)
 	{
+		Com_Printf("failed:\n\"%s\"\n", Sys_LibraryError());
 		Com_Error(ERR_FATAL, "Failed to load renderer");
 	}
 
-	GetRefAPI = Sys_GetFunAddr(rendererLib, "GetRefAPI");
+	GetRefAPI = Sys_LoadFunction(rendererLib, "GetRefAPI");
 	if(!GetRefAPI)
 	{
-		Com_Error(ERR_FATAL, "Can't load symbol GetRefAPI.");
+		Com_Error(ERR_FATAL, "Can't load symbol GetRefAPI: '%s'",  Sys_LibraryError());
 	}
 #endif
 

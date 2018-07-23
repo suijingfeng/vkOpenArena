@@ -251,6 +251,12 @@ typedef enum {
 } cbufExec_t;
 
 
+//
+// these aren't needed by any of the VMs.  put in another header?
+//
+#define	MAX_MAP_AREA_BYTES		    32		// bit vector of area visibility
+
+
 
 // print levels from renderer (FIXME: set up for game / cgame?)
 typedef enum {
@@ -418,7 +424,6 @@ extern const vec3_t	axisDefault[3];
 
 extern void QDECL qsnapvectorx87(vec3_t vec);
 extern void QDECL qsnapvectorsse(vec3_t vec);
-
 extern void (QDECL *Q_SnapVector)(vec3_t vec);
 
 
@@ -1199,6 +1204,6 @@ typedef enum _flag_status {
 #define CDKEY_LEN       16
 #define CDCHKSUM_LEN    2
 
-#define	MAX_MAP_AREA_BYTES		    32		// bit vector of area visibility
+
 
 #endif	// __Q_SHARED_H

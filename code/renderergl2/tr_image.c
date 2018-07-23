@@ -24,7 +24,11 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
 #include "tr_dsa.h"
 
+extern cvar_t *r_ext_texture_filter_anisotropic;
+extern cvar_t *r_ext_max_anisotropy;
+extern cvar_t *r_ext_compressed_textures;// these control use of specific extensions, tr2
 
+static cvar_t* r_texturebits;
 static unsigned char s_intensitytable[256];
 static unsigned char s_gammatable[256];
 
@@ -1663,6 +1667,14 @@ static GLenum RawImage_GetFormat(const byte *data, int numPixels, GLenum picForm
 			{
 				internalFormat = GL_COMPRESSED_RGBA_S3TC_DXT5_EXT;
 			}
+			else if ( r_texturebits->integer == 16 )
+			{
+				internalFormat = GL_RGBA4;
+			}
+			else if ( r_texturebits->integer == 32 )
+			{
+				internalFormat = GL_RGBA8;
+			}
 			else
 			{
 				internalFormat = GL_RGBA;
@@ -1681,6 +1693,14 @@ static GLenum RawImage_GetFormat(const byte *data, int numPixels, GLenum picForm
 			else if (!forceNoCompression && glConfig.textureCompression == TC_S3TC_ARB)
 			{
 				internalFormat = GL_COMPRESSED_RGBA_S3TC_DXT5_EXT;
+			}
+			else if (r_texturebits->integer == 16)
+			{
+				internalFormat = GL_RGB5;
+			}
+			else if (r_texturebits->integer == 32)
+			{
+				internalFormat = GL_RGB8;
 			}
 			else
 			{
@@ -1702,23 +1722,30 @@ static GLenum RawImage_GetFormat(const byte *data, int numPixels, GLenum picForm
 		// select proper internal format
 		if ( samples == 3 )
 		{
-
-				if ( !forceNoCompression && (glRefConfig.textureCompression & TCR_BPTC) )
-				{
-					internalFormat = GL_COMPRESSED_RGBA_BPTC_UNORM_ARB;
-				}
-				else if ( !forceNoCompression && glConfig.textureCompression == TC_S3TC_ARB )
-				{
-					internalFormat = GL_COMPRESSED_RGBA_S3TC_DXT1_EXT;
-				}
-				else if ( !forceNoCompression && glConfig.textureCompression == TC_S3TC )
-				{
-					internalFormat = GL_RGB4_S3TC;
-				}
-				else
-				{
-					internalFormat = GL_RGB;
-				}
+            if ( !forceNoCompression && (glRefConfig.textureCompression & TCR_BPTC) )
+            {
+                internalFormat = GL_COMPRESSED_RGBA_BPTC_UNORM_ARB;
+            }
+            else if ( !forceNoCompression && glConfig.textureCompression == TC_S3TC_ARB )
+            {
+                internalFormat = GL_COMPRESSED_RGBA_S3TC_DXT1_EXT;
+            }
+            else if ( !forceNoCompression && glConfig.textureCompression == TC_S3TC )
+            {
+                internalFormat = GL_RGB4_S3TC;
+            }
+            else if ( r_texturebits->integer == 16 )
+            {
+                internalFormat = GL_RGB5;
+            }
+            else if ( r_texturebits->integer == 32 )
+            {
+                internalFormat = GL_RGB8;
+            }
+            else
+            {
+                internalFormat = GL_RGB;
+            }
 		}
 		else if ( samples == 4 )
 		{
@@ -1730,11 +1757,19 @@ static GLenum RawImage_GetFormat(const byte *data, int numPixels, GLenum picForm
             {
                 internalFormat = GL_COMPRESSED_RGBA_S3TC_DXT5_EXT;
             }
+            else if ( r_texturebits->integer == 16 )
+            {
+                internalFormat = GL_RGBA4;
+            }
+            else if ( r_texturebits->integer == 32 )
+            {
+                internalFormat = GL_RGBA8;
+            }
             else
             {
                 internalFormat = GL_RGBA;
             }
-        }
+		}
 	}
 
 	return internalFormat;
@@ -2120,6 +2155,9 @@ image_t *R_CreateImage2( const char *name, byte *pic, int width, int height, GLe
 	if (cubemap)
 		qglTextureParameteriEXT(image->texnum, textureTarget, GL_TEXTURE_WRAP_R, glWrapClampMode);
 
+	if (r_ext_texture_filter_anisotropic->integer && !cubemap)
+		qglTextureParameteriEXT(image->texnum, textureTarget, GL_TEXTURE_MAX_ANISOTROPY_EXT,
+			mipmap ? r_ext_max_anisotropy->integer : 1);
 
 	switch(internalFormat)
 	{
@@ -2219,6 +2257,19 @@ void R_LoadImage( const char *name, byte **pic, int *width, int *height, GLenum 
 	const char* ext = getExtension( localName );
 
 	// If compressed textures are enabled, try loading a DDS first, it'll load fastest
+	if (r_ext_compressed_textures->integer)
+	{
+		char ddsName[MAX_QPATH];
+
+		stripExtension(name, ddsName, MAX_QPATH);
+		Q_strcat(ddsName, MAX_QPATH, ".dds");
+
+		R_LoadDDS(ddsName, pic, width, height, picFormat, numMips);
+
+		// If loaded, we're done.
+		if (*pic)
+			return;
+	}
 
 	if( *ext )
 	{
@@ -2731,19 +2782,27 @@ void R_CreateBuiltinImages( void ) {
 }
 
 
-void R_SetColorMappings( void )
-{
-	int		i;
+/*
+===============
+R_SetColorMappings
+===============
+*/
+void R_SetColorMappings( void ) {
+	int		i, j;
 	float	g;
 	int		inf;
 
-	tr.identityLight = 1.0f / ( 2 );
+	// setup the overbright lighting
+	tr.overbrightBits = 1;
+
+
+	tr.identityLight = 1.0f;
 	tr.identityLightByte = 255 * tr.identityLight;
 
 	if ( r_gamma->value < 0.5f ) {
 		ri.Cvar_Set( "r_gamma", "0.5" );
-	} else if ( r_gamma->value > 2.0f ) {
-		ri.Cvar_Set( "r_gamma", "2.0" );
+	} else if ( r_gamma->value > 3.0f ) {
+		ri.Cvar_Set( "r_gamma", "3.0" );
 	}
 
 	g = r_gamma->value;
@@ -2758,15 +2817,18 @@ void R_SetColorMappings( void )
 		if (inf < 0) {
 			inf = 0;
 		}
-		if (inf > 255) {
+		else if (inf > 255) {
 			inf = 255;
 		}
 		s_gammatable[i] = inf;
 	}
 
-	for (i=0 ; i<256 ; i++)
-    {
-		s_intensitytable[i] = i;
+	for (i=0 ; i<256 ; i++) {
+		j = i;
+		if (j > 255) {
+			j = 255;
+		}
+		s_intensitytable[i] = j;
 	}
 
 	if ( glConfig.deviceSupportsGamma )
@@ -2781,6 +2843,9 @@ void R_InitImages( void )
 	memset(hashTable, 0, sizeof(hashTable));
 	// build brightness translation tables
 	
+    r_texturebits = ri.Cvar_Get( "r_texturebits", "16", CVAR_ARCHIVE | CVAR_LATCH );
+    ri.Printf( PRINT_ALL, "texture bits: %d\n", r_texturebits->integer );
+
     R_SetColorMappings();
 
 	// create default texture and white texture

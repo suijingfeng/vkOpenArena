@@ -166,7 +166,7 @@ typedef struct {
 	qboolean (*Sys_LowPhysicalMemory)( void );
 
 	// platform-dependent functions
-	void	(*GLimpInit)( glconfig_t *config, qboolean context);
+	void	(*GLimpInit)( glconfig_t *config );
 	void	(*GLimpShutdown)( qboolean unloadDLL );
 	void	(*GLimpEndFrame)( void );
 	void	(*InitGamma)( glconfig_t *config );
@@ -178,7 +178,6 @@ typedef struct {
              uint32_t *destlen,		/* amount of output space */
              uint8_t  *source,		/* pointer to source data pointer */
              uint32_t *sourcelen);	/* amount of input available */
-	
 
 } refimport_t;
 

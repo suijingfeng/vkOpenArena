@@ -87,6 +87,25 @@ static void R_PerformanceCounters(void)
 }
 
 
+static void R_IssueRenderCommands(qboolean runPerformanceCounters)
+{
+	renderCommandList_t	*cmdList = &backEndData->commands;
+	assert(cmdList);
+	// add an end-of-list command
+	*(int *)(cmdList->cmds + cmdList->used) = RC_END_OF_LIST;
+
+	// clear it out, in case this is a sync and not a buffer flip
+	cmdList->used = 0;
+
+	if( runPerformanceCounters )
+		R_PerformanceCounters();
+
+
+	// actually start the commands going
+    // let it start on the new batch
+    RB_ExecuteRenderCommands( cmdList->cmds );
+}
+
 
 //////////////////////////////////////////////////////////////////////////
 
@@ -112,7 +131,7 @@ void R_IssuePendingRenderCommands( void )
 /*
  make sure there is enough command space
 */
-void *R_GetCommandBuffer(int bytes)
+void* R_GetCommandBuffer(int bytes)
 {
 	renderCommandList_t	*cmdList = &backEndData->commands;
 	
@@ -261,6 +280,15 @@ void RE_BeginFrame(void)
 		if ((err = glGetError()) != GL_NO_ERROR)
 			ri.Error(ERR_FATAL, "RE_BeginFrame() - glGetError() failed (0x%x)!", err);
 	}
+    
+    drawBufferCommand_t	*cmd = R_GetCommandBuffer(sizeof(drawBufferCommand_t*));
+
+    if(cmd)
+    {
+        cmd->commandId = RC_DRAW_BUFFER;
+        cmd->buffer = (int)GL_BACK;
+    }
+
 
 }
 
@@ -274,42 +302,26 @@ Returns the number of msec spent in the back end
 */
 void RE_EndFrame( int *frontEndMsec, int *backEndMsec )
 {
-    if ( tr.registered )
-    {
-        swapBuffersCommand_t *cmd = R_GetCommandBuffer( sizeof( *cmd ) );
+	swapBuffersCommand_t *cmd = R_GetCommandBuffer( sizeof( *cmd ) );
 
-	    if ( !cmd )
-		    return;
+	if ( !cmd )
+		return;
+    if ( !tr.registered )
+		return;
 
-        cmd->commandId = RC_SWAP_BUFFERS;
+	cmd->commandId = RC_SWAP_BUFFERS;
 
-        renderCommandList_t	*cmdList = &backEndData->commands;
-        assert(cmdList);
-        // add an end-of-list command
-        *(int *)(cmdList->cmds + cmdList->used) = RC_END_OF_LIST;
+	R_IssueRenderCommands( qtrue );
 
-        // clear it out, in case this is a sync and not a buffer flip
-        cmdList->used = 0;
+	R_InitNextFrame();
 
+	if( frontEndMsec != NULL )
+		*frontEndMsec = tr.frontEndMsec;
+	tr.frontEndMsec = 0;
 
-        R_PerformanceCounters();
-
-
-        // actually start the commands going
-        // let it start on the new batch
-        RB_ExecuteRenderCommands( cmdList->cmds );
-
-
-        R_InitNextFrame();
-
-        if( frontEndMsec != NULL )
-            *frontEndMsec = tr.frontEndMsec;
-        tr.frontEndMsec = 0;
-
-        if( backEndMsec != NULL )
-            *backEndMsec = backEnd.pc.msec;
-        backEnd.pc.msec = 0;
-    }
+	if( backEndMsec != NULL )
+		*backEndMsec = backEnd.pc.msec;
+	backEnd.pc.msec = 0;
 }
 
 

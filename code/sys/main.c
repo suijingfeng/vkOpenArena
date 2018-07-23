@@ -31,7 +31,8 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #include <errno.h>
 #include <unistd.h>
 
-#include "sys_local.h"
+#include "local.h"
+#include "inputs.h"
 
 
 #include "../qcommon/q_shared.h"
@@ -270,7 +271,7 @@ void Sys_AnsiColorPrint( const char *msg )
 			else
 			{
 				// Print the color code
-				snprintf( buffer, sizeof( buffer ), "\033[%dm", q3ToAnsi[ ColorIndex( *( msg + 1 ) ) ] );
+				Com_sprintf( buffer, sizeof( buffer ), "\033[%dm", q3ToAnsi[ ColorIndex( *( msg + 1 ) ) ] );
 				fputs( buffer, stderr );
 				msg += 2;
 			}
@@ -342,6 +343,46 @@ int Sys_FileTime( char *path )
 	return buf.st_mtime;
 }
 
+
+/*
+=================
+Sys_LoadGameDll
+
+Used to load a development dll instead of a virtual machine
+=================
+*/
+void *Sys_LoadGameDll(const char *name,	intptr_t (QDECL **entryPoint)(int, ...), intptr_t (*systemcalls)(intptr_t, ...))
+{
+
+	assert(name);
+	printf( "Loading DLL file: %s\n", name);
+	
+    void* libHandle = Sys_LoadLibrary(name);
+	if(!libHandle)
+	{
+		printf("Sys_LoadGameDll(%s) failed:\n\"%s\"\n", name, Sys_LibraryError());
+		return NULL;
+	}
+
+    void (*dllEntry)(intptr_t (*syscallptr)(intptr_t, ...));
+
+	dllEntry = Sys_LoadFunction( libHandle, "dllEntry" );
+	*entryPoint = Sys_LoadFunction( libHandle, "vmMain" );
+
+	if ( !*entryPoint || !dllEntry )
+	{
+		printf ( "Sys_LoadGameDll(%s) failed to find vmMain function:\n\"%s\" !\n", name, Sys_LibraryError( ) );
+		Sys_UnloadLibrary(libHandle);
+
+		return NULL;
+	}
+
+	printf( "Sys_LoadGameDll(%s) found vmMain function at %p\n", name, *entryPoint );
+
+	dllEntry( systemcalls );
+
+	return libHandle;
+}
 
 
 void Sys_ParseArgs( int argc, char **argv )

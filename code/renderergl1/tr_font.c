@@ -69,6 +69,7 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
 
 #include "tr_local.h"
+#include "../qcommon/qcommon.h"
 
 #ifdef BUILD_FREETYPE
 #include <ft2build.h>
@@ -85,16 +86,12 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 FT_Library ftLibrary = NULL;  
 #endif
 
-extern refimport_t ri;
-
-
 #define MAX_FONTS 6
 static int registeredFontCount = 0;
 static fontInfo_t registeredFont[MAX_FONTS];
 
 #ifdef BUILD_FREETYPE
-void R_GetGlyphInfo(FT_GlyphSlot glyph, int *left, int *right, int *width, int *top, int *bottom, int *height, int *pitch)
-{
+void R_GetGlyphInfo(FT_GlyphSlot glyph, int *left, int *right, int *width, int *top, int *bottom, int *height, int *pitch) {
 	*left  = _FLOOR( glyph->metrics.horiBearingX );
 	*right = _CEIL( glyph->metrics.horiBearingX + glyph->metrics.width );
 	*width = _TRUNC(*right - *left);
@@ -106,8 +103,7 @@ void R_GetGlyphInfo(FT_GlyphSlot glyph, int *left, int *right, int *width, int *
 }
 
 
-FT_Bitmap *R_RenderGlyph(FT_GlyphSlot glyph, glyphInfo_t* glyphOut)
-{
+FT_Bitmap *R_RenderGlyph(FT_GlyphSlot glyph, glyphInfo_t* glyphOut) {
 	FT_Bitmap  *bit2;
 	int left, right, width, top, bottom, height, pitch, size;
 
@@ -304,17 +300,16 @@ static glyphInfo_t *RE_ConstructGlyphInfo(unsigned char *imageOut, int *xOut, in
 #endif
 
 static int fdOffset;
-static unsigned char* fdFile;
+static byte	*fdFile;
 
-int readInt( void )
-{
+int readInt( void ) {
 	int i = fdFile[fdOffset]+(fdFile[fdOffset+1]<<8)+(fdFile[fdOffset+2]<<16)+(fdFile[fdOffset+3]<<24);
 	fdOffset += 4;
 	return i;
 }
 
 typedef union {
-	unsigned char fred[4];
+	byte	fred[4];
 	float	ffred;
 } poor;
 
@@ -557,8 +552,7 @@ void R_InitFreeType(void)
 }
 
 
-void R_DoneFreeType(void)
-{
+void R_DoneFreeType(void) {
 #ifdef BUILD_FREETYPE
 	if (ftLibrary) {
 		FT_Done_FreeType( ftLibrary );

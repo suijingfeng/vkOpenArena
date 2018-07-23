@@ -30,6 +30,10 @@ extern glconfig_t glConfig;
 extern glstate_t glState;
 
 
+static cvar_t *r_ext_texture_filter_anisotropic;
+static cvar_t *r_ext_max_anisotropy;
+
+
 cvar_t* r_ignoreGLErrors;
 cvar_t* r_gamma;
 
@@ -676,11 +680,18 @@ done:
 
 	if (mipmap)
 	{
+        if ( r_ext_texture_filter_anisotropic->integer )
+		    glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MAX_ANISOTROPY_EXT, r_ext_max_anisotropy->integer );
+
         glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, gl_filter_min);
 		glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, gl_filter_max);
 	}
 	else
 	{
+
+		if ( r_ext_texture_filter_anisotropic->integer )
+            glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MAX_ANISOTROPY_EXT, 1 );
+
         glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR );
 		glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR );
 	}
@@ -795,6 +806,61 @@ static void R_LoadImage(const char *name, unsigned char **pic, int *width, int *
 }
 
 
+
+/*
+===============
+R_FindImageFileIfItsThere
+leilei Finds the given image and does not load it.
+==============
+
+static image_t	*R_FindImageFileIfItsThere( const char *name, imgType_t type, imgFlags_t flags )
+{
+	image_t	*image;
+	int	width, height;
+	unsigned char *pic;
+
+	if (!name) {
+		return NULL;
+	}
+
+	long hash = generateHashValue(name);
+
+	//
+	// see if the image is already loaded
+	//
+	for (image=hashTable[hash]; image; image=image->next)
+    {
+		if ( !strcmp( name, image->imgName ) )
+        {
+			// the white image can be used with any set of parms, but other mismatches are errors
+			if ( strcmp( name, "*white" ) ) {
+				if ( image->flags != flags ) {
+					ri.Printf( PRINT_DEVELOPER, "WARNING: reused image %s with mixed flags (%i vs %i)\n", name, image->flags, flags );
+				}
+			}
+			return image;
+		}
+	}
+
+	// leilei - Detail texture hack to kill artifacts of shimmer of pattern of terrible
+	if ( !Q_strncmp( name, "textures/detail/", 16 )  || !Q_strncmp( name, "gfx/fx/detail/", 14 ))
+    {
+		ri.Printf( PRINT_ALL, "DETAILHACK: %s - mips will be gray\n", name );
+	}
+
+	//
+	// load the pic from disk
+	//
+	R_LoadImage( name, &pic, &width, &height );
+	if ( pic == NULL ) {
+		return NULL;
+	}
+
+	image = R_CreateImage( ( char * ) name, pic, width, height, type, flags, 0 );
+	ri.Free( pic );
+	return image;
+}
+*/
 
 /*
 ================
@@ -960,6 +1026,8 @@ static void R_CreateBuiltinImages( void )
 	R_CreateDlightImage();
 
 	R_CreateFogImage();
+	//tr.fogImage = R_FindImageFile( "gfx/engine/fog.tga", 0, IMGFLAG_CLAMPTOEDGE )
+	//tr.dlightImage = R_FindImageFile( "gfx/engine/dlight.tga", 0, IMGFLAG_CLAMPTOEDGE );
 }
 
 
@@ -1351,19 +1419,23 @@ void R_SetColorMappings(void)
 {
 	int	i, inf;
 
-	tr.identityLight = 1.0f;
-	tr.identityLightByte = 255;
+    tr.overbrightBits = 1;
 
-	if( r_gamma->value < 0.5f )
+	tr.identityLight = 1.0f ;
+	tr.identityLightByte = 255 * tr.identityLight;
+
+	if( r_gamma->value < 0.4f )
     {
-		ri.Cvar_Set( "r_gamma", "0.5" );
+		ri.Cvar_Set( "r_gamma", "0.4" );
 	}
-    else if ( r_gamma->value > 2.0f )
+    else if ( r_gamma->value > 3.0f )
     {
-		ri.Cvar_Set( "r_gamma", "2.0" );
+		ri.Cvar_Set( "r_gamma", "3.0" );
 	}
 
 	float g = r_gamma->value;
+
+	// hardware gamma to work (if available) since we can't do alternate gamma via blends
 
 
 	for ( i = 0; i < 256; i++ )
@@ -1376,7 +1448,7 @@ void R_SetColorMappings(void)
         {
 			inf = 255 * pow ( i/255.0f, 1.0f / g ) + 0.5f;
 		}
-		//inf <<= shift;
+		//inf <<= 1;
 		if (inf < 0)
         {
 			inf = 0;
@@ -1390,7 +1462,7 @@ void R_SetColorMappings(void)
 
 	if ( glConfig.deviceSupportsGamma)
 	{
-		//ri.SetGamma( s_gammatable, s_gammatable, s_gammatable );
+		ri.SetGamma( s_gammatable, s_gammatable, s_gammatable );
 	}
 }
 
@@ -1423,7 +1495,8 @@ void R_InitImages(void)
 {
 	memset(hashTable, 0, sizeof(hashTable));
 	// build brightness translation tables
-	
+	r_ext_texture_filter_anisotropic = ri.Cvar_Get( "r_ext_texture_filter_anisotropic", "0", CVAR_ARCHIVE | CVAR_LATCH );
+	r_ext_max_anisotropy = ri.Cvar_Get( "r_ext_max_anisotropy", "2", CVAR_ARCHIVE | CVAR_LATCH );	
 
 	r_simpleMipMaps = ri.Cvar_Get( "r_simpleMipMaps", "1", CVAR_ARCHIVE | CVAR_LATCH );
 

@@ -103,7 +103,7 @@ const char *Sys_DefaultHomePath( void )
 
 	if(shfolder == NULL)
 	{
-		printf("Unable to load SHFolder.dll\n");
+		Com_Printf("Unable to load SHFolder.dll\n");
 		return NULL;
 	}
 
@@ -112,7 +112,7 @@ const char *Sys_DefaultHomePath( void )
 		qSHGetFolderPath = GetProcAddress(shfolder, "SHGetFolderPathA");
 		if(qSHGetFolderPath == NULL)
 		{
-			printf("Unable to find SHGetFolderPath in SHFolder.dll\n");
+			Com_Printf("Unable to find SHGetFolderPath in SHFolder.dll\n");
 			FreeLibrary(shfolder);
 			return NULL;
 		}
@@ -120,7 +120,7 @@ const char *Sys_DefaultHomePath( void )
 		if( !SUCCEEDED( qSHGetFolderPath( NULL, CSIDL_APPDATA,
 						NULL, 0, szPath ) ) )
 		{
-			printf("Unable to detect CSIDL_APPDATA\n");
+			Com_Printf("Unable to detect CSIDL_APPDATA\n");
 			FreeLibrary(shfolder);
 			return NULL;
 		}
@@ -774,7 +774,7 @@ void Sys_PlatformInit( void )
 
 		if(timerResolution > 1)
 		{
-			printf("Warning: Minimum supported timer resolution is %ums "
+			Com_Printf("Warning: Minimum supported timer resolution is %ums "
 				"on this system, recommended resolution 1ms\n", timerResolution);
 		}
 		
@@ -843,7 +843,7 @@ qboolean Sys_PIDIsRunning( int pid )
 
 	if(psapi == NULL)
 	{
-		printf("Unable to load PSAPI.dll\n");
+		Com_Printf("Unable to load PSAPI.dll\n");
 		FreeLibrary(psapi);
 		return qfalse;
 	}
@@ -851,7 +851,7 @@ qboolean Sys_PIDIsRunning( int pid )
 		qEnumProcesses = GetProcAddress(psapi, "EnumProcesses");
 		if(qEnumProcesses == NULL)
 		{
-			printf("Unable to find EnumProcesses in psapi.dll\n");
+			Com_Printf("Unable to find EnumProcesses in psapi.dll\n");
 			FreeLibrary(psapi);
 			return qfalse;
 		}

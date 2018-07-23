@@ -4,7 +4,8 @@
 
 #include <X11/extensions/xf86vmode.h>
 
-#include "sys_local.h"
+//#include "../client/client.h"
+#include "local.h"
 
 
 
@@ -60,35 +61,35 @@ qboolean VidMode_Init( void )
 
 	if ( v_lib == NULL )
 	{
-		v_lib = Sys_LoadDll( "libXxf86vm.so.1", qtrue);
+		v_lib = Sys_LoadLibrary( "libXxf86vm.so.1" );
 		if ( v_lib == NULL )
 		{
-			v_lib = Sys_LoadDll( "libXxf86vm.so", qtrue);
+			v_lib = Sys_LoadLibrary( "libXxf86vm.so" );
 		}
 		if ( v_lib == NULL )
 		{
-			printf( "...error loading libXxf86vm\n" );
+			Com_Printf( "...error loading libXxf86vm\n" );
 			goto __fail;
 		}
 	}
 
 	for ( i = 0 ; i < ARRAY_LEN( v_list ); i++ )
 	{
-		*v_list[ i ].symbol = Sys_GetFunAddr( v_lib, v_list[ i ].name );
+		*v_list[ i ].symbol = Sys_LoadFunction( v_lib, v_list[ i ].name );
 		if ( *v_list[ i ].symbol == NULL )
 		{
-			printf( "...couldn't find '%s' in libXxf86vm\n", v_list[ i ].name );
+			Com_Printf( "...couldn't find '%s' in libXxf86vm\n", v_list[ i ].name );
 			goto __fail;
 		}
 	}
 	
 	if ( !_XF86VidModeQueryExtension( dpy, &event_base, &error_base ) || !_XF86VidModeQueryVersion( dpy, &ver_major, &ver_minor ) )
 	{
-		printf( "...VidMode extension is not available.\n" );
+		Com_Printf( "...VidMode extension is not available.\n" );
 		goto __fail;
 	}
 
-	printf( "...VidMode extension version %i.%i detected.\n", ver_major, ver_minor );
+	Com_Printf( "...VidMode extension version %i.%i detected.\n", ver_major, ver_minor );
 
 	glw_state.vidmode_ext = qtrue;
 	
@@ -104,11 +105,11 @@ qboolean VidMode_Init( void )
 		}
 		else
 		{
-			printf( "XF86VidModeGetModeLine failed.\n" );
+			Com_Printf( "XF86VidModeGetModeLine failed.\n" );
 		}
 	}
 
-	printf( "desktop width:%i height:%i\n",
+	Com_Printf( "desktop width:%i height:%i\n",
 		glw_state.desktop_width, glw_state.desktop_height );
 
 	/* Minimum extension version required */
@@ -117,12 +118,12 @@ qboolean VidMode_Init( void )
 
 	if ( ver_major < GAMMA_MINMAJOR || (ver_major == GAMMA_MINMAJOR && ver_minor < GAMMA_MINMINOR) )
 	{
-		printf( "...VidMode gamma extension not supported.\n" );
+		Com_Printf( "...VidMode gamma extension not supported.\n" );
 	}
 	else
 	{
 		_XF86VidModeGetGamma( dpy, scrnum, &vidmode_InitialGamma );
-		printf( "...using VidMode gamma extension.\n" );
+		Com_Printf( "...using VidMode gamma extension.\n" );
 		glw_state.vidmode_gamma = qtrue;
 	}
 
@@ -138,7 +139,7 @@ void VidMode_Done( void )
 {
 	if ( v_lib )
 	{
-		Sys_UnloadDll( v_lib );
+		Sys_UnloadLibrary( v_lib );
 		v_lib = NULL;
 	}
 
@@ -167,10 +168,12 @@ void VidMode_SetGamma( unsigned char red[256], unsigned char green[256], unsigne
 
 void VidMode_RestoreGamma( void )
 {
-	if ( glw_state.gammaSet && glw_state.vidmode_ext && glw_state.vidmode_gamma )
+	if ( !glw_state.vidmode_ext )
+		return;
+
+	if ( glw_state.vidmode_gamma )
 	{
 		_XF86VidModeSetGamma( dpy, scrnum, &vidmode_InitialGamma );
-        glw_state.gammaSet = qfalse;
 	}
 }
 
@@ -227,14 +230,14 @@ qboolean VidMode_SetMode( int *width, int *height, int *rate )
 		// Move the viewport to top left
 		_XF86VidModeSetViewPort( dpy, scrnum, 0, 0 );
 
-		printf( "XFree86-VidModeExtension Activated at %dx%d\n",
+		Com_Printf( "XFree86-VidModeExtension Activated at %dx%d\n",
 			*width, *height );
 
 		return qtrue;
 	}
 	else
 	{
-		printf( "XFree86-VidModeExtension: No acceptable modes found\n" );
+		Com_Printf( "XFree86-VidModeExtension: No acceptable modes found\n" );
 		return qfalse;
 	}
 }

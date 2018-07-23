@@ -1765,6 +1765,9 @@ static qboolean CollapseMultitexture( void ) {
 	int i;
 	textureBundle_t tmpBundle;
 
+	if ( !glActiveTextureARB ) {
+		return qfalse;
+	}
 
 	// make sure both stages are active
 	if ( !stages[0].active || !stages[1].active ) {
@@ -2277,6 +2280,14 @@ static shader_t *FinishShader( void )
 		shader.sort = SS_OPAQUE;
 	}
 
+	//
+	// if we are in r_vertexLight mode, never use a lightmap texture
+	//
+	if ( stage > 1 && ( (r_vertexLight->integer && !r_uiFullScreen->integer)  ) ) {
+		VertexLightingCollapse();
+		stage = 1;
+		hasLightmapStage = qfalse;
+	}
 
 	//
 	// look for multitexture potential

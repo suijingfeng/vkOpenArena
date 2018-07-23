@@ -22,7 +22,7 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
 #include "../qcommon/q_shared.h"
 #include "../qcommon/qcommon.h"
-#include "sys_local.h"
+#include "local.h"
 
 #ifndef DEDICATED
 #include "../client/client.h"
@@ -251,7 +251,7 @@ CON_Init: Initialize the console input (tty mode if possible)
 */
 void CON_Init( void )
 {
-    printf("-------- CON_Init() --------\n");
+    Com_Printf("-------- CON_Init() --------\n");
 	struct termios tc;
 
 
@@ -260,7 +260,7 @@ void CON_Init( void )
 
 	if(!IsStdinATTY())
 	{
-		printf("tty console mode disabled\n");
+		Com_Printf("tty console mode disabled\n");
 		ttycon_on = qfalse;
 		stdin_active = qtrue;
 		return;
@@ -346,7 +346,7 @@ char *CON_Input(void)
 					}
                     else if (TTY_con.cursor)
                     {
-						snprintf(text, sizeof(text), "cmd say %s", TTY_con.buffer);
+						Com_sprintf(text, sizeof(text), "cmd say %s", TTY_con.buffer);
 					}
                     else
                     {
@@ -356,7 +356,7 @@ char *CON_Input(void)
 					// push it in history
 					Hist_Add(&TTY_con);
 					CON_Hide();
-					printf("%s%s\n", TTY_CONSOLE_PROMPT, TTY_con.buffer);
+					Com_Printf("%s%s\n", TTY_CONSOLE_PROMPT, TTY_con.buffer);
 					Field_Clear(&TTY_con);
 					CON_Show();
 #else

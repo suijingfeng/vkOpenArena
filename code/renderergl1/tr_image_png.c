@@ -19,10 +19,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 ===========================================================================
 */
 
-#include "tr_image.h"
-#include "tr_public.h"
-
-extern refimport_t ri;
+#include "tr_local.h"
 
 // we could limit the png size to a lower value here
 #ifndef INT_MAX
@@ -788,11 +785,13 @@ static uint8_t PredictPaeth(uint8_t a, uint8_t b, uint8_t c)
 	 */
 
 	uint8_t Pr;
+	int p;
+	int pa, pb, pc;
 
-	int p  = ((int) a) + ((int) b) - ((int) c);
-	int pa = abs(p - ((int) a));
-	int pb = abs(p - ((int) b));
-	int pc = abs(p - ((int) c));
+	p  = ((int) a) + ((int) b) - ((int) c);
+	pa = abs(p - ((int) a));
+	pb = abs(p - ((int) b));
+	pc = abs(p - ((int) c));
 
 	if((pa <= pb) && (pa <= pc))
 	{
@@ -808,6 +807,7 @@ static uint8_t PredictPaeth(uint8_t a, uint8_t b, uint8_t c)
 	}
 
 	return(Pr);
+
 }
 
 /*
@@ -815,8 +815,11 @@ static uint8_t PredictPaeth(uint8_t a, uint8_t b, uint8_t c)
  */
 
 static qboolean UnfilterImage(uint8_t  *DecompressedData, 
-		uint32_t  ImageHeight, uint32_t  BytesPerScanline, uint32_t  BytesPerPixel)
+		uint32_t  ImageHeight,
+		uint32_t  BytesPerScanline, 
+		uint32_t  BytesPerPixel)
 {
+	uint8_t   *DecompPtr;
 	uint8_t   FilterType;
 	uint8_t  *PixelLeft, *PixelUp, *PixelUpLeft;
 	uint32_t  w, h, p;
@@ -849,7 +852,7 @@ static qboolean UnfilterImage(uint8_t  *DecompressedData,
 	 *  Set the pointer to the start of the decompressed Data.
 	 */
 
-	uint8_t* DecompPtr = DecompressedData;
+	DecompPtr = DecompressedData;
 
 	/*
 	 *  Un-filtering is done in place.
@@ -989,11 +992,11 @@ static qboolean UnfilterImage(uint8_t  *DecompressedData,
  */
 
 static qboolean ConvertPixel(struct PNG_Chunk_IHDR *IHDR,
-		unsigned char * OutPtr,
-		uint8_t* DecompPtr,
-		qboolean HasTransparentColour,
-		uint8_t* TransparentColour,
-		uint8_t* OutPal)
+		byte                  *OutPtr,
+		uint8_t               *DecompPtr,
+		qboolean               HasTransparentColour,
+		uint8_t               *TransparentColour,
+		uint8_t               *OutPal)
 {
 	/*
 	 *  input verification
@@ -1538,7 +1541,7 @@ static qboolean DecodeImageInterlaced(struct PNG_Chunk_IHDR *IHDR,
 	uint32_t PassWidth[PNG_Adam7_NumPasses], PassHeight[PNG_Adam7_NumPasses];
 	uint32_t WSkip[PNG_Adam7_NumPasses], WOffset[PNG_Adam7_NumPasses], HSkip[PNG_Adam7_NumPasses], HOffset[PNG_Adam7_NumPasses];
 	uint32_t w, h, p, a;
-	unsigned char *OutPtr;
+	byte *OutPtr;
 	uint8_t *DecompPtr;
 	uint32_t TargetLength;
 

@@ -33,73 +33,101 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 **
 */
 
+#include <termios.h>
+#include <sys/ioctl.h>
 #ifdef __linux__
   #include <sys/stat.h>
   #include <sys/vt.h>
 #endif
-
+#include <stdarg.h>
 #include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
+#include <signal.h>
+#include <pthread.h>
+#include <semaphore.h>
+
+#include <sys/time.h>
+#include <sys/types.h>
 #include <unistd.h>
-
-
-#include <GL/glx.h>
-
 
 #include <X11/keysym.h>
 #include <X11/cursorfont.h>
 #include <X11/Xatom.h>
 #include <X11/XKBlib.h>
-#include <X11/Xlib.h>
-#include <X11/Xutil.h>
 
 
-#ifdef HAVE_XF86DGA
+#include <GL/gl.h>
+#include <GL/glext.h>
+
+#include <GL/glx.h>
+#include <GL/glxext.h>
+
+/*
+#if !defined(__sun)
 #include <X11/extensions/Xxf86dga.h>
 #endif
+*/
 
 
-#include <X11/Xcursor/Xcursor.h>
-#include <X11/extensions/Xdbe.h>
-#include <X11/extensions/Xinerama.h>
-#include <X11/extensions/XInput2.h>
-#include <X11/extensions/Xrandr.h>
-#include <X11/extensions/scrnsaver.h>
-#include <X11/extensions/shape.h>
-#include <X11/extensions/xf86vmode.h>
+#include <dlfcn.h>
 
 
+#ifdef _XF86DGA_H_
+#define HAVE_XF86DGA
+#endif
 
 #include "../client/client.h"
-#include "sys_public.h"
-#include "sys_local.h"
+#include "local.h"
+#include "inputs.h"
+
+
+#define OPENGL_DRIVER_NAME	"libGL.so.1"
+
+#define QGL_LinX11_PROCS \
+	GLE( XVisualInfo*, glXChooseVisual, Display *dpy, int screen, int *attribList ) \
+	GLE( GLXContext, glXCreateContext, Display *dpy, XVisualInfo *vis, GLXContext shareList, Bool direct ) \
+	GLE( void, glXDestroyContext, Display *dpy, GLXContext ctx ) \
+	GLE( Bool, glXMakeCurrent, Display *dpy, GLXDrawable drawable, GLXContext ctx) \
+	GLE( void, glXCopyContext, Display *dpy, GLXContext src, GLXContext dst, GLuint mask ) \
+	GLE( void, glXSwapBuffers, Display *dpy, GLXDrawable drawable )
+
+
+#define QGL_Swp_PROCS \
+	GLE( void,	glXSwapIntervalEXT, Display *dpy, GLXDrawable drawable, int interval ) \
+	GLE( int,	glXSwapIntervalMESA, unsigned interval ) \
+	GLE( int,	glXSwapIntervalSGI, int interval )
+
+
+#define GLE( ret, name, ... ) ret ( APIENTRY * q##name )( __VA_ARGS__ );
+    QGL_LinX11_PROCS;
+    QGL_Swp_PROCS;
+#undef GLE
+
 
 /////////////////////////////
 
-extern cvar_t *in_dgamouse; // user pref for dga mouse
-
-static GLXContext ctx = NULL;
-static qboolean ctxErrorOccurred = qfalse;
 
 static cvar_t* r_fullscreen;
+static cvar_t* r_availableModes;
+
 static cvar_t* r_customwidth;
 static cvar_t* r_customheight;
 
+static cvar_t* r_swapInterval;
 static cvar_t* r_mode;
 
+cvar_t	*r_stencilbits;
+cvar_t	*r_depthbits;
+cvar_t	*r_colorbits;
+
+cvar_t	*r_stereoSeparation;
+
+cvar_t   *vid_xpos;
+cvar_t   *vid_ypos;
+
+static cvar_t* r_glDriver;
+cvar_t* r_drawBuffer;
 ///////////////////////////
  
-typedef enum
-{
-  RSERR_OK,
-
-  RSERR_INVALID_FULLSCREEN,
-  RSERR_INVALID_MODE,
-
-  RSERR_UNKNOWN
-} rserr_t;
-
 glwstate_t glw_state;
 
 Display *dpy = NULL;
@@ -110,15 +138,15 @@ int window_width = 0;
 int window_height = 0;
 
 
+extern cvar_t *in_dgamouse; // user pref for dga mouse
+
+static GLXContext ctx = NULL;
+
 Atom wmDeleteEvent = None;
 
 
 qboolean window_created = qfalse;
 
-
-
-cvar_t   *vid_xpos;
-cvar_t   *vid_ypos;
 
 
 ////////////////////////////////////////////////////////////////////////////////////////
@@ -129,37 +157,40 @@ typedef struct vidmode_s
 	float		pixelAspect;		// pixel width / height
 } vidmode_t;
 
-static const vidmode_t cl_vidModes[19] =
-{
-	{ "Mode  0: 1920x1080",			1920,	1080,	1 },
-	{ "Mode  1: 1440x900 (16:10)",	1440,	900,	1 },
-	{ "Mode  2: 1366x768",			1366,	768,	1 },
-	{ "Mode  3: 640x480",			640,	480,	1 },
-	{ "Mode  4: 800x600",			800,	600,	1 },
-	{ "Mode  5: 1280x800 (16:10)",	1280,	800,	1 },
-	{ "Mode  6: 1024x768",			1024,	768,	1 },
-	{ "Mode  7: 1152x864",			1152,	864,	1 },
-	{ "Mode  8: 1280x1024 (5:4)",	1280,	1024,	1 },
-	{ "Mode  9: 1600x1200",			1600,	1200,	1 },
-	{ "Mode 10: 2048x1536",			2048,	1536,	1 },
-	{ "Mode 11: 4096x2160 (4K)",	4096,	2160,	1 },
-	// extra modes:
-	{ "Mode 12: 1280x960",			1280,	960,	1 },
-	{ "Mode 13: 1280x720",			1280,	720,	1 },
-	{ "Mode 14: 2560x1080 (21:9)",	2560,	1080,	1 },
-	{ "Mode 15: 3840x2160",			3840,	2160,	1 },
-	{ "Mode 16: 1600x900",			1600,	900,	1 },
-    { "Mode 17: 3440x1440 (21:9)",	3440,	1440,	1 },
-	{ "Mode 18: 1680x1050 (16:10)",	1680,	1050,	1 },
-
+static const vidmode_t r_vidModes[] = {
+	{ "Mode  0: 320x240",		320,	240,	1 },
+	{ "Mode  1: 400x300",		400,	300,	1 },
+	{ "Mode  2: 512x384",		512,	384,	1 },
+	{ "Mode  3: 640x480 (480p)",	640,	480,	1 },
+	{ "Mode  4: 800x600",		800,	600,	1 },
+	{ "Mode  5: 960x720",		960,	720,	1 },
+	{ "Mode  6: 1024x768",		1024,	768,	1 },
+	{ "Mode  7: 1152x864",		1152,	864,	1 },
+	{ "Mode  8: 1280x1024",		1280,	1024,	1 },
+	{ "Mode  9: 1600x1200",		1600,	1200,	1 },
+	{ "Mode 10: 2048x1536",		2048,	1536,	1 },
+	{ "Mode 11: 856x480",		856,	480,	1 },		// Q3 MODES END HERE AND EXTENDED MODES BEGIN
+	{ "Mode 12: 1280x720 (720p)",	1280,	720,	1 },
+	{ "Mode 13: 1280x768",		1280,	768,	1 },
+	{ "Mode 14: 1280x800",		1280,	800,	1 },
+	{ "Mode 15: 1280x960",		1280,	960,	1 },
+	{ "Mode 16: 1360x768",		1360,	768,	1 },
+	{ "Mode 17: 1366x768",		1366,	768,	1 }, // yes there are some out there on that extra 6
+	{ "Mode 18: 1360x1024",		1360,	1024,	1 },
+	{ "Mode 19: 1400x1050",		1400,	1050,	1 },
+	{ "Mode 20: 1400x900",		1400,	900,	1 },
+	{ "Mode 21: 1600x900",		1600,	900,	1 },
+	{ "Mode 22: 1680x1050",		1680,	1050,	1 },
+	{ "Mode 23: 1920x1080 (1080p)",	1920,	1080,	1 },
+	{ "Mode 24: 1920x1200",		1920,	1200,	1 },
+	{ "Mode 25: 1920x1440",		1920,	1440,	1 },
+	{ "Mode 26: 2560x1600",		2560,	1600,	1 },
+	{ "Mode 27: 3840x2160 (4K)",	3840,	2160,	1 }
 };
-static const int s_numVidModes = ARRAY_LEN( cl_vidModes );
+static const int s_numVidModes = ARRAY_LEN( r_vidModes );
 
 qboolean CL_GetModeInfo( int *width, int *height, int mode, int dw, int dh, qboolean fullscreen )
 {
-	const	vidmode_t *vm;
-
-
 	if ( mode < -2 )
 		return qfalse;
 
@@ -177,80 +208,123 @@ qboolean CL_GetModeInfo( int *width, int *height, int mode, int dw, int dh, qboo
 		*width = r_customwidth->integer;
 		*height = r_customheight->integer;
 	} else { // predefined resolution
-		vm = &cl_vidModes[ mode ];
-		*width  = vm->width;
-		*height = vm->height;
+		*width  = r_vidModes[ mode ].width;
+		*height = r_vidModes[ mode ].height;
 	}
 	return qtrue;
 }
 
+/*
+static void GLimp_DetectAvailableModes(void)
+{
+	int i, j;
+	char buf[ MAX_STRING_CHARS ] = { 0 };
+
+
+	SDL_DisplayMode windowMode;
+    
+	// If a window exists, note its display index
+	if( SDL_window != NULL )
+	{
+		r_displayIndex->integer = SDL_GetWindowDisplayIndex( SDL_window );
+		if( r_displayIndex->integer < 0 )
+		{
+			Com_Printf("SDL_GetWindowDisplayIndex() failed: %s\n", SDL_GetError() );
+            return;
+		}
+	}
+
+	int numSDLModes = SDL_GetNumDisplayModes( r_displayIndex->integer );
+
+	if( SDL_GetWindowDisplayMode( SDL_window, &windowMode ) < 0 || numSDLModes <= 0 )
+	{
+		Com_Printf("Couldn't get window display mode, no resolutions detected: %s\n", SDL_GetError() );
+		return;
+	}
+
+	int numModes = 0;
+	SDL_Rect* modes = SDL_calloc(numSDLModes, sizeof( SDL_Rect ));
+	if ( !modes )
+	{
+        ////////////////////////////////////
+		Com_Error(ERR_FATAL, "Out of memory" );
+        ////////////////////////////////////
+	}
+
+	for( i = 0; i < numSDLModes; i++ )
+	{
+		SDL_DisplayMode mode;
+
+		if( SDL_GetDisplayMode( r_displayIndex->integer, i, &mode ) < 0 )
+			continue;
+
+		if( !mode.w || !mode.h )
+		{
+			Com_Printf( "Display supports any resolution\n" );
+			SDL_free( modes );
+			return;
+		}
+
+		if( windowMode.format != mode.format )
+			continue;
+
+		// SDL can give the same resolution with different refresh rates.
+		// Only list resolution once.
+		for( j = 0; j < numModes; j++ )
+		{
+			if( (mode.w == modes[ j ].w) && (mode.h == modes[ j ].h) )
+				break;
+		}
+
+		if( j != numModes )
+			continue;
+
+		modes[ numModes ].w = mode.w;
+		modes[ numModes ].h = mode.h;
+		numModes++;
+	}
+
+	for( i = 0; i < numModes; i++ )
+	{
+		const char *newModeString = va( "%ux%u ", modes[ i ].w, modes[ i ].h );
+
+		if( strlen( newModeString ) < (int)sizeof( buf ) - strlen( buf ) )
+			Q_strcat( buf, sizeof( buf ), newModeString );
+		else
+			Com_Printf( "Skipping mode %ux%u, buffer too small\n", modes[ i ].w, modes[ i ].h );
+	}
+
+	if( *buf )
+	{
+		buf[ strlen( buf ) - 1 ] = 0;
+		Com_Printf("Available modes: '%s'\n", buf );
+		Cvar_Set( "r_availableModes", buf );
+	}
+	SDL_free( modes );
+}
+*/
 
 static void ModeList_f( void )
 {
 	int i;
 
-	printf("\n" );
+	Com_Printf("\n" );
 	for ( i = 0; i < s_numVidModes; i++ )
 	{
-		printf( "%s\n", cl_vidModes[i].description );
+		Com_Printf( "%s\n", r_vidModes[i].description );
 	}
-	printf("\n" );
+	Com_Printf("\n" );
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////
 
-#define GLX_CONTEXT_MAJOR_VERSION_ARB       0x2091
-#define GLX_CONTEXT_MINOR_VERSION_ARB       0x2092
-typedef GLXContext (*glXCreateContextAttribsARBProc)(Display*, GLXFBConfig, GLXContext, Bool, const int*);
-
-// Helper to check for extension string presence.  Adapted from:
-//   http://www.opengl.org/resources/features/OGLextensions/
-static qboolean isExtensionSupported(const char *extList, const char *extension)
+void* GLimp_GetProcAddress( const char *symbol )
 {
-  const char *start;
-  const char *where, *terminator;
-  
-  /* Extension names should not have spaces. */
-  where = strchr(extension, ' ');
-  if (where || *extension == '\0')
-    return qfalse;
-
-  /* It takes a bit of care to be fool-proof about parsing the
-     OpenGL extensions string. Don't be fooled by sub-strings,
-     etc. */
-  for (start=extList;;) {
-    where = strstr(start, extension);
-
-    if (!where)
-      break;
-
-    terminator = where + strlen(extension);
-
-    if ( where == start || *(where - 1) == ' ' )
-      if ( *terminator == ' ' || *terminator == '\0' )
-        return qtrue;
-
-    start = terminator;
-  }
-
-  return qfalse;
+	void *sym = dlsym(glw_state.OpenGLLib, symbol);
+//    void *sym = glXGetProcAddressARB((const unsigned char *)symbol);
+    return sym;
 }
 
-
-/////////////////////////////////////////////////////////////////////////////////////////
-void* GLimp_GetProcAddress(const char *symbol)
-{
-    return Sys_GetFunAddr(glw_state.OpenGLLib, symbol);
-}
-
-/*
-** This is responsible for binding our qgl function pointers to 
-** the appropriate GL stuff.  In Windows this means doing a 
-** LoadLibrary and a bunch of calls to GetProcAddress.  On other
-** operating systems we need to do the right thing, whatever that
-** might be.
-** 
-*/
 
 
 
@@ -261,11 +335,11 @@ void* GLimp_GetProcAddress(const char *symbol)
 */
 static void GL_Shutdown( qboolean unloadDLL )
 {
-	printf( "...shutting down GL\n" );
+	Com_Printf( "...shutting down GL\n" );
 
 	if ( glw_state.OpenGLLib && unloadDLL )
 	{
-		printf( "...unloading OpenGL DLL\n" );
+		Com_Printf( "...unloading OpenGL DLL\n" );
 		// 25/09/05 Tim Angus <tim@ngus.net>
 		// Certain combinations of hardware and software, specifically
 		// Linux/SMP/Nvidia/agpgart (OK, OK. MY combination of hardware and
@@ -281,29 +355,50 @@ static void GL_Shutdown( qboolean unloadDLL )
 		// placing a short delay before libGL is unloaded works around the problem.
 		// This delay is changable via the r_GLlibCoolDownMsec cvar (nice name
 		// huh?), and it defaults to 0. For me, 500 seems to work.
-		//if( r_GLlibCoolDownMsec->integer )`
+		//if( r_GLlibCoolDownMsec->integer )
 		//	usleep( r_GLlibCoolDownMsec->integer * 1000 );
-		usleep( 50 * 1000 );
+		usleep( 250 * 1000 );
 
-		Sys_UnloadDll( glw_state.OpenGLLib );
+		dlclose( glw_state.OpenGLLib );
 
 		glw_state.OpenGLLib = NULL;
 	}
-    
 }
-
-
 
 
 
 ////////////////////////////////////////////////////////////////////////////////
 //about glw
-static int GLW_SetMode(int mode, qboolean fullscreen, glconfig_t* config, qboolean context)
+static int GLW_SetMode(glconfig_t *config, int mode, qboolean fullscreen )
 {
+	// these match in the array
+	#define ATTR_RED_IDX 2
+	#define ATTR_GREEN_IDX 4
+	#define ATTR_BLUE_IDX 6
+	#define ATTR_DEPTH_IDX 9
+	#define ATTR_STENCIL_IDX 11
 
+	static int attrib[] =
+	{
+		GLX_RGBA,         // 0
+		GLX_RED_SIZE, 4,      // 1, 2
+		GLX_GREEN_SIZE, 4,      // 3, 4
+		GLX_BLUE_SIZE, 4,     // 5, 6
+		GLX_DOUBLEBUFFER,     // 7
+		GLX_DEPTH_SIZE, 1,      // 8, 9
+		GLX_STENCIL_SIZE, 1,    // 10, 11
+		None
+	};
+
+
+	Window root;
+	XVisualInfo *visinfo;
+
+	XSetWindowAttributes attr;
 	XSizeHints sizehints;
 	unsigned long mask;
-	int actualWidth = 0, actualHeight = 0, actualRate = 60;
+	int actualWidth, actualHeight, actualRate;
+
 
 	window_width = 0;
 	window_height = 0;
@@ -317,12 +412,11 @@ static int GLW_SetMode(int mode, qboolean fullscreen, glconfig_t* config, qboole
 
 	if ( dpy == NULL )
 	{
-		fprintf( stderr, "Error: couldn't open the X display\n" );
-		return RSERR_INVALID_MODE;
+		Com_Printf( "Couldn't open the X display\n" );
 	}
 
 	scrnum = DefaultScreen( dpy );
-	Window root = RootWindow( dpy, scrnum );
+	root = RootWindow( dpy, scrnum );
 
 	// Init xrandr and get desktop resolution if available
 	RandR_Init( vid_xpos->integer, vid_ypos->integer, 640, 480 );
@@ -345,17 +439,16 @@ static int GLW_SetMode(int mode, qboolean fullscreen, glconfig_t* config, qboole
 
 	if ( !CL_GetModeInfo( &config->vidWidth, &config->vidHeight, mode, glw_state.desktop_width, glw_state.desktop_height, fullscreen ) )
 	{
-		printf( " invalid mode\n" );
-		return RSERR_INVALID_MODE;
+        Com_Error( ERR_FATAL, " invalid mode\n" );
 	}
 
 	actualWidth = config->vidWidth;
 	actualHeight = config->vidHeight;
 
 	if ( actualRate )
-		printf( " %d %d @%iHz\n", actualWidth, actualHeight, actualRate );
+		Com_Printf( " %d %d @%iHz\n", actualWidth, actualHeight, actualRate );
 	else
-		printf( " %d %d\n", actualWidth, actualHeight );
+		Com_Printf( " %d %d\n", actualWidth, actualHeight );
 
 	if ( fullscreen ) // try randr first
 	{
@@ -367,380 +460,212 @@ static int GLW_SetMode(int mode, qboolean fullscreen, glconfig_t* config, qboole
 		if ( fullscreen )
 			VidMode_SetMode( &actualWidth, &actualHeight, &actualRate );
 		else
-			printf( "XFree86-VidModeExtension: Ignored on non-fullscreen\n" );
+			Com_Printf( "XFree86-VidModeExtension: Ignored on non-fullscreen\n" );
 	}
 
 
-/////////////////////////////
-    if(context)
-    {
-     // Get a matching FB config
-        static int visual_attribs[] =
-        {
-          GLX_X_RENDERABLE    , True,
-          GLX_DRAWABLE_TYPE   , GLX_WINDOW_BIT,
-          GLX_RENDER_TYPE     , GLX_RGBA_BIT,
-          GLX_X_VISUAL_TYPE   , GLX_TRUE_COLOR,
-          GLX_RED_SIZE        , 8,
-          GLX_GREEN_SIZE      , 8,
-          GLX_BLUE_SIZE       , 8,
-          GLX_ALPHA_SIZE      , 8,
-          GLX_DEPTH_SIZE      , 24,
-          GLX_STENCIL_SIZE    , 0,
-          GLX_DOUBLEBUFFER    , True, 
-          //GLX_SAMPLE_BUFFERS  , 1,
-          //GLX_SAMPLES         , 4,
-          None
-        };
+    attrib[ATTR_DEPTH_IDX] = 24; // default to 24 depth
+    attrib[ATTR_STENCIL_IDX] = 0;
+    attrib[ATTR_RED_IDX] = 8;
+    attrib[ATTR_GREEN_IDX] = 8;
+    attrib[ATTR_BLUE_IDX] = 8;
+    visinfo = qglXChooseVisual( dpy, scrnum, attrib );
+	if ( !visinfo )
+	{
+		Com_Printf( "Couldn't get a visual\n" );
+	}
 
-        int glx_major, glx_minor;
-     
-        // FBConfigs were added in GLX version 1.3.
-        if ( !glXQueryVersion( dpy, &glx_major, &glx_minor ) || ( ( glx_major == 1 ) && ( glx_minor < 3 ) ) || ( glx_major < 1 ) )
-        {
-            printf("Invalid GLX version");
-            exit(1);
-        }
-        
-        printf( "Getting matching framebuffer configs\n" );
-        int fbcount;
-        GLXFBConfig* fbc = glXChooseFBConfig(dpy, scrnum, visual_attribs, &fbcount);
-        if (!fbc)
-        {
-            printf( "Failed to retrieve a framebuffer config\n" );
-            exit(1);
-        }
-        printf( "Found %d matching FB configs.\n", fbcount );
+    printf( "Using %d/%d/%d Color bits, %d depth, %d stencil display.\n", 
+        attrib[ATTR_RED_IDX], attrib[ATTR_GREEN_IDX], attrib[ATTR_BLUE_IDX],
+        attrib[ATTR_DEPTH_IDX], attrib[ATTR_STENCIL_IDX]);
 
-        // Pick the FB config/visual with the most samples per pixel
-        printf( "Getting XVisualInfos\n" );
-        int best_fbc = -1, worst_fbc = -1, best_num_samp = -1, worst_num_samp = 999;
-
-        int i;
-        for (i=0; i<fbcount; ++i)
-        {
-            XVisualInfo *vi = glXGetVisualFromFBConfig( dpy, fbc[i] );
-            if ( vi )
-            {
-                int samp_buf, samples;
-                glXGetFBConfigAttrib(dpy, fbc[i], GLX_SAMPLE_BUFFERS, &samp_buf );
-                glXGetFBConfigAttrib(dpy, fbc[i], GLX_SAMPLES       , &samples  );
-          
-                printf("  Matching fbconfig %d, visual ID 0x%2x: SAMPLE_BUFFERS = %d, SAMPLES = %d\n", i, vi->visualid, samp_buf, samples );
-            
-                if ( (best_fbc < 0) || (samp_buf && (samples > best_num_samp)) )
-                {
-                    best_fbc = i;
-                    best_num_samp = samples;
-                }
-                
-                if ( (worst_fbc < 0) || !samp_buf || (samples < worst_num_samp) )
-                {
-                    worst_fbc = i;
-                    worst_num_samp = samples;
-                }
-            }
-            XFree( vi );
-        }
-        
-        GLXFBConfig bestFbc = fbc[ best_fbc ];
+    config->colorBits = 24;
+    config->depthBits = 24;
+    config->stencilBits = 0;
 
 
-        // Get a visual
-        XVisualInfo *vi = glXGetVisualFromFBConfig( dpy, bestFbc );
-        printf( "Chosen visual ID = 0x%x\n", vi->visualid );
+    config->vidWidth = window_width = actualWidth;
+    config->vidHeight = window_height = actualHeight;
+    config->displayFrequency = actualRate;
 
-        
-        XSetWindowAttributes attr;
-        attr.colormap = XCreateColormap(dpy, root, vi->visual, AllocNone );
-        attr.background_pixmap = None ;
-        attr.border_pixel = 0;
-        attr.event_mask = (KeyPressMask | KeyReleaseMask) |
-        (ButtonPressMask | ButtonReleaseMask | PointerMotionMask | ButtonMotionMask)
-                | (VisibilityChangeMask | StructureNotifyMask | FocusChangeMask );      
-       
-        // Be sure to free the FBConfig list allocated by glXChooseFBConfig()
-        XFree( fbc );
-
-        if ( fullscreen )
-        {
-            mask = CWBackPixel | CWColormap | CWSaveUnder | CWBackingStore | CWEventMask | CWOverrideRedirect;
-            attr.override_redirect = True;
-            attr.backing_store = NotUseful;
-            attr.save_under = False;
-        }
-        else
-        {
-            mask = CWBackPixel | CWBorderPixel | CWColormap | CWEventMask;
-        }
-        
-        win = XCreateWindow( dpy, root, 0, 0, actualWidth, actualHeight, 0, 
-                vi->depth, InputOutput, vi->visual, mask, &attr );
-        if ( !win )
-        {
-            printf( "Failed to create window.\n" );
-            exit(1);
-        }
-             // Done with the visual info data
-        XFree( vi );
-
-        XStoreName( dpy, win, CLIENT_WINDOW_TITLE);
-        XMapWindow( dpy, win );       
-//////////
-        glw_state.cdsFullscreen = fullscreen;
+    config->windowAspect = (float) window_width / (float) window_height;
+    config->isFullscreen = glw_state.cdsFullscreen = fullscreen;
 
 
-        // Get the default screen's GLX extension list
-        const char *glxExts = glXQueryExtensionsString( dpy, scrnum);
 
-        // NOTE: It is not necessary to create or make current to a context before
-        // calling glXGetProcAddressARB
-        glXCreateContextAttribsARBProc glXCreateContextAttribsARB = 0;
-        glXCreateContextAttribsARB = (glXCreateContextAttribsARBProc) glXGetProcAddressARB( (const GLubyte *) "glXCreateContextAttribsARB" );
+	/* window attributes */
+	attr.background_pixel = BlackPixel( dpy, scrnum );
+	attr.border_pixel = 0;
+	attr.colormap = XCreateColormap( dpy, root, visinfo->visual, AllocNone );
+	attr.event_mask = X_MASK;
 
+	if ( fullscreen )
+	{
+		mask = CWBackPixel | CWColormap | CWSaveUnder | CWBackingStore |
+			CWEventMask | CWOverrideRedirect;
+		attr.override_redirect = True;
+		attr.backing_store = NotUseful;
+		attr.save_under = False;
+	}
+	else
+	{
+		mask = CWBackPixel | CWBorderPixel | CWColormap | CWEventMask;
+	}
 
-        // Install an X error handler so the application won't exit if GL 3.0
-        // context allocation fails.
-        //
-        // Note this error handler is global.  All display connections in all threads
-        // of a process use the same error handler, so be sure to guard against other
-        // threads issuing X commands while this code is running.
-        ctxErrorOccurred = qfalse;
-        //int (*oldHandler)(Display*, XErrorEvent*) = XSetErrorHandler(&ctxErrorHandler);
+	win = XCreateWindow( dpy, root, 0, 0,
+		actualWidth, actualHeight,
+		0, visinfo->depth, InputOutput,
+		visinfo->visual, mask, &attr );
 
-        // Check for the GLX_ARB_create_context extension string and the function.
-        // If either is not present, use GLX 1.3 context creation method.
-        if ( !isExtensionSupported( glxExts, "GLX_ARB_create_context" ) || !glXCreateContextAttribsARB )
-        {
-            printf( "glXCreateContextAttribsARB() not found, using old-style GLX context\n" );
-            ctx = glXCreateNewContext( dpy, bestFbc, GLX_RGBA_TYPE, 0, True );
-        }
-        else
-        {
-            // If it does, try to get a GL 3.0 context!
-            int context_attribs[] =
-            {
-                GLX_CONTEXT_MAJOR_VERSION_ARB, 3,
-                GLX_CONTEXT_MINOR_VERSION_ARB, 3,
-                //GLX_CONTEXT_FLAGS_ARB        , 0,
-                None
-            };
+	XStoreName( dpy, win, CLIENT_WINDOW_TITLE );
 
-            ctx = glXCreateContextAttribsARB( dpy, bestFbc, 0, True, context_attribs );
+	/* GH: Don't let the window be resized */
+	sizehints.flags = PMinSize | PMaxSize;
+	sizehints.min_width = sizehints.max_width = actualWidth;
+	sizehints.min_height = sizehints.max_height = actualHeight;
 
-            // Sync to ensure any errors generated are processed.
-            XSync( dpy, False );
-            if( !ctxErrorOccurred && ctx )
-                printf( "Created GL 3.2 context\n" );
-            else
-            {
-              // Couldn't create GL 3.0 context.  Fall back to old-style 2.x context.
-              // When a context version below 3.0 is requested, implementations will
-              // return the newest context version compatible with OpenGL versions less
-              // than version 3.0.
-              // GLX_CONTEXT_MAJOR_VERSION_ARB = 1
-              context_attribs[1] = 1;
-              // GLX_CONTEXT_MINOR_VERSION_ARB = 0
-              context_attribs[3] = 0;
+	XSetWMNormalHints( dpy, win, &sizehints );
 
-              ctxErrorOccurred = qfalse;
+	XMapWindow( dpy, win );
 
-              printf( "Failed to create GL 3.2 context, using old-style GLX context\n" );
-              ctx = glXCreateContextAttribsARB( dpy, bestFbc, 0, True, context_attribs );
-            }
-        }
-          // Sync to ensure any errors generated are processed.
-          XSync( dpy, False );
+	wmDeleteEvent = XInternAtom( dpy, "WM_DELETE_WINDOW", True );
+	if ( wmDeleteEvent == BadValue )
+		wmDeleteEvent = None;
+	if ( wmDeleteEvent != None )
+		XSetWMProtocols( dpy, win, &wmDeleteEvent, 1 );
 
-          // Restore the original error handler
-          //XSetErrorHandler( oldHandler );
-
-          if( ctxErrorOccurred || !ctx )
-          {
-            printf( "Failed to create an OpenGL context\n" );
-            exit(1);
-          }
-
-          // Verifying that context is a direct context
-          if( ! glXIsDirect ( dpy, ctx ) )
-            printf( "Indirect GLX rendering context obtained\n" );
-          else
-            printf( "Direct GLX rendering context obtained\n" );
-
-///////////////////////////
-        /* GH: Don't let the window be resized */
-        sizehints.flags = PMinSize | PMaxSize;
-        sizehints.min_width = sizehints.max_width = actualWidth;
-        sizehints.min_height = sizehints.max_height = actualHeight;
-
-        XSetWMNormalHints(dpy, win, &sizehints);
-
-        XMapWindow(dpy, win);
-
-        wmDeleteEvent = XInternAtom( dpy, "WM_DELETE_WINDOW", True );
-
-        if ( wmDeleteEvent == BadValue )
-            wmDeleteEvent = None;
-        if ( wmDeleteEvent != None )
-            XSetWMProtocols( dpy, win, &wmDeleteEvent, 1 );
-
+    if(win)
+	{
         window_created = qtrue;
-
-        if ( fullscreen )
-        {
-            if ( glw_state.randr_active || glw_state.vidmode_active )
-                XMoveWindow( dpy, win, glw_state.desktop_x, glw_state.desktop_y );
-        }
-        else
-        {
-            XMoveWindow( dpy, win, vid_xpos->integer, vid_ypos->integer );
-        }
-        XSync( dpy, False );
-
-///////////////////////////
+        //GLimp_DetectAvailableModes();
     }
-    else
-    {
-        	// these match in the array
-        #define ATTR_RED_IDX 2
-        #define ATTR_GREEN_IDX 4
-        #define ATTR_BLUE_IDX 6
-        #define ATTR_DEPTH_IDX 9
-        #define ATTR_STENCIL_IDX 11
+	if ( fullscreen )
+	{
+		if ( glw_state.randr_active || glw_state.vidmode_active )
+			XMoveWindow( dpy, win, glw_state.desktop_x, glw_state.desktop_y );
+	}
+	else
+	{
+		XMoveWindow( dpy, win, vid_xpos->integer, vid_ypos->integer );
+	}
 
-        static int attrib[] =
-        {
-            GLX_RGBA,         // 0
-            GLX_RED_SIZE, 4,      // 1, 2
-            GLX_GREEN_SIZE, 4,      // 3, 4
-            GLX_BLUE_SIZE, 4,     // 5, 6
-            GLX_DOUBLEBUFFER,     // 7
-            GLX_DEPTH_SIZE, 1,      // 8, 9
-            GLX_STENCIL_SIZE, 1,    // 10, 11
-            None
-        };
+	XFlush( dpy );
+	XSync( dpy, False );
+	ctx = qglXCreateContext( dpy, visinfo, NULL, True );
+	XSync( dpy, False );
 
-        attrib[ATTR_DEPTH_IDX] = 24; // default to 24 depth
-        attrib[ATTR_STENCIL_IDX] = 0;
-        attrib[ATTR_RED_IDX] = 8;
-        attrib[ATTR_GREEN_IDX] = 8;
-        attrib[ATTR_BLUE_IDX] = 8;
-        
-        XVisualInfo* visinfo = glXChooseVisual( dpy, scrnum, attrib );
-        if ( !visinfo )
-        {
-            printf( "Couldn't get a visual\n" );
-        }
+	/* GH: Free the visinfo after we're done with it */
+	XFree( visinfo );
 
-        printf( "Using %d/%d/%d Color bits, %d depth, %d stencil display.\n", 
-            attrib[ATTR_RED_IDX], attrib[ATTR_GREEN_IDX], attrib[ATTR_BLUE_IDX],
-            attrib[ATTR_DEPTH_IDX], attrib[ATTR_STENCIL_IDX]);
-
-        window_width = actualWidth;
-        window_height = actualHeight;
+	qglXMakeCurrent( dpy, win, ctx );
 
 
-        /* window attributes */
-        XSetWindowAttributes attr;
-
-        attr.background_pixel = BlackPixel( dpy, scrnum );
-        attr.border_pixel = 0;
-        attr.colormap = XCreateColormap( dpy, root, visinfo->visual, AllocNone );
-        attr.event_mask = (KeyPressMask | KeyReleaseMask)
-                | (ButtonPressMask | ButtonReleaseMask | PointerMotionMask | ButtonMotionMask )
-                | (VisibilityChangeMask | StructureNotifyMask | FocusChangeMask );
-
-        if ( fullscreen )
-        {
-            mask = CWBackPixel | CWColormap | CWSaveUnder | CWBackingStore |
-                CWEventMask | CWOverrideRedirect;
-            attr.override_redirect = True;
-            attr.backing_store = NotUseful;
-            attr.save_under = False;
-        }
-        else
-        {
-            mask = CWBackPixel | CWBorderPixel | CWColormap | CWEventMask;
-        }
-
-        win = XCreateWindow( dpy, root, 0, 0, actualWidth, actualHeight,
-            0, visinfo->depth, InputOutput, visinfo->visual, mask, &attr );
-
-        XStoreName( dpy, win, CLIENT_WINDOW_TITLE );
-
-        /* GH: Don't let the window be resized */
-        sizehints.flags = PMinSize | PMaxSize;
-        sizehints.min_width = sizehints.max_width = actualWidth;
-        sizehints.min_height = sizehints.max_height = actualHeight;
-
-        XSetWMNormalHints( dpy, win, &sizehints );
-
-        XMapWindow( dpy, win );
-
-        wmDeleteEvent = XInternAtom( dpy, "WM_DELETE_WINDOW", True );
-        if ( wmDeleteEvent == BadValue )
-            wmDeleteEvent = None;
-        if ( wmDeleteEvent != None )
-            XSetWMProtocols( dpy, win, &wmDeleteEvent, 1 );
-
-        window_created = qtrue;
-
-        if ( fullscreen )
-        {
-            if ( glw_state.randr_active || glw_state.vidmode_active )
-                XMoveWindow( dpy, win, glw_state.desktop_x, glw_state.desktop_y );
-        }
-        else
-        {
-            XMoveWindow( dpy, win, vid_xpos->integer, vid_ypos->integer );
-        }
-
-        XFlush( dpy );
-        XSync( dpy, False );
-        ctx = glXCreateContext(dpy, visinfo, NULL, True);
-        XSync( dpy, False );
-        	/* GH: Free the visinfo after we're done with it */
-	    XFree( visinfo );
-
-    }
-
-
-    printf( "Making context current\n" );
-	glXMakeCurrent(dpy, win, ctx);
-
-    glClearColor( 0, 0.5, 1, 1 );
-    glClear( GL_COLOR_BUFFER_BIT );
-    glXSwapBuffers ( dpy, win );
-    sleep( 1 );
-
-  
 	Key_ClearStates();
 
 	XSetInputFocus( dpy, win, RevertToParent, CurrentTime );
 
-	return RSERR_OK;
+	return 0;
 }
 
 
-static qboolean GLW_StartDriverAndSetMode(int mode, qboolean fullscreen, glconfig_t* config, qboolean context)
+
+/*
+** GLW_LoadOpenGL
+**
+** GLimp_win.c internal function that that attempts to load and use a specific OpenGL DLL.
+**
+**                 https://www.khronos.org/registry/OpenGL/ABI/
+**
+** This is responsible for binding our qgl function pointers to the appropriate GL stuff.
+** In Windows this means doing a LoadLibrary and a bunch of calls to GetProcAddress.
+** On other operating systems we need to do the right thing, whatever that might be.
+** 
+** There are two link-level libraries. libGL includes the OpenGL and GLX entry points 
+** and in general depends on underlying hardware and/or X server dependent code that 
+** may or may not be incorporated into this library. 
+** The libraries must export all OpenGL 1.2, GLU 1.3, GLX 1.3, and ARB_multitexture 
+** entry points statically. It's possible (but unlikely) that additional ARB or vendor
+** extensions will be mandated before the ABI is finalized. Applications should not 
+** expect to link statically against any entry points not specified here. Because 
+** non-ARB extensions vary so widely and are constantly increasing in number, 
+** it's infeasible to require that they all be supported, and extensions can always 
+** be added to hardware drivers after the base link libraries are released. These 
+** drivers are dynamically loaded by libGL, so extensions not in the base library
+** must also be obtained dynamically. 
+** 
+** To perform the dynamic query, libGL also must export an entry point called 
+    void (*glXGetProcAddressARB(const GLubyte *))();
+** It takes the string name of a GL or GLX entry point and returns a pointer to
+** a function implementing that entry point. It is functionally identical to the 
+** wglGetProcAddress query defined by the Windows OpenGL library, except that the 
+** function pointers returned are context independent, unlike the WGL query. 
+** All OpenGL and GLX entry points may be queried with this extension; 
+
+** Thread safety (the ability to issue OpenGL calls to different graphics contexts
+** from different application threads) is required. Multithreaded applications must
+** use -lpthread. 
+** libGL must be transitively linked with any libraries they require in their own 
+** internal implementation, so that applications don't fail on some implementations
+** due to not pulling in libraries needed not by the app, but by the implementation. 
+** 
+** The following header files are required:
+
+    <GL/gl.h> --- OpenGL
+    <GL/glx.h> --- GLX
+    <GL/glext.h> --- OpenGL Extensions
+    <GL/glxext.h> --- GLX Extensions
+
+** All OpenGL 1.2 and ARB_multitexture, and GLX 1.3 entry points and enumerants
+** must be present in the corresponding header files gl.h, and glx.h, 
+** even if only OpenGL 1.1 is implemented at runtime by the associated runtime libraries. 
+** Non-ARB OpenGL extensions are defined in glext.h, and non-ARB GLX extensions in glxext.h.
+
+** gl.h must define the symbol GL_OGLBASE_VERSION. This symbol must be an integer
+** defining the version of the ABI supported by the headers. Its value is 
+** 1000 * major_version + minor_version where major_version and minor_version are
+** the major and minor revision numbers of this ABI standard. The primary purpose
+** of the symbol is to provide a compile-time test by which application code knows
+** whether the ABI guarantees are in force.
+*/
+
+
+static qboolean GLW_LoadOpenGL(const char* dllname)
 {
-	rserr_t err = GLW_SetMode(mode, fullscreen, config, context);
-
-	switch ( err )
+	if ( glw_state.OpenGLLib == NULL )
 	{
-        case RSERR_INVALID_FULLSCREEN:
-            printf( "...WARNING: fullscreen unavailable in this mode\n" );
-            return qfalse;
+		glw_state.OpenGLLib = Sys_LoadLibrary( dllname );
+		Com_Printf( "load %s\n", dllname);
 
-        case RSERR_INVALID_MODE:
-            printf( "...WARNING: could not set the given mode (%d)\n", mode );
-            return qfalse;
+        if ( glw_state.OpenGLLib == NULL )
+		{
+			Com_Error(ERR_FATAL, "GL_Init: failed to load %s from /etc/ld.so.conf: %s\n", dllname, dlerror());
+		}
+	}
+		
+    // expand constants before stringifying them
+    // load the GLX funs
+    #define GLE( ret, name, ... ) \
+        q##name = GLimp_GetProcAddress( XSTRING( name ) ); if ( !q##name ) Com_Error(ERR_FATAL, "Error resolving glx core functions\n");
+	    QGL_LinX11_PROCS;
+    #undef GLE
 
-        default:
-            break;
+
+    #define GLE( ret, name, ... ) \
+        q##name = GLimp_GetProcAddress( XSTRING( name ) );
+        QGL_Swp_PROCS;
+    #undef GLE
+
+	if( qglXSwapIntervalEXT || qglXSwapIntervalMESA || qglXSwapIntervalSGI )
+	{
+		Com_Printf( "...using GLX_EXT_swap_control\n" );
+		Cvar_SetModified( "r_swapInterval", qtrue ); // force a set next frame
+	}
+	else
+	{
+		Com_Printf( "...GLX_EXT_swap_control not found\n" );
 	}
 
-	return qtrue;
+    return qtrue;
 }
 
 
@@ -762,14 +687,7 @@ static int qXErrorHandler( Display *dpy, XErrorEvent *ev )
 	return 0;
 }
 
-//////////////////////////////////////////////////////////////////////////////////
-
-
-void MinimizeWindow(void)
-{
-    XIconifyWindow(dpy, win, scrnum);
-    XFlush(dpy);
-}
+///////////////////////////////////////////////////////////////////////////////////////////////
 
 /*
 ** GLimp_Init
@@ -777,61 +695,75 @@ void MinimizeWindow(void)
 ** This routine is responsible for initializing the OS specific portions
 ** of OpenGL.
 */
-void GLimp_Init(glconfig_t *config, qboolean context )
+void GLimp_Init( glconfig_t *config )
 {
     r_fullscreen = Cvar_Get( "r_fullscreen", "0", CVAR_ARCHIVE | CVAR_LATCH);
 	r_mode = Cvar_Get( "r_mode", "-2", CVAR_ARCHIVE | CVAR_LATCH );
+
+	r_colorbits = Cvar_Get( "r_colorbits", "24", CVAR_ARCHIVE | CVAR_LATCH );
+	r_stencilbits = Cvar_Get( "r_stencilbits", "0", CVAR_ARCHIVE | CVAR_LATCH );
+	r_depthbits = Cvar_Get( "r_depthbits", "24", CVAR_ARCHIVE | CVAR_LATCH ); 
+	r_stereoSeparation = Cvar_Get( "r_stereoSeparation", "64", CVAR_ARCHIVE );
+    r_drawBuffer = Cvar_Get( "r_drawBuffer", "GL_BACK", CVAR_CHEAT );
     
 	r_customwidth = Cvar_Get( "r_customwidth", "1920", CVAR_ARCHIVE | CVAR_LATCH );
 	r_customheight = Cvar_Get( "r_customheight", "1080", CVAR_ARCHIVE | CVAR_LATCH );
-    
-    
+   	r_swapInterval = Cvar_Get( "r_swapInterval", "0", CVAR_ARCHIVE );
+	r_glDriver = Cvar_Get( "r_glDriver", OPENGL_DRIVER_NAME, CVAR_ARCHIVE | CVAR_LATCH );
+
+
     vid_xpos = Cvar_Get( "vid_xpos", "3", CVAR_ARCHIVE );
 	vid_ypos = Cvar_Get( "vid_ypos", "22", CVAR_ARCHIVE );
 
-    Cmd_AddCommand( "modelist", ModeList_f );
-	Cmd_AddCommand( "minimize", MinimizeWindow );
 
-    IN_Init();   // rcg08312005 moved into glimp.
-    //load opengl dll
-	glw_state.OpenGLLib = Sys_LoadDll(OPENGL_DRIVER_NAME, qtrue);
+	if ( r_swapInterval->integer )
+		setenv( "vblank_mode", "2", 1 );
+	else
+		setenv( "vblank_mode", "1", 1 );
 
-    
-	// set up our custom error handler for X failures
-	XSetErrorHandler( &qXErrorHandler );
-
-	// feedback to renderer configuration
-    // glw_state.config = config;
-    qboolean fullscreen = (r_fullscreen->integer != 0);
-
-	config->isFullscreen = fullscreen;
-    
-
-	
-	// This values force the UI to disable driver selection
-	config->driverType = GLDRV_ICD;
-	config->hardwareType = GLHW_GENERIC;
-    config->colorBits = 24;
-    config->depthBits = 24;
-    config->stencilBits = 0;
 	// load the GL layer
 
 
+    Cmd_AddCommand( "modelist", ModeList_f );
+
+	// This values force the UI to disable driver selection
+	config->driverType = GLDRV_ICD;
+	config->hardwareType = GLHW_GENERIC;
+
+    IN_Init();   // rcg08312005 moved into glimp.
+
+	// set up our custom error handler for X failures
+	XSetErrorHandler( &qXErrorHandler );
+
+	//
+	// load and initialize the specific OpenGL driver
+	//
+	printf( "...GLW_StartOpenGL...\n" );
+	// load and initialize the specific OpenGL driver
+	if ( !GLW_LoadOpenGL( r_glDriver->string ) )
+	{
+		if ( Q_stricmp( r_glDriver->string, OPENGL_DRIVER_NAME ) != 0 )
+		{
+			// try default driver
+			if ( GLW_LoadOpenGL( OPENGL_DRIVER_NAME ) )
+			{
+				Cvar_Set( "r_glDriver", OPENGL_DRIVER_NAME );
+				r_glDriver->modified = qfalse;
+				return;
+			}
+		}
+
+		Com_Error( ERR_FATAL, "GLW_StartOpenGL() - could not load OpenGL subsystem\n" );
+	}
+
+
     // create the window and set up the context
-    if ( GLW_StartDriverAndSetMode(r_mode->integer, fullscreen, config, context) )
+
+    if( 0 != GLW_SetMode( config, r_mode->integer, (r_fullscreen->integer != 0) ))
     {
-        return;
-    }
-    else if ( r_mode->integer != 3 )
-    {
-        if ( GLW_StartDriverAndSetMode(3, fullscreen, config, context) )
-        {
-            return;
-        }
-    }
-    else
-    {
-        GL_Shutdown( qtrue );
+        r_mode->integer = 3;
+        if(0 != GLW_SetMode( config, 3, qfalse ))
+            Com_Error(ERR_FATAL, "Error setting given display modes\n" );
     }
 }
 
@@ -846,7 +778,25 @@ void GLimp_Init(glconfig_t *config, qboolean context )
 void GLimp_EndFrame( void )
 {
 	// don't flip if drawing to front buffer
-	glXSwapBuffers( dpy, win );
+	if ( Q_stricmp( r_drawBuffer->string, "GL_FRONT" ) != 0 )
+	{
+		qglXSwapBuffers( dpy, win );
+	}
+
+	//
+	// swapinterval stuff
+	//
+	if ( r_swapInterval->modified ) {
+		r_swapInterval->modified = qfalse;
+
+		if ( qglXSwapIntervalEXT ) {
+			qglXSwapIntervalEXT( dpy, win, r_swapInterval->integer );
+		} else if ( qglXSwapIntervalMESA ) {
+			qglXSwapIntervalMESA( r_swapInterval->integer );
+		} else if ( qglXSwapIntervalSGI ) {
+			qglXSwapIntervalSGI( r_swapInterval->integer );
+		}
+	}
 }
 
 
@@ -865,18 +815,25 @@ void GLimp_Shutdown( qboolean unloadDLL )
 
 	if ( dpy )
 	{
-
-		RandR_RestoreGamma();
+		if ( glw_state.randr_gamma && glw_state.gammaSet )
+		{
+			RandR_RestoreGamma();
+			glw_state.gammaSet = qfalse;
+		}
 
 		RandR_RestoreMode();
 
 		if ( ctx )
-			glXDestroyContext( dpy, ctx );
+			qglXDestroyContext( dpy, ctx );
 
 		if ( win )
 			XDestroyWindow( dpy, win );
 
-		VidMode_RestoreGamma();
+		if ( glw_state.gammaSet )
+		{
+			VidMode_RestoreGamma();
+			glw_state.gammaSet = qfalse;
+		}
 
 		if ( glw_state.vidmode_active )
 			VidMode_RestoreMode();
@@ -897,11 +854,13 @@ void GLimp_Shutdown( qboolean unloadDLL )
 	win = 0;
 	ctx = NULL;
 
+	unsetenv( "vblank_mode" );
 	
-    if ( glw_state.cdsFullscreen )
+	//if ( glw_state.cdsFullscreen )
 	{
 		glw_state.cdsFullscreen = qfalse;
 	}
+    Cmd_RemoveCommand("modelist");
 
 	GL_Shutdown( unloadDLL );
 }

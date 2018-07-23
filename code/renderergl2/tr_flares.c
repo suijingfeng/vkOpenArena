@@ -82,8 +82,7 @@ typedef struct flare_s {
 #define		MAX_FLARES		128
 
 flare_t		r_flareStructs[MAX_FLARES];
-flare_t* r_activeFlares;
-flare_t* r_inactiveFlares;
+flare_t		*r_activeFlares, *r_inactiveFlares;
 
 int flareCoeff;
 
@@ -139,7 +138,7 @@ void RB_AddFlare( void *surface, int fogNum, vec3_t point, vec3_t color, vec3_t 
 
 	if(normal && (normal[0] || normal[1] || normal[2]))
 	{
-		VecSub( backEnd.viewParms.or.origin, point, local );
+		VectorSubtract( backEnd.viewParms.or.origin, point, local );
 		FastVectorNormalize(local);
 		d = DotProduct(local, normal);
 
@@ -200,12 +199,12 @@ void RB_AddFlare( void *surface, int fogNum, vec3_t point, vec3_t color, vec3_t 
 	f->addedFrame = backEnd.viewParms.frameCount;
 	f->fogNum = fogNum;
 
-	VecCopy(point, f->origin);
-	VecCopy( color, f->color );
+	VectorCopy(point, f->origin);
+	VectorCopy( color, f->color );
 
 	// fade the intensity of the flare down as the
 	// light surface turns away from the viewer
-	VecScale( f->color, d, f->color ); 
+	VectorScale( f->color, d, f->color ); 
 
 	// save info needed to test
 	f->windowX = backEnd.viewParms.viewportX + window[0];
@@ -380,13 +379,13 @@ void RB_RenderFlare( flare_t *f ) {
 	
 	intensity = flareCoeff * size * size / (factor * factor);
 
-	VecScale(f->color, f->drawIntensity * intensity, color);
+	VectorScale(f->color, f->drawIntensity * intensity, color);
 
 	// Calculations for fogging
 	if(tr.world && f->fogNum > 0 && f->fogNum < tr.world->numfogs)
 	{
 		tess.numVertexes = 1;
-		VecCopy(f->origin, tess.xyz[0]);
+		VectorCopy(f->origin, tess.xyz[0]);
 		tess.fogNum = f->fogNum;
 	
 		RB_CalcModulateColorsByFog(fogFactors);
@@ -473,9 +472,7 @@ void RB_RenderFlares (void) {
 	flare_t		*f;
 	flare_t		**prev;
 	qboolean	draw;
-	float oldmodelview[16];
-    float oldprojection[16];
-    float matrix[16];
+	mat4_t    oldmodelview, oldprojection, matrix;
 
 	if ( !r_flares->integer ) {
 		return;

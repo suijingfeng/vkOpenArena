@@ -35,6 +35,8 @@ extern trGlobals_t tr;
 extern refimport_t ri;
 // render lightmaps only
 
+cvar_t* r_vertexLight;
+
 cvar_t* r_lightmap;
 // avoid lightmap pass
 static world_t	s_worldData;
@@ -91,33 +93,29 @@ static void HSVtoRGB( float h, float s, float v, float rgb[3] )
 
 static void R_ColorShiftLightingBytes(unsigned char in[4], unsigned char out[4])
 {
-	// shift the color data based on overbright range
-	float shift = 3;
-	int r = in[0] * shift;
-	int g = in[1] * shift;
-	int b = in[2] * shift;
-	
+	int	shift = 1;
+    int r, g, b;
 
+	// shift the color data based on overbright range
+	// shift the data based on overbright range
+	r = in[0] << shift;
+	g = in[1] << shift;
+	b = in[2] << shift;
+	
 	// normalize by color instead of saturating to white
 	if ( ( r | g | b ) > 255 )
     {
-		int	max;
-
-		max = r > g ? r : g;
+		int	max = r > g ? r : g;
 		max = max > b ? max : b;
-		float scale = 255.0f / max;
-		out[0] = r * scale;
-		out[1] = g * scale;
-		out[2] = b * scale;
-		out[3] = in[3];
+		r = r * 255 / max;
+		g = g * 255 / max;
+		b = b * 255 / max;
 	}
-	else
-	{
-		out[0] = r;
-		out[1] = g;
-		out[2] = b;
-		out[3] = in[3];
-	}
+
+	out[0] = r;
+	out[1] = g;
+	out[2] = b;
+	out[3] = in[3];
 }
 
 /*

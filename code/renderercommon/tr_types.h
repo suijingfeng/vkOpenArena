@@ -121,7 +121,6 @@ typedef struct {
 #define	MAX_RENDER_STRINGS			8
 #define	MAX_RENDER_STRING_LENGTH	32
 
-
 typedef struct {
 	int			x, y, width, height;
 	float		fov_x, fov_y;
@@ -165,10 +164,10 @@ typedef enum {
 } glHardwareType_t;
 
 typedef struct {
-	char					renderer_string[MAX_STRING_CHARS];
-	char					vendor_string[MAX_STRING_CHARS];
-	char					version_string[MAX_STRING_CHARS];
-	char					extensions_string[BIG_INFO_STRING];
+	char					renderer_string[256];
+	char					vendor_string[256];
+	char					version_string[512];
+	char					extensions_string[10240];
 
 	int						maxTextureSize;			// queried from GL
 	int						numTextureUnits;		// multitexture ability
@@ -188,7 +187,7 @@ typedef struct {
 	// normal screens should be 4/3, but wide aspect monitors may be 16/9
 	float					windowAspect;
 
-	int						refresh_rate;
+	int                     displayFrequency;
     
     // synonymous with "does rendering consume the entire screen?"
     qboolean				isFullscreen;

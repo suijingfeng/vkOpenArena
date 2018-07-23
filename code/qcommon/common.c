@@ -23,8 +23,7 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
 #include "q_shared.h"
 #include "qcommon.h"
-#include "../sys/sys_public.h"
-
+#include "../sys/inputs.h"
 #include <setjmp.h>
 #ifndef _WIN32
 #include <netinet/in.h>
@@ -1974,7 +1973,9 @@ sysEvent_t Com_GetSystemEvent( void )
 		eventTail++;
 		return eventQueue[ ( eventTail - 1 ) & MASK_QUEUED_EVENTS ];
 	}
-
+#ifndef DEDICATED	
+    Sys_SendKeyEvents();
+#endif	
     // check for console commands
 	char *s = Sys_ConsoleInput();
 	if ( s )
@@ -2523,6 +2524,8 @@ Find out whether we have SSE support for Q_ftol function
 
 #if (id386 || idx64)
 
+
+
 static void Com_DetectSSE(void)
 {
 	cpuFeatures_t feat = Sys_GetProcessorFeatures();
@@ -2532,7 +2535,8 @@ static void Com_DetectSSE(void)
 		if(feat & CF_SSE2)
         {
 			Q_SnapVector = qsnapvectorsse;
-        	Com_Printf(" Have SSE2 support\n");
+        	
+            Com_Printf(" Have SSE2 support\n");
         }
         else
 			Q_SnapVector = qsnapvectorx87;
@@ -2707,6 +2711,7 @@ void Com_Init(char *commandLine )
 	//
 	// init commands and vars
 	//
+	//com_altivec = Cvar_Get ("com_altivec", "1", CVAR_ARCHIVE);
 	com_maxfps = Cvar_Get ("com_maxfps", "85", CVAR_ARCHIVE);
 	com_blood = Cvar_Get ("com_blood", "1", CVAR_ARCHIVE);
 
@@ -2796,6 +2801,9 @@ void Com_Init(char *commandLine )
 			}
 		}
 	}
+
+	// start in full screen ui mode
+	Cvar_Set("r_uiFullScreen", "0");
 
 	CL_StartHunkUsers( qfalse );
 

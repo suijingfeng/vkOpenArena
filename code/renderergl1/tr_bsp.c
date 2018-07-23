@@ -92,17 +92,28 @@ static void HSVtoRGB( float h, float s, float v, float rgb[3] )
 	}
 }
 
-static void R_ColorShiftLightingBytes(unsigned char in[4], unsigned char out[4])
-{
+/*
+===============
+R_ColorShiftLightingBytes
+
+===============
+*/
+static	void R_ColorShiftLightingBytes( byte in[4], byte out[4] ) {
+	int		r, g, b;
+
 	// shift the color data based on overbright range
-	int r = in[0] << 1;
-	int g = in[1] << 1;
-	int b = in[2] << 1;
+	int shift = 2 - tr.overbrightBits;
+
+	// shift the data based on overbright range
+	r = in[0] << shift;
+	g = in[1] << shift;
+	b = in[2] << shift;
 	
 	// normalize by color instead of saturating to white
-	if ( ( r | g | b ) > 255 )
-    {
-		int	max = r > g ? r : g;
+	if ( ( r | g | b ) > 255 ) {
+		int		max;
+
+		max = r > g ? r : g;
 		max = max > b ? max : b;
 		r = r * 255 / max;
 		g = g * 255 / max;
@@ -145,6 +156,11 @@ static	void R_LoadLightmaps( lump_t *l ) {
 		//FIXME: HACK: maps with only one lightmap turn up fullbright for some reason.
 		//this avoids this, but isn't the correct solution.
 		tr.numLightmaps++;
+	}
+
+	// if we are in r_vertexLight mode, we don't need the lightmaps at all
+	if ( r_vertexLight->integer ) {
+		return;
 	}
 
 	tr.lightmaps = ri.Hunk_Alloc( tr.numLightmaps * sizeof(image_t *), h_low );
@@ -264,6 +280,13 @@ static shader_t *ShaderForShaderNum( int shaderNum, int lightmapNum ) {
 	}
 	dsh = &s_worldData.shaders[ _shaderNum ];
 
+	if ( r_vertexLight->integer ) {
+		lightmapNum = LIGHTMAP_BY_VERTEX;
+	}
+
+	//if ( r_fullbright->integer ) {
+	//	lightmapNum = LIGHTMAP_WHITEIMAGE;
+	//}
 
 	shader = R_FindShader( dsh->shader, lightmapNum, qtrue );
 
@@ -1719,6 +1742,9 @@ void R_LoadEntities( lump_t *l ) {
 				break;
 			}
 			*s++ = 0;
+			if (r_vertexLight->integer) {
+				R_RemapShader(value, s, "0");
+			}
 			continue;
 		}
 		// check for remapping of shaders

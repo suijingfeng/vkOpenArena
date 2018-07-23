@@ -29,7 +29,7 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
 #ifdef USE_OPENAL_DLOPEN
 
-#include "../sys/sys_public.h"
+#include "../sys/public.h"
 
 LPALENABLE qalEnable;
 LPALDISABLE qalDisable;
@@ -118,7 +118,9 @@ GPA
 */
 static void *GPA(char *str)
 {
-	void *rv = Sys_GetFunAddr(OpenALLib, str);
+	void *rv;
+
+	rv = Sys_LoadFunction(OpenALLib, str);
 	if(!rv)
 	{
 		Com_Printf( " Can't load symbol %s\n", str);
@@ -242,7 +244,7 @@ void QAL_Shutdown( void )
 {
 	if(OpenALLib)
 	{
-		Sys_UnloadDll(OpenALLib);
+		Sys_UnloadLibrary(OpenALLib);
 		OpenALLib = NULL;
 	}
 

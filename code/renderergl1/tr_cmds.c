@@ -73,6 +73,33 @@ void R_PerformanceCounters( void ) {
 }
 
 
+/*
+====================
+R_IssueRenderCommands
+====================
+*/
+void R_IssueRenderCommands( qboolean runPerformanceCounters ) {
+	renderCommandList_t	*cmdList;
+
+	cmdList = &backEndData->commands;
+	assert(cmdList);
+	// add an end-of-list command
+	*(int *)(cmdList->cmds + cmdList->used) = RC_END_OF_LIST;
+
+	// clear it out, in case this is a sync and not a buffer flip
+	cmdList->used = 0;
+
+	if ( runPerformanceCounters ) {
+		R_PerformanceCounters();
+	}
+
+	// actually start the commands going
+	if ( !r_skipBackEnd->integer ) {
+		// let it start on the new batch
+		RB_ExecuteRenderCommands( cmdList->cmds );
+	}
+}
+
 
 /*
 ====================
@@ -81,22 +108,11 @@ R_IssuePendingRenderCommands
 Issue any pending commands and wait for them to complete.
 ====================
 */
-void R_IssuePendingRenderCommands( void )
-{
-	if ( tr.registered )
-    {
-        renderCommandList_t	*cmdList = &backEndData->commands;
-        assert(cmdList);
-        // add an end-of-list command
-        *(int *)(cmdList->cmds + cmdList->used) = RC_END_OF_LIST;
-
-        // clear it out, in case this is a sync and not a buffer flip
-        cmdList->used = 0;
-
-        // actually start the commands going
-        // let it start on the new batch
-        RB_ExecuteRenderCommands( cmdList->cmds );
+void R_IssuePendingRenderCommands( void ) {
+	if ( !tr.registered ) {
+		return;
 	}
+	R_IssueRenderCommands( qfalse );
 }
 
 /*
@@ -106,14 +122,14 @@ R_GetCommandBufferReserved
 make sure there is enough command space
 ============
 */
-void* R_GetCommandBufferReserved( int bytes, int reservedBytes )
-{
-	renderCommandList_t	*cmdList = &backEndData->commands;
+void *R_GetCommandBufferReserved( int bytes, int reservedBytes ) {
+	renderCommandList_t	*cmdList;
+
+	cmdList = &backEndData->commands;
 	bytes = PAD(bytes, sizeof(void *));
 
 	// always leave room for the end of list command
-	if ( cmdList->used + bytes + sizeof( int ) + reservedBytes > MAX_RENDER_COMMANDS )
-    {
+	if ( cmdList->used + bytes + sizeof( int ) + reservedBytes > MAX_RENDER_COMMANDS ) {
 		if ( bytes > MAX_RENDER_COMMANDS - sizeof( int ) ) {
 			ri.Error( ERR_FATAL, "R_GetCommandBuffer: bad size %i", bytes );
 		}
@@ -133,26 +149,8 @@ R_GetCommandBuffer
 returns NULL if there is not enough space for important commands
 =============
 */
-void *R_GetCommandBuffer( int bytes )
-{
-    int reservedBytes = PAD( sizeof( swapBuffersCommand_t ), sizeof(void *) );
-
-	renderCommandList_t	*cmdList = &backEndData->commands;
-	bytes = PAD(bytes, sizeof(void *));
-
-	// always leave room for the end of list command
-	if ( cmdList->used + bytes + sizeof( int ) + reservedBytes > MAX_RENDER_COMMANDS )
-    {
-		if ( bytes > MAX_RENDER_COMMANDS - sizeof( int ) ) {
-			ri.Error( ERR_FATAL, "R_GetCommandBuffer: bad size %i", bytes );
-		}
-		// if we run out of room, just start dropping commands
-		return NULL;
-	}
-
-	cmdList->used += bytes;
-
-	return cmdList->cmds + cmdList->used - bytes;
+void *R_GetCommandBuffer( int bytes ) {
+	return R_GetCommandBufferReserved( bytes, PAD( sizeof( swapBuffersCommand_t ), sizeof(void *) ) );
 }
 
 
@@ -239,8 +237,16 @@ void RE_StretchPic ( float x, float y, float w, float h,
 }
 
 
+/*
+====================
+RE_BeginFrame
 
+If running in stereo, RE_BeginFrame will be called twice
+for each RE_EndFrame
+====================
+*/
 void RE_BeginFrame( void ) {
+	drawBufferCommand_t	*cmd = NULL;
 
 	if ( !tr.registered ) {
 		return;
@@ -248,6 +254,7 @@ void RE_BeginFrame( void ) {
 	glState.finishCalled = qfalse;
 
 	tr.frameCount++;
+	tr.frameSceneNum = 0;
 
 	//
 	// do overdraw measurement
@@ -317,7 +324,8 @@ void RE_BeginFrame( void ) {
 	}
 
 	
-    drawBufferCommand_t	* cmd = R_GetCommandBuffer(sizeof(*cmd));
+    if( !(cmd = R_GetCommandBuffer(sizeof(*cmd))) )
+        return;
 
     if(cmd)
     {
@@ -335,52 +343,47 @@ RE_EndFrame
 Returns the number of msec spent in the back end
 =============
 */
-void RE_EndFrame( int *frontEndMsec, int *backEndMsec )
-{
-	if ( tr.registered )
-    {
-        swapBuffersCommand_t* cmd;
-        cmd = R_GetCommandBufferReserved( sizeof( *cmd ), 0 );
-        if ( !cmd ) {
-            return;
-        }
-        cmd->commandId = RC_SWAP_BUFFERS;
+void RE_EndFrame( int *frontEndMsec, int *backEndMsec ) {
+	swapBuffersCommand_t	*cmd;
 
-        renderCommandList_t	*cmdList = &backEndData->commands;
-        assert(cmdList);
-        // add an end-of-list command
-        *(int *)(cmdList->cmds + cmdList->used) = RC_END_OF_LIST;
-
-        // clear it out, in case this is a sync and not a buffer flip
-        cmdList->used = 0;
-
-        R_PerformanceCounters();
-
-        // actually start the commands going
-        // let it start on the new batch
-        RB_ExecuteRenderCommands( cmdList->cmds );
-
-        R_InitNextFrame();
-
-        if ( frontEndMsec ) {
-            *frontEndMsec = tr.frontEndMsec;
-        }
-        tr.frontEndMsec = 0;
-        if ( backEndMsec ) {
-            *backEndMsec = backEnd.pc.msec;
-        }
-        backEnd.pc.msec = 0;
+	if ( !tr.registered ) {
+		return;
 	}
+	cmd = R_GetCommandBufferReserved( sizeof( *cmd ), 0 );
+	if ( !cmd ) {
+		return;
+	}
+	cmd->commandId = RC_SWAP_BUFFERS;
+
+	R_IssueRenderCommands( qtrue );
+
+	R_InitNextFrame();
+
+	if ( frontEndMsec ) {
+		*frontEndMsec = tr.frontEndMsec;
+	}
+	tr.frontEndMsec = 0;
+	if ( backEndMsec ) {
+		*backEndMsec = backEnd.pc.msec;
+	}
+	backEnd.pc.msec = 0;
 }
 
-
-void RE_TakeVideoFrame( int width, int height, byte *captureBuffer, byte *encodeBuffer, qboolean motionJpeg )
+/*
+=============
+RE_TakeVideoFrame
+=============
+*/
+void RE_TakeVideoFrame( int width, int height,
+		byte *captureBuffer, byte *encodeBuffer, qboolean motionJpeg )
 {
+	videoFrameCommand_t	*cmd;
+
 	if( !tr.registered ) {
 		return;
 	}
 
-	videoFrameCommand_t* cmd = R_GetCommandBuffer( sizeof( *cmd ) );
+	cmd = R_GetCommandBuffer( sizeof( *cmd ) );
 	if( !cmd ) {
 		return;
 	}

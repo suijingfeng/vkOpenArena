@@ -1,126 +1,30 @@
 #ifndef TR_SHARE_H_
 #define TR_SHARE_H_
-
-
-#include<math.h>
-#include<string.h>
-
-extern const float colorBlack[4];
-extern const float colorRed[4];
-extern const float colorGreen[4];
-extern const float colorBlue[4];
-extern const float colorYellow[4];
-extern const float colorMagenta[4];
-extern const float colorCyan[4];
-extern const float colorWhite[4];
-extern const float colorLtGrey[4];
-extern const float colorMdGrey[4];
-extern const float colorDkGrey[4];
-
-
-
+/*  
+extern const vec4_t	colorBlack;
+extern const vec4_t	colorRed;
+extern const vec4_t	colorGreen;
+extern const vec4_t	colorBlue;
+extern const vec4_t	colorYellow;
+extern const vec4_t	colorMagenta;
+extern const vec4_t	colorCyan;
+extern const vec4_t	colorWhite;
+extern const vec4_t	colorLtGrey;
+extern const vec4_t	colorMdGrey;
+extern const vec4_t	colorDkGrey;
+*/
 
 union uInt4bytes{
     unsigned int i;
     unsigned char uc[4];
 };
 
-union f32_u {
-	float f;
-	unsigned int ui;
-	struct {
-		unsigned int fraction:23;
-		unsigned int exponent:8;
-		unsigned int sign:1;
-	} pack;
-};
-
-union f16_u {
-	unsigned short ui;
-	struct {
-		unsigned int fraction:10;
-		unsigned int exponent:5;
-		unsigned int sign:1;
-	} pack;
-};
-
-
-
-// subroutines
-
-#ifndef SGN
-#define SGN(x) (((x) >= 0) ? !!(x) : -1)
-#endif
-
-#ifndef MAX
-#define MAX(a,b) ((a) > (b) ? (a) : (b))
-#endif
-
-#ifndef MIN
-#define MIN(a,b) ((a) < (b) ? (a) : (b))
-#endif
-
-#ifndef CLAMP
-#define CLAMP(a,b,c) MIN(MAX((a),(b)),(c))
-#endif
-
-#define VectorCopy2(a,b)		((b)[0]=(a)[0],(b)[1]=(a)[1])
-#define VectorSet2(v,x,y)       ((v)[0]=(x),(v)[1]=(y));
-
-#define VectorCopy4(a,b)		((b)[0]=(a)[0],(b)[1]=(a)[1],(b)[2]=(a)[2],(b)[3]=(a)[3])
-#define VectorSet4(v,x,y,z,w)	((v)[0]=(x),(v)[1]=(y),(v)[2]=(z),(v)[3]=(w))
-#define DotProduct4(a,b)        ((a)[0]*(b)[0] + (a)[1]*(b)[1] + (a)[2]*(b)[2] + (a)[3]*(b)[3])
-#define VectorScale4(a,b,c)     ((c)[0]=(a)[0]*(b),(c)[1]=(a)[1]*(b),(c)[2]=(a)[2]*(b),(c)[3]=(a)[3]*(b))
-
-#define VectorCopy5(a,b)		((b)[0]=(a)[0],(b)[1]=(a)[1],(b)[2]=(a)[2],(b)[3]=(a)[3],(b)[4]=(a)[4])
-
-#define OffsetByteToFloat(a)    ((float)(a) * 1.0f/127.5f - 1.0f)
-#define FloatToOffsetByte(a)    (byte)((a) * 127.5f + 128.0f)
-#define ByteToFloat(a)          ((float)(a) * 1.0f/255.0f)
-#define FloatToByte(a)          (byte)((a) * 255.0f)
-
-
-
-const char* getExtension( const char *name );
-char* SkipPath(char *pathname);
-void stripExtension(const char *in, char *out, int destsize);
-float R_NoiseGet4f( float x, float y, float z, float t );
-void  R_NoiseInit( void );
-
-
-int NextPowerOfTwo(int in);
-unsigned short FloatToHalf(float in);
-float HalfToFloat(unsigned short in);
-
-int SpheresIntersect(float origin1[3], float radius1, float origin2[3], float radius2);
-void BoundingSphereOfSpheres(float origin1[3], float radius1, float origin2[3], float radius2, float origin3[3], float *radius3);
-
-
-static inline int VectorCompare4(const float v1[4], const float v2[4])
-{
-	if( (v1[0] != v2[0]) || (v1[1] != v2[1]) || (v1[2] != v2[2]) || (v1[3] != v2[3]))
-	{
-		return 0;
-	}
-	return 1;
-}
-
-static inline int VectorCompare5(const float v1[5], const float v2[5])
-{
-	if(v1[0] != v2[0] || v1[1] != v2[1] || v1[2] != v2[2] || v1[3] != v2[3] || v1[4] != v2[4])
-	{
-		return 0;
-	}
-	return 1;
-}
-
-
-static inline float VectorLength(const float v[3])
+static ID_INLINE float VectorLength( const vec3_t v )
 {
 	return sqrtf(v[0]*v[0] + v[1]*v[1] + v[2]*v[2]);
 }
 
-static inline float VectorLength2(const float* v1, const float* v2)
+static ID_INLINE float VectorLength2( const float* v1, const float* v2)
 {
     float tmp1 = v1[0]-v2[0];
     float tmp2 = v1[1]-v2[1];
@@ -129,21 +33,19 @@ static inline float VectorLength2(const float* v1, const float* v2)
 	return sqrtf(tmp1*tmp1 + tmp2*tmp2 + tmp3*tmp3);
 }
 
-static inline void AxisClear( float axis[3][3] )
-{
-    memset(axis, 0, 9 * sizeof(float));
-}
 
-static inline void AxisCopy(const float in[3][3], float out[3][3])
+static ID_INLINE void AxisCopy( vec3_t in[3], vec3_t out[3] )
 {
-    memcpy(out, in, 9 * sizeof(float));
+	VectorCopy( in[0], out[0] );
+	VectorCopy( in[1], out[1] );
+	VectorCopy( in[2], out[2] );
 }
 
 
 // fast vector normalize routine that does not check to make sure
 // that length != 0, nor does it return length, uses rsqrt approximation
 
-static inline void FastVectorNormalize(float v[3])
+static ID_INLINE void FastVectorNormalize( float* v )
 {
 	// writing it this way allows gcc to recognize that rsqrt can be used
     float invLen = v[0] * v[0] + v[1] * v[1] + v[2]*v[2];
@@ -158,7 +60,7 @@ static inline void FastVectorNormalize(float v[3])
 }
 
 
-static inline void FastVectorNormalize2( const float* v, float* out)
+static ID_INLINE void FastVectorNormalize2( const float* v, float* out)
 {
 	// writing it this way allows gcc to recognize that rsqrt can be used
     float invLen = 1.0f / sqrtf(v[0]*v[0] + v[1]*v[1] + v[2]*v[2]);
@@ -169,7 +71,7 @@ static inline void FastVectorNormalize2( const float* v, float* out)
 }
 
 
-static inline unsigned int ColorBytes4(float r, float g, float b, float a)
+static ID_INLINE unsigned int ColorBytes4(float r, float g, float b, float a)
 {
 	union uInt4bytes cvt;
 
@@ -182,7 +84,7 @@ static inline unsigned int ColorBytes4(float r, float g, float b, float a)
 }
 
 
-static inline float NormalizeColor(const float in[3], float out[3])
+static ID_INLINE float NormalizeColor( const vec3_t in, vec3_t out )
 {
 	float max = in[0];
 	if ( in[1] > max )
@@ -200,81 +102,26 @@ static inline float NormalizeColor(const float in[3], float out[3])
 	return max;
 }
 
-static inline void VecCopy(const float in[3], float out[3])
-{
-    out[0] = in[0];
-    out[1] = in[1];
-    out[2] = in[2];
-}
 
-static inline void VecCross(const float v1[3], const float v2[3], float cross[3] )
+static ID_INLINE void VectorCross( const vec3_t v1, const vec3_t v2, vec3_t cross )
 {
 	cross[0] = v1[1]*v2[2] - v1[2]*v2[1];
 	cross[1] = v1[2]*v2[0] - v1[0]*v2[2];
 	cross[2] = v1[0]*v2[1] - v1[1]*v2[0];
 }
 
-static inline float VecDot(const float v1[3], const float v2[3])
-{
-	return (v1[0]*v2[0] + v1[1]*v2[1] + v1[2]*v2[2]);
-}
-
-
-static inline void VecScale(float v[3], const float s, float o[3])
-{
-    o[0]=v[0]*s;
-    o[1]=v[1]*s;
-    o[2]=v[2]*s;
-}
-
-static inline void VecSub( float a[3], float b[3], float c[3])
-{
-    c[0]= a[0] - b[0];
-    c[1]= a[1] - b[1];
-    c[2]= a[2] - b[2];
-}
-
-static inline void VecAdd( float a[3], float b[3], float c[3])
-{
-    c[0]= a[0] + b[0];
-    c[1]= a[1] + b[1];
-    c[2]= a[2] + b[2];
-}
-
-
-static inline void VecLerp(float a[3], float b[3], const float lerp, float c[3])
-{
-    float dif[3];
-    dif[0] = b[0] - a[0];
-    dif[1] = b[1] - a[1];
-    dif[2] = b[2] - a[2];
-
-	c[0] = a[0] + dif[0] * lerp;
-	c[1] = a[1] + dif[1] * lerp;
-	c[2] = a[2] + dif[2] * lerp;
-}
-
-
-static inline void VecMA(float v[3], float s, float b[3], float o[3])
-{
-    o[0] = v[0] + b[0]*s;
-    o[1] = v[1] + b[1]*s;
-    o[2] = v[2] + b[2]*s;
-}
 // use Rodrigue's rotation formula
-static inline void PointRotateAroundVector(const float p[3], const float dir[3], const float degrees, float sum[3])
+static ID_INLINE void PointRotateAroundVector( const vec3_t p, const vec3_t dir, const float degrees, float* sum )
 {
-    float k[3]; 
+    vec3_t k; 
     FastVectorNormalize2(dir, k);
-   
-
-    float rad = degrees * ( M_PI / 180.0F);
+    
+    float rad = DEG2RAD( degrees );
     float cos_th = cos( rad );
     float sin_th = sin( rad );
     float d = (1 - cos_th) * (p[0] * k[0] + p[1] * k[1] + p[2] * k[2]);
 
-	VecCross(k, p, sum);
-
+	VectorCross(k, p, sum);
 
     sum[0] *= sin_th;
     sum[1] *= sin_th;
@@ -290,19 +137,33 @@ static inline void PointRotateAroundVector(const float p[3], const float dir[3],
 }
 
 
-void MatrixMultiply4x4(const float A[16], const float B[16], float out[16]);
-void Mat4Translation(const float vec[3], float out[16]);
-void Mat4Transform(const float mat[16], const float v[4], float out[4]);
-void Mat4Copy(const float in[16], float out[16]);
-void Mat4Zero(float out[16]);
-void Mat4Identity(float out[16]);
-int Mat4Compare(const float a[16], const float b[16]);
 
-void Mat4Ortho(float left, float right, float bottom, float top, float znear, float zfar, float out[16]);
-void Mat4View(const float axes[3][3], const float origin[3], float out[16]);
-void Mat4SimpleInverse( const float in[16], float out[16]);
+//void Matrix4Multiply(const float a[16], const float b[16], float out[16]);
+//note: out = A X B
+static ID_INLINE void MatrixMultiply4x4(const float* A, const float* B, float* out)
+{
+    out[0] = A[0]*B[0] + A[1]*B[4] + A[2]*B[8] + A[3]*B[12];
+    out[1] = A[0]*B[1] + A[1]*B[5] + A[2]*B[9] + A[3]*B[13];
+    out[2] = A[0]*B[2] + A[1]*B[6] + A[2]*B[10] + A[3]*B[14];
+    out[3] = A[0]*B[3] + A[1]*B[7] + A[2]*B[11] + A[3]*B[15];
 
-void Mat4Dump(const float in[16]);
+    out[4] = A[4]*B[0] + A[5]*B[4] + A[6]*B[8] + A[7]*B[12];
+    out[5] = A[4]*B[1] + A[5]*B[5] + A[6]*B[9] + A[7]*B[13];
+    out[6] = A[4]*B[2] + A[5]*B[6] + A[6]*B[10] + A[7]*B[14];
+    out[7] = A[4]*B[3] + A[5]*B[7] + A[6]*B[11] + A[7]*B[15];
+
+    out[8] = A[8]*B[0] + A[9]*B[4] + A[10]*B[8] + A[11]*B[12];
+    out[9] = A[8]*B[1] + A[9]*B[5] + A[10]*B[9] + A[11]*B[13];
+    out[10] = A[8]*B[2] + A[9]*B[6] + A[10]*B[10] + A[11]*B[14];
+    out[11] = A[8]*B[3] + A[9]*B[7] + A[10]*B[11] + A[11]*B[15];
+
+    out[12] = A[12]*B[0] + A[13]*B[4] + A[14]*B[8] + A[15]*B[12];
+    out[13] = A[12]*B[1] + A[13]*B[5] + A[14]*B[9] + A[15]*B[13];
+    out[14] = A[12]*B[2] + A[13]*B[6] + A[14]*B[10] + A[15]*B[14];
+    out[15] = A[12]*B[3] + A[13]*B[7] + A[14]*B[11] + A[15]*B[15];
+}
+
+
 /*
 ================
 MakeNormalVectors
@@ -313,7 +174,7 @@ Given a normalized forward vector, create two other perpendicular vectors
 ================
 */
 
-static inline void MakeNormalVectors( const float forward[3], float right[3], float up[3])
+static ID_INLINE void MakeNormalVectors( const vec3_t forward, vec3_t right, vec3_t up)
 {
 	// this rotate and negate guarantees a vector not colinear with the original
 	right[1] = -forward[0];
@@ -323,17 +184,125 @@ static inline void MakeNormalVectors( const float forward[3], float right[3], fl
     // assume forward = (1/sqrt(3), 1/sqrt(3), -1/sqrt(3)),
     // then right = (-1/sqrt(3), -1/sqrt(3), 1/sqrt(3))
 
-	float d = right[0]*forward[0] + right[1]*forward[1] + right[2]*forward[2];
+	float d = DotProduct(right, forward);
 
 	right[0] -= d*forward[0];
 	right[1] -= d*forward[1];
 	right[2] -= d*forward[2];
 
     FastVectorNormalize(right);
-	VecCross(forward, right, up);
+	CrossProduct(forward, right, up);
 }
 
 
+///////////////////////////////////////////////////////////////////
 
+extern refimport_t ri;
+
+static const vec4_t	colorBlack	= {0, 0, 0, 1};
+static const vec4_t	colorRed	= {1, 0, 0, 1};
+static const vec4_t	colorGreen	= {0, 1, 0, 1};
+static const vec4_t	colorBlue	= {0, 0, 1, 1};
+static const vec4_t	colorYellow	= {1, 1, 0, 1};
+static const vec4_t	colorMagenta= {1, 0, 1, 1};
+static const vec4_t	colorCyan	= {0, 1, 1, 1};
+static const vec4_t	colorWhite	= {1, 1, 1, 1};
+static const vec4_t	colorLtGrey	= {0.75, 0.75, 0.75, 1};
+static const vec4_t	colorMdGrey	= {0.5, 0.5, 0.5, 1};
+static const vec4_t	colorDkGrey	= {0.25, 0.25, 0.25, 1};
+
+
+
+static ID_INLINE void AxisClear( vec3_t axis[3] )
+{
+	axis[0][0] = 1;
+	axis[0][1] = 0;
+	axis[0][2] = 0;
+	axis[1][0] = 0;
+	axis[1][1] = 1;
+	axis[1][2] = 0;
+	axis[2][0] = 0;
+	axis[2][1] = 0;
+	axis[2][2] = 1;
+}
+
+static ID_INLINE char *SkipPath(char *pathname)
+{
+	char *last = pathname;
+    char c;
+    do{
+        c = *pathname;
+    	if (c == '/')
+		    last = pathname+1;
+        pathname++;
+    }while(c);
+
+	return last;
+}
+
+
+static ID_INLINE void stripExtension(const char *in, char *out, int destsize)
+{
+	const char *dot = strrchr(in, '.');
+    const char *slash = strrchr(in, '/');
+
+
+	if ((dot != NULL) && ( (slash < dot) || (slash == NULL) ) )
+    {
+        int len = dot-in+1;
+        if(len <= destsize)
+            destsize = len;
+        else
+		    ri.Printf( PRINT_WARNING, "stripExtension: dest size not enough!\n");
+    }
+
+    if(in != out)
+    	strncpy(out, in, destsize-1);
+	
+    out[destsize-1] = '\0';
+}
+
+static ID_INLINE const char* getExtension( const char *name )
+{
+	const char* dot = strrchr(name, '.');
+    const char* slash = strrchr(name, '/');
+
+	if ((dot != NULL) && ((slash == NULL) || (slash < dot) ))
+		return dot + 1;
+	else
+		return "";
+}
+
+/*
+static void VectorPerp(const vec3_t src, vec3_t dst1, vec3_t dst2 )
+{
+	int	pos = 0;
+	int i;
+	float minelem = 1.0F;
+	vec3_t tempvec = {0.0f, 0.0f, 0.0f};
+
+	// find the smallest magnitude axially aligned vector
+	for (i = 0; i < 3; i++ )
+	{
+        float len = fabs( src[i] );
+		if ( len < minelem )
+		{
+			pos = i;
+			minelem = len;
+		}
+	}
+	//tempvec[0] = tempvec[1] = tempvec[2] = 0.0F;
+	tempvec[pos] = 1.0F;
+
+	//project the point onto the plane defined by src
+	//float d = -DotProduct( tempvec, src );
+	VectorMA( tempvec, -src[pos], src, dst1 );
+
+    //normalize the result
+	VectorNormalize( dst1 );
+
+	CrossProduct(src, dst1, dst2);
+}
+*/
 
 #endif

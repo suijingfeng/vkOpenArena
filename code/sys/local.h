@@ -28,72 +28,27 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #define SYS_LOCAL_H_
 
 
-#include "sys_public.h"
+#include "public.h"
 
 #include <X11/Xlib.h>
 #include <X11/Xfuncproto.h>
-#include <GL/glx.h>
-#include <GL/glxext.h> 
+
 
 
 #if defined(_WIN32)
 #define OPENGL_DRIVER_NAME	"opengl32"
 #elif defined(MACOS_X)
 #define OPENGL_DRIVER_NAME	"/System/Library/Frameworks/OpenGL.framework/Libraries/libGL.dylib"
-#else
-#define OPENGL_DRIVER_NAME	"libGL.so.1"
 #endif
 
 
-
-
-typedef struct sym_s
-{
-	void **symbol;
-	const char *name;
-} sym_t;
-
-typedef struct
-{
-	void *OpenGLLib; // instance of OpenGL library
-	FILE *log_fp;
-
-	int	monitorCount;
-
-	qboolean gammaSet;
-
-	qboolean cdsFullscreen;
-
-//	glconfig_t *config; // feedback to renderer module
-
-	qboolean dga_ext;
-
-	qboolean vidmode_ext;
-	qboolean vidmode_active;
-	qboolean vidmode_gamma;
-
-	qboolean randr_ext;
-	qboolean randr_active;
-	qboolean randr_gamma;
-
-	qboolean desktop_ok;
-	int desktop_width;
-	int desktop_height;
-	int desktop_x;
-	int desktop_y;
-
-
-    qboolean gw_minimized;
-} glwstate_t;
-
-
 qboolean BuildGammaRampTable( unsigned char *red, unsigned char *green, unsigned char *blue, int gammaRampSize, unsigned short table[3][4096] );
-
+/*
 // DGA extension
 qboolean DGA_Init( Display *_dpy );
 void DGA_Mouse( qboolean enable );
 void DGA_Done( void );
-
+*/
 
 // VidMode extension
 qboolean VidMode_Init( void );
@@ -126,6 +81,40 @@ unsigned int CON_LogWrite( const char *in );
 unsigned int CON_LogRead( char *out, unsigned int outSize );
 
 
+typedef struct
+{
+	void *OpenGLLib; // instance of OpenGL library
+	FILE *log_fp;
+
+	int	monitorCount;
+
+	qboolean gammaSet;
+
+	qboolean cdsFullscreen;
+
+	qboolean dga_ext;
+
+	qboolean vidmode_ext;
+	qboolean vidmode_active;
+	qboolean vidmode_gamma;
+
+	qboolean randr_ext;
+	qboolean randr_active;
+	qboolean randr_gamma;
+
+	qboolean desktop_ok;
+	int desktop_width;
+	int desktop_height;
+	int desktop_x;
+	int desktop_y;
+} glwstate_t;
+
+
+typedef struct sym_s
+{
+	void **symbol;
+	const char *name;
+} sym_t;
 
 #ifdef MACOS_X
 char *Sys_StripAppBundle( char *pwd );
@@ -144,7 +133,7 @@ void Sys_Exit( int exitCode );
 
 qboolean Sys_PIDIsRunning( int pid );
 
-////////////////// GLX or GLW function load helper /////////////////////////
+////////////////// GLX /////////////////////////
 
 #ifdef _WIN32
 
@@ -158,13 +147,21 @@ qboolean Sys_PIDIsRunning( int pid );
 #define QGL_Swp_PROCS \
 	GLE( BOOL,	wglSwapIntervalEXT, int interval )
 
-#define GLE(ret, name, ...)	extern ret (* q##name )( __VA_ARGS__ );
-	QGL_Swp_PROCS;
-	QGL_Win32_PROCS;
-#undef GLE
+#else
 
 
 #endif
+
+
+#ifdef _WIN32
+	QGL_Win32_PROCS;
+//#endif
+//#if ( (defined __linux__ )  || (defined __FreeBSD__ ) || (defined __sun) )
+#else // assume in opposition to win32
+//	QGL_LinX11_PROCS;
+#endif
+
+#undef GLE
 
 
 #endif

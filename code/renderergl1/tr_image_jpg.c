@@ -22,10 +22,8 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
 #include <setjmp.h>
 
-#include "tr_image.h"
-#include "tr_public.h"
+#include "tr_local.h"
 
-extern refimport_t ri;
 /*
  * Include file for users of JPEG library.
  * You will need to have included system headers that define at least

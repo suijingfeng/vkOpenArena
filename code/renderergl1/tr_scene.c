@@ -276,7 +276,8 @@ Rendering a scene may require multiple views to be rendered
 to handle mirrors,
 @@@@@@@@@@@@@@@@@@@@@
 */
-void RE_RenderScene( const refdef_t *fd ) {
+void RE_RenderScene( const refdef_t *fd )
+{
 	viewParms_t		parms;
 	int				startTime;
 
@@ -284,13 +285,12 @@ void RE_RenderScene( const refdef_t *fd ) {
 		return;
 	}
 
-	if ( r_norefresh->integer ) {
-		return;
-	}
-
 	startTime = ri.Milliseconds();
 
-	if (!tr.world && !( fd->rdflags & RDF_NOWORLDMODEL ) ) {
+	qboolean customscrn = !(fd->rdflags & RDF_NOWORLDMODEL);
+
+
+	if (!tr.world && customscrn ) {
 		ri.Error (ERR_DROP, "R_RenderScene: NULL worldmodel");
 	}
 
@@ -314,6 +314,9 @@ void RE_RenderScene( const refdef_t *fd ) {
 	// copy the areamask data over and note if it has changed, which
 	// will force a reset of the visible leafs even if the view hasn't moved
 	tr.refdef.areamaskModified = qfalse;
+
+
+
 	if ( ! (tr.refdef.rdflags & RDF_NOWORLDMODEL) ) {
 		int		areaDiff;
 		int		i;
@@ -350,7 +353,8 @@ void RE_RenderScene( const refdef_t *fd ) {
 
 	// turn off dynamic lighting globally by clearing all the
 	// dlights if it needs to be disabled or if vertex lighting is enabled
-	if ( r_dynamiclight->integer == 0 ) {
+	if ( r_dynamiclight->integer == 0 ||
+		 r_vertexLight->integer == 1 ) {
 		tr.refdef.num_dlights = 0;
 	}
 
@@ -359,7 +363,7 @@ void RE_RenderScene( const refdef_t *fd ) {
 	// They need to be distinguished by the light flare code, because
 	// the visibility state for a given surface may be different in
 	// each scene / view.
-	//tr.frameSceneNum++;
+	tr.frameSceneNum++;
 	tr.sceneCount++;
 
 	// setup view parms for the initial view
@@ -377,32 +381,30 @@ void RE_RenderScene( const refdef_t *fd ) {
 
 	parms.fovX = tr.refdef.fov_x;
 	parms.fovY = tr.refdef.fov_y;
-
-	// leilei - widescreen
-	// recalculate fov according to widescreen parameters
-	if (!( fd->rdflags & RDF_NOWORLDMODEL ) ) // don't affect interface refdefs
+	
+	if (customscrn) // don't affect interface refdefs
 	{
-		float zoomfov = tr.refdef.fov_x / 90;	// figure out our zoom or changed fov magnitiude from cg_fov and cg_zoomfov
-		int thisisit;
-
+		// figure out our zoom or changed fov magnitiude from cg_fov and cg_zoomfov
+		//float zoomfov = tr.refdef.fov_x / 90;
 		// find aspect to immediately match our vidwidth for perfect match with resized screens...
-		float erspact = tr.refdef.width / tr.refdef.height;
-		float aspact = glConfig.vidWidth / glConfig.vidHeight;
-		if (erspact == aspact) thisisit = 1;
+		//float erspact = tr.refdef.width / tr.refdef.height;
+		//float aspact = glConfig.vidWidth / glConfig.vidHeight;
 
 	
 		// try not to recalculate fov of ui and hud elements
 		//if (((tr.refdef.fov_x /  tr.refdef.fov_y) > 1.3) && (tr.refdef.width > 320) && (tr.refdef.height > 240))
 		//if (((tr.refdef.fov_x /  tr.refdef.fov_y) > 1.3) && (tr.refdef.width > (320 * refdefscalex)) && (tr.refdef.height > (240 * refdefscaley)))
-		if (((tr.refdef.fov_x /  tr.refdef.fov_y) > 1.3) && (thisisit))
-        {
-            // undo vert-
-            parms.fovY = parms.fovY * (73.739792 / tr.refdef.fov_y) * zoomfov;
-            
-            // recalculate the fov
-            parms.fovX = (atan (glConfig.vidWidth / (glConfig.vidHeight / tan ((parms.fovY * M_PI) / 360.0f))) * 360.0f) / M_PI;
-            parms.fovY = (atan (glConfig.vidHeight / (glConfig.vidWidth / tan ((parms.fovX * M_PI) / 360.0f))) * 360.0f) / M_PI;
-        }
+		float x_div_y = tr.refdef.fov_x / tr.refdef.fov_y;
+
+		if ((x_div_y > 1.34) && ((tr.refdef.width / tr.refdef.height) == (glConfig.vidWidth / glConfig.vidHeight)))
+		{
+			// undo vert-
+			parms.fovY *= x_div_y * (73.739792 / 90.0);
+			
+			// recalculate the fov
+			parms.fovX = atan( tan(parms.fovY * (M_PI / 360.0f)) * glConfig.windowAspect ) * (360.0f / M_PI);
+			parms.fovY = atan( tan(parms.fovX * (M_PI / 360.0f)) / glConfig.windowAspect ) * (360.0f / M_PI);
+		}
 	}
 
 
