@@ -386,17 +386,18 @@ void RE_RenderScene( const refdef_t *fd )
 	// setup view parms for the initial view
 	//
 	// set up viewport
-	// The refdef takes 0-at-the-top y coordinates, so
-	// convert to GL's 0-at-the-bottom space
-	//
+	// The refdef takes 0-at-the-top y coordinates
+    // 0 +-------> x
+    //   |
+    //   |
+    //   |
+    //   y
     viewParms_t		parms;
 	memset( &parms, 0, sizeof( parms ) );
 
 
     parms.viewportX = fd->x;
-//	parms.viewportY = glConfig.vidHeight - ( tr.refdef.y + tr.refdef.height );
 	parms.viewportY =  fd->y;
-
 
     parms.viewportWidth = fd->width;
 	parms.viewportHeight = fd->height;
@@ -414,7 +415,6 @@ void RE_RenderScene( const refdef_t *fd )
 	parms.isPortal = qfalse;
 
 
-
 	R_RenderView( &parms );
 
 	// the next scene rendered in this frame will tack on after this one
@@ -425,3 +425,21 @@ void RE_RenderScene( const refdef_t *fd )
 
 	tr.frontEndMsec += ri.Milliseconds() - startTime;
 }
+
+/*
+typedef struct {
+/	orientationr_t	or;
+	orientationr_t	world;
+//	vec3_t		pvsOrigin;			// may be different than or.origin for portals
+//	qboolean	isPortal;			// true if this view is through a portal
+	qboolean	isMirror;			// the portal is a mirror, invert the face culling
+	int			frameCount;			// copied from tr.frameCount
+	cplane_t	portalPlane;		// clip anything behind this if mirroring
+//	int			viewportX, viewportY, viewportWidth, viewportHeight;
+//	float		fovX, fovY;
+	float		projectionMatrix[16] QALIGN(16);
+	cplane_t	frustum[4];
+	vec3_t		visBounds[2];
+	float		zFar;
+} viewParms_t;
+*/

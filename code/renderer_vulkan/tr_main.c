@@ -1268,7 +1268,6 @@ void R_RenderView (viewParms_t *parms)
 	tr.viewCount++;
 
 	tr.viewParms = *parms;
-	tr.viewParms.frameCount = tr.frameCount;
 
 	firstDrawSurf = tr.refdef.numDrawSurfs;
 
