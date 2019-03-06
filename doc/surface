@@ -1,0 +1,36 @@
+Quake3平面Surface的光照贴图（light map）UV坐标与Surface顶点世界3D坐标之间的转换原理
+
+很少有将这个原理讲得通俗易懂，特别清楚的，我尝试下自己阐述技术问题的能力，希望能让对这个问题迷糊的朋友明白其中的原理。
+     在这里我假设读者对Quake3的几何组织方式已经颇有了解，所以接下来我会直接进入主题，讲解变换的原理。在讲解过程中可能会点到Quake3代码中一些重要的概念。
+     首先向大家说明两个非常重要的条件：
+     1. 这里讲的QUAKE3的平面Surface都是平面的。
+     2. 光照贴图的 U, V 钳制在 0~1之间。
+
+     Quake3是如何把一个平面Surface上任意顶点3D空间坐标映射到光照贴图上唯一对应的一个U,V上的？
+      答：第一步，Quake3会先计算出该平面Surface的AABB（轴对齐）包围盒，这个AABB盒由2个向量来定义： Vector_min,，Vector_max，分别表示了这个AABB包围盒的最小顶点和最大顶点。再根据平面Surface的法线的X, Y, Z的绝对值的大小，决定把平面投影到哪个轴平面上，需要使得到的AABB盒的投影面积能达到最大。 假设：如果ABS(X)（求X的绝对值）最大，当把渲染平面投影到YZ平面上能得到最大的投影面积，很显然这个投影面积是一个矩形，矩形的2个边长分别为：ABS[ (Vector_max - Vector_min).y] 和 ABS[ (Vector_max - Vector_min).z]。现在我们已经完成了第一步：将渲染面的AABB包围盒投影到了一个合理的轴平面上，成功的渲染平面上所有3D空间中的点都影射到了轴平面的一个矩形内，如：A(10, 8, 7) -> A'(0, 8, 7 ), 是不是看到希望了，我们的纹理也是矩形的。
+      第二步：我们还有点小工作要做，现在我们映射得到的轴平面后得坐标虽然已经处于2D平面内（其中一维的值已经等于0了），但显然还不满足开始提到的第二个重要条件：光照贴图的 U, V 钳制在 0~1之间，为了做到这点，我们还需要对AABB盒的映射矩形进行平移和缩放，平移是为了让映射的值都为正值，而缩放是为了让其钳制在0~1之间。比如：求出Vector_min投影后的坐标 Vector_prj_min, 平移操作的表达式就是：
+
+Vector_prj_Trans_A = Vector_prj_A - Vector_prj_min;
+//Vector_prj_x和Vector_prj_min分别为平面Surface的任意一顶点A和Vector_min投影到轴平面上后的坐标
+
+然后对这个平移后的值进行缩放：
+U = Vector_prj_Trans_A.y / ABS[ (Vector_max - Vector_min).y];    //假设U对应着y值
+V = Vector_prj_Trans_A.z / ABS[ (Vector_max - Vector_min).z];
+映射完毕！我们为平面上任何一3D点都映射了一对唯一的位于0~1之间的UV坐标值。
+
+     我们如何将唯一的一个UV坐标映射到一个3D坐标上呢？
+     答：我们接着上面哪个例子做，为了能进行逆运算，我们必须知道几个值：
+     1. 矩形2个边的缩放系数S1,S2，分别对应例子中的ABS[ (Vector_max - Vector_min).y] 和 ABS[ (Vector_max - Vector_min).z。
+     2. Vector_min的投影坐标，也就是Vector_prj_min。
+     3. 平面Surface到原点的距离dist。
+     4. 平面Surface的法线normal。
+     这四个值需要在进行“把一个平面Surface上任意顶点3D空间坐标映射到光照贴图上唯一对应的一个U,V上”时就保存下来，在这里使用。
+
+     现在我们看看具体如何使用这四个值来进行UV->3D坐标的映射。
+     1. 逆缩放操作：Vector_tmp.y = U * S1，Vector_tmp.z = V * S2。
+     2. 逆平移操作：Vector_tmp.y += Vector_prj_min.y，Vector_tmp.z += Vector_prj_min.z;
+     3. 逆投影运算：求出对应的X值就可以了，也就是求点（ 0 , Vector_tmp.y, Vector_tmp.z ) 沿投影方向到平面的距离Dx:
+         D = Dot[（ 0 , Vector_tmp.y, Vector_tmp.z ) , normal ] - dist;  //点到平面的最短距离
+         Dx = D / normal.x;      
+
+     Quake3映射原理与此相同，只是它保存的值有些不同，Quake3保存的是：2个平面Surface上的缩放向量，Vector_min在平面Surface上沿投影方向投影值，具体计算请参看源代码。

@@ -35,7 +35,6 @@ extern qboolean loadCamera(const char *name);
 extern void startCamera(int time);
 extern qboolean getCameraInfo(int time, vec3_t *origin, vec3_t *angles);
 
-
 void CL_GetGameState( gameState_t *gs )
 {
 	*gs = cl.gameState;
@@ -425,7 +424,7 @@ intptr_t CL_CgameSystemCalls( intptr_t *args ) {
 	case CG_FS_FOPENFILE:
 		return FS_FOpenFileByMode( VMA(1), VMA(2), args[3] );
 	case CG_FS_READ:
-		FS_Read2( VMA(1), args[2], args[3] );
+		FS_Read( VMA(1), args[2], args[3] );
 		return 0;
 	case CG_FS_WRITE:
 		FS_Write( VMA(1), args[2], args[3] );
@@ -637,7 +636,7 @@ intptr_t CL_CgameSystemCalls( intptr_t *args ) {
 	case CG_REAL_TIME:
 		return Com_RealTime( VMA(1) );
 	case CG_SNAPVECTOR:
-		Q_SnapVector(VMA(1));
+		qsnapvectorsse(VMA(1));
 		return 0;
 
 	case CG_CIN_PLAYCINEMATIC:
@@ -690,25 +689,29 @@ intptr_t CL_CgameSystemCalls( intptr_t *args ) {
 CL_InitCGame: Should only be called by CL_StartHunkUsers
 ====================
 */
-void CL_InitCGame(void)
+void CL_InitCGame( void )
 {
 
-	int t1 = Sys_Milliseconds();
-    int t2;
+	const char	*info;
+	const char	*mapname;
+	int			t1, t2;
+	
+    vmInterpret_t interpret;
 
-    Com_Printf("\n======== CL_InitCGame() ========\n");
+	t1 = Sys_Milliseconds();
+	
 
-
-	// put away the console
+	
+    // put away the console
 	Con_Close();
 
 	// find the current mapname
-	const char* info = cl.gameState.stringData + cl.gameState.stringOffsets[ CS_SERVERINFO ];
-	const char* mapname = Info_ValueForKey( info, "mapname" );
+	info = cl.gameState.stringData + cl.gameState.stringOffsets[ CS_SERVERINFO ];
+	mapname = Info_ValueForKey( info, "mapname" );
 	Com_sprintf( cl.mapname, sizeof( cl.mapname ), "maps/%s.bsp", mapname );
 
 	// load the dll or bytecode
-	vmInterpret_t interpret = Cvar_VariableValue("vm_cgame");
+	interpret = Cvar_VariableValue("vm_cgame");
 	if(cl_connectedToPureServer)
 	{
 		// if sv_pure is set we only allow qvms to be loaded
@@ -737,7 +740,7 @@ void CL_InitCGame(void)
 
 	t2 = Sys_Milliseconds();
 
-	Com_Printf(" CL_InitCGame: %5.2f seconds\n", (t2-t1)/1000.0 );
+	Com_Printf( "CL_InitCGame: %5.2f seconds\n", (t2-t1)/1000.0 );
 
 	// have the renderer touch all its images, so they are present
 	// on the card even if the driver does deferred loading
@@ -751,7 +754,7 @@ void CL_InitCGame(void)
 	// clear anything that got printed
 	Con_ClearNotify ();
 
-   Com_Printf("\n======== CL_InitCGame() finished. ========\n");
+    Com_Printf("...CL_InitCGame() Finished...\n");
 }
 
 
@@ -769,7 +772,7 @@ qboolean CL_GameCommand( void )
 void CL_CGameRendering(void)
 {
 	VM_Call( cgvm, CG_DRAW_ACTIVE_FRAME, cl.serverTime, 0, clc.demoplaying );
-	set_VM_Debug( 0 );
+	VM_Debug( 0 );
 }
 
 
@@ -914,7 +917,8 @@ void CL_FirstSnapshot( void ) {
 CL_SetCGameTime
 ==================
 */
-void CL_SetCGameTime( void ) {
+void CL_SetCGameTime( void )
+{
 	// getting a valid frame message ends the connection process
 	if ( clc.state != CA_ACTIVE ) {
 		if ( clc.state != CA_PRIMED ) {
@@ -964,7 +968,9 @@ void CL_SetCGameTime( void ) {
 		// cl_timeNudge is a user adjustable cvar that allows more
 		// or less latency to be added in the interest of better 
 		// smoothness or better responsiveness.
-		int tn = cl_timeNudge->integer;
+		int tn;
+		
+		tn = cl_timeNudge->integer;
 		if (tn<-30) {
 			tn = -30;
 		} else if (tn>30) {

@@ -1,0 +1,234 @@
+<html><head>
+<meta http-equiv="content-type" content="text/html; charset=windows-1252">
+<title>Multitexture and the Quake 3 graphics engine</title>
+<meta name="Template" content="C:\PROGRAM FILES\MICROSOFT OFFICE\OFFICE\html.dot">
+</head>
+<body vlink="#800080" link="#0000ff" bgcolor="#ffffff">
+
+<b><font size="5"><p align="CENTER">Multitexture and the Quake 3 graphics engine</p>
+</font></b><font size="2"><p align="CENTER">by Bryan McNett</p>
+<p>This article will attempt to explain one of Quake 3’s most important 
+graphics technologies. Afterwards, you may download a file which lets 
+you play with Quake 3 technology in <i>Adobe Photoshop</i>.</p>
+
+<font color="#ff0000"><p>note! the web server was corrupting the photoshop files. this was fixed at 10am on 7/27. we apologize for the inconvenience.</p></font>
+
+<p>When cheap 3D hardware acceleration began to proliferate, computer 
+game designers who don’t understand graphics technology breathed a sigh 
+of relief. "Finally," they said, "all games will look equally good, and 
+then gameplay will rule the marketplace." In May, 1998, these words bear
+ a whiff of truth: games without new graphics technology regularly blow 
+people away simply by supporting 3DFX. This will change utterly upon the
+ release of id software’s "Quake 3", the first computer game engine 
+known to grudgingly accept 3DFX as a minimum requirement.</p>
+<i></i><p><i>Light mapping</i> is one Quake technology that changed the 
+computer game industry forever. Without the detailed shadows made 
+possible by light mapping, it is very difficult to convey a sense of 
+depth or realism, especially when texture maps repeat. Light mapping is 
+also an early example of <i>multitexture</i> in computer games. 
+Multitexture refers to the act of mixing two or more texture maps to 
+create a new texture map. Multitexture is also the key to the Quake 3 
+graphics technology I will discuss. Let’s use light mapping to acquaint 
+ourselves with multitexture:</p>
+<p>A light map is <i>multiplied</i> with a texture map to produce 
+shadows. It may not be clear what this means. At these times, it helps 
+to think of colors as numbers between zero and one, with black having 
+the value zero and white having the value one. Because white has the 
+value one, multiplying it with any other color does not change the 
+color:</p>
+<center><table bgcolor="#f0f0f0">
+<tbody><tr><td align="center"><img src="Multitexture%20and%20the%20Quake%203%20graphics%20engine_files/smaller.jpg"></td><td align="center">X</td><td align="center"><img src="Multitexture%20and%20the%20Quake%203%20graphics%20engine_files/white.jpg"></td><td align="center">=</td><td align="center"><img src="Multitexture%20and%20the%20Quake%203%20graphics%20engine_files/smaller.jpg"></td></tr>
+<tr><td align="center">whatever</td><td align="center">times</td><td align="center">one</td><td align="center">equals</td><td align="center">whatever</td></tr>
+</tbody></table></center>
+<p>Because black has the value zero, multiplying it with any other color changes the color to black:</p>
+<center><table bgcolor="#f0f0f0">
+<tbody><tr><td align="center"><img src="Multitexture%20and%20the%20Quake%203%20graphics%20engine_files/smaller.jpg"></td><td align="center">X</td><td align="center"><img src="Multitexture%20and%20the%20Quake%203%20graphics%20engine_files/black.jpg"></td><td align="center">=</td><td align="center"><img src="Multitexture%20and%20the%20Quake%203%20graphics%20engine_files/black.jpg"></td></tr>
+<tr><td align="center">whatever</td><td align="center">times</td><td align="center">zero</td><td align="center">equals</td><td align="center">zero</td></tr>
+</tbody></table></center>
+<p>In a light map, shadows are black and the rest is bright. Therefore, 
+when the light map is multiplied with the texture map, shadows become 
+black and the rest stays essentially the same:</p>
+<center><table bgcolor="#f0f0f0">
+<tbody><tr><td align="center"><img src="Multitexture%20and%20the%20Quake%203%20graphics%20engine_files/texturemap.jpg"></td><td align="center">X</td><td align="center"><img src="Multitexture%20and%20the%20Quake%203%20graphics%20engine_files/lightmap.jpg"></td><td align="center">=</td><td align="center"><img src="Multitexture%20and%20the%20Quake%203%20graphics%20engine_files/multiplied.jpg"></td></tr>
+<tr><td align="center">texture map</td><td align="center">times</td><td align="center">light map</td><td align="center">equals</td><td align="center">shadows</td></tr>
+</tbody></table></center>
+<p>Let’s look at what happens to one pixel when a light map is <i>multiplied</i>
+ with a texture map. In this example, I will use pseudocode because it 
+is familiar to programmers. P stands for "pixel color", T for "texture 
+color", and L for "light map color":</p></font><dir><font size="2">
+</font><dir><font size="2">
+
+</font><pre>P.r = L.r * T.r; // red
+P.g = L.g * T.g; // green
+P.b = L.b * T.b; // blue</pre></dir>
+</dir>
+
+<font size="2"><p>To find the pixel color, we <i>multiply</i> the values of the texture map and light map. Since we do this once for each pixel, we may say that we are <i>multiplying</i> the texture maps themselves. </p>
+<p>At this point, we should abandon pseudocode in favor of something with the same meaning – but a more compact form: </p></font><dir><font size="2">
+</font><dir><font size="2">
+
+</font><p><img src="Multitexture%20and%20the%20Quake%203%20graphics%20engine_files/Image1.gif"></p></dir>
+</dir>
+
+<font size="2"><p>Those who have studied mathematics should know that this is an equation. In English, this equation is saying: </p></font><dir><font size="2">
+</font><dir><font size="2">
+
+</font><font size="2" face="Courier New"><p>"the pixel color is equal to the texture map multiplied by the light map."</p></font></dir><font size="2" face="Courier New">
+</font></dir><font size="2" face="Courier New">
+
+</font><font size="2"><p>Surprisingly, the corresponding equation for 
+Quake 3 was announced in public by Brian Hook of id software in May, 
+1998. Here is an interpretation:</p></font><dir><font size="2">
+</font><dir><font size="2">
+
+</font><p><img src="Multitexture%20and%20the%20Quake%203%20graphics%20engine_files/Image3.gif"></p></dir>
+</dir>
+
+<font size="2"><p>Aside from new terms B, S, and ?, Quake 3's equation 
+is the same as Quake's. Before we examine the meaning of the new terms, 
+however, let’s express this equation as pseudocode, which some people 
+find easier to read:</p></font><dir><font size="2">
+</font><dir><font size="2">
+
+</font><pre>p = L;
+for( i=0; i&lt;n; i++ ) {
+ p += B[i];
+}
+p = p * T + S;</pre></dir>
+</dir>
+
+<font size="2"><p>Now let's express it as English:</p></font><dir><font size="2">
+</font><dir><font size="2">
+
+</font><font size="2" face="Courier New"><p>"The pixel color is equal to
+ the static light map plus the dynamic bump maps, multiplied by the 
+texture map, and then added to the specularity map. We aren't sure what 
+comes next."</p></font></dir><font size="2" face="Courier New">
+</font></dir><font size="2" face="Courier New">
+
+</font><font size="2"><p>I must emphasize that even Mr. Hook admits that
+ the Quake 3 engine is subject to change. Also, it is possible that only
+ walls get static light maps, or only objects get dynamic bump maps... 
+since I'm not involved with Quake 3 development, I have no way of 
+knowing the details. With that in mind, let's continue.</p>
+<p>We’ve seen texture multiplication before, but here we are introduced to texture <i>addition</i>. Where multiplication tends to make textures darker, addition tends to make them brighter:</p>
+<center><table bgcolor="#f0f0f0">
+<tbody><tr><td align="center"><img src="Multitexture%20and%20the%20Quake%203%20graphics%20engine_files/smaller.jpg"></td><td align="center">+</td><td align="center"><img src="Multitexture%20and%20the%20Quake%203%20graphics%20engine_files/white.jpg"></td><td align="center">=</td><td align="center"><img src="Multitexture%20and%20the%20Quake%203%20graphics%20engine_files/white.jpg"></td></tr>
+<tr><td align="center">whatever</td><td align="center">plus</td><td align="center">one</td><td align="center">equals</td><td align="center">one</td></tr>
+</tbody></table></center>
+<p>White is the brightest color. No matter what you add to it, it just doesn't get any brighter.</p>
+<center><table bgcolor="#f0f0f0">
+<tbody><tr><td align="center"><img src="Multitexture%20and%20the%20Quake%203%20graphics%20engine_files/smaller.jpg"></td><td align="center">+</td><td align="center"><img src="Multitexture%20and%20the%20Quake%203%20graphics%20engine_files/black.jpg"></td><td align="center">=</td><td align="center"><img src="Multitexture%20and%20the%20Quake%203%20graphics%20engine_files/smaller.jpg"></td></tr>
+<tr><td align="center">whatever</td><td align="center">plus</td><td align="center">zero</td><td align="center">equals</td><td align="center">whatever</td></tr>
+</tbody></table></center>
+<center><table bgcolor="#f0f0f0">
+<tbody><tr><td align="center"><img src="Multitexture%20and%20the%20Quake%203%20graphics%20engine_files/smaller.jpg"></td><td align="center">+</td><td align="center"><img src="Multitexture%20and%20the%20Quake%203%20graphics%20engine_files/lightmap.jpg"></td><td align="center">=</td><td align="center"><img src="Multitexture%20and%20the%20Quake%203%20graphics%20engine_files/glare.jpg"></td></tr>
+<tr><td align="center">texture map</td><td align="center">plus</td><td align="center">specularity map</td><td align="center">equals</td><td align="center">shiny</td></tr>
+</tbody></table></center>
+<p>Now to explain the terms B, S, and ? in Quake 3's equation. B stands for <i>bump map</i>, though it is <font color="#ff0000">nothing nothing nothing</font> like the <i>bump maps</i> that appear in the computer graphics literature. Quake 3 bump maps are totally new. It is <i>very</i> important that you learn this distinction <i>now</i>. The white parts are <font color="#ff0000">not</font>
+ the parts that "stick out". Each bump map is the light map for the 
+polygon as dynamically lit from a particular range of angles. When all 
+the <i>bump maps</i> are <i>added</i>, the surface is dynamically lit 
+from all angles. As such, Quake 3 bump maps are similar to the light 
+maps that appear in Paul Haeberli's article <a href="http://www.sgi.com/grafica/synth/index.html">Synthetic Lighting for Photography</a>.</p></font>
+<p align="CENTER"></p><center><table width="638" cellspacing="0" cellpadding="7" border="0">
+<tbody><tr><td valign="TOP">
+<p align="CENTER"><img src="Multitexture%20and%20the%20Quake%203%20graphics%20engine_files/bump5.gif" width="200" height="200"></p>
+<font size="2"></font><p align="CENTER"><font size="2">A complete light map of a raised button</font></p></td>
+</tr>
+</tbody></table>
+</center><p></p>
+
+<p align="CENTER"></p>
+<p align="CENTER"></p><center><table width="638" cellspacing="0" cellpadding="7" border="0">
+<tbody><tr><td width="50%" valign="TOP" height="11">
+<p align="CENTER"><img src="Multitexture%20and%20the%20Quake%203%20graphics%20engine_files/bump1.gif" width="200" height="200"></p>
+<font size="2"></font><p align="CENTER"><font size="2">bump map for when the light is to the upper-left</font></p></td>
+<td width="50%" valign="TOP" height="11">
+<p align="CENTER"><img src="Multitexture%20and%20the%20Quake%203%20graphics%20engine_files/bump2.gif" width="200" height="200"></p>
+<font size="2"></font><p align="CENTER"><font size="2">bump map for when the light is to the upper-right</font></p></td>
+</tr>
+<tr><td width="50%" valign="TOP" height="25">
+<p align="CENTER"><img src="Multitexture%20and%20the%20Quake%203%20graphics%20engine_files/bump3.gif" width="200" height="200"></p>
+<font size="2"></font><p align="CENTER"><font size="2">bump map for when the light is below</font></p></td>
+<td width="50%" valign="TOP" height="25">
+<p align="CENTER"><img src="Multitexture%20and%20the%20Quake%203%20graphics%20engine_files/bump4.gif" width="200" height="200"></p>
+<font size="2"></font><p align="CENTER"><font size="2">bump map for when the light is directly in front</font></p></td>
+</tr>
+</tbody></table>
+</center><p></p>
+
+<font size="2"><p>Quake 3’s <i>bump maps</i> are different from ordinary
+ light maps because it is possible to modulate their brightness 
+independently by adjusting per-vertex iterated or constant color. This 
+results in a surface with texel-sized cracks and bumps that are always 
+lit from the correct direction. As dynamic lights swing around in real 
+time, texel-sized highlights on the cracks and bumps swing around in 
+response. The result is a shockingly real environment for those who are 
+just now becoming jaded with the visuals in Quake 2.</p>
+<p>S stands for <i>specularity map</i>. This is a supplementary light map for only the shiny parts of a surface. Where the specularity map is bright, a glare will be <i>added</i> when a light points directly at it. Where it is dark, there is no glare. Because it is a texture map, the <i>specularity map</i>
+ enables the distinction between shiny and dull parts of a surface to be
+ the size of a single texel. Likewise, it is not a choice of fully dull 
+or fully shiny – there should be hundreds of shine levels for a texel to
+ choose from.</p>
+<p>? stands for two or perhaps more additional effects about which I understand little at this time.</p>
+<center><font size="5"><b>Time to Download the Nummy Goodies</b></font></center>
+<p>For those of you lucky enough to own Photoshop, but somehow not lucky
+ enough to work at id software, I've put together a file that lets you 
+play with Quake 3's multitexture technology in real time. By playing 
+with this file, you can get an early glimpse at the fundamentals of 
+Quake 3 texture editing. Unfortunately, like some 3D cards, Photoshop 
+does not really support all the required <i>mixing modes</i>. This can be fixed by tripling the number of "passes", but I'll leave that as an exercise for the reader.</p>
+<p>Once you load <i>shader.psd</i> into Photoshop, open the "layers" window. This should appear:</p>
+<center><img src="Multitexture%20and%20the%20Quake%203%20graphics%20engine_files/layers.jpg"></center>
+<p>Each Photoshop layer corresponds to a single "pass" of multitexture. 
+Let's explain how these layers help you to play the roles of "id 
+software texture designer", "Quake 3 engine" and "light map compiler".</p>
+<center><img src="Multitexture%20and%20the%20Quake%203%20graphics%20engine_files/light.jpg"></center>
+<p>When something bright appears while you're playing Quake and Quake 2,
+ the graphics engine draws bright circles into the light map. The final 
+step of Quake level design is the light compiler, another program that 
+draws stuff into the light map. You can pretend that you are either the 
+light map compiler or the Quake engine by selecting the "light map" 
+layer, then doodling into it with the usual Photoshop tools.</p>
+<center><img src="Multitexture%20and%20the%20Quake%203%20graphics%20engine_files/opacity.jpg"></center>
+<center><img src="Multitexture%20and%20the%20Quake%203%20graphics%20engine_files/bump.jpg"></center>
+<p>The pure white square to the left of the <i>layer mask</i> is like one big white polygon. By doodling into the white square, you're saying <i>"instead of one big white polygon, there are thousands of colored polygons, each the size of a single pixel."</i> Quake 3 will not generally draw polygons that small.</p>
+<p>By doodling into the <i>layer mask</i> of bump map #1, however, you are saying <i>"the
+ white parts of this bump map are the parts of the surface that point 
+directly away from the surface, like the wall itself and the top of this
+ raised button. The black parts are those that do not point directly 
+away from the surface, like the edge of the raised button. The gray 
+parts are in between."</i> By doodling into bump map #2, you are saying <i>"the white parts are the parts of the surface that point downward, like the bottom edge of this raised button."</i> And so on. This is the job of the texture designer.</p>
+<p>By adjusting the opacity slider of bump map #1, you are saying <i>"this much dynamic light is striking the surface directly."</i> By adjusting the opacity slider for bump map #2, you are saying <i>"this much dynamic light is striking the surface from below."</i> And so on. This is the job of the Quake 3 graphics engine.</p>
+<p>The image will look a billion times better if you make very many tiny
+ bumps - not one big bump like this one. The bump maps that ship with 
+Quake 3 will probably have lots of tiny bumps and cracks.</p>
+<center><img src="Multitexture%20and%20the%20Quake%203%20graphics%20engine_files/diffuse.jpg"></center>
+<p>The Quake engines don't draw stuff into the diffuse map while you're 
+playing. You can play texture designer, however, by doodling on the 
+diffuse map layer.</p>
+<center><img src="Multitexture%20and%20the%20Quake%203%20graphics%20engine_files/opacity.jpg"></center>
+<center><img src="Multitexture%20and%20the%20Quake%203%20graphics%20engine_files/specularity.jpg"></center>
+<p>The pure white square to the left of the <i>layer mask</i> is like one huge white polygon. By doodling into the white square, you're saying <i>"instead of one big white polygon, there are thousands of colored polygons, each the size of a single pixel."</i> Quake 3 will not generally draw polygons that small.</p>
+<p>By doodling into the <i>layer mask</i>, however, you are saying <i>"the
+ white parts of this specularity map are the parts of the surface that 
+are very shiny. The black parts are the parts that are very dull. The 
+gray parts are in between."</i> This is the job of the texture designer.</p>
+<p>By setting the opacity slider to 100%, you are saying <i>"the dynamic light striking this surface points directly at the surface."</i> By setting it to 0%, you are saying <i>"the dynamic light striking this surface is not really pointing directly at the surface."</i> This is the job of the Quake 3 graphics engine.</p>
+<p>You get the most mileage from a specularity map when there are many 
+tiny variations in shininess, not one big one like this. Quake 3 will 
+probably ship with specularity maps that have many tiny features.</p>
+<center><table><tbody><tr><td align="center">
+<a href="http://www.bigpanda.com/trinity/shader.psd"><img src="Multitexture%20and%20the%20Quake%203%20graphics%20engine_files/shader.gif"></a><br>click above to download shader.psd, a shiny wooden wall with a large, shiny raised button and dull grout.
+</td></tr></tbody></table></center>
+<p>With so many people equating 3DFX with reality these days, it may be 
+difficult to visualize Quake 3 as significantly better in ways that are 
+important to most game players. Even if i could provide screen shots of 
+Quake 3, which i clearly can't, the increase in quality would not be 
+obvious. The extra quality conferred by multitexture appears <i>only</i>
+ when the game is in motion. Once you see this technology in motion for 
+the first time, your jaw will drop. Other game engines will seem like an
+ enormous waste of time.</p></font>
+
+</body></html>

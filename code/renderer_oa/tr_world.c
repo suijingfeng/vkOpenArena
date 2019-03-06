@@ -21,22 +21,6 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 */
 #include "tr_local.h"
 
-extern trGlobals_t tr;
-extern refimport_t ri;
-
-
-cvar_t* r_nocull;
-
-
-static cvar_t* r_lockpvs;
-static cvar_t* r_showcluster;
-
-// enables culling of planar surfaces with back side test
-static cvar_t* r_facePlaneCull;
-
-// disable/enable usage of PVS
-static cvar_t* r_novis;
-
 
 /*
 =================
@@ -50,7 +34,7 @@ static qboolean	R_CullTriSurf( srfTriangles_t *cv )
 {
 	int boxCull = R_CullLocalBox( cv->bounds );
 
-	if( boxCull == CULL_OUT )
+	if ( boxCull == CULL_OUT )
     {
 		return qtrue;
 	}
@@ -122,7 +106,7 @@ This will also allow mirrors on both sides of a model without recursion.
 */
 static qboolean	R_CullSurface( surfaceType_t *surface, shader_t *shader )
 {
-
+	srfSurfaceFace_t *sface;
 
 	if ( r_nocull->integer ) {
 		return qfalse;
@@ -149,7 +133,7 @@ static qboolean	R_CullSurface( surfaceType_t *surface, shader_t *shader )
 		return qfalse;
 	}
 
-	srfSurfaceFace_t* sface = ( srfSurfaceFace_t * ) surface;
+	sface = ( srfSurfaceFace_t * ) surface;
 	float d = DotProduct (tr.or.viewOrigin, sface->plane.normal);
 
 	// don't cull exactly on the plane, because there are levels of rounding
@@ -205,7 +189,7 @@ static int R_DlightFace( srfSurfaceFace_t *face, int dlightBits )
 static int R_DlightGrid( srfGridMesh_t *grid, int dlightBits )
 {
 	int	i;
-	for( i = 0 ; i < tr.refdef.num_dlights ; i++ )
+	for ( i = 0 ; i < tr.refdef.num_dlights ; i++ )
     {
 		if ( ! ( dlightBits & ( 1 << i ) ) ) {
 			continue;
@@ -328,8 +312,7 @@ static void R_AddWorldSurface( msurface_t *surf, int dlightBits )
 	}
 
 	// check for dlighting
-	if ( dlightBits )
-    {
+	if ( dlightBits ) {
 		dlightBits = R_DlightSurface( surf, dlightBits );
 		dlightBits = ( dlightBits != 0 );
 	}
@@ -446,6 +429,8 @@ static void R_RecursiveWorldNode( mnode_t *node, int planeBits, int dlightBits )
 		dlightBits = newDlights[1];
 	}while ( 1 );
 
+
+
     // leaf node, so add mark surfaces
     tr.pc.c_leafs++;
 
@@ -540,6 +525,12 @@ static void R_MarkLeaves (void)
 {
 	int	i;
 
+	// lockpvs lets designers walk around to determine the
+	// extent of the current pvs
+	if( r_lockpvs->integer ) {
+		return;
+	}
+
 	// current viewcluster
 	mnode_t* leaf = R_PointInLeaf( tr.viewParms.pvsOrigin );
 	int cluster = leaf->cluster;
@@ -548,12 +539,12 @@ static void R_MarkLeaves (void)
 	// hasn't changed, we don't need to mark everything again
 
 	// if r_showcluster was just turned on, remark everything 
-	if( (tr.viewCluster == cluster) && (!tr.refdef.areamaskModified) && (!r_showcluster->modified) )
+	if ( tr.viewCluster == cluster && !tr.refdef.areamaskModified && !r_showcluster->modified )
     {
 		return;
 	}
 
-	if( r_showcluster->modified || r_showcluster->integer )
+	if ( r_showcluster->modified || r_showcluster->integer )
     {
 		r_showcluster->modified = qfalse;
 		if ( r_showcluster->integer ) {
@@ -578,7 +569,7 @@ static void R_MarkLeaves (void)
 
 	const unsigned char	*vis = R_ClusterPVS (tr.viewCluster);
 	
-	for (i=0,leaf=tr.world->nodes; i<tr.world->numnodes; i++, leaf++)
+	for (i=0,leaf=tr.world->nodes ; i<tr.world->numnodes ; i++, leaf++)
     {
 		cluster = leaf->cluster;
 		if ( cluster < 0 || cluster >= tr.world->numClusters )
@@ -655,21 +646,12 @@ qboolean R_inPVS( const vec3_t p1, const vec3_t p2 )
 
 void R_AddWorldSurfaces (void)
 {
-	if ( tr.refdef.rdflags & RDF_NOWORLDMODEL )
-    {
-		return;
-	}
-
 	tr.currentEntityNum = REFENTITYNUM_WORLD;
 	tr.shiftedEntityNum = tr.currentEntityNum << QSORT_REFENTITYNUM_SHIFT;
 
 	// determine which leaves are in the PVS / areamask
-    // lockpvs lets designers walk around to determine the extent of the current pvs
-	if( r_lockpvs->integer )
-    {
-		R_MarkLeaves();
-	}
-    
+	R_MarkLeaves();
+
 	// clear out the visible min/max
 	ClearBounds( tr.viewParms.visBounds[0], tr.viewParms.visBounds[1] );
 
@@ -678,53 +660,4 @@ void R_AddWorldSurfaces (void)
 		tr.refdef.num_dlights = 32 ;
 	}
 	R_RecursiveWorldNode( tr.world->nodes, 15, ( 1 << tr.refdef.num_dlights ) - 1 );
-}
-
-
-int R_CullLocalPointAndRadius( vec3_t pt, float radius )
-{
-	vec3_t transformed;
-
-	R_LocalPointToWorld( pt, transformed );
-
-	return R_CullPointAndRadius( transformed, radius );
-}
-
-
-int R_CullPointAndRadius( vec3_t pt, float radius )
-{
-	qboolean mightBeClipped = qfalse;
-
-	if ( r_nocull->integer )
-		return CULL_CLIP;
-
-    int	i;
-
-	// check against frustum planes
-	for (i = 0 ; i < 4 ; i++) 
-	{
-		cplane_t* frust = &tr.viewParms.frustum[i];
-
-		float dist = DotProduct( pt, frust->normal) - frust->dist;
-		if ( dist < -radius )
-			return CULL_OUT;
-		else if ( dist <= radius ) 
-			mightBeClipped = qtrue;
-	}
-
-	if ( mightBeClipped )
-		return CULL_CLIP;
-
-	return CULL_IN;		// completely inside frustum
-}
-
-
-
-void R_InitWorld(void)
-{
-    r_lockpvs = ri.Cvar_Get ("r_lockpvs", "0", CVAR_CHEAT);
-    r_showcluster = ri.Cvar_Get ("r_showcluster", "0", CVAR_CHEAT);
-    r_facePlaneCull = ri.Cvar_Get ("r_facePlaneCull", "1", CVAR_ARCHIVE );
-    r_nocull = ri.Cvar_Get ("r_nocull", "0", CVAR_CHEAT);
-    r_novis = ri.Cvar_Get ("r_novis", "0", CVAR_CHEAT);
 }

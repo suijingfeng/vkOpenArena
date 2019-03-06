@@ -21,13 +21,10 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 */
 // tr_image.c
 #include "tr_local.h"
-
 #include "tr_dsa.h"
+#include "../renderercommon/image_loader.h"
 
-extern cvar_t *r_ext_texture_filter_anisotropic;
-extern cvar_t *r_ext_max_anisotropy;
-extern cvar_t *r_ext_compressed_textures;// these control use of specific extensions, tr2
-
+extern cvar_t* r_ext_compressed_textures;
 static cvar_t* r_texturebits;
 static unsigned char s_intensitytable[256];
 static unsigned char s_gammatable[256];
@@ -41,12 +38,10 @@ static	image_t*		hashTable[FILE_HASH_SIZE];
 /*
 ** R_GammaCorrect
 */
-void R_GammaCorrect( byte *buffer, int bufSize )
-{
+void R_GammaCorrect( byte *buffer, int bufSize ) {
 	int i;
 
-	for ( i = 0; i < bufSize; i++ )
-    {
+	for ( i = 0; i < bufSize; i++ ) {
 		buffer[i] = s_gammatable[buffer[i]];
 	}
 }
@@ -56,9 +51,7 @@ typedef struct {
 	int	minimize, maximize;
 } textureMode_t;
 
-
-textureMode_t modes[] =
-{
+textureMode_t modes[] = {
 	{"GL_NEAREST", GL_NEAREST, GL_NEAREST},
 	{"GL_LINEAR", GL_LINEAR, GL_LINEAR},
 	{"GL_NEAREST_MIPMAP_NEAREST", GL_NEAREST_MIPMAP_NEAREST, GL_NEAREST},
@@ -72,13 +65,15 @@ textureMode_t modes[] =
 return a hash value for the filename
 ================
 */
-static long generateHashValue( const char *fname )
-{
-	int		i = 0;
-	long	hash = 0;
-	while (fname[i] != '\0')
-    {
-		char letter = tolower(fname[i]);
+static long generateHashValue( const char *fname ) {
+	int		i;
+	long	hash;
+	char	letter;
+
+	hash = 0;
+	i = 0;
+	while (fname[i] != '\0') {
+		letter = tolower(fname[i]);
 		if (letter =='.') break;				// don't include extension
 		if (letter =='\\') letter = '/';		// damn path names
 		hash+=(long)(letter)*(i+119);
@@ -523,11 +518,9 @@ static void RGBAtoNormal(const byte *in, byte *out, int width, int height, qbool
 
 			normal[2] = s[4] * 4;
 
-			if ( normal[0]*normal[0] + normal[1]*normal[1] + normal[2]*normal[2] == 0)
+			if (!VectorNormalize2(normal, normal))
 			{
-				normal[0] = 0;
-                normal[1] = 0;
-                normal[2] = 1;       
+				VectorSet(normal, 0, 0, 1);
 			}
 
 			*outbyte++ = FloatToOffsetByte(normal[0]);
@@ -538,7 +531,17 @@ static void RGBAtoNormal(const byte *in, byte *out, int width, int height, qbool
 	}
 }
 
-#define COPYSAMPLE(a,b) *(unsigned int *)(a) = *(unsigned int *)(b)
+//#define COPYSAMPLE(a,b) *(unsigned int *)(a) = *(unsigned int *)(b)
+
+static inline void COPYSAMPLE(unsigned char* a, unsigned char* b)
+{
+	a[0] = b[0];
+	a[1] = b[1];
+	a[2] = b[2];
+	a[3] = b[3];
+}	
+
+
 
 // based on Fast Curve Based Interpolation
 // from Fast Artifacts-Free Image Interpolation (http://www.andreagiachetti.it/icbi/)
@@ -548,7 +551,7 @@ static void RGBAtoNormal(const byte *in, byte *out, int width, int height, qbool
 static void DoFCBI(byte *in, byte *out, int width, int height, int component)
 {
 	int x, y;
-	unsigned char *outbyte, *inbyte;
+	byte *outbyte, *inbyte;
 
 	// copy in to out
 	for (y = 2; y < height - 2; y += 2)
@@ -1381,8 +1384,7 @@ static void R_MipMapNormalHeight (const byte *in, byte *out, int width, int heig
 	height >>= 1;
 	
 	for (i=0 ; i<height ; i++, in+=row) {
-		for (j=0 ; j<width ; j++, out+=4, in+=8)
-		{
+		for (j=0 ; j<width ; j++, out+=4, in+=8) {
 			vec3_t v;
 
 			v[0] =  OffsetByteToFloat(in[sx      ]);
@@ -1401,7 +1403,7 @@ static void R_MipMapNormalHeight (const byte *in, byte *out, int width, int heig
 			v[1] += OffsetByteToFloat(in[   row+5]);
 			v[2] += OffsetByteToFloat(in[   row+6]);
 
-			FastVectorNormalize(v);
+			FastNormalize1f(v);
 
 			//v[0] *= 0.25f;
 			//v[1] *= 0.25f;
@@ -1481,6 +1483,16 @@ RawImage_ScaleToPower2
 
 ===============
 */
+static inline int NextPowerOfTwo(int in)
+{
+	int out;
+
+	for (out = 1; out < in; out <<= 1)
+		;
+
+	return out;
+}
+
 static qboolean RawImage_ScaleToPower2( byte **data, int *inout_width, int *inout_height, imgType_t type, imgFlags_t flags, byte **resampledBuffer)
 {
 	int width =         *inout_width;
@@ -1710,7 +1722,7 @@ static GLenum RawImage_GetFormat(const byte *data, int numPixels, GLenum picForm
 	}
 	else if(lightMap)
 	{
-			internalFormat = GL_RGBA;
+		internalFormat = GL_RGBA;
 	}
 	else
 	{
@@ -1992,7 +2004,7 @@ static void RawImage_UploadTexture(GLuint texture, byte *data, int x, int y, int
 
 static void Upload32(unsigned char *data, int x, int y, int width, int height, GLenum picFormat, int numMips, image_t *image, qboolean scaled)
 {
-	int			i, c;
+	int	i, c;
 
 
 	imgType_t type = image->type;
@@ -2039,7 +2051,6 @@ static void Upload32(unsigned char *data, int x, int y, int width, int height, G
 
 	GL_CheckErrors();
 }
-
 
 /*
 ================
@@ -2155,9 +2166,6 @@ image_t *R_CreateImage2( const char *name, byte *pic, int width, int height, GLe
 	if (cubemap)
 		qglTextureParameteriEXT(image->texnum, textureTarget, GL_TEXTURE_WRAP_R, glWrapClampMode);
 
-	if (r_ext_texture_filter_anisotropic->integer && !cubemap)
-		qglTextureParameteriEXT(image->texnum, textureTarget, GL_TEXTURE_MAX_ANISOTROPY_EXT,
-			mipmap ? r_ext_max_anisotropy->integer : 1);
 
 	switch(internalFormat)
 	{
@@ -2240,7 +2248,7 @@ Loads any of the supported image types into a canonical
 */
 void R_LoadImage( const char *name, byte **pic, int *width, int *height, GLenum *picFormat, int *numMips )
 {
-	qboolean orgNameFailed = qfalse;
+	//qboolean orgNameFailed = qfalse;
 	int orgLoader = -1;
 	int i;
 	char localName[ MAX_QPATH ];
@@ -2291,7 +2299,7 @@ void R_LoadImage( const char *name, byte **pic, int *width, int *height, GLenum 
 			{
 				// Loader failed, most likely because the file isn't there;
 				// try again without the extension
-				orgNameFailed = qtrue;
+				//orgNameFailed = qtrue;
 				orgLoader = i;
 				stripExtension( name, localName, MAX_QPATH );
 			}
@@ -2317,12 +2325,12 @@ void R_LoadImage( const char *name, byte **pic, int *width, int *height, GLenum 
 
 		if( *pic )
 		{
+            /*
 			if( orgNameFailed )
 			{
-				ri.Printf( PRINT_DEVELOPER, "WARNING: %s not present, using %s instead\n",
-						name, altName );
+				ri.Printf( PRINT_DEVELOPER, "WARNING: %s not present, using %s instead\n", name, altName );
 			}
-
+            */
 			break;
 		}
 	}
@@ -2793,11 +2801,27 @@ void R_SetColorMappings( void ) {
 	int		inf;
 
 	// setup the overbright lighting
-	tr.overbrightBits = 1;
+	tr.overbrightBits = r_overBrightBits->integer;
 
+	// allow 2 overbright bits
+	if ( tr.overbrightBits > 2 ) {
+		tr.overbrightBits = 2;
+	} else if ( tr.overbrightBits < 0 ) {
+		tr.overbrightBits = 0;
+	}
 
-	tr.identityLight = 1.0f;
+	// don't allow more overbright bits than map overbright bits
+	if ( tr.overbrightBits > r_mapOverBrightBits->integer ) {
+		tr.overbrightBits = r_mapOverBrightBits->integer;
+	}
+
+	tr.identityLight = 1.0f / ( 1 << tr.overbrightBits );
 	tr.identityLightByte = 255 * tr.identityLight;
+
+
+	if ( r_intensity->value <= 1 ) {
+		ri.Cvar_Set( "r_intensity", "1" );
+	}
 
 	if ( r_gamma->value < 0.5f ) {
 		ri.Cvar_Set( "r_gamma", "0.5" );
@@ -2817,14 +2841,14 @@ void R_SetColorMappings( void ) {
 		if (inf < 0) {
 			inf = 0;
 		}
-		else if (inf > 255) {
+		if (inf > 255) {
 			inf = 255;
 		}
 		s_gammatable[i] = inf;
 	}
 
 	for (i=0 ; i<256 ; i++) {
-		j = i;
+		j = i * r_intensity->value;
 		if (j > 255) {
 			j = 255;
 		}
@@ -2833,7 +2857,7 @@ void R_SetColorMappings( void ) {
 
 	if ( glConfig.deviceSupportsGamma )
 	{
-		ri.SetGamma( s_gammatable, s_gammatable, s_gammatable );
+		GLimp_SetGamma( s_gammatable, s_gammatable, s_gammatable );
 	}
 }
 
@@ -2843,7 +2867,7 @@ void R_InitImages( void )
 	memset(hashTable, 0, sizeof(hashTable));
 	// build brightness translation tables
 	
-    r_texturebits = ri.Cvar_Get( "r_texturebits", "16", CVAR_ARCHIVE | CVAR_LATCH );
+    r_texturebits = ri.Cvar_Get("r_texturebits", "32", CVAR_ARCHIVE | CVAR_LATCH);
     ri.Printf( PRINT_ALL, "texture bits: %d\n", r_texturebits->integer );
 
     R_SetColorMappings();
@@ -2995,10 +3019,7 @@ qhandle_t RE_RegisterSkin( const char *name ) {
 	qhandle_t	hSkin;
 	skin_t		*skin;
 	skinSurface_t	*surf;
-	union {
-		char *c;
-		void *v;
-	} text;
+	char *text;
 	char		*text_p;
 	char		*token;
 	char		surfName[MAX_QPATH];
@@ -3048,13 +3069,13 @@ qhandle_t RE_RegisterSkin( const char *name ) {
 	}
 
 	// load and parse the skin file
-    ri.FS_ReadFile( name, &text.v );
-	if ( !text.c ) {
+    ri.R_ReadFile( name, &text );
+	if ( !text ) {
 		return 0;
 	}
 
 	totalSurfaces = 0;
-	text_p = text.c;
+	text_p = text;
 	while ( text_p && *text_p ) {
 		// get surface name
 		token = CommaParse( &text_p );
@@ -3087,7 +3108,7 @@ qhandle_t RE_RegisterSkin( const char *name ) {
 		totalSurfaces++;
 	}
 
-	ri.FS_FreeFile( text.v );
+	ri.FS_FreeFile(text);
 
 	if ( totalSurfaces > MAX_SKIN_SURFACES ) {
 		ri.Printf( PRINT_WARNING, "WARNING: Ignoring excess surfaces (found %d, max is %d) in skin '%s'!\n",

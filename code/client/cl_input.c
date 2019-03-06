@@ -72,6 +72,19 @@ static ID_INLINE signed char ClampChar( int i )
 	return i;
 }
 
+/*
+static ID_INLINE signed short ClampShort( int i )
+{
+	if ( i < -32768 ) {
+		return -32768;
+	}
+    else if ( i > 0x7fff ) {
+		return 0x7fff;
+	}
+    
+	return i;
+}
+*/
 
 
 void IN_MLookDown( void ) {
@@ -169,9 +182,11 @@ CL_KeyState
 Returns the fraction of the frame that the key was down
 ===============
 */
-float CL_KeyState( kbutton_t *key )
-{
-	int msec = key->msec;
+float CL_KeyState( kbutton_t *key ) {
+	float		val;
+	int			msec;
+
+	msec = key->msec;
 	key->msec = 0;
 
 	if ( key->active ) {
@@ -184,12 +199,19 @@ float CL_KeyState( kbutton_t *key )
 		key->downtime = com_frameTime;
 	}
 
+#if 0
+	if (msec) {
+		Com_Printf ("%i ", msec);
+	}
+#endif
 
-	float val = (float)msec / frame_msec;
-	if ( val < 0 )
+	val = (float)msec / frame_msec;
+	if ( val < 0 ) {
 		val = 0;
-    else if( val > 1 )
+	}
+	if ( val > 1 ) {
 		val = 1;
+	}
 
 	return val;
 }
@@ -358,17 +380,20 @@ void CL_KeyMove( usercmd_t *cmd ) {
 	cmd->upmove = ClampChar( up );
 }
 
-
-
+/*
+=================
+CL_MouseEvent
+=================
+*/
 void CL_MouseEvent(int dx, int dy, int time)
 {
 	if( Key_GetCatcher() & KEYCATCH_UI )
     {
-		VM_Call(uivm, UI_MOUSE_EVENT, dx, dy);
+		VM_Call( uivm, UI_MOUSE_EVENT, dx, dy );
 	}
-    else if( Key_GetCatcher() & KEYCATCH_CGAME)
+    else if (Key_GetCatcher() & KEYCATCH_CGAME)
     {
-		VM_Call(cgvm, CG_MOUSE_EVENT, dx, dy);
+		VM_Call (cgvm, CG_MOUSE_EVENT, dx, dy);
 	}
     else
     {
@@ -410,10 +435,13 @@ void CL_MouseMove(usercmd_t *cmd)
 	{
 		if(cl_mouseAccelStyle->integer == 0)
 		{
-			float rate = sqrt(mx * mx + my * my) / frame_msec;
-			float accelSensitivity = cl_sensitivity->value + rate * cl_mouseAccel->value;
+			float accelSensitivity;
+			float rate;
 			
-            mx *= accelSensitivity;
+			rate = sqrt(mx * mx + my * my) / (float) frame_msec;
+
+			accelSensitivity = cl_sensitivity->value + rate * cl_mouseAccel->value;
+			mx *= accelSensitivity;
 			my *= accelSensitivity;
 			
 			if(cl_showMouseRate->integer)
@@ -547,10 +575,8 @@ usercmd_t CL_CreateCmd(void)
 	// store out the final values
 	CL_FinishMove( &cmd );
 
-
 	// draw debug graphs of turning for mouse testing
-	if ( cl_debugMove->integer )
-    {
+	if ( cl_debugMove->integer ) {
 		if ( cl_debugMove->integer == 1 ) {
 			SCR_DebugGraph( fabs(cl.viewangles[YAW] - oldAngles[YAW]) );
 		}
@@ -572,6 +598,8 @@ Create a new usercmd_t structure for this frame
 */
 void CL_CreateNewCommands( void )
 {
+	int	cmdNum;
+
 	// no need to create usercmds until we have a gamestate
 	if ( clc.state < CA_PRIMED ) {
 		return;
@@ -595,7 +623,7 @@ void CL_CreateNewCommands( void )
 
 	// generate a command for this frame
 	cl.cmdNumber++;
-	int cmdNum = cl.cmdNumber & CMD_MASK;
+	cmdNum = cl.cmdNumber & CMD_MASK;
 	cl.cmds[cmdNum] = CL_CreateCmd();
 }
 
@@ -610,21 +638,23 @@ delivered in the next packet, but saving a header and
 getting more delta compression will reduce total bandwidth.
 =================
 */
-qboolean CL_ReadyToSendPacket( void )
-{
+qboolean CL_ReadyToSendPacket( void ) {
+	int		oldPacketNum;
+	int		delta;
+
 	// don't send anything if playing back a demo
-	if ( clc.demoplaying || clc.state == CA_CINEMATIC )
-    {
+	if ( clc.demoplaying || clc.state == CA_CINEMATIC ) {
 		return qfalse;
 	}
 
 	// If we are downloading, we send no less than 50ms between packets
-	if ( *clc.downloadTempName && (cls.realtime - clc.lastPacketSentTime < 50) )
-    {
+	if ( *clc.downloadTempName &&
+		cls.realtime - clc.lastPacketSentTime < 50 ) {
 		return qfalse;
 	}
 
-	// if we don't have a valid gamestate yet, only send one packet a second
+	// if we don't have a valid gamestate yet, only send
+	// one packet a second
 	if ( clc.state != CA_ACTIVE && 
 		clc.state != CA_PRIMED && 
 		!*clc.downloadTempName &&
@@ -648,8 +678,8 @@ qboolean CL_ReadyToSendPacket( void )
 	} else if ( cl_maxpackets->integer > 125 ) {
 		Cvar_Set( "cl_maxpackets", "125" );
 	}
-	int oldPacketNum = (clc.netchan.outgoingSequence - 1) & PACKET_MASK;
-	int delta = cls.realtime -  cl.outPackets[ oldPacketNum ].p_realtime;
+	oldPacketNum = (clc.netchan.outgoingSequence - 1) & PACKET_MASK;
+	delta = cls.realtime -  cl.outPackets[ oldPacketNum ].p_realtime;
 	if ( delta < 1000 / cl_maxpackets->integer ) {
 		// the accumulated commands will go out in the next packet
 		return qfalse;
@@ -679,12 +709,11 @@ During normal gameplay, a client packet will contain something like:
 
 ===================
 */
-void CL_WritePacket( void )
-{
+void CL_WritePacket( void ) {
 	msg_t		buf;
-	unsigned char data[MAX_MSGLEN];
+	byte		data[MAX_MSGLEN];
 	int			i, j;
-	usercmd_t	*cmd;
+	usercmd_t	*cmd, *oldcmd;
 	usercmd_t	nullcmd;
 	int			packetNum;
 	int			oldPacketNum;
@@ -696,7 +725,7 @@ void CL_WritePacket( void )
 	}
 
 	memset( &nullcmd, 0, sizeof(nullcmd) );
-	usercmd_t* oldcmd = &nullcmd;
+	oldcmd = &nullcmd;
 
 	MSG_Init( &buf, data, sizeof(data) );
 
@@ -841,17 +870,14 @@ CL_SendCmd
 Called every frame to builds and sends a command packet to the server.
 =================
 */
-void CL_SendCmd( void )
-{
+void CL_SendCmd( void ) {
 	// don't send any message if not connected
-	if ( clc.state < CA_CONNECTED )
-    {
+	if ( clc.state < CA_CONNECTED ) {
 		return;
 	}
 
 	// don't send commands if paused
-	if ( com_sv_running->integer && sv_paused->integer && cl_paused->integer )
-    {
+	if ( com_sv_running->integer && sv_paused->integer && cl_paused->integer ) {
 		return;
 	}
 
@@ -859,10 +885,8 @@ void CL_SendCmd( void )
 	CL_CreateNewCommands();
 
 	// don't send a packet if the last packet was sent too recently
-	if ( !CL_ReadyToSendPacket() )
-    {
-		if ( cl_showSend->integer )
-        {
+	if ( !CL_ReadyToSendPacket() ) {
+		if ( cl_showSend->integer ) {
 			Com_Printf( ". " );
 		}
 		return;
@@ -922,6 +946,16 @@ void CL_InitInput( void )
 	Cmd_AddCommand ("-button8", IN_Button8Up);
 	Cmd_AddCommand ("+button9", IN_Button9Down);
 	Cmd_AddCommand ("-button9", IN_Button9Up);
+	Cmd_AddCommand ("+button10", IN_Button10Down);
+	Cmd_AddCommand ("-button10", IN_Button10Up);
+	Cmd_AddCommand ("+button11", IN_Button11Down);
+	Cmd_AddCommand ("-button11", IN_Button11Up);
+	Cmd_AddCommand ("+button12", IN_Button12Down);
+	Cmd_AddCommand ("-button12", IN_Button12Up);
+	Cmd_AddCommand ("+button13", IN_Button13Down);
+	Cmd_AddCommand ("-button13", IN_Button13Up);
+	Cmd_AddCommand ("+button14", IN_Button14Down);
+	Cmd_AddCommand ("-button14", IN_Button14Up);
 	Cmd_AddCommand ("+mlook", IN_MLookDown);
 	Cmd_AddCommand ("-mlook", IN_MLookUp);
 
@@ -989,6 +1023,16 @@ void CL_ShutdownInput(void)
 	Cmd_RemoveCommand("-button8");
 	Cmd_RemoveCommand("+button9");
 	Cmd_RemoveCommand("-button9");
+	Cmd_RemoveCommand("+button10");
+	Cmd_RemoveCommand("-button10");
+	Cmd_RemoveCommand("+button11");
+	Cmd_RemoveCommand("-button11");
+	Cmd_RemoveCommand("+button12");
+	Cmd_RemoveCommand("-button12");
+	Cmd_RemoveCommand("+button13");
+	Cmd_RemoveCommand("-button13");
+	Cmd_RemoveCommand("+button14");
+	Cmd_RemoveCommand("-button14");
 	Cmd_RemoveCommand("+mlook");
 	Cmd_RemoveCommand("-mlook");
 

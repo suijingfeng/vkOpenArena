@@ -29,62 +29,9 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
  *
  *****************************************************************************/
 
-#ifndef L_UTILS_H_
-#define L_UTILS_H_
-
 #define Vector2Angles(v,a)		vectoangles(v,a)
 #ifndef MAX_PATH
 #define MAX_PATH				MAX_QPATH
 #endif
 #define Maximum(x,y)			(x > y ? x : y)
 #define Minimum(x,y)			(x < y ? x : y)
-
-
-static ID_INLINE float BE_VectorNormalize( vec3_t v )
-{
-	float length = v[0]*v[0] + v[1]*v[1] + v[2]*v[2];
-
-	if ( length != 0)
-	{
-		float invLen = 1.0f / sqrtf(length);
-		v[0] *= invLen;
-		v[1] *= invLen;
-		v[2] *= invLen;
-        return length*invLen;
-	}
-		
-	return length;
-}
-
-static ID_INLINE void VectorNormalize( float* v )
-{
-	// writing it this way allows gcc to recognize that rsqrt can be used
-    float invLen = v[0] * v[0] + v[1] * v[1] + v[2]*v[2];
-    if(invLen != 0)
-	{
-
-	invLen = 1.0f / sqrtf(invLen);
-
-	v[0] *= invLen;
-	v[1] *= invLen;
-	v[2] *= invLen;
-	}
-}
-
-static ID_INLINE void VectorNormalize2( const float* v, float* out)
-{
-    // writing it this way allows gcc to recognize that rsqrt can be used
-	float invLen = 1.0f/sqrtf(v[0]*v[0] + v[1]*v[1] + v[2]*v[2]);
-
- 	out[0] = v[0] * invLen;
-	out[1] = v[1] * invLen;
-	out[2] = v[2] * invLen;
-}
-
-
-static ID_INLINE float VectorLength( const vec3_t v )
-{
-	return sqrtf(v[0]*v[0] + v[1]*v[1] + v[2]*v[2]);
-}
-
-#endif

@@ -26,7 +26,7 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
 #include "cg_local.h"
 
-#define	MAX_LOCAL_ENTITIES	512
+#define	MAX_LOCAL_ENTITIES	512 
 localEntity_t	cg_localEntities[MAX_LOCAL_ENTITIES];
 localEntity_t	cg_activeLocalEntities;		// double linked list
 localEntity_t	*cg_freeLocalEntities;		// single linked list
@@ -148,6 +148,38 @@ void CG_BloodTrail( localEntity_t *le ) {
 }
 
 
+// LEILEI
+void CG_SmallBloodTrail( localEntity_t *le ) {
+	int		t;
+	int		t2;
+	int		step;
+	vec3_t	newOrigin;
+	localEntity_t	*blood;
+
+	step = 61;
+	t = step * ( (cg.time - cg.frametime + step ) / step );
+	t2 = step * ( cg.time / step );
+
+	for ( ; t <= t2; t += step ) {
+		BG_EvaluateTrajectory( &le->pos, t, newOrigin );
+
+		blood = CG_SmokePuff( newOrigin, vec3_origin, 
+					  3,		// radius
+					  1, 1, 1, 1,	// color
+					  770,		// trailTime
+					  t,		// startTime
+					  0,		// fadeInTime
+					  0,		// flags
+					  cgs.media.lbldShader1 );
+		// use the optimized version
+		blood->leType = LE_FALL_SCALE_FADE;
+		// drop a total of 40 units over its lifetime
+		blood->pos.trDelta[2] = 120;
+	}
+}
+
+
+
 /*
 ================
 CG_FragmentBounceMark
@@ -196,6 +228,42 @@ void CG_FragmentBounceSound( localEntity_t *le, trace_t *trace ) {
 			trap_S_StartSound( trace->endpos, ENTITYNUM_WORLD, CHAN_AUTO, s );
 		}
 	} else if ( le->leBounceSoundType == LEBS_BRASS ) {
+		if ( cg_leiBrassNoise.integer ) {
+		// half the casings will make  casing sounds
+		if ( rand() & 1 ) {
+			int r = rand()&3;
+			sfxHandle_t	s;
+
+			if ( r == 0 ) {
+				s = cgs.media.lbul1Sound;
+			} else if ( r == 1 ) {
+				s = cgs.media.lbul2Sound;
+			} else {
+				s = cgs.media.lbul3Sound;
+			}
+			trap_S_StartSound( trace->endpos, ENTITYNUM_WORLD, CHAN_AUTO, s );
+			}
+		}
+
+	} else if ( le->leBounceSoundType == LEBS_SHELL ) {
+		
+		if ( cg_leiBrassNoise.integer ) {
+			
+		// half the casings will make  casing sounds
+		if ( rand() & 1 ) {
+			int r = rand()&3;
+			sfxHandle_t	s;
+
+			if ( r == 0 ) {
+				s = cgs.media.lshl1Sound;
+			} else if ( r == 1 ) {
+				s = cgs.media.lshl2Sound;
+			} else {
+				s = cgs.media.lshl3Sound;
+			}
+			trap_S_StartSound( trace->endpos, ENTITYNUM_WORLD, CHAN_AUTO, s );
+		}
+		}
 
 	}
 
@@ -203,6 +271,56 @@ void CG_FragmentBounceSound( localEntity_t *le, trace_t *trace ) {
 	// or it gets too noisy as they settle
 	le->leBounceSoundType = LEBS_NONE;
 }
+
+
+// LEILEI 
+void CG_GoreMark( localEntity_t *le, trace_t *trace ) {
+	int			radius;
+
+	if ( le->leMarkType == LEMT_BURN ) {
+
+		radius = 6 + (rand()&16);
+		CG_ImpactMark( cgs.media.lbldShader2, trace->endpos, trace->plane.normal, random()*360,
+			1,1,1,1, qtrue, radius, qfalse );
+	
+	}
+
+	le->leMarkType = LEMT_NONE;
+}
+
+
+/*
+================
+CG_SplatSound LEILEI
+================
+*/
+void CG_SplatSound( localEntity_t *le, trace_t *trace ) {
+	if ( le->leBounceSoundType == LEBS_BLOOD ) {
+		// half the splats will make splat sounds
+	if ( cg_leiGoreNoise.integer ) {
+		if ( rand() & 1 ) {
+			int r = rand()&3;
+			sfxHandle_t	s;
+
+			if ( r == 0 ) {
+				s = cgs.media.lspl1Sound;
+			} else if ( r == 1 ) {
+				s = cgs.media.lspl2Sound;
+			} else {
+				s = cgs.media.lspl3Sound;
+			}
+			trap_S_StartSound( trace->endpos, ENTITYNUM_WORLD, CHAN_AUTO, s );
+		}
+		}
+	} else if ( le->leBounceSoundType == LEBS_BRASS ) {
+		// no GERMAN EURO CENSOR ROBOTS mode yet.
+	}
+
+	// don't allow a fragment to make multiple bounce sounds,
+	// or it gets too noisy as they settle
+	le->leBounceSoundType = LEBS_NONE;
+}
+
 
 
 /*
@@ -315,6 +433,91 @@ void CG_AddFragment( localEntity_t *le ) {
 	trap_R_AddRefEntityToScene( &le->refEntity );
 }
 
+// LEILEI
+
+void CG_JustSplat( localEntity_t *le, trace_t *trace ) {
+	vec3_t	velocity;
+	float	dot;
+	int		hitTime;
+
+	// reflect the velocity on the trace plane
+	hitTime = cg.time - cg.frametime + cg.frametime * trace->fraction;
+	BG_EvaluateTrajectoryDelta( &le->pos, hitTime, velocity );
+	dot = DotProduct( velocity, trace->plane.normal );
+	VectorMA( velocity, -2*dot, trace->plane.normal, le->pos.trDelta );
+
+	VectorScale( le->pos.trDelta, le->bounceFactor, le->pos.trDelta );
+
+	VectorCopy( trace->endpos, le->pos.trBase );
+	le->pos.trTime = cg.time;
+
+
+	// check for stop, making sure that even on low FPS systems it doesn't bobble
+	if ( trace->allsolid || 
+		( trace->plane.normal[2] > 0 && 
+		( le->pos.trDelta[2] < 40 || le->pos.trDelta[2] < -cg.frametime * le->pos.trDelta[2] ) ) ) {
+		le->pos.trType = TR_STATIONARY;
+	} else {
+
+	}
+}
+
+void CG_AddGore( localEntity_t *le ) {
+	vec3_t	newOrigin;
+	trace_t	trace;
+
+	if ( le->pos.trType == TR_STATIONARY ) {
+		// sink into the ground if near the removal time
+		//int		t;
+		//float	oldZ;
+		
+		CG_FreeLocalEntity( le ); // kill it
+
+		return;
+	}
+
+	// calculate new position
+	BG_EvaluateTrajectory( &le->pos, cg.time, newOrigin );
+
+	// trace a line from previous position to new position
+	CG_Trace( &trace, le->refEntity.origin, NULL, NULL, newOrigin, -1, CONTENTS_SOLID );
+	if ( trace.fraction == 1.0 ) {
+		// still in free fall
+		VectorCopy( newOrigin, le->refEntity.origin );
+
+		if ( le->leFlags & LEF_TUMBLE ) {
+			vec3_t angles;
+
+			BG_EvaluateTrajectory( &le->angles, cg.time, angles );
+			AnglesToAxis( angles, le->refEntity.axis );
+		}
+
+		trap_R_AddRefEntityToScene( &le->refEntity );
+
+		CG_SmallBloodTrail( le );
+	
+		return;
+	}
+
+	// if it is in a nodrop zone, remove it
+	// this keeps gibs from waiting at the bottom of pits of death
+	// and floating levels
+	if ( trap_CM_PointContents( trace.endpos, 0 ) & CONTENTS_NODROP ) {
+		CG_FreeLocalEntity( le );
+		return;
+	}
+
+	// leave a mark
+	CG_GoreMark( le, &trace );
+
+	// do a juicy sound
+	CG_SplatSound( le, &trace );
+
+	CG_JustSplat( le, &trace );
+
+	trap_R_AddRefEntityToScene( &le->refEntity );
+}
+
 /*
 =====================================================================
 
@@ -416,11 +619,13 @@ static void CG_AddScaleFade( localEntity_t *le ) {
 	// so it doesn't add too much overdraw
 	VectorSubtract( re->origin, cg.refdef.vieworg, delta );
 	len = VectorLength( delta );
+	// LEILEI
+	if (!cg_leiEnhancement.integer) {
 	if ( len < le->radius ) {
 		CG_FreeLocalEntity( le );
 		return;
 	}
-
+		}
 	trap_R_AddRefEntityToScene( re );
 }
 
@@ -456,11 +661,14 @@ static void CG_AddFallScaleFade( localEntity_t *le ) {
 	// so it doesn't add too much overdraw
 	VectorSubtract( re->origin, cg.refdef.vieworg, delta );
 	len = VectorLength( delta );
+	
+	// LEILEI
+if (!cg_leiEnhancement.integer) {
 	if ( len < le->radius ) {
 		CG_FreeLocalEntity( le );
 		return;
 	}
-
+	}
 	trap_R_AddRefEntityToScene( re );
 }
 
@@ -536,7 +744,7 @@ static void CG_AddSpriteExplosion( localEntity_t *le ) {
 }
 
 
-#ifdef MISSIONPACK
+//#ifdef MISSIONPACK
 /*
 ====================
 CG_AddKamikaze
@@ -629,6 +837,9 @@ void CG_AddKamikaze( localEntity_t *le ) {
 			le->angles.trBase[1] = random() * 360;
 			le->angles.trBase[2] = random() * 360;
 		}
+		else {
+			c = 0;
+		}
 		memset(&shockwave, 0, sizeof(shockwave));
 		shockwave.hModel = cgs.media.kamikazeShockWave;
 		shockwave.reType = RT_MODEL;
@@ -707,7 +918,7 @@ void CG_AddRefEntity( localEntity_t *le ) {
 	trap_R_AddRefEntityToScene( &le->refEntity );
 }
 
-#endif
+//#endif
 /*
 ===================
 CG_AddScorePlum
@@ -860,7 +1071,7 @@ void CG_AddLocalEntities( void ) {
 			CG_AddScorePlum( le );
 			break;
 
-#ifdef MISSIONPACK
+//#ifdef MISSIONPACK
 		case LE_KAMIKAZE:
 			CG_AddKamikaze( le );
 			break;
@@ -873,7 +1084,11 @@ void CG_AddLocalEntities( void ) {
 		case LE_SHOWREFENTITY:
 			CG_AddRefEntity( le );
 			break;
-#endif
+//#endif
+
+		case LE_GORE:			// blood
+			CG_AddGore( le );
+			break;
 		}
 	}
 }

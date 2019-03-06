@@ -283,7 +283,7 @@ int R_MarkFragments( int numPoints, const vec3_t *points, const vec3_t projectio
 	tr.viewCount++;
 
 	//
-	FastVectorNormalize2( projection, projectionDir );
+	VectorNormalize2( projection, projectionDir );
 	// find all the brushes that are to be considered
 	ClearBounds( mins, maxs );
 	for ( i = 0 ; i < numPoints ; i++ ) {
@@ -304,7 +304,7 @@ int R_MarkFragments( int numPoints, const vec3_t *points, const vec3_t projectio
 		VectorAdd(points[i], projection, v2);
 		VectorSubtract(points[i], v2, v2);
 		CrossProduct(v1, v2, normals[i]);
-		FastVectorNormalize(normals[i]);
+		FastNormalize1f(normals[i]);
 		dists[i] = DotProduct(normals[i], points[i]);
 	}
 	// add near and far clipping planes for projection
@@ -369,7 +369,7 @@ int R_MarkFragments( int numPoints, const vec3_t *points, const vec3_t projectio
 					VectorSubtract(clipPoints[0][0], clipPoints[0][1], v1);
 					VectorSubtract(clipPoints[0][2], clipPoints[0][1], v2);
 					CrossProduct(v1, v2, normal);
-					FastVectorNormalize(normal);
+					FastNormalize1f(normal);
 					if (DotProduct(normal, projectionDir) < -0.1) {
 						// add the fragments of this triangle
 						R_AddMarkFragments(numClipPoints, clipPoints,
@@ -396,7 +396,7 @@ int R_MarkFragments( int numPoints, const vec3_t *points, const vec3_t projectio
 					VectorSubtract(clipPoints[0][0], clipPoints[0][1], v1);
 					VectorSubtract(clipPoints[0][2], clipPoints[0][1], v2);
 					CrossProduct(v1, v2, normal);
-					FastVectorNormalize(normal);
+					FastNormalize1f(normal);
 					if (DotProduct(normal, projectionDir) < -0.05) {
 						// add the fragments of this triangle
 						R_AddMarkFragments(numClipPoints, clipPoints,

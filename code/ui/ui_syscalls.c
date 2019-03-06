@@ -30,11 +30,13 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
 static intptr_t (QDECL *syscall)( intptr_t arg, ... ) = (intptr_t (QDECL *)( intptr_t, ...))-1;
 
-Q_EXPORT void dllEntry( intptr_t (QDECL *syscallptr)( intptr_t arg,... ) ) {
+Q_EXPORT void dllEntry( long (QDECL *syscallptr)( long arg,... ) ) {
 	syscall = syscallptr;
 }
 
-int PASSFLOAT( float x ) {
+
+int PASSFLOAT( float x )
+{
 	floatint_t fi;
 	fi.f = x;
 	return fi.i;
@@ -44,11 +46,9 @@ void trap_Print( const char *string ) {
 	syscall( UI_PRINT, string );
 }
 
-void trap_Error(const char *string)
-{
-	syscall(UI_ERROR, string);
-	// shut up GCC warning about returning functions, because we know better
-	exit(1);
+void trap_Error( const char *string ) {
+	syscall( UI_ERROR, string );
+	exit(UI_ERROR); //Will never occour but makes compiler happy
 }
 
 int trap_Milliseconds( void ) {
@@ -67,10 +67,16 @@ void trap_Cvar_Set( const char *var_name, const char *value ) {
 	syscall( UI_CVAR_SET, var_name, value );
 }
 
-float trap_Cvar_VariableValue( const char *var_name ) {
-	floatint_t fi;
-	fi.i = syscall( UI_CVAR_VARIABLEVALUE, var_name );
-	return fi.f;
+float trap_Cvar_VariableValue( const char *var_name )
+{
+    union f32_i {
+	    float f;
+	    int i;
+    }fi;
+    
+    fi.i = syscall( UI_CVAR_VARIABLEVALUE, var_name );
+	
+    return fi.f;
 }
 
 void trap_Cvar_VariableStringBuffer( const char *var_name, char *buffer, int bufsize ) {
@@ -363,31 +369,31 @@ int trap_RealTime(qtime_t *qtime) {
 
 // this returns a handle.  arg0 is the name in the format "idlogo.roq", set arg1 to NULL, alteredstates to qfalse (do not alter gamestate)
 int trap_CIN_PlayCinematic( const char *arg0, int xpos, int ypos, int width, int height, int bits) {
-  return syscall(UI_CIN_PLAYCINEMATIC, arg0, xpos, ypos, width, height, bits);
+	return syscall(UI_CIN_PLAYCINEMATIC, arg0, xpos, ypos, width, height, bits);
 }
  
 // stops playing the cinematic and ends it.  should always return FMV_EOF
 // cinematics must be stopped in reverse order of when they are started
 e_status trap_CIN_StopCinematic(int handle) {
-  return syscall(UI_CIN_STOPCINEMATIC, handle);
+	return syscall(UI_CIN_STOPCINEMATIC, handle);
 }
 
 
 // will run a frame of the cinematic but will not draw it.  Will return FMV_EOF if the end of the cinematic has been reached.
 e_status trap_CIN_RunCinematic (int handle) {
-  return syscall(UI_CIN_RUNCINEMATIC, handle);
+	return syscall(UI_CIN_RUNCINEMATIC, handle);
 }
  
 
 // draws the current frame
 void trap_CIN_DrawCinematic (int handle) {
-  syscall(UI_CIN_DRAWCINEMATIC, handle);
+	syscall(UI_CIN_DRAWCINEMATIC, handle);
 }
  
 
 // allows you to resize the animation dynamically
 void trap_CIN_SetExtents (int handle, int x, int y, int w, int h) {
-  syscall(UI_CIN_SETEXTENTS, handle, x, y, w, h);
+	syscall(UI_CIN_SETEXTENTS, handle, x, y, w, h);
 }
 
 

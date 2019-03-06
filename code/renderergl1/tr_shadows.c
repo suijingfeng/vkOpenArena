@@ -62,6 +62,35 @@ void R_AddEdgeDef( int i1, int i2, int facing ) {
 void R_RenderShadowEdges( void ) {
 	int		i;
 
+#if 0
+	int		numTris;
+
+	// dumb way -- render every triangle's edges
+	numTris = tess.numIndexes / 3;
+
+	for ( i = 0 ; i < numTris ; i++ ) {
+		int		i1, i2, i3;
+
+		if ( !facing[i] ) {
+			continue;
+		}
+
+		i1 = tess.indexes[ i*3 + 0 ];
+		i2 = tess.indexes[ i*3 + 1 ];
+		i3 = tess.indexes[ i*3 + 2 ];
+
+		qglBegin( GL_TRIANGLE_STRIP );
+		qglVertex3fv( tess.xyz[ i1 ] );
+		qglVertex3fv( shadowXyz[ i1 ] );
+		qglVertex3fv( tess.xyz[ i2 ] );
+		qglVertex3fv( shadowXyz[ i2 ] );
+		qglVertex3fv( tess.xyz[ i3 ] );
+		qglVertex3fv( shadowXyz[ i3 ] );
+		qglVertex3fv( tess.xyz[ i1 ] );
+		qglVertex3fv( shadowXyz[ i1 ] );
+		qglEnd();
+	}
+#else
 	int		c, c2;
 	int		j, k;
 	int		i2;
@@ -96,19 +125,19 @@ void R_RenderShadowEdges( void ) {
 			// if it doesn't share the edge with another front facing
 			// triangle, it is a sil edge
 			if ( hit[ 1 ] == 0 ) {
-				glBegin( GL_TRIANGLE_STRIP );
-				glVertex3fv( tess.xyz[ i ] );
-				glVertex3fv( shadowXyz[ i ] );
-				glVertex3fv( tess.xyz[ i2 ] );
-				glVertex3fv( shadowXyz[ i2 ] );
-				glEnd();
+				qglBegin( GL_TRIANGLE_STRIP );
+				qglVertex3fv( tess.xyz[ i ] );
+				qglVertex3fv( shadowXyz[ i ] );
+				qglVertex3fv( tess.xyz[ i2 ] );
+				qglVertex3fv( shadowXyz[ i2 ] );
+				qglEnd();
 				c_edges++;
 			} else {
 				c_rejected++;
 			}
 		}
 	}
-
+#endif
 }
 
 /*
@@ -179,28 +208,28 @@ void RB_ShadowTessEnd( void ) {
 
 	GL_Bind( tr.whiteImage );
 	GL_State( GLS_SRCBLEND_ONE | GLS_DSTBLEND_ZERO );
-	glColor3f( 0.2f, 0.2f, 0.2f );
+	qglColor3f( 0.2f, 0.2f, 0.2f );
 
 	// don't write to the color buffer
-	glGetBooleanv(GL_COLOR_WRITEMASK, rgba);
-	glColorMask( GL_FALSE, GL_FALSE, GL_FALSE, GL_FALSE );
+	qglGetBooleanv(GL_COLOR_WRITEMASK, rgba);
+	qglColorMask( GL_FALSE, GL_FALSE, GL_FALSE, GL_FALSE );
 
-	glEnable( GL_STENCIL_TEST );
-	glStencilFunc( GL_ALWAYS, 1, 255 );
+	qglEnable( GL_STENCIL_TEST );
+	qglStencilFunc( GL_ALWAYS, 1, 255 );
 
 	GL_Cull( CT_BACK_SIDED );
-	glStencilOp( GL_KEEP, GL_KEEP, GL_INCR );
+	qglStencilOp( GL_KEEP, GL_KEEP, GL_INCR );
 
 	R_RenderShadowEdges();
 
 	GL_Cull( CT_FRONT_SIDED );
-	glStencilOp( GL_KEEP, GL_KEEP, GL_DECR );
+	qglStencilOp( GL_KEEP, GL_KEEP, GL_DECR );
 
 	R_RenderShadowEdges();
 
 
 	// reenable writing to the color buffer
-	glColorMask(rgba[0], rgba[1], rgba[2], rgba[3]);
+	qglColorMask(rgba[0], rgba[1], rgba[2], rgba[3]);
 }
 
 
@@ -221,31 +250,31 @@ void RB_ShadowFinish( void ) {
 	if ( glConfig.stencilBits < 4 ) {
 		return;
 	}
-	glEnable( GL_STENCIL_TEST );
-	glStencilFunc( GL_NOTEQUAL, 0, 255 );
+	qglEnable( GL_STENCIL_TEST );
+	qglStencilFunc( GL_NOTEQUAL, 0, 255 );
 
-	glDisable (GL_CLIP_PLANE0);
+	qglDisable (GL_CLIP_PLANE0);
 	GL_Cull( CT_TWO_SIDED );
 
 	GL_Bind( tr.whiteImage );
 
-    glLoadIdentity ();
+    qglLoadIdentity ();
 
-	glColor3f( 0.6f, 0.6f, 0.6f );
+	qglColor3f( 0.6f, 0.6f, 0.6f );
 	GL_State( GLS_DEPTHMASK_TRUE | GLS_SRCBLEND_DST_COLOR | GLS_DSTBLEND_ZERO );
 
-//	glColor3f( 1, 0, 0 );
+//	qglColor3f( 1, 0, 0 );
 //	GL_State( GLS_DEPTHMASK_TRUE | GLS_SRCBLEND_ONE | GLS_DSTBLEND_ZERO );
 
-	glBegin( GL_QUADS );
-	glVertex3f( -100, 100, -10 );
-	glVertex3f( 100, 100, -10 );
-	glVertex3f( 100, -100, -10 );
-	glVertex3f( -100, -100, -10 );
-	glEnd ();
+	qglBegin( GL_QUADS );
+	qglVertex3f( -100, 100, -10 );
+	qglVertex3f( 100, 100, -10 );
+	qglVertex3f( 100, -100, -10 );
+	qglVertex3f( -100, -100, -10 );
+	qglEnd ();
 
-	glColor4f(1,1,1,1);
-	glDisable( GL_STENCIL_TEST );
+	qglColor4f(1,1,1,1);
+	qglDisable( GL_STENCIL_TEST );
 }
 
 

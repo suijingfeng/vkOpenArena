@@ -129,7 +129,7 @@ static	int	neighbors[8][2] = {
 	wrapWidth = qfalse;
 	for ( i = 0 ; i < height ; i++ ) {
 		VectorSubtract( ctrl[i][0].xyz, ctrl[i][width-1].xyz, delta );
-		len = VectorLengthSquared( delta );
+		len = delta[0]*delta[0] + delta[1]*delta[1] + delta[2]*delta[2];
 		if ( len > 1.0 ) {
 			break;
 		}
@@ -141,7 +141,7 @@ static	int	neighbors[8][2] = {
 	wrapHeight = qfalse;
 	for ( i = 0 ; i < width ; i++ ) {
 		VectorSubtract( ctrl[0][i].xyz, ctrl[height-1][i].xyz, delta );
-		len = VectorLengthSquared( delta );
+		len = delta[0]*delta[0] + delta[1]*delta[1] + delta[2]*delta[2];
 		if ( len > 1.0 ) {
 			break;
 		}
@@ -182,21 +182,11 @@ static	int	neighbors[8][2] = {
 						break;					// edge of patch
 					}
 					VectorSubtract( ctrl[y][x].xyz, base, temp );
-                    
-                    float iSquareLen = temp[0]*temp[0] + temp[1]*temp[1] + temp[2]*temp[2]; 
-                    if ( iSquareLen == 0 )
-                    {
+					if ( VectorNormalize2( temp, temp ) == 0 ) {
 						continue;				// degenerate edge, get more dist
-					}
-                    else
-                    {
+					} else {
 						good[k] = qtrue;
-                        
-                        iSquareLen = 1.0f/sqrtf(iSquareLen);
-                        around[k][0] = iSquareLen * temp[0];
-                        around[k][1] = iSquareLen * temp[1];
-                        around[k][2] = iSquareLen * temp[2];
-
+						VectorCopy( temp, around[k] );
 						break;					// good edge
 					}
 				}
@@ -208,16 +198,10 @@ static	int	neighbors[8][2] = {
 					continue;	// didn't get two points
 				}
 				CrossProduct( around[(k+1)&7], around[k], normal );
-                float iSquareLen = normal[0]*normal[0] + normal[1]*normal[1] + normal[2]*normal[2]; 
-                
-                if ( iSquareLen == 0 )
+				if ( VectorNormalize2( normal, normal ) == 0 ) {
 					continue;
-                
-                iSquareLen = 1.0f/sqrtf(iSquareLen);
-
-			    sum[0] += iSquareLen * normal[0];
-			    sum[1] += iSquareLen * normal[1];
-			    sum[2] += iSquareLen * normal[2];
+				}
+				VectorAdd( normal, sum, sum );
 				count++;
 			}
 			//if ( count == 0 ) {
@@ -225,7 +209,7 @@ static	int	neighbors[8][2] = {
 			//}
 			{
 				vec3_t fNormal;
-				FastVectorNormalize2(sum, fNormal);
+				VectorNormalize2(sum, fNormal);
 				R_VaoPackNormal(dv->normal, fNormal);
 			}
 		}
@@ -434,7 +418,7 @@ void R_CreateSurfaceGridMesh(srfBspSurface_t *grid, int width, int height,
 	VectorAdd( grid->cullBounds[0], grid->cullBounds[1], grid->cullOrigin );
 	VectorScale( grid->cullOrigin, 0.5f, grid->cullOrigin );
 	VectorSubtract( grid->cullBounds[0], grid->cullOrigin, tmpVec );
-	grid->cullRadius = VectorLength( tmpVec );
+	grid->cullRadius = VectorLen( tmpVec );
 
 	VectorCopy( grid->cullOrigin, grid->lodOrigin );
 	grid->lodRadius = grid->cullRadius;
@@ -514,12 +498,12 @@ void R_SubdividePatchToGrid( srfBspSurface_t *grid, int width, int height,
 				// dist-from-midpoint
 				VectorSubtract( midxyz, ctrl[i][j].xyz, midxyz );
 				VectorSubtract( ctrl[i][j+2].xyz, ctrl[i][j].xyz, dir );
-				FastVectorNormalize( dir );
+				VectorNormalize( dir );
 
 				d = DotProduct( midxyz, dir );
 				VectorScale( dir, d, projected );
 				VectorSubtract( midxyz, projected, midxyz2);
-				len = VectorLengthSquared( midxyz2 );			// we will do the sqrt later
+				len = midxyz2[0] * midxyz2[0] + midxyz2[1] * midxyz2[1] + midxyz2[2] * midxyz2[2] ;			// we will do the sqrt later
 				if ( len > maxLen ) {
 					maxLen = len;
 				}

@@ -1,6 +1,6 @@
 code
 
-equ	trap_Print				-1
+equ	trap_Printf				-1
 equ	trap_Error				-2
 equ	trap_Milliseconds		-3
 equ	trap_Cvar_Register		-4
@@ -58,7 +58,6 @@ equ floor					-111
 equ	ceil					-112
 equ	testPrintInt			-113
 equ	testPrintFloat			-114
-
 
 
 equ trap_BotLibSetup					-201

@@ -21,10 +21,12 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 */
 
 #include "tr_local.h"
+#include "../renderercommon/matrix_multiplication.h"
 
-void RB_ToneMap(FBO_t *hdrFbo, ivec4_t hdrBox, FBO_t *ldrFbo, ivec4_t ldrBox, int autoExposure)
+
+void RB_ToneMap(FBO_t *hdrFbo, int hdrBox[4], FBO_t *ldrFbo, int ldrBox[4], int autoExposure)
 {
-	ivec4_t srcBox, dstBox;
+	int srcBox[4], dstBox[4];
 	vec4_t color;
 	static int lastFrameCount = 0;
 
@@ -103,9 +105,8 @@ Blurs a part of one framebuffer to another.
 Framebuffers can be identical. 
 =============
 */
-void RB_BokehBlur(FBO_t *src, ivec4_t srcBox, FBO_t *dst, ivec4_t dstBox, float blur)
+void RB_BokehBlur(FBO_t *src, int srcBox[4], FBO_t *dst, int dstBox[4], float blur)
 {
-//	ivec4_t srcBox, dstBox;
 	vec4_t color;
 	
 	blur *= 10.0f;
@@ -118,7 +119,7 @@ void RB_BokehBlur(FBO_t *src, ivec4_t srcBox, FBO_t *dst, ivec4_t dstBox, float 
 		// bokeh blur
 		if (blur > 0.0f)
 		{
-			ivec4_t quarterBox;
+			int quarterBox[4];
 
 			quarterBox[0] = 0;
 			quarterBox[1] = tr.quarterFbo[0]->height;
@@ -226,7 +227,7 @@ void RB_BokehBlur(FBO_t *src, ivec4_t srcBox, FBO_t *dst, ivec4_t dstBox, float 
 
 static void RB_RadialBlur(FBO_t *srcFbo, FBO_t *dstFbo, int passes, float stretch, float x, float y, float w, float h, float xcenter, float ycenter, float alpha)
 {
-	ivec4_t srcBox, dstBox;
+	int srcBox[4], dstBox[4];
 	int srcWidth, srcHeight;
 	vec4_t color;
 	const float inc = 1.f / passes;
@@ -294,7 +295,7 @@ static qboolean RB_UpdateSunFlareVis(void)
 	return sampleCount > 0;
 }
 
-void RB_SunRays(FBO_t *srcFbo, ivec4_t srcBox, FBO_t *dstFbo, ivec4_t dstBox)
+void RB_SunRays(FBO_t *srcFbo, int srcBox[4], FBO_t *dstFbo, int dstBox[4])
 {
 	vec4_t color;
 	float dot;
@@ -302,7 +303,6 @@ void RB_SunRays(FBO_t *srcFbo, ivec4_t srcBox, FBO_t *dstFbo, ivec4_t dstBox)
 	qboolean colorize = qtrue;
 
 //	float w, h, w2, h2;
-	mat4_t mvp;
 	vec4_t pos, hpos;
 
 	dot = DotProduct(tr.sunDirection, backEnd.viewParms.or.axis[0]);
@@ -314,32 +314,34 @@ void RB_SunRays(FBO_t *srcFbo, ivec4_t srcBox, FBO_t *dstFbo, ivec4_t dstBox)
 
 	// From RB_DrawSun()
 	{
-		float dist;
-		mat4_t trans, model;
+        float mvp[16] QALIGN(16);
+		float trans[16] QALIGN(16);
+        float model[16] QALIGN(16);
 
 		Mat4Translation( backEnd.viewParms.or.origin, trans );
-		Mat4Multiply( backEnd.viewParms.world.modelMatrix, trans, model );
-		Mat4Multiply(backEnd.viewParms.projectionMatrix, model, mvp);
+		MatrixMultiply4x4_SSE( trans, backEnd.viewParms.world.modelMatrix, model );
+		MatrixMultiply4x4_SSE( model, backEnd.viewParms.projectionMatrix, mvp);
 
-		dist = backEnd.viewParms.zFar / 1.75;		// div sqrt(3)
+		float dist = backEnd.viewParms.zFar / 1.75;		// div sqrt(3)
 
 		VectorScale( tr.sunDirection, dist, pos );
+
+        	// project sun point
+        Mat4Transform(mvp, pos, hpos);
+
+        // transform to UV coords
+        hpos[3] = 0.5f / hpos[3];
+
+        pos[0] = 0.5f + hpos[0] * hpos[3];
+        pos[1] = 0.5f + hpos[1] * hpos[3];
 	}
 
-	// project sun point
-	//Mat4Multiply(backEnd.viewParms.projectionMatrix, backEnd.viewParms.world.modelMatrix, mvp);
-	Mat4Transform(mvp, pos, hpos);
 
-	// transform to UV coords
-	hpos[3] = 0.5f / hpos[3];
-
-	pos[0] = 0.5f + hpos[0] * hpos[3];
-	pos[1] = 0.5f + hpos[1] * hpos[3];
 
 	// initialize quarter buffers
 	{
 		float mul = 1.f;
-		ivec4_t rayBox, quarterBox;
+		int rayBox[4], quarterBox[4];
 		int srcWidth  = srcFbo ? srcFbo->width  : glConfig.vidWidth;
 		int srcHeight = srcFbo ? srcFbo->height : glConfig.vidHeight;
 
@@ -411,7 +413,7 @@ static void RB_BlurAxis(FBO_t *srcFbo, FBO_t *dstFbo, float strength, qboolean h
 	ymul *= strength;
 
 	{
-		ivec4_t srcBox, dstBox;
+		int srcBox[4], dstBox[4];
 		vec4_t color;
 
 		VectorSet4(color, weights[0], weights[0], weights[0], 1.0f);
@@ -450,13 +452,13 @@ static void RB_VBlur(FBO_t *srcFbo, FBO_t *dstFbo, float strength)
 void RB_GaussianBlur(float blur)
 {
 	//float mul = 1.f;
-    if(blur > 1.0f)
-        blur = 1.0f;
-    else if (blur <= 0.f)
+	float factor = Com_Clamp(0.f, 1.f, blur);
+
+	if (factor <= 0.f)
 		return;
 
 	{
-		ivec4_t srcBox, dstBox;
+		int srcBox[4], dstBox[4];
 		vec4_t color;
 
 		VectorSet4(color, 1, 1, 1, 1);
@@ -471,13 +473,13 @@ void RB_GaussianBlur(float blur)
 		qglColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE);
 
 		// blur the tiny buffer horizontally and vertically
-		RB_HBlur(tr.textureScratchFbo[0], tr.textureScratchFbo[1], blur);
-		RB_VBlur(tr.textureScratchFbo[1], tr.textureScratchFbo[0], blur);
+		RB_HBlur(tr.textureScratchFbo[0], tr.textureScratchFbo[1], factor);
+		RB_VBlur(tr.textureScratchFbo[1], tr.textureScratchFbo[0], factor);
 
 		// finally, merge back to framebuffer
 		VectorSet4(srcBox, 0, 0, tr.textureScratchFbo[0]->width, tr.textureScratchFbo[0]->height);
 		VectorSet4(dstBox, 0, 0, glConfig.vidWidth,              glConfig.vidHeight);
-		color[3] = blur;
+		color[3] = factor;
 		FBO_Blit(tr.textureScratchFbo[0], srcBox, NULL, NULL, dstBox, NULL, color, GLS_SRCBLEND_SRC_ALPHA | GLS_DSTBLEND_ONE_MINUS_SRC_ALPHA);
 	}
 }

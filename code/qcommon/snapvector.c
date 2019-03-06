@@ -20,10 +20,7 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 ===========================================================================
 */
 
-#include "q_platform.h"
-#include "q_shared.h"
-
-
+#include "../qcommon/q_shared.h"
 
 /*
  * GNU inline asm version of qsnapvector
@@ -51,25 +48,5 @@ void qsnapvectorsse(vec3_t vec)
 		:
 		: "r" (ssemask), "r" (vec)
 		: "memory", "%xmm0", "%xmm1", "%xmm2"
-	);
-	
-}
-
-#define QROUNDX87(src) \
-	"flds " src "\n" \
-	"fistpl " src "\n" \
-	"fildl " src "\n" \
-	"fstps " src "\n"	
-
-void qsnapvectorx87(vec3_t vec)
-{
-	__asm__ volatile
-	(
-		QROUNDX87("(%0)")
-		QROUNDX87("4(%0)")
-		QROUNDX87("8(%0)")
-		:
-		: "r" (vec)
-		: "memory"
 	);
 }

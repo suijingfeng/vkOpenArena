@@ -1,4 +1,4 @@
-/*
+            /*
 ===========================================================================
 Copyright (C) 1999-2005 Id Software, Inc.
 
@@ -25,27 +25,39 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #define TR_LOCAL_H
 
 #include "../qcommon/q_shared.h"
+#include "../qcommon/qfiles.h"
 #include "../qcommon/qcommon.h"
-
 #include "../renderercommon/tr_public.h"
-#include "../renderercommon/tr_shared.h"
+#include "../renderercommon/tr_common.h"
+#include "../renderercommon/iqm.h"
 #include "../renderercommon/qgl.h"
-
-
 #include "tr_extratypes.h"
-#include "tr_extramath.h"
 #include "tr_fbo.h"
 #include "tr_postprocess.h"
-#include "iqm.h"
+#include "../renderercommon/ref_import.h"
+#include "../renderercommon/image.h"
 
-extern refimport_t ri;
-extern glconfig_t glConfig;
-// any change in the LIGHTMAP_* defines here MUST be reflected in
-// R_FindShader() in tr_bsp.c
-#define LIGHTMAP_2D         -4	// shader is for 2D rendering
-#define LIGHTMAP_BY_VERTEX  -3	// pre-lit triangle models
-#define LIGHTMAP_WHITEIMAGE -2
-#define LIGHTMAP_NONE       -1
+#define GLE(ret, name, ...) extern name##proc * qgl##name;
+QGL_1_1_PROCS;
+QGL_DESKTOP_1_1_PROCS;
+QGL_1_3_PROCS;
+QGL_1_5_PROCS;
+QGL_2_0_PROCS;
+QGL_3_0_PROCS;
+QGL_ARB_framebuffer_object_PROCS;
+QGL_ARB_vertex_array_object_PROCS;
+QGL_EXT_direct_state_access_PROCS;
+#undef GLE
+
+void GLimp_Init(glconfig_t *glConfig, qboolean coreContext);
+void GLimp_Shutdown(void);
+void GLimp_EndFrame(void);
+void GLimp_LogComment(char *comment);
+void GLimp_Minimize(void);
+void GLimp_SetGamma(unsigned char red[256], unsigned char green[256], unsigned char blue[256]);
+void* GLimp_GetProcAddress(const char* fun);
+void GLimp_DeleteGLContext(void);
+void GLimp_DestroyWindow(void);
 
 
 #define GL_INDEX_TYPE		GL_UNSIGNED_INT
@@ -63,53 +75,9 @@ typedef unsigned int glIndex_t;
 #define MAX_VISCOUNTS 5
 #define MAX_VAOS      4096
 
-#define MAX_CALC_PSHADOWS       64
-#define MAX_DRAWN_PSHADOWS      16 // do not increase past 32, because bit flags are used on surfaces
-#define PSHADOW_MAP_SIZE        512
-
-
-typedef enum
-{
-	IMGTYPE_COLORALPHA, // for color, lightmap, diffuse, and specular
-	IMGTYPE_NORMAL,
-	IMGTYPE_NORMALHEIGHT,
-	IMGTYPE_DELUXE, // normals are swizzled, deluxe are not
-} imgType_t;
-
-typedef enum
-{
-	IMGFLAG_NONE           = 0x0000,
-	IMGFLAG_MIPMAP         = 0x0001,
-	IMGFLAG_PICMIP         = 0x0002,
-	IMGFLAG_CUBEMAP        = 0x0004,
-	IMGFLAG_NO_COMPRESSION = 0x0010,
-	IMGFLAG_NOLIGHTSCALE   = 0x0020,
-	IMGFLAG_CLAMPTOEDGE    = 0x0040,
-	IMGFLAG_SRGB           = 0x0080,
-	IMGFLAG_GENNORMALMAP   = 0x0100,
-} imgFlags_t;
-
-
-typedef struct image_s {
-	char		imgName[MAX_QPATH];		// game path, including extension
-	int			width, height;				// source image
-	int			uploadWidth, uploadHeight;	// after power of two and picmip but not including clamp to MAX_TEXTURE_SIZE
-	GLuint		texnum;					// gl texture binding
-
-	int			frameUsed;			// for texture usage in frame statistics
-
-	int			internalFormat;
-	int			TMU;				// only needed for voodoo2
-
-	imgType_t   type;
-	imgFlags_t  flags;
-
-	struct image_s*	next;
-
-	qboolean	maptexture;	// leilei - map texture listing hack
-} image_t;
-
-
+#define MAX_CALC_PSHADOWS    64
+#define MAX_DRAWN_PSHADOWS    16 // do not increase past 32, because bit flags are used on surfaces
+#define PSHADOW_MAP_SIZE      512
 
 typedef struct cubemap_s {
 	char name[MAX_QPATH];
@@ -117,7 +85,6 @@ typedef struct cubemap_s {
 	float parallaxRadius;
 	image_t *image;
 } cubemap_t;
-
 
 typedef struct dlight_s {
 	vec3_t	origin;
@@ -142,17 +109,19 @@ typedef struct {
 	vec3_t		lightDir;		// normalized direction towards light, in world space
 	vec3_t      modelLightDir;  // normalized direction towards light, in model space
 	vec3_t		ambientLight;	// color normalized to 0-255
-	int			ambientLightInt;	// 32 bit rgba packed
 	vec3_t		directedLight;
+    unsigned char ambientLightRGBA[4];
+
 } trRefEntity_t;
 
 
 typedef struct {
+    float		modelMatrix[16] QALIGN(16);
+	float		transformMatrix[16] QALIGN(16);
 	vec3_t		origin;			// in world coordinates
 	vec3_t		axis[3];		// orientation in world
 	vec3_t		viewOrigin;		// viewParms->or.origin in local coordinates
-	float		modelMatrix[16];
-	float		transformMatrix[16];
+
 } orientationr_t;
 
 // Ensure this is >= the ATTR_INDEX_COUNT enum below
@@ -823,7 +792,7 @@ typedef struct {
 	int			originalBrushNumber;
 	vec3_t		bounds[2];
 
-	unsigned	colorInt;				// in packed byte format
+	unsigned char colorRGBA[4];	
 	float		tcScale;				// texture coordinate vector scales
 	fogParms_t	parms;
 
@@ -859,7 +828,7 @@ typedef struct {
 	int         targetFboLayer;
 	int         targetFboCubemapIndex;
 	float		fovX, fovY;
-	float		projectionMatrix[16];
+	float		projectionMatrix[16] QALIGN(16);
 	cplane_t	frustum[5];
 	vec3_t		visBounds[2];
 	float		zFar;
@@ -1335,6 +1304,8 @@ the bits are allocated as follows:
 #endif
 #define QSORT_PSHADOW_SHIFT     1
 
+extern	int			gl_filter_min, gl_filter_max;
+
 /*
 ** performanceCounters_t
 */
@@ -1357,6 +1328,10 @@ typedef struct {
 
 // the renderer front end should never modify glstate_t
 typedef struct {
+    float       modelview[16] QALIGN(16);
+	float       projection[16] QALIGN(16);
+	float       modelviewProjection[16] QALIGN(16);
+
 	qboolean	finishCalled;
 	int			texEnv[2];
 	int			faceCulling;
@@ -1368,9 +1343,6 @@ typedef struct {
 	uint32_t        vertexAttribsEnabled;  // global if no VAOs, tess only otherwise
 	FBO_t          *currentFBO;
 	vao_t          *currentVao;
-	mat4_t        modelview;
-	mat4_t        projection;
-	mat4_t		modelviewProjection;
 } glstate_t;
 
 typedef enum {
@@ -1494,7 +1466,7 @@ typedef struct {
 	vec3_t                  toneMinAvgMaxLevel;
 	world_t					*world;
 
-	const unsigned char*    externalVisData;	// from RE_SetWorldVisData, shared with CM_Load
+	const byte				*externalVisData;	// from RE_SetWorldVisData, shared with CM_Load
 
 	image_t					*defaultImage;
 	image_t					*scratchImage[32];
@@ -1671,7 +1643,6 @@ extern cvar_t	*r_ignore;				// used for debugging anything
 extern cvar_t	*r_verbose;				// used for verbose debug spew
 
 extern cvar_t	*r_znear;				// near Z clip plane
-extern cvar_t	*r_zproj;				// z distance of projection plane
 
 extern cvar_t	*r_measureOverdraw;		// enables stencil buffer overdraw measurement
 
@@ -1685,9 +1656,7 @@ extern cvar_t	*r_dynamiclight;		// dynamic lights enabled/disabled
 extern cvar_t	*r_dlightBacks;			// dlight non-facing surfaces for continuity
 
 extern	cvar_t	*r_drawentities;		// disable/enable entity rendering
-extern	cvar_t	*r_drawworld;			// disable/enable world rendering
 extern	cvar_t	*r_speeds;				// various levels of information display
-extern  cvar_t	*r_detailTextures;		// enables/disables detail texturing stages
 extern	cvar_t	*r_novis;				// disable/enable usage of PVS
 extern	cvar_t	*r_nocull;
 extern	cvar_t	*r_facePlaneCull;		// enables culling of planar surfaces with back side test
@@ -1695,7 +1664,6 @@ extern	cvar_t	*r_nocurves;
 extern	cvar_t	*r_showcluster;
 
 extern cvar_t	*r_gamma;
-extern cvar_t	*r_displayRefresh;		// optional display refresh option
 
 extern  cvar_t  *r_ext_framebuffer_object;
 extern  cvar_t  *r_ext_texture_float;
@@ -1714,11 +1682,12 @@ extern	cvar_t	*r_textureMode;
 extern	cvar_t	*r_offsetFactor;
 extern	cvar_t	*r_offsetUnits;
 
+
 extern	cvar_t	*r_lightmap;					// render lightmaps only
 extern	cvar_t	*r_vertexLight;					// vertex lighting mode for better performance
 extern	cvar_t	*r_uiFullScreen;				// ui is running fullscreen
-
-extern	cvar_t	*r_logFile;						// number of frames to emit GL logs
+//extern	cvar_t	*r_logFile;						// number of frames to emit GL logs
+//extern  cvar_t  *r_deluxeSpecular;
 extern	cvar_t	*r_showtris;					// enables wireframe rendering of the world
 extern	cvar_t	*r_showsky;						// forces sky in front of all surfaces
 extern	cvar_t	*r_shownormals;					// draws wireframe normals
@@ -1736,10 +1705,6 @@ extern	cvar_t	*r_portalOnly;
 extern	cvar_t	*r_subdivisions;
 extern	cvar_t	*r_lodCurveError;
 extern	cvar_t	*r_skipBackEnd;
-
-extern	cvar_t	*r_anaglyphMode;
-
-extern  cvar_t  *r_externalGLSL;
 
 extern  cvar_t  *r_hdr;
 extern  cvar_t  *r_floatLightmap;
@@ -1767,6 +1732,7 @@ extern  cvar_t  *r_deluxeMapping;
 extern  cvar_t  *r_parallaxMapping;
 extern  cvar_t  *r_cubeMapping;
 extern  cvar_t  *r_cubemapSize;
+extern  cvar_t  *r_deluxeSpecular;
 extern  cvar_t  *r_pbr;
 extern  cvar_t  *r_baseNormalX;
 extern  cvar_t  *r_baseNormalY;
@@ -1795,8 +1761,12 @@ extern  cvar_t  *r_shadowCascadeZFar;
 extern  cvar_t  *r_shadowCascadeZBias;
 extern  cvar_t  *r_ignoreDstAlpha;
 
+extern	cvar_t	*r_greyscale;
+
 extern	cvar_t	*r_ignoreGLErrors;
 
+extern	cvar_t	*r_overBrightBits;
+extern	cvar_t	*r_mapOverBrightBits;
 
 extern	cvar_t	*r_debugSurface;
 extern	cvar_t	*r_simpleMipMaps;
@@ -1874,7 +1844,6 @@ int R_CullPointAndRadiusEx( const vec3_t origin, float radius, const cplane_t* f
 int R_CullPointAndRadius( const vec3_t origin, float radius );
 int R_CullLocalPointAndRadius( const vec3_t origin, float radius );
 
-void R_SetupProjection(viewParms_t *dest, float zProj, float zFar, qboolean computeFrustum);
 void R_RotateForEntity( const trRefEntity_t *ent, const viewParms_t *viewParms, orientationr_t *or );
 
 /*
@@ -1886,8 +1855,8 @@ void	GL_TextureMode( const char *string );
 void	GL_CheckErrs( char *file, int line );
 #define GL_CheckErrors(...) GL_CheckErrs(__FILE__, __LINE__)
 void	GL_State( unsigned long stateVector );
-void    GL_SetProjectionMatrix(mat4_t matrix);
-void    GL_SetModelviewMatrix(mat4_t matrix);
+void    GL_SetProjectionMatrix(float matrix[16]);
+void    GL_SetModelviewMatrix(float matrix[16]);
 void	GL_Cull( int cullType );
 
 #define GLS_SRCBLEND_ZERO						0x00000001
@@ -1963,7 +1932,6 @@ int		R_SumOfUsedImages( void );
 void	R_InitSkins( void );
 skin_t	*R_GetSkinByHandle( qhandle_t hSkin );
 
-int R_ComputeLOD( trRefEntity_t *ent );
 
 const void *RB_TakeVideoFrameCmd( const void *data );
 
@@ -1977,17 +1945,7 @@ shader_t *R_FindShaderByName( const char *name );
 void		R_InitShaders( void );
 void		R_ShaderList_f( void );
 void    R_RemapShader(const char *oldShader, const char *newShader, const char *timeOffset);
-void stripExtension(const char *in, char *out, int destsize);
-/*
-====================================================================
-
-IMPLEMENTATION SPECIFIC FUNCTIONS
-
-====================================================================
-*/
-
-void		GLimp_InitExtraExtensions( void );
-
+image_t *R_FindImageFile( const char *name, imgType_t type, imgFlags_t flags );
 /*
 ====================================================================
 
@@ -2010,7 +1968,7 @@ typedef struct shaderCommands_s
 	int16_t		tangent[SHADER_MAX_VERTEXES][4] QALIGN(16);
 	vec2_t		texCoords[SHADER_MAX_VERTEXES] QALIGN(16);
 	vec2_t		lightCoords[SHADER_MAX_VERTEXES] QALIGN(16);
-	uint16_t	color[SHADER_MAX_VERTEXES][4] QALIGN(16);
+	uint16_t	vertexColors[SHADER_MAX_VERTEXES][4] QALIGN(16);
 	int16_t		lightdir[SHADER_MAX_VERTEXES][4] QALIGN(16);
 	//int			vertexDlightBits[SHADER_MAX_VERTEXES] QALIGN(16);
 
@@ -2054,8 +2012,8 @@ void RB_StageIteratorSky( void );
 void RB_StageIteratorVertexLitTexture( void );
 void RB_StageIteratorLightmappedMultitexture( void );
 
-void RB_AddQuadStamp( vec3_t origin, vec3_t left, vec3_t up, const float color[4] );
-void RB_AddQuadStampExt( vec3_t origin, vec3_t left, vec3_t up, const float color[4], float s1, float t1, float s2, float t2 );
+void RB_AddQuadStamp( vec3_t origin, vec3_t left, vec3_t up, float color[4] );
+void RB_AddQuadStampExt( vec3_t origin, vec3_t left, vec3_t up, float color[4], float s1, float t1, float s2, float t2 );
 void RB_InstantQuad( vec4_t quadVerts[4] );
 //void RB_InstantQuad2(vec4_t quadVerts[4], vec2_t texCoords[4], vec4_t color, shaderProgram_t *sp, vec2_t invTexRes);
 void RB_InstantQuad2(vec4_t quadVerts[4], vec2_t texCoords[4]);
@@ -2169,7 +2127,7 @@ VERTEX BUFFER OBJECTS
 
 void R_VaoPackTangent(int16_t *out, vec4_t v);
 void R_VaoPackNormal(int16_t *out, vec3_t v);
-void R_VaoPackColor(uint16_t *out, const vec4_t c);
+void R_VaoPackColor(uint16_t *out, vec4_t c);
 void R_VaoUnpackTangent(vec4_t v, int16_t *pack);
 void R_VaoUnpackNormal(vec3_t v, int16_t *pack);
 
@@ -2215,7 +2173,7 @@ void GLSL_SetUniformFloat5(shaderProgram_t *program, int uniformNum, const vec5_
 void GLSL_SetUniformVec2(shaderProgram_t *program, int uniformNum, const vec2_t v);
 void GLSL_SetUniformVec3(shaderProgram_t *program, int uniformNum, const vec3_t v);
 void GLSL_SetUniformVec4(shaderProgram_t *program, int uniformNum, const vec4_t v);
-void GLSL_SetUniformMat4(shaderProgram_t *program, int uniformNum, const mat4_t matrix);
+void GLSL_SetUniformMat4(shaderProgram_t *program, int uniformNum, const float matrix[16]);
 
 shaderProgram_t *GLSL_GetGenericShaderProgram(int stage);
 
@@ -2466,7 +2424,6 @@ void R_AddPostProcessCmd (void);
 void RE_SetColor( const float *rgba );
 void RE_StretchPic ( float x, float y, float w, float h, 
 					  float s1, float t1, float s2, float t2, qhandle_t hShader );
-void RE_BeginFrame( void );
 void RE_EndFrame( int *frontEndMsec, int *backEndMsec );
 void RE_SaveJPG(char * filename, int quality, int image_width, int image_height,
                 unsigned char *image_buffer, int padding);
@@ -2475,60 +2432,5 @@ size_t RE_SaveJPGToBuffer(byte *buffer, size_t bufSize, int quality,
 void RE_TakeVideoFrame( int width, int height,
 		byte *captureBuffer, byte *encodeBuffer, qboolean motionJpeg );
 
-
-
-/*
-=============================================================
-
-IMAGE LOADERS
-
-=============================================================
-*/
-
-void R_LoadBMP( const char *name, byte **pic, int *width, int *height );
-void R_LoadJPG( const char *name, byte **pic, int *width, int *height );
-void R_LoadPCX( const char *name, byte **pic, int *width, int *height );
-void R_LoadPNG( const char *name, byte **pic, int *width, int *height );
-void R_LoadTGA( const char *name, byte **pic, int *width, int *height );
-image_t *R_FindImageFile( const char *name, imgType_t type, imgFlags_t flags );
-qhandle_t RE_RegisterShaderLightMap( const char *name, int lightmapIndex );
-qhandle_t RE_RegisterShader( const char *name );
-qhandle_t RE_RegisterShaderNoMip( const char *name );
-qhandle_t RE_RegisterShaderFromImage(const char *name, int lightmapIndex, image_t *image, qboolean mipRawImage);
-float R_NoiseGet4f( float x, float y, float z, float t );
-void  R_NoiseInit( void );
-// font stuff
-void R_InitFreeType( void );
-void R_DoneFreeType( void );
-void RE_RegisterFont(const char *fontName, int pointSize, fontInfo_t *font);
-
-
-///////////////////////////// tr_shared.c  //////////////////////////////
-void AnglesToAxis( const vec3_t angles, vec3_t axis[3] );
-void ByteToDir( int b, vec3_t dir );
-void AxisClear( vec3_t axis[3] );
-char *SkipPath(char *pathname);
-void stripExtension(const char *in, char *out, int destsize);
-const char *getExtension( const char *name );
-
-///////////////////////////////////////////////////////////////////////////
-
-/*
-
-void (APIENTRYP qglActiveTextureARB) (GLenum texture);
-void (APIENTRYP qglClientActiveTextureARB) (GLenum texture);
-void (APIENTRYP qglMultiTexCoord2fARB) (GLenum target, GLfloat s, GLfloat t);
-
-void (APIENTRYP qglLockArraysEXT) (GLint first, GLsizei count);
-void (APIENTRYP qglUnlockArraysEXT) (void);
-
-#define GLE(ret, name, ...) name##proc * qgl##name;
-QGL_1_1_PROCS;
-QGL_DESKTOP_1_1_PROCS;
-QGL_ES_1_1_PROCS;
-QGL_3_0_PROCS;
-#undef GLE
-
-*/
-
+void Mat4Ortho( float left, float right, float bottom, float top, float znear, float zfar, float out[16] );
 #endif //TR_LOCAL_H

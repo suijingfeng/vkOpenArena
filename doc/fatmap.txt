@@ -1,0 +1,1822 @@
+
+            Fast affine texture mapping (fatmap.txt)
+            ----------------------------------------
+
+                              by
+                                  
+                        Mats Byggmastar
+                             a.k.a.
+                         MRI / Doomsday
+                        mri@penti.sit.fi
+
+                 8 Jul. 1996  Jakobstad, Finland
+                   19 Jun. 1996  Espoo, Finland
+
+           Read this today, it might be obsolete tomorrow.
+
+  Feel free to upload this document to wherever you find appropriate,
+      as long as you keep it in it's original, unmodified form.
+    This is free information, you may not charge anything for it.
+
+
+
+Table of contents
+-----------------
+
+1.  About this document
+2.  Disclaimer
+3.  Definition of terms
+4.  Assume the following
+5.  The slow method
+6.  A faster method
+7.  General structure of the texture mapping function
+8.  Equations for the constant deltas
+9.  Traditional inner loops
+10. Memories from the past
+11. Selfmodifying code
+12. Unrolled and selfmodifying inner loops
+13. Table lookup inner loops
+14. Problems with precalculated runs
+15. Pre-stepping texture coordinates
+16. Special case code
+17. Clipping
+18. Clipping using matrices
+19. Writing a byte, word, dword and other weird things
+20. The data cache
+21. The code cache
+22. Some pairing rules
+23. Pipeline delays
+24. The time stamp counter
+25. Branch prediction
+26. Reference
+27. Where to go from here
+28. Credits and greetings
+
+
+
+1.  About this document
+-----------------------
+
+This document tries to describe how to make fast affine texture mapping. The
+document describes both the general structure as well as the more critical
+parts such as inner loops. The information is aimed at both beginners and
+also at people who maybe already have a working texture mapper but are
+looking for more speed. The goal was to make a good document that would be
+useful today, not already be obsolete. So I'm giving you the best information
+I can possibly come up with.
+
+You don't get the information for free though. You will have to invest some
+of your own effort and actually learn what's going on in the inner loops and
+select the parts that will be most suitable for you.
+
+The information is based on my own work and findings but also on information
+found on the net, especially articles posted to the newsgroup
+comp.graphics.algorithms and on ideas given to me by other coders. IRC
+channel #coders is usually a good place to get new ideas and help. Many of
+the coders there are willing to share ideas and answer decent questions. 
+
+I am not claiming that the methods described here are THE fastest methods of
+doing texture mapping. But these methods are what coders are using today and
+they ARE fast. 
+
+To get the most out of this document you should have a good understanding of
+386+ Assembly and C. The asm code and optimizations are aimed especially
+for the Intel Pentium CPU.
+
+Note that the C code given is only meant as some sort of pseudo code. C is
+most of the time much easier to read that asm. For your information I have
+the whole texture mapping function in asm. This is overkill, I know, but this
+way I get full control over the optimization. In C I can only _hope_ that the
+compiler makes the best code possible. I'm certain that a human brain still
+is better to optimize code than a compiler. I do not say this because I'm a
+true asm-freak. In fact, I had programmed C for a year before even
+considering learning asm.
+
+I should say that I do not have a masters degree in computer graphics. I'm
+merely a 24 year old computer and telecom engineer (B.Sc.) that found
+interest in this area. I have never taken any computer graphics related
+course in school so if you think I misuses some expressions or terms, or even
+leave out some expressions or terms where I should use them, you might very
+well be right and I wrong.
+
+Also I have to confess that I haven't read Chris Hecker's articles in Game
+Developer magazine (http://www.gdmag.com). People tell me that they are good.
+You should probably take a look at them also.
+
+
+
+2.  Disclaimer
+--------------
+
+Some parts of the technical discussion at the end of the document might not
+be 100% accurate as of the actual hardware in the Pentium. But from a
+programmers point of view the guidelines given should apply anyway.
+
+When I state that a inner loop is e.g. 5 clock ticks per pixel, this don't
+mean that it will actually run at 5 clock ticks. This is just a theoretical 
+minimum when I assume that the instructions pair as expected and there are
+no cache misses and no delays writing to RAM.
+
+
+
+3.  Definition of terms
+-----------------------
+
+Just so there won't be any confusion:
+
+triangle side     Each triangle has two sides, the left side and the right
+                  side.
+
+triangle edge     These makes up the outline of the triangle. Usually one
+                  interpolates variables along the triangle edges, both on
+                  the left and the right side of the triangle.
+
+triangle section  A triangle is always made up of 3 sections. These are
+                  straight lines which makes up the triangle edges. When
+                  interpolating along the triangle edges we must calculate
+                  deltas for each of the 3 sections.
+
+triangle x        The current x value of a triangle edge on the screen. There
+                  are two triangle x, one on the left side and one on the
+                  right side of the triangle. Between these is the current
+                  scanline.
+
+u and v           The x and y components in the bitmap.
+
+dudx and dvdx     Our constant deltas for u and v, du/dx and dv/dx. (constant
+                  texture gradients for u and v)
+
+
+
+4.  Assume the following
+------------------------  
+
+We are only drawing triangles. (This is no problem to me as 3D Studio only
+uses triangles anyway.) Well actually it doesn't have to be triangles, this
+also works on other types of polygons as long as the texture gradients are
+constant for the whole polygon surface.
+
+You agree that a fractional part of 8 bit is enough for interpolating u and v
+on the scanlines of the triangle. Well actually a 16 bit fractional part is
+better but inner loops are usually much simpler to do if we only use 8 bits.
+
+Bitmaps always has a width of 256 pixels and a maximum height of 256 pixels.
+In some of the inner loops we must also assume that the bitmaps are aligned
+on 64k.
+
+The CPU is a Pentium and we are in 32 bit protected mode and flat memory
+model (TASM+WATCOM+PMODE/W).
+
+
+
+5.  The slow method
+-------------------
+
+The slow method of doing texture mapping is to interpolate u and v (and
+triangle x) on both the left and right side of the triangle and then
+calculate du/dx and dv/dx for each scanline. Then interpolate u and v when
+drawing the scanline. To make this even slower you could first interpolate
+the u and v (and triangle x) on both sides of the triangle and store the
+values in a edge buffer. Then pick the values from the edge buffer and draw
+each scanline.
+
+
+
+6.  A faster method
+-------------------
+
+Don't use a edge buffer as described in the slow method above. Calculate the
+edge deltas when you need them and interpolate along the edges at the same
+time you draw each scanline. It's just as simple to do it this way and a lot
+faster.
+
+One important thing you should realize is that when texture mapping a
+triangle (or any type of polygon that has constant texture gradients), you
+are interpolating two variables, u and v, whose deltas are constant over the
+whole triangle. I repeat, the deltas are constant for the whole triangle.
+Make sure you understand this because this is the key to fast texture mapping
+(or any other type of linear shading for that matter). I guess that the
+correct term isn't constant deltas, rather constant gradients, but I like the
+term delta better.
+
+Because the deltas (delta u and delta v) are constant, we only need to
+calculate them once for the whole triangle. No need to calculate them for
+each scanline. Also when interpolating u and v along the edges of the
+triangle you only need to interpolate u and v on one side of the triangle.
+Triangle x must be interpolated on both sides.
+
+
+
+7.  General structure of the texture mapping function
+-----------------------------------------------------
+
+Here is the general structure of my texture mapping function. If you have
+Watcom C/C++ you can compile it as is. Just initialize VGA mode 0x13 and call
+it. I didn't want to include the clipping code as it only would make it more
+difficult to read. No kind of pre-stepping or any other type of compensation
+is presented here, this is just the bare bones of the function. It might look
+big (?) but it is pretty damn simple and efficient if I may say so myself.
+
+You should call the function by passing a pointer to an array of 3 vertex
+structures and a pointer to the bitmap.
+
+    extern char myimage[];  // 256x256 256 color bitmap
+    vertex array[3];
+    // fill in the values for each vertex in the array here
+    DrawTextureTriangle(array, myimage);
+
+Note that the function doesn't move the vertex data to some local variables,
+it uses pointers to each of the structures instead. This makes it extremely
+simple to later on add more variables in the vertex structure which you will
+be doing in the case of an environment-bump or Phong-texture-bump mapper.
+The same function structure can still be used, just add a few variables to
+the vertex structure, calculate 2 more deltas, interpolate 2 more variables
+along the left side and make a new inner loop.
+
+
+// This is the only Watcom C/C++ specific part of the function. These
+// instructions take a 26:6 bit fixed point number and converts it 
+// to 32:32 bit. Then divides it with another 16:16 bit fixed point 
+// number. The result is 16:16 bit. This must be done in asm where we
+// can do 64/32 bit divides.
+
+int shl10idiv(int x, int y);
+#pragma aux shl10idiv = \
+    " mov   edx, eax "\
+    " shl   eax, 10  "\
+    " sar   edx, 22  "\
+    " idiv  ebx      "\
+    parm [eax] [ebx] \
+    modify exact [eax edx] \
+    value [eax]
+
+// sizeof(int) is 4
+
+struct vertex
+{
+    int x,y;    // screen coordinates (integers)
+    int u,v;    // vertex u,v (26:6 bit fixed point)
+};
+
+static vertex * left_array[3], * right_array[3];
+static int left_section, right_section;
+static int left_section_height, right_section_height;
+static int dudx, dvdx;
+static int left_u, delta_left_u, left_v, delta_left_v;
+static int left_x, delta_left_x, right_x, delta_right_x;
+
+
+inline int RightSection(void)
+{
+    vertex * v1 = right_array[ right_section ];
+    vertex * v2 = right_array[ right_section-1 ];
+
+    int height = v2->y - v1->y;
+    if(height == 0)
+        return 0;
+
+    // Calculate the deltas along this section
+
+    delta_right_x = ((v2->x - v1->x) << 16) / height;
+    right_x = v1->x << 16;
+
+    right_section_height = height;
+    return height;                  // return the height of this section
+}
+
+inline int LeftSection(void)
+{
+    vertex * v1 = left_array[ left_section ];
+    vertex * v2 = left_array[ left_section-1 ];
+
+    int height = v2->y - v1->y;
+    if(height == 0)
+        return 0;
+
+    // Calculate the deltas along this section
+
+    delta_left_x = ((v2->x - v1->x) << 16) / height;
+    left_x = v1->x << 16;
+    delta_left_u = ((v2->u - v1->u) << 10) / height;
+    left_u = v1->u << 10;
+    delta_left_v = ((v2->v - v1->v) << 10) / height;
+    left_v = v1->v << 10;
+
+    left_section_height = height;
+    return height;                  // return the height of this section
+}
+
+void DrawTextureTriangle(vertex * vtx, char * bitmap)
+{
+    vertex * v1 = vtx;
+    vertex * v2 = vtx+1;
+    vertex * v3 = vtx+2;
+
+    // Sort the triangle so that v1 points to the topmost, v2 to the
+    // middle and v3 to the bottom vertex.
+     
+    if(v1->y > v2->y) { vertex * v = v1; v1 = v2; v2 = v; }
+    if(v1->y > v3->y) { vertex * v = v1; v1 = v3; v3 = v; }
+    if(v2->y > v3->y) { vertex * v = v2; v2 = v3; v3 = v; }
+
+    // We start out by calculating the length of the longest scanline.
+
+    int height = v3->y - v1->y;
+    if(height == 0)
+        return;
+    int temp = ((v2->y - v1->y) << 16) / height;
+    int longest = temp * (v3->x - v1->x) + ((v1->x - v2->x) << 16);
+    if(longest == 0)
+        return;
+
+    // Now that we have the length of the longest scanline we can use that 
+    // to tell us which is left and which is the right side of the triangle.
+
+    if(longest < 0)
+    {
+        // If longest is neg. we have the middle vertex on the right side.
+        // Store the pointers for the right and left edge of the triangle.
+        right_array[0] = v3;
+        right_array[1] = v2;
+        right_array[2] = v1;
+        right_section  = 2;
+        left_array[0]  = v3;
+        left_array[1]  = v1;
+        left_section   = 1;
+
+        // Calculate initial left and right parameters
+        if(LeftSection() <= 0)
+            return;
+        if(RightSection() <= 0)
+        {
+            // The first right section had zero height. Use the next section. 
+            right_section--;
+            if(RightSection() <= 0)
+                return;
+        }
+
+        // Ugly compensation so that the dudx,dvdx divides won't overflow
+        // if the longest scanline is very short.
+        if(longest > -0x1000)
+            longest = -0x1000;     
+    }
+    else
+    {
+        // If longest is pos. we have the middle vertex on the left side.
+        // Store the pointers for the left and right edge of the triangle.
+        left_array[0]  = v3;
+        left_array[1]  = v2;
+        left_array[2]  = v1;
+        left_section   = 2;
+        right_array[0] = v3;
+        right_array[1] = v1;
+        right_section  = 1;
+
+        // Calculate initial right and left parameters
+        if(RightSection() <= 0)
+            return;
+        if(LeftSection() <= 0)
+        {
+            // The first left section had zero height. Use the next section.
+            left_section--;
+            if(LeftSection() <= 0)
+                return;
+        }
+
+        // Ugly compensation so that the dudx,dvdx divides won't overflow
+        // if the longest scanline is very short.
+        if(longest < 0x1000)
+            longest = 0x1000;     
+    }
+
+    // Now we calculate the constant deltas for u and v (dudx, dvdx)
+
+    int dudx = shl10idiv(temp*(v3->u - v1->u)+((v1->u - v2->u)<<16),longest);
+    int dvdx = shl10idiv(temp*(v3->v - v1->v)+((v1->v - v2->v)<<16),longest);
+
+    char * destptr = (char *) (v1->y * 320 + 0xa0000);
+
+    // If you are using a table lookup inner loop you should setup the
+    // lookup table here.
+
+    // Here starts the outer loop (for each scanline)
+
+    for(;;)         
+    {
+        int x1 = left_x >> 16;
+        int width = (right_x >> 16) - x1;
+
+        if(width > 0)
+        {
+            // This is the inner loop setup and the actual inner loop.
+            // If you keep everything else in C that's up to you but at 
+            // least remove this inner loop in C and insert some of 
+            // the Assembly versions.
+
+            char * dest = destptr + x1;
+            int u  = left_u >> 8;
+            int v  = left_v >> 8;
+            int du = dudx   >> 8;            
+            int dv = dvdx   >> 8;
+
+            // Watcom C/C++ 10.0 can't get this inner loop any tighter 
+            // than about 10-12 clock ticks.
+
+            do
+            {
+                *dest++ = bitmap[ (v & 0xff00) + ((u & 0xff00) >> 8) ];
+                u += du;
+                v += dv;
+            }
+            while(--width);
+        }
+
+        destptr += 320;
+
+        // Interpolate along the left edge of the triangle
+        if(--left_section_height <= 0)  // At the bottom of this section?
+        {
+            if(--left_section <= 0)     // All sections done?
+                return;
+            if(LeftSection() <= 0)      // Nope, do the last section
+                return;
+        }
+        else
+        {
+            left_x += delta_left_x;
+            left_u += delta_left_u;
+            left_v += delta_left_v;
+        }
+
+        // Interpolate along the right edge of the triangle
+        if(--right_section_height <= 0) // At the bottom of this section?
+        {
+            if(--right_section <= 0)    // All sections done?
+                return;
+            if(RightSection() <= 0)     // Nope, do the last section
+                return;
+        }
+        else
+        {
+            right_x += delta_right_x;
+        }
+    }
+}
+
+
+
+8.  Equations for the constant deltas
+-------------------------------------
+
+Sort the vertices in the triangle so that the topmost vertex is known as
+x1,y1 and the bottom vertex is known as x3,y3. Like the drawing below.
+
+                               x1,y1
+                                p1
+                                  /   
+                               / /    
+                            /   /     
+                         /     /      
+                      /       /       
+                   /         /        
+        x2,y2   /           /         
+        p2   /_____________/          
+             \    width   /          
+               \         /             
+                 \      /               
+                   \   /             
+                     \/        
+                   x3,y3    
+                    p3     
+
+  xn,yn     - x,y screen coordinates at vertex n (integers)
+  pn        - Value of variable at vertex n to calculate the constant delta
+              for. Note that this variable is assumed to have a 6 bit
+              fractional part (26:6 bit fixed point). 
+  width     - Width of the longest scanline in the triangle
+
+
+The reason why I have p as a 26:6 bit fixed point and not 16:16 or 24:8 bit
+fixed point is just for being able to store u and v with a little higher
+precision in the 3D structure and still use only words to save space. 
+
+Sorting 3 vertices is no more that 3 compares. Another thing: Don't load
+all x,y,u and v values of the vertices into registers. Use pointers to the
+vertex structures instead. This will also make it easier when you later on
+implement your Phong-texture-bump mapper. Something like this:
+
+    ; EDX -> vertex 1
+    ; ESI -> vertex 2
+    ; EDI -> vertex 3
+    mov     EAX, [EDX+vertex_y]
+    cmp     EAX, [ESI+vertex_y]
+    jle     short @@sorta
+    xchg    EDX, ESI                ; swap v1 - v2
+ @@sorta:
+    mov     EAX, [EDX+vertex_y]
+    cmp     EAX, [EDI+vertex_y]
+    jle     short @@sortb
+    xchg    EDX, EDI                ; swap v1 - v3
+ @@sortb:
+    mov     EAX, [ESI+vertex_y]
+    cmp     EAX, [EDI+vertex_y]
+    jle     short @@sortc
+    xchg    ESI, EDI                ; swap v2 - v3
+ @@sortc:
+    ; EDX -> topmost vertex
+    ; ESI -> middle vertex
+    ; EDI -> bottom vertex
+
+
+The following two equations needs only be calculated once for all the
+constant deltas in the triangle. Skip the triangle if y3 == y1, i.e. if the
+triangle has zero height. The width can be either positive or negative
+depending on which side the x2,y2 vertex is. This will be useful information
+when sorting out which is left and which is the right side of the triangle.
+
+              (y2-y1) << 16
+       temp = --------------
+                  y3-y1
+
+       width = temp * (x3-x1) + ((x1-x2) << 16)
+
+This will give you temp and width as 16:16 bit fixed point.
+
+The equation below is used to calculate the delta for a variable that should
+be interpolated over the triangle, e.g. texture u. Beware of the denominator
+in this equation! Make sure it won't cause divide overflow in case the width
+is less than one pixel. (Remember that width is a 16:16 bit fixed point
+number.) Note that shift by 10 in the equation. This is because p1,p2,p3 has
+a 6 bit fractional part. The resulting delta p is a 16:16 bit number. Note
+that this divide should be done in asm where we can do 64/32 bit divides.
+
+                  ( temp * (p3-p1) + ((p1-p2) << 16) ) << 10
+       delta p = --------------------------------------------
+                                 width  
+
+So for a texture mapper where we have 2 variables (u,v) to interpolate over
+the triangle, we have a total of 3 divs and 3 muls to calculate dudx and
+dvdx.
+
+
+Here is another equation that can be used to calculate the deltas with. It
+was posted to the newsgroup comp.graphic.algorithm by Mark Pursey.
+
+  There is a cleaner way, which doesn't rely on finding the widest line:
+  A-B-C: a triangle with screen x and y components, as well as t, a
+  value which could represent lightning, texture coordinates etc.
+  The following equation gives you the increment for t per horizontal pixel:
+        
+          (At-Ct)*(By-Cy) - (Bt-Ct)*(Ay-Cy)
+  dt/dx = ---------------------------------
+          (Ax-Cx)*(By-Cy) - (Bx-Cx)*(Ay-Cy)
+
+I've been told that this is the correct way to calculate the deltas (or
+constant texture gradients). This might very well be true but the other
+equations gives me good results and the length of the longest scanline for
+free. In this equation the denominator is reusable for both u and v. This
+makes a total of 6 muls and 2 divs. Remember to add the necessary shifts if
+you do this in fixed point.
+
+
+
+9.  Traditional inner loops
+---------------------------
+
+So assuming you have come so far that you have the triangle sorted, the
+constant deltas calculated, the u and v deltas on the left side calculated,
+deltas for triangle x calculated for both sides, and you are actually
+interpolating those values for each scanline, we come to the very core of the
+texture mapper, the inner loop. I'll first present a few traditional inner
+loops that interpolates u and v while plotting the scanline. These loops are
+simple, fast and works very well. 
+
+The loops assume the following:
+
+ ebx     = ptr to bitmap aligned on 64k. (the low 16 bits zero)
+ edi     = ptr to first destination pixel to plot in this scanline
+ ebp     = width of scanline (loop counter)
+ left_u  = current u on the left edge of the triangle (16:16 bit fixed point)
+ left_v  = current v on the left edge of the triangle (16:16 bit fixed point)
+ du      = our constant delta u (24:8 bit fixed point)
+ dv      = our constant delta v (24:8 bit fixed point)
+
+                                                               
+The first loop interpolates the u and v in two 32 bit registers (ecx, edx).
+We are one register short here so we use the dudx variable directly in the
+inner loop. This loop should run at 6 ticks per pixel. eax is not used for
+anything else than holding the pixel so we could unroll this loop to plot
+a word or dword at a time.
+
+   mov   ecx, [left_u]              ; current u
+   mov   edx, [left_v]              ; current u
+   shr   ecx, 8                     ; make them 28:8 bit fixed point
+   shr   edx, 8             
+   mov   bl, ch                     ; make ebx point to the first textel
+   mov   bh, dh
+   mov   esi, [du]
+
+ @@inner:
+    add   edx, [dv]                 ; update v
+    add   ecx, esi                  ; update u
+    mov   al, [ebx]                 ; get pixel from aligned texture map
+    mov   bl, ch
+    mov   [edi], al                 ; plot pixel
+    mov   bh, dh
+    inc   edi
+    dec   ebp
+    jnz   @@inner
+
+
+Just to show that it is also possible to directly interpolate u and v in ebx
+I'll present this one that uses the carry flag to add the "overflow" from the
+fractional part to the whole part of u and v.
+
+    mov   cl, byte ptr [left_u+1]   ; fractional part of current u
+    mov   ch, byte ptr [left_v+1]   ; fractional part of current v
+    mov   dl, byte ptr [du]         ; fractional part of delta u
+    mov   dh, byte ptr [dv]         ; fractional part of delta v
+    mov   bl, byte ptr [left_u+2]   ; whole part of current u
+    mov   bh, byte ptr [left_v+2]   ; whole part of current v
+
+ @@inner:
+    mov   al, [ebx]                 ; get pixel from aligned texture map
+    add   cl, dl                    ; update fractional part of u
+    adc   bl, byte ptr [du+1]       ; + whole part of dudx (+carry)
+    add   ch, dh                    ; update fractional part of v
+    adc   bh, byte ptr [dv+1]       ; + whole part of dvdx (+carry)
+    mov   [edi], al                 ; plot pixel
+    inc   edi
+    dec   ebp
+    jnz   @@inner
+
+
+The following loop uses a combination of interpolation in one 32 bit register
+(ecx) and the carry overflow method. We have just enough registers in this
+loop that we don't need to use any memory variables. On the other hand this
+makes it impossible to unroll it and plot a word or dword at a time. Anyway, 
+this version should run at 5 ticks per pixel.
+
+    mov   ecx, [left_u]
+    shr   ecx, 8                    ; make it 28:8 bit fixed point
+    mov   esi, [du]
+    mov   dl, byte ptr [dv]         ; fractional part of delta v 
+    mov   dh, byte ptr [left_v+1]   ; fractional part of current v
+    mov   ah, byte ptr [dv+1]       ; whole part of delta v
+    mov   bh, byte ptr [left_v+2]   ; whole part of current v
+    mov   bl, ch
+
+ @@inner:
+    add   ecx, esi                  ; update u
+    mov   al, [ebx]                 ; get pixel from aligned texture map
+    mov   bl, ch
+    add   dh, dl                    ; update fractional part of v
+    adc   bh, ah                    ; + whole part of of delta v (+carry)
+    mov   [edi], al                 ; plot pixel
+    inc   edi
+    dec   ebp
+    jnz   @@inner
+
+The loop counter (ebp) in the above loop can be removed if we reorder the
+registers a bit and plot the scanline from right to left. 
+
+ @@inner:
+    add   ecx, ebp
+    mov   al, [ebx]
+    mov   bl, ch
+    add   dh, dl
+    adc   dh, ah
+    mov   [edi+esi], al
+    dec   esi
+    jnz   @@inner
+
+The loop should now run at 4 clock ticks.
+
+I'm sure there are other ways to make these kind of loops but this is what I
+could come up with.
+
+After I wrote the above sentence, there was a post in the newsgroup
+comp.graphics.algorithms by Sean L. Palmer where he presented the following
+4 tick loop:
+    
+    Texture must be aligned on a 64K boundary. Must be 256x256.
+    Only 8 bits used for fractions, means shaky textures.
+    Start at right end of scanline
+    
+    T=texture adr        
+    D=dest adr+count (start)
+    E=dest adr (end)
+    X=tex X int          (whole part of initial u)
+    x=tex X frac         (fractional part of initial u)
+    Y=tex Y int          (whole part of initial v)
+    y=tex Y frac         (fractional part of initial v)
+    H=tex X step int     (whole part of delta u)
+    h=tex X step frac    (fractional part of delta u)
+    V=tex Y step int     (whole part of delta v)
+    v=tex Y step frac    (fractional part of delta v)
+    m=account for borrow for negative Y step, either 0 or 0FFh
+    p=texture pixel
+    
+    edi=DDDD
+    esi=EEEE
+    edx=TTYX
+    eax=000p
+    ebx=x0Yy
+    ecx=hmVv
+    ebp=000H
+    esp=
+    
+      mov   dh,bh
+    @@L:
+      mov   al,[edx]
+      add   ebx,ecx
+      adc   edx,ebp
+      dec   edi
+      mov   dh,bh
+      cmp   edi,esi
+      mov   [edi],al
+      jne   @@L
+        
+It's not necessary to simulate the loop counter this way. esi is not really
+used in the loop so we might as well use it as a loop counter and draw the
+scanline from left to right (the way I like to draw my scanlines). Like this:
+
+  @@inner:
+    mov   al, [edx]
+    add   ebx, ecx
+    adc   edx, ebp
+    inc   edi
+    mov   dh, bh
+    dec   esi
+    mov   [edi], al
+    jnz   @@inner
+
+Both of these loops uses eax only to hold the pixel so they can be unrolled
+to plot a word or dword at a time. In fact, by unrolling this loop to plot
+a dword per turn it might very well beat the table lookup inner loop
+presented below. By unrolling this loop we can remove 3 instructions,
+"inc edi", "dec esi" and "jnz @@inner". This will also mean that the loop
+will become too tight that will lead to AGI delays instead.
+
+
+
+10. Memories from the past
+--------------------------
+
+I as many others, started coding asm in real mode and later on moved to
+protected mode and flat model. The thing I miss about real mode was the
+ability to have a pointer in the low 16 bit and a variable in the high 16 bit
+of a 32 bit register. In flat model we need all 32 bits for the pointer.
+Sure, one can setup a selector and address the data with only the low 16 bits
+but all prefix bytes can be seen as a 1 clock tick, nonpairable instruction
+on the Pentium. So addressing with only 16 bit and using a segment override 
+will give 2 prefix bytes or 2 ticks delay.
+
+The following loop in real mode was for a bitmap scaler I once used. We have
+4 variables in only 2 registers (edi, ebx). 
+
+    ; ebx = neg(loop counter)   : source ptr 
+    ; edi = decision variable   : destination pointer
+    ; ecx = frac. part of delta : 1
+    ; edx = 1                   : whole part of delta
+    ; the delta is 16:16 bit 
+ @@inner:
+    mov   al, [bx]
+    mov   es:[di], al
+    add   edi, ecx      ; update fractional part : move dest. pointer
+    adc   ebx, edx      ; update loop counter    : whole step in bmp (+carry)
+    jnc   @@inner       ; jump if loop counter didn't overflow
+
+OK, this loop is crap on a Pentium but ain't it pretty? Just two adds to move
+both pointers, update the decision variable and loop counter. If we only had
+64 bit registers on the Pentium...
+
+
+
+11. Selfmodifying code
+-----------------------
+
+One way to get rid of the memory variables in inner loops is to use
+selfmodifying code. When you have calculated a constant delta and are about
+to store it in a memory variable, why don't you store it right into a
+instruction as a constant in the inner loop? It's just as simple. Just
+remember to not use CS as segment override as we are in protected mode.
+
+I must warn you about this way of coding, especially on the Pentium (read
+about the code cache at the end). It can actually make the loop slower even
+if you think you cut away a few ticks.
+
+Doing more complex shadings like environment-bump or Phong-texture-bump,
+selfmodifying code might be the only way to get it to run at all. I.e. not
+having to write to any memory variables from the inner loop. If you are about
+to make your loop selfmodifying, compare it with your old loop by actually
+timing a typical scene. Then you'll know if you gained anything.
+
+If your loop is faster with selfmodifying code and the environment your
+application is aimed for allows selfmodifying code, I'd definitely say go for
+it, use selfmodifying code.
+
+
+
+12. Unrolled and selfmodifying inner loops
+------------------------------------------
+
+I don't really see these as an alternative to the traditional inner loops on
+the Pentium. I present them here just because they are interesting.
+
+The deltas are constant so the offsets for each pixel in each scanline into
+the bitmap will also be constant. I.e. we can precalculate a whole run and
+use that in the inner loop. The inner loops for these type of texture mappers
+can look very different. The most radical must be to unroll it all the way
+and to plug in the offsets right into the mov instructions, i.e.
+selfmodifying code. These completely unrolled loops will be pretty big also.
+The loop below is 14 byte per pixel which means over 4k code for a whole 320
+pixel scanline. The loop will take up half of the code cache. Ouch! (read
+about the code cache at the end). Here is some code that shows the principle
+of this type of "inner loop":
+
+    jmp   ecx                   ; Jump to the right place in the "loop"
+    mov   al, [esi+12345]
+    mov   [edi+319], al
+    mov   al, [esi+12345]       ; Get pixel 
+    mov   [edi+318], al         ; Plot pixel
+    ......
+    mov   al, [esi+12345]       ; '12345' is the selfmodifying part
+    mov   [edi+2], al           ; that will be modified once per triangle
+    mov   al, [esi+12345]
+    mov   [edi+1], al
+    mov   al, [esi+12345]
+    mov   [edi+0], al
+
+Note that we are doing it backwards, from right to left. This makes it easier
+to setup esi and edi. As the code for each pixel in this loop is 14 byte you
+will be doing a X*14 when calculating the jump offset. X*14 is (X<<4)-X-X.
+You should of coarse not plug in the offsets for the whole loop if you only
+have a small triangle. The length of the longest scanline is a byproduct from
+the constant delta calculations.
+
+
+So what about the 1.5 tick per pixel loop?
+Well the following peace of code is usually what people think of. I'm not
+really sure that this is actually 1.5 tick per pixel as the 'mov [edi+?],ax' 
+has a operand size prefix byte. This code will need some work to make the
+instructions pair on the Pentium. Of coarse this loop also suffers from the
+same problems as the previous selfmodifying, unrolled loop.
+
+    jmp   ecx
+    ......
+    mov   al, [esi+12345]
+    mov   ah, [esi+12345]
+    mov   [edi+4], ax
+    mov   al, [esi+12345]
+    mov   ah, [esi+12345]
+    mov   [edi+2], ax
+    mov   al, [esi+12345]
+    mov   ah, [esi+12345]
+    mov   [edi], ax
+
+
+
+13. Table lookup inner loops
+----------------------------
+
+Now to a cooler method that is not selfmodifying and don't need to be
+unrolled all the way. The idea is very similar to the unrolled loops above
+but in this loop we have the offsets stored in a lookup table instead. For
+each pixel we get the address of the next pixel from the lookup table. This
+method should be much more Pentium friendly. Also this inner loop don't need
+to have the bitmap aligned on 64k as the traditional inner loops.
+
+The loop assume the following:
+
+ esi     = ptr to bitmap (no alignment needed)
+ edi     = ptr to first destination pixel to plot in this scanline
+ ebp     = width of scanline (loop counter)
+ left_u  = current u on the left edge of the triangle (16:16 bit fixed point)
+ left_v  = current v on the left edge of the triangle (16:16 bit fixed point)
+ lookup  = ptr to the precalculated lookup table. The lookup table is an
+           array of dwords.
+
+
+    mov   edx, [lookup]
+    xor   eax, eax
+    mov   al, byte ptr [left_u+2]
+    mov   ah, byte ptr [left_v+2]
+    add   esi, eax
+
+  @@inner:
+    mov   al, [esi+ebx]         ; Get pixel
+    mov   ebx, [edx]            ; Get offset for next pixel
+    mov   [edi], al             ; Plot pixel
+    add   edx, 4
+    inc   edi
+    dec   ebp
+    jnz   @@inner
+
+
+The same loop could look like this in C:
+
+    // destptr = ptr to screen + y*320
+    // bitmap  = ptr to bitmap
+    // lookup  = ptr to lookup table
+    // x1      = start screen x coordinate of scanline
+    // width   = width of scanline
+
+    char * dest = destptr + x1;
+    char * src  = bitmap + (left_u>>16) + (left_v>>16)*256;
+
+    for(; width--; )
+    {
+        *(dest++) = src[ *(lookup++) ];            
+    }
+
+
+The above loop in asm should be 4 clock ticks per pixel on a Pentium. This
+loop can be changed to plot 4 pixels at a time:
+
+  @@inner:
+    mov   al, [esi+ebx]         ; Get pixel #1
+    mov   ebx, [edx]          
+    mov   ah, [esi+ecx]         ; Get pixel #2
+    mov   ecx, [edx+4]         
+    shl   eax, 16               ; Move pixels 1 and 2 to the high word
+    add   edi, 4
+    mov   al, [esi+ebx]         ; Get pixel #3
+    mov   ebx, [edx+8]
+    mov   ah, [esi+ecx]         ; Get pixel #4
+    mov   ecx, [edx+12]          
+    rol   eax, 16               ; Swap the high and low words
+    add   edx, 16
+    mov   [edi], eax            ; Plot all 4 pixels
+    dec   ebp
+    jnz   @@inner
+
+Now this loop is 9 (8 if we assume that shl and rol are pairable in the U
+pipeline) ticks per 4 pixel with the pixels written as a dword. Very
+good if we align the write on dword. Use the other loop for very short lines
+or to get this one aligned on dword and use this for the rest of the
+scanline.
+
+
+Calculate the lookup table with the following loop (this loop can also be
+used to calculate the offsets in the selfmodifying example):
+(dudx and dvdx are 16:16 bit fixed point. lookup is an array of dwords)
+
+   int du = dudx >> 8; 
+   int dv = dvdx >> 8;
+   int u = 0;
+   int v = 0; 
+   for( width of longest scanline )
+   {
+      *lookup++ = (u>>8) + (v & 0xffffff00);
+      u += du;
+      v += dv;
+   }
+
+   ; ebx = ecx = 0
+   ; esi = delta u  (26:8 bit fixed point)
+   ; edi = delta v  (26:8 bit fixed point)
+   ; edx = ptr to lookup table
+   ; ebp = length of table (the width of the longest scanline)
+
+ @@mklookup:
+    mov   eax, ecx          
+    add   ecx, edi          ; update v
+    mov   al, bh
+    add   ebx, esi          ; update u
+    mov   [edx], eax        ; lookup[edx] = u+256*v
+    add   edx, 4
+    dec   ebp
+    jnz   @@mklookup
+
+
+
+14. Problems with precalculated runs
+------------------------------------
+
+The more I play around with inner loops that uses the same precalculated run
+for each scanline, the more skeptic I get. This is because they all suffers
+from the same problem, no matter if we use a lookup table or if we have a
+unrolled selfmodified loop.
+
+In the case of the lookup table inner loop we always start at the beginning
+of the table when drawing a scanline. This is wrong and will give very bad
+distortion especially when the triangle is zoomed in close. Always starting
+at the beginning of the table is the same as ignoring the fractional parts of
+the initial u and v of the scanline. So to fix this we should start somewhere
+into the table depending on the initial fractional parts of u and v. But this
+is impossible because u and v are interpolated separately on the triangle
+edge but are fixed to each other in the lookup table. Wilco Dijkstra posted
+the following solution in comp.graphics.algorithms:
+
+
+    The basic idea is correct. What you mean is using subpixel positioning
+    with one or two bits precision. For example, for 2 bits subpixel
+    positioning you have to create 4 * 4 tables of the longest scanline.
+    The first table starts at u = v = 0, second u = 0, v = 0.25, third u  0,
+    v = 0.50 fourth u = 0, v = 0.75, fifth u = 0.25, v = 0, etc.
+    When stepping down the scanlines, select the table giving the 2 most
+    significant fractional bits of u and v. The maximum error you get is 1/8
+    in each direction (when proper rounding is used!). Thus this is 64 times
+    more precise than using no subpixel positioning.
+    
+    The problem is that it's only faster for very large triangles (eg. more
+    than 32 scanlines deep), so it may be faster (and more accurate) to draw
+    the texture in the standard way, without a table.
+
+
+This method will reduce the distortion. On the other hand the lookup tables
+will require much more memory that in turn will push out other cached data,
+not to mention the additional time it takes to setup the tables. 
+
+
+
+15. Pre-stepping texture coordinates
+------------------------------------
+
+When we interpolate u, v and triangle x along the left edge of the triangle
+we always truncates triangle x when drawing a scanline. This is natural
+because we can only draw whole pixels. When we truncates x we must also
+adjust the initial u and v of the scanline. Adjusting u and v will give much
+cleaner and stable textures. Note that this only applies if you use a
+traditional inner loop. Don't bother doing this if you are using a table
+lookup inner loop.  Kevin Baca sent me the following explanation:
+
+
+    No matter how you compute screen pixels, you need to "pre-step" your
+    texture coordinates by the difference between actual screen  coordinates
+    and screen pixels.  It looks like this:
+    
+    // sp = screen pixel, sc = screen coordinate.
+    float sc, diff, u, v, dudx, dvdx;
+    int sp;
+    
+    sp = (int) sc;
+    diff = sc - (float) sp;
+    u -= dudx * diff;
+    v -= dvdx * diff;
+    
+    You can actually do this without multiplies (by calculating a dda for 
+    each edge that determines when to add an extra 1 to the texel 
+    coordinates).
+    
+
+
+16. Special case code
+---------------------
+
+It often pays off to make special case code that takes care of the edge delta
+calculations when a triangle section is 1, 2 or 4 pixels high. Then you can
+skip the divs and use shifts instead. 
+
+I once made a histogram of the length of each scanline in the very popular
+chrmface.3ds object. This object has about 850 triangles and was scaled up
+so it just touched the top and the bottom of a 320x200 pixel screen. The
+histogram showed that most scanlines was only 1 or 2 pixels wide. This proves
+that the outer loop is just as important as the inner loop and also that it
+might be a good idea to have special case code for those 1 or 2 pixel lines.
+
+width    number of scanlines
+  1     *********************
+  2     ******************
+  3     **********
+  4     ******
+  5     ***
+  6     **
+  7     **
+
+
+
+17. Clipping
+------------
+
+Clipping is most of the time a real pain in the ass implementing. It will
+always mess up a nice looking routine with extra junk. One possibility is to
+have two separate functions, one with clipping and one with no clipping. Then
+test the triangle if it needs clipping before calling any of the functions.
+
+The actual clipping code is not that difficult to implement really. Say if
+you need to clip a texture mapped scanline, you first have to get the number
+of pixels you need to skip at the end of the scanline and the number of
+pixels in the beginning of the scanline. Then subtract the number of pixels
+skipped from the original scanline width. If you skipped some pixels at the
+start of the scanline, the new starting u and v must be calculated. This is
+done by multiplying the pixels skipped by delta u and delta v respectively.
+And adding the original starting u and v of coarse.
+
+The following code is what I'm using to sort out the stuff:
+
+    movsx   EBP, word ptr [left_x+2]    ; Get the integer part from the
+    movsx   ECX, word ptr [right_x+2]   ; 16:16 bit numbers.
+    mov     EDX, EBP
+    sub     EDX, ECX
+    ; EDX = width of scanline
+    ; ECX = x1
+    ; EBP = x2
+    mov     EBX, EDX
+    sub     EBP, [_RightClip]
+    jle     short @@rightok
+    sub     EDX, EBP                    ; skip pixels at end
+ @@rightok:
+    xor     EAX, EAX
+    cmp     ECX, [_LeftClip]
+    jge     short @@leftok
+    mov     EAX, [_LeftClip]
+    sub     EAX, ECX
+    mov     ECX, [_LeftClip]
+ @@leftok:
+    sub     EDX, EAX                    ; skip pixels at start
+    jle     @@notvisible
+    ; EAX = pixels skipped at start
+    ; ECX = clipped x1
+    ; EDX = clipped width of scanline
+
+So now you just have to multiply EAX by delta u and add the original u to get
+the clipped u. The same apply for v.
+
+
+
+18. Clipping using matrices
+---------------------------
+
+I've been told that clipping should not be done scanline by scanline in the
+texture mapping function. But I have yet to find a simple alternative
+solution to this. Don't confuse the clipping I'm referring to with removal of
+nonvisible polygons. When we arrive at the texture mapping function we should
+already have removed those triangles that are backface or outside the
+viewcone.
+
+Kevin Baca sent me the following explanation on how to decide if vertices
+should be clipped or not.
+
+
+    If you use homogeneous matrices to do your transformations
+    it's actually very simple to clip before you do the perspective 
+    divide to get screen coordinates.
+    
+    Using homogeneous coordinates, you get vertices of the form [X Y Z W] 
+    after doing the perspective projection.  To get actual screen 
+    coordinates, you divide X and Y by W.  If you are going to 
+    "Normalized Device Coordinates" the results of these divisions will 
+    be -1 < X' < 1 and -1 < Y' < 1.  Therefore, to do clipping you need 
+    to perform the following comparison before the perspective divide:
+    
+    -W < X < W, -W < Y < W.
+    
+    To clip along the Z axis, you can do the same thing, but I usually 
+    use the following comparison instead:
+    
+    0 < Z < W.
+    
+    To do a perspective projection, multiply the projection matrix, P, by 
+    the view matrix, V:  M = P * V.
+    
+    The view matrix is the result of all your transformations 
+    (translations, rotations, scalings, etc.) of both the model and the 
+    camera.  For the projection matrix, I use the following:
+    
+    1  0  0  0
+    0  a  0  0
+    0  0  b  c
+    0  0  f  0
+    
+    where:
+    a = the aspect ratio (width / height of screen)
+    b = f * (yon / (yon - hither))
+    c = -f * (yon * hither / (yon - hither))
+    f = sin(aov / 2) / cos(aov / 2)
+    aov = angle of view
+    yon = distance to far clipping plane
+    hither = distance to near clipping plane
+    
+    These values allow me to clip using:
+    -W < X < W
+    -W < Y < W
+    0 < Z < W
+    
+    After clipping, divide X and Y by W and multiply by the width and 
+    height of your screen to get final screen coordinates.
+
+
+
+19. Writing a byte, word, dword and other weird things
+------------------------------------------------------
+
+Now to a weird thing on the Pentium. The Pentium has a so called Write-Back
+cache. Well, the fact that the Pentium has a Write-Back cache is not weird at
+all. It's how the Write-Back cache works in practice that is weird if you are
+used to a Write-Trough cache that is used on the 486.
+
+Write-Trough:
+    When we write a byte to memory the byte is always written to RAM. If that 
+    same byte is also present in the cache, the byte in the cache is also 
+    updated.
+    
+Write-Back:
+    When we write a byte to memory the byte is only written to RAM if the
+    same byte is not present in the cache. If the byte is present in the
+    cache, only the cache will be updated. It is first when a cacheline is
+    pushed out from the cache that the whole cacheline will be written to
+    RAM.
+
+I have done tests on my system (Pentium 120, L1:8+8k, L2:256k) using the
+time stamp counter to see how it actually behaves. These are the results:
+
+Writing to a byte (or aligned word or dword) that is not present in the L1
+cache takes 8 clock ticks (no matter if the byte is present in the L2 cache).
+If the byte is present in the L1 cache, the same "mov" instruction takes the
+theoretical 0.5 clock tick.
+
+This is very interesting and potentially useful. If we e.g. manage to keep
+the cacheline where we have our memory variables in the L1 cache, we can
+write to them at the same speed as writing to a register. This could be very
+useful in the case of a Phong-texture or Phong-texture-bump inner loop where
+we need to interpolate many variables and only have 7 registers.
+
+The problem is that our cacheline will be pushed out from the cache as soon
+as we start getting cache misses when reading the texture data. Then we are
+back at 8 clock tick per write. To fix this we must read a byte from our
+cacheline so that it won't be marked as old and thrown out. But this is
+usually what we do anyway. We read a variable, interpolates it, uses it and
+writes it back.
+
+Juan Carlos Arevalo Baeza presented in an article to comp.graphics.algorithms
+another way to make use of the Write-Back cache in a texture mapping inner
+loop. The idea is to ensure that the destination pixel written is always
+present in the cache. This is done by reading a byte from the destination
+cacheline first:
+
+     ; edi = ptr to first destination pixel (+1) to plot
+     ; esi = ptr to last destination pixel to plot
+     ; The scanline is plotted from right to left
+
+      push esi
+      mov  al,[edi-1]    ; read the first byte into the cache.
+    
+    @@L1:
+      lea  esi,[edi-32]
+      cmp  esi,[esp]
+      jae  @@C
+      mov  esi,[esp]
+    @@C:
+      mov  al,[esi]      ; read the last byte of the 32-byte chunk.
+    @@L:
+      mov  al,[edx]
+      add  ebx,ecx
+      adc  edx,ebp
+      dec  edi
+      mov  dh,bh
+      cmp  edi,esi
+      mov  [edi],al
+      jne  @@L
+    
+      cmp  edi,[esp]
+      jne  @@L1
+    
+      pop  esi
+
+    This ensures that whenever you write a pixel, that address is already in
+    the cache, and that's a lot faster. A LOT. My P90 takes 20-40 cycles to
+    read a cache line, so that's around 1 more cycle per pixel. Problems:
+    when painting polys, rows of very few pixels (let's say 1-8 pixels) are
+    the most common, and those don't feel so good about this loop. You can
+    always have two loops for the different lengths.
+
+
+Another way to speed up writes (that also works on 486) is to collect 4
+pixels in a 32 bit register and write all 4 pixels at a time as a aligned
+dword. This will split the 8 clock tick delay on all 4 pixels making the
+delay only 2 clock ticks per pixel. This method will almost always gain speed
+especially if the scanlines are long.
+
+
+
+20. The data cache
+------------------
+
+Although it is fun optimizing inner loops there are other important factors
+that one should look at. With the Pentium processor the cache aspects are
+very important. Maybe more important than the speed of the inner loop. Don't
+know how long this is true though as newer processors seems to get bigger and
+bigger caches that probably will become smarter also.
+
+The general idea of the cache is:
+When the CPU has decoded an instruction that needs to get a variable from
+memory, the CPU first checks the cache to see if the variable is already
+in the cache. If it is there the CPU reads the variable from the cache.
+This is called a cache hit. If the variable is not in the cache the CPU first
+has to wait for the data to be read from RAM (or the secondary cache, L2)
+into the cache and first after that get the variable from the cache. The
+cache always loads a full cacheline at a time so this will take a few clock
+ticks. A cacheline is 16 byte on a 486 and 32 byte on Pentium. The advantage
+of this is when reading byte after byte from the memory, the data will most
+of the time already be loaded into the cache because we have accessed the
+same cacheline just before. Also a cacheline is always aligned on 16 byte
+on the 486 and on 32 byte on the Pentium.
+
+I did a few tests on my system (Pentium 120 MHz, L1 cache 8+8k, L2 cache
+256k) using the time stamp counter to check the actual time for loading a
+cacheline. In the first test I flushed the L2 cache so that each cacheline
+must be read all the way from RAM. This was done by allocating a 256k memory
+chunk and read each byte of that first. This would cause the memory I did the
+test on to be pushed out of the L2 cache. The testloop looked like this:
+ 
+    mov  ecx, 1000
+  next:
+    mov  al, [esi]
+    add  esi, ofs
+    dec  ecx
+    jnz  next
+
+The overhead of the loop was first timed by replacing the "mov al, [esi]"
+by "mov al, cl". The loop ran at exactly 2 clock tick per turn. The "ofs"
+value was replaced for each run with 1, 2, 4, 8, 16, 32, 64, ... In the
+second test I first forced the L2 cache to load the memory by reading each
+byte of a 128k memory chunk and then run the testloop on the same memory.
+Here are the results of both tests:
+
+
+ clock ticks
+                                                              * *
+    |                                          *  *  *  *  *
+ 40 +                              *  *  *  *  
+    |                             *
+ 35 +                   from RAM *
+    |                           *
+ 30 +                          *
+    |                          *
+ 25 +                         *
+    |                        *
+ 20 +                       *      +  +  +  +  +  +  +  +  +  + +
+    |                      *      +
+ 15 +                     *     +
+    |                   *      +  from L2 cache
+ 10 +                  *     +
+    |                 *   +
+  5 +               *  +
+    |            * +
+  0 + -----+-----+-----+-----+-----+-----+-----+-----+-----+-----  ofs
+    1      2     4     8    16    32    64    128   256   512     
+
+
+So this tells me that it takes 40-45 clock ticks minimum to load a cacheline
+all the way from RAM and exactly 18 clock ticks from the L2 cache. When "ofs"
+was 1 the "mov al, [esi]" ran at 2.0 ticks when loading from RAM and 1.1
+ticks from the L2 cache. 0.5+40/32=1.75 and 0.5+18/32=1.06 so this makes
+sense.
+
+This is pretty scary!  18 clock ticks to load a cacheline from the L2 cache.
+18 clock ticks minimum for the inner loops if we assume that a cacheline must
+be filled for each byte read. Ouch!
+
+So in the case of a texture mapper where we might be reading texels in a
+vertical line in the bitmap, the inner loop will be accessing pixels that
+are >256 bytes apart. The CPU will then be busy filling cachelines for each
+texel. A 64k bitmap won't fit inside a 8k cache, you know. So what can we do?
+Well, we can wait on Intel to invent bigger caches or we might consider
+storing our bitmaps some other, more cache friendly way.
+
+I got an interesting tip from Otto Chrons on channel #coders the other day
+about this. He said that one should store the bitmap as a set of tiles, say
+8 x 8 pixels instead of the usual 256 x 256 pixel. This makes perfect sense.
+It would mean that a small part of the bitmap (8 x 4 pixel) would fit in the
+same 32 byte cacheline. This way, new cachelines don't need to be loaded that
+often when reading pixels in a vertical line in the bitmap.
+
+The following was suggested in a mail to me by Dare Manojlovic:
+
+
+    If you are saving bitmap as a set of tiles (8*4) the inner loop wouldn't
+    have to be more complicated (this is my opinion - not yet tested).
+    
+    For example, let's say that we have u&v texture coordinates, we only have
+    to reorder bits to get the correct address (before the inner loop):
+       Normally for a bitmap of 256*256 the texel address would look like:
+       EAX                           AH            AL
+        oooo oooo    oooo oooo    oooo oooo     oooo oooo
+                                v coordinate   u coordinate
+    
+       And now:
+       EAX                           AH            AL
+        oooo oooo    oooo oooo    oooo oooo    oooo oooo
+         v(other 6 bits)  u(other 5 bits) v(lower 2 bits) u(lower 3 bits)
+
+    Adding a constant value,that is also converted, in the loop shouldn't be
+    a problem.
+
+    Now, as I understand cache loading procedure,it always loads 32 bytes of
+    data (Pentium), so the whole bitmap tile of (8*4 pixels) will be in cache.
+    Of course bitmap tile must be 32 bytes aligned.
+    This would also work faster on 486 where cache is loaded with 16 bytes.
+
+
+There is a small problem to the above method. We can't just add a constant
+value to a number in this format (even if they both are converted). This
+is because there is a gap between the bits. We must make the bits jump over
+the gap to make the add correct. There is a simple solution to this problem
+though. Just fill the gap with 1:s before adding the constant value. This
+will cause the bit to jump over the gap. Filling the gap is done with a
+bitwise OR instruction.
+
+Converting u and v (16:16 bit) to this format can be done with the following
+code:
+
+    int uc = (u & 0x0007ffff) | ((u<<2) & 0xffe00000);
+    int vc = (v & 0x0003ffff) | ((v<<5) & 0xff800000);
+
+
+    ; eax = u  --------wwwwwwwwffffffffffffffff  (w=whole, f=fractional)
+    ; ebx = v  --------wwwwwwwwffffffffffffffff
+    ; ecx = scratch register
+    mov   ecx, eax
+    shl   eax, 2
+    and   ecx, 00000000000001111111111111111111b
+    and   eax, 11111111111000000000000000000000b
+    or    eax, ecx            
+    mov   ecx, ebx
+    shl   ebx, 5
+    and   ecx, 00000000000000111111111111111111b
+    and   ebx, 11111111100000000000000000000000b
+    or    ebx, ecx            
+    ; eax = u  ------wwwww--wwwffffffffffffffff
+    ; ebx = v  ---wwwwww-----wwffffffffffffffff
+
+
+Adding dudx and dvdx to u and v in this format can be done with the following
+code (all variables are in the converterd format):
+
+    uc = (uc | 0x00180000) + dudx; 
+    vc = (vc | 0x007c0000) + dvdx;
+
+
+    ; eax = u  ------wwwww--wwwffffffffffffffff
+    ; ebx = v  ---wwwwww-----wwffffffffffffffff
+    ; dudx, dvdx = 16:16 bit converted to this format 
+    or    eax, 00000000000110000000000000000000b    ; fill the bit-gap in u
+    or    ebx, 00000000011111000000000000000000b    ; fill the bit-gap in v
+    add   eax, [dudx]
+    add   ebx, [dvdx]
+
+
+In a mail sent to me, Russel Simmons preresented the following method to
+reorder the bits to acheive a simpler inner loop by eliminating a bit-gap:
+
+
+    In one post, someone suggested a bit structure to find the corect
+    position in your tiled texture given u and v. He suggested something
+    like:
+    
+    high bits of v | high bits of u | low bits of v | low bits of u
+    
+    This way the high bits of u and v determine which tile our texel is in,
+    and the low bits of u and v determine where in our tile the texel is.
+    If we store our tiles in a different manner, we can simplify this to:
+
+    high bits of u | high bits of v | low bits of v | low bits of u
+
+    which is in other words:
+
+    high bits of u | all bits of v | low bits of u
+
+    In order to facilitate this, instead of storing our tiles in this order:
+
+    -------------
+    | 0| 1| 2| 3| ...  (here i am showing the upper 4x4 tiles of a 256x256
+    -------------       texture store in 8x8 tiles)
+    |32|33|34|35| ...
+    -------------       Original Method
+    |64|65|66|67| ...
+    -------------
+    |96|97|98|99| ...
+    -------------
+    |  |  |  |  |
+
+    store them in this order:
+
+    -------------
+    | 0|32|64|96| ...  (here i am showing the upper 4x4 tiles of a 256x256
+    -------------       texture store in 8x8 tiles)
+    | 1|33|65|97| ...
+    -------------       New Method, in order to acheive a simpler inner loop
+    | 2|34|66|98| ...
+    -------------
+    | 3|35|67|99| ...
+    -------------
+    |  |  |  |  |
+
+    Also, if we are storing our bitmap in a tiled fashion, then it would
+    greatly improve our cache performance if we can back and forth across
+    scan lines.. in other words alternate the direction we scan across lines.
+    Say we have just scanned forward across one scan line. If we start
+    backwards across the next scan line, we are likely to be pulling texels
+    from the same tiles as we were at the end of the previous scan line.
+
+
+The last part about alternating the drawing direction is definitely something
+to try out!
+
+I was hoping I would be able to present some code here that uses all these
+techniques and 16:16 bit interpolation in a slick inner loop but due to lack
+of time and the fact that I'm fed up with this document, I leave this to you.
+
+
+
+21. The code cache
+------------------
+
+The cool thing about Pentiums is that it can execute two instructions in
+parallel. This is called instruction pairing. But there is a lot of rules
+that must be fulfilled for the pairing to take place. One rule is that both
+instructions must already be in the code cache. This means that the first
+time trough a inner loop, no instructions will pair. There is one exception
+to this rule. If the first instruction is a 1 byte instruction, e.g. inc eax,
+and the other is a simple instruction, then they will pair the first time.
+
+If by chance our inner loop happens to be in the code cache, by modifying an
+instruction in the inner loop (selfmodifying code) the cacheline where we
+did the modification will be marked as not up to date. So that cacheline
+must be loaded into the cache again before we can execute the inner loop
+again. Loading of code cachelines seems to be exceptionally slow also. In
+other words, we have found yet another source of delay.
+
+So to have a completely unrolled loop that almost fills up the whole code
+cache and also is selfmodifying is a pretty bad idea on the Pentium. On the
+other hand, we are not modifying the loop for each scanline so chances are
+that parts of it will be in the code cache from drawing the previous
+scanline.
+
+
+
+22. Some pairing rules
+----------------------
+
+As mentioned above, the Pentium can execute two instructions in parallel.
+This is possible because the CPU has dual integer pipelines, they are
+called the U and V pipelines. The Pentium has a so called superscalar
+architecture. The U pipeline is fully equipped and can execute all integer
+instructions. The V pipeline on the other hand is a bit crippled and can only
+execute simple, RISC type instructions.
+
+Simple instructions are:
+
+ mov, inc, dec, add, adc, sub, sbb,
+ and, or, xor, cmp, test, push, pop,
+ lea, jmp, call, jcc, nop, sar, sal,
+ shl, shr, rol, ror, (rcl), (rcr)
+
+(What I've heard there are different opinions on if the shift/rotate
+instructions are pairable or not. The book I have here states that these
+instructions are pairable but can only execute in the U pipeline)
+
+
+The first pairing rule is that both instructions must be simple instructions.
+Also, no segment registers can be involved in the instructions.
+
+Another rule is that the two instructions must be completely independent of
+each other. Also they must not write to the same destination register/memory.
+They can read from the same register though. Here are some examples:
+
+    add   ecx, eax      ; store result in ecx
+    add   edx, ecx      ; get result from ecx. No pairing!
+
+    mov   ecx, eax
+    mov   edx, ecx      ; No pairing!
+
+    mov   al, bh        ; al and ah is in the same register
+    mov   ah, ch        ; No pairing!
+
+
+    mov   ecx, eax      ; read from the same register 
+    mov   edx, eax      ; Pairs ok.
+
+    mov   ecx, eax      ; note eax in this example
+    add   eax, edx      ; Pairs ok.
+
+There are two exception to this rule. Namely the flag register and the stack
+pointer. Intel has been kind enough to optimize these.
+
+    dec   ecx           ; modifies the flag register
+    jnz   @@inner       ; Pairs ok.
+
+    push  eax           ; both instructions are accessing esp
+    push  ebx           ; Pairs ok.
+
+
+So for example the loop we used to calculate the lookup table with, all
+instructions are simple and not dependent on the previous one. The 8
+instructions should execute in 4 clock ticks.
+
+ @@mklookup:
+    mov   eax, ecx          
+    add   ecx, edi      ; Pairs ok.
+    mov   al, bh
+    add   ebx, esi      ; Pairs ok.
+    mov   [edx], eax
+    add   edx, 4        ; Pairs ok.
+    dec   ebp
+    jnz   @@mklookup    ; Pairs ok.
+
+
+
+23. Pipeline delays
+-------------------
+
+There are a whole bunch of these that will delay the pipelines:
+
+ - data cache memory bank conflict
+ - address generation interlock, AGI
+ - prefix byte delay
+ - sequencing delay
+
+I personally think that the AGI is most important to consider in the case
+of tight inner loops. Because that is what's happening in a inner loop, where
+we are calculating an address and need it right away to access some data.
+There will be a AGI delay if a register used in a effective address
+calculation is modified in the previous clock cycle. So if we have our
+instructions nicely pairing we might have to put 3 instructions in between to
+avoid the AGI delay.
+
+    add   esi, ebx      ; Move the array pointer.
+    mov   eax, [esi+8]  ; AGI delay. You just modified esi.
+
+
+    add   esi, ebx      ; Move the array pointer.
+    add   ebx, ecx      ; Do something useful here
+    inc   edi           ;  "
+    add   ebp, 4        ;  "
+    mov   eax, [esi+8]  ; Now it's OK to access the data. No AGI delay.
+
+
+If you don't have any useful instructions to fill out the gap with you could
+try to swap the two instructions so that you access the data first and then
+modify the index register. 
+
+    mov   eax, [esi+8]
+    add   esi, ebx      ; Pairs ok. No AGI delay.
+
+
+
+There are a lot more rules one must follow so I suggest you buy a good book
+on the subject. I don't know of any free info about this on the net as of
+this writing. Maybe you'll find something at Intel's www-site
+(http://www.intel.com). Anyway, a book that got me started was: "Pentium
+Processor Optimization Tools" by Michael L. Schmit  ISBN 0-12-627230-1
+This book has a few minor errors and some of the explanations are a bit
+cryptic but it is a good starting point. The way to really learn is to get
+the basics from e.g. a book and then time actual code to see what is faster
+and what's not.
+
+
+
+24. The time stamp counter
+--------------------------
+
+The Pentium has a built in 64 bit counter called the Time Stamp Counter that
+is incremented by 1 for each clock tick. To read the counter you use the
+semi-undocumented instruction RDTSC (db 0fh,31h). This will load the low 32
+bit of the counter into EAX and the high 32 bit into EDX. Perfect for timing
+code! 
+
+    ; First time the overhead of doing the RDTSC instruction
+    db      0fh,31h         ; hex opcode for RDTSC
+    mov     ebx, eax        ; save low 32 bit in ebx
+    db      0fh,31h         
+    sub     eax, ebx        ; overhead = end - start
+    mov     [oh_low], eax
+
+    ; Now do the actual timing
+    db      0fh,31h         
+    mov     [co_low], eax
+    mov     [co_hi], edx
+
+    ; Run some inner loop here of whatever you want to time
+
+    db      0fh,31h         
+    sub     eax, [co_low]   ; ticks = end - start
+    sbb     edx, [co_hi]
+    sub     eax, [oh_low]   ; subtract overhead
+    sbb     edx, 0
+    ; Number of clock ticks is now in  edx:eax
+
+
+You'll notice that I first time the overhead of doing the RDTSC instruction.
+This might be a bit overkill but it's no harm in doing it. Note also that I
+ignore the high 32 bit. The overhead should not be more than 2^32 clock
+ticks anyway. The RDTSC can be a privileged instruction under some extenders
+(?) but still be available (under the control of the extender) so there might
+actually be a overhead to time.
+
+You can usually ignore the high 32 bit. Using only the low 32 bit will allow
+a maximum of 2^32 clock ticks which is 35 seconds on a Pentium 120 MHz.
+
+When you are timing your code e.g. when you have done some optimizations on
+your texture mapper, don't time just one triangle over and over. Time how
+long it takes to draw a complete object with hundreds (thousands) of
+triangles. Then you'll know if that optimization made any difference.
+
+
+
+25. Branch prediction
+---------------------
+
+The Pentium has some sort of lookup table called the Branch Target Buffer
+(BTB) in which it stores the last 256 branches. With this it tries to
+determine the destination for each jump or call. This is done by keeping a
+history of whether a jump was taken or not the last time it was executed. If
+the prediction is correct then a conditional jump takes only 1 clock tick to
+execute.
+
+Because the history mechanism only remembers the last time the jump was
+executed, the prediction will always fail if we jump different each time.
+There is a 4-5 clock tick delay if the prediction fails.
+
+The branch prediction takes place in the second stage of the instruction
+pipeline and predicts if whether a branch will be taken or not and its
+destination. Then it starts filling the other instruction prefetch queue
+with instructions from the branch destination. If the prediction was wrong,
+then both prefetch queue must be flushed and prefetching restarted.
+
+So to avoid this delay you should strive to use simple loops that always
+takes the jump or always not takes the jump. Not like the following that
+jumps different depending on the carry flag.
+
+
+    jmp   @@inner
+  @@extra:
+    ....                ; Do something extra when we get carry overflow
+    dec   ebp
+    jz    @@done
+  @@inner:
+    ....                ; Do something useful here
+    add   eax, ebx
+    jc    @@extra       ; Jump on carry overflow
+    dec   ebp
+    jnz   @@inner
+  @@done:
+
+In this loop it's the 'jc @@extra' instruction that will mess up the branch
+prediction. Sometimes the jump will be taken and sometimes not. The typical
+way of doing masking with compares and jumps has this problem also.
+
+
+
+26. Reference
+-------------
+
+Most of the Pentium specific information on optimization was found in the
+book: "Pentium Processor Optimization Tools" by Michael L. Schmit
+ISBN 0-12-627230-1
+
+
+
+27. Where to go from here
+-------------------------
+
+When you have implemented your texture mapper you automatically also have
+Phong shading and environment mapping. It's only a matter of making a
+suitable bitmap and to use the normal vectors at each triangle vertex to get
+the u and v values.
+
+From there the step is not far from combining Phong shading and texture
+mapping. And then adding bumps to all this. The only difficult part is that
+you need to interpolate 4 variables in the inner loop when you do
+Phong-texture, environment-bump or Phong-texture-bump and still have
+registers left for pointers and loop counter. These shadings can't really be
+called "fast" as the inner loops will become pretty ugly. They can definitely
+be called real time though.
+
+
+
+28. Credits and greetings
+-------------------------
+
+Juan Carlos Arevalo Baeza (JCAB/Iguana-VangeliSTeam) <jarevalo@daimi.aau.dk>
+Wilco Dijkstra                      <wdijkstr@hzsbg01.att.com>
+Kevin Baca                          <kbaca@skygames.com>
+Sean L. Palmer                      <sean@delta.com>
+Tiziano Sardone                     <tiz@mail.skylink.it>
+Mark Pursey                         <nerner@world.net>
+Dare Manojlovic                     <tangor@celje.eunet.si>
+Russel Simmons   (Armitage/Beyond)  <resimmon@uiuc.edu>
+Aatu Koskensilta (Zaphod.B)         <zaphod@sci.fi>   
+Otto Chrons      (OCoke)    (a legend)
+Nix/Logic Design            (a cool coder)
+Phil Carmody     (FatPhil)  (The optimizing guru, why all this silence?)
+Jmagic/Complex              (another legend)
+MacFeenix                   (you are young)
+BX                          (keep on coding)
+thefear                     (a cool swede)
+John Gronvall               (MIPS R8000 rules!)
+LoZEr                       (when will PacMan for Linux be out?)
+Addict, Damac, Dice, Doom, Swallow, Wode / Doomsday  (a bunch of finns ;)
+
+
+When I started out writing this document I didn't know half of what I now
+know about texture mapping. I've learned a lot and this is much because of
+those 12 first persons in the credits and greetings list. Thanks a lot for
+the help. I hope that the readers of this document also will learn something.
+
+If you truly find this document useful, you could consider giving me a small
+greeting in your production. That would be cool.
+
+<EOF>

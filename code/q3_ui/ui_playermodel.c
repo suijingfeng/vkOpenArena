@@ -22,16 +22,16 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 //
 #include "ui_local.h"
 
-#define MODEL_BACK0			"menu/art/back_0"
-#define MODEL_BACK1			"menu/art/back_1"
+#define MODEL_BACK0			"menu/" MENU_ART_DIR "/back_0"
+#define MODEL_BACK1			"menu/" MENU_ART_DIR "/back_1"
 #define MODEL_SELECT		"menu/art/opponents_select"
 #define MODEL_SELECTED		"menu/art/opponents_selected"
-#define MODEL_FRAMEL		"menu/art/frame1_l"
-#define MODEL_FRAMER		"menu/art/frame1_r"
-#define MODEL_PORTS			"menu/art/player_models_ports"
-#define MODEL_ARROWS		"menu/art/gs_arrows_0"
-#define MODEL_ARROWSL		"menu/art/gs_arrows_l"
-#define MODEL_ARROWSR		"menu/art/gs_arrows_r"
+#define MODEL_FRAMEL		"menu/" MENU_ART_DIR "/frame1_l"
+#define MODEL_FRAMER		"menu/" MENU_ART_DIR "/frame1_r"
+#define MODEL_PORTS			"menu/" MENU_ART_DIR "/player_models_ports"
+#define MODEL_ARROWS		"menu/" MENU_ART_DIR "/gs_arrows_0"
+#define MODEL_ARROWSL		"menu/" MENU_ART_DIR "/gs_arrows_l"
+#define MODEL_ARROWSR		"menu/" MENU_ART_DIR "/gs_arrows_r"
 
 #define LOW_MEMORY			(5 * 1024 * 1024)
 
@@ -414,7 +414,7 @@ static void PlayerModel_BuildList( void )
 		
 		if (dirlen && dirptr[dirlen-1]=='/') dirptr[dirlen-1]='\0';
 
-		if (!strcmp(dirptr,".") || !strcmp(dirptr,".."))
+		if (strequals(dirptr,".") || strequals(dirptr,".."))
 			continue;
 			
 		// iterate all skin files in directory
@@ -427,7 +427,7 @@ static void PlayerModel_BuildList( void )
 			COM_StripExtension(fileptr,skinname, sizeof(skinname));
 
 			// look for icon_????
-			if (!Q_stricmpn(skinname,"icon_",5))
+			if (Q_strequaln(skinname,"icon_",5))
 			{
 				Com_sprintf( s_playermodel.modelnames[s_playermodel.nummodels++],
 					sizeof( s_playermodel.modelnames[s_playermodel.nummodels] ),
@@ -488,7 +488,7 @@ static void PlayerModel_SetMenuItems( void )
 		else
 			continue;
 
-		if (!Q_stricmp( s_playermodel.modelskin, modelskin ))
+		if (Q_strequal( s_playermodel.modelskin, modelskin ))
 		{
 			// found pic, set selection here		
 			s_playermodel.selectedmodel = i;

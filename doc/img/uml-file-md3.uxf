@@ -1,0 +1,307 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<diagram program="umlet" version="14.3.0">
+  <zoom_level>9</zoom_level>
+  <element>
+    <id>UMLClass</id>
+    <coordinates>
+      <x>279</x>
+      <y>18</y>
+      <w>99</w>
+      <h>27</h>
+    </coordinates>
+    <panel_attributes>MD3
+</panel_attributes>
+    <additional_attributes/>
+  </element>
+  <element>
+    <id>UMLClass</id>
+    <coordinates>
+      <x>405</x>
+      <y>18</y>
+      <w>162</w>
+      <h>207</h>
+    </coordinates>
+    <panel_attributes>MD3Header
+--
+ident: 4*ASCII
+version: UINT32
+name: 64*ASCII (C-String)
+flags: UINT32
+num_frames: UINT32
+num_tags: UINT32
+num_surfaces: UINT32
+num_skins: UINT32
+ofs_frame_infos: UINT32
+ofs_tags: UINT32
+ofs_surfaces: UINT32
+ofs_end: UINT32</panel_attributes>
+    <additional_attributes/>
+  </element>
+  <element>
+    <id>UMLClass</id>
+    <coordinates>
+      <x>594</x>
+      <y>450</y>
+      <w>171</w>
+      <h>207</h>
+    </coordinates>
+    <panel_attributes>MD3SurfaceHeader
+--
+ident: 4*ASCII
+name: 64*ASCII (C-String)
+flags: UINT32
+num_frames: UINT32
+num_shaders: UINT32
+num_vertices: UINT32
+num_triangles: UINT32
+ofs_triangles: UINT32
+ofs_shaders: UINT32
+ofs_tex_coords: UINT32
+ofs_vertices: UINT32
+ofs_end: UINT32
+</panel_attributes>
+    <additional_attributes/>
+  </element>
+  <element>
+    <id>Relation</id>
+    <coordinates>
+      <x>369</x>
+      <y>18</y>
+      <w>54</w>
+      <h>45</h>
+    </coordinates>
+    <panel_attributes>m1=1
+m2=1
+</panel_attributes>
+    <additional_attributes>40.0;20.0;10.0;20.0</additional_attributes>
+  </element>
+  <element>
+    <id>UMLClass</id>
+    <coordinates>
+      <x>405</x>
+      <y>243</y>
+      <w>162</w>
+      <h>99</h>
+    </coordinates>
+    <panel_attributes>MD3FrameInfo
+--
+min_bound: 3*F32
+max_bound: 3*F32
+local_origin: 3*F32
+radius: F32
+name: 16*ASCII (C-String)
+
+</panel_attributes>
+    <additional_attributes/>
+  </element>
+  <element>
+    <id>UMLClass</id>
+    <coordinates>
+      <x>405</x>
+      <y>360</y>
+      <w>162</w>
+      <h>72</h>
+    </coordinates>
+    <panel_attributes>MD3FrameTag
+--
+name: 64*ASCII (C-String)
+location: 3*F32
+orientation: 3*3*F32
+
+</panel_attributes>
+    <additional_attributes/>
+  </element>
+  <element>
+    <id>UMLClass</id>
+    <coordinates>
+      <x>405</x>
+      <y>450</y>
+      <w>162</w>
+      <h>27</h>
+    </coordinates>
+    <panel_attributes>MD3Surface
+
+
+</panel_attributes>
+    <additional_attributes/>
+  </element>
+  <element>
+    <id>UMLClass</id>
+    <coordinates>
+      <x>594</x>
+      <y>675</y>
+      <w>171</w>
+      <h>45</h>
+    </coordinates>
+    <panel_attributes>MD3Triangle
+--
+indices: 3*UINT32</panel_attributes>
+    <additional_attributes/>
+  </element>
+  <element>
+    <id>UMLClass</id>
+    <coordinates>
+      <x>594</x>
+      <y>738</y>
+      <w>171</w>
+      <h>54</h>
+    </coordinates>
+    <panel_attributes>MD3Shader
+--
+name: 64*ASCII (C-String)
+shader_index: UINT32</panel_attributes>
+    <additional_attributes/>
+  </element>
+  <element>
+    <id>UMLClass</id>
+    <coordinates>
+      <x>594</x>
+      <y>810</y>
+      <w>171</w>
+      <h>45</h>
+    </coordinates>
+    <panel_attributes>MD3TexCoords
+--
+tex_coords: 2*F32</panel_attributes>
+    <additional_attributes/>
+  </element>
+  <element>
+    <id>UMLClass</id>
+    <coordinates>
+      <x>594</x>
+      <y>873</y>
+      <w>171</w>
+      <h>54</h>
+    </coordinates>
+    <panel_attributes>MD3FrameVertex
+--
+location: 3*INT16
+normal: 2*UINT8</panel_attributes>
+    <additional_attributes/>
+  </element>
+  <element>
+    <id>UMLNote</id>
+    <coordinates>
+      <x>594</x>
+      <y>18</y>
+      <w>207</w>
+      <h>162</h>
+    </coordinates>
+    <panel_attributes>Note:
+--
+Byte-order: little-endian
+
+UINT8: unsigned 8-bit integer
+INT16: signed 16-bit integer
+UINT16: unsigned 16-bit integer
+INT32: signed 32-bit integer
+UINT32: unsigned 32-bit integer
+F32: IEEE-754 32-bit floating-point
+ASCII: 8-bit ASCII character</panel_attributes>
+    <additional_attributes/>
+  </element>
+  <element>
+    <id>Relation</id>
+    <coordinates>
+      <x>315</x>
+      <y>36</y>
+      <w>108</w>
+      <h>252</h>
+    </coordinates>
+    <panel_attributes>m1=1
+m2=num_frames
+</panel_attributes>
+    <additional_attributes>30.0;10.0;30.0;250.0;100.0;250.0</additional_attributes>
+  </element>
+  <element>
+    <id>Relation</id>
+    <coordinates>
+      <x>252</x>
+      <y>36</y>
+      <w>171</w>
+      <h>369</h>
+    </coordinates>
+    <panel_attributes>m1=1
+m2=num_frames*num_tags
+</panel_attributes>
+    <additional_attributes>80.0;10.0;80.0;380.0;170.0;380.0</additional_attributes>
+  </element>
+  <element>
+    <id>Relation</id>
+    <coordinates>
+      <x>297</x>
+      <y>36</y>
+      <w>126</w>
+      <h>459</h>
+    </coordinates>
+    <panel_attributes>m1=1
+m2=num_surfaces
+</panel_attributes>
+    <additional_attributes>10.0;10.0;10.0;480.0;120.0;480.0</additional_attributes>
+  </element>
+  <element>
+    <id>Relation</id>
+    <coordinates>
+      <x>558</x>
+      <y>450</y>
+      <w>54</w>
+      <h>45</h>
+    </coordinates>
+    <panel_attributes>m1=1
+m2=1
+</panel_attributes>
+    <additional_attributes>40.0;20.0;10.0;20.0</additional_attributes>
+  </element>
+  <element>
+    <id>Relation</id>
+    <coordinates>
+      <x>495</x>
+      <y>468</y>
+      <w>117</w>
+      <h>252</h>
+    </coordinates>
+    <panel_attributes>m1=1
+m2=num_triangles
+</panel_attributes>
+    <additional_attributes>10.0;10.0;10.0;250.0;110.0;250.0</additional_attributes>
+  </element>
+  <element>
+    <id>Relation</id>
+    <coordinates>
+      <x>477</x>
+      <y>468</y>
+      <w>135</w>
+      <h>315</h>
+    </coordinates>
+    <panel_attributes>m1=1
+m2=num_shaders
+</panel_attributes>
+    <additional_attributes>10.0;10.0;10.0;320.0;130.0;320.0</additional_attributes>
+  </element>
+  <element>
+    <id>Relation</id>
+    <coordinates>
+      <x>459</x>
+      <y>468</y>
+      <w>153</w>
+      <h>387</h>
+    </coordinates>
+    <panel_attributes>m1=1
+m2=num_vertices
+</panel_attributes>
+    <additional_attributes>10.0;10.0;10.0;400.0;150.0;400.0</additional_attributes>
+  </element>
+  <element>
+    <id>Relation</id>
+    <coordinates>
+      <x>423</x>
+      <y>468</y>
+      <w>189</w>
+      <h>450</h>
+    </coordinates>
+    <panel_attributes>m1=1
+m2=num_frames*num_vertices
+</panel_attributes>
+    <additional_attributes>30.0;10.0;30.0;470.0;190.0;470.0</additional_attributes>
+  </element>
+</diagram>

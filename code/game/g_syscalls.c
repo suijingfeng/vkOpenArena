@@ -41,15 +41,13 @@ int PASSFLOAT( float x ) {
 	return fi.i;
 }
 
-void	trap_Print( const char *text ) {
-	syscall( G_PRINT, text );
+void	trap_Printf( const char *fmt ) {
+	syscall( G_PRINT, fmt );
 }
 
-void trap_Error( const char *text )
-{
-	syscall( G_ERROR, text );
-	// shut up GCC warning about returning functions, because we know better
-	exit(1);
+void	trap_Error( const char *fmt ) {
+	syscall( G_ERROR, fmt );
+        exit(0); //Will never be executed. Makes compiler happy
 }
 
 int		trap_Milliseconds( void ) {
@@ -228,6 +226,7 @@ int trap_RealTime( qtime_t *qtime ) {
 
 void trap_SnapVector( float *v ) {
 	syscall( G_SNAPVECTOR, v );
+	return;
 }
 
 // BotLib traps start here

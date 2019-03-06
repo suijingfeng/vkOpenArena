@@ -35,7 +35,6 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #include "l_precomp.h"
 #include "l_struct.h"
 #include "l_libvar.h"
-#include "l_utils.h"
 #include "aasfile.h"
 #include "botlib.h"
 #include "be_aas.h"
@@ -317,7 +316,7 @@ float AAS_WeaponJumpZVelocity(vec3_t origin, float radiusdamage)
 	VectorMA(origin, 0.5, v, v);
 	VectorSubtract(bsptrace.endpos, v, v);
 	//
-	points = radiusdamage - 0.5 * sqrtf(v[0]*v[0] + v[1]*v[1] + v[2]*v[2]);
+	points = radiusdamage - 0.5 * VectorLength(v);
 	if (points < 0) points = 0;
 	//the owner of the rocket gets half the damage
 	points *= 0.5;
@@ -494,7 +493,7 @@ int AAS_ClipToBBox(aas_trace_t *trace, vec3_t start, vec3_t end, int presencetyp
 int AAS_ClientMovementPrediction(struct aas_clientmove_s *move,
 								int entnum, vec3_t origin,
 								int presencetype, int onground,
-								const vec3_t velocity, vec3_t cmdmove,
+								vec3_t velocity, vec3_t cmdmove,
 								int cmdframes,
 								int maxframes, float frametime,
 								int stopevent, int stopareanum,
@@ -505,7 +504,7 @@ int AAS_ClientMovementPrediction(struct aas_clientmove_s *move,
 	float phys_walkaccelerate, phys_airaccelerate, phys_swimaccelerate;
 	float phys_maxwalkvelocity, phys_maxcrouchvelocity, phys_maxswimvelocity;
 	float phys_maxstep, phys_maxsteepness, phys_jumpvel, friction;
-	float gravity, delta, maxvel, wishspeed = 0, accelerate;
+	float gravity, delta, maxvel, wishspeed, accelerate;
 	//float velchange, newvel;
 	//int ax;
 	int n, i, j, pc, step, swimming, crouch, event, jump_frame, areanum;
@@ -601,26 +600,9 @@ int AAS_ClientMovementPrediction(struct aas_clientmove_s *move,
 				wishdir[2] = 0;
 			} //end else
 			//
-            
-            	// writing it this way allows gcc to recognize that rsqrt can be used
-            float Len = wishdir[0]*wishdir[0] + wishdir[1]*wishdir[1] + wishdir[2]*wishdir[2];
-            if(Len != 0)
-            {
-                float invLen = 1.0f / sqrtf(Len);
-
-                wishdir[0] *= invLen;
-                wishdir[1] *= invLen;
-                wishdir[2] *= invLen;
-
-                wishspeed = Len * invLen;
-
-                if (wishspeed > maxvel)
-                wishspeed = maxvel;
-            }
-        
-
-			
-            VectorScale(frame_test_vel, 1/frametime, frame_test_vel);
+			wishspeed = VectorNormalize(wishdir);
+			if (wishspeed > maxvel) wishspeed = maxvel;
+			VectorScale(frame_test_vel, 1/frametime, frame_test_vel);
 			AAS_Accelerate(frame_test_vel, frametime, wishdir, wishspeed, accelerate);
 			VectorScale(frame_test_vel, frametime, frame_test_vel);
 			/*
@@ -1001,7 +983,7 @@ int AAS_ClientMovementPrediction(struct aas_clientmove_s *move,
 int AAS_PredictClientMovement(struct aas_clientmove_s *move,
 								int entnum, vec3_t origin,
 								int presencetype, int onground,
-								const vec3_t velocity, vec3_t cmdmove,
+								vec3_t velocity, vec3_t cmdmove,
 								int cmdframes,
 								int maxframes, float frametime,
 								int stopevent, int stopareanum, int visualize)

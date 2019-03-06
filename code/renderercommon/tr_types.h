@@ -24,7 +24,8 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #define __TR_TYPES_H
 
 
-#define	MAX_DLIGHTS         32		// can't be increased, because bit flags are used on surfaces
+#define	MAX_DLIGHTS		32		// can't be increased, because bit flags are used on surfaces
+
 #define	REFENTITYNUM_BITS	10		// can't be increased without changing drawsurf bit packing
 #define	REFENTITYNUM_MASK	((1<<REFENTITYNUM_BITS) - 1)
 // the last N-bit number (2^REFENTITYNUM_BITS - 1) is reserved for the special world refentity,
@@ -52,20 +53,21 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #define	RF_SHADOW_PLANE		0x0100		// use refEntity->shadowPlane
 #define	RF_WRAP_FRAMES		0x0200		// mod the model frames by the maxframes to allow continuous
 										// animation without needing to know the frame count
+
 // refdef flags
 #define RDF_NOWORLDMODEL	0x0001		// used for player configuration screen
 #define RDF_HYPERSPACE		0x0004		// teleportation effect
 
 typedef struct {
-	float		xyz[3];
+	vec3_t		xyz;
 	float		st[2];
 	unsigned char modulate[4];
 } polyVert_t;
 
 typedef struct poly_s {
-	int			hShader;
-	int			numVerts;
-	polyVert_t* verts;
+	qhandle_t			hShader;
+	int					numVerts;
+	polyVert_t			*verts;
 } poly_t;
 
 typedef enum {
@@ -77,6 +79,7 @@ typedef enum {
 	RT_RAIL_RINGS,
 	RT_LIGHTNING,
 	RT_PORTALSURFACE,		// doesn't draw anything, just info for portals
+
 	RT_MAX_REF_ENTITY_TYPE
 } refEntityType_t;
 
@@ -84,10 +87,10 @@ typedef struct {
 	refEntityType_t	reType;
 	int			renderfx;
 
-	int     	hModel;				// opaque type outside refresh, handle_t
+	qhandle_t	hModel;				// opaque type outside refresh
 
 	// most recent data
-	float		lightingOrigin[3];		// so multi-part models can be lit identically (RF_LIGHTING_ORIGIN)
+	vec3_t		lightingOrigin;		// so multi-part models can be lit identically (RF_LIGHTING_ORIGIN)
 	float		shadowPlane;		// projection shadows go here, stencils go slightly lower
 
 	float		axis[3][3];			// rotation vectors
@@ -102,10 +105,8 @@ typedef struct {
 
 	// texturing
 	int			skinNum;			// inline skin index
-
-    int         customSkin;			// NULL for default skin, handle_t
-	int         customShader;		// use one image for the entire thing, handle_t
-
+	qhandle_t	customSkin;			// NULL for default skin
+	qhandle_t	customShader;		// use one image for the entire thing
 
 	// misc
 	unsigned char shaderRGBA[4];		// colors used by rgbgen entity shaders
@@ -129,7 +130,6 @@ typedef struct {
 
 	// time in milliseconds for shader effects and other time dependent rendering issues
 	int			time;
-
 	int			rdflags;			// RDF_NOWORLDMODEL, etc
 
 	// 1 bits will prevent the associated area from rendering at all
@@ -139,6 +139,13 @@ typedef struct {
 	char		text[MAX_RENDER_STRINGS][MAX_RENDER_STRING_LENGTH];
 
 } refdef_t;
+
+
+typedef enum {
+	STEREO_CENTER,
+	STEREO_LEFT,
+	STEREO_RIGHT
+} stereoFrame_t;
 
 
 /*
@@ -158,9 +165,17 @@ typedef enum {
 								// WARNING: there are tests that check for > GLDRV_ICD for minidriverness,
                                 // so this should always be the lowest value in this enum set
 	GLDRV_STANDALONE,			// driver is a non-3Dfx standalone driver
+	GLDRV_VOODOO				// driver is a 3Dfx standalone driver
 } glDriverType_t;
+
 typedef enum {
-	GLHW_GENERIC,			// where everthing works the way it should
+	GLHW_GENERIC,			// where everything works the way it should
+	GLHW_3DFX_2D3D,			// Voodoo Banshee or Voodoo3, relevant since if this is
+							// the hardware type then there can NOT exist a secondary
+							// display adapter
+	GLHW_RIVA128,			// where you can't interpolate alpha
+	GLHW_RAGEPRO,			// where you can't modulate alpha on alpha textures
+	GLHW_PERMEDIA2			// where you don't have src*dst
 } glHardwareType_t;
 
 typedef struct {
@@ -181,13 +196,13 @@ typedef struct {
 	textureCompression_t	textureCompression;
 	qboolean				textureEnvAddAvailable;
 
-	int						vidWidth, vidHeight;
+	unsigned int			vidWidth, vidHeight;
 	// aspect is the screen's physical width / height, which may be different
 	// than scrWidth / scrHeight if the pixels are non-square
 	// normal screens should be 4/3, but wide aspect monitors may be 16/9
 	float					windowAspect;
 
-	int                     displayFrequency;
+	int						refresh_rate;
     
     // synonymous with "does rendering consume the entire screen?"
     qboolean				isFullscreen;

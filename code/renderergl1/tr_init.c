@@ -23,19 +23,12 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
 #include "tr_local.h"
 
-
 glconfig_t  glConfig;
-qboolean    textureFilterAnisotropic = qfalse;
-int         maxAnisotropy = 0;
-float       displayAspect = 0.0f;
+
 
 glstate_t	glState;
 
 static void GfxInfo_f( void );
-
-#ifdef USE_RENDERER_DLOPEN
-cvar_t  *com_altivec;
-#endif
 
 cvar_t	*r_flareSize;
 cvar_t	*r_flareFade;
@@ -45,19 +38,17 @@ cvar_t	*r_railWidth;
 cvar_t	*r_railCoreWidth;
 cvar_t	*r_railSegmentLength;
 
-cvar_t	*r_ignoreFastPath;
 
 cvar_t	*r_verbose;
 cvar_t	*r_ignore;
 
-cvar_t  *r_displayRefresh;
-
-cvar_t	*r_detailTextures;
 
 cvar_t	*r_znear;
 cvar_t	*r_zproj;
 
 cvar_t	*r_skipBackEnd;
+
+cvar_t	*r_greyscale;
 
 cvar_t	*r_measureOverdraw;
 
@@ -71,7 +62,6 @@ cvar_t	*r_lodbias;
 cvar_t	*r_lodscale;
 
 cvar_t	*r_drawentities;
-cvar_t	*r_drawworld;
 cvar_t	*r_speeds;
 cvar_t	*r_novis;
 cvar_t	*r_nocull;
@@ -81,24 +71,17 @@ cvar_t	*r_nocurves;
 
 cvar_t	*r_allowExtensions;
 
-cvar_t	*r_ext_compiled_vertex_array;
-cvar_t	*r_ext_texture_env_add;
-cvar_t	*r_ext_texture_filter_anisotropic;
-cvar_t	*r_ext_max_anisotropy;
-
 cvar_t	*r_ignoreGLErrors;
-cvar_t	*r_logFile;
+
 
 cvar_t	*r_primitives;
-cvar_t	*r_texturebits;
-cvar_t  *r_ext_multisample;
+
 
 cvar_t	*r_lightmap;
 cvar_t	*r_vertexLight;
 cvar_t	*r_uiFullScreen;
 cvar_t	*r_shadows;
 cvar_t	*r_flares;
-cvar_t	*r_mode;
 cvar_t	*r_nobind;
 cvar_t	*r_singleShader;
 cvar_t	*r_roundImagesDown;
@@ -109,11 +92,11 @@ cvar_t	*r_showsky;
 cvar_t	*r_shownormals;
 cvar_t	*r_finish;
 cvar_t	*r_clear;
-cvar_t	*r_swapInterval;
 cvar_t	*r_textureMode;
 cvar_t	*r_offsetFactor;
 cvar_t	*r_offsetUnits;
 cvar_t	*r_gamma;
+cvar_t	*r_intensity;
 cvar_t	*r_lockpvs;
 cvar_t	*r_noportals;
 cvar_t	*r_portalOnly;
@@ -121,8 +104,9 @@ cvar_t	*r_portalOnly;
 cvar_t	*r_subdivisions;
 cvar_t	*r_lodCurveError;
 
-cvar_t	*r_fullscreen;
-cvar_t  *r_noborder;
+
+cvar_t	*r_overBrightBits;
+cvar_t	*r_mapOverBrightBits;
 
 cvar_t	*r_debugSurface;
 cvar_t	*r_simpleMipMaps;
@@ -134,7 +118,6 @@ cvar_t	*r_directedScale;
 cvar_t	*r_debugLight;
 cvar_t	*r_debugSort;
 cvar_t	*r_printShaders;
-cvar_t	*r_saveFontData;
 
 cvar_t	*r_marksOnTriangleMeshes;
 
@@ -146,6 +129,219 @@ int		max_polys;
 cvar_t	*r_maxpolyverts;
 int		max_polyverts;
 
+
+static cvar_t* r_ext_texture_filter_anisotropic;
+static cvar_t* r_ext_max_anisotropy;
+
+
+void (APIENTRYP qglActiveTextureARB) (GLenum texture);
+void (APIENTRYP qglClientActiveTextureARB) (GLenum texture);
+void (APIENTRYP qglMultiTexCoord2fARB) (GLenum target, GLfloat s, GLfloat t);
+void (APIENTRYP qglLockArraysEXT) (GLint first, GLsizei count);
+void (APIENTRYP qglUnlockArraysEXT) (void);
+
+#define GLE(ret, name, ...) name##proc * qgl##name;
+QGL_1_1_PROCS;
+QGL_DESKTOP_1_1_PROCS;
+QGL_1_3_PROCS;
+#undef GLE
+
+
+/*
+===============
+GLimp_GetProcAddresses
+
+Get addresses for OpenGL functions.
+===============
+*/
+static qboolean GLimp_GetProcAddresses( void )
+{
+	qboolean success = qtrue;
+	const char *version;
+    int qglMajorVersion, qglMinorVersion;
+
+#define GLE( ret, name, ... ) \
+    qgl##name = (name##proc *) GLimp_GetProcAddress("gl" #name); \
+	if ( qgl##name == NULL ) { \
+		ri.Error(ERR_FATAL, "Missing OpenGL function %s\n", "gl" #name ); \
+		success = qfalse; \
+	}
+
+
+	// OpenGL 1.0 and OpenGL ES 1.0
+	GLE(const GLubyte *, GetString, GLenum name)
+
+	if ( !qglGetString ) {
+		ri.Error( ERR_FATAL, "glGetString is NULL" );
+	}
+//
+	version = (const char *)qglGetString( GL_VERSION );
+
+	if ( !version )
+		ri.Error( ERR_FATAL, "GL_VERSION is NULL\n" );
+    else
+       	ri.Printf( PRINT_ALL, "GL_VERSION is %s\n", version); 
+
+
+    sscanf( version, "%d.%d", &qglMajorVersion, &qglMinorVersion );
+
+	if ( (qglMajorVersion > 1) || ( ( qglMajorVersion == 1) && (qglMinorVersion >= 2 ) ) )
+    {
+		QGL_1_1_PROCS;
+		QGL_DESKTOP_1_1_PROCS;
+        QGL_1_3_PROCS;
+	}
+    else {
+		ri.Error( ERR_FATAL, "Unsupported OpenGL Version: %s\n", version );
+	}
+#undef GLE
+
+	return success;
+}
+
+
+/*
+===============
+GLimp_ClearProcAddresses
+
+Clear addresses for OpenGL functions.
+===============
+*/
+void GLimp_ClearProcAddresses( void )
+{
+#define GLE( ret, name, ... ) qgl##name = NULL;
+    QGL_1_1_PROCS;
+    QGL_DESKTOP_1_1_PROCS;
+    QGL_1_3_PROCS;
+
+    qglActiveTextureARB = NULL;
+	qglClientActiveTextureARB = NULL;
+	qglMultiTexCoord2fARB = NULL;
+
+	qglLockArraysEXT = NULL;
+	qglUnlockArraysEXT = NULL;
+#undef GLE
+}
+
+
+
+static qboolean GLimp_HaveExtension(const char *ext)
+{
+	const char *ptr = Q_stristr( glConfig.extensions_string, ext );
+	if (ptr == NULL)
+		return qfalse;
+	ptr += strlen(ext);
+	return ((*ptr == ' ') || (*ptr == '\0'));  // verify it's complete string.
+}
+
+
+void GLimp_InitExtensions( void )
+{
+	r_ext_max_anisotropy = ri.Cvar_Get( "r_ext_max_anisotropy", "2", CVAR_ARCHIVE | CVAR_LATCH );
+    r_ext_texture_filter_anisotropic = ri.Cvar_Get( "r_ext_texture_filter_anisotropic", "0", CVAR_ARCHIVE | CVAR_LATCH );
+
+	ri.Printf( PRINT_ALL,  "\n...Initializing OpenGL extensions\n" );
+
+
+	// GL_EXT_texture_env_add
+	glConfig.textureEnvAddAvailable = qfalse;
+	if ( GLimp_HaveExtension( "EXT_texture_env_add" ) )
+	{
+		if ( GLimp_HaveExtension( "GL_EXT_texture_env_add" ) )
+		{
+			glConfig.textureEnvAddAvailable = qtrue;
+			ri.Printf( PRINT_ALL, "...using GL_EXT_texture_env_add\n" );
+		}
+		else
+		{
+			glConfig.textureEnvAddAvailable = qfalse;
+			ri.Printf( PRINT_ALL, "...ignoring GL_EXT_texture_env_add\n" );
+		}
+	}
+	else
+	{
+		ri.Printf( PRINT_ALL, "...GL_EXT_texture_env_add not found\n" );
+	}
+
+	// GL_ARB_multitexture
+	qglMultiTexCoord2fARB = NULL;
+	qglActiveTextureARB = NULL;
+	qglClientActiveTextureARB = NULL;
+	if ( GLimp_HaveExtension( "GL_ARB_multitexture" ) )
+	{
+		qglMultiTexCoord2fARB = GLimp_GetProcAddress( "glMultiTexCoord2fARB" );
+		qglActiveTextureARB = GLimp_GetProcAddress( "glActiveTextureARB" );
+		qglClientActiveTextureARB = GLimp_GetProcAddress( "glClientActiveTextureARB" );
+
+		if ( qglActiveTextureARB )
+		{
+			GLint glint = 0;
+			qglGetIntegerv( GL_MAX_TEXTURE_UNITS_ARB, &glint );
+			glConfig.numTextureUnits = (int) glint;
+			if ( glConfig.numTextureUnits > 1 )
+			{
+				ri.Printf( PRINT_ALL, "...using GL_ARB_multitexture\n" );
+			}
+			else
+			{
+				qglMultiTexCoord2fARB = NULL;
+				qglActiveTextureARB = NULL;
+				qglClientActiveTextureARB = NULL;
+				ri.Printf( PRINT_ALL, "...not using GL_ARB_multitexture, < 2 texture units\n" );
+			}
+		}
+	}
+	else
+	{
+		ri.Printf( PRINT_ALL,  "...GL_ARB_multitexture not found\n" );
+	}
+
+	// GL_EXT_compiled_vertex_array
+	if ( GLimp_HaveExtension( "GL_EXT_compiled_vertex_array" ) )
+	{
+		ri.Printf( PRINT_ALL,  "...using GL_EXT_compiled_vertex_array\n" );
+		qglLockArraysEXT = ( void ( APIENTRY * )( GLint, GLint ) ) GLimp_GetProcAddress( "glLockArraysEXT" );
+		qglUnlockArraysEXT = ( void ( APIENTRY * )( void ) ) GLimp_GetProcAddress( "glUnlockArraysEXT" );
+		if (!qglLockArraysEXT || !qglUnlockArraysEXT)
+		{
+			ri.Error(ERR_FATAL, "bad getprocaddress");
+		}
+	}
+	else
+	{
+		ri.Printf( PRINT_ALL, "...GL_EXT_compiled_vertex_array not found\n" );
+	}
+
+	if ( GLimp_HaveExtension( "GL_EXT_texture_filter_anisotropic" ) )
+	{
+		if ( r_ext_texture_filter_anisotropic->integer )
+        {
+            int maxAnisotropy = 0;
+            char target_string[4] = {0};
+			qglGetIntegerv( GL_MAX_TEXTURE_MAX_ANISOTROPY_EXT, (GLint *)&maxAnisotropy );
+			if ( maxAnisotropy <= 0 ) {
+				ri.Printf( PRINT_ALL, "...GL_EXT_texture_filter_anisotropic not properly supported!\n" );
+				maxAnisotropy = 0;
+			}
+			else
+			{
+                sprintf(target_string, "%d", maxAnisotropy);
+				ri.Printf( PRINT_ALL,  "...using GL_EXT_texture_filter_anisotropic (max: %i)\n", maxAnisotropy );
+                ri.Cvar_Set( "r_ext_max_anisotropy", target_string);
+
+			}
+		}
+		else
+		{
+			ri.Printf( PRINT_ALL,  "...ignoring GL_EXT_texture_filter_anisotropic\n" );
+		}
+	}
+	else
+	{
+		ri.Printf( PRINT_ALL, "...GL_EXT_texture_filter_anisotropic not found\n" );
+	}
+}
+
 /*
 ** InitOpenGL
 **
@@ -154,62 +350,66 @@ int		max_polyverts;
 ** setting variables, checking GL constants, and reporting the gfx system config
 ** to the user.
 */
-static void InitOpenGL(void)
+static void InitOpenGL( void )
 {
+	char renderer_buffer[1024];
+
+	//
 	// initialize OS specific portions of the renderer
 	//
 	// GLimp_Init directly or indirectly references the following cvars:
-	//		- r_fullscreen
-	//		- r_mode
 	//		- r_(color|depth|stencil)bits
-	ri.Printf( PRINT_ALL, "-------- InitOpenGL --------\n");
-
+	//		- r_gamma
+	//
+	
 	if ( glConfig.vidWidth == 0 )
 	{
-		GLint max_texture_size;
-		GLint max_shader_units = -1;
-		GLint max_bind_units = -1;
-        ri.GLimpInit(&glConfig);
-        // GLimp_InitExtraExtensions();
+		GLint		temp;
+		
+		GLimp_Init(&glConfig, qfalse);
+        
+        if ( !GLimp_GetProcAddresses() )
+        {
+            ri.Error(ERR_FATAL, "GLimp_GetProcAddresses() failed\n" );
+            GLimp_ClearProcAddresses();
+            GLimp_DeleteGLContext();
+            GLimp_DestroyWindow();
+        }
+        else
+        {
+            ri.Printf(PRINT_ALL, "GLimp_GetProcAddresses() successed\n" );
+        }
+
+        qglClearColor( 0, 1, 0, 1 );
+        qglClear( GL_COLOR_BUFFER_BIT );
+        GLimp_EndFrame();
+        
+        // get our config strings
+        Q_strncpyz( glConfig.vendor_string, (char *) qglGetString (GL_VENDOR), sizeof( glConfig.vendor_string ) );
+        Q_strncpyz( glConfig.renderer_string, (char *) qglGetString (GL_RENDERER), sizeof( glConfig.renderer_string ) );
+        if (*glConfig.renderer_string && glConfig.renderer_string[strlen(glConfig.renderer_string) - 1] == '\n')
+            glConfig.renderer_string[strlen(glConfig.renderer_string) - 1] = 0;
+        Q_strncpyz( glConfig.version_string, (char *) qglGetString (GL_VERSION), sizeof( glConfig.version_string ) );
+        Q_strncpyz( glConfig.extensions_string, (char *)qglGetString(GL_EXTENSIONS), sizeof( glConfig.extensions_string ) );
+
+        GLimp_InitExtensions();
+
+        strcpy( renderer_buffer, glConfig.renderer_string );
+		Q_strlwr( renderer_buffer );
 
 		// OpenGL driver constants
-		glGetIntegerv( GL_MAX_TEXTURE_SIZE, &max_texture_size );
-		glConfig.maxTextureSize = max_texture_size;
+		qglGetIntegerv( GL_MAX_TEXTURE_SIZE, &temp );
+		glConfig.maxTextureSize = temp;
 
 		// stubbed or broken drivers may have reported 0...
 		if ( glConfig.maxTextureSize <= 0 ) 
+		{
 			glConfig.maxTextureSize = 0;
-
-		glGetIntegerv( GL_MAX_TEXTURE_IMAGE_UNITS, &max_shader_units );
-		glGetIntegerv( GL_MAX_COMBINED_TEXTURE_IMAGE_UNITS, &max_bind_units );
-
-		if ( max_bind_units > max_shader_units )
-			max_bind_units = max_shader_units;
-		if ( max_bind_units > 16 )
-			max_bind_units = 16;
-
-		if ( glConfig.numTextureUnits && max_bind_units > 0 )
-			glConfig.numTextureUnits = max_bind_units;
-
-	    //	QGL_InitARB();
-
-		glConfig.deviceSupportsGamma = qfalse;
-
-		ri.InitGamma( &glConfig );
-
-    }
-
-    // stubbed or broken drivers may have reported 0...
-    if( glConfig.maxTextureSize < 0 )
-    {
-        glConfig.maxTextureSize = 0;
-    }
+		}
+	}
 
 	// set default state
 	GL_SetDefaultState();
-    
-    // print info
-	GfxInfo_f();
 }
 
 /*
@@ -221,7 +421,7 @@ void GL_CheckErrors( void ) {
 	int		err;
 	char	s[64];
 
-	err = glGetError();
+	err = qglGetError();
 	if ( err == GL_NO_ERROR ) {
 		return;
 	}
@@ -248,13 +448,12 @@ void GL_CheckErrors( void ) {
 			strcpy( s, "GL_OUT_OF_MEMORY" );
 			break;
 		default:
-			Com_sprintf( s, sizeof(s), "%i", err);
+			snprintf( s, sizeof(s), "%i", err);
 			break;
 	}
 
 	ri.Error( ERR_FATAL, "GL_CheckErrors: %s", s );
 }
-
 
 
 /* 
@@ -299,7 +498,7 @@ byte *RB_ReadPixels(int x, int y, int width, int height, size_t *offset, int *pa
 	int padwidth, linelen;
 	GLint packAlign;
 	
-	glGetIntegerv(GL_PACK_ALIGNMENT, &packAlign);
+	qglGetIntegerv(GL_PACK_ALIGNMENT, &packAlign);
 	
 	linelen = width * 3;
 	padwidth = PAD(linelen, packAlign);
@@ -308,7 +507,7 @@ byte *RB_ReadPixels(int x, int y, int width, int height, size_t *offset, int *pa
 	buffer = ri.Hunk_AllocateTempMemory(padwidth * height + *offset + packAlign - 1);
 	
 	bufstart = PADP((intptr_t) buffer + *offset, packAlign);
-	glReadPixels(x, y, width, height, GL_RGB, GL_UNSIGNED_BYTE, bufstart);
+	qglReadPixels(x, y, width, height, GL_RGB, GL_UNSIGNED_BYTE, bufstart);
 	
 	*offset = bufstart - buffer;
 	*padlen = padwidth - linelen;
@@ -451,7 +650,7 @@ void R_ScreenshotFilename( int lastNumber, char *fileName ) {
 	int		a,b,c,d;
 
 	if ( lastNumber < 0 || lastNumber > 9999 ) {
-		Com_sprintf( fileName, MAX_OSPATH, "screenshots/shot9999.tga" );
+		snprintf( fileName, MAX_OSPATH, "screenshots/shot9999.tga" );
 		return;
 	}
 
@@ -463,8 +662,7 @@ void R_ScreenshotFilename( int lastNumber, char *fileName ) {
 	lastNumber -= c*10;
 	d = lastNumber;
 
-	Com_sprintf( fileName, MAX_OSPATH, "screenshots/shot%i%i%i%i.tga"
-		, a, b, c, d );
+	snprintf( fileName, MAX_OSPATH, "screenshots/shot%i%i%i%i.tga", a, b, c, d );
 }
 
 /* 
@@ -476,7 +674,7 @@ void R_ScreenshotFilenameJPEG( int lastNumber, char *fileName ) {
 	int		a,b,c,d;
 
 	if ( lastNumber < 0 || lastNumber > 9999 ) {
-		Com_sprintf( fileName, MAX_OSPATH, "screenshots/shot9999.jpg" );
+		snprintf( fileName, MAX_OSPATH, "screenshots/shot9999.jpg" );
 		return;
 	}
 
@@ -488,7 +686,7 @@ void R_ScreenshotFilenameJPEG( int lastNumber, char *fileName ) {
 	lastNumber -= c*10;
 	d = lastNumber;
 
-	Com_sprintf( fileName, MAX_OSPATH, "screenshots/shot%i%i%i%i.jpg"
+	snprintf( fileName, MAX_OSPATH, "screenshots/shot%i%i%i%i.jpg"
 		, a, b, c, d );
 }
 
@@ -512,7 +710,7 @@ void R_LevelShot( void ) {
 	float		xScale, yScale;
 	int			xx, yy;
 
-	Com_sprintf(checkname, sizeof(checkname), "levelshots/%s.tga", tr.world->baseName);
+	snprintf(checkname, sizeof(checkname), "levelshots/%s.tga", tr.world->baseName);
 
 	allsource = RB_ReadPixels(0, 0, glConfig.vidWidth, glConfig.vidHeight, &offset, &padlen);
 	source = allsource + offset;
@@ -589,7 +787,7 @@ void R_ScreenShot_f (void) {
 
 	if ( ri.Cmd_Argc() == 2 && !silent ) {
 		// explicit filename
-		Com_sprintf( checkname, MAX_OSPATH, "screenshots/%s.tga", ri.Cmd_Argv( 1 ) );
+		snprintf( checkname, MAX_OSPATH, "screenshots/%s.tga", ri.Cmd_Argv( 1 ) );
 	} else {
 		// scan for a free filename
 
@@ -642,7 +840,7 @@ void R_ScreenShotJPEG_f (void) {
 
 	if ( ri.Cmd_Argc() == 2 && !silent ) {
 		// explicit filename
-		Com_sprintf( checkname, MAX_OSPATH, "screenshots/%s.jpg", ri.Cmd_Argv( 1 ) );
+		snprintf( checkname, MAX_OSPATH, "screenshots/%s.jpg", ri.Cmd_Argv( 1 ) );
 	} else {
 		// scan for a free filename
 
@@ -694,7 +892,7 @@ const void *RB_TakeVideoFrameCmd( const void *data )
 	
 	cmd = (const videoFrameCommand_t *)data;
 	
-	glGetIntegerv(GL_PACK_ALIGNMENT, &packAlign);
+	qglGetIntegerv(GL_PACK_ALIGNMENT, &packAlign);
 
 	linelen = cmd->width * 3;
 
@@ -707,7 +905,7 @@ const void *RB_TakeVideoFrameCmd( const void *data )
 
 	cBuf = PADP(cmd->captureBuffer, packAlign);
 		
-	glReadPixels(0, 0, cmd->width, cmd->height, GL_RGB,
+	qglReadPixels(0, 0, cmd->width, cmd->height, GL_RGB,
 		GL_UNSIGNED_BYTE, cBuf);
 
 	memcount = padwidth * cmd->height;
@@ -763,44 +961,44 @@ const void *RB_TakeVideoFrameCmd( const void *data )
 */
 void GL_SetDefaultState( void )
 {
-	glClearDepth( 1.0f );
+	qglClearDepth( 1.0f );
 
-	glCullFace(GL_FRONT);
+	qglCullFace(GL_FRONT);
 
-	glColor4f (1,1,1,1);
+	qglColor4f (1,1,1,1);
 
 	// initialize downstream texture unit if we're running
 	// in a multitexture environment
-	if ( glActiveTextureARB ) {
+	if ( qglActiveTextureARB ) {
 		GL_SelectTexture( 1 );
 		GL_TextureMode( r_textureMode->string );
 		GL_TexEnv( GL_MODULATE );
-		glDisable( GL_TEXTURE_2D );
+		qglDisable( GL_TEXTURE_2D );
 		GL_SelectTexture( 0 );
 	}
 
-	glEnable(GL_TEXTURE_2D);
+	qglEnable(GL_TEXTURE_2D);
 	GL_TextureMode( r_textureMode->string );
 	GL_TexEnv( GL_MODULATE );
 
-	glShadeModel( GL_SMOOTH );
-	glDepthFunc( GL_LEQUAL );
+	qglShadeModel( GL_SMOOTH );
+	qglDepthFunc( GL_LEQUAL );
 
 	// the vertex array is always enabled, but the color and texture
 	// arrays are enabled and disabled around the compiled vertex array call
-	glEnableClientState (GL_VERTEX_ARRAY);
+	qglEnableClientState (GL_VERTEX_ARRAY);
 
 	//
 	// make sure our GL state vector is set correctly
 	//
 	glState.glStateBits = GLS_DEPTHTEST_DISABLE | GLS_DEPTHMASK_TRUE;
 
-	glPolygonMode (GL_FRONT_AND_BACK, GL_FILL);
-	glDepthMask( GL_TRUE );
-	glDisable( GL_DEPTH_TEST );
-	glEnable( GL_SCISSOR_TEST );
-	glDisable( GL_CULL_FACE );
-	glDisable( GL_BLEND );
+	qglPolygonMode (GL_FRONT_AND_BACK, GL_FILL);
+	qglDepthMask( GL_TRUE );
+	qglDisable( GL_DEPTH_TEST );
+	qglEnable( GL_SCISSOR_TEST );
+	qglDisable( GL_CULL_FACE );
+	qglDisable( GL_BLEND );
 }
 
 /*
@@ -837,26 +1035,29 @@ void GfxInfo_f( void )
 		"disabled",
 		"enabled"
 	};
-	const char *fsstrings[] =
-	{
-		"windowed",
-		"fullscreen"
-	};
+
 
 	ri.Printf( PRINT_ALL, "\nGL_VENDOR: %s\n", glConfig.vendor_string );
 	ri.Printf( PRINT_ALL, "GL_RENDERER: %s\n", glConfig.renderer_string );
 	ri.Printf( PRINT_ALL, "GL_VERSION: %s\n", glConfig.version_string );
 	ri.Printf( PRINT_ALL, "GL_EXTENSIONS: " );
 
-
 		R_PrintLongString( glConfig.extensions_string );
+
 	ri.Printf( PRINT_ALL, "\n" );
 	ri.Printf( PRINT_ALL, "GL_MAX_TEXTURE_SIZE: %d\n", glConfig.maxTextureSize );
 	ri.Printf( PRINT_ALL, "GL_MAX_TEXTURE_UNITS_ARB: %d\n", glConfig.numTextureUnits );
 	ri.Printf( PRINT_ALL, "\nPIXELFORMAT: color(%d-bits) Z(%d-bit) stencil(%d-bits)\n", glConfig.colorBits, glConfig.depthBits, glConfig.stencilBits );
-	ri.Printf( PRINT_ALL, "MODE: %d, %d x %d %s hz:", r_mode->integer, glConfig.vidWidth, glConfig.vidHeight, fsstrings[r_fullscreen->integer == 1] );
-
-    if ( glConfig.deviceSupportsGamma )
+	ri.Printf( PRINT_ALL, "MODE: %d x %d hz:", glConfig.vidWidth, glConfig.vidHeight);
+	if ( glConfig.refresh_rate )
+	{
+		ri.Printf( PRINT_ALL, "%d\n", glConfig.refresh_rate );
+	}
+	else
+	{
+		ri.Printf( PRINT_ALL, "N/A\n" );
+	}
+	if ( glConfig.deviceSupportsGamma )
 	{
 		ri.Printf( PRINT_ALL, "GAMMA: hardware w/ %d overbright bits\n", tr.overbrightBits );
 	}
@@ -873,7 +1074,11 @@ void GfxInfo_f( void )
 		ri.Printf( PRINT_ALL, "rendering primitives: " );
 		primitives = r_primitives->integer;
 		if ( primitives == 0 ) {
+			if ( qglLockArraysEXT ) {
+				primitives = 2;
+			} else {
 				primitives = 1;
+			}
 		}
 		if ( primitives == -1 ) {
 			ri.Printf( PRINT_ALL, "none\n" );
@@ -888,8 +1093,8 @@ void GfxInfo_f( void )
 
 	ri.Printf( PRINT_ALL, "texturemode: %s\n", r_textureMode->string );
 	ri.Printf( PRINT_ALL, "picmip: %d\n", r_picmip->integer );
-	ri.Printf( PRINT_ALL, "texture bits: %d\n", r_texturebits->integer );
-	ri.Printf( PRINT_ALL, "multitexture: %s\n", enablestrings[glActiveTextureARB != 0] );
+	ri.Printf( PRINT_ALL, "multitexture: %s\n", enablestrings[qglActiveTextureARB != 0] );
+	ri.Printf( PRINT_ALL, "compiled vertex arrays: %s\n", enablestrings[qglLockArraysEXT != 0 ] );
 	ri.Printf( PRINT_ALL, "texenv add: %s\n", enablestrings[glConfig.textureEnvAddAvailable != 0] );
 	ri.Printf( PRINT_ALL, "compressed textures: %s\n", enablestrings[glConfig.textureCompression!=TC_NONE] );
 
@@ -905,45 +1110,31 @@ R_Register
 */
 void R_Register( void ) 
 {
-	#ifdef USE_RENDERER_DLOPEN
-	com_altivec = ri.Cvar_Get("com_altivec", "1", CVAR_ARCHIVE);
-	#endif	
-
 	//
 	// latched and archived variables
 	//
 	r_allowExtensions = ri.Cvar_Get( "r_allowExtensions", "1", CVAR_ARCHIVE | CVAR_LATCH );
-	r_ext_compiled_vertex_array = ri.Cvar_Get( "r_ext_compiled_vertex_array", "1", CVAR_ARCHIVE | CVAR_LATCH);
-	r_ext_texture_env_add = ri.Cvar_Get( "r_ext_texture_env_add", "1", CVAR_ARCHIVE | CVAR_LATCH);
 
-	r_ext_texture_filter_anisotropic = ri.Cvar_Get( "r_ext_texture_filter_anisotropic",
-			"0", CVAR_ARCHIVE | CVAR_LATCH );
-	r_ext_max_anisotropy = ri.Cvar_Get( "r_ext_max_anisotropy", "2", CVAR_ARCHIVE | CVAR_LATCH );
 
 	r_picmip = ri.Cvar_Get ("r_picmip", "1", CVAR_ARCHIVE | CVAR_LATCH );
 	r_roundImagesDown = ri.Cvar_Get ("r_roundImagesDown", "1", CVAR_ARCHIVE | CVAR_LATCH );
 	r_colorMipLevels = ri.Cvar_Get ("r_colorMipLevels", "0", CVAR_LATCH );
 	ri.Cvar_CheckRange( r_picmip, 0, 16, qtrue );
-	r_detailTextures = ri.Cvar_Get( "r_detailtextures", "1", CVAR_ARCHIVE | CVAR_LATCH );
-	r_texturebits = ri.Cvar_Get( "r_texturebits", "0", CVAR_ARCHIVE | CVAR_LATCH );
 
-	r_ext_multisample = ri.Cvar_Get( "r_ext_multisample", "0", CVAR_ARCHIVE | CVAR_LATCH );
-	ri.Cvar_CheckRange( r_ext_multisample, 0, 4, qtrue );
-	r_mode = ri.Cvar_Get( "r_mode", "3", CVAR_ARCHIVE | CVAR_LATCH );
-	r_fullscreen = ri.Cvar_Get( "r_fullscreen", "1", CVAR_ARCHIVE );
-	r_noborder = ri.Cvar_Get("r_noborder", "0", CVAR_ARCHIVE | CVAR_LATCH);
+	r_overBrightBits = ri.Cvar_Get ("r_overBrightBits", "1", CVAR_ARCHIVE | CVAR_LATCH );
+	
 	r_simpleMipMaps = ri.Cvar_Get( "r_simpleMipMaps", "1", CVAR_ARCHIVE | CVAR_LATCH );
 	r_vertexLight = ri.Cvar_Get( "r_vertexLight", "0", CVAR_ARCHIVE | CVAR_LATCH );
 	r_uiFullScreen = ri.Cvar_Get( "r_uifullscreen", "0", 0);
 	r_subdivisions = ri.Cvar_Get ("r_subdivisions", "4", CVAR_ARCHIVE | CVAR_LATCH);
-	r_ignoreFastPath = ri.Cvar_Get( "r_ignoreFastPath", "1", CVAR_ARCHIVE | CVAR_LATCH );
+	r_greyscale = ri.Cvar_Get("r_greyscale", "0", CVAR_ARCHIVE | CVAR_LATCH);
+	ri.Cvar_CheckRange(r_greyscale, 0, 1, qfalse);
 
 	//
 	// temporary latched variables that can only change over a restart
 	//
-	r_displayRefresh = ri.Cvar_Get( "r_displayRefresh", "0", CVAR_LATCH );
-	ri.Cvar_CheckRange( r_displayRefresh, 0, 200, qtrue );
-
+	r_mapOverBrightBits = ri.Cvar_Get ("r_mapOverBrightBits", "2", CVAR_LATCH );
+	r_intensity = ri.Cvar_Get ("r_intensity", "1", CVAR_LATCH );
 	r_singleShader = ri.Cvar_Get ("r_singleShader", "0", CVAR_CHEAT | CVAR_LATCH );
 
 	//
@@ -963,8 +1154,6 @@ void R_Register( void )
 	r_dlightBacks = ri.Cvar_Get( "r_dlightBacks", "1", CVAR_ARCHIVE );
 	r_finish = ri.Cvar_Get ("r_finish", "0", CVAR_ARCHIVE);
 	r_textureMode = ri.Cvar_Get( "r_textureMode", "GL_LINEAR_MIPMAP_NEAREST", CVAR_ARCHIVE );
-	r_swapInterval = ri.Cvar_Get( "r_swapInterval", "0",
-					CVAR_ARCHIVE | CVAR_LATCH );
 	r_gamma = ri.Cvar_Get( "r_gamma", "1", CVAR_ARCHIVE );
 	r_facePlaneCull = ri.Cvar_Get ("r_facePlaneCull", "1", CVAR_ARCHIVE );
 
@@ -986,10 +1175,8 @@ void R_Register( void )
 	r_debugLight = ri.Cvar_Get( "r_debuglight", "0", CVAR_TEMP );
 	r_debugSort = ri.Cvar_Get( "r_debugSort", "0", CVAR_CHEAT );
 	r_printShaders = ri.Cvar_Get( "r_printShaders", "0", 0 );
-	r_saveFontData = ri.Cvar_Get( "r_saveFontData", "0", 0 );
 
 	r_nocurves = ri.Cvar_Get ("r_nocurves", "0", CVAR_CHEAT );
-	r_drawworld = ri.Cvar_Get ("r_drawworld", "1", CVAR_CHEAT );
 	r_lightmap = ri.Cvar_Get ("r_lightmap", "0", 0 );
 	r_portalOnly = ri.Cvar_Get ("r_portalOnly", "0", CVAR_CHEAT );
 
@@ -1008,7 +1195,6 @@ void R_Register( void )
 	r_showcluster = ri.Cvar_Get ("r_showcluster", "0", CVAR_CHEAT);
 	r_speeds = ri.Cvar_Get ("r_speeds", "0", CVAR_CHEAT);
 	r_verbose = ri.Cvar_Get( "r_verbose", "0", CVAR_CHEAT );
-	r_logFile = ri.Cvar_Get( "r_logFile", "0", CVAR_CHEAT );
 	r_debugSurface = ri.Cvar_Get ("r_debugSurface", "0", CVAR_CHEAT);
 	r_nobind = ri.Cvar_Get ("r_nobind", "0", CVAR_CHEAT);
 	r_showtris = ri.Cvar_Get ("r_showtris", "0", CVAR_CHEAT);
@@ -1028,7 +1214,6 @@ void R_Register( void )
 
 	r_maxpolys = ri.Cvar_Get( "r_maxpolys", va("%d", MAX_POLYS), 0);
 	r_maxpolyverts = ri.Cvar_Get( "r_maxpolyverts", va("%d", MAX_POLYVERTS), 0);
-
 	// make sure all the commands added here are also
 	// removed in R_Shutdown
 	ri.Cmd_AddCommand( "imagelist", R_ImageList_f );
@@ -1038,7 +1223,7 @@ void R_Register( void )
 	ri.Cmd_AddCommand( "screenshot", R_ScreenShot_f );
 	ri.Cmd_AddCommand( "screenshotJPEG", R_ScreenShotJPEG_f );
 	ri.Cmd_AddCommand( "gfxinfo", GfxInfo_f );
-//	ri.Cmd_AddCommand( "minimize", GLimp_Minimize );
+	ri.Cmd_AddCommand( "minimize", GLimp_Minimize );
 }
 
 /*
@@ -1051,7 +1236,7 @@ void R_Init( void ) {
 	int i;
 	byte *ptr;
 
-	ri.Printf( PRINT_ALL, "----- R_Init -----\n" );
+	ri.Printf( PRINT_ALL, "----- RendererGL1 Init -----\n" );
 
 	// clear all our internal state
 	memset( &tr, 0, sizeof( tr ) );
@@ -1128,7 +1313,7 @@ void R_Init( void ) {
 	R_InitFreeType();
 
 
-	err = glGetError();
+	err = qglGetError();
 	if ( err != GL_NO_ERROR )
 		ri.Printf (PRINT_ALL, "glGetError() = 0x%x\n", err);
 
@@ -1137,13 +1322,9 @@ void R_Init( void ) {
 	ri.Printf( PRINT_ALL, "----- finished R_Init -----\n" );
 }
 
-/*
-===============
-RE_Shutdown
-===============
-*/
-void RE_Shutdown( qboolean destroyWindow )
-{	
+
+
+void RE_Shutdown( qboolean destroyWindow ) {	
 
 	ri.Printf( PRINT_ALL, "RE_Shutdown( %i )\n", destroyWindow );
 
@@ -1151,7 +1332,6 @@ void RE_Shutdown( qboolean destroyWindow )
 	ri.Cmd_RemoveCommand( "shaderlist" );
 	ri.Cmd_RemoveCommand( "skinlist" );
 	ri.Cmd_RemoveCommand( "modellist" );
-	ri.Cmd_RemoveCommand( "modelist" );
 	ri.Cmd_RemoveCommand( "screenshot" );
 	ri.Cmd_RemoveCommand( "screenshotJPEG" );
 	ri.Cmd_RemoveCommand( "gfxinfo" );
@@ -1166,9 +1346,9 @@ void RE_Shutdown( qboolean destroyWindow )
 	R_DoneFreeType();
 
 	// shut down platform specific OpenGL stuff
-	if ( destroyWindow )
-    {
-		ri.GLimpShutdown(destroyWindow);
+	if ( destroyWindow ) {
+
+		GLimp_Shutdown();
 
 		memset( &glConfig, 0, sizeof( glConfig ) );
 		memset( &glState, 0, sizeof( glState ) );
@@ -1256,6 +1436,6 @@ refexport_t *GetRefAPI ( int apiVersion, refimport_t *rimp ) {
 	re.inPVS = R_inPVS;
 
 	re.TakeVideoFrame = RE_TakeVideoFrame;
-    re.SetColorMappings = R_SetColorMappings;
+
 	return &re;
 }

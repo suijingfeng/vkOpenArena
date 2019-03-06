@@ -31,10 +31,10 @@ DISPLAY OPTIONS MENU
 #include "ui_local.h"
 
 
-#define ART_FRAMEL			"menu/art/frame2_l"
-#define ART_FRAMER			"menu/art/frame1_r"
-#define ART_BACK0			"menu/art/back_0"
-#define ART_BACK1			"menu/art/back_1"
+#define ART_FRAMEL			"menu/" MENU_ART_DIR "/frame2_l"
+#define ART_FRAMER			"menu/" MENU_ART_DIR "/frame1_r"
+#define ART_BACK0			"menu/" MENU_ART_DIR "/back_0"
+#define ART_BACK1			"menu/" MENU_ART_DIR "/back_1"
 
 #define ID_GRAPHICS			10
 #define ID_DISPLAY			11
@@ -66,49 +66,57 @@ typedef struct {
 static displayOptionsInfo_t	displayOptionsInfo;
 
 
-static void UI_DisplayOptionsMenu_Event( void* ptr, int event )
-{
-	if( event != QM_ACTIVATED ) 
+/*
+=================
+UI_DisplayOptionsMenu_Event
+=================
+*/
+static void UI_DisplayOptionsMenu_Event( void* ptr, int event ) {
+	if( event != QM_ACTIVATED ) {
 		return;
+	}
 
-	switch( ((menucommon_s*)ptr)->id )
-    {
-        case ID_GRAPHICS:
-            UI_PopMenu();
-            UI_GraphicsOptionsMenu();
-            break;
+	switch( ((menucommon_s*)ptr)->id ) {
+	case ID_GRAPHICS:
+		UI_PopMenu();
+		UI_GraphicsOptionsMenu();
+		break;
 
-        case ID_DISPLAY:
-            break;
+	case ID_DISPLAY:
+		break;
 
-        case ID_SOUND:
-            UI_PopMenu();
-            UI_SoundOptionsMenu();
-            break;
+	case ID_SOUND:
+		UI_PopMenu();
+		UI_SoundOptionsMenu();
+		break;
 
-        case ID_NETWORK:
-            UI_PopMenu();
-            UI_NetworkOptionsMenu();
-            break;
+	case ID_NETWORK:
+		UI_PopMenu();
+		UI_NetworkOptionsMenu();
+		break;
 
-        case ID_BRIGHTNESS:
-            trap_Cvar_SetValue( "r_gamma", displayOptionsInfo.brightness.curvalue / 10.0f );
-            break;
-        
-        case ID_SCREENSIZE:
-            trap_Cvar_SetValue( "cg_viewsize", displayOptionsInfo.screensize.curvalue * 10 );
-            break;
+	case ID_BRIGHTNESS:
+		trap_Cvar_SetValue( "r_gamma", displayOptionsInfo.brightness.curvalue / 10.0f );
+		break;
+	
+	case ID_SCREENSIZE:
+		trap_Cvar_SetValue( "cg_viewsize", displayOptionsInfo.screensize.curvalue * 10 );
+		break;
 
-        case ID_BACK:
-            UI_PopMenu();
-            break;
+	case ID_BACK:
+		UI_PopMenu();
+		break;
 	}
 }
 
 
-static void UI_DisplayOptionsMenu_Init( void )
-{
-	int	y;
+/*
+===============
+UI_DisplayOptionsMenu_Init
+===============
+*/
+static void UI_DisplayOptionsMenu_Init( void ) {
+	int		y;
 
 	memset( &displayOptionsInfo, 0, sizeof(displayOptionsInfo) );
 
@@ -232,8 +240,12 @@ static void UI_DisplayOptionsMenu_Init( void )
 }
 
 
-void UI_DisplayOptionsMenu_Cache( void )
-{
+/*
+===============
+UI_DisplayOptionsMenu_Cache
+===============
+*/
+void UI_DisplayOptionsMenu_Cache( void ) {
 	trap_R_RegisterShaderNoMip( ART_FRAMEL );
 	trap_R_RegisterShaderNoMip( ART_FRAMER );
 	trap_R_RegisterShaderNoMip( ART_BACK0 );
@@ -241,8 +253,12 @@ void UI_DisplayOptionsMenu_Cache( void )
 }
 
 
-void UI_DisplayOptionsMenu( void )
-{
+/*
+===============
+UI_DisplayOptionsMenu
+===============
+*/
+void UI_DisplayOptionsMenu( void ) {
 	UI_DisplayOptionsMenu_Init();
 	UI_PushMenu( &displayOptionsInfo.menu );
 	Menu_SetCursorToItem( &displayOptionsInfo.menu, &displayOptionsInfo.display );

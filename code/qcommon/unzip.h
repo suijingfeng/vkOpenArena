@@ -49,11 +49,8 @@
 extern "C" {
 #endif
 
-#ifdef USE_LOCAL_HEADERS
-  #include "../zlib/zlib.h"
-#else
-  #include <zlib.h>
-#endif
+
+#include "../zlib/zlib.h"
 #include "ioapi.h"
 
 #define NOUNCRYPT

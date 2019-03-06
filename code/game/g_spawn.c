@@ -32,7 +32,7 @@ qboolean	G_SpawnString( const char *key, const char *defaultString, char **out )
 	}
 
 	for ( i = 0 ; i < level.numSpawnVars ; i++ ) {
-		if ( !Q_stricmp( key, level.spawnVars[i][0] ) ) {
+		if ( Q_strequal( key, level.spawnVars[i][0] ) ) {
 			*out = level.spawnVars[i][1];
 			return qtrue;
 		}
@@ -75,40 +75,47 @@ qboolean	G_SpawnVector( const char *key, const char *defaultString, float *out )
 // fields are needed for spawning from the entity string
 //
 typedef enum {
-	F_INT,
+	F_INT, 
 	F_FLOAT,
-	F_STRING,
+	F_LSTRING,			// string on disk, pointer in memory, TAG_LEVEL
+	F_GSTRING,			// string on disk, pointer in memory, TAG_GAME
 	F_VECTOR,
-	F_ANGLEHACK
+	F_ANGLEHACK,
+	F_ENTITY,			// index on disk, pointer in memory
+	F_ITEM,				// index on disk, pointer in memory
+	F_CLIENT,			// index on disk, pointer in memory
+	F_IGNORE
 } fieldtype_t;
 
 typedef struct
 {
 	char	*name;
-	size_t	ofs;
+	int		ofs;
 	fieldtype_t	type;
+//	int		flags;
 } field_t;
 
 field_t fields[] = {
-	{"classname", FOFS(classname), F_STRING},
+	{"classname", FOFS(classname), F_LSTRING},
 	{"origin", FOFS(s.origin), F_VECTOR},
-	{"model", FOFS(model), F_STRING},
-	{"model2", FOFS(model2), F_STRING},
+	{"model", FOFS(model), F_LSTRING},
+	{"model2", FOFS(model2), F_LSTRING},
 	{"spawnflags", FOFS(spawnflags), F_INT},
 	{"speed", FOFS(speed), F_FLOAT},
-	{"target", FOFS(target), F_STRING},
-	{"targetname", FOFS(targetname), F_STRING},
-	{"message", FOFS(message), F_STRING},
-	{"team", FOFS(team), F_STRING},
+	{"target", FOFS(target), F_LSTRING},
+	{"targetname", FOFS(targetname), F_LSTRING},
+	{"message", FOFS(message), F_LSTRING},
+	{"team", FOFS(team), F_LSTRING},
 	{"wait", FOFS(wait), F_FLOAT},
 	{"random", FOFS(random), F_FLOAT},
 	{"count", FOFS(count), F_INT},
 	{"health", FOFS(health), F_INT},
+	{"light", 0, F_IGNORE},
 	{"dmg", FOFS(damage), F_INT},
 	{"angles", FOFS(s.angles), F_VECTOR},
 	{"angle", FOFS(s.angles), F_ANGLEHACK},
-	{"targetShaderName", FOFS(targetShaderName), F_STRING},
-	{"targetShaderNewName", FOFS(targetShaderNewName), F_STRING},
+	{"targetShaderName", FOFS(targetShaderName), F_LSTRING},
+	{"targetShaderNewName", FOFS(targetShaderNewName), F_LSTRING},
 
 	{NULL}
 };
@@ -122,6 +129,13 @@ typedef struct {
 void SP_info_player_start (gentity_t *ent);
 void SP_info_player_deathmatch (gentity_t *ent);
 void SP_info_player_intermission (gentity_t *ent);
+//standard domination:
+void SP_domination_point ( gentity_t *ent);
+
+void SP_info_firstplace(gentity_t *ent);
+void SP_info_secondplace(gentity_t *ent);
+void SP_info_thirdplace(gentity_t *ent);
+void SP_info_podium(gentity_t *ent);
 
 void SP_func_plat (gentity_t *ent);
 void SP_func_static (gentity_t *ent);
@@ -145,6 +159,7 @@ void SP_target_delay (gentity_t *ent);
 void SP_target_speaker (gentity_t *ent);
 void SP_target_print (gentity_t *ent);
 void SP_target_laser (gentity_t *self);
+void SP_target_character (gentity_t *ent);
 void SP_target_score( gentity_t *ent );
 void SP_target_teleporter( gentity_t *ent );
 void SP_target_relay (gentity_t *ent);
@@ -174,11 +189,10 @@ void SP_team_CTF_blueplayer( gentity_t *ent );
 void SP_team_CTF_redspawn( gentity_t *ent );
 void SP_team_CTF_bluespawn( gentity_t *ent );
 
-#ifdef MISSIONPACK
 void SP_team_blueobelisk( gentity_t *ent );
 void SP_team_redobelisk( gentity_t *ent );
 void SP_team_neutralobelisk( gentity_t *ent );
-#endif
+
 void SP_item_botroam( gentity_t *ent ) { }
 
 spawn_t	spawns[] = {
@@ -187,6 +201,16 @@ spawn_t	spawns[] = {
 	{"info_player_start", SP_info_player_start},
 	{"info_player_deathmatch", SP_info_player_deathmatch},
 	{"info_player_intermission", SP_info_player_intermission},
+//Double Domination player spawn:
+	{"info_player_dd", SP_info_player_deathmatch},
+	{"info_player_dd_red", SP_info_player_deathmatch},
+	{"info_player_dd_blue", SP_info_player_deathmatch},
+//Standard Domination point spawn:
+	{"domination_point", SP_domination_point},
+	{"info_player_dom_red", SP_info_player_deathmatch},
+	{"info_player_dom_blue", SP_info_player_deathmatch},
+
+
 	{"info_null", SP_info_null},
 	{"info_notnull", SP_info_notnull},		// use target_position instead
 	{"info_camp", SP_info_camp},
@@ -247,11 +271,10 @@ spawn_t	spawns[] = {
 	{"team_CTF_redspawn", SP_team_CTF_redspawn},
 	{"team_CTF_bluespawn", SP_team_CTF_bluespawn},
 
-#ifdef MISSIONPACK
 	{"team_redobelisk", SP_team_redobelisk},
 	{"team_blueobelisk", SP_team_blueobelisk},
 	{"team_neutralobelisk", SP_team_neutralobelisk},
-#endif
+
 	{"item_botroam", SP_item_botroam},
 
 	{NULL, 0}
@@ -268,15 +291,28 @@ returning qfalse if not found
 qboolean G_CallSpawn( gentity_t *ent ) {
 	spawn_t	*s;
 	gitem_t	*item;
+	char cvarname[128];
+	char itemname[128];
 
-	if ( !ent->classname ) {
+		//Construct a replace cvar:
+	Com_sprintf(cvarname, sizeof(cvarname), "replace_%s", ent->classname);
+
+		//Look an alternative item up:
+		trap_Cvar_VariableStringBuffer(cvarname,itemname,sizeof(itemname));
+		if(itemname[0]==0) //If nothing found use original
+			Com_sprintf(itemname, sizeof(itemname), "%s", ent->classname);
+		else
+			G_Printf ("%s replaced by %s\n", ent->classname, itemname);
+
+
+	if ( itemname[0]==0) {
 		G_Printf ("G_CallSpawn: NULL classname\n");
 		return qfalse;
 	}
 
 	// check item spawn functions
 	for ( item=bg_itemlist+1 ; item->classname ; item++ ) {
-		if ( !strcmp(item->classname, ent->classname) ) {
+		if ( strequals(item->classname, itemname) ) {
 			G_SpawnItem( ent, item );
 			return qtrue;
 		}
@@ -284,13 +320,13 @@ qboolean G_CallSpawn( gentity_t *ent ) {
 
 	// check normal spawn functions
 	for ( s=spawns ; s->name ; s++ ) {
-		if ( !strcmp(s->name, ent->classname) ) {
+		if ( strequals(s->name, itemname) ) {
 			// found it
 			s->spawn(ent);
 			return qtrue;
 		}
 	}
-	G_Printf ("%s doesn't have a spawn function\n", ent->classname);
+	G_Printf ("%s doesn't have a spawn function\n", itemname);
 	return qfalse;
 }
 
@@ -307,8 +343,8 @@ char *G_NewString( const char *string ) {
 	int		i,l;
 	
 	l = strlen(string) + 1;
-
-	newb = G_Alloc( l );
+	//KK-OAX Changed to Tremulous's BG_Alloc
+	newb = BG_Alloc( l );
 
 	new_p = newb;
 
@@ -347,12 +383,12 @@ void G_ParseField( const char *key, const char *value, gentity_t *ent ) {
 	vec3_t	vec;
 
 	for ( f=fields ; f->name ; f++ ) {
-		if ( !Q_stricmp(f->name, key) ) {
+		if ( Q_strequal(f->name, key) ) {
 			// found it
 			b = (byte *)ent;
 
 			switch( f->type ) {
-			case F_STRING:
+			case F_LSTRING:
 				*(char **)(b+f->ofs) = G_NewString (value);
 				break;
 			case F_VECTOR:
@@ -373,18 +409,17 @@ void G_ParseField( const char *key, const char *value, gentity_t *ent ) {
 				((float *)(b+f->ofs))[1] = v;
 				((float *)(b+f->ofs))[2] = 0;
 				break;
+			default:
+			case F_IGNORE:
+				break;
 			}
 			return;
 		}
 	}
 }
 
-#define ADJUST_AREAPORTAL() \
-	if(ent->s.eType == ET_MOVER) \
-	{ \
-		trap_LinkEntity(ent); \
-		trap_AdjustAreaPortalState(ent, qtrue); \
-	}
+
+
 
 /*
 ===================
@@ -398,7 +433,8 @@ void G_SpawnGEntityFromSpawnVars( void ) {
 	int			i;
 	gentity_t	*ent;
 	char		*s, *value, *gametypeName;
-	static char *gametypeNames[] = {"ffa", "tournament", "single", "team", "ctf", "oneflag", "obelisk", "harvester"};
+	static char *gametypeNames[] = {"ffa", "tournament", "single", "team", "ctf", "oneflag", "obelisk", "harvester", 
+	"elimination", "ctf", "lms", "dd", "dom", "pos"};
 
 	// get the next free entity
 	ent = G_Spawn();
@@ -411,23 +447,20 @@ void G_SpawnGEntityFromSpawnVars( void ) {
 	if ( g_gametype.integer == GT_SINGLE_PLAYER ) {
 		G_SpawnInt( "notsingle", "0", &i );
 		if ( i ) {
-			ADJUST_AREAPORTAL();
 			G_FreeEntity( ent );
 			return;
 		}
 	}
 	// check for "notteam" flag (GT_FFA, GT_TOURNAMENT, GT_SINGLE_PLAYER)
-	if ( g_gametype.integer >= GT_TEAM ) {
+	if ( g_gametype.integer >= GT_TEAM && !g_ffa_gt ) {
 		G_SpawnInt( "notteam", "0", &i );
 		if ( i ) {
-			ADJUST_AREAPORTAL();
 			G_FreeEntity( ent );
 			return;
 		}
 	} else {
 		G_SpawnInt( "notfree", "0", &i );
 		if ( i ) {
-			ADJUST_AREAPORTAL();
 			G_FreeEntity( ent );
 			return;
 		}
@@ -436,26 +469,35 @@ void G_SpawnGEntityFromSpawnVars( void ) {
 #ifdef MISSIONPACK
 	G_SpawnInt( "notta", "0", &i );
 	if ( i ) {
-		ADJUST_AREAPORTAL();
 		G_FreeEntity( ent );
 		return;
 	}
 #else
 	G_SpawnInt( "notq3a", "0", &i );
 	if ( i ) {
-		ADJUST_AREAPORTAL();
 		G_FreeEntity( ent );
 		return;
 	}
 #endif
 
+	if( G_SpawnString( "!gametype", NULL, &value ) ) {
+		if( g_gametype.integer >= GT_FFA && g_gametype.integer < ARRAY_LEN(gametypeNames) ) {
+			gametypeName = gametypeNames[g_gametype.integer];
+
+			s = strstr( value, gametypeName );
+			if( s ) {
+				G_FreeEntity( ent );
+				return;
+			}
+		}
+	}
+
 	if( G_SpawnString( "gametype", NULL, &value ) ) {
-		if( g_gametype.integer >= GT_FFA && g_gametype.integer < GT_MAX_GAME_TYPE ) {
+		if( g_gametype.integer >= GT_FFA && g_gametype.integer < ARRAY_LEN(gametypeNames) ) {
 			gametypeName = gametypeNames[g_gametype.integer];
 
 			s = strstr( value, gametypeName );
 			if( !s ) {
-				ADJUST_AREAPORTAL();
 				G_FreeEntity( ent );
 				return;
 			}
@@ -485,7 +527,7 @@ char *G_AddSpawnVarToken( const char *string ) {
 
 	l = strlen( string );
 	if ( level.numSpawnVarChars + l + 1 > MAX_SPAWN_VARS_CHARS ) {
-		G_Error( "G_AddSpawnVarToken: MAX_SPAWN_VARS_CHARS" );
+		G_Error( "G_AddSpawnVarToken: MAX_SPAWN_VARS" );
 	}
 
 	dest = level.spawnVarChars + level.numSpawnVarChars;
@@ -565,7 +607,7 @@ void SP_worldspawn( void ) {
 	char	*s;
 
 	G_SpawnString( "classname", "", &s );
-	if ( Q_stricmp( s, "worldspawn" ) ) {
+	if ( !Q_strequal( s, "worldspawn" ) ) {
 		G_Error( "SP_worldspawn: The first entity isn't 'worldspawn'" );
 	}
 
@@ -574,9 +616,13 @@ void SP_worldspawn( void ) {
 
 	trap_SetConfigstring( CS_LEVEL_START_TIME, va("%i", level.startTime ) );
 
-	G_SpawnString( "music", "", &s );
-	trap_SetConfigstring( CS_MUSIC, s );
-
+	if ( *g_music.string && !Q_strequal( g_music.string, "none" ) ) {
+		trap_SetConfigstring( CS_MUSIC, g_music.string );
+	} else {
+		G_SpawnString( "music", "", &s );   
+		trap_SetConfigstring( CS_MUSIC, s );
+	}
+    
 	G_SpawnString( "message", "", &s );
 	trap_SetConfigstring( CS_MESSAGE, s );				// map specific message
 
@@ -585,11 +631,17 @@ void SP_worldspawn( void ) {
 	G_SpawnString( "gravity", "800", &s );
 	trap_Cvar_Set( "g_gravity", s );
 
+	G_SpawnString( "enableFS", "0", &s );
+	trap_Cvar_Set( "g_enableFS", s );
+
 	G_SpawnString( "enableDust", "0", &s );
 	trap_Cvar_Set( "g_enableDust", s );
 
 	G_SpawnString( "enableBreath", "0", &s );
 	trap_Cvar_Set( "g_enableBreath", s );
+
+	G_SpawnString( "enableQ", "0", &s );
+	trap_Cvar_Set( "g_enableQ", s );
 
 	g_entities[ENTITYNUM_WORLD].s.number = ENTITYNUM_WORLD;
 	g_entities[ENTITYNUM_WORLD].r.ownerNum = ENTITYNUM_NONE;

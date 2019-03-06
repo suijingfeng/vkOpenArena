@@ -385,27 +385,9 @@ static void BotImport_DebugLineDelete(int line) {
 BotImport_DebugLineShow
 ==================
 */
-
-static ID_INLINE float CM_VectorNormalize( vec3_t v )
-{
-	float length = v[0]*v[0] + v[1]*v[1] + v[2]*v[2];
-
-	if ( length != 0)
-    {
-		float invLen = 1.0f / sqrtf(length);
-		v[0] *= invLen;
-		v[1] *= invLen;
-		v[2] *= invLen;
-        return length*invLen;
-	}
-		
-	return length;
-}
-
-
-static void BotImport_DebugLineShow(int line, vec3_t start, vec3_t end, int color)
-{
+static void BotImport_DebugLineShow(int line, vec3_t start, vec3_t end, int color) {
 	vec3_t points[4], dir, cross, up = {0, 0, 1};
+	float dot;
 
 	VectorCopy(start, points[0]);
 	VectorCopy(start, points[1]);
@@ -416,22 +398,12 @@ static void BotImport_DebugLineShow(int line, vec3_t start, vec3_t end, int colo
 
 
 	VectorSubtract(end, start, dir);
-    //	VectorNormalize(dir);
+	VectorNormalize(dir);
+	dot = DotProduct(dir, up);
+	if (dot > 0.99 || dot < -0.99) VectorSet(cross, 1, 0, 0);
+	else CrossProduct(dir, up, cross);
 
-	float length = dir[0]*dir[0] + dir[1]*dir[1] + dir[2]*dir[2];
-    if(length == 0)
-        return;
-	
-    length = 1.0f / sqrtf(length);
-	dir[0] *= length;
-	dir[1] *= length;
-	dir[2] *= length;
-
-
-    if (dir[2] > 0.99 || dir[2] < -0.99)
-        VectorSet(cross, 1, 0, 0);
-	else
-        CrossProduct(dir, up, cross);
+	VectorNormalize(cross);
 
 	VectorMA(points[0], 2, cross, points[0]);
 	VectorMA(points[1], -2, cross, points[1]);
@@ -567,7 +539,7 @@ void SV_BotInitBotLib(void) {
 
 	// file system access
 	botlib_import.FS_FOpenFile = FS_FOpenFileByMode;
-	botlib_import.FS_Read = FS_Read2;
+	botlib_import.FS_Read = FS_Read;
 	botlib_import.FS_Write = FS_Write;
 	botlib_import.FS_FCloseFile = FS_FCloseFile;
 	botlib_import.FS_Seek = FS_Seek;

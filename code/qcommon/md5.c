@@ -20,7 +20,10 @@
 typedef struct MD5Context {
 	uint32_t buf[4];
 	uint32_t bits[2];
-	unsigned char in[64];
+    union{
+	unsigned char uc[64];
+    unsigned int ui[16];
+    }in;
 } MD5_CTX;
 
 #ifndef Q3_BIG_ENDIAN
@@ -75,8 +78,7 @@ static void MD5Init(struct MD5Context *ctx)
  * reflect the addition of 16 longwords of new data.  MD5Update blocks
  * the data and converts bytes into longwords for this routine.
  */
-static void MD5Transform(uint32_t buf[4],
-	uint32_t const in[16])
+static void MD5Transform(uint32_t buf[4], uint32_t const in[16])
 {
     register uint32_t a, b, c, d;
 
@@ -163,8 +165,7 @@ static void MD5Transform(uint32_t buf[4],
  * Update context to reflect the concatenation of another buffer full
  * of bytes.
  */
-static void MD5Update(struct MD5Context *ctx, unsigned char const *buf,
-	unsigned len)
+static void MD5Update(struct MD5Context *ctx, unsigned char const *buf, unsigned len)
 {
     uint32_t t;
 
@@ -180,7 +181,7 @@ static void MD5Update(struct MD5Context *ctx, unsigned char const *buf,
     /* Handle any leading odd-sized chunks */
 
     if (t) {
-	unsigned char *p = (unsigned char *) ctx->in + t;
+	unsigned char *p = ctx->in.uc + t;
 
 	t = 64 - t;
 	if (len < t) {
@@ -189,23 +190,24 @@ static void MD5Update(struct MD5Context *ctx, unsigned char const *buf,
 	}
 	memcpy(p, buf, t);
 	byteReverse(ctx->in, 16);
-	MD5Transform(ctx->buf, (uint32_t *) ctx->in);
+	MD5Transform(ctx->buf, ctx->in.ui);
 	buf += t;
 	len -= t;
     }
     /* Process data in 64-byte chunks */
 
-    while (len >= 64) {
-	memcpy(ctx->in, buf, 64);
+    while (len >= 64)
+    {
+	memcpy(ctx->in.uc, buf, 64);
 	byteReverse(ctx->in, 16);
-	MD5Transform(ctx->buf, (uint32_t *) ctx->in);
+	MD5Transform(ctx->buf, ctx->in.ui);
 	buf += 64;
 	len -= 64;
     }
 
     /* Handle any remaining bytes of data. */
 
-    memcpy(ctx->in, buf, len);
+    memcpy(ctx->in.uc, buf, len);
 }
 
 
@@ -215,15 +217,13 @@ static void MD5Update(struct MD5Context *ctx, unsigned char const *buf,
  */
 static void MD5Final(struct MD5Context *ctx, unsigned char *digest)
 {
-    unsigned count;
-    unsigned char *p;
 
     /* Compute number of bytes mod 64 */
-    count = (ctx->bits[0] >> 3) & 0x3F;
+    unsigned int count = (ctx->bits[0] >> 3) & 0x3F;
 
     /* Set the first char of padding to 0x80.  This is safe since there is
        always at least one byte free */
-    p = ctx->in + count;
+    unsigned char * p = ctx->in.uc + count;
     *p++ = 0x80;
 
     /* Bytes of padding needed to make 64 bytes */
@@ -234,10 +234,10 @@ static void MD5Final(struct MD5Context *ctx, unsigned char *digest)
 	/* Two lots of padding:  Pad the first block to 64 bytes */
 	memset(p, 0, count);
 	byteReverse(ctx->in, 16);
-	MD5Transform(ctx->buf, (uint32_t *) ctx->in);
+	MD5Transform(ctx->buf, ctx->in.ui);
 
 	/* Now fill the next block with 56 bytes */
-	memset(ctx->in, 0, 56);
+	memset(ctx->in.uc, 0, 56);
     } else {
 	/* Pad block to 56 bytes */
 	memset(p, 0, count - 8);
@@ -245,10 +245,10 @@ static void MD5Final(struct MD5Context *ctx, unsigned char *digest)
     byteReverse(ctx->in, 14);
 
     /* Append length in bits and transform */
-    ((uint32_t *) ctx->in)[14] = ctx->bits[0];
-    ((uint32_t *) ctx->in)[15] = ctx->bits[1];
+    ctx->in.ui[14] = ctx->bits[0];
+    ctx->in.ui[15] = ctx->bits[1];
 
-    MD5Transform(ctx->buf, (uint32_t *) ctx->in);
+    MD5Transform(ctx->buf, ctx->in.ui);
     byteReverse((unsigned char *) ctx->buf, 4);
     
     if (digest!=NULL)
@@ -290,7 +290,7 @@ char *Com_MD5File( const char *fn, int length, const char *prefix, int prefix_le
 		MD5Update(&md5 , (unsigned char *)prefix, prefix_len);
 
 	for(;;) {
-		r = FS_Read2(buffer, sizeof(buffer), f);
+		r = FS_Read(buffer, sizeof(buffer), f);
 		if(r < 1)
 			break;
 		if(r + total > length)

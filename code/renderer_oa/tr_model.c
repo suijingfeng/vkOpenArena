@@ -23,8 +23,6 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
 #include "tr_local.h"
 
-extern trGlobals_t tr;
-extern refimport_t ri;
 
 typedef struct
 {
@@ -34,7 +32,7 @@ typedef struct
 
 // Note that the ordering indicates the order of preference used
 // when there are multiple models of different formats available
-static qboolean R_LoadMD3(model_t *mod, int lod, void *buffer, const char *name );
+static qboolean R_LoadMD3(model_t *mod, int lod, void *buffer, const char* modName);
 static qboolean R_LoadMDR(model_t *mod, void *buffer, int filesize, const char *name );
 static qhandle_t R_RegisterMD3(const char *name, model_t *mod);
 static qhandle_t R_RegisterMDR(const char *name, model_t *mod);
@@ -52,20 +50,19 @@ static const int numModelLoaders = ARRAY_LEN(modelLoaders);
 
 static qhandle_t R_RegisterMD3(const char *name, model_t *mod)
 {
-	union {
-		unsigned *u;
-		void *v;
-	} buf;
-
-    qboolean loaded = qfalse;
+	
+	char* buf;
+	int			lod;
+	qboolean	loaded = qfalse;
+	int			numLoaded;
 	char filename[MAX_QPATH], namebuf[MAX_QPATH+20];
-	char defex[] = "md3";
+	char *fext, defex[] = "md3";
 
-	int numLoaded = 0;
+	numLoaded = 0;
 
 	strcpy(filename, name);
 
-	char* fext = strchr(filename, '.');
+	fext = strchr(filename, '.');
 	if(!fext)
 		fext = defex;
 	else
@@ -74,26 +71,27 @@ static qhandle_t R_RegisterMD3(const char *name, model_t *mod)
 		fext++;
 	}
 
-    int	lod = MD3_MAX_LODS - 1;
-
-	for (; lod >= 0 ; lod--)
+	for (lod = MD3_MAX_LODS - 1 ; lod >= 0 ; lod--)
 	{
 		if(lod)
-			Com_sprintf(namebuf, sizeof(namebuf), "%s_%d.%s", filename, lod, fext);
+			snprintf(namebuf, sizeof(namebuf), "%s_%d.%s", filename, lod, fext);
 		else
-			Com_sprintf(namebuf, sizeof(namebuf), "%s.%s", filename, fext);
+			snprintf(namebuf, sizeof(namebuf), "%s.%s", filename, fext);
 
-		ri.FS_ReadFile( namebuf, &buf.v );
-		if(!buf.u)
+		ri.R_ReadFile( namebuf, &buf );
+		if(!buf)
 			continue;
-		
-		int ident = LittleLong(* (unsigned *) buf.u);
+#if defined( Q3_BIG_ENDIAN )		
+		int ident = LittleLong(*(int *)buf);
+#else
+		int ident = *(int *)buf;
+#endif		
 		if (ident == MD3_IDENT)
-			loaded = R_LoadMD3(mod, lod, buf.u, name);
+			loaded = R_LoadMD3(mod, lod, buf, name);
 		else
 			ri.Printf(PRINT_WARNING,"R_RegisterMD3: unknown fileid for %s\n", name);
 		
-		ri.FS_FreeFile(buf.v);
+		ri.FS_FreeFile(buf);
 
 		if(loaded)
 		{
@@ -117,9 +115,7 @@ static qhandle_t R_RegisterMD3(const char *name, model_t *mod)
 		return mod->index;
 	}
 
-#ifdef _DEBUG
 	ri.Printf(PRINT_WARNING,"R_RegisterMD3: couldn't load %s\n", name);
-#endif
 
 	mod->type = MOD_BAD;
 	return 0;
@@ -128,26 +124,26 @@ static qhandle_t R_RegisterMD3(const char *name, model_t *mod)
 
 static qhandle_t R_RegisterMDR(const char *name, model_t *mod)
 {
-	union {
-		unsigned *u;
-		void *v;
-	} buf;
-	int	ident;
+	char* buf;
 	qboolean loaded = qfalse;
 	int filesize;
 
-	filesize = ri.FS_ReadFile(name, (void **) &buf.v);
-	if(!buf.u)
+	filesize = ri.R_ReadFile(name, &buf);
+	if(!buf)
 	{
 		mod->type = MOD_BAD;
 		return 0;
 	}
 	
-	ident = LittleLong(*(unsigned *)buf.u);
+#if defined( Q3_BIG_ENDIAN )		
+	int ident = LittleLong(*(int *)buf);
+#else
+	int ident = *(int *)buf;
+#endif	
 	if(ident == MDR_IDENT)
-		loaded = R_LoadMDR(mod, buf.u, filesize, name);
+		loaded = R_LoadMDR(mod, buf, filesize, name);
 
-	ri.FS_FreeFile (buf.v);
+	ri.FS_FreeFile (buf);
 	
 	if(!loaded)
 	{
@@ -161,24 +157,19 @@ static qhandle_t R_RegisterMDR(const char *name, model_t *mod)
 
 
 static qhandle_t R_RegisterIQM(const char *name, model_t *mod)
-{
-	union {
-		unsigned *u;
-		void *v;
-	} buf;
+{	
+	char* buf;
 	qboolean loaded = qfalse;
-	int filesize;
-
-	filesize = ri.FS_ReadFile(name, (void **) &buf.v);
-	if(!buf.u)
+	int filesize = ri.R_ReadFile(name, &buf);
+	if(!buf)
 	{
 		mod->type = MOD_BAD;
 		return 0;
 	}
 	
-	loaded = R_LoadIQM(mod, buf.u, filesize, name);
+	loaded = R_LoadIQM(mod, buf, filesize, name);
 
-	ri.FS_FreeFile (buf.v);
+	ri.FS_FreeFile(buf);
 	
 	if(!loaded)
 	{
@@ -191,9 +182,127 @@ static qhandle_t R_RegisterIQM(const char *name, model_t *mod)
 }
 
 
-static qboolean R_LoadMD3(model_t *mod, int lod, void *buffer, const char *mod_name )
+static qhandle_t RE_RegisterModelReal( const char *name )
 {
-	int					i, j;
+	model_t		*mod;
+	qhandle_t	hModel;
+	//qboolean	orgNameFailed = qfalse;
+	int			orgLoader = -1;
+	int			i;
+	char		localName[ MAX_QPATH ];
+	const char	*ext;
+	char		altName[ MAX_QPATH ];
+
+	if ( !name || !name[0] ) {
+		ri.Printf( PRINT_ALL, "RE_RegisterModel: NULL name\n" );
+		return 0;
+	}
+
+	if ( strlen( name ) >= MAX_QPATH ) {
+		ri.Printf( PRINT_ALL, "Model name exceeds MAX_QPATH\n" );
+		return 0;
+	}
+
+	//
+	// search the currently loaded models
+	//
+	for ( hModel = 1 ; hModel < tr.numModels; hModel++ ) {
+		mod = tr.models[hModel];
+		if ( !strcmp( mod->name, name ) ) {
+			if( mod->type == MOD_BAD ) {
+				return 0;
+			}
+			return hModel;
+		}
+	}
+
+	// allocate a new model_t
+
+	if ( ( mod = R_AllocModel() ) == NULL )
+    {
+		ri.Printf( PRINT_WARNING, "RE_RegisterModel: R_AllocModel() failed for '%s'\n", name);
+		return 0;
+	}
+
+	// only set the name after the model has been successfully loaded
+	Q_strncpyz( mod->name, name, sizeof( mod->name ) );
+
+	R_IssuePendingRenderCommands();
+
+	mod->type = MOD_BAD;
+	mod->numLods = 0;
+
+	//
+	// load the files
+	//
+	Q_strncpyz( localName, name, MAX_QPATH );
+
+	ext = COM_GetExtension( localName );
+
+	if( *ext )
+	{
+		// Look for the correct loader and use it
+		for( i = 0; i < numModelLoaders; i++ )
+		{
+			if( !Q_stricmp( ext, modelLoaders[ i ].ext ) )
+			{
+				// Load
+				hModel = modelLoaders[ i ].ModelLoader( localName, mod );
+				break;
+			}
+		}
+
+		// A loader was found
+		if( i < numModelLoaders )
+		{
+			if( !hModel )
+			{
+				// Loader failed, most likely because the file isn't there;
+				// try again without the extension
+				//orgNameFailed = qtrue;
+				orgLoader = i;
+				stripExtension(name, localName, MAX_QPATH);
+			}
+			else
+			{
+				// Something loaded
+				return mod->index;
+			}
+		}
+	}
+
+	// Try and find a suitable match using all
+	// the model formats supported
+	for( i = 0; i < numModelLoaders; i++ )
+	{
+		if (i == orgLoader)
+			continue;
+
+		snprintf( altName, sizeof (altName), "%s.%s", localName, modelLoaders[ i ].ext );
+
+		// Load
+		hModel = modelLoaders[ i ].ModelLoader( altName, mod );
+
+		if( hModel )
+		{
+            /*
+			if( orgNameFailed )
+			{
+				ri.Printf( PRINT_DEVELOPER, "WARNING: %s not present, using %s instead\n", name, altName );
+			}
+            */
+			break;
+		}
+	}
+
+	return hModel;
+}
+
+
+static qboolean R_LoadMD3(model_t* mod, int lod, void *buffer, const char* modName)
+{
+	int	i, j;
+
     md3Frame_t			*frame;
 	md3Surface_t		*surf;
 	md3Shader_t			*shader;
@@ -202,20 +311,19 @@ static qboolean R_LoadMD3(model_t *mod, int lod, void *buffer, const char *mod_n
 	md3XyzNormal_t		*xyz;
 	md3Tag_t			*tag;
 
-
 	md3Header_t* pinmodel = (md3Header_t *)buffer;
 
 	int version = LittleLong(pinmodel->version);
-	if (version != MD3_VERSION)
-    {
-		ri.Printf( PRINT_WARNING, "R_LoadMD3: %s has wrong version (%i should be %i)\n", mod_name, version, MD3_VERSION);
+	if(version != MD3_VERSION)
+	{
+		ri.Printf(PRINT_WARNING, "R_LoadMD3: %s has wrong version (%i should be %i)\n", modName, version, MD3_VERSION);
 		return qfalse;
 	}
 
 	mod->type = MOD_MESH;
 	int size = LittleLong(pinmodel->ofsEnd);
 	mod->dataSize += size;
-	mod->md3[lod] = ri.Hunk_Alloc( size, h_low );
+	mod->md3[lod] = ri.Hunk_Alloc(size, h_low);
     pinmodel->ofsEnd = LittleLong(pinmodel->ofsEnd);
 	memcpy(mod->md3[lod], buffer, pinmodel->ofsEnd);
 
@@ -231,19 +339,20 @@ static qboolean R_LoadMD3(model_t *mod, int lod, void *buffer, const char *mod_n
 
 	if( mod->md3[lod]->numFrames < 1 )
     {
-		ri.Printf( PRINT_WARNING, "R_LoadMD3: %s has no frames\n", mod_name );
+		ri.Printf( PRINT_WARNING, "R_LoadMD3: %s has no frames\n", modName);
 		return qfalse;
 	}
-    
+
 	// swap all the frames
     frame = (md3Frame_t *) ( (unsigned char *)mod->md3[lod] + mod->md3[lod]->ofsFrames );
     for ( i = 0 ; i < mod->md3[lod]->numFrames ; i++, frame++)
     {
     	frame->radius = LittleFloat( frame->radius );
-        for ( j = 0 ; j < 3 ; j++ ) {
-            frame->bounds[0][j] = LittleFloat( frame->bounds[0][j] );
-            frame->bounds[1][j] = LittleFloat( frame->bounds[1][j] );
-	    	frame->localOrigin[j] = LittleFloat( frame->localOrigin[j] );
+        for ( j = 0 ; j < 3 ; j++ )
+		{
+            frame->bounds[0][j] = LittleFloat(frame->bounds[0][j]);
+            frame->bounds[1][j] = LittleFloat(frame->bounds[1][j]);
+	    	frame->localOrigin[j] = LittleFloat(frame->localOrigin[j]);
         }
 	}
 
@@ -277,12 +386,12 @@ static qboolean R_LoadMD3(model_t *mod, int lod, void *buffer, const char *mod_n
 		if ( surf->numVerts >= SHADER_MAX_VERTEXES )
         {
 			ri.Printf(PRINT_WARNING, "R_LoadMD3: %s has more than %i verts on %s (%i).\n",
-				mod_name, SHADER_MAX_VERTEXES - 1, surf->name[0] ? surf->name : "a surface", surf->numVerts );
+				modName, SHADER_MAX_VERTEXES - 1, surf->name[0] ? surf->name : "a surface", surf->numVerts );
 			return qfalse;
 		}
 		if ( surf->numTriangles*3 >= SHADER_MAX_INDEXES ) {
 			ri.Printf(PRINT_WARNING, "R_LoadMD3: %s has more than %i triangles on %s (%i).\n",
-				mod_name, ( SHADER_MAX_INDEXES / 3 ) - 1, surf->name[0] ? surf->name : "a surface",	surf->numTriangles );
+				modName, ( SHADER_MAX_INDEXES / 3 ) - 1, surf->name[0] ? surf->name : "a surface",	surf->numTriangles );
 			return qfalse;
 		}
 	
@@ -290,24 +399,27 @@ static qboolean R_LoadMD3(model_t *mod, int lod, void *buffer, const char *mod_n
 		surf->ident = SF_MD3;
 
 		// lowercase the surface name so skin compares are faster
-		Q_strlwr( surf->name );
+		Q_strlwr(surf->name);
 
 		// strip off a trailing _1 or _2
 		// this is a crutch for q3data being a mess
-		j = strlen( surf->name );
-		if ( j > 2 && surf->name[j-2] == '_' ) {
+		j = strlen(surf->name);
+		if((j > 2) && (surf->name[j-2] == '_') )
+		{
 			surf->name[j-2] = 0;
 		}
 
         // register the shaders
         shader = (md3Shader_t *) ( (byte *)surf + surf->ofsShaders );
-        for ( j = 0 ; j < surf->numShaders ; j++, shader++ )
+        for(j = 0; j < surf->numShaders; j++, shader++)
         {
-            shader_t *sh;
-            sh = R_FindShader( shader->name, LIGHTMAP_NONE, qtrue );
-			if ( sh->defaultShader ) {
+            shader_t* sh = R_FindShader(shader->name, LIGHTMAP_NONE, qtrue);
+			if(sh->defaultShader)
+			{
 				shader->shaderIndex = 0;
-			} else {
+			}
+			else
+			{
 				shader->shaderIndex = sh->index;
 			}
         }
@@ -347,6 +459,9 @@ static qboolean R_LoadMD3(model_t *mod, int lod, void *buffer, const char *mod_n
     
 	return qtrue;
 }
+
+
+
 
 
 /*
@@ -467,7 +582,7 @@ static void MC_UnCompress(float mat[3][4],const unsigned char * comp)
 static qboolean R_LoadMDR( model_t *mod, void *buffer, int filesize, const char *mod_name ) 
 {
 	int					i, j, k, l;
-	mdrHeader_t			*pinmodel, *mdr;
+	mdrHeader_t* mdr;
 	mdrFrame_t			*frame;
 	mdrLOD_t			*lod, *curlod;
 	mdrSurface_t		*surf, *cursurf;
@@ -477,17 +592,26 @@ static qboolean R_LoadMDR( model_t *mod, void *buffer, int filesize, const char 
 	mdrTag_t			*tag, *curtag;
 	shader_t			*sh;
 
-	pinmodel = (mdrHeader_t *)buffer;
+	mdrHeader_t* pinmodel = (mdrHeader_t *)buffer;
+
+    #if defined( Q3_LITTLE_ENDIAN )
 
 	pinmodel->version = LittleLong(pinmodel->version);
+
+    #endif
+
 	if (pinmodel->version != MDR_VERSION) 
 	{
 		ri.Printf(PRINT_WARNING, "R_LoadMDR: %s has wrong version (%i should be %i)\n", mod_name, pinmodel->version, MDR_VERSION);
 		return qfalse;
 	}
 
+    #if defined( Q3_LITTLE_ENDIAN )
 	int size = LittleLong(pinmodel->ofsEnd);
-	
+    #else
+	int size = pinmodel->ofsEnd;
+    #endif
+
 	if(size > filesize)
 	{
 		ri.Printf(PRINT_WARNING, "R_LoadMDR: Header of %s is broken. Wrong filesize declared!\n", mod_name);
@@ -546,10 +670,10 @@ static qboolean R_LoadMDR( model_t *mod, void *buffer, int filesize, const char 
 		
 	if (pinmodel->ofsFrames < 0)
 	{
-		mdrCompFrame_t *cframe;
 				
-		// compressed model...				
-		cframe = (mdrCompFrame_t *)((byte *) pinmodel - pinmodel->ofsFrames);
+		// compressed model..
+        unsigned char *pTem = ((unsigned char *) pinmodel - pinmodel->ofsFrames);
+		mdrCompFrame_t* cframe = (mdrCompFrame_t *)pTem;
 		
 		for(i = 0; i < mdr->numFrames; i++)
 		{
@@ -565,6 +689,7 @@ static qboolean R_LoadMDR( model_t *mod, void *buffer, int filesize, const char 
 			
 			for(j = 0; j < mdr->numBones; j++)
 			{
+#if defined( Q3_BIG_ENDIAN )
 				for(k = 0; k < (sizeof(cframe->bones[j].Comp) / 2); k++)
 				{
 					// Do swapping for the uncompressing functions. They seem to use shorts
@@ -574,24 +699,30 @@ static qboolean R_LoadMDR( model_t *mod, void *buffer, int filesize, const char 
 					((unsigned short *)(cframe->bones[j].Comp))[k] =
 						LittleShort( ((unsigned short *)(cframe->bones[j].Comp))[k] );
 				}
-				
+#endif				
 				/* Now do the actual uncompressing */
 				MC_UnCompress(frame->bones[j].matrix, cframe->bones[j].Comp);
 			}
 			
-			// Next Frame...
-			cframe = (mdrCompFrame_t *) &cframe->bones[j];
-			frame = (mdrFrame_t *) &frame->bones[j];
+            {
+			    // Next Frame...
+                mdrCompBone_t *p = &(cframe->bones[j]);
+			    cframe = (mdrCompFrame_t *) p;
+            }
+
+            {
+                mdrBone_t *p = &frame->bones[j];
+                frame = (mdrFrame_t *) p;
+            }
 		}
 	}
 	else
 	{
-		mdrFrame_t *curframe;
 		
 		// uncompressed model...
 		//
     
-		curframe = (mdrFrame_t *)((byte *) pinmodel + pinmodel->ofsFrames);
+		mdrFrame_t* curframe = (mdrFrame_t *)((byte *) pinmodel + pinmodel->ofsFrames);
 		
 		// swap all the frames
 		for ( i = 0 ; i < mdr->numFrames ; i++) 
@@ -605,14 +736,30 @@ static qboolean R_LoadMDR( model_t *mod, void *buffer, int filesize, const char 
 			
 			frame->radius = LittleFloat(curframe->radius);
 			Q_strncpyz(frame->name, curframe->name, sizeof(frame->name));
-			
-			for (j = 0; j < (int) (mdr->numBones * sizeof(mdrBone_t) / 4); j++) 
+	
+            
+#if defined( Q3_BIG_ENDIAN )
+            for (j = 0; j < (int) (mdr->numBones * sizeof(mdrBone_t) / 4); j++) 
 			{
-				((float *)frame->bones)[j] = LittleFloat( ((float *)curframe->bones)[j] );
-			}
-			
-			curframe = (mdrFrame_t *) &curframe->bones[mdr->numBones];
-			frame = (mdrFrame_t *) &frame->bones[mdr->numBones];
+
+				((float *)frame->bones)[j] = FloatSwap( &((float *)curframe->bones)[j] );
+            }
+#else
+            for (j = 0; j < mdr->numBones; j++) 
+			{
+                frame->bones[j] = curframe->bones[j];
+            }
+#endif		
+
+            {
+			    mdrBone_t* p = &curframe->bones[mdr->numBones];
+                curframe = (mdrFrame_t *) p;
+            }
+
+            {
+                mdrBone_t* p = &frame->bones[mdr->numBones];
+                frame = (mdrFrame_t *) p;
+            }
 		}
 	}
 	
@@ -804,17 +951,14 @@ static md3Tag_t *R_GetTag(md3Header_t *mod, int frame, const char *tagName)
 	md3Tag_t *tag;
 	int	i;
 
-	if( frame >= mod->numFrames )
-    {
+	if ( frame >= mod->numFrames ) {
 		// it is possible to have a bad frame while changing models, so don't error
 		frame = mod->numFrames - 1;
 	}
 
 	tag = (md3Tag_t *)((byte *)mod + mod->ofsTags) + frame * mod->numTags;
-	for ( i = 0 ; i < mod->numTags ; i++, tag++ )
-    {
-		if ( !strcmp( tag->name, tagName ) )
-        {
+	for ( i = 0 ; i < mod->numTags ; i++, tag++ ) {
+		if ( !strcmp( tag->name, tagName ) ) {
 			return tag;	// found it
 		}
 	}
@@ -860,10 +1004,7 @@ static void R_GetAnimTag( mdrHeader_t *mod, int framenum, const char *tagName, m
 			return;
 		}
 	}
-
-	AxisClear( dest->axis );
-	VectorClear( dest->origin );
-	strcpy(dest->name, "");
+    memset(dest, 0, sizeof(md3Tag_t));
 }
 
 
@@ -874,8 +1015,9 @@ static void R_GetAnimTag( mdrHeader_t *mod, int framenum, const char *tagName, m
 model_t	*R_GetModelByHandle( qhandle_t index )
 {
 	// out of range gets the defualt model
-	if ( index < 1 || index >= tr.numModels )
+	if ( index < 1 || index >= tr.numModels ) {
 		return tr.models[0];
+	}
 
 	return tr.models[index];
 }
@@ -897,6 +1039,14 @@ model_t *R_AllocModel( void )
 	return mod;
 }
 
+/*
+====================
+RE_RegisterModel: Loads in a model for the given name
+
+Zero will be returned if the model fails to load.
+An entry will be retained for failed models as an optimization to prevent disk rescanning if they are asked for again.
+====================
+*/
 
 
 void R_Modellist_f( void )
@@ -908,9 +1058,9 @@ void R_Modellist_f( void )
     {
 		model_t	*mod = tr.models[i];
 		int lods = 1;
-		for(j = 1; j < MD3_MAX_LODS; j++)
+		for ( j = 1 ; j < MD3_MAX_LODS ; j++ )
         {
-			if( mod->md3[j] && mod->md3[j] != mod->md3[j-1] )
+			if ( mod->md3[j] && mod->md3[j] != mod->md3[j-1] )
             {
 				lods++;
 			}
@@ -924,135 +1074,12 @@ void R_Modellist_f( void )
 
 
 //=============================================================================
-/*
-====================
-RE_RegisterModel: Loads in a model for the given name
+// leilei - wrapper function to get alternate models loaded
 
-Zero will be returned if the model fails to load.
-An entry will be retained for failed models as an optimization to prevent disk rescanning if they are asked for again.
-====================
-*/
 qhandle_t RE_RegisterModel( const char *name )
 {
-	model_t		*mod;
-	qhandle_t	hModel;
-	qboolean	orgNameFailed = qfalse;
-	int			orgLoader = -1;
-	int			i;
-	char		localName[ MAX_QPATH ];
-	char		altName[ MAX_QPATH ];
-
-
-
-	if ( !name || !name[0] )
-    {
-		ri.Printf( PRINT_ALL, "RE_RegisterModel: NULL name\n" );
-		return 0;
-	}
-
-	if ( strlen( name ) >= MAX_QPATH )
-    {
-		ri.Printf( PRINT_ALL, "Model name exceeds MAX_QPATH\n" );
-		return 0;
-	}
-
-	//
-	// search the currently loaded models
-	//
-	for(hModel = 1 ; hModel < tr.numModels; hModel++)
-    {
-		mod = tr.models[hModel];
-		if ( !strcmp( mod->name, name ) )
-        {
-			if( mod->type == MOD_BAD )
-            {
-				return 0;
-			}
-			return hModel;
-		}
-	}
-
-	// allocate a new model_t
-
-	if( ( mod = R_AllocModel() ) == NULL )
-    {
-		ri.Printf( PRINT_WARNING, "RE_RegisterModel: R_AllocModel() failed for '%s'\n", name);
-		return 0;
-	}
-
-	// only set the name after the model has been successfully loaded
-	Q_strncpyz( mod->name, name, sizeof( mod->name ) );
-
-	R_IssuePendingRenderCommands();
-
-	mod->type = MOD_BAD;
-	mod->numLods = 0;
-
-	//
-	// load the files
-	//
-	Q_strncpyz( localName, name, MAX_QPATH );
-
-	const char* ext = getExtension( localName );
-
-	if( *ext )
-	{
-		// Look for the correct loader and use it
-		for( i = 0; i < numModelLoaders; i++ )
-		{
-			if( !Q_stricmp( ext, modelLoaders[ i ].ext ) )
-			{
-				// Load
-				hModel = modelLoaders[ i ].ModelLoader( localName, mod );
-				break;
-			}
-		}
-
-		// A loader was found
-		if( i < numModelLoaders )
-		{
-			if( !hModel )
-			{
-				// Loader failed, most likely because the file isn't there;
-				// try again without the extension
-				orgNameFailed = qtrue;
-				orgLoader = i;
-				stripExtension( name, localName, MAX_QPATH );
-			}
-			else
-			{
-				// Something loaded
-				return mod->index;
-			}
-		}
-	}
-
-	// Try and find a suitable match using all
-	// the model formats supported
-	for( i = 0; i < numModelLoaders; i++ )
-	{
-		if (i == orgLoader)
-			continue;
-
-		Com_sprintf( altName, sizeof (altName), "%s.%s", localName, modelLoaders[ i ].ext );
-
-		// Load
-		hModel = modelLoaders[ i ].ModelLoader( altName, mod );
-
-		if( hModel )
-		{
-			if( orgNameFailed )
-			{
-				ri.Printf( PRINT_DEVELOPER, "WARNING: %s not present, using %s instead\n", name, altName );
-			}
-
-			break;
-		}
-	}
-
-	return hModel;
+	return RE_RegisterModelReal( name );	// OK!!!
 }
-
 
 
 int R_LerpTag( orientation_t *tag, qhandle_t handle, int startFrame, int endFrame, float frac, const char *tagName )
@@ -1078,9 +1105,7 @@ int R_LerpTag( orientation_t *tag, qhandle_t handle, int startFrame, int endFram
 					startFrame, endFrame,
 					frac, tagName );
 		} else {
-
-			AxisClear( tag->axis );
-			VectorClear( tag->origin );
+            memset(tag, 0, sizeof(orientation_t));
 			return qfalse;
 
 		}
@@ -1089,13 +1114,14 @@ int R_LerpTag( orientation_t *tag, qhandle_t handle, int startFrame, int endFram
 	{
 		start = R_GetTag( model->md3[0], startFrame, tagName );
 		end = R_GetTag( model->md3[0], endFrame, tagName );
+
 		if ( !start || !end ) {
-			AxisClear( tag->axis );
-			VectorClear( tag->origin );
+            memset(tag, 0, sizeof(orientation_t));
+
 			return qfalse;
 		}
 	}
-	
+
 	frontLerp = frac;
 	backLerp = 1.0f - frac;
 
@@ -1105,45 +1131,45 @@ int R_LerpTag( orientation_t *tag, qhandle_t handle, int startFrame, int endFram
 		tag->axis[1][i] = start->axis[1][i] * backLerp +  end->axis[1][i] * frontLerp;
 		tag->axis[2][i] = start->axis[2][i] * backLerp +  end->axis[2][i] * frontLerp;
 	}
-	FastVectorNormalize( tag->axis[0] );
-	FastVectorNormalize( tag->axis[1] );
-	FastVectorNormalize( tag->axis[2] );
+	VectorNormalize( tag->axis[0] );
+	VectorNormalize( tag->axis[1] );
+	VectorNormalize( tag->axis[2] );
 	return qtrue;
 }
 
 
 void R_ModelBounds( qhandle_t handle, vec3_t mins, vec3_t maxs )
 {
-	model_t	*model = R_GetModelByHandle( handle );
+	model_t* model = R_GetModelByHandle( handle );
 
 	if(model->type == MOD_BRUSH)
-    {
+	{
 		VectorCopy( model->bmodel->bounds[0], mins );
 		VectorCopy( model->bmodel->bounds[1], maxs );
 		return;
 	}
-    else if (model->type == MOD_MESH)
-    {
-		md3Header_t	*header = model->md3[0];
-		md3Frame_t	*frame = (md3Frame_t *) ((byte *)header + header->ofsFrames);
+	else if (model->type == MOD_MESH)
+	{
+		md3Header_t* header = model->md3[0];
+		md3Frame_t* frame = (md3Frame_t *) ((byte *)header + header->ofsFrames);
 
 		VectorCopy( frame->bounds[0], mins );
 		VectorCopy( frame->bounds[1], maxs );
 		return;
 	}
-    else if (model->type == MOD_MDR)
-    {
-		mdrHeader_t	*header = (mdrHeader_t *)model->modelData;
-		mdrFrame_t	*frame = (mdrFrame_t *) ((byte *)header + header->ofsFrames);
-				
+	else if (model->type == MOD_MDR)
+	{
+		mdrHeader_t* header = (mdrHeader_t *)model->modelData;
+		mdrFrame_t* frame = (mdrFrame_t *) ((byte *)header + header->ofsFrames);
+
 		VectorCopy( frame->bounds[0], mins );
 		VectorCopy( frame->bounds[1], maxs );
 		return;
 	}
-    else if(model->type == MOD_IQM)
-    {
+	else if(model->type == MOD_IQM)
+	{
 		iqmData_t *iqmData = model->modelData;
-		
+
 		if(iqmData->bounds)
 		{
 			VectorCopy(iqmData->bounds, mins);
@@ -1159,8 +1185,7 @@ void R_ModelBounds( qhandle_t handle, vec3_t mins, vec3_t maxs )
 void R_ModelInit( void )
 {
 	model_t	*mod = ri.Hunk_Alloc( sizeof( *tr.models[0] ), h_low );
-  
-    // leave a space for NULL model
+	// leave a space for NULL model
 	mod->index = tr.numModels = 0;
     mod->type = MOD_BAD;
 

@@ -94,8 +94,8 @@ typedef struct {
 	qboolean			looping, holdAtEnd, dirty, alterGameState, silent, shader;
 	fileHandle_t		iFile;
 	e_status			status;
-	unsigned int		startTime;
-	unsigned int		lastTime;
+	int					startTime;
+	int					lastTime;
 	long				tfps;
 	long				RoQPlayed;
 	long				ROQSize;
@@ -579,19 +579,22 @@ static unsigned short yuv_to_rgb( long y, long u, long v )
 	
 	if (r<0)
 		r = 0;
-	else if (r > 31)
+	else if(r > 31)
 		r = 31;
-	
+
+
 	if (g<0)
 		g = 0;
 	else if (g > 63)
 		g = 63;
-	
+
+
 	if (b<0)
 		b = 0;
 	else if (b > 31)
 		b = 31;
 
+	
 	return (unsigned short)((r<<11)+(g<<5)+(b));
 }
 
@@ -604,29 +607,28 @@ static unsigned short yuv_to_rgb( long y, long u, long v )
 ******************************************************************************/
 static unsigned int yuv_to_rgb24( long y, long u, long v )
 { 
-	long YY = ROQ_YY_tab[(y)];
+	long r,g,b,YY = (long)(ROQ_YY_tab[(y)]);
 
-	long r = (YY + ROQ_VR_tab[v]) >> 6;
-	long g = (YY + ROQ_UG_tab[u] + ROQ_VG_tab[v]) >> 6;
-	long b = (YY + ROQ_UB_tab[u]) >> 6;
+	r = (YY + ROQ_VR_tab[v]) >> 6;
+	g = (YY + ROQ_UG_tab[u] + ROQ_VG_tab[v]) >> 6;
+	b = (YY + ROQ_UB_tab[u]) >> 6;
 	
 	if (r<0)
-        r = 0;
-    else if (r > 255)
-        r = 255; 
-    
-    if (g<0)
-        g = 0;
-    else if (g > 255)
-        g = 255; 
-    
-    if (b<0)
-        b = 0;
-    else if (b > 255)
-        b = 255;
+		r = 0;
+	else if (r > 255)
+		r = 255; 
 	
-//	return LittleLong ((r)|(g<<8)|(b<<16)|(255<<24));
-	return LittleLong ((unsigned long)((r)|(g<<8)|(b<<16))|(255UL<<24));
+	if (g<0)
+		g = 0;
+	else if (g > 255)
+		g = 255;	
+	
+	if (b<0)
+		b = 0;
+	else if (b > 255)
+		b = 255;
+	
+	return LittleLong ((r)|(g<<8)|(b<<16)|(255<<24));
 }
 
 /******************************************************************************
@@ -637,12 +639,12 @@ static unsigned int yuv_to_rgb24( long y, long u, long v )
 *
 ******************************************************************************/
 
-static void decodeCodeBook( unsigned char* input, unsigned short roq_flags )
+static void decodeCodeBook( byte *input, unsigned short roq_flags )
 {
 	long	i, j, two, four;
 	unsigned short	*aptr, *bptr, *cptr, *dptr;
 	long	y0,y1,y2,y3,cr,cb;
-	unsigned char* bbptr, *baptr, *bcptr, *bdptr;
+	byte	*bbptr, *baptr, *bcptr, *bdptr;
 	union {
 		unsigned int *i;
 		unsigned short *s;
@@ -1301,9 +1303,12 @@ static void RoQShutdown( void ) {
 	currentHandle = -1;
 }
 
-
-e_status CIN_StopCinematic(int handle)
-{
+/*
+==================
+CIN_StopCinematic
+==================
+*/
+e_status CIN_StopCinematic(int handle) {
 	
 	if (handle < 0 || handle>= MAX_VIDEO_HANDLES || cinTable[handle].status == FMV_EOF) return FMV_EOF;
 	currentHandle = handle;
@@ -1337,8 +1342,7 @@ Fetch and decompress the pending frame
 e_status CIN_RunCinematic (int handle)
 {
 	int	start = 0;
-	int thisTime = 0;
-
+	int     thisTime = 0;
 
 	if (handle < 0 || handle>= MAX_VIDEO_HANDLES || cinTable[handle].status == FMV_EOF) return FMV_EOF;
 
@@ -1575,10 +1579,9 @@ void CIN_ResampleCinematic(int handle, int *buf2) {
 CIN_DrawCinematic
 ==================
 */
-void CIN_DrawCinematic (int handle)
-{
+void CIN_DrawCinematic (int handle) {
 	float	x, y, w, h;
-	unsigned char* buf;
+	byte	*buf;
 
 	if (handle < 0 || handle>= MAX_VIDEO_HANDLES || cinTable[handle].status == FMV_EOF) return;
 
@@ -1610,6 +1613,16 @@ void CIN_DrawCinematic (int handle)
 	cinTable[handle].dirty = qfalse;
 }
 
+
+void SCR_RunCinematic (void)
+{
+	if (CL_handle >= 0 && CL_handle < MAX_VIDEO_HANDLES)
+    {
+		CIN_RunCinematic(CL_handle);
+	}
+}
+
+
 void CL_PlayCinematic_f(void)
 {
 	int bits = CIN_system;
@@ -1639,39 +1652,31 @@ void CL_PlayCinematic_f(void)
         {
 			SCR_RunCinematic();
 		}
-		while (cinTable[currentHandle].buf == NULL && cinTable[currentHandle].status == FMV_PLAY);
-		// wait for first frame (load codebook and sound)
+        while (cinTable[currentHandle].buf == NULL && cinTable[currentHandle].status == FMV_PLAY);
+        // wait for first frame (load codebook and sound)
 	}
 }
 
 
-void SCR_DrawCinematic (void)
-{
-	if (CL_handle >= 0 && CL_handle < MAX_VIDEO_HANDLES)
-    {
+void SCR_DrawCinematic (void) {
+	if (CL_handle >= 0 && CL_handle < MAX_VIDEO_HANDLES) {
 		CIN_DrawCinematic(CL_handle);
 	}
 }
 
-void SCR_RunCinematic (void)
-{
-	if (CL_handle >= 0 && CL_handle < MAX_VIDEO_HANDLES)
-		CIN_RunCinematic(CL_handle);
-}
 
 
 void SCR_StopCinematic(void)
 {
 	if (CL_handle >= 0 && CL_handle < MAX_VIDEO_HANDLES)
-	{
+    {
 		CIN_StopCinematic(CL_handle);
 		S_StopAllSounds ();
 		CL_handle = -1;
 	}
 }
 
-void CIN_UploadCinematic(int handle)
-{
+void CIN_UploadCinematic(int handle) {
 	if (handle >= 0 && handle < MAX_VIDEO_HANDLES) {
 		if (!cinTable[handle].buf) {
 			return;

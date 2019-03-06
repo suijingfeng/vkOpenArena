@@ -22,9 +22,6 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 // tr_shade_calc.c
 
 #include "tr_local.h"
-#if idppc_altivec && !defined(__APPLE__)
-#include <altivec.h>
-#endif
 
 
 #define	WAVEVALUE( table, base, amplitude, phase, freq )  ((base) + table[ ( (int64_t) ( ( (phase) + tess.shaderTime * (freq) ) * FUNCTABLE_SIZE ) ) & FUNCTABLE_MASK ] * (amplitude))
@@ -163,17 +160,16 @@ Wiggle the normals for wavy environment mapping
 */
 void RB_CalcDeformNormals( deformStage_t *ds ) {
 	int i;
-	float* xyz = ( float * ) tess.xyz;
-	int16_t* normal = tess.normal[0];
+	float	scale;
+	float	*xyz = ( float * ) tess.xyz;
+	int16_t *normal = tess.normal[0];
 
-	for ( i = 0; i < tess.numVertexes; i++, xyz += 4, normal += 4 )
-	{
-
+	for ( i = 0; i < tess.numVertexes; i++, xyz += 4, normal += 4 ) {
 		vec3_t fNormal;
 
 		R_VaoUnpackNormal(fNormal, normal);
 
-		float scale = 0.98f;
+		scale = 0.98f;
 		scale = R_NoiseGet4f( xyz[0] * scale, xyz[1] * scale, xyz[2] * scale,
 			tess.shaderTime * ds->deformationWave.frequency );
 		fNormal[ 0 ] += ds->deformationWave.amplitude * scale;
@@ -185,11 +181,10 @@ void RB_CalcDeformNormals( deformStage_t *ds ) {
 
 		scale = 0.98f;
 		scale = R_NoiseGet4f( 200 + xyz[0] * scale, xyz[1] * scale, xyz[2] * scale,
-		tess.shaderTime * ds->deformationWave.frequency );
-		
+			tess.shaderTime * ds->deformationWave.frequency );
 		fNormal[ 2 ] += ds->deformationWave.amplitude * scale;
 
-		FastVectorNormalize( fNormal );
+		FastNormalize1f( fNormal );
 
 		R_VaoPackNormal(normal, fNormal);
 	}
@@ -206,7 +201,9 @@ void RB_CalcBulgeVertexes( deformStage_t *ds ) {
 	const float *st = ( const float * ) tess.texCoords[0];
 	float		*xyz = ( float * ) tess.xyz;
 	int16_t	*normal = tess.normal[0];
-	double now = backEnd.refdef.time * 0.001 * ds->bulgeSpeed;
+	double		now;
+
+	now = backEnd.refdef.time * 0.001 * ds->bulgeSpeed;
 
 	for ( i = 0; i < tess.numVertexes; i++, xyz += 4, st += 2, normal += 4 ) {
 		int64_t off;
@@ -358,7 +355,7 @@ static void AutospriteDeform( void ) {
 	int		i;
 	int		oldVerts;
 	float	*xyz;
-	vec3_t	mid, delta;
+	vec3_t	mid;
 	float	radius;
 	vec3_t	left, up;
 	vec3_t	leftDir, upDir;
@@ -383,7 +380,9 @@ static void AutospriteDeform( void ) {
 		VectorCopy( backEnd.viewParms.or.axis[2], upDir );
 	}
 
-	for ( i = 0 ; i < oldVerts ; i+=4 ) {
+	for ( i = 0 ; i < oldVerts ; i+=4 )
+    {
+        float delta[3];
 		vec4_t color;
 		// find the midpoint
 		xyz = tess.xyz[i];
@@ -393,29 +392,32 @@ static void AutospriteDeform( void ) {
 		mid[2] = 0.25f * (xyz[2] + xyz[6] + xyz[10] + xyz[14]);
 
 		VectorSubtract( xyz, mid, delta );
-		radius = VectorLength( delta ) * 0.707f;		// / sqrt(2)
+		radius = sqrtf( delta[0]*delta[0] + delta[1]*delta[1] + delta[2]*delta[2]) * 0.707f;		// / sqrt(2)
 
 		VectorScale( leftDir, radius, left );
 		VectorScale( upDir, radius, up );
 
 		if ( backEnd.viewParms.isMirror ) {
-			VectorSubtract( vec3_origin, left, left );
+			VectorSubtract( ORIGIN, left, left );
 		}
 
 	  // compensate for scale in the axes if necessary
-  	if ( backEnd.currentEntity->e.nonNormalizedAxes ) {
-      float axisLength;
-		  axisLength = VectorLength( backEnd.currentEntity->e.axis[0] );
-  		if ( !axisLength ) {
-	  		axisLength = 0;
-  		} else {
-	  		axisLength = 1.0f / axisLength;
-  		}
-      VectorScale(left, axisLength, left);
-      VectorScale(up, axisLength, up);
+  	if ( backEnd.currentEntity->e.nonNormalizedAxes )
+    {
+        float square = backEnd.currentEntity->e.axis[0][0] * backEnd.currentEntity->e.axis[0][0]
+            + backEnd.currentEntity->e.axis[0][1] * backEnd.currentEntity->e.axis[0][1] 
+            + backEnd.currentEntity->e.axis[0][2] * backEnd.currentEntity->e.axis[0][2];
+        
+        float axisLength = 0;
+
+        if(square)
+            axisLength = 1.0f / sqrtf(square);
+
+        VectorScale(left, axisLength, left);
+        VectorScale(up, axisLength, up);
     }
 
-		VectorScale4(tess.color[i], 1.0f / 65535.0f, color);
+		VectorScale4(tess.vertexColors[i], 1.0f / 65535.0f, color);
 		RB_AddQuadStamp( mid, left, up, color );
 	}
 }
@@ -508,7 +510,7 @@ static void Autosprite2Deform( void ) {
 
 		// cross this with the view direction to get minor axis
 		CrossProduct( major, forward, minor );
-		FastVectorNormalize( minor );
+		VectorNormalize( minor );
 		
 		// re-project the points
 		for ( j = 0 ; j < 2 ; j++ ) {

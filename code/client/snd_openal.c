@@ -50,7 +50,7 @@ static qboolean enumeration_all_ext = qfalse;
 #ifdef USE_VOIP
 static qboolean capture_ext = qfalse;
 #endif
-extern int xmpspeed; 		// leilei
+// extern int xmpspeed; // leilei
 
 /*
 =================
@@ -153,7 +153,6 @@ static alSfx_t knownSfx[MAX_SFX];
 static sfxHandle_t numSfx = 0;
 
 static sfxHandle_t default_sfx;
-
 
 /*
 =================
@@ -583,7 +582,7 @@ typedef struct src_s
 	qboolean	local;			// Is this local (relative to the cam)
 } src_t;
 
-#ifdef MACOS_X
+#ifdef __APPLE__
 	#define MAX_SRC 64
 #else
 	#define MAX_SRC 128
@@ -881,7 +880,9 @@ static void S_AL_NewLoopMaster(src_t *rmSource, qboolean iskilled)
 {
 	int index;
 	src_t *curSource = NULL;
-	alSfx_t *curSfx = &knownSfx[rmSource->sfx];
+	alSfx_t *curSfx;
+	
+	curSfx = &knownSfx[rmSource->sfx];
 
 	if(rmSource->isPlaying)
 		curSfx->loopActiveCnt--;
@@ -899,7 +900,8 @@ static void S_AL_NewLoopMaster(src_t *rmSource, qboolean iskilled)
 				S_AL_SaveLoopPos(rmSource, rmSource->alSource);
 			}
 		}
-        else if((curSfx->masterLoopSrc != -1) && (rmSource == &srcList[curSfx->masterLoopSrc]))
+		else if((curSfx->masterLoopSrc != -1) &&
+		        (rmSource == &srcList[curSfx->masterLoopSrc]))
 		{
 			int firstInactive = -1;
 
@@ -2205,9 +2207,11 @@ static ALCdevice *alCaptureDevice;
 static cvar_t *s_alCapture;
 #endif
 
-#ifdef _WIN32
+#if defined(_WIN64)
+#define ALDRIVER_DEFAULT "OpenAL64.dll"
+#elif defined(_WIN32)
 #define ALDRIVER_DEFAULT "OpenAL32.dll"
-#elif defined(MACOS_X)
+#elif defined(__APPLE__)
 #define ALDRIVER_DEFAULT "/System/Library/Frameworks/OpenAL.framework/OpenAL"
 #elif defined(__OpenBSD__)
 #define ALDRIVER_DEFAULT "libopenal.so"
@@ -2235,8 +2239,7 @@ void S_AL_StopAllSounds( void )
 S_AL_Respatialize
 =================
 */
-static
-void S_AL_Respatialize( int entityNum, const vec3_t origin, vec3_t axis[3], int inwater )
+static void S_AL_Respatialize( int entityNum, const vec3_t origin, vec3_t axis[3], int inwater )
 {
 	float		orientation[6];
 	vec3_t	sorigin;
@@ -2442,8 +2445,7 @@ static void S_AL_SoundInfo(void)
 S_AL_Shutdown
 =================
 */
-static
-void S_AL_Shutdown( void )
+static void S_AL_Shutdown( void )
 {
 	// Shut down everything
 	int i;
@@ -2516,9 +2518,7 @@ qboolean S_AL_Init( soundInterface_t *si )
 	s_alInputDevice = Cvar_Get( "s_alInputDevice", "", CVAR_ARCHIVE | CVAR_LATCH );
 	s_alDevice = Cvar_Get("s_alDevice", "", CVAR_ARCHIVE | CVAR_LATCH);
 
-
-	xmpspeed = 48000; // leilei - force it to 48000 which is the native mixing rate post-ac'97
-
+	// xmpspeed = 48000; // leilei - force it to 48000 which is the native mixing rate post-ac'97
 	// Load QAL
 	if( !QAL_Init( s_alDriver->string ) )
 	{
@@ -2644,7 +2644,7 @@ qboolean S_AL_Init( soundInterface_t *si )
 #endif
 	else
 	{
-#ifdef MACOS_X
+#ifdef __APPLE__
 		// !!! FIXME: Apple has a 1.1-compliant OpenAL, which includes
 		// !!! FIXME:  capture support, but they don't list it in the
 		// !!! FIXME:  extension string. We need to check the version string,

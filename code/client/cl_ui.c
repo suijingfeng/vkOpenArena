@@ -21,12 +21,12 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 */
 
 #include "client.h"
-
+#include "../sdl/input.h"
 #include "../botlib/botlib.h"
 
 extern	botlib_export_t	*botlib_export;
 
-vm_t* uivm;
+vm_t *uivm;
 
 /*
 ====================
@@ -479,7 +479,8 @@ static void LAN_MarkServerVisible(int source, int n, qboolean visible ) {
 		serverInfo_t *server = NULL;
 		switch (source) {
 			case AS_LOCAL :
-				server = &cls.localServers[0]; break;
+				server = &cls.localServers[0];
+				break;
 			case AS_MPLAYER:
 			case AS_GLOBAL :
 				server = &cls.globalServers[0];
@@ -572,10 +573,15 @@ static void CL_GetGlconfig( glconfig_t *config ) {
 	*config = cls.glconfig;
 }
 
+/*
+====================
+CL_GetClipboardData
+====================
+*/
+static void CL_GetClipboardData( char *buf, int buflen ) {
+	char	*cbd;
 
-static void CL_GetClipboardData( char *buf, int buflen )
-{
-	char* cbd = Sys_GetClipboardData();
+	cbd = Sys_GetClipboardData();
 
 	if ( !cbd ) {
 		*buf = 0;
@@ -756,7 +762,7 @@ intptr_t CL_UISystemCalls(intptr_t *args)
             return FS_FOpenFileByMode(VM_ArgPtr( args[1]), VM_ArgPtr(args[2]) , args[3] );
 
         case UI_FS_READ:
-            FS_Read2( VM_ArgPtr(args[1]), args[2], args[3] );
+            FS_Read( VM_ArgPtr(args[1]), args[2], args[3] );
             return 0;
 
         case UI_FS_WRITE:
@@ -1064,14 +1070,14 @@ void CL_ShutdownUI( void )
 
 void CL_InitUI( void )
 {
-    Com_Printf("======== CL_InitUI() started. ========\n");
+	int	v;
 
 	// load the dll or bytecode
 	vmInterpret_t interpret = Cvar_VariableValue("vm_ui");
 	if(cl_connectedToPureServer)
 	{
 		// if sv_pure is set we only allow qvms to be loaded
-		if((interpret != VMI_COMPILED) && (interpret != VMI_BYTECODE))
+		if(interpret != VMI_COMPILED && interpret != VMI_BYTECODE)
 			interpret = VMI_COMPILED;
 	}
 
@@ -1080,11 +1086,10 @@ void CL_InitUI( void )
 		Com_Error( ERR_FATAL, "VM_Create on UI failed" );
 
 	// sanity check
-	int v = VM_Call( uivm, UI_GETAPIVERSION );
-
+	v = VM_Call( uivm, UI_GETAPIVERSION );
 	if (v == UI_OLD_API_VERSION)
     {
-		Com_Printf(S_COLOR_YELLOW " WARNING: loading old Quake III Arena User Interface version %d\n", v );
+		Com_Printf(S_COLOR_YELLOW "WARNING: loading old Quake III Arena User Interface version %d\n", v );
 		// init for this gamestate
 		VM_Call( uivm, UI_INIT, (clc.state >= CA_AUTHORIZING && clc.state < CA_ACTIVE));
 	}
@@ -1101,8 +1106,9 @@ void CL_InitUI( void )
 		// init for this gamestate
 		VM_Call( uivm, UI_INIT, (clc.state >= CA_AUTHORIZING && clc.state < CA_ACTIVE) );
 	}
-    
-    Com_Printf("======== CL_InitUI() finished. ========\n");
+
+    Com_Printf( "--- CL_InitUI() finished ---\n" );	
+
 }
 
 #ifndef STANDALONE

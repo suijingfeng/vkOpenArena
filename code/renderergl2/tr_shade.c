@@ -19,19 +19,16 @@ along with Quake III Arena source code; if not, write to the Free Software
 Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 ===========================================================================
 */
-// tr_shade.c
+
+/* 
+ * tr_shade.c
+ *
+ * THIS ENTIRE FILE IS BACK END
+ *
+ * This file deals with applying shaders to surface data in the tess struct.
+ */
 
 #include "tr_local.h" 
-#if idppc_altivec && !defined(__APPLE__)
-#include <altivec.h>
-#endif
-
-/*
-
-  THIS ENTIRE FILE IS BACK END
-
-  This file deals with applying shaders to surface data in the tess struct.
-*/
 
 
 /*
@@ -64,7 +61,8 @@ R_BindAnimatedImageToTMU
 
 =================
 */
-static void R_BindAnimatedImageToTMU( textureBundle_t *bundle, int tmu ) {
+static void R_BindAnimatedImageToTMU( textureBundle_t *bundle, int tmu )
+{
 	int64_t index;
 
 	if ( bundle->isVideoMap ) {
@@ -105,7 +103,8 @@ DrawTris
 Draws triangle outlines for debugging
 ================
 */
-static void DrawTris (shaderCommands_t *input) {
+static void DrawTris (shaderCommands_t *input)
+{
 	GL_BindToTMU( tr.whiteImage, TB_COLORMAP );
 
 	GL_State( GLS_POLYMODE_LINE | GLS_DEPTHMASK_TRUE );
@@ -129,16 +128,7 @@ static void DrawTris (shaderCommands_t *input) {
 }
 
 
-/*
-================
-DrawNormals
 
-Draws vertex normals for debugging
-================
-*/
-static void DrawNormals (shaderCommands_t *input) {
-	//FIXME: implement this
-}
 
 /*
 ==============
@@ -201,7 +191,8 @@ static void ComputeTexMods( shaderStage_t *pStage, int bundleNum, float *outMatr
 
 	outOffTurb[0] = 0.0f; outOffTurb[1] = 0.0f; outOffTurb[2] = 0.0f; outOffTurb[3] = 0.0f;
 
-	for ( tm = 0; tm < bundle->numTexMods ; tm++ ) {
+	for ( tm = 0; tm < bundle->numTexMods ; tm++ )
+    {
 		switch ( bundle->texMods[tm].type )
 		{
 			
@@ -287,10 +278,9 @@ static void ComputeDeformValues(int *deformGen, vec5_t deformParams)
 	*deformGen = DGEN_NONE;
 	if(!ShaderRequiresCPUDeforms(tess.shader))
 	{
-		deformStage_t  *ds;
 
 		// only support the first one
-		ds = &tess.shader->deforms[0];
+		deformStage_t* ds = &tess.shader->deforms[0];
 
 		switch (ds->deformation)
 		{
@@ -335,21 +325,20 @@ static void ProjectDlightTexture( void ) {
 
 	ComputeDeformValues(&deformGen, deformParams);
 
-	for ( l = 0 ; l < backEnd.refdef.num_dlights ; l++ ) {
-		dlight_t	*dl;
-		shaderProgram_t *sp;
+	for ( l = 0 ; l < backEnd.refdef.num_dlights ; l++ )
+    {
 		vec4_t vector;
 
 		if ( !( tess.dlightBits & ( 1 << l ) ) ) {
 			continue;	// this surface definitely doesn't have any of this light
 		}
 
-		dl = &backEnd.refdef.dlights[l];
+		dlight_t* dl = &backEnd.refdef.dlights[l];
 		VectorCopy( dl->transformed, origin );
 		radius = dl->radius;
 		scale = 1.0f / radius;
 
-		sp = &tr.dlightShader[deformGen == DGEN_NONE ? 0 : 1];
+		shaderProgram_t* sp = &tr.dlightShader[deformGen == DGEN_NONE ? 0 : 1];
 
 		backEnd.pc.c_dlightDraws++;
 
@@ -409,7 +398,7 @@ static void ComputeShaderColors( shaderStage_t *pStage, vec4_t baseColor, vec4_t
 
 	qboolean is2DDraw = backEnd.currentEntity == &backEnd.entity2D;
 
-	float overbright = (isBlend || is2DDraw) ? 1.0f : 2.0f;
+	float overbright = (isBlend || is2DDraw) ? 1.0f : (float)(1 << tr.overbrightBits);
 
 	fog_t *fog;
 
@@ -469,11 +458,10 @@ static void ComputeShaderColors( shaderStage_t *pStage, vec4_t baseColor, vec4_t
 			break;
 		case CGEN_FOG:
 			fog = tr.world->fogs + tess.fogNum;
-
-			baseColor[0] = ((unsigned char *)(&fog->colorInt))[0] / 255.0f;
-			baseColor[1] = ((unsigned char *)(&fog->colorInt))[1] / 255.0f;
-			baseColor[2] = ((unsigned char *)(&fog->colorInt))[2] / 255.0f;
-			baseColor[3] = ((unsigned char *)(&fog->colorInt))[3] / 255.0f;
+			baseColor[0] = fog->colorRGBA[0] / 255.0f;
+			baseColor[1] = fog->colorRGBA[1] / 255.0f;
+			baseColor[2] = fog->colorRGBA[2] / 255.0f;
+			baseColor[3] = fog->colorRGBA[3] / 255.0f;
 			break;
 		case CGEN_WAVEFORM:
 			baseColor[0] = 
@@ -917,10 +905,13 @@ static void RB_FogPass( void ) {
 		GLSL_SetUniformFloat(sp, UNIFORM_TIME, tess.shaderTime);
 	}
 
-	color[0] = ((unsigned char *)(&fog->colorInt))[0] / 255.0f;
-	color[1] = ((unsigned char *)(&fog->colorInt))[1] / 255.0f;
-	color[2] = ((unsigned char *)(&fog->colorInt))[2] / 255.0f;
-	color[3] = ((unsigned char *)(&fog->colorInt))[3] / 255.0f;
+    
+	color[0] = fog->colorRGBA[0] / 255.0f;
+	color[1] = fog->colorRGBA[1] / 255.0f;
+	color[2] = fog->colorRGBA[2] / 255.0f;
+	color[3] = fog->colorRGBA[3] / 255.0f;
+
+
 	GLSL_SetUniformVec4(sp, UNIFORM_COLOR, color);
 
 	ComputeFogValues(fogDistanceVector, fogDepthVector, &eyeT);
@@ -966,6 +957,8 @@ static void RB_IterateStagesGeneric( shaderCommands_t *input )
 
 	int deformGen;
 	vec5_t deformParams;
+
+	qboolean renderToCubemap = tr.renderCubeFbo && glState.currentFBO == tr.renderCubeFbo;
 
 	ComputeDeformValues(&deformGen, deformParams);
 
@@ -1049,7 +1042,6 @@ static void RB_IterateStagesGeneric( shaderCommands_t *input )
 		else
 		{
 			sp = GLSL_GetGenericShaderProgram(stage);
-
 			backEnd.pc.c_genericDraws++;
 		}
 
@@ -1174,6 +1166,13 @@ static void RB_IterateStagesGeneric( shaderCommands_t *input )
 			vec4_t specularScale;
 			Vector4Copy(pStage->specularScale, specularScale);
 
+			if (renderToCubemap)
+			{
+				// force specular to nonmetal if rendering cubemaps
+				if (r_pbr->integer)
+					specularScale[1] = 0.0f;
+			}
+
 			GLSL_SetUniformVec4(sp, UNIFORM_SPECULARSCALE, specularScale);
 		}
 
@@ -1200,7 +1199,19 @@ static void RB_IterateStagesGeneric( shaderCommands_t *input )
 				if (tr.screenShadowImage)
 					GL_BindToTMU(tr.screenShadowImage, TB_SHADOWMAP);
 				GLSL_SetUniformVec3(sp, UNIFORM_PRIMARYLIGHTAMBIENT, backEnd.refdef.sunAmbCol);
-				GLSL_SetUniformVec3(sp, UNIFORM_PRIMARYLIGHTCOLOR, backEnd.refdef.sunCol);
+				if (r_pbr->integer)
+				{
+					vec3_t color;
+
+					color[0] = backEnd.refdef.sunCol[0] * backEnd.refdef.sunCol[0];
+					color[1] = backEnd.refdef.sunCol[1] * backEnd.refdef.sunCol[1];
+					color[2] = backEnd.refdef.sunCol[2] * backEnd.refdef.sunCol[2];
+					GLSL_SetUniformVec3(sp, UNIFORM_PRIMARYLIGHTCOLOR, color);
+				}
+				else
+				{
+					GLSL_SetUniformVec3(sp, UNIFORM_PRIMARYLIGHTCOLOR, backEnd.refdef.sunCol);
+				}
 				GLSL_SetUniformVec4(sp, UNIFORM_PRIMARYLIGHTORIGIN,  backEnd.refdef.sunDir);
 			}
 
@@ -1410,16 +1421,6 @@ void RB_StageIteratorGeneric( void )
 	}
 
 	//
-	// log this call
-/*  
-	if ( r_logFile->integer ) 
-	{
-		// don't just call LogComment, or we will get
-		// a call to va() every frame!
-		GLimp_LogComment( va("--- RB_StageIteratorGeneric( %s ) ---\n", tess.shader->name) );
-	}
-*/
-	//
 	// set face culling appropriately
 	//
 	if (input->shader->cullType == CT_TWO_SIDED)
@@ -1536,22 +1537,17 @@ void RB_StageIteratorGeneric( void )
 	}
 }
 
-/*
-** RB_EndSurface
-*/
-void RB_EndSurface( void ) {
-	shaderCommands_t *input;
 
-	input = &tess;
-
-	if (input->numIndexes == 0 || input->numVertexes == 0) {
+void RB_EndSurface( void )
+{
+	if ((tess.numIndexes == 0) || (tess.numVertexes == 0)) {
 		return;
 	}
 
-	if (input->indexes[SHADER_MAX_INDEXES-1] != 0) {
+	if (tess.indexes[SHADER_MAX_INDEXES-1] != 0) {
 		ri.Error (ERR_DROP, "RB_EndSurface() - SHADER_MAX_INDEXES hit");
 	}	
-	if (input->xyz[SHADER_MAX_VERTEXES-1][0] != 0) {
+	if (tess.xyz[SHADER_MAX_VERTEXES-1][0] != 0) {
 		ri.Error (ERR_DROP, "RB_EndSurface() - SHADER_MAX_VERTEXES hit");
 	}
 
@@ -1588,15 +1584,14 @@ void RB_EndSurface( void ) {
 	// draw debugging stuff
 	//
 	if ( r_showtris->integer ) {
-		DrawTris (input);
+		DrawTris (&tess);
 	}
-	if ( r_shownormals->integer ) {
-		DrawNormals (input);
-	}
+
+#if R_SHOWNORMALS
+	DrawNormals (&tess);
+#endif
 	// clear shader so we can tell we don't have any unclosed surfaces
 	tess.numIndexes = 0;
 	tess.numVertexes = 0;
 	tess.firstIndex = 0;
-
-	//GLimp_LogComment( "----------\n" );
 }

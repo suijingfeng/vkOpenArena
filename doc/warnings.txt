@@ -1,0 +1,258 @@
+GL_VENDOR: NVIDIA Corporation
+GL_RENDERER: GeForce GTX 1080/PCIe/SSE2
+GL_VERSION: 3.2.0 NVIDIA 390.48
+GL_MAX_TEXTURE_SIZE: 32768
+GL_MAX_TEXTURE_IMAGE_UNITS: 32
+  
+PIXELFORMAT: color(24-bits) Z(24-bit) stencil(0-bits)
+MODE: 1920 x 1080 hz:60
+GAMMA: hardware w/ 1 overbright bits
+texturemode: GL_LINEAR_MIPMAP_NEAREST
+picmip: 1
+compiled vertex arrays: enabled
+texenv add: enabled
+compressed textures: disabled
+----- finished R_Init -----
+Loading vm file vm/ui.qvm...
+File "vm/ui.qvm" found in "/home/suijingfeng/.local/share/OpenArena/baseoa/pak6-patch088.pk3"
+...which has vmMagic VM_MAGIC_VER2
+Loading 1555 jump table targets
+VM file ui compiled to 785004 bytes of code
+Couldn't load symbol file: vm/ui.map
+ui loaded in 1848448 bytes on the hunk
+WARNING: loading old Quake III Arena User Interface version 4
+WARNING: Unsetting CVAR_ROM cvar 'g_spScores1', since it is also CVAR_ARCHIVE
+WARNING: Unsetting CVAR_ROM cvar 'g_spScores2', since it is also CVAR_ARCHIVE
+WARNING: Unsetting CVAR_ROM cvar 'g_spScores3', since it is also CVAR_ARCHIVE
+WARNING: Unsetting CVAR_ROM cvar 'g_spScores4', since it is also CVAR_ARCHIVE
+WARNING: Unsetting CVAR_ROM cvar 'g_spScores5', since it is also CVAR_ARCHIVE
+WARNING: Unsetting CVAR_ROM cvar 'g_spAwards', since it is also CVAR_ARCHIVE
+WARNING: Unsetting CVAR_ROM cvar 'g_spVideos', since it is also CVAR_ARCHIVE
+Can't use keys or values with a '"': verload" = <NULL>
+205 arenas parsed
+2 arenas ignored to make count divisible by 4
+FS_FreeFileList: trying to free null point. 
+33 bots parsed
+Loading vm file vm/cgame.qvm...
+File "vm/cgame.qvm" found in "/home/suijingfeng/.local/share/OpenArena/baseoa/pak6-patch088.pk3"
+...which has vmMagic VM_MAGIC_VER2
+Loading 1235 jump table targets
+VM file cgame compiled to 1196870 bytes of code
+Couldn't load symbol file: vm/cgame.map
+cgame loaded in 5287712 bytes on the hunk
+Warning: cvar "cg_autoswitch" given initial values: "2" and "1"
+Warning: cvar "team_model" given initial values: "james" and "sarge"
+Warning: cvar "team_headmodel" given initial values: "*james" and "sarge"
+WARNING: levelshots/oa_dm7.tga not present, using levelshots/oa_dm7.jpg instead
+WARNING: textures/sfx/detail.tga not present, using textures/sfx/detail.jpg instead
+CM_LoadMap( maps/oa_dm7.bsp, 1 )
+Can't read sound file sound/items/cl_ammoregen.ogg
+WARNING: Failed to load sound sound/items/cl_ammoregen.wav!
+WARNING: Using default sound for sound/items/cl_ammoregen.wav
+Can't read sound file sound/weapons/nailgun/wnalimpd.ogg
+WARNING: Failed to load sound sound/weapons/nailgun/wnalimpd.wav!
+WARNING: Using default sound for sound/weapons/nailgun/wnalimpd.wav
+Can't read sound file sound/weapons/vulcan/wvulimpd.ogg
+WARNING: Failed to load sound sound/weapons/vulcan/wvulimpd.wav!
+WARNING: Using default sound for sound/weapons/vulcan/wvulimpd.wav
+Can't read sound file sound/weapons/vulcan/wvulimpl.ogg
+WARNING: Failed to load sound sound/weapons/vulcan/wvulimpl.wav!
+WARNING: Using default sound for sound/weapons/vulcan/wvulimpl.wav
+Can't read sound file sound/weapons/vulcan/wvulimpm.ogg
+WARNING: Failed to load sound sound/weapons/vulcan/wvulimpm.wav!
+WARNING: Using default sound for sound/weapons/vulcan/wvulimpm.wav
+Can't read sound file sound/misc/yousuck.ogg
+WARNING: Failed to load sound sound/misc/yousuck.wav!
+WARNING: Using default sound for sound/misc/yousuck.wav
+WARNING: textures/liquids/kc_fogcloud3.tga not present, using textures/liquids/kc_fogcloud3.jpg instead
+WARNING: textures/gothic_wall/streetbricks14.tga not present, using textures/gothic_wall/streetbricks14.jpg instead
+WARNING: shader 'textures/sfx/xnotsodensegreyfog' has lightmap but no lightmap stage!
+...R_InitSkyTexCoords()...
+WARNING: textures/skies/stars.tga not present, using textures/skies/stars.jpg instead
+WARNING: textures/skies/nitesky.tga not present, using textures/skies/nitesky.jpg instead
+WARNING: textures/e7/e7panelwood.tga not present, using textures/e7/e7panelwood.jpg instead
+WARNING: textures/e7/e7bmtrim2.tga not present, using textures/e7/e7bmtrim2.jpg instead
+WARNING: textures/gothic_trim/pitted_rust3_black.tga not present, using textures/gothic_trim/pitted_rust3_black.jpg instead
+WARNING: textures/gothic_floor/largerblock3b3.tga not present, using textures/gothic_floor/largerblock3b3.jpg instead
+WARNING: textures/gothic_block/blocks17.tga not present, using textures/gothic_block/blocks17.jpg instead
+stitched 0 LoD cracks
+...loaded 626 faces, 0 meshes, 0 trisurfs, 10 flares
+WARNING: light grid mismatch
+WARNING: reused image textures/flares/flarey.tga with mixed flags (67 vs 3)
+WARNING: gfx/2d/net.tga not present, using gfx/2d/net.jpg instead
+WARNING: gfx/misc/tracer2.tga not present, using gfx/misc/tracer2.jpg instead
+Couldn't find image file for shader gfx/2d/crosshair00
+Couldn't find image file for shader gfx/2d/crosshair01
+Couldn't find image file for shader gfx/2d/crosshair02
+Couldn't find image file for shader gfx/2d/crosshair03
+Couldn't find image file for shader gfx/2d/crosshair04
+Couldn't find image file for shader gfx/2d/crosshair05
+Couldn't find image file for shader gfx/2d/crosshair06
+Couldn't find image file for shader gfx/2d/crosshair07
+Couldn't find image file for shader gfx/2d/crosshair08
+Couldn't find image file for shader gfx/2d/crosshair09
+Couldn't find image file for shader gfx/2d/crosshair10
+Couldn't find image file for shader gfx/2d/crosshair11
+Couldn't find image file for shader gfx/2d/crosshair12
+Couldn't find image file for shader gfx/2d/crosshair13
+Couldn't find image file for shader gfx/2d/crosshair14
+Couldn't find image file for shader gfx/2d/crosshair15
+Couldn't find image file for shader gfx/2d/crosshair16
+Couldn't find image file for shader gfx/2d/crosshair17
+Couldn't find image file for shader gfx/2d/crosshair18
+Couldn't find image file for shader gfx/2d/crosshair19
+Couldn't find image file for shader gfx/2d/crosshair20
+Couldn't find image file for shader gfx/2d/crosshair21
+Couldn't find image file for shader gfx/2d/crosshair22
+Couldn't find image file for shader gfx/2d/crosshair23
+Couldn't find image file for shader gfx/2d/crosshair24
+Couldn't find image file for shader gfx/2d/crosshair25
+Couldn't find image file for shader gfx/2d/crosshair26
+Couldn't find image file for shader gfx/2d/crosshair27
+Couldn't find image file for shader gfx/2d/crosshair28
+Couldn't find image file for shader gfx/2d/crosshair29
+Couldn't find image file for shader gfx/2d/crosshair30
+Couldn't find image file for shader gfx/2d/crosshair31
+Couldn't find image file for shader gfx/2d/crosshair32
+Couldn't find image file for shader gfx/2d/crosshair33
+Couldn't find image file for shader gfx/2d/crosshair34
+Couldn't find image file for shader gfx/2d/crosshair35
+Couldn't find image file for shader gfx/2d/crosshair36
+Couldn't find image file for shader gfx/2d/crosshair37
+Couldn't find image file for shader gfx/2d/crosshair38
+Couldn't find image file for shader gfx/2d/crosshair39
+Couldn't find image file for shader gfx/2d/crosshair40
+Couldn't find image file for shader gfx/2d/crosshair41
+Couldn't find image file for shader gfx/2d/crosshair42
+Couldn't find image file for shader gfx/2d/crosshair43
+Couldn't find image file for shader gfx/2d/crosshair44
+Couldn't find image file for shader gfx/2d/crosshair45
+Couldn't find image file for shader gfx/2d/crosshair46
+Couldn't find image file for shader gfx/2d/crosshair47
+Couldn't find image file for shader gfx/2d/crosshair48
+Couldn't find image file for shader gfx/2d/crosshair49
+Couldn't find image file for shader gfx/2d/crosshair50
+Couldn't find image file for shader gfx/2d/crosshair51
+Couldn't find image file for shader gfx/2d/crosshair52
+Couldn't find image file for shader gfx/2d/crosshair53
+Couldn't find image file for shader gfx/2d/crosshair54
+Couldn't find image file for shader gfx/2d/crosshair55
+Couldn't find image file for shader gfx/2d/crosshair56
+Couldn't find image file for shader gfx/2d/crosshair57
+Couldn't find image file for shader gfx/2d/crosshair58
+Couldn't find image file for shader gfx/2d/crosshair59
+Couldn't find image file for shader gfx/2d/crosshair60
+Couldn't find image file for shader gfx/2d/crosshair61
+Couldn't find image file for shader gfx/2d/crosshair62
+Couldn't find image file for shader gfx/2d/crosshair63
+Couldn't find image file for shader gfx/2d/crosshair64
+Couldn't find image file for shader gfx/2d/crosshair65
+Couldn't find image file for shader gfx/2d/crosshair66
+Couldn't find image file for shader gfx/2d/crosshair67
+Couldn't find image file for shader gfx/2d/crosshair68
+Couldn't find image file for shader gfx/2d/crosshair69
+Couldn't find image file for shader gfx/2d/crosshair70
+Couldn't find image file for shader gfx/2d/crosshair71
+Couldn't find image file for shader gfx/2d/crosshair72
+Couldn't find image file for shader gfx/2d/crosshair73
+Couldn't find image file for shader gfx/2d/crosshair74
+Couldn't find image file for shader gfx/2d/crosshair75
+Couldn't find image file for shader gfx/2d/crosshair76
+Couldn't find image file for shader gfx/2d/crosshair77
+Couldn't find image file for shader gfx/2d/crosshair78
+Couldn't find image file for shader gfx/2d/crosshair79
+Couldn't find image file for shader gfx/2d/crosshair80
+Couldn't find image file for shader gfx/2d/crosshair81
+Couldn't find image file for shader gfx/2d/crosshair82
+Couldn't find image file for shader gfx/2d/crosshair83
+Couldn't find image file for shader gfx/2d/crosshair84
+Couldn't find image file for shader gfx/2d/crosshair85
+Couldn't find image file for shader gfx/2d/crosshair86
+Couldn't find image file for shader gfx/2d/crosshair87
+Couldn't find image file for shader gfx/2d/crosshair88
+WARNING: textures/oafx/regenshell.tga not present, using textures/oafx/regenshell.jpg instead
+Couldn't find image file for shader playeroverlays/playerSuit1_Neutral
+Couldn't find image file for shader models/weaphits/kamikred
+WARNING: gfx/2d/colorbar.tga not present, using gfx/2d/colorbar.jpg instead
+Couldn't find image file for shader poopypants
+Couldn't find image file for shader E:\projects\oa\newplasrailhit\Sphere
+Couldn't find image file for shader rocketFlare_001
+Couldn't find image file for shader E:\projects\oa\newtele\Circle
+Couldn't find image file for shader teleporterEffect
+WARNING: textures/effects/envmapdimb.tga not present, using textures/effects/envmapdimb.jpg instead
+WARNING: textures/effects/envmapred.tga not present, using textures/effects/envmapred.jpg instead
+Couldn't find image file for shader ui/assets/statusbar/selectedhealth.tga
+WARNING: textures/oafx/greenchrm.tga not present, using textures/oafx/greenchrm.jpg instead
+WARNING: textures/effects/envmapligh.tga not present, using textures/effects/envmapligh.jpg instead
+WARNING: textures/effects/envmapyel.tga not present, using textures/effects/envmapyel.jpg instead
+WARNING: models/weapons2/shotgun/shotgun_laser.tga not present, using models/weapons2/shotgun/shotgun_laser.jpg instead
+WARNING: models/weapons2/machinegun/f_machinegun3.tga not present, using models/weapons2/machinegun/f_machinegun3.jpg instead
+WARNING: models/weaphits/rlboom/rlboom_1.tga not present, using models/weaphits/rlboom/rlboom_1.jpg instead
+WARNING: models/weaphits/rlboom/rlboom_2.tga not present, using models/weaphits/rlboom/rlboom_2.jpg instead
+WARNING: models/weaphits/rlboom/rlboom_3.tga not present, using models/weaphits/rlboom/rlboom_3.jpg instead
+WARNING: models/weaphits/rlboom/rlboom_4.tga not present, using models/weaphits/rlboom/rlboom_4.jpg instead
+WARNING: models/weaphits/rlboom/rlboom_5.tga not present, using models/weaphits/rlboom/rlboom_5.jpg instead
+WARNING: models/weaphits/rlboom/rlboom_6.tga not present, using models/weaphits/rlboom/rlboom_6.jpg instead
+WARNING: models/weaphits/rlboom/rlboom_7.tga not present, using models/weaphits/rlboom/rlboom_7.jpg instead
+WARNING: models/weaphits/rlboom/rlboom_8.tga not present, using models/weaphits/rlboom/rlboom_8.jpg instead
+WARNING: textures/oa/fiar.tga not present, using textures/oa/fiar.jpg instead
+WARNING: textures/oa/fiar2.tga not present, using textures/oa/fiar2.jpg instead
+WARNING: models/weapons2/lightning/f_lightning.tga not present, using models/weapons2/lightning/f_lightning.jpg instead
+WARNING: reused image textures/flares/lava.tga with mixed flags (3 vs 67)
+WARNING: models/weapons2/railgun/f_railgun3.tga not present, using models/weapons2/railgun/f_railgun3.jpg instead
+WARNING: textures/sfx/specular.tga not present, using textures/sfx/specular.jpg instead
+Couldn't find image file for shader models/players/grismlambert2SG
+Couldn't find image file for shader grismlambert2SG
+Couldn't find image file for shader D:\svnthis\oa\source\assets\models\grism\lambert2SG
+Couldn't find image file for shader E:\projects\oa\baseq3\models\players\doom\lambert2SG
+Couldn't find image file for shader Material
+WARNING: models/players/gargoyle/specwing.tga not present, using models/players/gargoyle/specwing.jpg instead
+Couldn't find image file for shader models/players/beret/Material.010
+WARNING: R_FindImageFile could not find 'models/players/beret/spec_skin1.tga' in shader 'models/players/beret/skin1'
+Shader models/players/beret/skin1 has a stage with no image
+Couldn't find image file for shader tag_head
+Couldn't find image file for shader tag_weapon
+Couldn't find image file for shader tag_torso
+CL_InitCGame:  1.06 seconds
+8 msec to draw all images
+Com_TouchMemory: 0 msec
+
+
+
+WARNING: R_FindImageFile could not find 'models/players/smarine/l_legs' in shader 'models/players/smarine/l_legs'
+Shader models/players/smarine/l_legs has a stage with no image
+WARNING: R_FindImageFile could not find 'models/players/smarine/u_torso' in shader 'models/players/smarine/u_torso'
+Shader models/players/smarine/u_torso has a stage with no image
+WARNING: R_FindImageFile could not find 'models/players/smarine/h_head' in shader 'models/players/smarine/h_head'
+Shader models/players/smarine/h_head has a stage with no image
+
+WARNING: reused image textures/flares/flarey.tga with mixed flags (67 vs 3)
+WARNING: R_FindImageFile could not find 'gfx/2d/crosshairk.tga' in shader 'gfx/2d/crosshair27'
+Shader gfx/2d/crosshair27 has a stage with no image
+R_RegisterMD3: couldn't load models/flag2/flagpole.md3
+R_RegisterMD3: couldn't load models/flag2/flagflap3.md3
+R_RegisterMD3: couldn't load models/powerups/shield/shield.md3
+R_RegisterMD3: couldn't load models/powerups/armor/shard_sphere.md3
+R_RegisterMD3: couldn't load models/weapons2/gauntlet/gauntlet_flash.md3
+R_RegisterMD3: couldn't load models/weapons2/gauntlet/gauntlet_hand.md3
+R_RegisterMD3: couldn't load models/weapons2/shotgun/shotgun_barrel.md3
+R_RegisterMD3: couldn't load models/weapons2/rocketl/rocketl_barrel.md3
+Shader rocketThrust has a stage with no image
+R_RegisterMD3: couldn't load models/weapons2/lightning/lightning_barrel.md3
+R_RegisterMD3: couldn't load models/weapons2/lightning/lightning_hand.md3
+R_RegisterMD3: couldn't load models/weapons2/railgun/railgun_barrel.md3
+R_RegisterMD3: couldn't load models/weapons2/railgun/railgun_hand.md3
+R_RegisterMD3: couldn't load models/weapons2/plasma/plasma_barrel.md3
+R_RegisterMD3: couldn't load models/weapons2/plasma/plasma_hand.md3
+R_RegisterMD3: couldn't load models/weapons/nailgun/nailgun_barrel.md3
+R_RegisterMD3: couldn't load models/weapons/nailgun/nailgun_hand.md3
+R_RegisterMD3: couldn't load models/players/james/lower.md3
+R_RegisterMD3: couldn't load models/players/characters/james/lower.md3
+Failed to load model file models/players/characters/james/lower.md3
+Failed to load model file models/players/characters/james/lower.md3
+WARNING: Failed to open sound music/sonic1.wav!
+
+
+R_RegisterMD3: couldn't load models/players/neko/lower.md3
+R_RegisterMD3: couldn't load models/players/characters/neko/lower.md3
+

@@ -86,7 +86,7 @@ typedef struct {
 #define MD3_MAX_VERTS		4096	// per surface
 #define MD3_MAX_SHADERS		256		// per surface
 #define MD3_MAX_FRAMES		1024	// per model
-//#define	MD3_MAX_SURFACES	32		// per model
+#define	MD3_MAX_SURFACES	32		// per model
 #define MD3_MAX_TAGS		16		// per frame
 
 // vertex scales
@@ -204,7 +204,7 @@ MDR file format
 
 typedef struct {
 	int			boneIndex;	// these are indexes into the boneReferences,
-	float		   boneWeight;		// not the global per-frame bone list
+	float		boneWeight;		// not the global per-frame bone list
 	vec3_t		offset;
 } mdrWeight_t;
 
@@ -361,8 +361,7 @@ typedef struct {
 
 
 typedef struct {
-	int	fileofs;
-    int filelen;
+	int		fileofs, filelen;
 } lump_t;
 
 #define	LUMP_ENTITIES		0
@@ -384,10 +383,10 @@ typedef struct {
 #define	LUMP_VISIBILITY		16
 #define	HEADER_LUMPS		17
 
-typedef struct
-{
-    int			ident;
+typedef struct {
+	int			ident;
 	int			version;
+
 	lump_t		lumps[HEADER_LUMPS];
 } dheader_t;
 
@@ -455,6 +454,7 @@ typedef struct {
 	vec3_t      normal;
 	unsigned char color[4];
 } drawVert_t;
+
 #define drawVert_t_cleared(x) drawVert_t (x) = {{0, 0, 0}, {0, 0}, {0, 0}, {0, 0, 0}, {0, 0, 0, 0}}
 
 typedef enum {

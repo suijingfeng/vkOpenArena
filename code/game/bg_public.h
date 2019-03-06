@@ -25,6 +25,10 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 // because games can change separately from the main system version, we need a
 // second version that must match between game and cgame
 
+#if defined(BG_PUBLIC_H)
+#else
+#define BG_PUBLIC_H 1
+
 #define	GAME_VERSION		BASEGAME "-1"
 
 #define	DEFAULT_GRAVITY		800
@@ -50,6 +54,15 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #define	DEFAULT_VIEWHEIGHT	26
 #define CROUCH_VIEWHEIGHT	12
 #define	DEAD_VIEWHEIGHT		-16
+
+//Domination points
+#define MAX_DOMINATION_POINTS 6
+#define MAX_DOMINATION_POINTS_NAMES 20
+
+// leilei - q scale game cvar
+
+#define QUACK_SCALE		0.85
+#define	QUACK_VIEWHEIGHT	22
 
 //
 // config strings are a general means of communicating variable length strings
@@ -86,9 +99,9 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #define	CS_SOUNDS				(CS_MODELS+MAX_MODELS)
 #define	CS_PLAYERS				(CS_SOUNDS+MAX_SOUNDS)
 #define CS_LOCATIONS			(CS_PLAYERS+MAX_CLIENTS)
-#define CS_PARTICLES			(CS_LOCATIONS+MAX_LOCATIONS) 
+#define CS_PARTICLES			(CS_LOCATIONS+MAX_LOCATIONS)
 
-#define CS_MAX					(CS_PARTICLES+MAX_LOCATIONS)
+#define CS_MAX				(CS_PARTICLES+MAX_LOCATIONS)
 
 #if (CS_MAX) > MAX_CONFIGSTRINGS
 #error overflow: (CS_MAX) > MAX_CONFIGSTRINGS
@@ -102,11 +115,24 @@ typedef enum {
 	//-- team games go after this --
 
 	GT_TEAM,			// team deathmatch
-	GT_CTF,				// capture the flag
+
+	//-- team games that uses bases go after this
+
+	GT_CTF,				// capture the flag	
 	GT_1FCTF,
 	GT_OBELISK,
-	GT_HARVESTER,
+	GT_HARVESTER,	
+	
+	//-- custom game types, there will be a variable in 
+	
+	GT_ELIMINATION,			// team elimination (custom)
+	GT_CTF_ELIMINATION,		// ctf elimination
+	GT_LMS,				// Last man standing
+	GT_DOUBLE_D,			// Double Domination
+	GT_DOMINATION,			// Standard domination 12
+	GT_POSSESSION,
 	GT_MAX_GAME_TYPE
+	
 } gametype_t;
 
 typedef enum { GENDER_MALE, GENDER_FEMALE, GENDER_NEUTER } gender_t;
@@ -153,6 +179,8 @@ typedef enum {
 #define PMF_FOLLOW			4096	// spectate following another player
 #define PMF_SCOREBOARD		8192	// spectate as a scoreboard
 #define PMF_INVULEXPAND		16384	// invulnerability sphere set to full size
+//Elimination players cannot fire in warmup
+#define PMF_ELIMWARMUP		32768	//Bit 15
 
 #define	PMF_ALL_TIMES	(PMF_TIME_WATERJUMP|PMF_TIME_LAND|PMF_TIME_KNOCKBACK)
 
@@ -185,6 +213,12 @@ typedef struct {
 	int			pmove_fixed;
 	int			pmove_msec;
 
+	//Sago's pmove
+	int                     pmove_float;
+
+	//Flags effecting movement (see dmflags)
+	int                     pmove_flags;
+
 	// callbacks to test the world
 	// these will be different functions during game and cgame
 	void		(*trace)( trace_t *results, const vec3_t start, const vec3_t mins, const vec3_t maxs, const vec3_t end, int passEntityNum, int contentMask );
@@ -193,7 +227,7 @@ typedef struct {
 
 // if a full pmove isn't done on the client, you can just update the angles
 void PM_UpdateViewAngles( playerState_t *ps, const usercmd_t *cmd );
-void Pmove(pmove_t *pmove);
+void Pmove (pmove_t *pmove);
 
 //===================================================================================
 
@@ -203,14 +237,12 @@ void Pmove(pmove_t *pmove);
 typedef enum {
 	STAT_HEALTH,
 	STAT_HOLDABLE_ITEM,
-#ifdef MISSIONPACK
-	STAT_PERSISTANT_POWERUP,
-#endif
 	STAT_WEAPONS,					// 16 bit fields
 	STAT_ARMOR,				
 	STAT_DEAD_YAW,					// look this direction when dead (FIXME: get rid of?)
 	STAT_CLIENTS_READY,				// bit mask of clients wishing to exit the intermission (FIXME: configstring?)
-	STAT_MAX_HEALTH					// health / armor limit, changable by handicap
+	STAT_MAX_HEALTH,					// health / armor limit, changable by handicap
+	STAT_PERSISTANT_POWERUP
 } statIndex_t;
 
 
@@ -240,9 +272,7 @@ typedef enum {
 
 // entityState_t->eFlags
 #define	EF_DEAD				0x00000001		// don't draw a foe marker over players with EF_DEAD
-#ifdef MISSIONPACK
 #define EF_TICKING			0x00000002		// used to make players play the prox mine ticking sound
-#endif
 #define	EF_TELEPORT_BIT		0x00000004		// toggled every time the origin abruptly changes
 #define	EF_AWARD_EXCELLENT	0x00000008		// draw an excellent sprite
 #define EF_PLAYER_EVENT		0x00000010
@@ -300,6 +330,25 @@ typedef enum {
 	HI_NUM_HOLDABLE
 } holdable_t;
 
+typedef enum {
+	DD_NONE,
+
+	DD_POINTARED,
+	DD_POINTABLUE,
+	DD_POINTAWHITE,
+	DD_POINTBRED,
+	DD_POINTBBLUE,
+	DD_POINTBWHITE
+} doubled_t;
+
+typedef enum {
+	DOM_NONE,
+
+	DOM_POINTRED,
+	DOM_POINTBLUE,
+	DOM_POINTWHITE,
+} domination_t;
+
 
 typedef enum {
 	WP_NONE,
@@ -314,13 +363,12 @@ typedef enum {
 	WP_PLASMAGUN,
 	WP_BFG,
 	WP_GRAPPLING_HOOK,
-#ifdef MISSIONPACK
 	WP_NAILGUN,
 	WP_PROX_LAUNCHER,
 	WP_CHAINGUN,
-#endif
 
-	WP_NUM_WEAPONS
+	WP_NUM_WEAPONS,
+	WP_NUM_INVALID
 } weapon_t;
 
 
@@ -330,7 +378,7 @@ typedef enum {
 #define PLAYEREVENT_HOLYSHIT			0x0004
 
 // entityState_t->event values
-// entity events are for effects that take place relative
+// entity events are for effects that take place reletive
 // to an existing entities origin.  Very network efficient.
 
 // two bits at the top of the entityState->event field
@@ -364,7 +412,7 @@ typedef enum {
 
 	EV_JUMP_PAD,			// boing sound at origin, jump sound on player
 
-	EV_JUMP,
+	EV_JUMP,                        //Event 14
 	EV_WATER_TOUCH,	// foot touches
 	EV_WATER_LEAVE,	// foot leaves
 	EV_WATER_UNDER,	// head touches
@@ -377,7 +425,7 @@ typedef enum {
 	EV_CHANGE_WEAPON,
 	EV_FIRE_WEAPON,
 
-	EV_USE_ITEM0,
+	EV_USE_ITEM0,                   //Event 24
 	EV_USE_ITEM1,
 	EV_USE_ITEM2,
 	EV_USE_ITEM3,
@@ -394,7 +442,7 @@ typedef enum {
 	EV_USE_ITEM14,
 	EV_USE_ITEM15,
 
-	EV_ITEM_RESPAWN,
+	EV_ITEM_RESPAWN,                //Event 40
 	EV_ITEM_POP,
 	EV_PLAYER_TELEPORT_IN,
 	EV_PLAYER_TELEPORT_OUT,
@@ -408,7 +456,7 @@ typedef enum {
 	EV_BULLET_HIT_FLESH,
 	EV_BULLET_HIT_WALL,
 
-	EV_MISSILE_HIT,
+	EV_MISSILE_HIT,                 //Event 50
 	EV_MISSILE_MISS,
 	EV_MISSILE_MISS_METAL,
 	EV_RAILTRAIL,
@@ -419,7 +467,7 @@ typedef enum {
 	EV_DEATH1,
 	EV_DEATH2,
 	EV_DEATH3,
-	EV_OBITUARY,
+	EV_OBITUARY,                    //Event 60
 
 	EV_POWERUP_QUAD,
 	EV_POWERUP_BATTLESUIT,
@@ -428,7 +476,6 @@ typedef enum {
 	EV_GIB_PLAYER,			// gib a previously living player
 	EV_SCOREPLUM,			// score plum
 
-//#ifdef MISSIONPACK
 	EV_PROXIMITY_MINE_STICK,
 	EV_PROXIMITY_MINE_TRIGGER,
 	EV_KAMIKAZE,			// kamikaze explodes
@@ -437,7 +484,6 @@ typedef enum {
 	EV_INVUL_IMPACT,		// invulnerability sphere impact
 	EV_JUICED,				// invulnerability juiced effect
 	EV_LIGHTNINGBOLT,		// lightning bolt bounced of invulnerability sphere
-//#endif
 
 	EV_DEBUG_LINE,
 	EV_STOPLOOPINGSOUND,
@@ -513,6 +559,25 @@ typedef enum {
 	TORSO_AFFIRMATIVE,
 	TORSO_NEGATIVE,
 
+	TORSO_RUN, 	// run with gun
+	TORSO_RUN2, 	// run with gauntlet
+	TORSO_RUN3, 	// run with flag in left hand, gun in right
+	TORSO_STAND3, 	// stand /w flag in left hand (if has flag)
+	TORSO_JUMP, 	// jump with gun
+	TORSO_JUMP2, 	// jump with gauntlet
+	TORSO_JUMP3, 	// jump with flag
+	TORSO_FALL, 	// fall with gun
+	TORSO_FALL2, 	// fall with gauntlet
+	TORSO_FALL3, 	// fall with flag
+	TORSO_TALK, 	// fall with flag
+//	TORSO_AIMUP, 	// aiming upward
+//	TORSO_AIMDOWN, 	// aiming downward
+	TORSO_STRAFE, 	// strafing sideways
+	LEGS_STRAFE_LEFT, // strafing to the player's left
+	LEGS_STRAFE_RIGHT, // strafing to the player's right
+
+//	BOTH_POSE,		// leilei - crappy ui posing code trying
+
 	MAX_ANIMATIONS,
 
 	LEGS_BACKCR,
@@ -549,6 +614,9 @@ typedef enum {
 
 	TEAM_NUM_TEAMS
 } team_t;
+
+// This is a fair assumption for Double Domination:
+#define TEAM_NONE TEAM_SPECTATOR
 
 // Time between location updates
 #define TEAM_LOCATION_UPDATE_TIME		1000
@@ -593,13 +661,11 @@ typedef enum {
 	MOD_SUICIDE,
 	MOD_TARGET_LASER,
 	MOD_TRIGGER_HURT,
-#ifdef MISSIONPACK
 	MOD_NAIL,
 	MOD_CHAINGUN,
 	MOD_PROXIMITY_MINE,
 	MOD_KAMIKAZE,
 	MOD_JUICED,
-#endif
 	MOD_GRAPPLE
 } meansOfDeath_t;
 
@@ -657,6 +723,38 @@ qboolean	BG_CanItemBeGrabbed( int gametype, const entityState_t *ent, const play
 #define	DF_NO_FALLING			8
 #define DF_FIXED_FOV			16
 #define	DF_NO_FOOTSTEPS			32
+#define DF_INSTANT_WEAPON_CHANGE        64
+#define DF_NO_BUNNY                     128
+#define DF_INVIS                        256
+#define DF_LIGHT_VOTING                 512
+#define DF_NO_SELF_DAMAGE               1024
+#define DF_PLAYER_OVERLAY               2048
+#define DF_FAST_WATER_MOVE				4096
+
+//g_videoflags->integer
+#define VF_LOCK_CVARS_BASIC             1
+#define VF_LOCK_CVARS_EXTENDED          2
+#define VF_LOCK_VERTEX                  4
+
+// g_elimflags->integer
+//This is used to signal the client that it cannot go to free spectator:
+#define EF_ONEWAY                       1
+#define EF_NO_FREESPEC                  2
+
+//g_voteflags->integer
+//Autoparsed from allowedvote
+//List: "/map_restart/nextmap/map/g_gametype/kick/clientkick/g_doWarmup/timelimit/fraglimit/custom/shuffle/"
+#define VF_map_restart  1
+#define VF_nextmap      2
+#define VF_map          4
+#define VF_g_gametype   8
+//Note that we skipped kick... not needed
+#define VF_clientkick   16
+#define VF_g_doWarmup   32
+#define VF_timelimit    64
+#define VF_fraglimit    128
+#define VF_custom       256
+#define VF_shuffle      512
 
 // content masks
 #define	MASK_ALL				(-1)
@@ -691,6 +789,14 @@ typedef enum {
 							// this avoids having to set eFlags and eventNum
 } entityType_t;
 
+//KK-OAX Using this now instead of g_mem.c
+// bg_alloc.c
+//
+qboolean BG_CanAlloc( unsigned int size );
+void    *BG_Alloc( unsigned int size );
+void    BG_InitMemory( void );
+void    BG_Free( void *ptr );
+void    BG_DefragmentMemory( void );
 
 
 void	BG_EvaluateTrajectory( const trajectory_t *tr, int atTime, vec3_t result );
@@ -736,3 +842,27 @@ qboolean	BG_PlayerTouchesItem( playerState_t *ps, entityState_t *item, int atTim
 #define KAMI_BOOMSPHERE_MAXRADIUS		720
 #define KAMI_SHOCKWAVE2_MAXRADIUS		704
 
+//KK-OAX
+//bg_misc.c
+const char *BG_TeamName( team_t team );
+
+typedef struct mapinfo_result_s {
+	int minPlayers;
+	int maxPlayers;
+	int recommendedPlayers;
+	int minTeamSize;
+	int maxTeamSize;
+	int timeLimit;
+	int fragLimit;
+	int captureLimit;
+	char mpBots[1024];
+	char author[64];
+	char description[8192];
+	char gametypeSupported[GT_MAX_GAME_TYPE]; //y/n
+} mapinfo_result_t;
+
+qboolean MatchesGametype(int gametype, const char* gametypeName);
+void MapInfoGet(const char* mapname, int gametype, mapinfo_result_t *result);
+
+
+#endif

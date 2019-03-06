@@ -157,7 +157,7 @@ qboolean R_LoadIQM( model_t *mod, void *buffer, int filesize, const char *mod_na
 	}
 
 	header = (iqmHeader_t *)buffer;
-	if( strncmp( header->magic, IQM_MAGIC, sizeof(header->magic) ) ) {
+	if( Q_strncmp( header->magic, IQM_MAGIC, sizeof(header->magic) ) ) {
 		return qfalse;
 	}
 
@@ -807,7 +807,7 @@ int R_ComputeIQMFogNum( iqmData_t *data, trRefEntity_t *ent ) {
 	VectorSubtract( bounds+3, bounds, diag );
 	VectorMA( bounds, 0.5f, diag, center );
 	VectorAdd( ent->e.origin, center, localOrigin );
-	radius = 0.5f * VectorLength( diag );
+	radius = 0.5f * VectorLen( diag );
 
 	for ( i = 1 ; i < tr.world->numfogs ; i++ ) {
 		fog = &tr.world->fogs[i];
@@ -1161,8 +1161,8 @@ int R_IQMLerpTag( orientation_t *tag, iqmData_t *data,
 		names += strlen( names ) + 1;
 	}
 	if( joint >= data->num_joints ) {
-		AxisClear( tag->axis );
-		VectorClear( tag->origin );
+        memset(tag, 0, sizeof(orientation_t));
+
 		return qfalse;
 	}
 

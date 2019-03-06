@@ -26,17 +26,12 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #ifndef __QGL_H__
 #define __QGL_H__
 
+#ifdef _WIN32
+	#include "SDL_opengl.h"
+#else
+	#include <GL/gl.h>
+#endif
 
-#include <GL/gl.h>
-#include <GL/glext.h>
-
-
-extern void (APIENTRYP qglActiveTextureARB) (GLenum texture);
-extern void (APIENTRYP qglClientActiveTextureARB) (GLenum texture);
-extern void (APIENTRYP qglMultiTexCoord2fARB) (GLenum target, GLfloat s, GLfloat t);
-
-extern void (APIENTRYP qglLockArraysEXT) (GLint first, GLsizei count);
-extern void (APIENTRYP qglUnlockArraysEXT) (void);
 
 
 //===========================================================================
@@ -72,6 +67,7 @@ extern void (APIENTRYP qglUnlockArraysEXT) (void);
 	GLE(void, GetBooleanv, GLenum pname, GLboolean *params) \
 	GLE(GLenum, GetError, void) \
 	GLE(void, GetIntegerv, GLenum pname, GLint *params) \
+	GLE(void, GetFloatv, GLenum pname, GLfloat *params) \
 	GLE(const GLubyte *, GetString, GLenum name) \
 	GLE(void, LineWidth, GLfloat width) \
 	GLE(void, LoadIdentity, void) \
@@ -80,6 +76,8 @@ extern void (APIENTRYP qglUnlockArraysEXT) (void);
 	GLE(void, PolygonOffset, GLfloat factor, GLfloat units) \
 	GLE(void, PopMatrix, void) \
 	GLE(void, PushMatrix, void) \
+	GLE(void, PushClientAttrib, GLbitfield mask) \
+	GLE(void, PopClientAttrib, void) \
 	GLE(void, ReadPixels, GLint x, GLint y, GLsizei width, GLsizei height, GLenum format, GLenum type, GLvoid *pixels) \
 	GLE(void, Scissor, GLint x, GLint y, GLsizei width, GLsizei height) \
 	GLE(void, ShadeModel, GLenum mode) \
@@ -90,6 +88,7 @@ extern void (APIENTRYP qglUnlockArraysEXT) (void);
 	GLE(void, TexEnvf, GLenum target, GLenum pname, GLfloat param) \
 	GLE(void, TexImage2D, GLenum target, GLint level, GLint internalFormat, GLsizei width, GLsizei height, GLint border, GLenum format, GLenum type, const GLvoid *pixels) \
 	GLE(void, TexParameterf, GLenum target, GLenum pname, GLfloat param) \
+	GLE(void, TexParameterfv, GLenum target, GLenum pname, GLfloat* param) \
 	GLE(void, TexParameteri, GLenum target, GLenum pname, GLint param) \
 	GLE(void, TexSubImage2D, GLenum target, GLint level, GLint xoffset, GLint yoffset, GLsizei width, GLsizei height, GLenum format, GLenum type, const GLvoid *pixels) \
 	GLE(void, Translatef, GLfloat x, GLfloat y, GLfloat z) \
@@ -226,7 +225,7 @@ extern void (APIENTRYP qglUnlockArraysEXT) (void);
 
 // OpenGL 3.0 specific
 #define QGL_3_0_PROCS \
-	GLE(const GLubyte *, GetStringi, GLenum name, GLuint index) \
+	GLE(const GLubyte *, GetStringi, GLenum name, GLuint index)
 
 // GL_ARB_framebuffer_object, built-in to OpenGL 3.0
 #define QGL_ARB_framebuffer_object_PROCS \
@@ -300,10 +299,10 @@ extern void (APIENTRYP qglUnlockArraysEXT) (void);
 	GLE(GLvoid, NamedFramebufferTexture2DEXT, GLuint framebuffer, GLenum attachment, GLenum textarget, GLuint texture, GLint level) \
 	GLE(GLvoid, NamedFramebufferRenderbufferEXT, GLuint framebuffer, GLenum attachment, GLenum renderbuffertarget, GLuint renderbuffer) \
 
-#define GLE(ret, name, ...) typedef ret APIENTRY name##proc(__VA_ARGS__); extern name##proc * qgl##name;
+#define GLE(ret, name, ...) typedef ret APIENTRY name##proc(__VA_ARGS__);
 QGL_1_1_PROCS;
 QGL_DESKTOP_1_1_PROCS;
-QGL_ES_1_1_PROCS;
+//QGL_ES_1_1_PROCS;
 QGL_1_3_PROCS;
 QGL_1_5_PROCS;
 QGL_2_0_PROCS;
@@ -313,7 +312,5 @@ QGL_ARB_vertex_array_object_PROCS;
 QGL_EXT_direct_state_access_PROCS;
 #undef GLE
 
-#define QGL_VERSION_ATLEAST( major, minor ) ( qglMajorVersion > major || ( qglMajorVersion == major && qglMinorVersion >= minor ) )
-#define QGLES_VERSION_ATLEAST( major, minor ) ( qglesMajorVersion > major || ( qglesMajorVersion == major && qglesMinorVersion >= minor ) )
 
 #endif

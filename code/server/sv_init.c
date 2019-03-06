@@ -379,11 +379,8 @@ SV_TouchCGame
   touch the cgame.vm so that a pure client can load it if it's in a seperate pk3
 ================
 */
-static void SV_TouchCGame(void) {
-	fileHandle_t	f;
-	char filename[MAX_QPATH];
-
-	Com_sprintf( filename, sizeof(filename), "vm/%s.qvm", "cgame" );
+static void SV_TouchFile( const char *filename )
+{	fileHandle_t	f;
 	FS_FOpenFileRead( filename, &f, qfalse );
 	if ( f ) {
 		FS_FCloseFile( f );
@@ -574,11 +571,11 @@ void SV_SpawnServer( char *server, qboolean killBots ) {
 		p = FS_LoadedPakNames();
 		Cvar_Set( "sv_pakNames", p );
 
-		// if a dedicated pure server we need to touch the cgame because it could be in a
-		// seperate pk3 file and the client will need to load the latest cgame.qvm
-		if ( com_dedicated->integer ) {
-			SV_TouchCGame();
-		}
+		// we need to touch the cgame and ui qvm because they could be in
+		// separate pk3 files and the client will need to download the pk3
+		// files with the latest cgame and ui qvm to pass the pure check
+		SV_TouchFile( "vm/cgame.qvm" );
+		SV_TouchFile( "vm/ui.qvm" );
 	}
 	else {
 		Cvar_Set( "sv_paks", "" );
@@ -627,7 +624,7 @@ SV_Init: Only called at main exe startup, not for each game
 */
 void SV_Init(void)
 {
-	Com_Printf(" SV_Init(). \n");
+	int index;
 
 	SV_AddOperatorCommands ();
 
@@ -677,9 +674,7 @@ void SV_Init(void)
 	
 	sv_master[0] = Cvar_Get("sv_master1", MASTER_SERVER_NAME, 0);
 	sv_master[1] = Cvar_Get("sv_master2", "master.ioquake3.org", 0);
-    
-    int index;	
-    for(index = 2; index < MAX_MASTER_SERVERS; index++)
+	for(index = 2; index < MAX_MASTER_SERVERS; index++)
 		sv_master[index] = Cvar_Get(va("sv_master%d", index + 1), "", CVAR_ARCHIVE);
 
 	sv_reconnectlimit = Cvar_Get ("sv_reconnectlimit", "3", 0);
@@ -777,7 +772,7 @@ void SV_Shutdown( char *finalmsg )
 	}
 	memset( &svs, 0, sizeof( svs ) );
 
-	Cvar_Set( "sv_running", "0" );
+	Cvar_Set("sv_running", "0");
 	Cvar_Set("ui_singlePlayerActive", "0");
 
 	Com_Printf( "---------------------------\n" );

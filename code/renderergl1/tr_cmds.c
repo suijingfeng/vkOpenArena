@@ -21,8 +21,7 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 */
 #include "tr_local.h"
 
-
-
+backEndData_t* backEndData;
 
 /*
 =====================
@@ -123,9 +122,7 @@ make sure there is enough command space
 ============
 */
 void *R_GetCommandBufferReserved( int bytes, int reservedBytes ) {
-	renderCommandList_t	*cmdList;
-
-	cmdList = &backEndData->commands;
+	renderCommandList_t	*cmdList = &backEndData->commands;
 	bytes = PAD(bytes, sizeof(void *));
 
 	// always leave room for the end of list command
@@ -184,7 +181,7 @@ RE_SetColor
 Passing NULL will set the color to white
 =============
 */
-void RE_SetColor( const float *rgba ) {
+void	RE_SetColor( const float *rgba ) {
 	setColorCommand_t	*cmd;
 
   if ( !tr.registered ) {
@@ -245,8 +242,7 @@ If running in stereo, RE_BeginFrame will be called twice
 for each RE_EndFrame
 ====================
 */
-void RE_BeginFrame( void ) {
-	drawBufferCommand_t	*cmd = NULL;
+void RE_BeginFrame(void) {
 
 	if ( !tr.registered ) {
 		return;
@@ -276,11 +272,11 @@ void RE_BeginFrame( void ) {
 		else
 		{
 			R_IssuePendingRenderCommands();
-			glEnable( GL_STENCIL_TEST );
-			glStencilMask( ~0U );
-			glClearStencil( 0U );
-			glStencilFunc( GL_ALWAYS, 0U, ~0U );
-			glStencilOp( GL_KEEP, GL_INCR, GL_INCR );
+			qglEnable( GL_STENCIL_TEST );
+			qglStencilMask( ~0U );
+			qglClearStencil( 0U );
+			qglStencilFunc( GL_ALWAYS, 0U, ~0U );
+			qglStencilOp( GL_KEEP, GL_INCR, GL_INCR );
 		}
 		r_measureOverdraw->modified = qfalse;
 	}
@@ -289,7 +285,7 @@ void RE_BeginFrame( void ) {
 		// this is only reached if it was on and is now off
 		if ( r_measureOverdraw->modified ) {
 			R_IssuePendingRenderCommands();
-			glDisable( GL_STENCIL_TEST );
+			qglDisable( GL_STENCIL_TEST );
 		}
 		r_measureOverdraw->modified = qfalse;
 	}
@@ -319,19 +315,9 @@ void RE_BeginFrame( void ) {
 		int	err;
 
 		R_IssuePendingRenderCommands();
-		if ((err = glGetError()) != GL_NO_ERROR)
+		if ((err = qglGetError()) != GL_NO_ERROR)
 			ri.Error(ERR_FATAL, "RE_BeginFrame() - glGetError() failed (0x%x)!", err);
 	}
-
-	
-    if( !(cmd = R_GetCommandBuffer(sizeof(*cmd))) )
-        return;
-
-    if(cmd)
-    {
-        cmd->commandId = RC_DRAW_BUFFER;
-        cmd->buffer = (int)GL_BACK;
-    }
 	
 }
 

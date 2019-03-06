@@ -88,13 +88,15 @@ tryagain:
 	}
 
 	if ( weaponNum == WP_MACHINEGUN || weaponNum == WP_GAUNTLET || weaponNum == WP_BFG ) {
-		COM_StripExtension( item->world_model[0], path, sizeof(path) );
-		Q_strcat( path, sizeof(path), "_barrel.md3" );
+		strcpy( path, item->world_model[0] );
+		COM_StripExtension( path, path, sizeof(path) );
+		strcat( path, "_barrel.md3" );
 		pi->barrelModel = trap_R_RegisterModel( path );
 	}
 
-	COM_StripExtension( item->world_model[0], path, sizeof(path) );
-	Q_strcat( path, sizeof(path), "_flash.md3" );
+	strcpy( path, item->world_model[0] );
+	COM_StripExtension( path, path, sizeof(path) );
+	strcat( path, "_flash.md3" );
 	pi->flashModel = trap_R_RegisterModel( path );
 
 	switch( weaponNum ) {
@@ -502,7 +504,7 @@ static void UI_SwingAngles( float destination, float swingTolerance, float clamp
 			*swinging = qfalse;
 		}
 		*angle = AngleMod( *angle + move );
-	} else if ( swing < 0 ) {
+	} else {
 		move = uis.frametime * scale * -speed;
 		if ( move <= swing ) {
 			move = swing;
@@ -532,10 +534,12 @@ static float UI_MovedirAdjustment( playerInfo_t *pi ) {
 
 	VectorSubtract( pi->viewAngles, pi->moveAngles, relativeAngles );
 	AngleVectors( relativeAngles, moveVector, NULL, NULL );
-	if ( Q_fabs( moveVector[0] ) < 0.01 ) {
+	if ( fabs( moveVector[0] ) < 0.01 )
+    {
 		moveVector[0] = 0.0;
 	}
-	if ( Q_fabs( moveVector[1] ) < 0.01 ) {
+	if ( fabs( moveVector[1] ) < 0.01 )
+    {
 		moveVector[1] = 0.0;
 	}
 
@@ -687,12 +691,12 @@ UI_DrawPlayer
 */
 void UI_DrawPlayer( float x, float y, float w, float h, playerInfo_t *pi, int time ) {
 	refdef_t		refdef;
-	refEntity_t		legs = {0};
-	refEntity_t		torso = {0};
-	refEntity_t		head = {0};
-	refEntity_t		gun = {0};
-	refEntity_t		barrel = {0};
-	refEntity_t		flash = {0};
+	refEntity_t		legs;
+	refEntity_t		torso;
+	refEntity_t		head;
+	refEntity_t		gun;
+	refEntity_t		barrel;
+	refEntity_t		flash;
 	vec3_t			origin;
 	int				renderfx;
 	vec3_t			mins = {-16, -16, -24};
@@ -817,12 +821,6 @@ void UI_DrawPlayer( float x, float y, float w, float h, playerInfo_t *pi, int ti
 	if ( pi->currentWeapon != WP_NONE ) {
 		memset( &gun, 0, sizeof(gun) );
 		gun.hModel = pi->weaponModel;
-		if( pi->currentWeapon == WP_RAILGUN ) {
-			Byte4Copy( pi->c1RGBA, gun.shaderRGBA );
-		}
-		else {
-			Byte4Copy( colorWhite, gun.shaderRGBA );
-		}
 		VectorCopy( origin, gun.lightingOrigin );
 		UI_PositionEntityOnTag( &gun, &torso, pi->torsoModel, "tag_weapon");
 		gun.renderfx = renderfx;
@@ -857,12 +855,6 @@ void UI_DrawPlayer( float x, float y, float w, float h, playerInfo_t *pi, int ti
 		if ( pi->flashModel ) {
 			memset( &flash, 0, sizeof(flash) );
 			flash.hModel = pi->flashModel;
-			if( pi->currentWeapon == WP_RAILGUN ) {
-				Byte4Copy( pi->c1RGBA, flash.shaderRGBA );
-			}
-			else {
-				Byte4Copy( colorWhite, flash.shaderRGBA );
-			}
 			VectorCopy( origin, flash.lightingOrigin );
 			UI_PositionEntityOnTag( &flash, &gun, pi->weaponModel, "tag_flash");
 			flash.renderfx = renderfx;
@@ -967,13 +959,13 @@ static qboolean UI_ParseAnimationFile( const char *filename, animation_t *animat
 		if ( !token ) {
 			break;
 		}
-		if ( !Q_stricmp( token, "footsteps" ) ) {
+		if ( Q_strequal( token, "footsteps" ) ) {
 			token = COM_Parse( &text_p );
 			if ( !token ) {
 				break;
 			}
 			continue;
-		} else if ( !Q_stricmp( token, "headoffset" ) ) {
+		} else if ( Q_strequal( token, "headoffset" ) ) {
 			for ( i = 0 ; i < 3 ; i++ ) {
 				token = COM_Parse( &text_p );
 				if ( !token ) {
@@ -981,7 +973,7 @@ static qboolean UI_ParseAnimationFile( const char *filename, animation_t *animat
 				}
 			}
 			continue;
-		} else if ( !Q_stricmp( token, "sex" ) ) {
+		} else if ( Q_strequal( token, "sex" ) ) {
 			token = COM_Parse( &text_p );
 			if ( !token ) {
 				break;
@@ -1146,35 +1138,8 @@ UI_PlayerInfo_SetInfo
 void UI_PlayerInfo_SetInfo( playerInfo_t *pi, int legsAnim, int torsoAnim, vec3_t viewAngles, vec3_t moveAngles, weapon_t weaponNumber, qboolean chat ) {
 	int			currentAnim;
 	weapon_t	weaponNum;
-	int			c;
 
 	pi->chat = chat;
-
-	c = (int)trap_Cvar_VariableValue( "color1" );
- 
-	VectorClear( pi->color1 );
-
-	if( c < 1 || c > 7 ) {
-		VectorSet( pi->color1, 1, 1, 1 );
-	}
-	else {
-		if( c & 1 ) {
-			pi->color1[2] = 1.0f;
-		}
-
-		if( c & 2 ) {
-			pi->color1[1] = 1.0f;
-		}
-
-		if( c & 4 ) {
-			pi->color1[0] = 1.0f;
-		}
-	}
-
-	pi->c1RGBA[0] = 255 * pi->color1[0];
-	pi->c1RGBA[1] = 255 * pi->color1[1];
-	pi->c1RGBA[2] = 255 * pi->color1[2];
-	pi->c1RGBA[3] = 255;
 
 	// view angles
 	VectorCopy( viewAngles, pi->viewAngles );

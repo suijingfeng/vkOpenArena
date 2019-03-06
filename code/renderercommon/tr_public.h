@@ -31,18 +31,15 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 //
 typedef struct
 {
-	// called before the library is unloaded
-	// if the system is just reconfiguring, pass destroyWindow = qfalse, 
-	//which will keep the screen from flashing to the desktop.
+	// called before the library is unloaded,
+	// if the system is just reconfiguring, pass destroyWindow = qfalse, which will keep the screen from flashing to the desktop.
 	void (*Shutdown)( qboolean destroyWindow );
 
-	// All data that will be used in a level should be
-	// registered before rendering any frames to prevent disk hits,
+	// All data that will be used in a level should be registered before rendering any frames to prevent disk hits,
 	// but they can still be registered at a later time if necessary.
 	//
-	// BeginRegistration makes any existing media pointers invalid
-	// and returns the current gl configuration, including screen width and height, 
-	//which can be used by the client to intelligently size display elements
+	// BeginRegistration makes any existing media pointers invalid and returns the current gl configuration, 
+    // including screen width and height, which can be used by the client to intelligently size display elements
 	void (*BeginRegistration)( glconfig_t *config );
 	qhandle_t (*RegisterModel)( const char *name );
 	qhandle_t (*RegisterSkin)( const char *name );
@@ -61,12 +58,12 @@ typedef struct
 	void (*ClearScene)( void );
 	void (*AddRefEntityToScene)( const refEntity_t *re );
 	void (*AddPolyToScene)( qhandle_t hShader , int numVerts, const polyVert_t *verts, int num );
-	int	 (*LightForPoint)( vec3_t point, vec3_t ambientLight, vec3_t directedLight, vec3_t lightDir );
+	int (*LightForPoint)( vec3_t point, vec3_t ambientLight, vec3_t directedLight, vec3_t lightDir );
 	void (*AddLightToScene)( const vec3_t org, float intensity, float r, float g, float b );
 	void (*AddAdditiveLightToScene)( const vec3_t org, float intensity, float r, float g, float b );
 	void (*RenderScene)( const refdef_t *fd );
 	void (*SetColor)( const float *rgba );	// NULL = 1,1,1,1
-	void (*DrawStretchPic) ( float x, float y, float w, float h, float s1, float t1, float s2, float t2, qhandle_t hShader );	// 0 = white
+	void (*DrawStretchPic) ( float x, float y, float w, float h, float s1, float t1, float s2, float t2, qhandle_t hShader );// 0 = white
 
 	// Draw images for cinematic rendering, pass as 32 bit rgba
 	void (*DrawStretchRaw) (int x, int y, int w, int h, int cols, int rows, const byte *data, int client, qboolean dirty);
@@ -92,8 +89,6 @@ typedef struct
 	qboolean (*inPVS)( const vec3_t p1, const vec3_t p2 );
 
 	void (*TakeVideoFrame)( int h, int w, byte* captureBuffer, byte *encodeBuffer, qboolean motionJpeg );
-
-    void (*SetColorMappings)( void );
 } refexport_t;
 
 //
@@ -101,53 +96,51 @@ typedef struct
 //
 typedef struct {
 	// print message on the local console
-	void	(QDECL *Printf)( int printLevel, const char *fmt, ...) __attribute__ ((format (printf, 2, 3)));
+	void (QDECL *Printf)( int printLevel, const char *fmt, ...) __attribute__ ((format (printf, 2, 3)));
 
 	// abort the game
-	void	(QDECL *Error)( int errorLevel, const char *fmt, ...) __attribute__ ((format (printf, 2, 3)));
+	void (QDECL *Error)( int errorLevel, const char *fmt, ...) __attribute__ ((noreturn, format (printf, 2, 3)));
 
-	// milliseconds should only be used for profiling, 
-	// never for anything game related. Get time from the refdef
-	int		(*Milliseconds)( void );
+	// milliseconds should only be used for profiling, never for anything game related. Get time from the refdef
+	int (*Milliseconds)( void );
 
 	// stack based memory allocation for per-level things that won't be freed
 #ifdef HUNK_DEBUG
-	void*	(*Hunk_AllocDebug)( int size, ha_pref pref, char *label, char *file, int line );
+	void* (*Hunk_AllocDebug)( int size, ha_pref pref, char *label, char *file, int line );
 #else
-	void*	(*Hunk_Alloc)( int size, ha_pref pref );
+	void* (*Hunk_Alloc)( int size, ha_pref pref );
 #endif
-	void*	(*Hunk_AllocateTempMemory)( int size );
-	void	(*Hunk_FreeTempMemory)( void *block );
+	void* (*Hunk_AllocateTempMemory)( int size );
+	void (*Hunk_FreeTempMemory)( void *block );
 
 	// dynamic memory allocator for things that need to be freed
-	void*   (*Malloc)( int bytes );
-	void	(*Free)( void *buf );
+	void* (*Malloc)( int bytes );
+	void (*Free)( void *buf );
 
 	cvar_t* (*Cvar_Get)( const char *name, const char *value, int flags );
-	void	(*Cvar_Set)( const char *name, const char *value );
-	void	(*Cvar_SetValue) (const char *name, float value);
-	void	(*Cvar_CheckRange)( cvar_t *cv, float minVal, float maxVal, qboolean shouldBeIntegral );
-	void	(*Cvar_SetDescription)( cvar_t *cv, const char *description );
+	void (*Cvar_Set)( const char *name, const char *value );
+	void (*Cvar_SetValue) (const char *name, float value);
+	void (*Cvar_CheckRange)( cvar_t *cv, float minVal, float maxVal, qboolean shouldBeIntegral );
+	void (*Cvar_SetDescription)( cvar_t *cv, const char *description );
+	int (*Cvar_VariableIntegerValue) (const char *var_name);
 
-	int		(*Cvar_VariableIntegerValue) (const char *var_name);
+	void (*Cmd_AddCommand)( const char *name, void(*cmd)(void) );
+	void (*Cmd_RemoveCommand)( const char *name );
 
-	void	(*Cmd_AddCommand)( const char *name, void(*cmd)(void) );
-	void	(*Cmd_RemoveCommand)( const char *name );
+	int (*Cmd_Argc) (void);
+	char* (*Cmd_Argv) (int i);
 
-	int		(*Cmd_Argc) (void);
-	char	*(*Cmd_Argv) (int i);
-
-	void	(*Cmd_ExecuteText) (int exec_when, const char *text);
-
+	void (*Cmd_ExecuteText) (int exec_when, const char *text);
 	unsigned char *(*CM_ClusterPVS)(int cluster);
 
 	// visualization for debugging collision detection
 	void	(*CM_DrawDebugSurface)( void (*drawPoly)(int color, int numPoints, float *points) );
 
 	// a -1 return means the file does not exist
-	// NULL can be passed for buf to just determine existence
+	// NULL can be passed for buf to just determine existance
 	int		(*FS_FileIsInPAK)( const char *name, int *pCheckSum );
-	long	(*FS_ReadFile)( const char *name, void **buf );
+	long (*FS_ReadFile)( const char *name, void **buf );
+	long (*R_ReadFile)( const char *name, char **buf );
 	void	(*FS_FreeFile)( void *buf );
 	char **	(*FS_ListFiles)( const char *name, const char *extension, int *numfilesfound );
 	void	(*FS_FreeFileList)( char **filelist );
@@ -165,19 +158,10 @@ typedef struct {
 	void	(*Sys_SetEnv)( const char *name, const char *value );
 	qboolean (*Sys_LowPhysicalMemory)( void );
 
-	// platform-dependent functions
-	void	(*GLimpInit)( glconfig_t *config );
-	void	(*GLimpShutdown)( qboolean unloadDLL );
-	void	(*GLimpEndFrame)( void );
-	void	(*InitGamma)( glconfig_t *config );
-	void	(*SetGamma)(unsigned char red[256], unsigned char green[256], unsigned char blue[256]);
-
-	void*	(*GLimpGetProcAddress)(const char * fun);
-    // extra
-    int32_t ( *Puff)(uint8_t  *dest,		/* pointer to destination pointer */
-             uint32_t *destlen,		/* amount of output space */
-             uint8_t  *source,		/* pointer to source data pointer */
-             uint32_t *sourcelen);	/* amount of input available */
+// input event handling
+	void (* IN_Init)( void* , unsigned int);
+	void (* IN_Shutdown)( void );
+	void (* IN_Restart)( void );
 
 } refimport_t;
 

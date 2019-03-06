@@ -232,7 +232,7 @@ RE_AddDynamicLightToScene
 
 =====================
 */
-static void RE_AddDynamicLightToScene( const vec3_t org, float intensity, float r, float g, float b, int additive ) {
+void RE_AddDynamicLightToScene( const vec3_t org, float intensity, float r, float g, float b, int additive ) {
 	dlight_t	*dl;
 
 	if ( !tr.registered ) {
@@ -298,14 +298,14 @@ void RE_BeginScene(const refdef_t *fd)
 	// will force a reset of the visible leafs even if the view hasn't moved
 	tr.refdef.areamaskModified = qfalse;
 	if ( ! (tr.refdef.rdflags & RDF_NOWORLDMODEL) ) {
-		int		areaDiff;
-		int		i;
+		int	areaDiff = 0;
+		int	i;
 
 		// compare the area bits
-		areaDiff = 0;
-		for (i = 0 ; i < MAX_MAP_AREA_BYTES/4 ; i++) {
-			areaDiff |= ((int *)tr.refdef.areamask)[i] ^ ((int *)fd->areamask)[i];
-			((int *)tr.refdef.areamask)[i] = ((int *)fd->areamask)[i];
+		for (i = 0 ; i < MAX_MAP_AREA_BYTES; i++)
+		{
+			areaDiff |= tr.refdef.areamask[i] ^ fd->areamask[i];
+			tr.refdef.areamask[i] = fd->areamask[i];
 		}
 
 		if ( areaDiff ) {
@@ -325,7 +325,7 @@ void RE_BeginScene(const refdef_t *fd)
 	}
 	else
 	{
-		float scale = (1 << 2) / 255.0f;
+		float scale = (1 << r_mapOverBrightBits->integer) / 255.0f;
 
 		if (r_forceSun->integer)
 			VectorScale(tr.sunLight, scale * r_forceSunLightScale->value, tr.refdef.sunCol);
@@ -410,8 +410,7 @@ void RE_BeginScene(const refdef_t *fd)
 
 	// turn off dynamic lighting globally by clearing all the
 	// dlights if it needs to be disabled or if vertex lighting is enabled
-	if ( r_dynamiclight->integer == 0 ||
-		 r_vertexLight->integer == 1 ) {
+	if ( r_dynamiclight->integer == 0 ) {
 		tr.refdef.num_dlights = 0;
 	}
 
@@ -425,7 +424,7 @@ void RE_BeginScene(const refdef_t *fd)
 }
 
 
-void RE_EndScene()
+void RE_EndScene(void)
 {
 	// the next scene rendered in this frame will tack on after this one
 	r_firstSceneDrawSurf = tr.refdef.numDrawSurfs;
@@ -447,15 +446,13 @@ to handle mirrors,
 */
 void RE_RenderScene( const refdef_t *fd ) {
 	viewParms_t		parms;
-	int				startTime;
-	qboolean	customscrn = !(fd->rdflags & RDF_NOWORLDMODEL);
+
 	if ( !tr.registered ) {
 		return;
 	}
 
-	//GLimp_LogComment( "====== RE_RenderScene =====\n" );
-
-	startTime = ri.Milliseconds();
+	qboolean customscrn = !(fd->rdflags & RDF_NOWORLDMODEL);
+	int startTime = ri.Milliseconds();
 
 	if (!tr.world && customscrn ) {
 		ri.Error (ERR_DROP, "R_RenderScene: NULL worldmodel");
@@ -464,19 +461,19 @@ void RE_RenderScene( const refdef_t *fd ) {
 	RE_BeginScene(fd);
 
 	// SmileTheory: playing with shadow mapping
-	if (customscrn && tr.refdef.num_dlights && r_dlightMode->integer >= 2)
+	if (customscrn && tr.refdef.num_dlights && (r_dlightMode->integer >= 2))
 	{
 		R_RenderDlightCubemaps(fd);
 	}
 
 	/* playing with more shadows */
-	if(glRefConfig.framebufferObject && customscrn && r_shadows->integer == 4)
+	if(glRefConfig.framebufferObject && customscrn && (r_shadows->integer == 4))
 	{
 		R_RenderPshadowMaps(fd);
 	}
-
+/*
 	// playing with even more shadows
-	if(glRefConfig.framebufferObject && r_sunlightMode->integer && customscrn && (r_forceSun->integer || tr.sunShadows))
+	if(glRefConfig.framebufferObject && r_sunlightMode->integer && !( fd->rdflags & RDF_NOWORLDMODEL ) && (r_forceSun->integer || tr.sunShadows))
 	{
 		if (r_shadowCascadeZFar->integer != 0)
 		{
@@ -486,9 +483,7 @@ void RE_RenderScene( const refdef_t *fd ) {
 		}
 		else
 		{
-			Mat4Zero(tr.refdef.sunShadowMvp[0]);
-			Mat4Zero(tr.refdef.sunShadowMvp[1]);
-			Mat4Zero(tr.refdef.sunShadowMvp[2]);
+            memset(tr.refdef.sunShadowMvp, 0, 64 * 3);
 		}
 
 		// only rerender last cascade if sun has changed position
@@ -503,7 +498,7 @@ void RE_RenderScene( const refdef_t *fd ) {
 			Mat4Copy(tr.lastCascadeSunMvp, tr.refdef.sunShadowMvp[3]);
 		}
 	}
-
+*/
 	// playing with cube maps
 	// this is where dynamic cubemaps would be rendered
 	if (0) //(glRefConfig.framebufferObject && !( fd->rdflags & RDF_NOWORLDMODEL ))
@@ -524,7 +519,10 @@ void RE_RenderScene( const refdef_t *fd ) {
 	// set up viewport
 	// The refdef takes 0-at-the-top y coordinates, so
 	// convert to GL's 0-at-the-bottom space
-	//
+	// leilei - widescreen
+	// recalculate fov according to widescreen parameters
+    // figure out our zoom or changed fov magnitiude from cg_fov and cg_zoomfov
+    // try not to recalculate fov of ui and hud elements
 	memset( &parms, 0, sizeof( parms ) );
 	parms.viewportX = tr.refdef.x;
 	parms.viewportY = glConfig.vidHeight - ( tr.refdef.y + tr.refdef.height );
@@ -535,31 +533,6 @@ void RE_RenderScene( const refdef_t *fd ) {
 	parms.fovX = tr.refdef.fov_x;
 	parms.fovY = tr.refdef.fov_y;
 
-    if (customscrn) // don't affect interface refdefs
-	{
-		// figure out our zoom or changed fov magnitiude from cg_fov and cg_zoomfov
-		//float zoomfov = tr.refdef.fov_x / 90;
-		// find aspect to immediately match our vidwidth for perfect match with resized screens...
-		//float erspact = tr.refdef.width / tr.refdef.height;
-		//float aspact = glConfig.vidWidth / glConfig.vidHeight;
-
-	
-		// try not to recalculate fov of ui and hud elements
-		//if (((tr.refdef.fov_x /  tr.refdef.fov_y) > 1.3) && (tr.refdef.width > 320) && (tr.refdef.height > 240))
-		//if (((tr.refdef.fov_x /  tr.refdef.fov_y) > 1.3) && (tr.refdef.width > (320 * refdefscalex)) && (tr.refdef.height > (240 * refdefscaley)))
-		float x_div_y = tr.refdef.fov_x / tr.refdef.fov_y;
-
-		if ((x_div_y > 1.34) && ((tr.refdef.width / tr.refdef.height) == (glConfig.vidWidth / glConfig.vidHeight)))
-		{
-			// undo vert-
-			parms.fovY *= x_div_y * (73.739792 / 90.0);
-			
-			// recalculate the fov
-			parms.fovX = atan( tan(parms.fovY * (M_PI / 360.0f)) * glConfig.windowAspect ) * (360.0f / M_PI);
-			parms.fovY = atan( tan(parms.fovX * (M_PI / 360.0f)) / glConfig.windowAspect ) * (360.0f / M_PI);
-		}
-	}
-    
 	VectorCopy( fd->vieworg, parms.or.origin );
 	VectorCopy( fd->viewaxis[0], parms.or.axis[0] );
 	VectorCopy( fd->viewaxis[1], parms.or.axis[1] );

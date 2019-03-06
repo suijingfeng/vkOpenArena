@@ -21,11 +21,16 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 */
 // vm_x86.c -- load time compiler and execution environment for x86
 
+
 #include "vm_local.h"
 
 #ifdef _WIN32
   #include <windows.h>
 #else
+  #ifdef __FreeBSD__
+  #include <sys/types.h>
+  #endif
+
   #include <sys/mman.h> // for PROT_ stuff
 
   /* need this on NX enabled systems (i386 with PAE kernel or noexec32=on x86_64) */
@@ -36,6 +41,7 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
     #define MAP_ANONYMOUS MAP_ANON
   #endif
 #endif
+
 
 static void VM_Destroy_Compiled(vm_t* self);
 
@@ -84,109 +90,118 @@ static	ELastCommand	LastCommand;
 
 static int iss8(int32_t v)
 {
-	return (SCHAR_MIN <= v && v <= SCHAR_MAX);
+	return ( (v >= SCHAR_MIN) && (v <= SCHAR_MAX) );
 }
 
 
-static int NextConstant4(void)
+inline static int Constant4( void )
 {
-	return (code[pc] | (code[pc+1]<<8) | (code[pc+2]<<16) | (code[pc+3]<<24));
-}
-
-static int	Constant4( void )
-{
-	int	v = NextConstant4();
+	int	v = (code[pc] | (code[pc+1]<<8) | (code[pc+2]<<16) | (code[pc+3]<<24));
 	pc += 4;
 	return v;
 }
 
-static int Constant1( void )
-{
-	int	v = code[pc];
-	pc += 1;
-	return v;
-}
 
-static void Emit1( int v ) 
-{
-	buf[ compiledOfs ] = v;
-	compiledOfs++;
 
+inline static void Emit1( int v ) 
+{
+	buf[ compiledOfs++ ] = v;
 	LastCommand = LAST_COMMAND_NONE;
 }
 
-static void Emit2(int v)
+inline static void Emit2(int v)
 {
-	Emit1(v & 255);
-	Emit1((v >> 8) & 255);
+    buf[ compiledOfs++ ] = v & 0xFF;
+    buf[ compiledOfs++ ] = (v >> 8) & 0xFF;
+	LastCommand = LAST_COMMAND_NONE;
 }
 
 
-static void Emit4(int v)
+inline static void Emit4(int v)
 {
-	Emit1(v & 0xFF);
-	Emit1((v >> 8) & 0xFF);
-	Emit1((v >> 16) & 0xFF);
-	Emit1((v >> 24) & 0xFF);
+    buf[ compiledOfs++ ] = v & 0xFF;
+    buf[ compiledOfs++ ] = (v >> 8) & 0xFF;
+    buf[ compiledOfs++ ] = (v >> 16) & 0xFF;
+    buf[ compiledOfs++ ] = (v >> 24) & 0xFF;
+	LastCommand = LAST_COMMAND_NONE;
 }
 
-static void EmitPtr(void *ptr)
+inline static void EmitPtr(void *ptr)
 {
 	intptr_t v = (intptr_t) ptr;
 	
-	Emit4(v);
+    buf[ compiledOfs++ ] = v & 0xFF;
+    buf[ compiledOfs++ ] = (v >> 8) & 0xFF;
+    buf[ compiledOfs++ ] = (v >> 16) & 0xFF;
+    buf[ compiledOfs++ ] = (v >> 24) & 0xFF;
+
 #if idx64
-	Emit1((v >> 32) & 0xFF);
-	Emit1((v >> 40) & 0xFF);
-	Emit1((v >> 48) & 0xFF);
-	Emit1((v >> 56) & 0xFF);
+    buf[ compiledOfs++ ] = (v >> 32) & 0xFF;
+    buf[ compiledOfs++ ] = (v >> 40) & 0xFF;
+    buf[ compiledOfs++ ] = (v >> 48) & 0xFF;
+    buf[ compiledOfs++ ] = (v >> 56) & 0xFF;
 #endif
+
+    LastCommand = LAST_COMMAND_NONE;
 }
 
 
-static int Hex( int c )
+inline static int ch2Hex( unsigned char c )
 {
-	if ( c >= 'a' && c <= 'f' ) {
-		return 10 + c - 'a';
-	}
-	if ( c >= 'A' && c <= 'F' ) {
-		return 10 + c - 'A';
-	}
-	if ( c >= '0' && c <= '9' ) {
+
+	if( (c >= '0') && (c <= '9') )
+    {
 		return c - '0';
 	}
-
-	VMFREE_BUFFERS();
-	Com_Error( ERR_DROP, "Hex: bad char '%c'", c );
-
+	if( (c >= 'A') && (c <= 'F') )
+    {
+		return 10 + c - 'A';
+	}
+	if( (c >= 'a') && (c <= 'f') )
+    {
+		return 10 + c - 'a';
+	}
 	return 0;
 }
 
 
-static void EmitString( const char *string )
+
+inline static void EmitString(const char *string)
 {
+
 	while ( 1 )
     {
-		int v = ( Hex( (int)string[0] ) << 4 ) | Hex( (int)string[1] );
-		Emit1( v );
+		buf[ compiledOfs++ ] = (ch2Hex(string[0]) << 4) | ch2Hex(string[1]);
 
-		if ( !string[2] )
-        {
+		if ( 0 == string[2] )
 			break;
-		}
+        
 		string += 3;
 	}
+
+    LastCommand = LAST_COMMAND_NONE;
 }
 
 
-static void EmitRexString(unsigned char rex, const char *string)
+
+inline static void EmitRexString(unsigned char rex, const char *string)
 {
 #if idx64
 	if(rex)
-		Emit1(rex);
+    	buf[ compiledOfs++ ] = rex;
 #endif
 
-	EmitString(string);
+	while ( 1 )
+    {
+		buf[ compiledOfs++ ] = (ch2Hex(string[0]) << 4) | ch2Hex(string[1]);
+
+		if ( 0 == string[2] )
+			break;
+        
+		string += 3;
+	}
+
+    LastCommand = LAST_COMMAND_NONE;
 }
 
 
@@ -197,42 +212,39 @@ static void EmitRexString(unsigned char rex, const char *string)
 		Emit4((mask)); \
 	} while(0)
 
-// add bl, bytes
-#define STACK_PUSH(bytes) \
-	do { \
-		EmitString("80 C3"); \
-		Emit1(bytes); \
-	} while(0)
 
-// sub bl, bytes
-#define STACK_POP(bytes) \
-	do { \
-		EmitString("80 EB"); \
-		Emit1(bytes); \
-	} while(0)
-
-
-static void EmitCommand(ELastCommand command)
+inline static void EmitCommand(ELastCommand command)
 {
 	switch(command)
 	{
 		case LAST_COMMAND_MOV_STACK_EAX:
-			EmitString("89 04 9F");		// mov dword ptr [edi + ebx * 4], eax
+			// EmitString("89 04 9F");		// mov dword ptr [edi + ebx * 4], eax
+            
+            buf[ compiledOfs++ ] = 0x89;
+            buf[ compiledOfs++ ] = 0x04;
+            buf[ compiledOfs++ ] = 0x9F;
 			break;
 
 		case LAST_COMMAND_SUB_BL_1:
-			STACK_POP(1);			// sub bl, 1
+			//EmitString("80 EB");
+		    buf[ compiledOfs++ ] = 0x80;
+            buf[ compiledOfs++ ] = 0xEB;
+            //Emit1(1);			// sub bl, 1
+            buf[ compiledOfs++ ] = 0x01;
 			break;
 
 		case LAST_COMMAND_SUB_BL_2:
-			STACK_POP(2);			// sub bl, 2
+			//EmitString("80 EB");
+		    buf[ compiledOfs++ ] = 0x80;
+            buf[ compiledOfs++ ] = 0xEB;
+            //Emit1(2);			// sub bl, 2
+            buf[ compiledOfs++ ] = 0x02;
 			break;
 		default:
 			break;
 	}
-	LastCommand = command;
+    LastCommand = command;
 }
-
 
 static void EmitPushStack(vm_t *vm)
 {
@@ -248,14 +260,25 @@ static void EmitPushStack(vm_t *vm)
 		{	// sub bl, 2
 			compiledOfs -= 3;
 			vm->instructionPointers[instruction - 1] = compiledOfs;
-			STACK_POP(1);		//	sub bl, 1
+			//EmitString("80 EB");
+		    buf[ compiledOfs++ ] = 0x80;
+            buf[ compiledOfs++ ] = 0xEB;
+            //Emit1(1);			// sub bl, 1
+            buf[ compiledOfs++ ] = 0x01;
+	        LastCommand = LAST_COMMAND_NONE;
 			return;
 		}
 	}
 
-	STACK_PUSH(1);		// add bl, 1
-}
+	// add bl, 1
+    //EmitString("80 C3");
+	//Emit1(1);
 
+	buf[ compiledOfs++ ] = 0x80;
+    buf[ compiledOfs++ ] = 0xC3;
+    buf[ compiledOfs++ ] = 0x01;
+	LastCommand = LAST_COMMAND_NONE;
+}
 
 static void EmitMovEAXStack(vm_t *vm, int andit)
 {
@@ -293,36 +316,6 @@ static void EmitMovEAXStack(vm_t *vm, int andit)
 		EmitString("25");		// and eax, 0x12345678
 		Emit4(andit);
 	}
-}
-
-
-#if idx64
-  #define EAX "%%rax"
-  #define EBX "%%rbx"
-  #define ESP "%%rsp"
-  #define EDI "%%rdi"
-#else
-  #define EAX "%%eax"
-  #define EBX "%%ebx"
-  #define ESP "%%esp"
-  #define EDI "%%edi"
-#endif
-
-
-static inline int Q_VMftol(void)
-{
-  int retval;
-  
-  __asm__ volatile
-  (
-    "movss (" EDI ", " EBX ", 4), %%xmm0\n"
-    "cvttss2si %%xmm0, %0\n"
-    : "=r" (retval)
-    :
-    : "%xmm0"
-  );
-
-  return retval;
 }
 
 void EmitMovECXStack(vm_t *vm)
@@ -408,7 +401,7 @@ Error handler for jump/call to invalid instruction number
 =================
 */
 
-static void ErrJump(void)
+static void __attribute__((__noreturn__)) ErrJump(void)
 { 
 	Com_Error(ERR_DROP, "program tried to execute code outside VM");
 }
@@ -422,29 +415,34 @@ work around different calling conventions
 =================
 */
 
-static int vm_syscallNum;
-static int vm_programStack;
-static int *vm_opStackBase;
-static uint8_t vm_opStackOfs;
-static intptr_t vm_arg;
+int vm_syscallNum;
+int vm_programStack;
+int *vm_opStackBase;
+uint8_t vm_opStackOfs;
+intptr_t vm_arg;
 
 static void DoSyscall(void)
 {
+	vm_t *savedVM;
+
 	// save currentVM so as to allow for recursive VM entry
-	vm_t *savedVM = currentVM;
+	savedVM = currentVM;
 	// modify VM stack pointer for recursive VM entry
 	currentVM->programStack = vm_programStack - 4;
 
 	if(vm_syscallNum < 0)
 	{
+		int *data, *ret;
+#if idx64
+		int index;
+		intptr_t args[MAX_VMSYSCALL_ARGS];
+#endif
 		
-		int* data = (int *) (savedVM->dataBase + vm_programStack + 4);
-		int* ret = &vm_opStackBase[vm_opStackOfs + 1];
+		data = (int *) (savedVM->dataBase + vm_programStack + 4);
+		ret = &vm_opStackBase[vm_opStackOfs + 1];
 
 #if idx64
-		intptr_t args[MAX_VMSYSCALL_ARGS];
 		args[0] = ~vm_syscallNum;
-		int index;
 		for(index = 1; index < ARRAY_LEN(args); index++)
 			args[index] = data[index];
 			
@@ -458,18 +456,21 @@ static void DoSyscall(void)
 	{
 		switch(vm_syscallNum)
 		{
-            case VM_JMP_VIOLATION:
-                ErrJump();break;
-            case VM_BLOCK_COPY: 
-                if(vm_opStackOfs < 1)
-                    Com_Error(ERR_DROP, "VM_BLOCK_COPY failed due to corrupted opStack");
-                
-                VM_BlockCopy(vm_opStackBase[(vm_opStackOfs - 1)], vm_opStackBase[vm_opStackOfs], vm_arg);
-                break;
-            default:
-                Com_Error(ERR_DROP, "Unknown VM operation %d", vm_syscallNum);break;
+		case VM_JMP_VIOLATION:
+			ErrJump();
+		break;
+		case VM_BLOCK_COPY: 
+			if(vm_opStackOfs < 1)
+				Com_Error(ERR_DROP, "VM_BLOCK_COPY failed due to corrupted opStack");
+			
+			VM_BlockCopy(vm_opStackBase[(vm_opStackOfs - 1)], vm_opStackBase[vm_opStackOfs], vm_arg);
+		break;
+		default:
+			Com_Error(ERR_DROP, "Unknown VM operation %d", vm_syscallNum);
+		break;
 		}
 	}
+
 	currentVM = savedVM;
 }
 
@@ -584,7 +585,8 @@ int EmitCallProcedure(vm_t *vm, int sysCallOfs)
 	int retval;
 
 	EmitString("8B 04 9F");		// mov eax, dword ptr [edi + ebx * 4]
-	STACK_POP(1);			// sub bl, 1
+	EmitString("80 EB");
+	Emit1(1);			// sub bl, 1
 	EmitString("85 C0");		// test eax, eax
 
 	// Jump to syscall code, 1 byte offset should suffice
@@ -622,7 +624,9 @@ int EmitCallProcedure(vm_t *vm, int sysCallOfs)
 	EmitCallRel(vm, sysCallOfs);
 
 	// have opStack reg point at return value
-	STACK_PUSH(1);			// add bl, 1
+	// add bl, 1
+    EmitString("80 C3");
+	Emit1(1);
 	EmitString("C3");		// ret
 
 	return retval;
@@ -698,36 +702,36 @@ void EmitBranchConditions(vm_t *vm, int op)
 {
 	switch(op)
 	{
-        case OP_EQ:
-            EmitJumpIns(vm, "0F 84", Constant4());	// je 0x12345678
-        break;
-        case OP_NE:
-            EmitJumpIns(vm, "0F 85", Constant4());	// jne 0x12345678
-        break;
-        case OP_LTI:
-            EmitJumpIns(vm, "0F 8C", Constant4());	// jl 0x12345678
-        break;
-        case OP_LEI:
-            EmitJumpIns(vm, "0F 8E", Constant4());	// jle 0x12345678
-        break;
-        case OP_GTI:
-            EmitJumpIns(vm, "0F 8F", Constant4());	// jg 0x12345678
-        break;
-        case OP_GEI:
-            EmitJumpIns(vm, "0F 8D", Constant4());	// jge 0x12345678
-        break;
-        case OP_LTU:
-            EmitJumpIns(vm, "0F 82", Constant4());	// jb 0x12345678
-        break;
-        case OP_LEU:
-            EmitJumpIns(vm, "0F 86", Constant4());	// jbe 0x12345678
-        break;
-        case OP_GTU:
-            EmitJumpIns(vm, "0F 87", Constant4());	// ja 0x12345678
-        break;
-        case OP_GEU:
-            EmitJumpIns(vm, "0F 83", Constant4());	// jae 0x12345678
-        break;
+	case OP_EQ:
+		EmitJumpIns(vm, "0F 84", Constant4());	// je 0x12345678
+	break;
+	case OP_NE:
+		EmitJumpIns(vm, "0F 85", Constant4());	// jne 0x12345678
+	break;
+	case OP_LTI:
+		EmitJumpIns(vm, "0F 8C", Constant4());	// jl 0x12345678
+	break;
+	case OP_LEI:
+		EmitJumpIns(vm, "0F 8E", Constant4());	// jle 0x12345678
+	break;
+	case OP_GTI:
+		EmitJumpIns(vm, "0F 8F", Constant4());	// jg 0x12345678
+	break;
+	case OP_GEI:
+		EmitJumpIns(vm, "0F 8D", Constant4());	// jge 0x12345678
+	break;
+	case OP_LTU:
+		EmitJumpIns(vm, "0F 82", Constant4());	// jb 0x12345678
+	break;
+	case OP_LEU:
+		EmitJumpIns(vm, "0F 86", Constant4());	// jbe 0x12345678
+	break;
+	case OP_GTU:
+		EmitJumpIns(vm, "0F 87", Constant4());	// ja 0x12345678
+	break;
+	case OP_GEU:
+		EmitJumpIns(vm, "0F 83", Constant4());	// jae 0x12345678
+	break;
 	}
 }
 
@@ -911,7 +915,7 @@ qboolean ConstOptimize(vm_t *vm, int callProcOfsSyscall)
 		return qtrue;
 
 	case OP_LSH:
-		v = NextConstant4();
+		v = (code[pc] | (code[pc+1]<<8) | (code[pc+2]<<16) | (code[pc+3]<<24));
 		if(v < 0 || v > 31)
 			break;
 
@@ -925,7 +929,7 @@ qboolean ConstOptimize(vm_t *vm, int callProcOfsSyscall)
 		return qtrue;
 
 	case OP_RSHI:
-		v = NextConstant4();
+		v = (code[pc] | (code[pc+1]<<8) | (code[pc+2]<<16) | (code[pc+3]<<24));
 		if(v < 0 || v > 31)
 			break;
 			
@@ -939,7 +943,7 @@ qboolean ConstOptimize(vm_t *vm, int callProcOfsSyscall)
 		return qtrue;
 
 	case OP_RSHU:
-		v = NextConstant4();
+		v = (code[pc] | (code[pc+1]<<8) | (code[pc+2]<<16) | (code[pc+3]<<24));
 		if(v < 0 || v > 31)
 			break;
 			
@@ -1035,7 +1039,7 @@ qboolean ConstOptimize(vm_t *vm, int callProcOfsSyscall)
 
 	case OP_EQF:
 	case OP_NEF:
-		if(NextConstant4())
+		if(code[pc] | (code[pc+1]<<8) | (code[pc+2]<<16) | (code[pc+3]<<24))
 			break;
 		pc += 5;					// CONST + OP_EQF|OP_NEF
 
@@ -1075,27 +1079,58 @@ qboolean ConstOptimize(vm_t *vm, int callProcOfsSyscall)
 	return qfalse;
 }
 
+#if idx64
+  #define EAX "%%rax"
+  #define EBX "%%rbx"
+  #define ESP "%%rsp"
+  #define EDI "%%rdi"
+#else
+  #define EAX "%%eax"
+  #define EBX "%%ebx"
+  #define ESP "%%esp"
+  #define EDI "%%edi"
+#endif
+
+static inline int Q_VMftol(void)
+{
+    int retval;
+
+    __asm__ volatile
+        (
+         "movss (" EDI ", " EBX ", 4), %%xmm0\n"
+         "cvttss2si %%xmm0, %0\n"
+         : "=r" (retval)
+         :
+         : "%xmm0"
+        );
+
+    return retval;
+}
 
 void VM_Compile(vm_t *vm, vmHeader_t *header)
 {
-	int	op, v, i;
+	int	op, maxLength, v, i;
     int	callProcOfsSyscall, callProcOfs, callDoSyscallOfs;
 
 	jusedSize = header->instructionCount + 2;
 
 	// allocate a very large temp buffer, we will shrink it later
-	int maxLength = header->codeLength * 8 + 64;
-	buf = Z_Malloc(maxLength);
-	jused = Z_Malloc(jusedSize);
-	code = Z_Malloc(header->codeLength+32);
+	maxLength = header->codeLength * 8 + 64;
 	
+    buf = Z_Malloc(maxLength);
+    memset(buf, 0, maxLength);
+
+	jused = Z_Malloc(jusedSize);
 	memset(jused, 0, jusedSize);
-	memset(buf, 0, maxLength);
+
+	code = Z_Malloc(header->codeLength+32);
+	memset(code, 0, header->codeLength+32);
+	
+
 
 	// copy code in larger buffer and put some zeros at the end
 	// so we can safely look ahead for a few instructions in it
 	// without a chance to get false-positive because of some garbage bytes
-	memset(code, 0, header->codeLength+32);
 	memcpy(code, (byte *)header + header->codeOffset, header->codeLength );
 
 	// ensure that the optimisation pass knows about all the jump
@@ -1131,7 +1166,7 @@ void VM_Compile(vm_t *vm, vmHeader_t *header)
 	{
 		if(compiledOfs > maxLength - 16)
 		{
-	        	VMFREE_BUFFERS();
+	        VMFREE_BUFFERS();
 			Com_Error(ERR_DROP, "VM_CompileX86: maxLength exceeded");
 		}
 
@@ -1150,9 +1185,10 @@ void VM_Compile(vm_t *vm, vmHeader_t *header)
 			Com_Error(ERR_DROP, "VM_CompileX86: pc > header->codeLength");
 		}
 
-		op = code[ pc ];
-		pc++;
-		switch ( op ) {
+		op = code[ pc++ ];
+	
+		switch ( op )
+        {
 		case 0:
 			break;
 		case OP_BREAK:
@@ -1187,7 +1223,7 @@ void VM_Compile(vm_t *vm, vmHeader_t *header)
 			EmitMovEAXStack(vm, 0);				// mov eax, dword ptr [edi + ebx * 4]
 			EmitString("8B D6");				// mov edx, esi
 			EmitString("81 C2");				// add edx, 0x12345678
-			Emit4((Constant1() & 0xFF));
+			Emit4(code[pc++]);
 			MASK_REG("E2", vm->dataMask);			// and edx, 0x12345678
 #if idx64
 			EmitRexString(0x41, "89 04 11");		// mov dword ptr [r9 + edx], eax
@@ -1686,7 +1722,7 @@ void VM_Compile(vm_t *vm, vmHeader_t *header)
 	Z_Free( code );
 	Z_Free( buf );
 	Z_Free( jused );
-	Com_Printf( " VM_Compile: VM file %s compiled to %i bytes of code\n", vm->name, compiledOfs );
+	Com_Printf( "VM file %s compiled to %i bytes of code\n", vm->name, compiledOfs );
 
 	vm->destroy = VM_Destroy_Compiled;
 
@@ -1695,7 +1731,6 @@ void VM_Compile(vm_t *vm, vmHeader_t *header)
 		vm->instructionPointers[i] += (intptr_t) vm->codeBase;
 	}
 }
-
 
 void VM_Destroy_Compiled(vm_t* self)
 {
@@ -1723,8 +1758,8 @@ extern uint8_t qvmcall64(int *programStack, int *opStack, intptr_t *instructionP
 intptr_t VM_CallCompiled(vm_t *vm, int *args)
 {
 	unsigned char stack[OPSTACK_SIZE + 15];
-	//int	*opStack;
-	int	arg;
+	unsigned char* image;
+    int	arg;
 
 	currentVM = vm;
 
@@ -1734,9 +1769,8 @@ intptr_t VM_CallCompiled(vm_t *vm, int *args)
 	// we might be called recursively, so this might not be the very top
 	int programStack = vm->programStack;
     int stackOnEntry = vm->programStack;
-
 	// set up the stack frame 
-	unsigned char* image = vm->dataBase;
+	image = vm->dataBase;
 
 	programStack -= ( 8 + 4 * MAX_VMMAIN_ARGS );
 

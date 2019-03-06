@@ -23,7 +23,6 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
 #include "q_shared.h"
 #include "qcommon.h"
-#include "../sys/inputs.h"
 #include <setjmp.h>
 #ifndef _WIN32
 #include <netinet/in.h>
@@ -32,6 +31,7 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #include <winsock.h>
 #endif
 
+#include "../sdl/input.h"
 
 #define MAX_NUM_ARGVS	50
 
@@ -107,14 +107,13 @@ int		com_frameNumber;
 qboolean	com_errorEntered = qfalse;
 qboolean	com_fullyInitialized = qfalse;
 qboolean	com_gameRestarting = qfalse;
+qboolean	com_gameClientRestarting = qfalse;
 
-char com_errorMessage[MAXPRINTMSG];
+char	com_errorMessage[MAXPRINTMSG];
 
-//void Com_WriteConfig_f( void );
+static void Com_WriteConfig_f( void );
 void CIN_CloseAllVideos( void );
 
-
-void (QDECL *Q_SnapVector)(vec3_t vec);
 
 
 //============================================================================
@@ -143,6 +142,78 @@ void Com_EndRedirect (void)
 	rd_buffer = NULL;
 	rd_buffersize = 0;
 	rd_flush = NULL;
+}
+
+/*
+ * Transform Q3 colour codes to ANSI escape sequences
+ */
+void Sys_AnsiColorPrint( const char *msg )
+{
+	static char buffer[ MAXPRINTMSG ];
+	int length = 0;
+	static int  q3ToAnsi[ 8 ] =
+	{
+		30, // COLOR_BLACK
+		31, // COLOR_RED
+		32, // COLOR_GREEN
+		33, // COLOR_YELLOW
+		34, // COLOR_BLUE
+		36, // COLOR_CYAN
+		35, // COLOR_MAGENTA
+		0   // COLOR_WHITE
+	};
+
+	while( *msg )
+	{
+		if( Q_IsColorString( msg ) || *msg == '\n' )
+		{
+			// First empty the buffer
+			if( length > 0 )
+			{
+				buffer[ length ] = '\0';
+				fputs( buffer, stderr );
+				length = 0;
+			}
+
+			if( *msg == '\n' )
+			{
+				// Issue a reset and then the newline
+				fputs("\033[0m\n", stderr );
+				msg++;
+			}
+			else
+			{
+				// Print the color code
+				Com_sprintf( buffer, sizeof( buffer ), "\033[%dm", q3ToAnsi[ ColorIndex( *( msg + 1 ) ) ] );
+				fputs( buffer, stderr );
+				msg += 2;
+			}
+		}
+		else
+		{
+			if( length >= MAXPRINTMSG - 1 )
+				break;
+
+			buffer[ length ] = *msg;
+			length++;
+			msg++;
+		}
+	}
+
+	// Empty anything still left in the buffer
+	if( length > 0 )
+	{
+		buffer[ length ] = '\0';
+		fputs( buffer, stderr );
+	}
+}
+
+
+
+void Sys_Print( const char *msg )
+{
+	CON_LogWrite( msg );
+	CON_Print( msg );
 }
 
 /*
@@ -182,12 +253,14 @@ void QDECL Com_Printf(const char *fmt, ... )
     {
     // TTimo: only open the qconsole.log if the filesystem is in an initialized state
     //   also, avoid recursing in the qconsole.log opening (i.e. if fs_debug is on)
-		if( !logfile && FS_Initialized() && !opening_qconsole)
-        {
-            opening_qconsole = qtrue;
+		if( !logfile && FS_Initialized() && !opening_qconsole) {
+			struct tm *newtime;
 			time_t aclock;
+            
+            opening_qconsole = qtrue;
+
 			time( &aclock );
-			struct tm *newtime = localtime( &aclock );
+			newtime = localtime( &aclock );
 
 			logfile = FS_FOpenFileWrite( "qconsole.log" );
 			
@@ -195,9 +268,10 @@ void QDECL Com_Printf(const char *fmt, ... )
 			{
 				Com_Printf( "logfile opened on %s\n", asctime( newtime ) );
 			
-				if( com_logfile->integer > 1 )
+				if ( com_logfile->integer > 1 )
 				{
-					// force it to not buffer so we get valid data even if we are crashing
+					// force it to not buffer so we get valid
+					// data even if we are crashing
 					FS_ForceFlush(logfile);
 				}
 			}
@@ -243,6 +317,7 @@ void QDECL Com_Error( int code, const char *fmt, ... )
 	static int	lastErrorTime;
 	static int	errorCount;
 	int			currentTime;
+	qboolean	restartClient;
 
 	if(com_errorEntered)
 		Sys_Error("recursive error after: %s", com_errorMessage);
@@ -274,9 +349,17 @@ void QDECL Com_Error( int code, const char *fmt, ... )
 	if (code != ERR_DISCONNECT && code != ERR_NEED_CD)
 		Cvar_Set("com_errorMessage", com_errorMessage);
 
+	restartClient = com_gameClientRestarting && !( com_cl_running && com_cl_running->integer );
+
+	com_gameRestarting = qfalse;
+	com_gameClientRestarting = qfalse;
+
 	if (code == ERR_DISCONNECT || code == ERR_SERVERDISCONNECT) {
 		VM_Forced_Unload_Start();
 		SV_Shutdown( "Server disconnected" );
+		if ( restartClient ) {
+			CL_Init();
+		}
 		CL_Disconnect( qtrue );
 		CL_FlushMemory( );
 		VM_Forced_Unload_Done();
@@ -288,6 +371,9 @@ void QDECL Com_Error( int code, const char *fmt, ... )
 		Com_Printf ("********************\nERROR: %s\n********************\n", com_errorMessage);
 		VM_Forced_Unload_Start();
 		SV_Shutdown (va("Server crashed: %s",  com_errorMessage));
+		if ( restartClient ) {
+			CL_Init();
+		}
 		CL_Disconnect( qtrue );
 		CL_FlushMemory( );
 		VM_Forced_Unload_Done();
@@ -297,6 +383,9 @@ void QDECL Com_Error( int code, const char *fmt, ... )
 	} else if ( code == ERR_NEED_CD ) {
 		VM_Forced_Unload_Start();
 		SV_Shutdown( "Server didn't have CD" );
+		if ( restartClient ) {
+			CL_Init();
+		}
 		if ( com_cl_running && com_cl_running->integer ) {
 			CL_Disconnect( qtrue );
 			CL_FlushMemory( );
@@ -324,29 +413,6 @@ void QDECL Com_Error( int code, const char *fmt, ... )
 }
 
 
-void COM_StripExtension(const char *in, char *out, int destsize)
-{
-	const char *dot = strrchr(in, '.');
-    const char *slash = strrchr(in, '/');
-
-
-	if ((dot != NULL) && ( (slash < dot) || (slash == NULL) ) )
-    {
-        int len = dot-in+1;
-        if(len <= destsize)
-            destsize = len;
-        else
-		    Com_Printf("stripExtension: dest size not enough!\n");
-    }
-
-    if(in != out)
-    	strncpy(out, in, destsize-1);
-	
-    out[destsize-1] = '\0';
-}
-
-
-
 /*
 =============
 Com_Quit_f
@@ -354,14 +420,14 @@ Com_Quit_f
 Both client and server can use this, and it will do the apropriate things.
 =============
 */
-void Com_Quit_f( void )
-{
+void Com_Quit_f( void ) {
 	// don't try to shutdown if we are in a recursive error
 	char *p = Cmd_Args( );
-	if ( !com_errorEntered )
-    {
-		// Some VMs might execute "quit" command directly, which would trigger an unload of active VM error.
-		// Sys_Quit will kill this process anyways, so a corrupt call stack makes no difference
+	if ( !com_errorEntered ) {
+		// Some VMs might execute "quit" command directly,
+		// which would trigger an unload of active VM error.
+		// Sys_Quit will kill this process anyways, so
+		// a corrupt call stack makes no difference
 		VM_Forced_Unload_Start();
 		SV_Shutdown(p[0] ? p : "Server quit");
 		CL_Shutdown(p[0] ? p : "Client quit", qtrue, qtrue);
@@ -406,18 +472,14 @@ void Com_ParseCommandLine( char *commandLine )
     com_consoleLines[0] = commandLine;
     com_numConsoleLines = 1;
 
-    while ( *commandLine )
-    {
-        if (*commandLine == '"')
-        {
+    while ( *commandLine ) {
+        if (*commandLine == '"') {
             inq = !inq;
         }
         // look for a + seperating character
         // if commandLine came from a file, we might have real line seperators
-        if ( (*commandLine == '+' && !inq) || *commandLine == '\n'  || *commandLine == '\r' )
-        {
-            if ( com_numConsoleLines == MAX_CONSOLE_LINES )
-            {
+        if ( (*commandLine == '+' && !inq) || *commandLine == '\n'  || *commandLine == '\r' ) {
+            if ( com_numConsoleLines == MAX_CONSOLE_LINES ) {
                 return;
             }
             com_consoleLines[com_numConsoleLines] = commandLine + 1;
@@ -491,26 +553,26 @@ void Com_StartupVariable( const char *match )
 =================
 Com_AddStartupCommands
 
-Adds command line parameters as script statements Commands are seperated by + signs
+Adds command line parameters as script statements
+Commands are seperated by + signs
 
-Returns qtrue if any late commands were added, which will keep the demoloop from immediately starting
+Returns qtrue if any late commands were added, which
+will keep the demoloop from immediately starting
 =================
 */
-qboolean Com_AddStartupCommands( void )
-{
-	qboolean added = qfalse;
-    int i;
+qboolean Com_AddStartupCommands( void ) {
+	int		i;
+	qboolean	added;
+
+	added = qfalse;
 	// quote every token, so args with semicolons can work
-	for (i=0 ; i < com_numConsoleLines ; i++)
-    {
-		if ( !com_consoleLines[i] || !com_consoleLines[i][0] )
-        {
+	for (i=0 ; i < com_numConsoleLines ; i++) {
+		if ( !com_consoleLines[i] || !com_consoleLines[i][0] ) {
 			continue;
 		}
 
 		// set commands already added with Com_StartupVariable
-		if ( !Q_stricmpn( com_consoleLines[i], "set", 3 ) )
-        {
+		if ( !Q_stricmpn( com_consoleLines[i], "set", 3 ) ) {
 			continue;
 		}
 
@@ -525,11 +587,11 @@ qboolean Com_AddStartupCommands( void )
 
 //============================================================================
 
-void Info_Print( const char *s )
-{
+void Info_Print( const char *s ) {
 	char	key[BIG_INFO_KEY];
 	char	value[BIG_INFO_VALUE];
 	char	*o;
+	int		l;
 
 	if (*s == '\\')
 		s++;
@@ -539,7 +601,7 @@ void Info_Print( const char *s )
 		while (*s && *s != '\\')
 			*o++ = *s++;
 
-		int l = o - key;
+		l = o - key;
 		if (l < 20)
 		{
 			memset (o, ' ', 20-l);
@@ -708,13 +770,19 @@ int Com_FilterPath(char *filter, char *name, int casesensitive)
 	return Com_Filter(new_filter, new_name, casesensitive);
 }
 
+/*
+================
+Com_RealTime
+================
+*/
+int Com_RealTime(qtime_t *qtime) {
+	time_t t;
+	struct tm *tms;
 
-int Com_RealTime(qtime_t *qtime)
-{
-	time_t t = time(NULL);
+	t = time(NULL);
 	if (!qtime)
 		return t;
-	struct tm* tms = localtime(&t);
+	tms = localtime(&t);
 	if (tms) {
 		qtime->tm_sec = tms->tm_sec;
 		qtime->tm_min = tms->tm_min;
@@ -758,7 +826,7 @@ typedef struct zonedebug_s {
 typedef struct memblock_s {
 	int		size;           // including the header and possibly tiny fragments
 	int     tag;            // a tag of 0 is a free block
-	struct memblock_s   *next, *prev;
+	struct memblock_s       *next, *prev;
 	int     id;        		// should be ZONEID
 #ifdef ZONE_DEBUG
 	zonedebug_t d;
@@ -779,14 +847,14 @@ static memzone_t *smallzone;
 
 static void Z_CheckHeap( void );
 
-
 static void Z_ClearZone( memzone_t *zone, int size )
 {
-	memblock_t* block;
+	memblock_t	*block;
 	
 	// set the entire zone to one free block
 
-	zone->blocklist.next = zone->blocklist.prev = block = (memblock_t *)( (unsigned char *)zone + sizeof(memzone_t) );
+	zone->blocklist.next = zone->blocklist.prev = block =
+		(memblock_t *)( (byte *)zone + sizeof(memzone_t) );
 	zone->blocklist.tag = 1;	// in use block
 	zone->blocklist.id = 0;
 	zone->blocklist.size = 0;
@@ -805,7 +873,7 @@ static void Z_ClearZone( memzone_t *zone, int size )
 Z_AvailableZoneMemory
 ========================
 */
-int Z_AvailableZoneMemory( memzone_t *zone ) {
+static int Z_AvailableZoneMemory( memzone_t *zone ) {
 	return zone->size - zone->used;
 }
 
@@ -819,38 +887,37 @@ int Z_AvailableMemory( void ) {
 }
 
 
-void Z_Free(void* ptr)
-{
-
-	if (!ptr)
-		Com_Error( ERR_DROP, "Z_Free: NULL pointer" );
-
+void Z_Free( void *ptr ) {
+	memblock_t	*block, *other;
 	memzone_t *zone;
-	memblock_t* block = (memblock_t *) ( (char *)ptr - sizeof(memblock_t));
 	
-    if (block->id != ZONEID)
+	if (!ptr) {
+		Com_Error( ERR_DROP, "Z_Free: NULL pointer" );
+	}
+
+	block = (memblock_t *) ( (unsigned char *)ptr - sizeof(memblock_t));
+	if (block->id != ZONEID) {
 		Com_Error( ERR_FATAL, "Z_Free: freed a pointer without ZONEID" );
-
-	if (block->tag == 0)
+	}
+	if (block->tag == 0) {
 		Com_Error( ERR_FATAL, "Z_Free: freed a freed pointer" );
-
+	}
 	// if static memory
-	if (block->tag == TAG_STATIC)
-    {
+	if (block->tag == TAG_STATIC) {
 		return;
 	}
 
 	// check the memory trash tester
-	if ( *(int *)((char *)block + block->size - 4 ) != ZONEID )
-    {
+	if ( *(int *)((unsigned char *)block + block->size - 4 ) != ZONEID ) {
 		Com_Error( ERR_FATAL, "Z_Free: memory block wrote past end" );
 	}
 
-	if (block->tag == TAG_SMALL)
+	if (block->tag == TAG_SMALL) {
 		zone = smallzone;
-	else
+	}
+	else {
 		zone = mainzone;
-
+	}
 
 	zone->used -= block->size;
 	// set the block to something that should cause problems
@@ -859,15 +926,13 @@ void Z_Free(void* ptr)
 
 	block->tag = 0;		// mark as free
 	
-	memblock_t* other = block->prev;
-	if (!other->tag)
-    {
-		// merge with previous free block/
+	other = block->prev;
+	if (!other->tag) {
+		// merge with previous free block
 		other->size += block->size;
 		other->next = block->next;
 		other->next->prev = other;
-		if (block == zone->rover)
-        {
+		if (block == zone->rover) {
 			zone->rover = other;
 		}
 		block = other;
@@ -876,8 +941,7 @@ void Z_Free(void* ptr)
 	zone->rover = block;
 
 	other = block->next;
-	if( !other->tag )
-    {
+	if ( !other->tag ) {
 		// merge the next free block onto the end
 		block->size += other->size;
 		block->next = other->next;
@@ -886,10 +950,13 @@ void Z_Free(void* ptr)
 }
 
 
-void Z_FreeTags( int tag )
-{
-	int	count = 0;
-	memzone_t* zone;
+/*
+================
+Z_FreeTags
+================
+*/
+void Z_FreeTags( int tag ) {
+	memzone_t	*zone;
 
 	if ( tag == TAG_SMALL ) {
 		zone = smallzone;
@@ -902,7 +969,6 @@ void Z_FreeTags( int tag )
 	zone->rover = zone->blocklist.next;
 	do {
 		if ( zone->rover->tag == tag ) {
-			count++;
 			Z_Free( (void *)(zone->rover + 1) );
 			continue;
 		}
@@ -1033,7 +1099,6 @@ void *Z_Malloc( int size ) {
 	return buf;
 }
 
-
 #ifdef ZONE_DEBUG
 void *S_MallocDebug( int size, char *label, char *file, int line ) {
 	return Z_TagMallocDebug( size, TAG_SMALL, label, file, line );
@@ -1049,8 +1114,7 @@ void *S_Malloc( int size ) {
 Z_CheckHeap
 ========================
 */
-static void Z_CheckHeap( void )
-{
+static void Z_CheckHeap( void ) {
 	memblock_t	*block;
 	
 	for (block = mainzone->blocklist.next ; ; block = block->next) {
@@ -1256,7 +1320,7 @@ Com_Meminfo_f
 void Com_Meminfo_f( void ) {
 	memblock_t	*block;
 	int			zoneBytes, zoneBlocks;
-	int			smallZoneBytes, smallZoneBlocks;
+	int			smallZoneBytes;
 	int			botlibBytes, rendererBytes;
 	int			unused;
 
@@ -1294,11 +1358,9 @@ void Com_Meminfo_f( void ) {
 	}
 
 	smallZoneBytes = 0;
-	smallZoneBlocks = 0;
 	for (block = smallzone->blocklist.next ; ; block = block->next) {
 		if ( block->tag ) {
 			smallZoneBytes += block->size;
-			smallZoneBlocks++;
 		}
 
 		if (block->next == &smallzone->blocklist) {
@@ -1347,15 +1409,17 @@ Com_TouchMemory
 Touch all known used data to make sure it is paged in
 ===============
 */
-void Com_TouchMemory( void )
-{
+void Com_TouchMemory( void ) {
+	int		start, end;
 	int		i, j;
-	int		sum = 0;
+	unsigned	sum;
 	memblock_t	*block;
 
 	Z_CheckHeap();
 
-	int start = Sys_Milliseconds();
+	start = Sys_Milliseconds();
+
+	sum = 0;
 
 	j = hunk_low.permanent >> 2;
 	for ( i = 0 ; i < j ; i+=64 ) {			// only need to touch each page
@@ -1380,7 +1444,7 @@ void Com_TouchMemory( void )
 		}
 	}
 
-    int end = Sys_Milliseconds();
+	end = Sys_Milliseconds();
 
 	Com_Printf( "Com_TouchMemory: %i msec\n", end - start );
 }
@@ -1672,7 +1736,7 @@ void *Hunk_AllocDebug( int size, ha_pref preference, char *label, char *file, in
 #else
 void *Hunk_Alloc( int size, ha_pref preference ) {
 #endif
-	void	*buf;
+	void* buf;
 
 	if ( s_hunkData == NULL)
 	{
@@ -1746,10 +1810,10 @@ Multiple files can be loaded in temporary memory.
 When the files-in-use count reaches zero, all temp memory will be deleted
 =================
 */
-void *Hunk_AllocateTempMemory( int size )
+void* Hunk_AllocateTempMemory( int size )
 {
-	void		*buf;
-	hunkHeader_t	*hdr;
+	void* buf;
+	hunkHeader_t* hdr;
 
 	// return a Z_Malloc'd block if the hunk has not been initialized
 	// this allows the config and product id files ( journal files too ) to be loaded
@@ -1859,18 +1923,17 @@ In addition to these events, .cfg files are also copied to the journaled file
 ===================================================================
 */
 
-#define	MAX_PUSHED_EVENTS	    1024
+#define	MAX_PUSHED_EVENTS	            1024
 static int com_pushedEventsHead = 0;
 static int com_pushedEventsTail = 0;
-static sysEvent_t com_pushedEvents[MAX_PUSHED_EVENTS];
+static sysEvent_t	com_pushedEvents[MAX_PUSHED_EVENTS];
 
 
 void Com_InitJournaling( void )
 {
 	Com_StartupVariable( "journal" );
-	com_journal = Cvar_Get("journal", "0", CVAR_INIT);
-	if( !com_journal->integer )
-    {
+	com_journal = Cvar_Get ("journal", "0", CVAR_INIT);
+	if ( !com_journal->integer ) {
 		return;
 	}
 
@@ -1933,7 +1996,6 @@ void Com_QueueEvent( int time, sysEventType_t type, int value, int value2, int p
 		}
 	}
 
-
 	ev = &eventQueue[ eventHead & MASK_QUEUED_EVENTS ];
 
 	if ( eventHead - eventTail >= MAX_QUEUED_EVENTS )
@@ -1962,10 +2024,16 @@ void Com_QueueEvent( int time, sysEventType_t type, int value, int value2, int p
 	ev->evPtr = ptr;
 }
 
+/*
+================
+Com_GetSystemEvent
 
+================
+*/
 sysEvent_t Com_GetSystemEvent( void )
 {
 	sysEvent_t  ev;
+	char        *s;
 
 	// return if we have data
 	if ( eventHead > eventTail )
@@ -1973,15 +2041,17 @@ sysEvent_t Com_GetSystemEvent( void )
 		eventTail++;
 		return eventQueue[ ( eventTail - 1 ) & MASK_QUEUED_EVENTS ];
 	}
-#ifndef DEDICATED	
-    Sys_SendKeyEvents();
-#endif	
-    // check for console commands
-	char *s = Sys_ConsoleInput();
+
+    // Handle new console input
+	// check for console commands
+	s = CON_Input();
 	if ( s )
 	{
-		int len = strlen( s ) + 1;
-		char* b = Z_Malloc( len );
+		char  *b;
+		int   len;
+
+		len = strlen( s ) + 1;
+		b = Z_Malloc( len );
 		strcpy( b, s );
 		Com_QueueEvent( 0, SE_CONSOLE, 0, 0, len, b );
 	}
@@ -2000,16 +2070,17 @@ sysEvent_t Com_GetSystemEvent( void )
 	return ev;
 }
 
-
-
-sysEvent_t Com_GetRealEvent( void )
-{
+/*
+=================
+Com_GetRealEvent
+=================
+*/
+sysEvent_t	Com_GetRealEvent( void ) {
 	int			r;
 	sysEvent_t	ev;
 
 	// either get an event from the system or the journal file
-	if ( com_journal->integer == 2 )
-    {
+	if ( com_journal->integer == 2 ) {
 		r = FS_Read( &ev, sizeof(ev), com_journalFile );
 		if ( r != sizeof(ev) ) {
 			Com_Error( ERR_FATAL, "Error reading from journal file" );
@@ -2021,9 +2092,7 @@ sysEvent_t Com_GetRealEvent( void )
 				Com_Error( ERR_FATAL, "Error reading from journal file" );
 			}
 		}
-	}
-    else
-    {
+	} else {
 		ev = Com_GetSystemEvent();
 
 		// write the journal value out if needed
@@ -2065,11 +2134,13 @@ Com_PushEvent
 */
 void Com_PushEvent( sysEvent_t *event )
 {
+	sysEvent_t *ev;
 	static int printedWarning = 0;
-	sysEvent_t* ev = &com_pushedEvents[ com_pushedEventsHead & (MAX_PUSHED_EVENTS-1) ];
 
-	if ( com_pushedEventsHead - com_pushedEventsTail >= MAX_PUSHED_EVENTS )
-    {
+	ev = &com_pushedEvents[ com_pushedEventsHead & (MAX_PUSHED_EVENTS-1) ];
+
+	if ( com_pushedEventsHead - com_pushedEventsTail >= MAX_PUSHED_EVENTS ) {
+
 		// don't print the warning constantly, or it can give time for more...
 		if ( !printedWarning ) {
 			printedWarning = qtrue;
@@ -2080,9 +2151,7 @@ void Com_PushEvent( sysEvent_t *event )
 			Z_Free( ev->evPtr );
 		}
 		com_pushedEventsTail++;
-	}
-    else
-    {
+	} else {
 		printedWarning = qfalse;
 	}
 
@@ -2131,7 +2200,7 @@ Returns last event time
 */
 int Com_EventLoop( void )
 {
-	netadr_t evFrom;
+	netadr_t	evFrom;
 	unsigned char bufData[MAX_MSGLEN];
 	msg_t buf;
 
@@ -2165,21 +2234,25 @@ int Com_EventLoop( void )
 		switch(ev.evType)
 		{
 			case SE_KEY:
-				CL_KeyEvent( ev.evValue, ev.evValue2, ev.evTime ); break;
+				CL_KeyEvent( ev.evValue, ev.evValue2, ev.evTime );
+			break;
 			case SE_CHAR:
-				CL_CharEvent( ev.evValue );	break;
+				CL_CharEvent( ev.evValue );
+			break;
 			case SE_MOUSE:
-				CL_MouseEvent( ev.evValue, ev.evValue2, ev.evTime ); break;
+				CL_MouseEvent( ev.evValue, ev.evValue2, ev.evTime );
+			break;
 			case SE_CONSOLE:
 				Cbuf_AddText( (char *)ev.evPtr );
-				Cbuf_AddText( "\n" ); break;
+				Cbuf_AddText( "\n" );
+			break;
 			default:
-				Com_Error( ERR_FATAL, "Com_EventLoop: bad event type %i", ev.evType ); break;
+				Com_Error( ERR_FATAL, "Com_EventLoop: bad event type %i", ev.evType );
+			break;
 		}
 
 		// free any block data
-		if ( ev.evPtr )
-        {
+		if ( ev.evPtr ) {
 			Z_Free( ev.evPtr );
 		}
 	}
@@ -2218,13 +2291,12 @@ Com_Error_f
 Just throw a fatal error to test error shutdown procedures
 =============
 */
-static void Com_Error_f (void)
-{
-	if ( Cmd_Argc() > 1 )
+static void __attribute__((__noreturn__)) Com_Error_f (void) {
+	if ( Cmd_Argc() > 1 ) {
 		Com_Error( ERR_DROP, "Testing drop error" );
-	else
+	} else {
 		Com_Error( ERR_FATAL, "Testing fatal error" );
-
+	}
 }
 
 
@@ -2329,13 +2401,13 @@ void Com_GameRestart(int checksumFeed, qboolean disconnect)
 	if(!com_gameRestarting && com_fullyInitialized)
 	{
 		com_gameRestarting = qtrue;
-		int clWasRunning = com_cl_running->integer;
-		
+		com_gameClientRestarting = com_cl_running->integer;
+
 		// Kill server if we have one
 		if(com_sv_running->integer)
 			SV_Shutdown("Game directory changed");
 
-		if(clWasRunning)
+		if(com_gameClientRestarting)
 		{
 			if(disconnect)
 				CL_Disconnect(qfalse);
@@ -2357,13 +2429,14 @@ void Com_GameRestart(int checksumFeed, qboolean disconnect)
 			NET_Restart_f();
 		}
 
-		if(clWasRunning)
+		if(com_gameClientRestarting)
 		{
 			CL_Init();
 			CL_StartHunkUsers(qfalse);
 		}
 		
 		com_gameRestarting = qfalse;
+		com_gameClientRestarting = qfalse;
 	}
 }
 
@@ -2515,54 +2588,7 @@ out:
 #endif // STANDALONE
 
 
-/*
-=================
-Com_DetectSSE
-Find out whether we have SSE support for Q_ftol function
-=================
-*/
 
-#if (id386 || idx64)
-
-
-
-static void Com_DetectSSE(void)
-{
-	cpuFeatures_t feat = Sys_GetProcessorFeatures();
-
-	if(feat & CF_SSE)
-	{
-		if(feat & CF_SSE2)
-        {
-			Q_SnapVector = qsnapvectorsse;
-        	
-            Com_Printf(" Have SSE2 support\n");
-        }
-        else
-			Q_SnapVector = qsnapvectorx87;
-
-		Com_Printf(" Have SSE support\n");
-	}
-	else
-	{
-		Q_SnapVector = qsnapvectorx87;
-
-		Com_Printf(" No SSE support on this machine\n");
-	}
-
-    if(feat & CF_SSE3)
-        Com_Printf(" Have SSE3 support\n");
-    if(feat & CF_SSE41)
-        Com_Printf(" Have SSE4.1 support\n");
-    if(feat & CF_SSE42)
-        Com_Printf(" Have SSE4.2 support\n");
-}
-
-#else
-
-#define Com_DetectSSE()
-
-#endif
 
 /*
 =================
@@ -2592,34 +2618,12 @@ static void Com_WriteConfigToFile( const char *filename )
 		return;
 	}
 
-	FS_Printf (f, "// generated by OA, do not modify\n");
-	Key_WriteBindings(f);
-	Cvar_WriteVariables(f);
-	FS_FCloseFile(f);
+	FS_Printf (f, "// generated by quake, do not modify\n");
+	Key_WriteBindings (f);
+	Cvar_WriteVariables (f);
+	FS_FCloseFile( f );
 }
 
-/*
-===============
-Com_WriteConfig_f
-
-Write the config file to a specific name
-===============
-*/
-static void Com_WriteConfig_f( void )
-{
-	char filename[MAX_QPATH];
-
-	if( Cmd_Argc() != 2 )
-    {
-		Com_Printf( "Usage: writeconfig <filename>\n" );
-		return;
-	}
-
-	Q_strncpyz( filename, Cmd_Argv(1), sizeof( filename ) );
-	COM_DefaultExtension( filename, sizeof( filename ), ".cfg" );
-	Com_Printf( "Writing %s.\n", filename );
-	Com_WriteConfigToFile( filename );
-}
 
 
 void Com_Init(char *commandLine )
@@ -2634,7 +2638,7 @@ void Com_Init(char *commandLine )
 
 
 	// Clear queues
-	memset( eventQueue, 0, sizeof( eventQueue) );
+	memset( eventQueue, 0, MAX_QUEUED_EVENTS * sizeof( sysEvent_t ) );
 
 	// initialize the weak pseudo-random number generator for use later.
 	Com_InitRand();
@@ -2650,8 +2654,6 @@ void Com_Init(char *commandLine )
 
 	Cbuf_Init();
 
-	Com_DetectSSE();
-
 	// override anything from the config files with command line args
 	Com_StartupVariable( NULL );
 
@@ -2666,7 +2668,7 @@ void Com_Init(char *commandLine )
 
 	com_standalone = Cvar_Get("com_standalone", "0", CVAR_ROM);
 	com_basegame = Cvar_Get("com_basegame", BASEGAME, CVAR_INIT);
-	com_homepath = Cvar_Get("com_homepath", "", CVAR_INIT);
+	com_homepath = Cvar_Get("com_homepath", "", CVAR_INIT|CVAR_PROTECTED);
 	
 	if(!com_basegame->string[0])
 		Cvar_ForceReset("com_basegame");
@@ -2711,7 +2713,6 @@ void Com_Init(char *commandLine )
 	//
 	// init commands and vars
 	//
-	//com_altivec = Cvar_Get ("com_altivec", "1", CVAR_ARCHIVE);
 	com_maxfps = Cvar_Get ("com_maxfps", "85", CVAR_ARCHIVE);
 	com_blood = Cvar_Get ("com_blood", "1", CVAR_ARCHIVE);
 
@@ -2731,7 +2732,7 @@ void Com_Init(char *commandLine )
 	com_sv_running = Cvar_Get ("sv_running", "0", CVAR_ROM);
 	com_cl_running = Cvar_Get ("cl_running", "0", CVAR_ROM);
 	com_buildScript = Cvar_Get( "com_buildScript", "0", 0 );
-	com_ansiColor = Cvar_Get( "com_ansiColor", "1", CVAR_ARCHIVE );
+	com_ansiColor = Cvar_Get( "com_ansiColor", "0", CVAR_ARCHIVE );
 
 	com_unfocused = Cvar_Get( "com_unfocused", "0", CVAR_ROM );
 	com_maxfpsUnfocused = Cvar_Get( "com_maxfpsUnfocused", "0", CVAR_ARCHIVE );
@@ -2760,7 +2761,6 @@ void Com_Init(char *commandLine )
 	Cvar_Set( "arch", OS_STRING " " ARCH_STRING );
 	Cvar_Set( "username", Sys_GetCurrentUser( ) );
 
-
 	if( Sys_WritePIDFile( ) ) {
 #ifndef DEDICATED
 		const char *message = "The last time " CLIENT_WINDOW_TITLE " ran, "
@@ -2786,7 +2786,8 @@ void Com_Init(char *commandLine )
 #endif
 
 	// set com_frameTime so that if a map is started on the command line 
-    // it will still be able to count on com_frameTime being random enough for a serverid
+    // it will still be able to count on com_frameTime
+	// being random enough for a serverid
 	com_frameTime = Com_Milliseconds();
 
 	// add + commands from command line
@@ -2803,7 +2804,7 @@ void Com_Init(char *commandLine )
 	}
 
 	// start in full screen ui mode
-	Cvar_Set("r_uiFullScreen", "0");
+	Cvar_Set("r_uiFullScreen", "1");
 
 	CL_StartHunkUsers( qfalse );
 
@@ -2821,7 +2822,7 @@ void Com_Init(char *commandLine )
 		pipefile = FS_FCreateOpenPipeFile( com_pipefile->string );
 	}
 
-	Com_Printf("================ Com_Init() finished. ================\n");
+	Com_Printf("\n-------- Common Initialization Complete --------\n");
 }
 
 /*
@@ -2831,11 +2832,14 @@ Com_ReadFromPipe
 Read whatever is in com_pipefile, if anything, and execute it
 ===============
 */
-static void Com_ReadFromPipe( void )
+void Com_ReadFromPipe( void )
 {
 	static char buf[MAX_STRING_CHARS];
 	static int accu = 0;
 	int read;
+
+	if( !pipefile )
+		return;
 
 	while( ( read = FS_Read( buf + accu, sizeof( buf ) - accu - 1, pipefile ) ) > 0 )
 	{
@@ -2876,7 +2880,6 @@ static void Com_ReadFromPipe( void )
 
 
 
-
 /*
 ===============
 Com_WriteConfiguration
@@ -2884,28 +2887,60 @@ Com_WriteConfiguration
 Writes key bindings and archived cvars to config file if modified
 ===============
 */
-static void Com_WriteConfiguration( void )
+void Com_WriteConfiguration( void )
 {
-	Com_WriteConfigToFile( Q3CONFIG_CFG );
 
-	// not needed for dedicated or standalone
+    // if we are quiting without fully initializing, make sure we don't write out anything
+	if ( (cvar_modifiedFlags & CVAR_ARCHIVE ) && com_fullyInitialized )
+    {
+
+	    cvar_modifiedFlags &= ~CVAR_ARCHIVE;
+
+	    Com_WriteConfigToFile( Q3CONFIG_CFG );
+
+	    // not needed for dedicated or standalone
 #if !defined(DEDICATED) && !defined(STANDALONE)
-	cvar_t* fs = Cvar_Get ("fs_game", "", CVAR_INIT|CVAR_SYSTEMINFO );
+	    cvar_t* fs = Cvar_Get ("fs_game", "", CVAR_INIT|CVAR_SYSTEMINFO );
 
-	if(!com_standalone->integer)
-	{
-		if (UI_usesUniqueCDKey() && fs && fs->string[0] != 0) {
-			Com_WriteCDKey( fs->string, &cl_cdkey[16] );
-		} else {
+	    if(!com_standalone->integer)
+    	{
+	    	if (UI_usesUniqueCDKey() && fs && fs->string[0] != 0) {
+			    Com_WriteCDKey( fs->string, &cl_cdkey[16] );
+	    	} else {
 			Com_WriteCDKey( BASEGAME, cl_cdkey );
-		}
-	}
+		    }
+    	}
 #endif
+    }
 }
 
+/*
+===============
+Com_WriteConfig_f
 
+Write the config file to a specific name
+===============
+*/
+static void Com_WriteConfig_f( void )
+{
+	char filename[MAX_QPATH];
 
+	if ( Cmd_Argc() != 2 ) {
+		Com_Printf( "Usage: writeconfig <filename>\n" );
+		return;
+	}
 
+	Q_strncpyz( filename, Cmd_Argv(1), sizeof( filename ) );
+	COM_DefaultExtension( filename, sizeof( filename ), ".cfg" );
+	Com_Printf( "Writing %s.\n", filename );
+	Com_WriteConfigToFile( filename );
+}
+
+/*
+================
+Com_ModifyMsec
+================
+*/
 int Com_ModifyMsec( int msec )
 {
 	int	clampTime;
@@ -2985,18 +3020,14 @@ void Com_Frame(void)
 		return;	// an ERR_DROP was thrown
 
 	// write config file if anything changed
-    // if we are quiting without fully initializing, make sure we don't write out anything
-	if( com_fullyInitialized && (cvar_modifiedFlags & CVAR_ARCHIVE ))
-    {
-	    Com_WriteConfiguration();
-        cvar_modifiedFlags &= ~CVAR_ARCHIVE;
-    }
-	
-	
-    // main event loop
-	if ( com_speeds->integer )
-		timeBeforeFirstEvents = Sys_Milliseconds();
+	Com_WriteConfiguration(); 
 
+	//
+	// main event loop
+	//
+	if ( com_speeds->integer ) {
+		timeBeforeFirstEvents = Sys_Milliseconds();
+	}
 
 	// Figure out how much time we have
 	if(!com_timedemo->integer)
@@ -3047,9 +3078,8 @@ void Com_Frame(void)
 		else
 			NET_Sleep(timeVal - 1);
 	} while(Com_TimeVal(minMsec));
-#ifndef DEDICATED	
+	
 	IN_Frame(); // youurayy input lag fix
-#endif
 	lastTime = com_frameTime;
 	com_frameTime = Com_EventLoop();
 	
@@ -3069,16 +3099,15 @@ void Com_Frame(void)
 
 	SV_Frame( msec );
 
-	// if "dedicated" has been modified, start up or shut down the client system.
-	// Do this after the server may have started, but before the client tries to auto-connect
-	if( com_dedicated->modified )
-    {
+	// if "dedicated" has been modified, start up
+	// or shut down the client system.
+	// Do this after the server may have started,
+	// but before the client tries to auto-connect
+	if ( com_dedicated->modified ) {
 		// get the latched value
 		Cvar_Get( "dedicated", "0", 0 );
 		com_dedicated->modified = qfalse;
-		
-        if ( !com_dedicated->integer )
-        {
+		if ( !com_dedicated->integer ) {
 			SV_Shutdown( "dedicated set to 0" );
 			CL_FlushMemory();
 		}
@@ -3090,7 +3119,7 @@ void Com_Frame(void)
 	//
 	//
 	// run event loop a second time to get server to client packets without a frame of latency
-	if( com_speeds->integer )
+	if ( com_speeds->integer )
     {
         timeBeforeEvents = Sys_Milliseconds();
 	    Com_EventLoop();
@@ -3107,12 +3136,13 @@ void Com_Frame(void)
     }
 
 #else
-	if( com_speeds->integer ) {
+	if ( com_speeds->integer ) {
 		timeAfter = Sys_Milliseconds ();
 		timeBeforeEvents = timeAfter;
 		timeBeforeClient = timeAfter;
 	}
 #endif
+
 
 	NET_FlushPacketQueue();
 
@@ -3120,7 +3150,7 @@ void Com_Frame(void)
 	// report timing information
 	//
 	if ( com_speeds->integer )
-    {
+	{
 		int all = timeAfter - timeBeforeServer;
 		int sv = timeBeforeEvents - timeBeforeServer;
 		int ev = timeBeforeServer - timeBeforeFirstEvents + timeBeforeClient - timeBeforeEvents;
@@ -3130,25 +3160,24 @@ void Com_Frame(void)
 
 		Com_Printf ("frame:%i all:%3i sv:%3i ev:%3i cl:%3i gm:%3i rf:%3i bk:%3i\n", 
 					 com_frameNumber, all, sv, ev, cl, time_game, time_frontend, time_backend );
-	}	
+	}
 
 	//
 	// trace optimization tracking
 	//
-	if( com_showtrace->integer )
+	if ( com_showtrace->integer )
     {
 		extern	int c_traces, c_brush_traces, c_patch_traces;
 		extern	int	c_pointcontents;
 
-		Com_Printf ("%4i traces  (%ib %ip) %4i points\n", c_traces,	c_brush_traces, c_patch_traces, c_pointcontents);
+		Com_Printf ("%4i traces (%ib %ip) %4i points\n", c_traces,	c_brush_traces, c_patch_traces, c_pointcontents);
 		c_traces = 0;
 		c_brush_traces = 0;
 		c_patch_traces = 0;
 		c_pointcontents = 0;
 	}
 
-    if( pipefile )
-		Com_ReadFromPipe();
+	Com_ReadFromPipe( );
 
 	com_frameNumber++;
 }
@@ -3171,9 +3200,8 @@ void Com_Shutdown (void)
 		FS_FCloseFile( pipefile );
 		FS_HomeRemove( com_pipefile->string );
 	}
+
 }
-
-
 
 /*
 ===========================================
@@ -3664,314 +3692,3 @@ int QDECL Com_strCompare( const void *a, const void *b )
     const char **pb = (const char **)b;
     return strcmp( *pa, *pb );
 }
-
-
-
-/*
-==================
-Info_SetValueForKey
-
-Changes or adds a key/value pair
-==================
-*/
-void Info_SetValueForKey( char *s, const char *key, const char *value )
-{
-	char newi[MAX_INFO_STRING];
-	const char* blacklist = "\\;\"";
-
-	if ( strlen( s ) >= MAX_INFO_STRING ) {
-		Com_Error( ERR_DROP, "Info_SetValueForKey: oversize infostring" );
-	}
-
-	for(; *blacklist; ++blacklist)
-	{
-		if (strchr (key, *blacklist) || strchr (value, *blacklist))
-		{
-			Com_Printf (S_COLOR_YELLOW "Can't use keys or values with a '%c': %s = %s\n", *blacklist, key, value);
-			return;
-		}
-	}
-	
-	Info_RemoveKey (s, key);
-	if (!value || !strlen(value))
-		return;
-
-	Com_sprintf (newi, sizeof(newi), "\\%s\\%s", key, value);
-
-	if (strlen(newi) + strlen(s) >= MAX_INFO_STRING)
-	{
-		Com_Printf ("Info string length exceeded\n");
-		return;
-	}
-
-	strcat (newi, s);
-	strcpy (s, newi);
-}
-
-
-
-/*
-=====================================================================
-
-  INFO STRINGS
-
-=====================================================================
-*/
-
-/*
-===============
-Info_ValueForKey
-
-Searches the string for the given
-key and returns the associated value, or an empty string.
-FIXME: overflow check?
-===============
-*/
-char *Info_ValueForKey( const char *s, const char *key ) {
-	char	pkey[BIG_INFO_KEY];
-	static	char value[2][BIG_INFO_VALUE];	// use two buffers so compares
-											// work without stomping on each other
-	static	int	valueindex = 0;
-	char	*o;
-	
-	if ( !s || !key ) {
-		return "";
-	}
-
-	if ( strlen( s ) >= BIG_INFO_STRING ) {
-		Com_Error( ERR_DROP, "Info_ValueForKey: oversize infostring" );
-	}
-
-	valueindex ^= 1;
-	if (*s == '\\')
-		s++;
-	while (1)
-	{
-		o = pkey;
-		while (*s != '\\')
-		{
-			if (!*s)
-				return "";
-			*o++ = *s++;
-		}
-		*o = 0;
-		s++;
-
-		o = value[valueindex];
-
-		while (*s != '\\' && *s)
-		{
-			*o++ = *s++;
-		}
-		*o = 0;
-
-		if (!Q_stricmp (key, pkey) )
-			return value[valueindex];
-
-		if (!*s)
-			break;
-		s++;
-	}
-
-	return "";
-}
-
-
-/*
-===================
-Info_NextPair
-
-Used to itterate through all the key/value pairs in an info string
-===================
-*/
-void Info_NextPair( const char **head, char *key, char *value ) {
-	char	*o;
-	const char	*s;
-
-	s = *head;
-
-	if ( *s == '\\' ) {
-		s++;
-	}
-	key[0] = 0;
-	value[0] = 0;
-
-	o = key;
-	while ( *s != '\\' ) {
-		if ( !*s ) {
-			*o = 0;
-			*head = s;
-			return;
-		}
-		*o++ = *s++;
-	}
-	*o = 0;
-	s++;
-
-	o = value;
-	while ( *s != '\\' && *s ) {
-		*o++ = *s++;
-	}
-	*o = 0;
-
-	*head = s;
-}
-
-
-/*
-===================
-Info_RemoveKey
-===================
-*/
-void Info_RemoveKey( char *s, const char *key ) {
-	char	*start;
-	char	pkey[MAX_INFO_KEY];
-	char	value[MAX_INFO_VALUE];
-	char	*o;
-
-	if ( strlen( s ) >= MAX_INFO_STRING ) {
-		Com_Error( ERR_DROP, "Info_RemoveKey: oversize infostring" );
-	}
-
-	if (strchr (key, '\\')) {
-		return;
-	}
-
-	while (1)
-	{
-		start = s;
-		if (*s == '\\')
-			s++;
-		o = pkey;
-		while (*s != '\\')
-		{
-			if (!*s)
-				return;
-			*o++ = *s++;
-		}
-		*o = 0;
-		s++;
-
-		o = value;
-		while (*s != '\\' && *s)
-		{
-			if (!*s)
-				return;
-			*o++ = *s++;
-		}
-		*o = 0;
-
-		if (!strcmp (key, pkey) )
-		{
-			memmove(start, s, strlen(s) + 1); // remove this part
-			
-			return;
-		}
-
-		if (!*s)
-			return;
-	}
-
-}
-
-/*
-===================
-Info_RemoveKey_Big
-===================
-*/
-void Info_RemoveKey_Big( char *s, const char *key )
-{
-	char	*start;
-	char	pkey[BIG_INFO_KEY];
-	char	value[BIG_INFO_VALUE];
-	char	*o;
-
-	if ( strlen( s ) >= BIG_INFO_STRING ) {
-		Com_Error( ERR_DROP, "Info_RemoveKey_Big: oversize infostring" );
-	}
-
-	if (strchr (key, '\\')) {
-		return;
-	}
-
-	while (1)
-	{
-		start = s;
-		if (*s == '\\')
-			s++;
-		o = pkey;
-		while (*s != '\\')
-		{
-			if (!*s)
-				return;
-			*o++ = *s++;
-		}
-		*o = 0;
-		s++;
-
-		o = value;
-		while (*s != '\\' && *s)
-		{
-			if (!*s)
-				return;
-			*o++ = *s++;
-		}
-		*o = 0;
-
-		if (!strcmp (key, pkey) )
-		{
-			memmove(start, s, strlen(s) + 1); // remove this part
-			return;
-		}
-
-		if (!*s)
-			return;
-	}
-
-}
-
-
-/*
-==================
-Info_SetValueForKey_Big
-
-Changes or adds a key/value pair
-Includes and retains zero-length values
-==================
-*/
-void Info_SetValueForKey_Big( char *s, const char *key, const char *value )
-{
-	char newi[BIG_INFO_STRING];
-	const char* blacklist = "\\;\"";
-
-	if ( strlen( s ) >= BIG_INFO_STRING ) {
-		Com_Error( ERR_DROP, "Info_SetValueForKey: oversize infostring" );
-	}
-
-	for(; *blacklist; ++blacklist)
-	{
-		if (strchr (key, *blacklist) || strchr (value, *blacklist))
-		{
-			Com_Printf (S_COLOR_YELLOW "Can't use keys or values with a '%c': %s = %s\n", *blacklist, key, value);
-			return;
-		}
-	}
-
-	Info_RemoveKey_Big (s, key);
-	if (!value)
-		return;
-
-	Com_sprintf (newi, sizeof(newi), "\\%s\\%s", key, value);
-
-	if (strlen(newi) + strlen(s) >= BIG_INFO_STRING)
-	{
-		Com_Printf ("BIG Info string length exceeded\n");
-		return;
-	}
-
-	strcat(s, newi);
-}
-
-
-
-

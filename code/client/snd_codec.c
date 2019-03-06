@@ -40,12 +40,13 @@ static void *S_CodecGetSound(const char *filename, snd_info_t *info)
 	snd_codec_t *orgCodec = NULL;
 	qboolean	orgNameFailed = qfalse;
 	char		localName[ MAX_QPATH ];
+	const char	*ext;
 	char		altName[ MAX_QPATH ];
 	void		*rtn = NULL;
 
 	Q_strncpyz(localName, filename, MAX_QPATH);
 
-    const char* ext = COM_GetExtension(localName);
+	ext = COM_GetExtension(localName);
 
 	if( *ext )
 	{

@@ -32,15 +32,15 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 //
 
 
-int				ui_numBots;
-static char		*ui_botInfos[MAX_BOTS];
+int             ui_numBots;
+static char     *ui_botInfos[MAX_BOTS];
 
-static int		ui_numArenas;
-static char		*ui_arenaInfos[MAX_ARENAS];
+static int      ui_numArenas;
+static char     *ui_arenaInfos[MAX_ARENAS];
 
-#ifndef MISSIONPACK
-static int		ui_numSinglePlayerArenas;
-static int		ui_numSpecialSinglePlayerArenas;
+#ifndef MISSIONPACK // bk001206
+static int      ui_numSinglePlayerArenas;
+static int      ui_numSpecialSinglePlayerArenas;
 #endif
 
 /*
@@ -49,10 +49,10 @@ UI_ParseInfos
 ===============
 */
 int UI_ParseInfos( char *buf, int max, char *infos[] ) {
-	char	*token;
-	int		count;
-	char	key[MAX_TOKEN_CHARS];
-	char	info[MAX_INFO_STRING];
+	char    *token;
+	int     count;
+	char    key[MAX_TOKEN_CHARS];
+	char    info[MAX_INFO_STRING];
 
 	count = 0;
 
@@ -105,9 +105,9 @@ UI_LoadArenasFromFile
 ===============
 */
 static void UI_LoadArenasFromFile( char *filename ) {
-	int				len;
-	fileHandle_t	f;
-	char			buf[MAX_ARENAS_TEXT];
+	int             len;
+	fileHandle_t    f;
+	char            buf[MAX_ARENAS_TEXT];
 
 	len = trap_FS_FOpenFile( filename, &f, FS_READ );
 	if ( !f ) {
@@ -133,14 +133,19 @@ UI_LoadArenas
 ===============
 */
 void UI_LoadArenas( void ) {
-	int			numdirs;
-	vmCvar_t	arenasFile;
-	char		filename[128];
-	char		dirlist[1024];
-	char*		dirptr;
-	int			i, n;
-	int			dirlen;
-	char		*type;
+	int         numdirs;
+	vmCvar_t    arenasFile;
+	char        filename[128];
+	char        dirlist[1024];
+	char*       dirptr;
+	int         i;
+	int         n;
+	int         dirlen;
+	char        *type;
+	// rfactory changes
+	// Changed RD
+	char specialgame[100];
+	// end changed RD
 
 	ui_numArenas = 0;
 	uiInfo.mapCount = 0;
@@ -164,7 +169,7 @@ void UI_LoadArenas( void ) {
 	}
 	trap_Print( va( "%i arenas parsed\n", ui_numArenas ) );
 	if (UI_OutOfMemory()) {
-		trap_Print(S_COLOR_YELLOW"WARNING: not enough memory in pool to load all arenas\n");
+		trap_Print(S_COLOR_YELLOW"WARNING: not anough memory in pool to load all arenas\n");
 	}
 
 	for( n = 0; n < ui_numArenas; n++ ) {
@@ -173,6 +178,12 @@ void UI_LoadArenas( void ) {
 		uiInfo.mapList[uiInfo.mapCount].cinematic = -1;
 		uiInfo.mapList[uiInfo.mapCount].mapLoadName = String_Alloc(Info_ValueForKey(ui_arenaInfos[n], "map"));
 		uiInfo.mapList[uiInfo.mapCount].mapName = String_Alloc(Info_ValueForKey(ui_arenaInfos[n], "longname"));
+		// rfactory changes
+		// Changed RD
+		uiInfo.mapList[uiInfo.mapCount].botName = String_Alloc(Info_ValueForKey(ui_arenaInfos[n], "bots"));
+		uiInfo.mapList[uiInfo.mapCount].special = String_Alloc(Info_ValueForKey(ui_arenaInfos[n], "special"));
+		uiInfo.mapList[uiInfo.mapCount].fraglimit = atoi(Info_ValueForKey( ui_arenaInfos[n], "fraglimit" ));
+		// end changed RD
 		uiInfo.mapList[uiInfo.mapCount].levelShot = -1;
 		uiInfo.mapList[uiInfo.mapCount].imageName = String_Alloc(va("levelshots/%s", uiInfo.mapList[uiInfo.mapCount].mapLoadName));
 		uiInfo.mapList[uiInfo.mapCount].typeBits = 0;
@@ -180,24 +191,40 @@ void UI_LoadArenas( void ) {
 		type = Info_ValueForKey( ui_arenaInfos[n], "type" );
 		// if no type specified, it will be treated as "ffa"
 		if( *type ) {
-			if( strstr( type, "ffa" ) ) {
-				uiInfo.mapList[uiInfo.mapCount].typeBits |= (1 << GT_FFA);
-			}
-			if( strstr( type, "tourney" ) ) {
-				uiInfo.mapList[uiInfo.mapCount].typeBits |= (1 << GT_TOURNAMENT);
-			}
-			if( strstr( type, "ctf" ) ) {
-				uiInfo.mapList[uiInfo.mapCount].typeBits |= (1 << GT_CTF);
-			}
-			if( strstr( type, "oneflag" ) ) {
-				uiInfo.mapList[uiInfo.mapCount].typeBits |= (1 << GT_1FCTF);
-			}
-			if( strstr( type, "overload" ) ) {
-				uiInfo.mapList[uiInfo.mapCount].typeBits |= (1 << GT_OBELISK);
-			}
-			if( strstr( type, "harvester" ) ) {
-				uiInfo.mapList[uiInfo.mapCount].typeBits |= (1 << GT_HARVESTER);
-			}
+			// Changed RD
+			trap_Cvar_VariableStringBuffer( "ui_SpecialGame", specialgame, sizeof(specialgame) );
+//			if (!specialgame[0])
+//			{
+				if( strstr( type, "ffa" ) ) {
+					uiInfo.mapList[uiInfo.mapCount].typeBits |= (1 << GT_FFA);
+				}
+				if( strstr( type, "tourney" ) ) {
+					uiInfo.mapList[uiInfo.mapCount].typeBits |= (1 << GT_TOURNAMENT);
+				}
+				if( strstr( type, "ctf" ) ) {
+					uiInfo.mapList[uiInfo.mapCount].typeBits |= (1 << GT_CTF);
+				}
+				if( strstr( type, "oneflag" ) ) {
+					uiInfo.mapList[uiInfo.mapCount].typeBits |= (1 << GT_1FCTF);
+				}
+				if( strstr( type, "overload" ) ) {
+					uiInfo.mapList[uiInfo.mapCount].typeBits |= (1 << GT_OBELISK);
+				}
+				if( strstr( type, "harvester" ) ) {
+					uiInfo.mapList[uiInfo.mapCount].typeBits |= (1 << GT_HARVESTER);
+				}
+				if( strstr( type, "elimination" ) ) {
+					uiInfo.mapList[uiInfo.mapCount].typeBits |= (1 << GT_ELIMINATION);
+				}
+				if( strstr( type, "ctfelimination" ) ) {
+					uiInfo.mapList[uiInfo.mapCount].typeBits |= (1 << GT_CTF_ELIMINATION);
+				}
+				if( strstr( type, "lms" ) ) {
+					uiInfo.mapList[uiInfo.mapCount].typeBits |= (1 << GT_LMS);
+				}
+				if( strstr( type, "dd" ) ) {
+					uiInfo.mapList[uiInfo.mapCount].typeBits |= (1 << GT_DOUBLE_D);
+				}
 		} else {
 			uiInfo.mapList[uiInfo.mapCount].typeBits |= (1 << GT_FFA);
 		}
@@ -302,7 +329,7 @@ char *UI_GetBotInfoByName( const char *name ) {
 
 	for ( n = 0; n < ui_numBots ; n++ ) {
 		value = Info_ValueForKey( ui_botInfos[n], "name" );
-		if ( !Q_stricmp( value, name ) ) {
+		if ( Q_strequal( value, name ) ) {
 			return ui_botInfos[n];
 		}
 	}

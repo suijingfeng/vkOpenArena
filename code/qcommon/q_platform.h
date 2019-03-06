@@ -24,37 +24,22 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #define __Q_PLATFORM_H
 
 // this is for determining if we have an asm version of a C function
-#define idx64 0
+#ifdef Q3_VM
 
+#define id386 0
+#define idppc 0
+#define idppc_altivec 0
 
+#else
 
 #if (defined _M_IX86 || defined __i386__) && !defined(C_ONLY)
-    #define id386 1
+#define id386 1
 #else
-    #define id386 0
+#define id386 0
 #endif
 
 
-#if (defined(powerc) || defined(powerpc) || defined(ppc) || defined(__ppc) || defined(__ppc__)) && !defined(C_ONLY)
-    #define idppc 1
-    #if defined(__VEC__)
-        #define idppc_altivec 1
-        #ifdef MACOS_X  // Apple's GCC does this differently than the FSF.
-            #define VECCONST_UINT8(a,b,c,d,e,f,g,h,i,j,k,l,m,n,o,p) \
-                (vector unsigned char) (a,b,c,d,e,f,g,h,i,j,k,l,m,n,o,p)
-        #else
-            #define VECCONST_UINT8(a,b,c,d,e,f,g,h,i,j,k,l,m,n,o,p) \
-                (vector unsigned char) {a,b,c,d,e,f,g,h,i,j,k,l,m,n,o,p}
-        #endif
-    #else
-        #define idppc_altivec 0
-    #endif
-#else
-    #define idppc 0
-    #define idppc_altivec 0
 #endif
-
-
 
 
 #ifndef __ASM_I386__ // don't include the C bits if included from qasm.h
@@ -87,6 +72,8 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
 #if defined( __WIN64__ ) 
 #define ARCH_STRING "x86_64"
+#elif defined _M_ALPHA
+#define ARCH_STRING "AXP"
 #endif
 
 #define Q3_LITTLE_ENDIAN
@@ -115,6 +102,7 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #endif
 
 #define Q3_LITTLE_ENDIAN
+
 #define DLL_EXT ".dll"
 
 #endif
@@ -229,7 +217,21 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
 #endif
 
+//================================================================== Q3VM ===
 
+#ifdef Q3_VM
+
+#define OS_STRING "q3vm"
+#define ID_INLINE
+#define PATH_SEP '/'
+
+#define ARCH_STRING "bytecode"
+
+#define DLL_EXT ".qvm"
+
+#endif
+
+//===========================================================================
 
 //catch missing defines in above blocks
 #if !defined( OS_STRING )
@@ -284,6 +286,14 @@ float FloatSwap (const float *f);
 #define BigLong(x) LongSwap(x)
 #define BigFloat(x) FloatSwap(&x)
 
+#elif defined( Q3_VM )
+
+#define LittleShort
+#define LittleLong
+#define LittleFloat
+#define BigShort
+#define BigLong
+#define BigFloat
 
 #else
 #error "Endianness not defined"

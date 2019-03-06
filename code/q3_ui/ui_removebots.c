@@ -32,14 +32,14 @@ REMOVE BOTS MENU
 #include "ui_local.h"
 
 
-#define ART_BACKGROUND		"menu/art/addbotframe"
-#define ART_BACK0			"menu/art/back_0"
-#define ART_BACK1			"menu/art/back_1"	
-#define ART_DELETE0			"menu/art/delete_0"
-#define ART_DELETE1			"menu/art/delete_1"
-#define ART_ARROWS			"menu/art/arrows_vert_0"
-#define ART_ARROWUP			"menu/art/arrows_vert_top"
-#define ART_ARROWDOWN		"menu/art/arrows_vert_bot"
+#define ART_BACKGROUND		"menu/" MENU_ART_DIR "/addbotframe"
+#define ART_BACK0			"menu/" MENU_ART_DIR "/back_0"
+#define ART_BACK1			"menu/" MENU_ART_DIR "/back_1"
+#define ART_DELETE0			"menu/" MENU_ART_DIR "/delete_0"
+#define ART_DELETE1			"menu/" MENU_ART_DIR "/delete_1"
+#define ART_ARROWS			"menu/" MENU_ART_DIR "/arrows_vert_0"
+#define ART_ARROWUP			"menu/" MENU_ART_DIR "/arrows_vert_top"
+#define ART_ARROWDOWN		"menu/" MENU_ART_DIR "/arrows_vert_bot"
 
 #define ID_UP				10
 #define ID_DOWN				11

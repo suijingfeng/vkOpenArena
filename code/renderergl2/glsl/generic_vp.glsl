@@ -155,7 +155,7 @@ vec2 ModTexCoords(vec2 st, vec3 position, vec4 texMatrix, vec4 offTurb)
 vec4 CalcColor(vec3 position, vec3 normal)
 {
 	vec4 color = u_VertColor * attr_Color + u_BaseColor;
-	
+
 	if (u_ColorGen == CGEN_LIGHTING_DIFFUSE)
 	{
 		float incoming = clamp(dot(normal, u_ModelLightDir), 0.0, 1.0);
@@ -170,8 +170,10 @@ vec4 CalcColor(vec3 position, vec3 normal)
 		vec3 lightDir = normalize(vec3(-960.0, 1980.0, 96.0) - position);
 		vec3 reflected = -reflect(lightDir, normal);
 		
-		color.a = clamp(dot(reflected, normalize(viewer)), 0.0, 1.0);
-		color.a *= color.a;
+		//color.a = clamp(dot(reflected, normalize(viewer)), 0.0, 1.0);
+		color.a = clamp(dot(reflected, viewer)/length(viewer), 0.0, 1.0);
+
+        color.a *= color.a;
 		color.a *= color.a;
 	}
 	else if (u_AlphaGen == AGEN_PORTAL)

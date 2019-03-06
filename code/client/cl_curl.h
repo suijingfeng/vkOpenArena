@@ -20,14 +20,18 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 ===========================================================================
 */
 
+
 #ifndef __QCURL_H__
 #define __QCURL_H__
 
 #include "../qcommon/q_shared.h"
 #include "../qcommon/qcommon.h"
 
-
-#include <curl/curl.h>
+#ifdef WIN32
+  #include "../curl-7.54.0/include/curl/curl.h"
+#else
+  #include <curl/curl.h>
+#endif
 
 
 #define qcurl_version curl_version
@@ -49,7 +53,6 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #define qcurl_multi_cleanup curl_multi_cleanup
 #define qcurl_multi_info_read curl_multi_info_read
 #define qcurl_multi_strerror curl_multi_strerror
-
 
 qboolean CL_cURL_Init( void );
 void CL_cURL_Shutdown( void );

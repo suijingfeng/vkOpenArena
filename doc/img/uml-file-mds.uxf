@@ -1,0 +1,423 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<diagram program="umlet" version="14.3.0">
+  <zoom_level>7</zoom_level>
+  <element>
+    <id>UMLClass</id>
+    <coordinates>
+      <x>406</x>
+      <y>0</y>
+      <w>70</w>
+      <h>21</h>
+    </coordinates>
+    <panel_attributes>MDS</panel_attributes>
+    <additional_attributes/>
+  </element>
+  <element>
+    <id>UMLClass</id>
+    <coordinates>
+      <x>497</x>
+      <y>0</y>
+      <w>140</w>
+      <h>189</h>
+    </coordinates>
+    <panel_attributes>MDSHeader
+--
+ident: 4*ASCII
+version: UINT32
+name: 64*ASCII (C-String)
+lod_scale: F32
+lod_bias: F32
+num_frames: UINT32
+num_bones: UINT32
+ofs_frames: UINT32
+ofs_bone_infos: UINT32
+torso_parent_bone: UINT32
+num_surfaces: UINT32
+ofs_surfaces: UINT32
+num_tags: UINT32
+ofs_tags: UINT32
+ofs_end: UINT32
+
+
+</panel_attributes>
+    <additional_attributes/>
+  </element>
+  <element>
+    <id>UMLClass</id>
+    <coordinates>
+      <x>497</x>
+      <y>203</y>
+      <w>119</w>
+      <h>21</h>
+    </coordinates>
+    <panel_attributes>MDSFrame</panel_attributes>
+    <additional_attributes/>
+  </element>
+  <element>
+    <id>UMLClass</id>
+    <coordinates>
+      <x>637</x>
+      <y>203</y>
+      <w>140</w>
+      <h>84</h>
+    </coordinates>
+    <panel_attributes>MDSFrameInfo
+--
+min_bound: 3*F32
+max_bound: 3*F32
+local_origin: 3*F32
+radius: F32
+root_bone_location: 3*F32</panel_attributes>
+    <additional_attributes/>
+  </element>
+  <element>
+    <id>UMLClass</id>
+    <coordinates>
+      <x>637</x>
+      <y>301</y>
+      <w>140</w>
+      <h>49</h>
+    </coordinates>
+    <panel_attributes>MDSBoneFrameCompressed
+--
+orientation: 4*INT16
+location_dir: 2*INT16</panel_attributes>
+    <additional_attributes/>
+  </element>
+  <element>
+    <id>UMLClass</id>
+    <coordinates>
+      <x>497</x>
+      <y>364</y>
+      <w>126</w>
+      <h>84</h>
+    </coordinates>
+    <panel_attributes>MDSBoneInfo
+--
+name: 64*ASCII (C-String)
+parent_bone: UINT32
+torso_weight: F32
+parent_dist: F32
+flags: UINT32</panel_attributes>
+    <additional_attributes/>
+  </element>
+  <element>
+    <id>Relation</id>
+    <coordinates>
+      <x>469</x>
+      <y>0</y>
+      <w>42</w>
+      <h>35</h>
+    </coordinates>
+    <panel_attributes>m1=1
+m2=1
+</panel_attributes>
+    <additional_attributes>40.0;20.0;10.0;20.0</additional_attributes>
+  </element>
+  <element>
+    <id>Relation</id>
+    <coordinates>
+      <x>427</x>
+      <y>14</y>
+      <w>84</w>
+      <h>224</h>
+    </coordinates>
+    <panel_attributes>m1=1
+m2=num_frames
+</panel_attributes>
+    <additional_attributes>50.0;10.0;50.0;290.0;100.0;290.0</additional_attributes>
+  </element>
+  <element>
+    <id>Relation</id>
+    <coordinates>
+      <x>609</x>
+      <y>203</y>
+      <w>42</w>
+      <h>35</h>
+    </coordinates>
+    <panel_attributes>m1=1
+m2=1
+</panel_attributes>
+    <additional_attributes>40.0;20.0;10.0;20.0</additional_attributes>
+  </element>
+  <element>
+    <id>Relation</id>
+    <coordinates>
+      <x>546</x>
+      <y>217</y>
+      <w>105</w>
+      <h>119</h>
+    </coordinates>
+    <panel_attributes>m1=1
+m2=num_bones
+</panel_attributes>
+    <additional_attributes>10.0;10.0;10.0;140.0;130.0;140.0</additional_attributes>
+  </element>
+  <element>
+    <id>Relation</id>
+    <coordinates>
+      <x>427</x>
+      <y>14</y>
+      <w>84</w>
+      <h>385</h>
+    </coordinates>
+    <panel_attributes>m1=1
+m2=num_bones
+</panel_attributes>
+    <additional_attributes>30.0;10.0;30.0;520.0;100.0;520.0</additional_attributes>
+  </element>
+  <element>
+    <id>Relation</id>
+    <coordinates>
+      <x>609</x>
+      <y>462</y>
+      <w>42</w>
+      <h>35</h>
+    </coordinates>
+    <panel_attributes>m1=1
+m2=1
+</panel_attributes>
+    <additional_attributes>40.0;20.0;10.0;20.0</additional_attributes>
+  </element>
+  <element>
+    <id>Relation</id>
+    <coordinates>
+      <x>420</x>
+      <y>14</y>
+      <w>91</w>
+      <h>483</h>
+    </coordinates>
+    <panel_attributes>m1=1
+m2=num_surfaces
+</panel_attributes>
+    <additional_attributes>20.0;10.0;20.0;660.0;110.0;660.0</additional_attributes>
+  </element>
+  <element>
+    <id>UMLClass</id>
+    <coordinates>
+      <x>637</x>
+      <y>462</y>
+      <w>133</w>
+      <h>182</h>
+    </coordinates>
+    <panel_attributes>MDSSurfaceHeader
+--
+ident: 4*ASCII
+name: 64*ASCII (C-String)
+shader: 64*ASCII (C-String)
+shader_index: UINT32
+min_lod: UINT32
+ofs_header: UINT32
+num_vertices: UINT32
+ofs_vertices: UINT32
+num_triangles: UINT32
+ofs_triangles: UINT32
+ofs_collapse_map: UINT32
+num_bone_refs: UINT32
+ofs_bone_refs: UINT32
+ofs_end: UINT32
+</panel_attributes>
+    <additional_attributes/>
+  </element>
+  <element>
+    <id>UMLClass</id>
+    <coordinates>
+      <x>497</x>
+      <y>462</y>
+      <w>119</w>
+      <h>21</h>
+    </coordinates>
+    <panel_attributes>MDSSurface</panel_attributes>
+    <additional_attributes/>
+  </element>
+  <element>
+    <id>UMLClass</id>
+    <coordinates>
+      <x>637</x>
+      <y>819</y>
+      <w>154</w>
+      <h>35</h>
+    </coordinates>
+    <panel_attributes>MDSTriangle
+--
+indices: 3*UINT32
+</panel_attributes>
+    <additional_attributes/>
+  </element>
+  <element>
+    <id>UMLClass</id>
+    <coordinates>
+      <x>637</x>
+      <y>868</y>
+      <w>154</w>
+      <h>35</h>
+    </coordinates>
+    <panel_attributes>MDSCollapseMap
+--
+mappings: num_vertices*UINT32</panel_attributes>
+    <additional_attributes/>
+  </element>
+  <element>
+    <id>Relation</id>
+    <coordinates>
+      <x>553</x>
+      <y>476</y>
+      <w>98</w>
+      <h>378</h>
+    </coordinates>
+    <panel_attributes>m1=1
+m2=num_triangles
+</panel_attributes>
+    <additional_attributes>10.0;10.0;10.0;510.0;120.0;510.0</additional_attributes>
+  </element>
+  <element>
+    <id>Relation</id>
+    <coordinates>
+      <x>539</x>
+      <y>476</y>
+      <w>112</w>
+      <h>427</h>
+    </coordinates>
+    <panel_attributes>m1=1
+m2=1
+</panel_attributes>
+    <additional_attributes>10.0;10.0;10.0;580.0;140.0;580.0</additional_attributes>
+  </element>
+  <element>
+    <id>Relation</id>
+    <coordinates>
+      <x>525</x>
+      <y>476</y>
+      <w>126</w>
+      <h>476</h>
+    </coordinates>
+    <panel_attributes>m1=1
+m2=1
+</panel_attributes>
+    <additional_attributes>10.0;10.0;10.0;650.0;160.0;650.0</additional_attributes>
+  </element>
+  <element>
+    <id>UMLClass</id>
+    <coordinates>
+      <x>637</x>
+      <y>917</y>
+      <w>161</w>
+      <h>35</h>
+    </coordinates>
+    <panel_attributes>MDSBoneRefs
+--
+bone_refs: num_bone_refs*UINT32
+</panel_attributes>
+    <additional_attributes/>
+  </element>
+  <element>
+    <id>UMLClass</id>
+    <coordinates>
+      <x>637</x>
+      <y>658</y>
+      <w>119</w>
+      <h>77</h>
+    </coordinates>
+    <panel_attributes>MDSVertex
+--
+normal: 3*F32
+tex_coords: 2*F32
+num_weights: UINT32
+fixed_parent: UINT32
+fixed_dist: F32
+</panel_attributes>
+    <additional_attributes/>
+  </element>
+  <element>
+    <id>Relation</id>
+    <coordinates>
+      <x>686</x>
+      <y>728</y>
+      <w>105</w>
+      <h>56</h>
+    </coordinates>
+    <panel_attributes>m1=1
+m2=1..3
+</panel_attributes>
+    <additional_attributes>10.0;10.0;10.0;50.0;130.0;50.0</additional_attributes>
+  </element>
+  <element>
+    <id>Relation</id>
+    <coordinates>
+      <x>560</x>
+      <y>476</y>
+      <w>91</w>
+      <h>217</h>
+    </coordinates>
+    <panel_attributes>m1=1
+m2=num_vertices
+</panel_attributes>
+    <additional_attributes>20.0;10.0;20.0;280.0;110.0;280.0</additional_attributes>
+  </element>
+  <element>
+    <id>UMLClass</id>
+    <coordinates>
+      <x>777</x>
+      <y>749</y>
+      <w>119</w>
+      <h>56</h>
+    </coordinates>
+    <panel_attributes>MDSWeight
+--
+bone_index: UINT32
+bone_weight: F32
+location_offset: 3*F32
+</panel_attributes>
+    <additional_attributes/>
+  </element>
+  <element>
+    <id>UMLClass</id>
+    <coordinates>
+      <x>497</x>
+      <y>973</y>
+      <w>133</w>
+      <h>56</h>
+    </coordinates>
+    <panel_attributes>MDSTag
+--
+name: 64*ASCII (C-String)
+torso_weight: F32
+parent_bone: UINT32
+</panel_attributes>
+    <additional_attributes/>
+  </element>
+  <element>
+    <id>Relation</id>
+    <coordinates>
+      <x>413</x>
+      <y>14</y>
+      <w>98</w>
+      <h>994</h>
+    </coordinates>
+    <panel_attributes>m1=1
+m2=num_tags
+</panel_attributes>
+    <additional_attributes>10.0;10.0;10.0;1390.0;120.0;1390.0</additional_attributes>
+  </element>
+  <element>
+    <id>UMLNote</id>
+    <coordinates>
+      <x>658</x>
+      <y>0</y>
+      <w>161</w>
+      <h>126</h>
+    </coordinates>
+    <panel_attributes>Note:
+--
+Byte-order: little-endian
+
+UINT8: unsigned 8-bit integer
+INT16: signed 16-bit integer
+UINT16: unsigned 16-bit integer
+INT32: signed 32-bit integer
+UINT32: unsigned 32-bit integer
+F32: IEEE-754 32-bit floating-point
+ASCII: 8-bit ASCII character</panel_attributes>
+    <additional_attributes/>
+  </element>
+</diagram>

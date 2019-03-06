@@ -72,6 +72,11 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #define INVENTORY_NEUTRALFLAG		47
 #define INVENTORY_REDCUBE			48
 #define INVENTORY_BLUECUBE			49
+//Elimination mod: Domination inventory
+#define INVENTORY_POINTWHITE			50
+#define INVENTORY_POINTRED			51
+#define INVENTORY_POINTBLUE			52
+
 //enemy stuff
 #define ENEMY_HORIZONTAL_DIST		200
 #define ENEMY_HEIGHT				201
@@ -148,6 +153,19 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #define MODELINDEX_NAILGUN			49
 #define MODELINDEX_PROXLAUNCHER		50
 #define MODELINDEX_CHAINGUN			51
+
+//Elimination mod: Double Domination and Standard Domination
+
+#define MODELINDEX_POINTABLUE			52
+#define MODELINDEX_POINTBBLUE			53
+#define MODELINDEX_POINTARED			54
+#define MODELINDEX_POINTBRED			55
+#define MODELINDEX_POINTAWHITE			56
+#define MODELINDEX_POINTBWHITE			57
+#define MODELINDEX_POINTWHITE			58
+#define MODELINDEX_POINTRED			59
+#define MODELINDEX_POINTBLUE			60
+
 
 
 //

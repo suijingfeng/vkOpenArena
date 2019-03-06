@@ -83,7 +83,7 @@ void TeleportPlayer( gentity_t *player, vec3_t origin, vec3_t angles ) {
 	noAngles = (angles[0] > 999999.0);
 	// use temp events at source and destination to prevent the effect
 	// from getting dropped by a second player event
-	if ( player->client->sess.sessionTeam != TEAM_SPECTATOR ) {
+	if ( player->client->sess.sessionTeam != TEAM_SPECTATOR && player->client->ps.pm_type != PM_SPECTATOR) {
 		tent = G_TempEntity( player->client->ps.origin, EV_PLAYER_TELEPORT_OUT );
 		tent->s.clientNum = player->s.clientNum;
 
@@ -96,19 +96,28 @@ void TeleportPlayer( gentity_t *player, vec3_t origin, vec3_t angles ) {
 
 	VectorCopy ( origin, player->client->ps.origin );
 	player->client->ps.origin[2] += 1;
+
 	if (!noAngles) {
-	// spit the player out
-	AngleVectors( angles, player->client->ps.velocity, NULL, NULL );
-	VectorScale( player->client->ps.velocity, 400, player->client->ps.velocity );
-	player->client->ps.pm_time = 160;		// hold time
-	player->client->ps.pm_flags |= PMF_TIME_KNOCKBACK;
-	// set angles
-	SetClientViewAngle(player, angles);
+		// spit the player out
+		AngleVectors( angles, player->client->ps.velocity, NULL, NULL );
+		VectorScale( player->client->ps.velocity, 400, player->client->ps.velocity );
+		player->client->ps.pm_time = 160;		// hold time
+		player->client->ps.pm_flags |= PMF_TIME_KNOCKBACK;
+
+		// set angles
+		SetClientViewAngle(player, angles);
 	}
+
 	// toggle the teleport bit so the client knows to not lerp
 	player->client->ps.eFlags ^= EF_TELEPORT_BIT;
+
+//unlagged - backward reconciliation #3
+	// we don't want players being backward-reconciled back through teleporters
+	G_ResetHistory( player );
+//unlagged - backward reconciliation #3
+
 	// kill anything at the destination
-	if ( player->client->sess.sessionTeam != TEAM_SPECTATOR ) {
+	if ( player->client->sess.sessionTeam != TEAM_SPECTATOR && player->client->ps.pm_type != PM_SPECTATOR ) {
 		G_KillBox (player);
 	}
 
@@ -118,7 +127,7 @@ void TeleportPlayer( gentity_t *player, vec3_t origin, vec3_t angles ) {
 	// use the precise origin for linking
 	VectorCopy( player->client->ps.origin, player->r.currentOrigin );
 
-	if ( player->client->sess.sessionTeam != TEAM_SPECTATOR ) {
+	if ( player->client->sess.sessionTeam != TEAM_SPECTATOR && player->client->ps.pm_type != PM_SPECTATOR ) {
 		trap_LinkEntity (player);
 	}
 }
@@ -336,8 +345,6 @@ void SP_shooter_grenade( gentity_t *ent ) {
 	InitShooter( ent, WP_GRENADE_LAUNCHER);
 }
 
-
-#ifdef MISSIONPACK
 static void PortalDie (gentity_t *self, gentity_t *inflictor, gentity_t *attacker, int damage, int mod) {
 	G_FreeEntity( self );
 	//FIXME do something more interesting
@@ -479,4 +486,94 @@ void DropPortalSource( gentity_t *player ) {
 	}
 
 }
-#endif
+
+static int countItems(const char* itemname, qboolean exclude_no_bots) {
+	gentity_t	*spot;
+	int			count;
+
+	count = 0;
+	spot = NULL;
+
+	while ((spot = G_Find (spot, FOFS(classname), itemname)) != NULL) {
+			if(exclude_no_bots && spot->flags & (FL_NO_BOTS|FL_NO_HUMANS) )
+		continue; //Do not count no_humans or no_bots items
+			count++;
+	}
+	G_Printf("Number of %s: %i\n",itemname,count);
+	return count;
+}
+
+static int countFfaSpawnpoints(void) {
+    return countItems("info_player_deathmatch",qtrue);
+}
+
+static int countDdSpawnpoints(void) {
+	int mincount,tmp;
+	mincount = 100;
+
+	tmp = countItems("info_player_dd_red",qtrue);
+	if(!tmp){
+	tmp = countFfaSpawnpoints(); //tmp==0 -> Fallback to FFA spawnpoints!
+	}
+	if(tmp<mincount)
+		mincount=tmp;
+
+	tmp = countItems("info_player_dd_blue",qtrue);
+	if(!tmp){
+	tmp = countFfaSpawnpoints(); //tmp==0 -> Fallback to FFA spawnpoints!
+	}
+	if(tmp<mincount)
+		mincount=tmp;
+
+	return mincount;
+
+}
+
+static int countCtfSpawnpoints(void) {
+	int mincount,tmp;
+
+	mincount=100;
+
+	tmp = countItems("team_CTF_redplayer",qtrue);
+	if(!tmp){
+		tmp = countFfaSpawnpoints(); //tmp==0 -> Fallback to FFA spawnpoints!
+	}
+	if(tmp<mincount) {
+		mincount=tmp;
+	}
+
+	tmp = countItems("team_CTF_blueplayer",qtrue);
+	if(!tmp){
+		tmp = countFfaSpawnpoints(); //tmp==0 -> Fallback to FFA spawnpoints!
+	}
+	if(tmp<mincount) {
+		mincount=tmp;
+	}
+
+	tmp = countItems("team_CTF_redspawn",qtrue);
+	if(!tmp){
+		tmp = countFfaSpawnpoints(); //tmp==0 -> Fallback to FFA spawnpoints!
+	}
+	if(tmp<mincount)
+		mincount=tmp;
+
+	tmp = countItems("team_CTF_bluespawn",qtrue);
+	if(!tmp){
+		tmp = countFfaSpawnpoints(); //tmp==0 -> Fallback to FFA spawnpoints!
+	}
+	if(tmp<mincount) {
+		mincount=tmp;
+	}
+
+	return mincount;
+}
+
+int MinSpawnpointCount(void) {
+	if(g_gametype.integer < GT_CTF || g_ffa_gt > 0) {
+		return countFfaSpawnpoints();
+	}
+	if(g_gametype.integer == GT_DOUBLE_D ) {
+		return countDdSpawnpoints();
+	}
+	return countCtfSpawnpoints();
+}

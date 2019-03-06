@@ -78,7 +78,7 @@ static void AddSkyPolygon (int nump, vec3_t vecs)
 	};
 
 	// decide which face it maps to
-	VectorCopy (vec3_origin, v);
+	VectorCopy (ORIGIN, v);
 	for (i=0, vp=vecs ; i<nump ; i++, vp+=3)
 	{
 		VectorAdd (vp, v, v);
@@ -369,18 +369,18 @@ static void DrawSkySide( struct image_s *image, const int mins[2], const int max
 
 	for ( t = mins[1]+HALF_SKY_SUBDIVISIONS; t < maxs[1]+HALF_SKY_SUBDIVISIONS; t++ )
 	{
-		glBegin( GL_TRIANGLE_STRIP );
+		qglBegin( GL_TRIANGLE_STRIP );
 
 		for ( s = mins[0]+HALF_SKY_SUBDIVISIONS; s <= maxs[0]+HALF_SKY_SUBDIVISIONS; s++ )
 		{
-			glTexCoord2fv( s_skyTexCoords[t][s] );
-			glVertex3fv( s_skyPoints[t][s] );
+			qglTexCoord2fv( s_skyTexCoords[t][s] );
+			qglVertex3fv( s_skyPoints[t][s] );
 
-			glTexCoord2fv( s_skyTexCoords[t+1][s] );
-			glVertex3fv( s_skyPoints[t+1][s] );
+			qglTexCoord2fv( s_skyTexCoords[t+1][s] );
+			qglVertex3fv( s_skyPoints[t+1][s] );
 		}
 
-		glEnd();
+		qglEnd();
 	}
 }
 
@@ -557,7 +557,7 @@ static void FillCloudBox( const shader_t *shader, int stage )
 		sky_mins_subd[1] = sky_mins[1][i] * HALF_SKY_SUBDIVISIONS;
 		sky_maxs_subd[0] = sky_maxs[0][i] * HALF_SKY_SUBDIVISIONS;
 		sky_maxs_subd[1] = sky_maxs[1][i] * HALF_SKY_SUBDIVISIONS;
-
+        
 		if ( sky_mins_subd[0] < -HALF_SKY_SUBDIVISIONS ) 
 			sky_mins_subd[0] = -HALF_SKY_SUBDIVISIONS;
 		else if ( sky_mins_subd[0] > HALF_SKY_SUBDIVISIONS ) 
@@ -679,7 +679,7 @@ void R_InitSkyTexCoords( float heightCloud )
 				v[2] += radiusWorld;
 
 				// compute vector from world origin to intersection point 'v'
-				FastVectorNormalize( v );
+				FastNormalize1f( v );
 
 				sRad = acos( v[0] );
 				tRad = acos( v[1] );
@@ -706,24 +706,21 @@ void RB_DrawSun( float scale, shader_t *shader ) {
 		return;
 	}
 
-	glLoadMatrixf( backEnd.viewParms.world.modelMatrix );
-	glTranslatef (backEnd.viewParms.or.origin[0], backEnd.viewParms.or.origin[1], backEnd.viewParms.or.origin[2]);
+	qglLoadMatrixf( backEnd.viewParms.world.modelMatrix );
+	qglTranslatef (backEnd.viewParms.or.origin[0], backEnd.viewParms.or.origin[1], backEnd.viewParms.or.origin[2]);
 
 	dist = 	backEnd.viewParms.zFar / 1.75;		// div sqrt(3)
 	size = dist * scale;
 
 	VectorScale( tr.sunDirection, dist, origin );
-	
-    //PerpendicularVector( vec1, tr.sunDirection );
-	//CrossProduct( tr.sunDirection, vec1, vec2 );
-    //assume tr.sunDirection is normalized
-    MakeNormalVectors(tr.sunDirection, vec1, vec2);
+	VectorPerp( tr.sunDirection, vec1);
+	CrossProduct( tr.sunDirection, vec1, vec2 );
 
 	VectorScale( vec1, size, vec1 );
 	VectorScale( vec2, size, vec2 );
 
 	// farthest depth range
-	glDepthRange( 1.0, 1.0 );
+	qglDepthRange( 1.0, 1.0 );
 
 	RB_BeginSurface( shader, 0 );
 
@@ -732,7 +729,7 @@ void RB_DrawSun( float scale, shader_t *shader ) {
 	RB_EndSurface();
 
 	// back to normal depth range
-	glDepthRange( 0.0, 1.0 );
+	qglDepthRange( 0.0, 1.0 );
 }
 
 
@@ -761,23 +758,23 @@ void RB_StageIteratorSky( void ) {
 	// front of everything to allow developers to see how
 	// much sky is getting sucked in
 	if ( r_showsky->integer ) {
-		glDepthRange( 0.0, 0.0 );
+		qglDepthRange( 0.0, 0.0 );
 	} else {
-		glDepthRange( 1.0, 1.0 );
+		qglDepthRange( 1.0, 1.0 );
 	}
 
 	// draw the outer skybox
 	if ( tess.shader->sky.outerbox[0] && tess.shader->sky.outerbox[0] != tr.defaultImage ) {
-		glColor3f( tr.identityLight, tr.identityLight, tr.identityLight );
+		qglColor3f( tr.identityLight, tr.identityLight, tr.identityLight );
 		
-		glPushMatrix ();
+		qglPushMatrix ();
 		GL_State( 0 );
 		GL_Cull( CT_FRONT_SIDED );
-		glTranslatef (backEnd.viewParms.or.origin[0], backEnd.viewParms.or.origin[1], backEnd.viewParms.or.origin[2]);
+		qglTranslatef (backEnd.viewParms.or.origin[0], backEnd.viewParms.or.origin[1], backEnd.viewParms.or.origin[2]);
 
 		DrawSkyBox( tess.shader );
 
-		glPopMatrix();
+		qglPopMatrix();
 	}
 
 	// generate the vertexes for all the clouds, which will be drawn
@@ -790,7 +787,7 @@ void RB_StageIteratorSky( void ) {
 
 
 	// back to normal depth range
-	glDepthRange( 0.0, 1.0 );
+	qglDepthRange( 0.0, 1.0 );
 
 	// note that sky was drawn so we will draw a sun later
 	backEnd.skyRenderedThisView = qtrue;

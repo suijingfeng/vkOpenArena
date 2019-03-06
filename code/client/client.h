@@ -30,9 +30,7 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #include "../cgame/cg_public.h"
 #include "../game/bg_public.h"
 
-#ifdef USE_CURL
 #include "cl_curl.h"
-#endif /* USE_CURL */
 
 #ifdef USE_VOIP
 #include <opus.h>
@@ -194,14 +192,14 @@ typedef struct{
 	fileHandle_t download;
 	char		downloadTempName[MAX_OSPATH];
 	char		downloadName[MAX_OSPATH];
-#ifdef USE_CURL
+	
 	qboolean	cURLEnabled;
 	qboolean	cURLUsed;
 	qboolean	cURLDisconnected;
 	char		downloadURL[MAX_OSPATH];
 	CURL		*downloadCURL;
 	CURLM		*downloadCURLM;
-#endif /* USE_CURL */
+	
 	int		    sv_allowDownload;
 	char		sv_dlURL[MAX_CVAR_VALUE_STRING];
 	int			downloadNumber;
@@ -352,9 +350,9 @@ extern	qboolean	cl_oldGameSet;
 
 //=============================================================================
 
-extern	vm_t* cgvm;	// interface to cgame dll or vm
-extern	vm_t* uivm;	// interface to ui dll or vm
-extern	refexport_t	re;	// interface to refresh .dll
+extern	vm_t	*cgvm;	// interface to cgame dll or vm
+extern	vm_t	*uivm;	// interface to ui dll or vm
+extern	refexport_t	re;		// interface to refresh .dll
 
 
 //
@@ -507,14 +505,13 @@ void CL_Voip_f(void);
 void CL_SystemInfoChanged(void);
 void CL_ParseServerMessage(msg_t *msg);
 
-
 //====================================================================
 
-void CL_ServerInfoPacket(netadr_t from, msg_t *msg);
-void CL_LocalServers_f(void);
-void CL_GlobalServers_f(void);
-void CL_FavoriteServers_f(void);
-void CL_Ping_f(void);
+void	CL_ServerInfoPacket(netadr_t from, msg_t *msg);
+void	CL_LocalServers_f(void);
+void	CL_GlobalServers_f(void);
+void	CL_FavoriteServers_f(void);
+void	CL_Ping_f(void);
 qboolean CL_UpdateVisiblePings_f(int source);
 
 
@@ -546,23 +543,22 @@ void CL_SaveConsoleHistory( void );
 //
 // cl_scrn.c
 //
-extern const vec4_t	g_color_table[NUMBER_OF_COLORS];
-void SCR_Init (void);
-void SCR_UpdateScreen (void);
+void	SCR_Init (void);
+void	SCR_UpdateScreen (void);
 
-void SCR_DebugGraph (float value);
+void	SCR_DebugGraph (float value);
 
-int	SCR_GetBigStringWidth( const char *str );	// returns in virtual 640x480 coordinates
+int		SCR_GetBigStringWidth( const char *str );	// returns in virtual 640x480 coordinates
 
-void SCR_AdjustFrom640( float *x, float *y, float *w, float *h );
-void SCR_FillRect( float x, float y, float width, float height, const float *color );
-void SCR_DrawPic( float x, float y, float width, float height, qhandle_t hShader );
-void SCR_DrawNamedPic( float x, float y, float width, float height, const char *picname );
+void	SCR_AdjustFrom640( float *x, float *y, float *w, float *h );
+void	SCR_FillRect( float x, float y, float width, float height, const float *color );
+void	SCR_DrawPic( float x, float y, float width, float height, qhandle_t hShader );
+void	SCR_DrawNamedPic( float x, float y, float width, float height, const char *picname );
 
-void SCR_DrawBigString( int x, int y, const char *s, float alpha, qboolean noColorEscape );			// draws a string with embedded color control characters with fade
-void SCR_DrawBigStringColor( int x, int y, const char *s, vec4_t color, qboolean noColorEscape );	// ignores embedded color control characters
-void SCR_DrawSmallStringExt( int x, int y, const char *string, float *setColor, qboolean forceColor, qboolean noColorEscape );
-void SCR_DrawSmallChar( int x, int y, int ch );
+void	SCR_DrawBigString( int x, int y, const char *s, float alpha, qboolean noColorEscape );			// draws a string with embedded color control characters with fade
+void	SCR_DrawBigStringColor( int x, int y, const char *s, vec4_t color, qboolean noColorEscape );	// ignores embedded color control characters
+void	SCR_DrawSmallStringExt( int x, int y, const char *string, float *setColor, qboolean forceColor, qboolean noColorEscape );
+void	SCR_DrawSmallChar( int x, int y, int ch );
 
 
 //
@@ -617,7 +613,7 @@ qboolean CL_OpenAVIForWriting(const char *filename);
 void CL_TakeVideoFrame(void);
 void CL_WriteAVIVideoFrame(const unsigned char *imageBuffer, int size);
 void CL_WriteAVIAudioFrame(const unsigned char *pcmBuffer, int size);
-void CL_CloseAVI_f(void);
+qboolean CL_CloseAVI(void);
 qboolean CL_VideoRecording(void);
 
 //

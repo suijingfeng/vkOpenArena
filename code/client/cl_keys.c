@@ -20,7 +20,7 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 ===========================================================================
 */
 #include "client.h"
-
+#include "../sdl/input.h"
 /*
 
 key up events are sent even if in console mode
@@ -33,6 +33,7 @@ int			nextHistoryLine;		// the last line in the history buffer, not masked
 int			historyLine;	// the line being displayed from history buffer
 							// will be <= nextHistoryLine
 
+field_t		g_consoleField;
 field_t		chatField;
 qboolean	chat_team;
 
@@ -275,13 +276,15 @@ Handles horizontal scrolling and cursor blinking x, y, and width are in pixels
 */
 void Field_VariableSizeDraw( field_t *edit, int x, int y, int width, int size, qboolean showCursor, qboolean noColorEscape )
 {
+	int		len;
+	int		drawLen;
 	int		prestep;
 	int		cursorChar;
 	char	str[MAX_STRING_CHARS];
 	int		i;
 
-	int drawLen = edit->widthInChars - 1; // - 1 so there is always a space for the cursor
-	int len = strlen( edit->buffer );
+	drawLen = edit->widthInChars - 1; // - 1 so there is always a space for the cursor
+	len = strlen( edit->buffer );
 
 	// guarantee that cursor will be visible
 	if ( len <= drawLen ) {
@@ -1163,14 +1166,8 @@ void CL_KeyDownEvent( int key, unsigned int time )
 	if( keys[key].repeats == 1 )
 		anykeydown++;
 
-	if( keys[K_ALT].down && key == K_ENTER )
-	{
-		Cvar_SetValue("r_fullscreen", !Cvar_VariableIntegerValue( "r_fullscreen" ) );
-		return;
-	}
-
 	// console key is hardcoded, so the user can never unbind it
-	if( (key == K_CONSOLE) || ( keys[K_SHIFT].down && (key == K_ESCAPE) ) )
+	if( key == K_CONSOLE || ( keys[K_SHIFT].down && key == K_ESCAPE ) )
 	{
 		Con_SetFrac(cl_consoleHeight->value);
 		if (key == K_CONSOLE)
@@ -1293,7 +1290,7 @@ void CL_KeyUpEvent( int key, unsigned time )
 CL_KeyEvent: Called by the system for both key up and key down events
 ===================
 */
-void CL_KeyEvent(int key, qboolean down, unsigned int time)
+void CL_KeyEvent (int key, qboolean down, unsigned int time)
 {
 	if( down )
 		CL_KeyDownEvent( key, time );
@@ -1336,10 +1333,12 @@ void CL_CharEvent( int key ) {
 
 
 
-void Key_ClearStates(void)
+void Key_ClearStates (void)
 {
+	int	i;
+
 	anykeydown = 0;
-    int i;
+
 	for(i=0; i < MAX_KEYS; i++)
     {
 		if ( keys[i].down )
@@ -1369,8 +1368,8 @@ void Key_SetCatcher( int catcher )
 }
 
 // This must not exceed MAX_CMD_LINE
-#define	MAX_CONSOLE_SAVE_BUFFER	1024
-#define	CONSOLE_HISTORY_FILE    "q3history"
+#define			MAX_CONSOLE_SAVE_BUFFER	1024
+#define			CONSOLE_HISTORY_FILE    "q3history"
 static char	consoleSaveBuffer[ MAX_CONSOLE_SAVE_BUFFER ];
 static int	consoleSaveBufferSize = 0;
 
@@ -1381,7 +1380,7 @@ CL_LoadConsoleHistory: Load the console history from cl_consoleHistory
 */
 void CL_LoadConsoleHistory( void )
 {
-	char *token;
+	char *token, *text_p;
 	int	i, numChars, numLines = 0;
 	fileHandle_t f;
 
@@ -1392,9 +1391,9 @@ void CL_LoadConsoleHistory( void )
 		return;
 	}
 
-	if( (consoleSaveBufferSize <= MAX_CONSOLE_SAVE_BUFFER) && (FS_Read( consoleSaveBuffer, consoleSaveBufferSize, f ) == consoleSaveBufferSize) )
+	if( consoleSaveBufferSize <= MAX_CONSOLE_SAVE_BUFFER && FS_Read( consoleSaveBuffer, consoleSaveBufferSize, f ) == consoleSaveBufferSize )
 	{
-		char* text_p = consoleSaveBuffer;
+		text_p = consoleSaveBuffer;
 
 		for( i = COMMAND_HISTORY - 1; i >= 0; i-- )
 		{
@@ -1448,17 +1447,19 @@ so that it persists across invocations of q3
 */
 void CL_SaveConsoleHistory( void )
 {
-	int	additionalLength;
+	int						i;
+	int						lineLength, saveBufferLength, additionalLength;
+	fileHandle_t	f;
 
 	consoleSaveBuffer[ 0 ] = '\0';
 
-	int i = ( nextHistoryLine - 1 ) % COMMAND_HISTORY;
+	i = ( nextHistoryLine - 1 ) % COMMAND_HISTORY;
 	do
 	{
 		if( historyEditLines[ i ].buffer[ 0 ] )
 		{
-			int lineLength = strlen( historyEditLines[ i ].buffer );
-			int saveBufferLength = strlen( consoleSaveBuffer );
+			lineLength = strlen( historyEditLines[ i ].buffer );
+			saveBufferLength = strlen( consoleSaveBuffer );
 
 			//ICK
 			additionalLength = lineLength + strlen( "999 999 999  " );
@@ -1476,11 +1477,12 @@ void CL_SaveConsoleHistory( void )
 				break;
 		}
 		i = ( i - 1 + COMMAND_HISTORY ) % COMMAND_HISTORY;
-	}while( i != ( nextHistoryLine - 1 ) % COMMAND_HISTORY );
+	}
+	while( i != ( nextHistoryLine - 1 ) % COMMAND_HISTORY );
 
 	consoleSaveBufferSize = strlen( consoleSaveBuffer );
 
-	fileHandle_t f = FS_FOpenFileWrite( CONSOLE_HISTORY_FILE );
+	f = FS_FOpenFileWrite( CONSOLE_HISTORY_FILE );
 	if( !f )
 	{
 		Com_Printf( "Couldn't write %s.\n", CONSOLE_HISTORY_FILE );

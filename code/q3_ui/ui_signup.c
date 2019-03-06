@@ -27,7 +27,7 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #include "ui_local.h"
 
 
-#define SIGNUP_FRAME		"menu/art/cut_frame"
+#define SIGNUP_FRAME		"menu/" MENU_ART_DIR "/cut_frame"
 
 #define ID_NAME			100
 #define ID_NAME_BOX		101
@@ -80,7 +80,7 @@ static void Signup_MenuEvent( void* ptr, int event ) {
 	switch( ((menucommon_s*)ptr)->id ) {
 	case ID_SIGNUP:
 		if( strcmp(s_signup.password_box.field.buffer, 
-			s_signup.again_box.field.buffer) != 0 )
+			s_signup.again_box.field.buffer) )
 		{
 			// GRANK_FIXME - password mismatch
 			break;

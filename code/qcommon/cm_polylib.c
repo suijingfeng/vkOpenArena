@@ -41,8 +41,6 @@ void pw(winding_t *w)
 }
 
 
-
-
 /*
 =============
 AllocWinding
@@ -87,10 +85,10 @@ void RemoveColinearPoints (winding_t *w)
 	{
 		j = (i+1)%w->numpoints;
 		k = (i+w->numpoints-1)%w->numpoints;
-		VectorSubtract(w->p[j], w->p[i], v1);
-		VectorSubtract(w->p[i], w->p[k], v2);
-		CM_VectorNormalize(v1);
-		CM_VectorNormalize(v2);
+		VectorSubtract (w->p[j], w->p[i], v1);
+		VectorSubtract (w->p[i], w->p[k], v2);
+		VectorNormalize2(v1,v1);
+		VectorNormalize2(v2,v2);
 		if (DotProduct(v1, v2) < 0.999)
 		{
 			VectorCopy (w->p[i], p[nump]);
@@ -118,12 +116,16 @@ void WindingPlane (winding_t *w, vec3_t normal, vec_t *dist)
 	VectorSubtract (w->p[1], w->p[0], v1);
 	VectorSubtract (w->p[2], w->p[0], v2);
 	CrossProduct (v2, v1, normal);
-	CM_VectorNormalize(normal);
+	VectorNormalize2(normal, normal);
 	*dist = DotProduct (w->p[0], normal);
 
 }
 
-
+/*
+=============
+WindingArea
+=============
+*/
 vec_t	WindingArea (winding_t *w)
 {
 	int		i;
@@ -136,7 +138,7 @@ vec_t	WindingArea (winding_t *w)
 		VectorSubtract (w->p[i-1], w->p[0], d1);
 		VectorSubtract (w->p[i], w->p[0], d2);
 		CrossProduct (d1, d2, cross);
-		total += 0.5 * sqrtf(cross[0]*cross[0] + cross[1]*cross[1] + cross[2]*cross[2]);
+		total += 0.5 * VectorLength ( cross );
 	}
 	return total;
 }
@@ -227,7 +229,7 @@ winding_t *BaseWindingForPlane (vec3_t normal, vec_t dist)
 
 	v = DotProduct (vup, normal);
 	VectorMA (vup, -v, normal, vup);
-	CM_VectorNormalize(vup);
+	VectorNormalize2(vup, vup);
 		
 	VectorScale (normal, dist, org);
 	
@@ -260,9 +262,8 @@ winding_t *BaseWindingForPlane (vec3_t normal, vec_t dist)
 winding_t *CopyWinding (winding_t *w)
 {
 	winding_t *c = AllocWinding (w->numpoints);
-//	intptr_t  size = (intptr_t) ((winding_t *)0)->p[w->numpoints];
-	intptr_t size = (intptr_t)&(w->p[w->numpoints]) - (intptr_t)w;
-    memcpy(c, w, size);
+	intptr_t  size = (intptr_t) ((winding_t *)0)->p[w->numpoints];
+	memcpy(c, w, size);
 	return c;
 }
 
@@ -273,8 +274,10 @@ ReverseWinding
 */
 winding_t	*ReverseWinding (winding_t *w)
 {
-	int	i;
-	winding_t* c = AllocWinding (w->numpoints);
+	int			i;
+	winding_t	*c;
+
+	c = AllocWinding (w->numpoints);
 	for (i=0 ; i<w->numpoints ; i++)
 	{
 		VectorCopy (w->p[w->numpoints-1-i], c->p[i]);
@@ -561,11 +564,11 @@ void CheckWinding (winding_t *w)
 		p2 = w->p[j];
 		VectorSubtract (p2, p1, dir);
 		
-		if (sqrtf(dir[0]*dir[0] + dir[1]*dir[1] + dir[2]*dir[2])  < ON_EPSILON)
+		if (VectorLength (dir) < ON_EPSILON)
 			Com_Error (ERR_DROP, "CheckWinding: degenerate edge");
 			
 		CrossProduct (facenormal, dir, edgenormal);
-		CM_VectorNormalize(edgenormal);
+		VectorNormalize2 (edgenormal, edgenormal);
 		edgedist = DotProduct (p1, edgenormal);
 		edgedist += ON_EPSILON;
 		
@@ -659,7 +662,7 @@ void	AddWindingToConvexHull( winding_t *w, winding_t **hull, vec3_t normal )
 			k = ( j + 1 ) % numHullPoints;
 
 			VectorSubtract( hullPoints[k], hullPoints[j], dir );
-			CM_VectorNormalize(dir);
+			VectorNormalize2( dir, dir );
 			CrossProduct( normal, dir, hullDirs[j] );
 		}
 

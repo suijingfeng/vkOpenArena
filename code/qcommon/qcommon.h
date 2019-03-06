@@ -42,7 +42,7 @@ typedef struct {
 	qboolean	allowoverflow;	// if false, do a Com_Error
 	qboolean	overflowed;		// set to true if the buffer size failed (with allowoverflow set)
 	qboolean	oob;			// set to true if the buffer size failed (with allowoverflow set)
-	unsigned char* data;
+	byte	*data;
 	int		maxsize;
 	int		cursize;
 	int		readcount;
@@ -190,7 +190,7 @@ void		NET_Sleep(int msec);
 
 #define MAX_DOWNLOAD_WINDOW		48	// ACK window of 48 download chunks. Cannot set this higher, or clients
 						// will overflow the reliable commands buffer
-#define MAX_DOWNLOAD_BLKSIZE		1024	// 896 byte block chunks
+#define MAX_DOWNLOAD_BLKSIZE		2048	// 896 byte block chunks
 
 #define NETCHAN_GENCHECKSUM(challenge, sequence) ((challenge) ^ ((sequence) * (challenge)))
 
@@ -370,7 +370,7 @@ vm_t	*VM_Restart(vm_t *vm, qboolean unpure);
 
 intptr_t QDECL VM_Call( vm_t *vm, int callNum, ... );
 
-void	set_VM_Debug( int level );
+void	VM_Debug( int level );
 
 void	*VM_ArgPtr( intptr_t intValue );
 void	*VM_ExplicitArgPtr( vm_t *vm, intptr_t intValue );
@@ -421,13 +421,16 @@ void Cbuf_Execute (void);
 //===========================================================================
 
 /*
- * Command execution takes a null terminated string, breaks it into tokens,
- * then searches for a command or variable that matches the first token.
- */
+
+Command execution takes a null terminated string, breaks it into tokens,
+then searches for a command or variable that matches the first token.
+
+*/
 
 typedef void (*xcommand_t) (void);
 
 void	Cmd_Init (void);
+
 void	Cmd_AddCommand( const char *cmd_name, xcommand_t function );
 // called by the init functions of other parts of the program to
 // register commands and functions to call for them.
@@ -451,8 +454,6 @@ void Cmd_CompleteCfgName( char *args, int argNum );
 
 int		Cmd_Argc (void);
 char	*Cmd_Argv (int arg);
-void    Cmd_Clear( void );
-
 void	Cmd_ArgvBuffer( int arg, char *buffer, int bufferLength );
 char	*Cmd_Args (void);
 char	*Cmd_ArgsFrom( int arg );
@@ -472,7 +473,7 @@ void	Cmd_ExecuteString( const char *text );
 // Parses a single line of text into arguments and tries to execute it
 // as if it was typed at the console
 
-
+void    Cmd_Clear( void ); // <- glimp inputs need this
 /*
 ==============================================================
 
@@ -518,11 +519,8 @@ void 	Cvar_Set( const char *var_name, const char *value );
 cvar_t	*Cvar_Set2(const char *var_name, const char *value, qboolean force);
 // same as Cvar_Set, but allows more control over setting of cvar
 
-void Cvar_SetIntegerValue( const char *var_name, int value );
-
 void	Cvar_SetSafe( const char *var_name, const char *value );
 // sometimes we set variables from an untrusted source: fail if flags & CVAR_PROTECTED
-qboolean Cvar_SetModified( const char *var_name, qboolean modified );
 
 void Cvar_SetLatched( const char *var_name, const char *value);
 // don't set the cvar immediately
@@ -604,9 +602,9 @@ issues.
 #define	MAX_FILE_HANDLES	64
 
 #ifdef DEDICATED
-#	define Q3CONFIG_CFG "oa_config_server.cfg"
+#	define Q3CONFIG_CFG "oa3config_server.cfg"
 #else
-#	define Q3CONFIG_CFG "oa_config.cfg"
+#	define Q3CONFIG_CFG "oa3config.cfg"
 #endif
 
 qboolean FS_Initialized( void );
@@ -670,6 +668,8 @@ void	FS_FCloseFile( fileHandle_t f );
 
 long	FS_ReadFileDir(const char *qpath, void *searchPath, qboolean unpure, void **buffer);
 long	FS_ReadFile(const char *qpath, void **buffer);
+long    R_ReadFile(const char *qpath, char **buffer);
+
 // returns the length of the file
 // a null buffer will just return the file length without loading
 // as a quick check for existance. -1 length == not present
@@ -737,8 +737,7 @@ void FS_Rename( const char *from, const char *to );
 void FS_Remove( const char *osPath );
 void FS_HomeRemove( const char *homePath );
 
-void FS_FilenameCompletion( const char *dir, const char *ext,
-		qboolean stripExt, void(*callback)(const char *s), qboolean allowNonPureFilesOnDisk );
+void	FS_FilenameCompletion( const char *dir, const char *ext, qboolean stripExt, void(*callback)(const char *s), qboolean allowNonPureFilesOnDisk );
 
 const char *FS_GetCurrentGameDir(void);
 qboolean FS_Which(const char *filename, void *searchPath);
@@ -750,12 +749,11 @@ Edit fields and command line history/completion
 */
 
 #define	MAX_EDIT_LINE	256
-typedef struct
-{
-	int	cursor;
-	int	scroll;
-	int	widthInChars;
-	char buffer[MAX_EDIT_LINE];
+typedef struct {
+	int		cursor;
+	int		scroll;
+	int		widthInChars;
+	char	buffer[MAX_EDIT_LINE];
 } field_t;
 
 void Field_Clear( field_t *edit );
@@ -765,10 +763,11 @@ void Field_CompleteFilename( const char *dir, const char *ext, qboolean stripExt
 void Field_CompleteCommand( char *cmd, qboolean doCommands, qboolean doCvars );
 void Field_CompletePlayerName( const char **names, int count );
 
-
 /*
 ==============================================================
+
 MISC
+
 ==============================================================
 */
 
@@ -776,56 +775,42 @@ MISC
 // https://zerowing.idsoftware.com/bugzilla/show_bug.cgi?id=470
 extern char cl_cdkey[34];
 
-// returned by Sys_GetProcessorFeatures
-typedef enum
-{
-  CF_RDTSC      = 1 << 0,
-  CF_MMX        = 1 << 1,
-  CF_MMX_EXT    = 1 << 2,
-  CF_3DNOW      = 1 << 3,
-  CF_3DNOW_EXT  = 1 << 4,
-  CF_SSE        = 1 << 5,
-  CF_SSE2       = 1 << 6,
-  CF_SSE3       = 1 << 7,
-  CF_SSE41       = 1 << 8,
-  CF_SSE42       = 1 << 9,
-  CF_ALTIVEC    = 1 << 10
-} cpuFeatures_t;
+
 
 // centralized and cleaned, that's the max string you can send to a Com_Printf / Com_DPrintf (above gets truncated)
 #define	MAXPRINTMSG	4096
 
 
 typedef enum {
-	SE_NONE = 0,	// SE_NONE must be zero, evTime is still valid
+	// SE_NONE must be zero
+	SE_NONE = 0,		// evTime is still valid
 	SE_KEY,			// evValue is a key code, evValue2 is the down flag
 	SE_CHAR,		// evValue is an ascii char
 	SE_MOUSE,		// evValue and evValue2 are relative signed x / y moves
 	SE_CONSOLE		// evPtr is a char*
 } sysEventType_t;
 
-
-typedef struct{
+typedef struct {
 	int				evTime;
 	sysEventType_t	evType;
 	int				evValue, evValue2;
 	int				evPtrLength;	// bytes of data pointed to by evPtr, for journaling
-	void*           evPtr;			// this must be manually freed if not NULL
+	void			*evPtr;			// this must be manually freed if not NULL
 } sysEvent_t;
 
 void		Com_QueueEvent( int time, sysEventType_t type, int value, int value2, int ptrLength, void *ptr );
 int			Com_EventLoop( void );
 sysEvent_t	Com_GetSystemEvent( void );
 
-char*       CopyString( const char *in );
+char		*CopyString( const char *in );
 void		Info_Print( const char *s );
 
 void		Com_BeginRedirect (char *buffer, int buffersize, void (*flush)(char *));
 void		Com_EndRedirect( void );
 void 		QDECL Com_Printf( const char *fmt, ... ) __attribute__ ((format (printf, 1, 2)));
 void 		QDECL Com_DPrintf( const char *fmt, ... ) __attribute__ ((format (printf, 1, 2)));
-void 		QDECL Com_Error( int code, const char *fmt, ... ) __attribute__ ((format(printf, 2, 3)));
-void 		Com_Quit_f( void );
+void 		QDECL Com_Error( int code, const char *fmt, ... ) __attribute__ ((noreturn, format(printf, 2, 3)));
+void 		Com_Quit_f( void ) __attribute__ ((noreturn));
 void		Com_GameRestart(int checksumFeed, qboolean disconnect);
 
 int			Com_Milliseconds( void );	// will be journaled properly
@@ -840,16 +825,15 @@ void		Com_RunAndTimeServerPacket(netadr_t *evFrom, msg_t *buf);
 qboolean	Com_IsVoipTarget(uint8_t *voipTargets, int voipTargetsSize, int clientNum);
 
 void		Com_StartupVariable( const char *match );
-
-void	    COM_StripExtension(const char *in, char *out, int destsize);  ////
-
 // checks for and removes command line "+set var arg" constructs
 // if match is NULL, all set commands will be executed, otherwise
 // only a set with the exact name.  Only used during startup.
 
-qboolean	Com_PlayerNameToFieldString( char *str, int length, const char *name );
-qboolean	Com_FieldStringToPlayerName( char *name, int length, const char *rawname );
+qboolean		Com_PlayerNameToFieldString( char *str, int length, const char *name );
+qboolean		Com_FieldStringToPlayerName( char *name, int length, const char *rawname );
 int QDECL	Com_strCompare( const void *a, const void *b );
+
+void		Com_WriteConfiguration( void );
 
 
 extern	cvar_t	*com_developer;
@@ -1002,7 +986,7 @@ void CL_MapLoading( void );
 // will be cleared, so the client must shutdown cgame, ui, and
 // the renderer
 
-void CL_ForwardCommandToServer( const char *string );
+void	CL_ForwardCommandToServer( const char *string );
 // adds the current command line as a clc_clientCommand to the client message.
 // things like godmode, noclip, etc, are commands directed to the server,
 // so when they are typed in at the console, they will need to be forwarded.
@@ -1066,21 +1050,16 @@ NON-PORTABLE SYSTEM SERVICES
 ==============================================================
 */
 
-void	Sys_Init (void);
 
-// general development dll loading for virtual machine testing
-void*   QDECL Sys_LoadGameDll( const char *name, intptr_t (QDECL **entryPoint)(int, ...),
-intptr_t (QDECL *systemcalls)(intptr_t, ...) );
-void	Sys_UnloadDll( void *dllHandle );
 
 char	*Sys_GetCurrentUser( void );
 
-void	QDECL Sys_Error( const char *error, ...) __attribute__ ((format (printf, 1, 2)));
-void	Sys_Quit (void);
-char	*Sys_GetClipboardData( void );	// note that this isn't journaled...
+void	QDECL Sys_Error( const char *error, ...) __attribute__ ((noreturn, format (printf, 1, 2)));
+void	Sys_Quit (void) __attribute__ ((noreturn));
+
 
 void	Sys_Print( const char *msg );
-
+void    Sys_AnsiColorPrint( const char *msg );
 // Sys_Milliseconds should only be used for profiling purposes,
 // any game related timing information should come from event timestamps
 int		Sys_Milliseconds (void);
@@ -1089,8 +1068,6 @@ qboolean Sys_RandomBytes( byte *string, int len );
 
 // the system console is shown when a dedicated server is running
 void	Sys_DisplaySystemConsole( qboolean show );
-
-cpuFeatures_t Sys_GetProcessorFeatures( void );
 
 void	Sys_SetErrorText( const char *text );
 
@@ -1105,19 +1082,19 @@ void		Sys_ShowIP(void);
 FILE	*Sys_FOpen( const char *ospath, const char *mode );
 qboolean Sys_Mkdir( const char *path );
 FILE	*Sys_Mkfifo( const char *ospath );
+char	*Sys_Cwd( void );
 
-void	Sys_SetDefaultInstallPath(const char *path);
-char	*Sys_DefaultInstallPath(void);
 
-#ifdef MACOS_X
-char    *Sys_DefaultAppPath(void);
-#endif
+// Console
+void CON_Shutdown( void );
+void CON_Init( void );
+char *CON_Input( void );
+unsigned int CON_LogSize( void );
 
-void  Sys_SetDefaultHomePath(const char *path);
-const char *Sys_DefaultHomePath(void);
-const char *Sys_Dirname( char *path );
-const char *Sys_Basename( char *path );
-char *Sys_ConsoleInput(void);
+unsigned int CON_LogRead( char *out, unsigned int outSize );
+void CON_Print( const char *message );
+unsigned int CON_LogWrite( const char *in );
+
 
 char **Sys_ListFiles( const char *directory, const char *extension, char *filter, int *numfiles, qboolean wantsubs );
 void	Sys_FreeFileList( char **list );

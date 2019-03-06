@@ -25,19 +25,18 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #include "qcommon.h"
 
 
-struct cmd_t
-{
+typedef struct {
 	unsigned char *data;
 	int		maxsize;
 	int		cursize;
-};
+} cmd_t;
 
 #define	MAX_CMD_LINE	1024
 #define	MAX_CMD_BUFFER  128*1024
 static unsigned char cmd_text_buf[MAX_CMD_BUFFER];
 
 static int			cmd_wait;
-static struct cmd_t	cmd_text;
+static cmd_t		cmd_text;
 
 
 /*
@@ -134,13 +133,13 @@ void Cbuf_ExecuteText(int exec_when, const char *text)
         case EXEC_NOW:
             if (text && strlen(text) > 0)
             {
-                Com_Printf(S_COLOR_YELLOW "EXEC_NOW %s\n", text);
+                Com_DPrintf(S_COLOR_YELLOW "EXEC_NOW %s\n", text);
                 Cmd_ExecuteString(text);
             }
             else
             {
                 Cbuf_Execute();
-                Com_Printf(S_COLOR_YELLOW "EXEC_NOW %s\n", cmd_text.data);
+                Com_DPrintf(S_COLOR_YELLOW "EXEC_NOW %s\n", cmd_text.data);
             } break;
         case EXEC_INSERT:
             Cbuf_InsertText(text);
@@ -162,15 +161,16 @@ void Cbuf_Execute(void)
 	//int		quotes;
 
 	// This will keep // style comments all on one line by not breaking on a semicolon.  
-    // It will keep /* ... */ style comments all on one line by not breaking it for semicolon or newline.
+    // It will keep /* ... */ style comments all on one line by not
+	// breaking it for semicolon or newline.
 	qboolean in_star_comment = qfalse;
 	qboolean in_slash_comment = qfalse;
-	
-    while (cmd_text.cursize)
+	while (cmd_text.cursize)
 	{
 		if( cmd_wait > 0 )
         {
-			// skip out while text still remains in buffer, leaving it for next frame
+			// skip out while text still remains in buffer, leaving it
+			// for next frame
 			cmd_wait--;
 			break;
 		}
@@ -179,15 +179,13 @@ void Cbuf_Execute(void)
 		char* text = (char *)cmd_text.data;
 
 		int quotes = 0;
-		for (i=0; i< cmd_text.cursize; i++)
+		for (i=0 ; i< cmd_text.cursize ; i++)
 		{
 			if (text[i] == '"')
 				quotes++;
 
-			if ( !(quotes&1))
-            {
-				if (i < cmd_text.cursize - 1)
-                {
+			if ( !(quotes&1)) {
+				if (i < cmd_text.cursize - 1) {
 					if (! in_star_comment && text[i] == '/' && text[i+1] == '/')
 						in_slash_comment = qtrue;
 					else if (! in_slash_comment && text[i] == '/' && text[i+1] == '*')
@@ -204,19 +202,17 @@ void Cbuf_Execute(void)
 				if (! in_slash_comment && ! in_star_comment && text[i] == ';')
 					break;
 			}
-			if (! in_star_comment && (text[i] == '\n' || text[i] == '\r'))
-            {
+			if (! in_star_comment && (text[i] == '\n' || text[i] == '\r')) {
 				in_slash_comment = qfalse;
 				break;
 			}
 		}
 
-		if( i >= (MAX_CMD_LINE - 1))
-        {
+		if( i >= (MAX_CMD_LINE - 1)) {
 			i = MAX_CMD_LINE - 1;
 		}
 				
-		memcpy(line, text, i);
+		memcpy (line, text, i);
 		line[i] = 0;
 		
 // delete the text from the command buffer and move remaining commands down
@@ -232,7 +228,7 @@ void Cbuf_Execute(void)
 			memmove (text, text+i, cmd_text.cursize);
 		}
 
-        // execute the command line
+// execute the command line
 		Cmd_ExecuteString(line);		
 	}
 }
@@ -345,11 +341,6 @@ int	Cmd_Argc( void )
 	return cmd_argc;
 }
 
-void Cmd_Clear( void )
-{
-	cmd_argc = 0;
-}
-
 char *Cmd_Argv( int arg )
 {
 	if( (unsigned)arg >= cmd_argc )
@@ -379,7 +370,7 @@ Cmd_Args
 Returns a single string containing argv(1) to argv(argc()-1)
 ============
 */
-char *Cmd_Args( void )
+char* Cmd_Args( void )
 {
 	static	char cmd_args[MAX_STRING_CHARS];
 	int		i;
@@ -656,27 +647,26 @@ void Cmd_SetCommandCompletionFunc(const char *command, completionFunc_t complete
 	}
 }
 
+/*
+============
+Cmd_RemoveCommand
+============
+*/
+void	Cmd_RemoveCommand( const char *cmd_name ) {
+	cmd_function_t	*cmd, **back;
 
-void Cmd_RemoveCommand( const char *cmd_name )
-{
-	cmd_function_t* cmd;
-    cmd_function_t** back= &cmd_functions;
-	
-    while( 1 )
-    {
+	back = &cmd_functions;
+	while( 1 ) {
 		cmd = *back;
-		if ( !cmd )
-        {
+		if ( !cmd ) {
 			// command wasn't active
 			return;
 		}
-
-		if ( !strcmp( cmd_name, cmd->name ) )
-        {
+		if ( !strcmp( cmd_name, cmd->name ) ) {
 			*back = cmd->next;
 
 			Z_Free(cmd->name);
-			Z_Free(cmd);
+			Z_Free (cmd);
 			return;
 		}
 		back = &cmd->next;
@@ -832,6 +822,12 @@ void Cmd_CompleteCfgName( char *args, int argNum )
     {
 		Field_CompleteFilename( "", "cfg", qfalse, qtrue );
 	}
+}
+
+
+void Cmd_Clear( void )
+{
+	cmd_argc = 0;
 }
 
 

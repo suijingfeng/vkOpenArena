@@ -42,7 +42,7 @@ void UpdateTournamentInfo( void ) {
 	gentity_t	*player;
 	int			playerClientNum;
 	int			n, accuracy, perfect,	msglen;
-#ifdef MISSIONPACK
+#ifdef MISSIONPACK // bk001205
   int score1, score2;
 	qboolean won;
 #endif
@@ -84,7 +84,7 @@ void UpdateTournamentInfo( void ) {
 		}
 #ifdef MISSIONPACK
 		won = qfalse;
-		if (g_gametype.integer >= GT_CTF) {
+		if (g_gametype.integer >= GT_CTF && g_ffa_gt==0) {
 			score1 = level.teamScores[TEAM_RED];
 			score2 = level.teamScores[TEAM_BLUE];
 			if (level.clients[playerClientNum].sess.sessionTeam	== TEAM_RED) {
@@ -127,6 +127,7 @@ void UpdateTournamentInfo( void ) {
 		Com_sprintf( buf, sizeof(buf), " %i %i %i", n, level.clients[n].ps.persistant[PERS_RANK], level.clients[n].ps.persistant[PERS_SCORE] );
 		msglen += strlen( buf );
 		if( msglen >= sizeof(msg) ) {
+
 			break;
 		}
 		strcat( msg, buf );
@@ -142,7 +143,7 @@ static gentity_t *SpawnModelOnVictoryPad( gentity_t *pad, vec3_t offset, gentity
 
 	body = G_Spawn();
 	if ( !body ) {
-		G_Printf( S_COLOR_RED "ERROR: out of gentities\n" );
+                G_Printf( S_COLOR_RED "ERROR: out of gentities\n" );
 		return NULL;
 	}
 

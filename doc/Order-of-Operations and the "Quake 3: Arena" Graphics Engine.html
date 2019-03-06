@@ -1,0 +1,128 @@
+<html><head>
+<meta http-equiv="content-type" content="text/html; charset=windows-1252">
+<title>Order-of-Operations and the "Quake 3: Arena" Graphics Engine</title>
+</head>
+<body bgcolor="#ffffff">
+
+<p></p><center><font size="6">Order-of-Operations<font size="2"><br>and the<br></font>"Quake 3: Arena" Graphics Engine</font><br>
+by <a href="mailto:bmcnett@bigpanda.com">Bryan McNett</a></center><p></p>
+
+
+<p>In July 1998, John Carmack announced further details regarding the <em>Quake 3 : Arena</em> (Q3A)
+graphics engine. This article 
+attempts to explain recent changes to the Q3A graphics engine while exploring <i>order-of-operations</i>.
+ After you're done, you may download all-new files that enable you to 
+play with the new features of the Q3A graphics engine in real time using
+ Adobe Photoshop.
+
+<font color="#ff0000"></font></p><p><font color="#ff0000">note! the web server was corrupting the photoshop files. this was fixed at 10am on 7/27. we apologize for the inconvenience.</font></p>
+
+<p>This article assumes you have read <a href="http://www.bigpanda.com/trinity/article1.html">Multitexture and the Quake 3 Graphics Engine</a> (MATQ3GE).
+
+<br wp="br1"><br wp="br2">
+</p><p>Most relevant to our ongoing discussion of multitexture, 
+bump-mapping has been dropped from Q3A's list of features due to 
+excessive hardware requirements. This removes bump-mapping from the 
+equation given in <a href="http://www.bigpanda.com/trinity/article1.html">MATQ3GE</a>. As a subtle side effect, the light-map is now free to appear <em>later</em> in the
+equation. It may be unclear what this means or why this would be important. It may help to
+discuss <em>order-of-operations. </em>Let's start with ordinary arithmetic:<em></em>
+</p><h2 align="center"><em>1+2*3</em></h2>
+Because multiplication and division are always done before addition and subtraction, two and
+three are multiplied together, and then one is added to produce <em>seven</em>. But parentheses can be
+used to rearrange the <em>order-of-operations</em>:
+<h2 align="center">(1+2)*3</h2>
+In this case, one and two are added, and then the result is multiplied by three to produce <em>nine</em>.
+
+<br wp="br1"><br wp="br2">
+<p>Multitexture can be done with <em>alpha blending</em>, <em>multiple texture units</em>, or a combination of both.
+Only the best 3D cards have <em>multiple texture units</em>, so we will concentrate on techniques that
+require only <em>alpha blending</em>.
+
+<br wp="br1"><br wp="br2">
+</p><p>Because alpha blending means blending a polygon with what's 
+already on the screen, each operation is applied to the grand total of 
+all previous operations. This order-of-operations doesn't care about 
+multiplication coming before addition - it moves strictly from the start
+ of the equation to the end, step by step. It is impossible to reorder 
+the operations with well-chosen parentheses.
+
+<br wp="br1"><br wp="br2">
+</p><p>You can't choose the parentheses, but you can avoid confusion by wrapping everything in
+parentheses like so:
+</p><h2 align="center">(((((A+B)*C)+D)*E)+F)</h2>
+In <a href="http://www.bigpanda.com/trinity/article1.html">MATQ3GE</a>, many layers of bump-mapping are added to one layer of light-mapping. The
+result is multiplied with texture-mapping.
+<h2 align="center">(((((L+B<font size="-2">1</font>)+B<font size="-2">2</font>)+B<font size="-2">3</font>)+B<font size="-2">4</font>)*T)</h2>
+If the light-map and bump-maps were applied after the texture-map, the operations would not be
+done in the same order, and the result would not look the same, to say the least:
+<h2 align="center">(((((T*B<font size="-2">4</font>)+B<font size="-2">3</font>)+B<font size="-2">2</font>)+B<font size="-2">1</font>)+L)</h2>
+But if the bump-maps are gone (as is the case with Q3A), the result is the same regardless of the
+order-of-operations:
+<h2 align="center">1. (L*T)</h2>
+<h2 align="center">2. (T*L)</h2>
+The light-map is free to come after the texture-map. Now that we've explained what this means,
+let's explain why it's important.
+
+<br wp="br1"><br wp="br2">
+<p>Let's consider the specular-map. Its purpose is to add shiny highlights to the texture-map. We
+can enable the specular-map in the above two equations in one of two ways:
+</p><h2 align="center">1. ((L*T)+S)</h2>
+<h2 align="center">2. ((T+S)*L)</h2>
+The first equation shows us how the specular map was applied in <a href="http://www.bigpanda.com/trinity/article1.html">MATQ3GE</a> - by necessity,
+only <em>after</em> the light-map had already applied shadows to the texture-map. The second equation
+shows us how, without bump-mapping, the specular-map can be applied <em>before</em> shadows are
+applied.
+
+<p><table width="100%"><tbody><tr>
+<td align="center">
+<a href="http://www.bigpanda.com/trinity/bad.psd"><img src="Order-of-Operations%20and%20the%20%22Quake%203:%20Arena%22%20Graphics%20Engine_files/bad.jpg"><br>click here to download bad.psd</a><br>
+<h2 align="center">1. ((L*T)+S)</h2>
+when specular-mapping is applied <i>after</i> light-mapping, 
+the shiny parts "glow" when they enter shadow. this looks bad.
+</td>
+<td align="center">
+<a href="http://www.bigpanda.com/trinity/good.psd"><img src="Order-of-Operations%20and%20the%20%22Quake%203:%20Arena%22%20Graphics%20Engine_files/good.jpg"><br>click here to download good.psd</a><br>
+<h2 align="center">2. ((T+S)*L)</h2>
+when specular-mapping is applied <i>before</i> light-mapping, 
+the shiny parts are obscured by shadow. this looks good.
+</td>
+</tr></tbody></table></p>
+
+<br wp="br1"><br wp="br2">
+<p>This is important because shadows are <em>supposed</em> to be applied after specular highlights. If the
+specular-map were to shine through shadows (as was the case in <a href="http://www.bigpanda.com/trinity/article1.html">MATQ3GE</a>), they would be
+specular in bright light, but <em>emissive</em> in shadow  (note to Quakers: emissive is just a fancy way of
+saying fullbright). It would not be easy to design specular-maps that look good under these
+conditions.
+
+<br wp="br1"><br wp="br2">
+</p><p>For what it's worth, the above problem was contrived to help explain the kind of problems that arise
+with <i>order-of-operations</i>. Many solutions do not involve tossing away bump-mapping.
+
+<br wp="br1"><br wp="br2">
+</p><p>It is possible to get correct shadows and bump-mapping by combining bump-maps and specular-maps into specular-bump-maps:
+</p><h2 align="center">(((((T+S<font size="-2">1</font>)+S<font size="-2">2</font>)+S<font size="-2">3</font>)+S<font size="-2">4</font>)*L)</h2>
+
+<p></p><center>
+<a href="http://www.bigpanda.com/trinity/specular-bump.psd"><img src="Order-of-Operations%20and%20the%20%22Quake%203:%20Arena%22%20Graphics%20Engine_files/specular-bump.jpg"><br>click here to download specular-bump.psd</a><br>
+specular-bump-mapping kills two birds with one stone.
+</center><p></p>
+
+<p>It is even possible, with the help of palettes, to combine all four specular-bump-maps into a
+single super-specular-bump-map:
+</p><h2 align="center">((T+S<font size="-2">1234</font>)*L)</h2><p></p>
+
+<p>Finally, the most twisted trick of all: the four specular-bump-maps 
+for each  16 bit texture-map are packed into the same two bits of four 
+separate 8 bit textures. Each 8 bit texture is shared by the 
+specular-bump-maps of four 16 bit texture-maps. A palette selects which 
+two bits define a four-color grayscale. If polygons are sorted by 
+palette, only four palette switches are needed per frame. Like usual, 
+six passes are required to get texture-mapping, specular-bump-mapping 
+and light-mapping, but texture memory requirements drop from 48 
+bits-per-pixel to 24!</p>
+<p></p>
+
+
+
+</body></html>

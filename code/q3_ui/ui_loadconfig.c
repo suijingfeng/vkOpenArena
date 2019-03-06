@@ -31,15 +31,15 @@ LOAD CONFIG MENU
 #include "ui_local.h"
 
 
-#define ART_BACK0			"menu/art/back_0"
-#define ART_BACK1			"menu/art/back_1"	
-#define ART_FIGHT0			"menu/art/load_0"
-#define ART_FIGHT1			"menu/art/load_1"
-#define ART_FRAMEL			"menu/art/frame2_l"
-#define ART_FRAMER			"menu/art/frame1_r"
-#define ART_ARROWS			"menu/art/arrows_horz_0"
-#define ART_ARROWLEFT		"menu/art/arrows_horz_left"
-#define ART_ARROWRIGHT		"menu/art/arrows_horz_right"
+#define ART_BACK0			"menu/" MENU_ART_DIR "/back_0"
+#define ART_BACK1			"menu/" MENU_ART_DIR "/back_1"
+#define ART_FIGHT0			"menu/" MENU_ART_DIR "/load_0"
+#define ART_FIGHT1			"menu/" MENU_ART_DIR "/load_1"
+#define ART_FRAMEL			"menu/" MENU_ART_DIR "/frame2_l"
+#define ART_FRAMER			"menu/" MENU_ART_DIR "/frame1_r"
+#define ART_ARROWS			"menu/" MENU_ART_DIR "/arrows_horz_0"
+#define ART_ARROWLEFT		"menu/" MENU_ART_DIR "/arrows_horz_left"
+#define ART_ARROWRIGHT		"menu/" MENU_ART_DIR "/arrows_horz_right"
 
 #define MAX_CONFIGS			128
 #define NAMEBUFSIZE			( MAX_CONFIGS * 16 )
@@ -225,7 +225,7 @@ static void LoadConfig_MenuInit( void ) {
 		
 		// strip extension
 		len = strlen( configname );
-		if (!Q_stricmp(configname +  len - 4,".cfg"))
+		if (Q_strequal(configname +  len - 4,".cfg"))
 			configname[len-4] = '\0';
 
 		Q_strupr(configname);

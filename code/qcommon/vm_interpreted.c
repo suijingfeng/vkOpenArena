@@ -123,8 +123,8 @@ static ID_INLINE unsigned int loadWord(void *addr) {
 	return word;
 }
 #else
-static ID_INLINE unsigned int __lwbrx(register void *addr,
-		register int offset) {
+static ID_INLINE unsigned int __lwbrx(register void *addr, register int offset)
+{
 	register unsigned int word;
 
 	asm("lwbrx %0,%2,%1" : "=r" (word) : "r" (addr), "b" (offset));
@@ -357,7 +357,7 @@ int	VM_CallInterpreted( vm_t *vm, int *args )
 	*(int *)&image[ programStack + 4 ] = 0;	// return stack
 	*(int *)&image[ programStack ] = -1;	// will terminate the loop on return
 
-	set_VM_Debug(0);
+	VM_Debug(0);
 
 	// leave a free spot at start of stack so
 	// that as long as opStack is valid, opStack-1 will
@@ -876,7 +876,7 @@ nextInstruction2:
 			((float *) opStack)[opStackOfs] = (float) opStack[opStackOfs];
 			goto nextInstruction;
 		case OP_CVFI:
-			opStack[opStackOfs] = Q_ftol(((float *) opStack)[opStackOfs]);
+			opStack[opStackOfs] = (int)(((float *) opStack)[opStackOfs]);
 			goto nextInstruction;
 		case OP_SEX8:
 			opStack[opStackOfs] = (signed char) opStack[opStackOfs];

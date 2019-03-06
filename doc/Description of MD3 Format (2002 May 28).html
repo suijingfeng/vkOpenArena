@@ -1,0 +1,303 @@
+<html><head>
+<meta http-equiv="content-type" content="text/html; charset=windows-1252">
+<title>
+Description of MD3 Format (2002 May 28)
+</title>
+</head>
+<body>
+<p>Document last updated 2002 May 28.
+</p><p>Much of the information was extracted from the header files provided in the Q3AToolsSource package from Id Software, Inc.
+
+<a name="Disclaimer"></a></p><h2><a name="Disclaimer">Disclaimer:</a></h2><p><a name="Disclaimer">
+</a></p><p><a name="Disclaimer">
+I make no claims as to the accuracy of the information provided within.
+I have made attempts to be as accurate as possible, but the information herein is still provided "as-is".
+I am not affiliated with Id Software, Inc., nor RSA Data Security, Inc.
+Copyrights and trademarks are under the control of their respective holders.
+
+</a><a name="Introduction"></a></p><h1><a name="Introduction">Introduction:</a></h1><p><a name="Introduction">
+</a></p><p><a name="Introduction">
+MD3 is the 3D data format used in Quake 3: Arena and derivative games 
+(Q3 mods, Alice, Return to Castle Wolfenstein, etc.).
+The file format is used to describe 3D objects in the game that move and
+ interact with players, other objects, and/or the environment.
+Animation is recorded by describing the position of every vertex in the 
+model for each frame of animation.
+This style of animation may also be known as "mesh deformation", "vertex
+ animation", ???.
+</a></p><p><a name="Introduction">
+A separate file format is used to describe maps, the environment of the game: a source MAP file that compiles into a BSP file.
+This document does not cover the MAP nor BSP file formats.
+</a></p><p><a name="Introduction">
+Id Software, Inc., introduced a new 3D data format that appeared in 
+Quake 3 PR 1.29(?), called MD4.
+The MD4 format uses "bones animation", which describes how groups of 
+vertex moves together around together in terms of rotation and 
+translation, instead of describing every the positon of every vertex.
+The animation style in MD4 may also be known as "skeleton animation", 
+???.
+</a></p><p><a name="Introduction">
+This newer file format from Id Software, Inc., should not be confused 
+with RSA Data Security, Inc., Message Digest 4 algorithm, also called 
+MD4.
+One is a file format, the other is an algorithm ("math formula"), but 
+they are, unfortunately, both called "MD4".
+Furthermore, to add to the confusion, the Quake series uses the MD4 
+algorithm (slightly modified?) as a checksum algorithm for network 
+error-checking and pak file integrity (including the MD4 files).
+</a></p><p><a name="Introduction">
+This document does not cover the MD4 file format.
+</a></p><p><a name="Introduction">
+The Quake series was developed and run on IA32 (x86) machines, using C.
+The file format shows many evidences of x86-isms and C-isms (expected byte order, word sizes, data type names, etc.).
+Some of these isms spill over into this document.
+
+</a></p><p><a name="Introduction">The MD3 format is presented here from a larger scope to smaller ones.
+
+</a></p><p><a name="Introduction">
+</a><a name="Data type indicator"></a></p><h2><a name="Data type indicator">Data type indicator:</a></h2><p><a name="Data type indicator">
+<table caption="Data type indicator" border="1">
+<tbody><tr><th>Datatype</th><th>name/purpose</th><th>Description</th></tr>
+
+ <tr><td>U8</td><td>char</td><td>8-bit unsigned octet (character).</td></tr>
+ <tr><td>S16</td><td>short</td><td>little-endian signed 16-bit integer.</td></tr>
+ <tr><td>S32</td><td>int</td><td>little-endian signed 32-bit integer.</td></tr>
+ <tr><td>F32</td><td>float</td><td>IEEE-754 32-bit floating-point (little-endian?).</td></tr>
+ <tr><td>VEC3</td><td>vec3_t</td><td>triplet of F32 in sequence (read 4 octets, make float, read 4, make float, read 4, make float), describing a 3-space vector.</td></tr>
+ <tr><td>*</td><td>[]</td><td>indicates sequential repeat count 
+(homogenous aggregation, array, vector), as in "U8 * 16" to mean a 
+16-octet array (i.e. character string).</td></tr>
+ <tr><td>-</td><td></td><td>file/array offset of which to make special note.</td></tr>
+ <tr><td>!</td><td></td><td>aggregate complex data that should be described elsewhere.</td></tr>
+</tbody></table>
+
+
+</a></p><p><a name="Data type indicator">
+</a><a name="MD3"></a></p><h2><a name="MD3">MD3:</a></h2><p><a name="MD3">
+<table caption="MD3" border="1">
+<tbody><tr><th>Datatype</th><th>name/purpose</th><th>Description</th></tr>
+
+ <tr><td>-</td><td>MD3_START</td><td>offset of <a href="#MD3">MD3</a> object.  Usually 0, but not guaranteed.</td></tr>
+ <tr><td>S32</td><td>IDENT</td><td>Magic number.  As a string of 4 
+octets, reads "IDP3", as unsigned little-endian 1367369843 (0x51806873),
+ as unsigned big-endian 1936228433 (0x73688051).</td></tr>
+ <tr><td>S32</td><td>VERSION</td><td><a href="#MD3">MD3</a> version number, latest known is 15, but use the constant MD3_VERSION</td></tr>
+ <tr><td>U8 * <b>MAX_QPATH</b></td><td>NAME</td><td><a href="#MD3">MD3</a> name, usually its pathname in the PK3.  ASCII character string, NUL-terminated (C-style).  Current value of <b>MAX_QPATH</b> is 64.</td></tr>
+ <tr><td>S32</td><td>FLAGS</td><td>???</td></tr>
+ <tr><td>S32</td><td>NUM_FRAMES</td><td>Number of <a href="#Frame">Frame</a> objects, with a maximum of <b>MD3_MAX_FRAMES</b>.  Current value of <b>MD3_MAX_FRAMES</b> is 1024.</td></tr>
+ <tr><td>S32</td><td>NUM_TAGS</td><td>Number of <a href="#Tag">Tag</a> objects, with a maximum of <b>MD3_MAX_TAGS</b>.  Current value of <b>MD3_MAX_TAGS</b> is 16.</td></tr>
+ <tr><td>S32</td><td>NUM_SURFACES</td><td>Number of <a href="#Surface">Surface</a> objects, with a maximum of <b>MD3_MAX_SURFACES</b>.  Current value of <b>MD3_MAX_SURFACES</b> is 32.</td></tr>
+ <tr><td>S32</td><td>NUM_SKINS</td><td>Number of Skin objects.
+I should note that I have not seen an <a href="#MD3">MD3</a> using this particular field for anything; this appears to be an artifact from the Quake 2 MD2 format.
+<a href="#Surface">Surface</a> objects have their own <a href="#Shader">Shader</a> field.</td></tr>
+ <tr><td>S32</td><td>OFS_FRAMES</td><td>Relative offset from start of MD3 object where <a href="#Frame">Frame</a> objects start.
+The <a href="#Frame">Frame</a> objects are written sequentially, that is, when you read one <a href="#Frame">Frame</a> object, you do not need to seek() for the next object.</td></tr>
+ <tr><td>S32</td><td>OFS_TAGS</td><td>Relative offset from start of <a href="#MD3">MD3</a> where <a href="#Tag">Tag</a> objects start.  Similarly written sequentially.</td></tr>
+ <tr><td>S32</td><td>OFS_SURFACES</td><td>Relative offset from start of <a href="#MD3">MD3</a> where <a href="#Surface">Surface</a> objects start.  Again, written sequentially.</td></tr>
+ <tr><td>S32</td><td>OFS_EOF</td><td>Relative offset from start of <a href="#MD3">MD3</a> to the end of the <a href="#MD3">MD3</a> object.  Note there is no offset for Skin objects.</td></tr>
+ <tr><td>!</td><td><i>(<a href="#Frame">Frame</a>)</i></td><td>The array of <a href="#Frame">Frame</a> objects usually starts immediately afterwards, but OFS_FRAMES should be used.</td></tr>
+ <tr><td>!</td><td><i>(<a href="#Tag">Tag</a>)</i></td><td>The array of <a href="#Tag">Tag</a> objects usually starts immediately after FRAMES, but OFS_TAGS should be used.</td></tr>
+ <tr><td>!</td><td><i>(<a href="#Surface">Surface</a>)</i></td><td>The array of <a href="#Surface">Surface</a> objects usually start after TAGS, but OFS_SURFACES should be used.</td></tr>
+ <tr><td>-</td><td>MD3_END</td><td>End of <a href="#MD3">MD3</a> object.  Should match MD3_START.</td></tr>
+</tbody></table>
+
+
+</a></p><p><a name="MD3">
+</a><a name="Frame"></a></p><h3><a name="Frame">Frame:</a></h3><p><a name="Frame">(member of </a><a href="#MD3">MD3</a>)
+<table caption="Frame" border="1">
+<tbody><tr><th>Datatype</th><th>name/purpose</th><th>Description</th></tr>
+
+ <tr><td>VEC3</td><td>MIN_BOUNDS</td><td>First corner of the bounding box.</td></tr>
+ <tr><td>VEC3</td><td>MAX_BOUNDS</td><td>Second corner of the bounding box.</td></tr>
+ <tr><td>VEC3</td><td>LOCAL_ORIGIN</td><td>Local origin, usually (0, 0, 0).</td></tr>
+ <tr><td>F32</td><td>RADIUS</td><td>Radius of bounding sphere.</td></tr>
+ <tr><td>U8 * 16</td><td>NAME</td><td>Name of Frame.  ASCII character string, NUL-terminated (C-style).</td></tr>
+</tbody></table>
+
+
+</p><p>
+<a name="Tag"></a></p><h3><a name="Tag">Tag:</a></h3><p><a name="Tag">(member of </a><a href="#MD3">MD3</a>)
+<table caption="Tag" border="1">
+<tbody><tr><th>Datatype</th><th>name/purpose</th><th>Description</th></tr>
+
+ <tr><td>U8 * <b>MAX_QPATH</b></td><td>NAME</td><td>Name of Tag object.  ASCII character string, NUL-terminated (C-style).  Current value of <b>MAX_QPATH</b> is 64.</td></tr>
+ <tr><td>VEC3</td><td>ORIGIN</td><td>Coordinates of Tag object.</td></tr>
+ <tr><td>VEC3 * 3</td><td>AXIS</td><td>Orientation of Tag object. (XXX: more descr)</td></tr>
+</tbody></table>
+
+
+</p><p>
+<a name="Surface"></a></p><h3><a name="Surface">Surface:</a></h3><p><a name="Surface">(member of </a><a href="#MD3">MD3</a>)
+<table caption="Surface" border="1">
+<tbody><tr><th>Datatype</th><th>name/purpose</th><th>Description</th></tr>
+
+ <tr><td>-</td><td>SURFACE_START</td><td>Offset relative to start of <a href="#MD3">MD3</a> object.</td></tr>
+ <tr><td>S32</td><td>IDENT</td><td>Magic number.  As a string of 4 
+octets, reads "IDP3", as unsigned little-endian 1367369843 (0x51806873),
+ as unsigned big-endian 1936228433 (0x73688051).</td></tr>
+ <tr><td>U8 * <b>MAX_QPATH</b></td><td>NAME</td><td>Name of <a href="#Surface">Surface</a> object.  ASCII character string, NUL-terminated (C-style).  Current value of <b>MAX_QPATH</b> is 64.</td></tr>
+ <tr><td>S32</td><td>FLAGS</td><td>flags?</td></tr>
+ <tr><td>S32</td><td>NUM_FRAMES</td><td>Number of animation frames.  This should match NUM_FRAMES in the <a href="#MD3">MD3</a> header.</td></tr>
+ <tr><td>S32</td><td>NUM_SHADERS</td><td>Number of <a href="#Shader">Shader</a> objects defined in this <a href="#Surface">Surface</a>, with a limit of <b>MD3_MAX_SHADERS</b>.  Current value of <b>MD3_MAX_SHADERS</b> is 256.</td></tr>
+ <tr><td>S32</td><td>NUM_VERTS</td><td>Number of <a href="#Vertex">Vertex</a> objects defined in this <a href="#Surface">Surface</a>, up to <b>MD3_MAX_VERTS</b>.  Current value of <b>MD3_MAX_VERTS</b> is 4096.</td></tr>
+ <tr><td>S32</td><td>NUM_TRIANGLES</td><td>Number of <a href="#Triangle">Triangle</a> objects defined in this <a href="#Surface">Surface</a>, maximum of <b>MD3_MAX_TRIANGLES</b>.  Current value of <b>MD3_MAX_TRIANGLES</b> is 8192.</td></tr>
+ <tr><td>S32</td><td>OFS_TRIANGLES</td><td>Relative offset from SURFACE_START where the list of <a href="#Triangle">Triangle</a> objects starts.</td></tr>
+ <tr><td>S32</td><td>OFS_SHADERS</td><td>Relative offset from SURFACE_START where the list of <a href="#Shader">Shader</a> objects starts.</td></tr>
+ <tr><td>S32</td><td>OFS_ST</td><td>Relative offset from SURFACE_START where the list of <a href="#TexCoord">St</a> objects (Texture Coordinates, S-T vertices) starts.</td></tr>
+ <tr><td>S32</td><td>OFS_XYZNORMAL</td><td>Relative offset from SURFACE_START where the list of <a href="#Vertex">Vertex</a> objects (X-Y-Z-N vertices) starts.</td></tr>
+ <tr><td>S32</td><td>OFS_END</td><td>Relative offset from SURFACE_START to where the <a href="#Surface">Surface</a> object ends.</td></tr>
+ <tr><td>!</td><td><i>(<a href="#Shader">Shader</a>)</i></td><td>List of <a href="#Shader">Shader</a> objects usually starts immediate after the Surface header, but use OFS_SHADERS (or rather, OFS_SHADERS+OFS_SURFACES for files).</td></tr>
+ <tr><td>!</td><td><i>(<a href="#Triangle">Triangle</a>)</i></td><td>List of <a href="#Triangle">Triangle</a> objects usually starts immedately after the list of Shader objects, but use OFS_TRIANGLES (+ OFS_SURFACES).</td></tr>
+ <tr><td>!</td><td><i>(<a href="#TexCoord">St</a>)</i></td><td>List of <a href="#TexCoord">St</a> objects usually starts immedately after the list of Triangle objects, but use OFS_ST (+ OFS_SURFACES).</td></tr>
+ <tr><td>!</td><td><i>(<a href="#Vertex">XYZNormal</a>)</i></td><td>List of <a href="#Vertex">Vertex</a> objects usually starts immediate after the list of <a href="#TexCoord">St</a> objects, but use OFS_XYZNORMALS (+ OFS_SURFACES).
+The total number of objects is (NUM_FRAMES * NUM_VERTS).
+One set of NUM_VERTS <a href="#Vertex">Vertex</a> objects describes the <a href="#Surface">Surface</a> in one frame of animation;
+the first NUM_VERTS <a href="#Vertex">Vertex</a> objects describes the <a href="#Surface">Surface</a> in the first frame of animation,
+the second NUM_VERTEX <a href="#Vertex">Vertex</a> objects describes the <a href="#Surface">Surface</a> in the second frame of animation, and so forth.</td></tr>
+ <tr><td>-</td><td>SURFACE_END</td><td>End of <a href="#Surface">Surface</a> object.  Should match OFS_END.</td></tr>
+</tbody></table>
+
+</p><p>
+<a name="Shader"></a></p><h4><a name="Shader">Shader:</a></h4><p><a name="Shader">(member of </a><a href="#Surface">Surface</a>)
+;
+ <table caption="Shader" border="1">
+<tbody><tr><th>Datatype</th><th>name/purpose</th><th>Description</th></tr>
+
+ <tr><td>U8 * <b>MAX_QPATH</b></td><td>NAME</td><td>Pathname of shader in the PK3.  ASCII character string, NUL-terminated (C-style).  Current value of <b>MAX_QPATH</b> is 64.</td></tr><tr><td>S32</td><td>SHADER_INDEX</td><td><a href="#Shader">Shader</a> index number.  No idea how this is allocated, but presumably in sequential order of definiton.</td></tr>
+</tbody></table>
+
+</p><p>
+<a name="Triangle"></a></p><h4><a name="Triangle">Triangle:</a></h4><p><a name="Triangle">(member of </a><a href="#Surface">Surface</a>)
+<table caption="Triangle" border="1">
+<tbody><tr><th>Datatype</th><th>name/purpose</th><th>Description</th></tr>
+
+ <tr><td>S32 * 3</td><td>INDEXES</td><td>List of offset values into the list of <a href="#Vertex">Vertex</a> objects that constitute the corners of the <a href="#Triangle">Triangle</a> object.
+<a href="#Vertex">Vertex</a> numbers are used instead of actual coordinates, as the coordinates are implicit in the <a href="#Vertex">Vertex</a> object. (XXX: does order matter?)</td></tr>
+</tbody></table>
+
+</p><p>
+<a name="TexCoord"></a></p><h4><a name="TexCoord">TexCoord:</a></h4><p><a name="TexCoord">(member of </a><a href="#Surface">Surface</a>)
+(St)
+<table caption="TexCoord" border="1">
+<tbody><tr><th>Datatype</th><th>name/purpose</th><th>Description</th></tr>
+
+ <tr><td>F32 * 2</td><td>ST</td><td>S-T (U-V?) texture coordinate.
+I am a little fuzzy on the whole notion of texture coordinates.
+Values tend to stay within [0.0 .. 1.0], suggesting (0,0) is one corner 
+of the shader/texture and (1,1) is the other far corner of the 
+shader/texture, with values outside the range indicating 
+wraparounds/repeats.
+Again, I am fuzzy on this notion.</td></tr>
+</tbody></table>
+
+</p><p>
+<a name="Vertex"></a></p><h4><a name="Vertex">Vertex:</a></h4><p><a name="Vertex">(member of </a><a href="#Surface">Surface</a>)
+(XYZNormal)
+<table caption="Vertex" border="1">
+<tbody><tr><th>Datatype</th><th>name/purpose</th><th>Description</th></tr>
+
+ <tr><td>S16</td><td>X</td><td>X-coordinate in left-handed 3-space, scaled down by factor <b>MD3_XYZ_SCALE</b>.  Current value of <b>MD3_XYZ_SCALE</b> is (1.0/64).  (multiply by <b>MD3_XYZ_SCALE</b> to obtain original coordinate value)</td></tr>
+ <tr><td>S16</td><td>Y</td><td>Y-coordinate in left-handed 3-space, scaled down by factor <b>MD3_XYZ_SCALE</b>.  Current value of <b>MD3_XYZ_SCALE</b> is (1.0/64).  (multiply by <b>MD3_XYZ_SCALE</b> to obtain original coordinate value)</td></tr>
+ <tr><td>S16</td><td>Z</td><td>Z-coordinate in left-handed 3-space, scaled down by factor <b>MD3_XYZ_SCALE</b>.  Current value of <b>MD3_XYZ_SCALE</b> is (1.0/64).  (multiply by <b>MD3_XYZ_SCALE</b> to obtain original coordinate value)</td></tr>
+ <tr><td>S16</td><td>NORMAL</td><td>Encoded normal vector (XXX: provide formulae)</td></tr>
+</tbody></table>
+
+
+<a name="Tags"></a></p><h1><a name="Tags">Tags:</a></h1><p><a name="Tags">
+</a></p><p><a name="Tags">
+Tags are volumeless vectors.
+Tags are primarily used in aligning separate MD3 objects in-game.
+For example, the Tag object in the railgun model is called 'tag_weapon',
+and the position (and rotation) of this Tag gets aligned with those of 
+the Tag named 'tag_weapon' in the player model, dragging the rest of the
+ railgun model over wtih the [railgun's] Tag object.
+The railgun model follows its Tag positions and rotations, which in turn
+ follows the positions and rotations of the player model's Tag object 
+(most noticeable in taunt animations).
+Tags are also used to line up the torso with the legs, and the head with
+ the torso, and so on.
+
+
+</a><a name="Normals"></a></p><h1><a name="Normals">Normals:</a></h1><p><a name="Normals">
+</a><a name="Encoding"></a></p><h2><a name="Encoding">Encoding:</a></h2><p><a name="Encoding">
+</a></p><p><a name="Encoding">
+The encoded normal vector uses a spherical coordinate system.
+Since the normal vector is, by definition, a length of one, only the angles need to be recorded.
+Each angle is constrained within [0, 255], so as to fit in one octet.
+Thus, a normal vector can be encoded in 16 bits.
+(XXX: more blah)
+
+</a></p><p><a name="Encoding">
+<table border="1">
+<tbody><tr>
+<th>15</th>
+<th>14</th>
+<th>13</th>
+<th>12</th>
+<th>11</th>
+<th>10</th>
+<th>9</th>
+<th>8</th>
+<th>7</th>
+<th>6</th>
+<th>5</th>
+<th>4</th>
+<th>3</th>
+<th>2</th>
+<th>1</th>
+<th>0</th>
+</tr>
+<tr>
+<td colspan="8" align="RIGHT">lng (longitude)</td>
+<td colspan="8" align="RIGHT">lat (latitude)</td>
+</tr>
+</tbody></table>
+
+</a></p><p><a name="Encoding">
+(Code in q3tools/common/mathlib.c:NormalToLatLong)
+<code><br>
+lng &lt;- <b>atan2</b> ( y / x) * 255 / (2 * <b>pi</b>)<br>
+lat &lt;- <b>acos</b> ( z ) * 255 / (2 * <b>pi</b>)<br>
+lng &lt;- lower 8 bits of lng<br>
+lat &lt;- lower 8 bits of lat<br>
+normal &lt;- (lng <b>shift-left</b> 8) <b>binary-or</b> (lat)<br>
+<br></code>
+Two special vectors are the ones that point up and point down, as these values for z result in a singularity for <b>acos</b>.
+The special case of straight-up is:
+<code><br>
+normal &lt;- 0<br>
+<br></code>
+And the special case of straight down is:
+<code><br>
+lat &lt;- 0<br>
+lng &lt;- 128<br>
+normal &lt;- (lng <b>shift-left</b> 8) <b>binary-or</b> (lat)<br>
+<br></code>
+or, shorter:
+<code><br>
+normal &lt;- 32768
+<br></code>
+
+</a><a name="Decoding"></a></p><h2><a name="Decoding">Decoding:</a></h2><p><a name="Decoding">
+</a></p><p><a name="Decoding">
+(Code in q3tools/q3map/misc_model.c:InsertMD3Model)
+<code><br>
+lat &lt;- (normal <b>binary-and</b> 255) * (2 * <b>pi</b>) / 255<br>
+lng &lt;- ((normal <b>shift-right</b> 8) <b>binary-and</b> 255) * (2 * <b>pi</b>) / 255<br>
+x &lt;- <b>cos</b> ( lat ) * <b>sin</b> ( lng )<br>
+y &lt;- <b>sin</b> ( lat ) * <b>sin</b> ( lng )<br>
+z &lt;- <b>cos</b> ( lng )<br>
+<br></code>
+
+</a></p><h2><a name="Decoding">See Also (Links)</a></h2><a name="Decoding">
+</a><p><a name="Decoding">
+</a><a href="http://www.ugrad.cs.jhu.edu/~dansch/md2/">
+.md2 File Format Specification</a>
+<!-- Mirrored locally as md2-schoenblum.html -->
+
+</p><hr>
+-- PhaethonH (phaethon , linux . ucla . edu)
+
+
+
+<div id="cntvlive2-is-installed"></div></body></html>

@@ -93,9 +93,11 @@ static unsigned char numBits[] = {
    8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,
 };
 
-byte MuLawEncode(short s) {
+
+unsigned char MuLawEncode(short s)
+{
 	unsigned long adjusted;
-	byte sign, exponent, mantissa;
+	unsigned char sign, exponent, mantissa;
 
 	sign = (s<0)?0:0x80;
 

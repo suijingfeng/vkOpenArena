@@ -1,0 +1,5 @@
+#The full path to start OpenArena
+BINNAME=~/game/engine/build/release-linux-x86_64/openarena.x86_64
+
+#The architecture. Use "i386" for 32 bit (default) or "x86_64" for 64 bit.
+ARCH=x86_64

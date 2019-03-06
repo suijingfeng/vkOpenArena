@@ -30,13 +30,13 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #define MAX_LISTBOXWIDTH		40
 #define MAX_LEAGUENAME			80
 
-#define SPECIFYLEAGUE_FRAMEL	"menu/art/frame2_l"
-#define SPECIFYLEAGUE_FRAMER	"menu/art/frame1_r"
-#define SPECIFYLEAGUE_BACK0		"menu/art/back_0"
-#define SPECIFYLEAGUE_BACK1		"menu/art/back_1"
-#define SPECIFYLEAGUE_ARROWS0	"menu/art/arrows_vert_0"
-#define SPECIFYLEAGUE_UP		"menu/art/arrows_vert_top"
-#define SPECIFYLEAGUE_DOWN		"menu/art/arrows_vert_bot"
+#define SPECIFYLEAGUE_FRAMEL	"menu/" MENU_ART_DIR "/frame2_l"
+#define SPECIFYLEAGUE_FRAMER	"menu/" MENU_ART_DIR "/frame1_r"
+#define SPECIFYLEAGUE_BACK0		"menu/" MENU_ART_DIR "/back_0"
+#define SPECIFYLEAGUE_BACK1		"menu/" MENU_ART_DIR "/back_1"
+#define SPECIFYLEAGUE_ARROWS0	"menu/" MENU_ART_DIR "/arrows_vert_0"
+#define SPECIFYLEAGUE_UP		"menu/" MENU_ART_DIR "/arrows_vert_top"
+#define SPECIFYLEAGUE_DOWN		"menu/" MENU_ART_DIR "/arrows_vert_bot"
 #define GLOBALRANKINGS_LOGO		"menu/art/gr/grlogo"
 #define GLOBALRANKINGS_LETTERS	"menu/art/gr/grletters"
 

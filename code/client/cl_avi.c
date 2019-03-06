@@ -26,7 +26,8 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #define INDEX_FILE_EXTENSION ".index.dat"
 
 #define MAX_RIFF_CHUNKS 16
-
+// AVI files have the start of pixel lines 4 byte-aligned
+#define AVI_LINE_PADDING 4
 typedef struct audioFormat_s
 {
   int rate;
@@ -351,7 +352,7 @@ qboolean CL_OpenAVIForWriting( const char *fileName )
   #define MAX_PACK_LEN 16
   afd.cBuffer = Z_Malloc((afd.width * 3 + MAX_PACK_LEN - 1) * afd.height + MAX_PACK_LEN - 1);
   // raw avi files have pixel lines start on 4-byte boundaries
-  afd.eBuffer = Z_Malloc(PAD(afd.width * 3, 4) * afd.height);
+  afd.eBuffer = Z_Malloc(PAD(afd.width * 3, AVI_LINE_PADDING) * afd.height);
 
   afd.a.rate = dma.speed;
   afd.a.format = WAV_FORMAT_PCM;
@@ -416,7 +417,9 @@ CL_CheckFileSize
 */
 static qboolean CL_CheckFileSize( int bytesToAdd )
 {
-  unsigned int newFileSize =
+  unsigned int newFileSize;
+
+  newFileSize =
     afd.fileSize +                // Current file size
     bytesToAdd +                  // What we want to add
     ( afd.numIndices * 16 ) +     // The index
@@ -427,7 +430,7 @@ static qboolean CL_CheckFileSize( int bytesToAdd )
   if( newFileSize > INT_MAX )
   {
     // Close the current file...
-    CL_CloseAVI_f( );
+    CL_CloseAVI( );
 
     // ...And open a new one
     CL_OpenAVIForWriting( va( "%s_", afd.fileName ) );
@@ -562,8 +565,7 @@ void CL_TakeVideoFrame( void )
   if( !afd.fileOpen )
     return;
 
-  re.TakeVideoFrame( afd.width, afd.height,
-      afd.cBuffer, afd.eBuffer, afd.motionJpeg );
+  re.TakeVideoFrame( afd.width, afd.height, afd.cBuffer, afd.eBuffer, afd.motionJpeg );
 }
 
 /*
@@ -573,7 +575,7 @@ CL_CloseAVI
 Closes the AVI file and writes an index chunk
 ===============
 */
-void CL_CloseAVI_f( void )
+qboolean CL_CloseAVI( void )
 {
   int indexRemainder;
   int indexSize = afd.numIndices * 16;
@@ -581,7 +583,7 @@ void CL_CloseAVI_f( void )
 
   // AVI file isn't open
   if( !afd.fileOpen )
-    return;
+    return qfalse;
 
   afd.fileOpen = qfalse;
 
@@ -598,7 +600,7 @@ void CL_CloseAVI_f( void )
           &afd.idxF, qtrue ) ) <= 0 )
   {
     FS_FCloseFile( afd.f );
-    return;
+    return qfalse;
   }
 
   indexRemainder = indexSize;
@@ -636,6 +638,8 @@ void CL_CloseAVI_f( void )
   FS_FCloseFile( afd.f );
 
   Com_Printf( "Wrote %d:%d frames to %s\n", afd.numVideoFrames, afd.numAudioFrames, afd.fileName );
+
+  return qtrue;
 }
 
 /*

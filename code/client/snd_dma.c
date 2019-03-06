@@ -33,9 +33,6 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #include "snd_codec.h"
 #include "client.h"
 
-// leilei - mod playabck support
-
-
 void S_Update_( void );
 void S_Base_StopAllSounds(void);
 void S_Base_StopBackgroundTrack( void );
@@ -57,8 +54,6 @@ static char		s_backgroundLoop[MAX_QPATH];
 channel_t   s_channels[MAX_CHANNELS];
 channel_t   loop_channels[MAX_CHANNELS];
 int			numLoopChannels;
-
-int			samplingrate;	// leilei - for snd_xmp
 
 static int	s_soundStarted;
 static		qboolean	s_soundMuted;
@@ -105,7 +100,7 @@ void S_Base_SoundInfo(void) {
 	} else {
 		Com_Printf("%5d stereo\n", dma.channels - 1);
 		Com_Printf("%5d samples\n", dma.samples);
-		Com_Printf("%5d samplebits\n", dma.samplebits);
+		Com_Printf("%5d samplebits (%s)\n", dma.samplebits, dma.isfloat ? "float" : "int");
 		Com_Printf("%5d submission_chunk\n", dma.submission_chunk);
 		Com_Printf("%5d speed\n", dma.speed);
 		Com_Printf("%p dma buffer\n", dma.buffer);
@@ -124,32 +119,31 @@ void S_Base_SoundInfo(void) {
 static
 void S_Base_StartCapture( void )
 {
-	// !!! FIXME: write me.
+	SNDDMA_StartCapture();
 }
 
 static
 int S_Base_AvailableCaptureSamples( void )
 {
-	// !!! FIXME: write me.
-	return 0;
+	return SNDDMA_AvailableCaptureSamples();
 }
 
 static
 void S_Base_Capture( int samples, byte *data )
 {
-	// !!! FIXME: write me.
+	SNDDMA_Capture(samples, data);
 }
 
 static
 void S_Base_StopCapture( void )
 {
-	// !!! FIXME: write me.
+	SNDDMA_StopCapture();
 }
 
 static
 void S_Base_MasterGain( float val )
 {
-	// !!! FIXME: write me.
+	SNDDMA_MasterGain(val);
 }
 #endif
 
@@ -420,16 +414,6 @@ void S_memoryLoad(sfx_t	*sfx) {
 
 //=============================================================================
 
-
-static ID_INLINE void VectorRotate( vec3_t in, vec3_t matrix[3], vec3_t out )
-{
-	out[0] = DotProduct( in, matrix[0] );
-	out[1] = DotProduct( in, matrix[1] );
-	out[2] = DotProduct( in, matrix[2] );
-}
-
-
-
 /*
 =================
 S_SpatializeOrigin
@@ -439,8 +423,6 @@ Used for spatializing s_channels
 */
 void S_SpatializeOrigin (vec3_t origin, int master_vol, int *left_vol, int *right_vol)
 {
-    vec_t		dot;
-    vec_t		dist;
     vec_t		lscale, rscale, scale;
     vec3_t		source_vec;
     vec3_t		vec;
@@ -450,30 +432,17 @@ void S_SpatializeOrigin (vec3_t origin, int master_vol, int *left_vol, int *righ
 	// calculate stereo seperation and distance attenuation
 	VectorSubtract(origin, listener_origin, source_vec);
 
-//	dist = VectorNormalize(source_vec);
-	
-	float length = source_vec[0]*source_vec[0] + source_vec[1]*source_vec[1] + source_vec[2]*source_vec[2];
-
-	if ( length != 0)
-    {
-		float invLen = 1.0f / sqrtf(length);
-		source_vec[0] *= invLen;
-		source_vec[1] *= invLen;
-		source_vec[2] *= invLen;
-        dist = length*invLen;
-	}
-    else
-        dist = 0;
-		
-    
-    dist -= SOUND_FULLVOLUME;
+	float dist = VectorNormalize(source_vec);
+	dist -= SOUND_FULLVOLUME;
 	if (dist < 0)
 		dist = 0;			// close enough to be at full volume
 	dist *= dist_mult;		// different attenuation levels
 	
-	VectorRotate( source_vec, listener_axis, vec );
+	//VectorRotate( source_vec, listener_axis, vec );
+	//vec[0] = DotProduct( source_vec, listener_axis[0] );
+	vec[1] = DotProduct( source_vec, listener_axis[1] );
+	//vec[2] = DotProduct( source_vec, listener_axis[2] );
 
-	dot = -vec[1];
 
 	if (dma.channels == 1)
 	{ // no attenuation = no spatialization
@@ -482,8 +451,8 @@ void S_SpatializeOrigin (vec3_t origin, int master_vol, int *left_vol, int *righ
 	}
 	else
 	{
-		rscale = 0.5 * (1.0 + dot);
-		lscale = 0.5 * (1.0 - dot);
+		rscale = 0.5 * (1.0 - vec[1]);
+		lscale = 0.5 * (1.0 + vec[1]);
 		if ( rscale < 0 ) {
 			rscale = 0;
 		}
@@ -1228,9 +1197,6 @@ qboolean S_ScanChannelStarts( void ) {
 	return newSamples;
 }
 
-
-
-
 /*
 ============
 S_Update
@@ -1282,8 +1248,9 @@ void S_GetSoundtime(void)
 
 	if( CL_VideoRecording( ) )
 	{
-		float fps = MIN(cl_aviFrameRate->value, 1000.0f);
-		float frameDuration = MAX(dma.speed / fps, 1.0f) + clc.aviSoundFrameRemainder;
+		float fps = cl_aviFrameRate->value<1000.0f ? cl_aviFrameRate->value : 1000.0f;
+		float tmp = dma.speed / fps;
+		float frameDuration = (tmp > 1.0f ? tmp:1.0f) + clc.aviSoundFrameRemainder;
 
 		int msec = (int)frameDuration;
 		s_soundtime += msec;
@@ -1358,7 +1325,6 @@ void S_Update_(void) {
 		sane = 11;			// 85hz
 	}
 
-	samplingrate = dma.speed;
 	ma = s_mixahead->value * dma.speed;
 	op = s_mixPreStep->value + sane*dma.speed*0.01;
 
@@ -1437,7 +1403,6 @@ static void S_OpenBackgroundStream( const char *filename ) {
 		Com_Printf(S_COLOR_YELLOW "WARNING: music file %s is not 22k stereo\n", filename );
 	}
 }
-
 
 /*
 ======================

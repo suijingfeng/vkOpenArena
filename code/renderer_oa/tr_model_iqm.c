@@ -23,13 +23,7 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
 #include "tr_local.h"
 
-extern refimport_t ri;
-
-
-extern shaderCommands_t	tess;
-extern trGlobals_t	tr;
-extern backEndState_t backEnd;
-
+extern	shaderCommands_t	tess;
 
 #define	LL(x) x=LittleLong(x)
 
@@ -175,7 +169,7 @@ qboolean R_LoadIQM( model_t *mod, void *buffer, int filesize, const char *mod_na
 	}
 
 	iqmHeader_t* header = (iqmHeader_t *)buffer;
-	if( strncmp( header->magic, IQM_MAGIC, sizeof(header->magic) ) )
+	if( Q_strncmp( header->magic, IQM_MAGIC, sizeof(header->magic) ) )
     {
 		return qfalse;
 	}
@@ -814,7 +808,7 @@ int R_ComputeIQMFogNum( iqmData_t *data, trRefEntity_t *ent ) {
 	VectorSubtract( bounds+3, bounds, diag );
 	VectorMA( bounds, 0.5f, diag, center );
 	VectorAdd( ent->e.origin, center, localOrigin );
-	radius = 0.5f * VectorLength( diag );
+	radius = 0.5f * VectorLen( diag );
 
 	for ( i = 1 ; i < tr.world->numfogs ; i++ ) {
 		fog = &tr.world->fogs[i];
@@ -841,19 +835,21 @@ R_AddIQMSurfaces
 Add all surfaces of this model
 =================
 */
-void R_AddIQMSurfaces( trRefEntity_t *ent )
-{
+void R_AddIQMSurfaces( trRefEntity_t *ent ) {
+	iqmData_t		*data;
+	srfIQModel_t		*surface;
 	int			i, j;
+	qboolean		personalModel;
 	int			cull;
 	int			fogNum;
 	shader_t		*shader;
 	skin_t			*skin;
 
-	iqmData_t* data = tr.currentModel->modelData;
-	srfIQModel_t* surface = data->surfaces;
+	data = tr.currentModel->modelData;
+	surface = data->surfaces;
 
 	// don't add third_person objects if not in a portal
-	qboolean personalModel = (ent->e.renderfx & RF_THIRD_PERSON) && !tr.viewParms.isPortal;
+	personalModel = (ent->e.renderfx & RF_THIRD_PERSON) && !tr.viewParms.isPortal;
 
 	if ( ent->e.renderfx & RF_WRAP_FRAMES ) {
 		ent->e.frame %= data->num_frames;
@@ -889,7 +885,7 @@ void R_AddIQMSurfaces( trRefEntity_t *ent )
 	//
 	// set up lighting now that we know we aren't culled
 	//
-	if ( !personalModel ) {
+	if ( !personalModel || r_shadows->integer > 1 ) {
 		R_SetupEntityLighting( &tr.refdef, ent );
 	}
 
@@ -910,7 +906,7 @@ void R_AddIQMSurfaces( trRefEntity_t *ent )
 
 			for(j = 0; j < skin->numSurfaces; j++)
 			{
-				if (!strcmp(skin->surfaces[j].name, surface->name))
+				if (0 == strcmp(skin->surfaces[j].name, surface->name))
 				{
 					shader = skin->surfaces[j].shader;
 					break;
@@ -920,6 +916,24 @@ void R_AddIQMSurfaces( trRefEntity_t *ent )
 			shader = surface->shader;
 		}
 
+		// we will add shadows even if the main object isn't visible in the view
+
+		// stencil shadows can't do personal models unless I polyhedron clip
+		if ( !personalModel
+			&& r_shadows->integer == 2 
+			&& fogNum == 0
+			&& !(ent->e.renderfx & ( RF_NOSHADOW | RF_DEPTHHACK ) ) 
+			&& shader->sort == SS_OPAQUE ) {
+			R_AddDrawSurf( (void *)surface, tr.shadowShader, 0, 0 );
+		}
+
+		// projection shadows work fine with personal models
+		if ( r_shadows->integer == 3
+			&& fogNum == 0
+			&& (ent->e.renderfx & RF_SHADOW_PLANE )
+			&& shader->sort == SS_OPAQUE ) {
+			R_AddDrawSurf( (void *)surface, tr.projectionShadowShader, 0, 0 );
+		}
 
 		if( !personalModel ) {
 			R_AddDrawSurf( (void *)surface, shader, fogNum, 0 );
@@ -1004,36 +1018,38 @@ RB_AddIQMSurfaces
 Compute vertices for this model surface
 =================
 */
-void RB_IQMSurfaceAnim( surfaceType_t *surface )
-{
-	srfIQModel_t* surf = (srfIQModel_t *)surface;
-	iqmData_t* data = surf->data;
-	float jointMats[IQM_MAX_JOINTS * 12];
+void RB_IQMSurfaceAnim( surfaceType_t *surface ) {
+	srfIQModel_t	*surf = (srfIQModel_t *)surface;
+	iqmData_t	*data = surf->data;
+	float		jointMats[IQM_MAX_JOINTS * 12];
+	int		i;
 
+	vec4_t		*outXYZ;
+	vec4_t		*outNormal;
+	vec2_t		(*outTexCoord)[2];
+	unsigned char (*outColor)[4];
 
 	int	frame = data->num_frames ? backEnd.currentEntity->e.frame % data->num_frames : 0;
 	int	oldframe = data->num_frames ? backEnd.currentEntity->e.oldframe % data->num_frames : 0;
 	float	backlerp = backEnd.currentEntity->e.backlerp;
 
-	int* tri;
-	unsigned int* ptr;
-	unsigned int base;
+	int		*tri;
+	glIndex_t	*ptr;
+	glIndex_t	base;
 
 
     //#define RB_CHECKOVERFLOW(v,i)
-    int i = surf->num_triangles * 3;
+    i = surf->num_triangles * 3;
     if (tess.numVertexes + surf->num_vertexes >= SHADER_MAX_VERTEXES || tess.numIndexes + i >= SHADER_MAX_INDEXES )
     {
         RB_CheckOverflow(surf->num_vertexes, i);
     }
 
 
-	vec4_t* outXYZ = &tess.xyz[tess.numVertexes];
-	vec4_t* outNormal = &tess.normal[tess.numVertexes];
-
-    vec2_t	(*outTexCoord)[2] = &tess.texCoords[tess.numVertexes];
-	unsigned char (*outColor)[4] = &tess.vertexColors[tess.numVertexes];
-
+	outXYZ = &tess.xyz[tess.numVertexes];
+	outNormal = &tess.normal[tess.numVertexes];
+	outTexCoord = &tess.texCoords[tess.numVertexes];
+	outColor = &tess.vertexColors[tess.numVertexes];
 
 	// compute interpolated joint matrices
 	if ( data->num_poses > 0 ) {
@@ -1143,7 +1159,6 @@ void RB_IQMSurfaceAnim( surfaceType_t *surface )
 	tess.numVertexes += surf->num_vertexes;
 }
 
-
 int R_IQMLerpTag( orientation_t *tag, iqmData_t *data,
 		  int startFrame, int endFrame, 
 		  float frac, const char *tagName ) {
@@ -1158,8 +1173,8 @@ int R_IQMLerpTag( orientation_t *tag, iqmData_t *data,
 		names += strlen( names ) + 1;
 	}
 	if( joint >= data->num_joints ) {
-		AxisClear( tag->axis );
-		VectorClear( tag->origin );
+        memset(tag, 0, sizeof(orientation_t));
+
 		return qfalse;
 	}
 

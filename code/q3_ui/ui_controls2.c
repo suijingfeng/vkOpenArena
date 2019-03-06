@@ -31,10 +31,10 @@ CONTROLS MENU
 
 #include "ui_local.h"
 
-#define ART_BACK0			"menu/art/back_0"
-#define ART_BACK1			"menu/art/back_1"
-#define ART_FRAMEL			"menu/art/frame2_l"
-#define ART_FRAMER			"menu/art/frame1_r"
+#define ART_BACK0			"menu/" MENU_ART_DIR "/back_0"
+#define ART_BACK1			"menu/" MENU_ART_DIR "/back_1"
+#define ART_FRAMEL			"menu/" MENU_ART_DIR "/frame2_l"
+#define ART_FRAMER			"menu/" MENU_ART_DIR "/frame1_r"
 
 
 typedef struct {
@@ -102,26 +102,34 @@ typedef struct
 #define ID_WEAPON6		22	
 #define ID_WEAPON7		23	
 #define ID_WEAPON8		24	
-#define ID_WEAPON9		25	
-#define ID_ATTACK		26
-#define ID_WEAPPREV		27
-#define ID_WEAPNEXT		28
-#define ID_GESTURE		29
-#define ID_CHAT			30
-#define ID_CHAT2		31
-#define ID_CHAT3		32
-#define ID_CHAT4		33
-#define ID_TOGGLEMENU	34
+#define ID_WEAPON9		25
+#define ID_WEAPON10		26
+#define ID_WEAPON11		27 //Nailgun
+#define ID_WEAPON12		28 //ProxMines
+#define ID_WEAPON13		29 //Chaingun
+#define ID_ATTACK		30
+#define ID_WEAPPREV		31
+#define ID_WEAPNEXT		32
+#define ID_GESTURE		33
+#define ID_CHAT			34
+#define ID_CHAT2		35
+#define ID_CHAT3		36
+#define ID_CHAT4		37
+#define ID_VOIP_TALK		38
+#define ID_ACCURACY		39
 
 // all others
-#define ID_FREELOOK		35
-#define ID_INVERTMOUSE	36
-#define ID_ALWAYSRUN	37
-#define ID_AUTOSWITCH	38
-#define ID_MOUSESPEED	39
-#define ID_JOYENABLE	40
-#define ID_JOYTHRESHOLD	41
-#define ID_SMOOTHMOUSE	42
+#define ID_FREELOOK		40
+#define ID_INVERTMOUSE	41
+#define ID_ALWAYSRUN	42
+#define ID_AUTOSWITCH	43
+#define ID_MOUSESPEED	44
+#define ID_JOYENABLE	45
+#define ID_JOYTHRESHOLD	46
+#define ID_SMOOTHMOUSE	47
+#define ID_VOIP_TEAMONLY 48
+
+
 
 #define ANIM_IDLE		0
 #define ANIM_RUN		1
@@ -149,6 +157,11 @@ typedef struct
 #define ANIM_GESTURE	23
 #define ANIM_DIE		24
 #define ANIM_CHAT		25
+
+//New in Beta 23
+#define ANIM_WEAPON11	26 //Nailgun
+#define ANIM_WEAPON12	27 //ProxMines
+#define ANIM_WEAPON13	28 //Chaingun
 
 typedef struct
 {
@@ -183,6 +196,12 @@ typedef struct
 	menuaction_s		railgun;
 	menuaction_s		plasma;
 	menuaction_s		bfg;
+    menuaction_s		grapple;
+    //New in Beta 23
+    menuaction_s		nailgun;
+    menuaction_s		proxmine;
+    menuaction_s		chaingun;
+    //New in 23 end
 	menuaction_s		attack;
 	menuaction_s		prevweapon;
 	menuaction_s		nextweapon;
@@ -198,7 +217,8 @@ typedef struct
 	menuradiobutton_s	smoothmouse;
 	menuradiobutton_s	alwaysrun;
 	menuaction_s		showscores;
-	menuradiobutton_s	autoswitch;
+	menuaction_s		showacc;
+	menulist_s              autoswitch;
 	menuaction_s		useitem;
 	playerInfo_t		playerinfo;
 	qboolean			changesmade;
@@ -206,7 +226,8 @@ typedef struct
 	menuaction_s		chat2;
 	menuaction_s		chat3;
 	menuaction_s		chat4;
-	menuaction_s		togglemenu;
+        menuaction_s		voip_talk;
+        menuradiobutton_s	voip_teamonly;
 	menuradiobutton_s	joyenable;
 	menuslider_s		joythreshold;
 	int					section;
@@ -225,37 +246,54 @@ typedef struct
 
 static controls_t s_controls;
 
-static vec4_t controls_binding_color  = {1.00f, 0.43f, 0.00f, 1.00f};
+static const char *autoswitch_items[] = {
+	"NEVER",
+	"ALWAYS",
+	"NEW",
+	"BETTER",
+        "NEW&BETTER",
+	NULL
+};
+
+// OLD
+//static vec4_t controls_binding_color  = {1.00f, 0.43f, 0.00f, 1.00f}; // bk: Win32 C4305
+
+// New!
+static vec4_t controls_binding_color  = {0.58f, 0.70f, 0.81f, 1.00f};
 
 static bind_t g_bindings[] = 
 {
-	{"+scores",			"show scores",		ID_SHOWSCORES,	ANIM_IDLE,		K_TAB,			-1,		-1, -1},
-	{"+button2",		"use item",			ID_USEITEM,		ANIM_IDLE,		K_ENTER,		-1,		-1, -1},
-	{"+speed", 			"run / walk",		ID_SPEED,		ANIM_RUN,		K_SHIFT,		-1,		-1,	-1},
+	{"+scores",		"show scores",		ID_SHOWSCORES,	ANIM_IDLE,		K_TAB,			-1,		-1, -1},
+	{"+button2",		"use item",		ID_USEITEM,		ANIM_IDLE,		K_ENTER,		-1,		-1, -1},
+	{"+speed", 		"run / walk",		ID_SPEED,		ANIM_RUN,		K_SHIFT,		-1,		-1,	-1},
 	{"+forward", 		"walk forward",		ID_FORWARD,		ANIM_WALK,		K_UPARROW,		-1,		-1, -1},
-	{"+back", 			"backpedal",		ID_BACKPEDAL,	ANIM_BACK,		K_DOWNARROW,	-1,		-1, -1},
+	{"+back", 		"backpedal",		ID_BACKPEDAL,	ANIM_BACK,		K_DOWNARROW,	-1,		-1, -1},
 	{"+moveleft", 		"step left",		ID_MOVELEFT,	ANIM_STEPLEFT,	',',			-1,		-1, -1},
 	{"+moveright", 		"step right",		ID_MOVERIGHT,	ANIM_STEPRIGHT,	'.',			-1,		-1, -1},
-	{"+moveup",			"up / jump",		ID_MOVEUP,		ANIM_JUMP,		K_SPACE,		-1,		-1, -1},
+	{"+moveup",		"up / jump",		ID_MOVEUP,		ANIM_JUMP,		K_SPACE,		-1,		-1, -1},
 	{"+movedown",		"down / crouch",	ID_MOVEDOWN,	ANIM_CROUCH,	'c',			-1,		-1, -1},
-	{"+left", 			"turn left",		ID_LEFT,		ANIM_TURNLEFT,	K_LEFTARROW,	-1,		-1, -1},
-	{"+right", 			"turn right",		ID_RIGHT,		ANIM_TURNRIGHT,	K_RIGHTARROW,	-1,		-1, -1},
+	{"+left", 		"turn left",		ID_LEFT,		ANIM_TURNLEFT,	K_LEFTARROW,	-1,		-1, -1},
+	{"+right", 		"turn right",		ID_RIGHT,		ANIM_TURNRIGHT,	K_RIGHTARROW,	-1,		-1, -1},
 	{"+strafe", 		"sidestep / turn",	ID_STRAFE,		ANIM_IDLE,		K_ALT,			-1,		-1, -1},
-	{"+lookup", 		"look up",			ID_LOOKUP,		ANIM_LOOKUP,	K_PGDN,			-1,		-1, -1},
+	{"+lookup", 		"look up",		ID_LOOKUP,		ANIM_LOOKUP,	K_PGDN,			-1,		-1, -1},
 	{"+lookdown", 		"look down",		ID_LOOKDOWN,	ANIM_LOOKDOWN,	K_DEL,			-1,		-1, -1},
-	{"+mlook", 			"mouse look",		ID_MOUSELOOK,	ANIM_IDLE,		'/',			-1,		-1, -1},
+	{"+mlook", 		"mouse look",		ID_MOUSELOOK,	ANIM_IDLE,		'/',			-1,		-1, -1},
 	{"centerview", 		"center view",		ID_CENTERVIEW,	ANIM_IDLE,		K_END,			-1,		-1, -1},
-	{"+zoom", 			"zoom view",		ID_ZOOMVIEW,	ANIM_IDLE,		-1,				-1,		-1, -1},
-	{"weapon 1",		"gauntlet",			ID_WEAPON1,		ANIM_WEAPON1,	'1',			-1,		-1, -1},
-	{"weapon 2",		"machinegun",		ID_WEAPON2,		ANIM_WEAPON2,	'2',			-1,		-1, -1},
-	{"weapon 3",		"shotgun",			ID_WEAPON3,		ANIM_WEAPON3,	'3',			-1,		-1, -1},
-	{"weapon 4",		"grenade launcher",	ID_WEAPON4,		ANIM_WEAPON4,	'4',			-1,		-1, -1},
-	{"weapon 5",		"rocket launcher",	ID_WEAPON5,		ANIM_WEAPON5,	'5',			-1,		-1, -1},
-	{"weapon 6",		"lightning",		ID_WEAPON6,		ANIM_WEAPON6,	'6',			-1,		-1, -1},
-	{"weapon 7",		"railgun",			ID_WEAPON7,		ANIM_WEAPON7,	'7',			-1,		-1, -1},
-	{"weapon 8",		"plasma gun",		ID_WEAPON8,		ANIM_WEAPON8,	'8',			-1,		-1, -1},
-	{"weapon 9",		"BFG",				ID_WEAPON9,		ANIM_WEAPON9,	'9',			-1,		-1, -1},
-	{"+attack", 		"attack",			ID_ATTACK,		ANIM_ATTACK,	K_CTRL,			-1,		-1, -1},
+	{"+zoom", 		"zoom view",		ID_ZOOMVIEW,	ANIM_IDLE,	-1,	-1,	-1, -1},
+	{"weapon 1",		"gauntlet",		ID_WEAPON1,	ANIM_WEAPON1,	'1',	-1,	-1, -1},
+	{"weapon 2",		"machinegun",		ID_WEAPON2,	ANIM_WEAPON2,	'2',	-1,	-1, -1},
+	{"weapon 3",		"shotgun",		ID_WEAPON3,	ANIM_WEAPON3,	'3',	-1,	-1, -1},
+	{"weapon 4",		"grenade launcher",	ID_WEAPON4,	ANIM_WEAPON4,	'4',	-1,	-1, -1},
+	{"weapon 5",		"rocket launcher",	ID_WEAPON5,	ANIM_WEAPON5,	'5',	-1,	-1, -1},
+	{"weapon 6",		"lightning",		ID_WEAPON6,	ANIM_WEAPON6,	'6',	-1,	-1, -1},
+	{"weapon 7",		"railgun",		ID_WEAPON7,	ANIM_WEAPON7,	'7',	-1,	-1, -1},
+	{"weapon 8",		"plasma gun",		ID_WEAPON8,	ANIM_WEAPON8,	'8',	-1,	-1, -1},
+	{"weapon 9",		"BFG",			ID_WEAPON9,	ANIM_WEAPON9,	'9',	-1,	-1, -1},
+        {"weapon 10",		"Grapple",		ID_WEAPON10,	ANIM_WEAPON10,	-1,	-1,	-1, -1},
+        {"weapon 11",		"nailgun",		ID_WEAPON11,	ANIM_WEAPON11,	-1,	-1,	-1, -1},
+        {"weapon 12",		"mine Launcher",	ID_WEAPON12,	ANIM_WEAPON12,	-1,	-1,	-1, -1},
+        {"weapon 13",		"chaingun",		ID_WEAPON13,	ANIM_WEAPON13,	-1,	-1,	-1, -1},
+	{"+attack", 		"attack",		ID_ATTACK,	ANIM_ATTACK,	K_CTRL,			-1,		-1, -1},
 	{"weapprev",		"prev weapon",		ID_WEAPPREV,	ANIM_IDLE,		'[',			-1,		-1, -1},
 	{"weapnext", 		"next weapon",		ID_WEAPNEXT,	ANIM_IDLE,		']',			-1,		-1, -1},
 	{"+button3", 		"gesture",			ID_GESTURE,		ANIM_GESTURE,	K_MOUSE3,		-1,		-1, -1},
@@ -263,7 +301,8 @@ static bind_t g_bindings[] =
 	{"messagemode2", 	"chat - team",		ID_CHAT2,		ANIM_CHAT,		-1,				-1,		-1, -1},
 	{"messagemode3", 	"chat - target",	ID_CHAT3,		ANIM_CHAT,		-1,				-1,		-1, -1},
 	{"messagemode4", 	"chat - attacker",	ID_CHAT4,		ANIM_CHAT,		-1,				-1,		-1, -1},
-	{"togglemenu", 		"toggle menu",		ID_TOGGLEMENU,	ANIM_IDLE,		K_ESCAPE,		-1,		-1, -1},
+        {"+voiprecord", 	"voice chat",           ID_VOIP_TALK,		ANIM_CHAT,		'q',				-1,		-1, -1},
+	{"+acc",		"show accuracy",	ID_ACCURACY,	ANIM_IDLE,		-1,			-1,		-1, -1},
 	{(char*)NULL,		(char*)NULL,		0,				0,				-1,				-1,		-1,	-1},
 };
 
@@ -277,66 +316,75 @@ static configcvar_t g_configcvars[] =
 	{"joy_threshold",	0,					0},
 	{"m_filter",		0,					0},
 	{"cl_freelook",		0,					0},
+        {"cg_voipTeamOnly",	0,					0},
 	{NULL,				0,					0}
 };
 
 static menucommon_s *g_movement_controls[] =
 {
-	(menucommon_s *)&s_controls.alwaysrun,     
-	(menucommon_s *)&s_controls.run,            
-	(menucommon_s *)&s_controls.walkforward,
-	(menucommon_s *)&s_controls.backpedal,
-	(menucommon_s *)&s_controls.stepleft,      
-	(menucommon_s *)&s_controls.stepright,     
-	(menucommon_s *)&s_controls.moveup,        
-	(menucommon_s *)&s_controls.movedown,      
-	(menucommon_s *)&s_controls.turnleft,      
-	(menucommon_s *)&s_controls.turnright,     
-	(menucommon_s *)&s_controls.sidestep,
+	&s_controls.alwaysrun.generic,     
+	&s_controls.run.generic,            
+	&s_controls.walkforward.generic,
+	&s_controls.backpedal.generic,
+	&s_controls.stepleft.generic,      
+	&s_controls.stepright.generic,     
+	&s_controls.moveup.generic,        
+	&s_controls.movedown.generic,      
+	&s_controls.turnleft.generic,      
+	&s_controls.turnright.generic,     
+	&s_controls.sidestep.generic,
 	NULL
 };
 
-static menucommon_s *g_weapons_controls[] = {
-	(menucommon_s *)&s_controls.attack,           
-	(menucommon_s *)&s_controls.nextweapon,
-	(menucommon_s *)&s_controls.prevweapon,
-	(menucommon_s *)&s_controls.autoswitch,    
-	(menucommon_s *)&s_controls.chainsaw,         
-	(menucommon_s *)&s_controls.machinegun,
-	(menucommon_s *)&s_controls.shotgun,          
-	(menucommon_s *)&s_controls.grenadelauncher,
-	(menucommon_s *)&s_controls.rocketlauncher,   
-	(menucommon_s *)&s_controls.lightning,   
-	(menucommon_s *)&s_controls.railgun,          
-	(menucommon_s *)&s_controls.plasma,           
-	(menucommon_s *)&s_controls.bfg,              
+
+static menucommon_s *g_weapons_controls[] =
+{
+	&s_controls.attack.generic,           
+	&s_controls.nextweapon.generic,
+	&s_controls.prevweapon.generic,
+    &s_controls.autoswitch.generic,    
+	&s_controls.chainsaw.generic,         
+	&s_controls.machinegun.generic,
+    &s_controls.shotgun.generic,          
+	&s_controls.grenadelauncher.generic,
+	&s_controls.rocketlauncher.generic,   
+	&s_controls.lightning.generic,   
+	&s_controls.railgun.generic,          
+	&s_controls.plasma.generic,           
+	&s_controls.bfg.generic,
+    &s_controls.grapple.generic,
+    &s_controls.nailgun.generic,
+    &s_controls.proxmine.generic,
+    &s_controls.chaingun.generic,
 	NULL,
 };
 
 static menucommon_s *g_looking_controls[] = {
-	(menucommon_s *)&s_controls.sensitivity,
-	(menucommon_s *)&s_controls.smoothmouse,
-	(menucommon_s *)&s_controls.invertmouse,
-	(menucommon_s *)&s_controls.lookup,
-	(menucommon_s *)&s_controls.lookdown,
-	(menucommon_s *)&s_controls.mouselook,
-	(menucommon_s *)&s_controls.freelook,
-	(menucommon_s *)&s_controls.centerview,
-	(menucommon_s *)&s_controls.zoomview,
-	(menucommon_s *)&s_controls.joyenable,
-	(menucommon_s *)&s_controls.joythreshold,
+	&s_controls.sensitivity.generic,
+	&s_controls.smoothmouse.generic,
+	&s_controls.invertmouse.generic,
+	&s_controls.lookup.generic,
+	&s_controls.lookdown.generic,
+	&s_controls.mouselook.generic,
+	&s_controls.freelook.generic,
+	&s_controls.centerview.generic,
+	&s_controls.zoomview.generic,
+	&s_controls.joyenable.generic,
+	&s_controls.joythreshold.generic,
 	NULL,
 };
 
 static menucommon_s *g_misc_controls[] = {
-	(menucommon_s *)&s_controls.showscores, 
-	(menucommon_s *)&s_controls.useitem,
-	(menucommon_s *)&s_controls.gesture,
-	(menucommon_s *)&s_controls.chat,
-	(menucommon_s *)&s_controls.chat2,
-	(menucommon_s *)&s_controls.chat3,
-	(menucommon_s *)&s_controls.chat4,
-	(menucommon_s *)&s_controls.togglemenu,
+	&s_controls.showscores.generic, 
+	&s_controls.showacc.generic, 
+	&s_controls.useitem.generic,
+	&s_controls.gesture.generic,
+	&s_controls.chat.generic,
+    &s_controls.chat2.generic,
+	&s_controls.chat3.generic,
+	&s_controls.chat4.generic,
+    &s_controls.voip_talk.generic,
+    &s_controls.voip_teamonly.generic,
 	NULL,
 };
 
@@ -391,7 +439,7 @@ static float Controls_GetCvarDefault( char* name )
 		if (!cvarptr->name)
 			return (0);
 
-		if (!strcmp(cvarptr->name,name))
+		if (strequals(cvarptr->name,name))
 			break;
 	}
 
@@ -414,7 +462,7 @@ static float Controls_GetCvarValue( char* name )
 		if (!cvarptr->name)
 			return (0);
 
-		if (!strcmp(cvarptr->name,name))
+		if (strequals(cvarptr->name,name))
 			break;
 	}
 
@@ -523,6 +571,18 @@ static void Controls_UpdateModel( int anim ) {
 	case ANIM_WEAPON10:
 		s_controls.playerWeapon = WP_GRAPPLING_HOOK;
 		break;
+                
+        case ANIM_WEAPON11:
+		s_controls.playerWeapon = WP_NAILGUN;
+		break;
+              
+        case ANIM_WEAPON12:
+		s_controls.playerWeapon = WP_PROX_LAUNCHER;
+		break;
+                
+        case ANIM_WEAPON13:
+		s_controls.playerWeapon = WP_CHAINGUN;
+		break;
 
 	case ANIM_ATTACK:
 		s_controls.playerTorso = TORSO_ATTACK;
@@ -565,6 +625,7 @@ static void Controls_Update( void ) {
 	// disable all controls in all groups
 	for( i = 0; i < C_MAX; i++ ) {
 		controls = g_controls[i];
+		// bk001204 - parentheses
 		for( j = 0;  (control = controls[j]) ; j++ ) {
 			control->flags |= (QMF_HIDDEN|QMF_INACTIVE);
 		}
@@ -573,12 +634,14 @@ static void Controls_Update( void ) {
 	controls = g_controls[s_controls.section];
 
 	// enable controls in active group (and count number of items for vertical centering)
+	// bk001204 - parentheses
 	for( j = 0;  (control = controls[j]) ; j++ ) {
 		control->flags &= ~(QMF_GRAYED|QMF_HIDDEN|QMF_INACTIVE);
 	}
 
 	// position controls
 	y = ( SCREEN_HEIGHT - j * SMALLCHAR_HEIGHT ) / 2;
+	// bk001204 - parentheses
 	for( j = 0;	(control = controls[j]) ; j++, y += SMALLCHAR_HEIGHT ) {
 		control->x      = 320;
 		control->y      = y;
@@ -741,7 +804,7 @@ static void Controls_DrawPlayer( void *self ) {
 	char			buf[MAX_QPATH];
 
 	trap_Cvar_VariableStringBuffer( "model", buf, sizeof( buf ) );
-	if ( strcmp( buf, s_controls.playerModel ) != 0 ) {
+	if ( !strequals( buf, s_controls.playerModel ) ) {
 		UI_PlayerInfo_SetModel( &s_controls.playerinfo, buf );
 		strcpy( s_controls.playerModel, buf );
 		Controls_UpdateModel( ANIM_IDLE );
@@ -772,7 +835,7 @@ static void Controls_GetKeyAssignment (char *command, int *twokeys)
 		if ( *b == 0 ) {
 			continue;
 		}
-		if ( !Q_stricmp( b, command ) ) {
+		if ( Q_strequal( b, command ) ) {
 			twokeys[count] = j;
 			count++;
 			if (count == 2)
@@ -810,11 +873,12 @@ static void Controls_GetConfig( void )
 	s_controls.invertmouse.curvalue  = Controls_GetCvarValue( "m_pitch" ) < 0;
 	s_controls.smoothmouse.curvalue  = UI_ClampCvar( 0, 1, Controls_GetCvarValue( "m_filter" ) );
 	s_controls.alwaysrun.curvalue    = UI_ClampCvar( 0, 1, Controls_GetCvarValue( "cl_run" ) );
-	s_controls.autoswitch.curvalue   = UI_ClampCvar( 0, 1, Controls_GetCvarValue( "cg_autoswitch" ) );
+	s_controls.autoswitch.curvalue   = UI_ClampCvar( 0, 4, Controls_GetCvarValue( "cg_autoswitch" ) );
 	s_controls.sensitivity.curvalue  = UI_ClampCvar( 2, 30, Controls_GetCvarValue( "sensitivity" ) );
 	s_controls.joyenable.curvalue    = UI_ClampCvar( 0, 1, Controls_GetCvarValue( "in_joystick" ) );
 	s_controls.joythreshold.curvalue = UI_ClampCvar( 0.05f, 0.75f, Controls_GetCvarValue( "joy_threshold" ) );
 	s_controls.freelook.curvalue     = UI_ClampCvar( 0, 1, Controls_GetCvarValue( "cl_freelook" ) );
+        s_controls.voip_teamonly.curvalue= UI_ClampCvar( 0, 1, Controls_GetCvarValue( "cg_voipTeamOnly" ) );
 }
 
 /*
@@ -857,6 +921,7 @@ static void Controls_SetConfig( void )
 	trap_Cvar_SetValue( "in_joystick", s_controls.joyenable.curvalue );
 	trap_Cvar_SetValue( "joy_threshold", s_controls.joythreshold.curvalue );
 	trap_Cvar_SetValue( "cl_freelook", s_controls.freelook.curvalue );
+        trap_Cvar_SetValue( "cg_voipTeamOnly", s_controls.voip_teamonly.curvalue);
 	trap_Cmd_ExecuteText( EXEC_APPEND, "in_restart\n" );
 }
 
@@ -891,6 +956,7 @@ static void Controls_SetDefaults( void )
 	s_controls.joyenable.curvalue    = Controls_GetCvarDefault( "in_joystick" );
 	s_controls.joythreshold.curvalue = Controls_GetCvarDefault( "joy_threshold" );
 	s_controls.freelook.curvalue     = Controls_GetCvarDefault( "cl_freelook" );
+        s_controls.voip_teamonly.curvalue= Controls_GetCvarDefault( "cg_voipTeamOnly");
 }
 
 /*
@@ -1119,6 +1185,7 @@ static void Controls_MenuEvent( void* ptr, int event )
 		case ID_SMOOTHMOUSE:
 		case ID_ALWAYSRUN:
 		case ID_AUTOSWITCH:
+                case ID_VOIP_TEAMONLY:
 		case ID_JOYENABLE:
 		case ID_JOYTHRESHOLD:
 			if (event == QM_ACTIVATED)
@@ -1181,6 +1248,21 @@ static void Controls_InitWeapons( void ) {
 	}
 }
 
+
+static void Controls_Menu_AddPText (menutext_s* menutext, int* y, int id, char* text ) {
+	menutext->generic.type		= MTYPE_PTEXT;
+	menutext->generic.flags	= QMF_CENTER_JUSTIFY|QMF_PULSEIFFOCUS;
+	menutext->generic.callback	= Controls_MenuEvent;
+	menutext->generic.id		= id;
+	menutext->generic.x		= 152;
+	menutext->generic.y		= *y;
+	menutext->string			= text;
+	menutext->color			= color_red;
+	menutext->style			= UI_RIGHT;
+
+	*y += PROP_HEIGHT;
+}
+
 /*
 =================
 Controls_MenuInit
@@ -1189,6 +1271,7 @@ Controls_MenuInit
 static void Controls_MenuInit( void )
 {
 	static char playername[32];
+	int y;
 
 	// zero set all our globals
 	memset( &s_controls, 0 ,sizeof(controls_t) );
@@ -1223,45 +1306,12 @@ static void Controls_MenuInit( void )
 	s_controls.framer.width  	    = 256;
 	s_controls.framer.height  	    = 334;
 
-	s_controls.looking.generic.type     = MTYPE_PTEXT;
-	s_controls.looking.generic.flags    = QMF_RIGHT_JUSTIFY|QMF_PULSEIFFOCUS;
-	s_controls.looking.generic.id	    = ID_LOOKING;
-	s_controls.looking.generic.callback	= Controls_MenuEvent;
-	s_controls.looking.generic.x	    = 152;
-	s_controls.looking.generic.y	    = 240 - 2 * PROP_HEIGHT;
-	s_controls.looking.string			= "LOOK";
-	s_controls.looking.style			= UI_RIGHT;
-	s_controls.looking.color			= color_red;
-
-	s_controls.movement.generic.type     = MTYPE_PTEXT;
-	s_controls.movement.generic.flags    = QMF_RIGHT_JUSTIFY|QMF_PULSEIFFOCUS;
-	s_controls.movement.generic.id	     = ID_MOVEMENT;
-	s_controls.movement.generic.callback = Controls_MenuEvent;
-	s_controls.movement.generic.x	     = 152;
-	s_controls.movement.generic.y	     = 240 - PROP_HEIGHT;
-	s_controls.movement.string			= "MOVE";
-	s_controls.movement.style			= UI_RIGHT;
-	s_controls.movement.color			= color_red;
-
-	s_controls.weapons.generic.type	    = MTYPE_PTEXT;
-	s_controls.weapons.generic.flags    = QMF_RIGHT_JUSTIFY|QMF_PULSEIFFOCUS;
-	s_controls.weapons.generic.id	    = ID_WEAPONS;
-	s_controls.weapons.generic.callback	= Controls_MenuEvent;
-	s_controls.weapons.generic.x	    = 152;
-	s_controls.weapons.generic.y	    = 240;
-	s_controls.weapons.string			= "SHOOT";
-	s_controls.weapons.style			= UI_RIGHT;
-	s_controls.weapons.color			= color_red;
-
-	s_controls.misc.generic.type	 = MTYPE_PTEXT;
-	s_controls.misc.generic.flags    = QMF_RIGHT_JUSTIFY|QMF_PULSEIFFOCUS;
-	s_controls.misc.generic.id	     = ID_MISC;
-	s_controls.misc.generic.callback = Controls_MenuEvent;
-	s_controls.misc.generic.x		 = 152;
-	s_controls.misc.generic.y		 = 240 + PROP_HEIGHT;
-	s_controls.misc.string			= "MISC";
-	s_controls.misc.style			= UI_RIGHT;
-	s_controls.misc.color			= color_red;
+	y = 240 - 2 * PROP_HEIGHT;
+	
+	Controls_Menu_AddPText(&s_controls.looking,&y,ID_LOOKING, "LOOK");
+	Controls_Menu_AddPText(&s_controls.movement,&y,ID_MOVEMENT, "MOVE");
+	Controls_Menu_AddPText(&s_controls.weapons,&y,ID_WEAPONS, "SHOOT");
+	Controls_Menu_AddPText(&s_controls.misc,&y,ID_MISC, "MISC");
 
 	s_controls.back.generic.type	 = MTYPE_BITMAP;
 	s_controls.back.generic.name     = ART_BACK0;
@@ -1396,6 +1446,30 @@ static void Controls_MenuInit( void )
 	s_controls.bfg.generic.ownerdraw = Controls_DrawKeyBinding;
 	s_controls.bfg.generic.id        = ID_WEAPON9;
 
+        s_controls.grapple.generic.type	     = MTYPE_ACTION;
+	s_controls.grapple.generic.flags     = QMF_LEFT_JUSTIFY|QMF_PULSEIFFOCUS|QMF_GRAYED|QMF_HIDDEN;
+	s_controls.grapple.generic.callback  = Controls_ActionEvent;
+	s_controls.grapple.generic.ownerdraw = Controls_DrawKeyBinding;
+	s_controls.grapple.generic.id        = ID_WEAPON10;
+        
+        s_controls.nailgun.generic.type	     = MTYPE_ACTION;
+	s_controls.nailgun.generic.flags     = QMF_LEFT_JUSTIFY|QMF_PULSEIFFOCUS|QMF_GRAYED|QMF_HIDDEN;
+	s_controls.nailgun.generic.callback  = Controls_ActionEvent;
+	s_controls.nailgun.generic.ownerdraw = Controls_DrawKeyBinding;
+	s_controls.nailgun.generic.id        = ID_WEAPON11;
+        
+        s_controls.proxmine.generic.type	     = MTYPE_ACTION;
+	s_controls.proxmine.generic.flags     = QMF_LEFT_JUSTIFY|QMF_PULSEIFFOCUS|QMF_GRAYED|QMF_HIDDEN;
+	s_controls.proxmine.generic.callback  = Controls_ActionEvent;
+	s_controls.proxmine.generic.ownerdraw = Controls_DrawKeyBinding;
+	s_controls.proxmine.generic.id        = ID_WEAPON12;
+        
+        s_controls.chaingun.generic.type	     = MTYPE_ACTION;
+	s_controls.chaingun.generic.flags     = QMF_LEFT_JUSTIFY|QMF_PULSEIFFOCUS|QMF_GRAYED|QMF_HIDDEN;
+	s_controls.chaingun.generic.callback  = Controls_ActionEvent;
+	s_controls.chaingun.generic.ownerdraw = Controls_DrawKeyBinding;
+	s_controls.chaingun.generic.id        = ID_WEAPON13;
+
 	s_controls.attack.generic.type	    = MTYPE_ACTION;
 	s_controls.attack.generic.flags     = QMF_LEFT_JUSTIFY|QMF_PULSEIFFOCUS|QMF_GRAYED|QMF_HIDDEN;
 	s_controls.attack.generic.callback  = Controls_ActionEvent;
@@ -1463,6 +1537,13 @@ static void Controls_MenuInit( void )
 	s_controls.showscores.generic.callback  = Controls_ActionEvent;
 	s_controls.showscores.generic.ownerdraw = Controls_DrawKeyBinding;
 	s_controls.showscores.generic.id        = ID_SHOWSCORES;
+	
+	
+	s_controls.showacc.generic.type	    = MTYPE_ACTION;
+	s_controls.showacc.generic.flags     = QMF_LEFT_JUSTIFY|QMF_PULSEIFFOCUS|QMF_GRAYED|QMF_HIDDEN;
+	s_controls.showacc.generic.callback  = Controls_ActionEvent;
+	s_controls.showacc.generic.ownerdraw = Controls_DrawKeyBinding;
+	s_controls.showacc.generic.id        = ID_ACCURACY;
 
 	s_controls.invertmouse.generic.type      = MTYPE_RADIOBUTTON;
 	s_controls.invertmouse.generic.flags	 = QMF_SMALLFONT;
@@ -1488,13 +1569,14 @@ static void Controls_MenuInit( void )
 	s_controls.alwaysrun.generic.callback  = Controls_MenuEvent;
 	s_controls.alwaysrun.generic.statusbar = Controls_StatusBar;
 
-	s_controls.autoswitch.generic.type      = MTYPE_RADIOBUTTON;
+	s_controls.autoswitch.generic.type      = MTYPE_SPINCONTROL;
 	s_controls.autoswitch.generic.flags	    = QMF_SMALLFONT;
 	s_controls.autoswitch.generic.x	        = SCREEN_WIDTH/2;
 	s_controls.autoswitch.generic.name	    = "autoswitch weapons";
 	s_controls.autoswitch.generic.id        = ID_AUTOSWITCH;
 	s_controls.autoswitch.generic.callback  = Controls_MenuEvent;
 	s_controls.autoswitch.generic.statusbar = Controls_StatusBar;
+        s_controls.autoswitch.itemnames = autoswitch_items;
 
 	s_controls.sensitivity.generic.type	     = MTYPE_SLIDER;
 	s_controls.sensitivity.generic.x		 = SCREEN_WIDTH/2;
@@ -1535,12 +1617,20 @@ static void Controls_MenuInit( void )
 	s_controls.chat4.generic.callback  = Controls_ActionEvent;
 	s_controls.chat4.generic.ownerdraw = Controls_DrawKeyBinding;
 	s_controls.chat4.generic.id        = ID_CHAT4;
+        
+        s_controls.voip_talk.generic.type	   = MTYPE_ACTION;
+	s_controls.voip_talk.generic.flags     = QMF_LEFT_JUSTIFY|QMF_PULSEIFFOCUS|QMF_GRAYED|QMF_HIDDEN;
+	s_controls.voip_talk.generic.callback  = Controls_ActionEvent;
+	s_controls.voip_talk.generic.ownerdraw = Controls_DrawKeyBinding;
+	s_controls.voip_talk.generic.id        = ID_VOIP_TALK;
 
-	s_controls.togglemenu.generic.type		= MTYPE_ACTION;
-	s_controls.togglemenu.generic.flags     = QMF_LEFT_JUSTIFY|QMF_PULSEIFFOCUS|QMF_GRAYED|QMF_HIDDEN;
-	s_controls.togglemenu.generic.callback  = Controls_ActionEvent;
-	s_controls.togglemenu.generic.ownerdraw = Controls_DrawKeyBinding;
-	s_controls.togglemenu.generic.id        = ID_TOGGLEMENU;
+        s_controls.voip_teamonly.generic.type      = MTYPE_RADIOBUTTON;
+	s_controls.voip_teamonly.generic.flags	    = QMF_SMALLFONT;
+	s_controls.voip_teamonly.generic.x	        = SCREEN_WIDTH/2;
+	s_controls.voip_teamonly.generic.name	    = "teamonly voicechat";
+	s_controls.voip_teamonly.generic.id        = ID_VOIP_TEAMONLY;
+	s_controls.voip_teamonly.generic.callback  = Controls_MenuEvent;
+	s_controls.voip_teamonly.generic.statusbar = Controls_StatusBar;
 
 	s_controls.joyenable.generic.type      = MTYPE_RADIOBUTTON;
 	s_controls.joyenable.generic.flags	   = QMF_SMALLFONT;
@@ -1616,15 +1706,21 @@ static void Controls_MenuInit( void )
 	Menu_AddItem( &s_controls.menu, &s_controls.railgun );
 	Menu_AddItem( &s_controls.menu, &s_controls.plasma );
 	Menu_AddItem( &s_controls.menu, &s_controls.bfg );
+        Menu_AddItem( &s_controls.menu, &s_controls.grapple );
+        Menu_AddItem( &s_controls.menu, &s_controls.nailgun );
+        Menu_AddItem( &s_controls.menu, &s_controls.proxmine );
+        Menu_AddItem( &s_controls.menu, &s_controls.chaingun );
 
 	Menu_AddItem( &s_controls.menu, &s_controls.showscores );
+	Menu_AddItem( &s_controls.menu, &s_controls.showacc );
 	Menu_AddItem( &s_controls.menu, &s_controls.useitem );
 	Menu_AddItem( &s_controls.menu, &s_controls.gesture );
 	Menu_AddItem( &s_controls.menu, &s_controls.chat );
 	Menu_AddItem( &s_controls.menu, &s_controls.chat2 );
 	Menu_AddItem( &s_controls.menu, &s_controls.chat3 );
 	Menu_AddItem( &s_controls.menu, &s_controls.chat4 );
-	Menu_AddItem( &s_controls.menu, &s_controls.togglemenu );
+        Menu_AddItem( &s_controls.menu, &s_controls.voip_talk );
+        Menu_AddItem( &s_controls.menu, &s_controls.voip_teamonly );
 
 	Menu_AddItem( &s_controls.menu, &s_controls.back );
 

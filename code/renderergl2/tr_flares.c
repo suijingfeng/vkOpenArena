@@ -22,7 +22,7 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 // tr_flares.c
 
 #include "tr_local.h"
-
+#include "../renderercommon/matrix_multiplication.h"
 /*
 =============================================================================
 
@@ -139,7 +139,7 @@ void RB_AddFlare( void *surface, int fogNum, vec3_t point, vec3_t color, vec3_t 
 	if(normal && (normal[0] || normal[1] || normal[2]))
 	{
 		VectorSubtract( backEnd.viewParms.or.origin, point, local );
-		FastVectorNormalize(local);
+		FastNormalize1f(local);
 		d = DotProduct(local, normal);
 
 		// If the viewer is behind the flare don't add it.
@@ -406,40 +406,40 @@ void RB_RenderFlare( flare_t *f ) {
 	tess.xyz[tess.numVertexes][1] = f->windowY - size;
 	tess.texCoords[tess.numVertexes][0] = 0;
 	tess.texCoords[tess.numVertexes][1] = 0;
-	tess.color[tess.numVertexes][0] = iColor[0];
-	tess.color[tess.numVertexes][1] = iColor[1];
-	tess.color[tess.numVertexes][2] = iColor[2];
-	tess.color[tess.numVertexes][3] = 65535;
+	tess.vertexColors[tess.numVertexes][0] = iColor[0];
+	tess.vertexColors[tess.numVertexes][1] = iColor[1];
+	tess.vertexColors[tess.numVertexes][2] = iColor[2];
+	tess.vertexColors[tess.numVertexes][3] = 65535;
 	tess.numVertexes++;
 
 	tess.xyz[tess.numVertexes][0] = f->windowX - size;
 	tess.xyz[tess.numVertexes][1] = f->windowY + size;
 	tess.texCoords[tess.numVertexes][0] = 0;
 	tess.texCoords[tess.numVertexes][1] = 1;
-	tess.color[tess.numVertexes][0] = iColor[0];
-	tess.color[tess.numVertexes][1] = iColor[1];
-	tess.color[tess.numVertexes][2] = iColor[2];
-	tess.color[tess.numVertexes][3] = 65535;
+	tess.vertexColors[tess.numVertexes][0] = iColor[0];
+	tess.vertexColors[tess.numVertexes][1] = iColor[1];
+	tess.vertexColors[tess.numVertexes][2] = iColor[2];
+	tess.vertexColors[tess.numVertexes][3] = 65535;
 	tess.numVertexes++;
 
 	tess.xyz[tess.numVertexes][0] = f->windowX + size;
 	tess.xyz[tess.numVertexes][1] = f->windowY + size;
 	tess.texCoords[tess.numVertexes][0] = 1;
 	tess.texCoords[tess.numVertexes][1] = 1;
-	tess.color[tess.numVertexes][0] = iColor[0];
-	tess.color[tess.numVertexes][1] = iColor[1];
-	tess.color[tess.numVertexes][2] = iColor[2];
-	tess.color[tess.numVertexes][3] = 65535;
+	tess.vertexColors[tess.numVertexes][0] = iColor[0];
+	tess.vertexColors[tess.numVertexes][1] = iColor[1];
+	tess.vertexColors[tess.numVertexes][2] = iColor[2];
+	tess.vertexColors[tess.numVertexes][3] = 65535;
 	tess.numVertexes++;
 
 	tess.xyz[tess.numVertexes][0] = f->windowX + size;
 	tess.xyz[tess.numVertexes][1] = f->windowY - size;
 	tess.texCoords[tess.numVertexes][0] = 1;
 	tess.texCoords[tess.numVertexes][1] = 0;
-	tess.color[tess.numVertexes][0] = iColor[0];
-	tess.color[tess.numVertexes][1] = iColor[1];
-	tess.color[tess.numVertexes][2] = iColor[2];
-	tess.color[tess.numVertexes][3] = 65535;
+	tess.vertexColors[tess.numVertexes][0] = iColor[0];
+	tess.vertexColors[tess.numVertexes][1] = iColor[1];
+	tess.vertexColors[tess.numVertexes][2] = iColor[2];
+	tess.vertexColors[tess.numVertexes][3] = 65535;
 	tess.numVertexes++;
 
 	tess.indexes[tess.numIndexes++] = 0;
@@ -472,7 +472,7 @@ void RB_RenderFlares (void) {
 	flare_t		*f;
 	flare_t		**prev;
 	qboolean	draw;
-	mat4_t    oldmodelview, oldprojection, matrix;
+	float    oldmodelview[16], oldprojection[16], matrix[16];
 
 	if ( !r_flares->integer ) {
 		return;
@@ -524,10 +524,6 @@ void RB_RenderFlares (void) {
 
 	if ( !draw ) {
 		return;		// none visible
-	}
-
-	if ( backEnd.viewParms.isPortal ) {
-		qglDisable (GL_CLIP_PLANE0);
 	}
 
 	Mat4Copy(glState.projection, oldprojection);

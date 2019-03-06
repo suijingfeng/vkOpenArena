@@ -66,12 +66,12 @@ static WORD CON_ColorCharToAttrib( char color ) {
 	}
 	else
 	{
-		float *rgba = g_color_table[ ColorIndex( color ) ];
+		const float *rgba = g_color_table[ ColorIndex( color ) ];
 
 		// set foreground color
-		attrib = ( rgba[0] >= 0.5 ? FOREGROUND_RED		: 0 ) |
-				( rgba[1] >= 0.5 ? FOREGROUND_GREEN		: 0 ) |
-				( rgba[2] >= 0.5 ? FOREGROUND_BLUE		: 0 ) |
+		attrib = ( rgba[0] >= 0.5 ? FOREGROUND_RED : 0 ) |
+				( rgba[1] >= 0.5 ? FOREGROUND_GREEN	: 0 ) |
+				( rgba[2] >= 0.5 ? FOREGROUND_BLUE : 0 ) |
 				( rgba[3] >= 0.5 ? FOREGROUND_INTENSITY	: 0 );
 
 		// use console's background color

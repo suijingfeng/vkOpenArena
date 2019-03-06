@@ -22,10 +22,10 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 //
 #include "ui_local.h"
 
-#define SERVERINFO_FRAMEL	"menu/art/frame2_l"
-#define SERVERINFO_FRAMER	"menu/art/frame1_r"
-#define SERVERINFO_BACK0	"menu/art/back_0"
-#define SERVERINFO_BACK1	"menu/art/back_1"
+#define SERVERINFO_FRAMEL	"menu/" MENU_ART_DIR "/frame2_l"
+#define SERVERINFO_FRAMER	"menu/" MENU_ART_DIR "/frame1_r"
+#define SERVERINFO_BACK0	"menu/" MENU_ART_DIR "/back_0"
+#define SERVERINFO_BACK1	"menu/" MENU_ART_DIR "/back_1"
 
 static char* serverinfo_artlist[] =
 {
@@ -76,14 +76,14 @@ void Favorites_Add( void )
 	for (i=0; i<MAX_FAVORITESERVERS; i++)
 	{
 		trap_Cvar_VariableStringBuffer( va("server%d",i+1), adrstr, sizeof(adrstr) );
-		if (!Q_stricmp(serverbuff,adrstr))
+		if (Q_strequal(serverbuff,adrstr))
 		{
 			// already in list
 			return;
 		}
 		
-		// use first empty available slot
-		if (!adrstr[0] && !best)
+		// use first empty or non-numeric available slot
+		if ((adrstr[0]  < '0' || adrstr[0] > '9' ) && !best)
 			best = i+1;
 	}
 
@@ -128,7 +128,7 @@ static void ServerInfo_MenuDraw( void )
 	const char		*s;
 	char			key[MAX_INFO_KEY];
 	char			value[MAX_INFO_VALUE];
-	int				i = 0, y;
+	int			i=0,y;
 
 	y = SCREEN_HEIGHT/2 - s_serverinfo.numlines*(SMALLCHAR_HEIGHT)/2 - 20;
 	s = s_serverinfo.info;
@@ -144,7 +144,7 @@ static void ServerInfo_MenuDraw( void )
 		UI_DrawString(SCREEN_WIDTH*0.50 + 8,y,value,UI_LEFT|UI_SMALLFONT,text_color_normal);
 
 		y += SMALLCHAR_HEIGHT;
-		i++;
+                i++;
 	}
 
 	Menu_Draw( &s_serverinfo.menu );

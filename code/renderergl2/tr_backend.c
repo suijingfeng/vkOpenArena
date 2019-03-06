@@ -22,18 +22,7 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #include "tr_local.h"
 #include "tr_fbo.h"
 #include "tr_dsa.h"
-
-#define GLE(ret, name, ...) name##proc * qgl##name;
-QGL_1_1_PROCS;
-QGL_1_3_PROCS;
-QGL_1_5_PROCS;
-QGL_3_0_PROCS;
-QGL_ARB_framebuffer_object_PROCS;
-QGL_ARB_vertex_array_object_PROCS;
-QGL_EXT_direct_state_access_PROCS;
-#undef GLE
-
-
+#include "../renderercommon/matrix_multiplication.h"
 
 backEndData_t	*backEndData;
 backEndState_t	backEnd;
@@ -70,7 +59,7 @@ void GL_BindToTMU( image_t *image, int tmu )
 		ri.Printf(PRINT_WARNING, "GL_BindToTMU: NULL image\n");
 	}
 
-	GL_BindMultiTexture(GL_TEXTURE0_ARB + tmu, target, texture);
+	GL_BindMultiTexture(GL_TEXTURE0 + tmu, target, texture);
 }
 
 
@@ -84,17 +73,17 @@ void GL_Cull( int cullType ) {
 
 	if ( cullType == CT_TWO_SIDED ) 
 	{
-		glDisable( GL_CULL_FACE );
+		qglDisable( GL_CULL_FACE );
 	} 
 	else 
 	{
 		qboolean cullFront = (cullType == CT_FRONT_SIDED);
 
 		if ( glState.faceCulling == CT_TWO_SIDED )
-			glEnable( GL_CULL_FACE );
+			qglEnable( GL_CULL_FACE );
 
 		if ( glState.faceCullFront != cullFront )
-			glCullFace( cullFront ? GL_FRONT : GL_BACK );
+			qglCullFace( cullFront ? GL_FRONT : GL_BACK );
 
 		glState.faceCullFront = cullFront;
 	}
@@ -124,15 +113,15 @@ void GL_State( unsigned long stateBits )
 	{
 		if ( stateBits & GLS_DEPTHFUNC_EQUAL )
 		{
-			glDepthFunc( GL_EQUAL );
+			qglDepthFunc( GL_EQUAL );
 		}
 		else if ( stateBits & GLS_DEPTHFUNC_GREATER)
 		{
-			glDepthFunc( GL_GREATER );
+			qglDepthFunc( GL_GREATER );
 		}
 		else
 		{
-			glDepthFunc( GL_LEQUAL );
+			qglDepthFunc( GL_LEQUAL );
 		}
 	}
 
@@ -147,11 +136,11 @@ void GL_State( unsigned long stateBits )
 
 		if (oldState == 0)
 		{
-			glEnable( GL_BLEND );
+			qglEnable( GL_BLEND );
 		}
 		else if (newState == 0)
 		{
-			glDisable( GL_BLEND );
+			qglDisable( GL_BLEND );
 		}
 
 		if (newState != 0 && storedState != newState)
@@ -226,7 +215,7 @@ void GL_State( unsigned long stateBits )
 				break;
 			}
 
-			glBlendFunc( srcFactor, dstFactor );
+			qglBlendFunc( srcFactor, dstFactor );
 		}
 	}
 
@@ -237,11 +226,11 @@ void GL_State( unsigned long stateBits )
 	{
 		if ( stateBits & GLS_DEPTHMASK_TRUE )
 		{
-			glDepthMask( GL_TRUE );
+			qglDepthMask( GL_TRUE );
 		}
 		else
 		{
-			glDepthMask( GL_FALSE );
+			qglDepthMask( GL_FALSE );
 		}
 	}
 
@@ -252,11 +241,11 @@ void GL_State( unsigned long stateBits )
 	{
 		if ( stateBits & GLS_POLYMODE_LINE )
 		{
-			glPolygonMode( GL_FRONT_AND_BACK, GL_LINE );
+			qglPolygonMode( GL_FRONT_AND_BACK, GL_LINE );
 		}
 		else
 		{
-			glPolygonMode( GL_FRONT_AND_BACK, GL_FILL );
+			qglPolygonMode( GL_FRONT_AND_BACK, GL_FILL );
 		}
 	}
 
@@ -267,11 +256,11 @@ void GL_State( unsigned long stateBits )
 	{
 		if ( stateBits & GLS_DEPTHTEST_DISABLE )
 		{
-			glDisable( GL_DEPTH_TEST );
+			qglDisable( GL_DEPTH_TEST );
 		}
 		else
 		{
-			glEnable( GL_DEPTH_TEST );
+			qglEnable( GL_DEPTH_TEST );
 		}
 	}
 
@@ -279,17 +268,24 @@ void GL_State( unsigned long stateBits )
 }
 
 
-void GL_SetProjectionMatrix(mat4_t matrix)
+void GL_SetProjectionMatrix(float matrix[16])
 {
 	Mat4Copy(matrix, glState.projection);
-	Mat4Multiply(glState.projection, glState.modelview, glState.modelviewProjection);	
+	MatrixMultiply4x4_SSE(glState.modelview, glState.projection, glState.modelviewProjection);	
 }
 
 
-void GL_SetModelviewMatrix(mat4_t matrix)
+void GL_SetModelviewMatrix(float matrix[16])
 {
 	Mat4Copy(matrix, glState.modelview);
-	Mat4Multiply(glState.projection, glState.modelview, glState.modelviewProjection);	
+	MatrixMultiply4x4_SSE(glState.modelview, glState.projection, glState.modelviewProjection);	
+}
+
+void GL_SetMvpMatrix(float MV[16], float P[16])
+{
+	Mat4Copy(MV, glState.modelview);
+	Mat4Copy(P, glState.projection);
+	MatrixMultiply4x4_SSE(glState.modelview, glState.projection, glState.modelviewProjection);
 }
 
 
@@ -308,9 +304,9 @@ static void RB_Hyperspace( void ) {
 	}
 
 	c = ( backEnd.refdef.time & 255 ) / 255.0f;
-	glClearColor( c, c, c, 1 );
-	glClear( GL_COLOR_BUFFER_BIT );
-	glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
+	qglClearColor( c, c, c, 1 );
+	qglClear( GL_COLOR_BUFFER_BIT );
+	qglClearColor(0.0f, 0.0f, 0.0f, 1.0f);
 
 	backEnd.isHyperspace = qtrue;
 }
@@ -320,9 +316,9 @@ static void SetViewportAndScissor( void ) {
 	GL_SetProjectionMatrix( backEnd.viewParms.projectionMatrix );
 
 	// set the window clipping
-	glViewport( backEnd.viewParms.viewportX, backEnd.viewParms.viewportY, 
+	qglViewport( backEnd.viewParms.viewportX, backEnd.viewParms.viewportY, 
 		backEnd.viewParms.viewportWidth, backEnd.viewParms.viewportHeight );
-	glScissor( backEnd.viewParms.viewportX, backEnd.viewParms.viewportY, 
+	qglScissor( backEnd.viewParms.viewportX, backEnd.viewParms.viewportY, 
 		backEnd.viewParms.viewportWidth, backEnd.viewParms.viewportHeight );
 }
 
@@ -339,7 +335,7 @@ void RB_BeginDrawingView (void) {
 
 	// sync with gl if needed
 	if ( r_finish->integer == 1 && !glState.finishCalled ) {
-		glFinish ();
+		qglFinish ();
 		glState.finishCalled = qtrue;
 	}
 	if ( r_finish->integer == 0 ) {
@@ -393,7 +389,7 @@ void RB_BeginDrawingView (void) {
 		clearBits |= GL_COLOR_BUFFER_BIT;
 	}
 
-	glClear( clearBits );
+	qglClear( clearBits );
 
 	if ( ( backEnd.refdef.rdflags & RDF_HYPERSPACE ) )
 	{
@@ -429,11 +425,6 @@ void RB_BeginDrawingView (void) {
 }
 
 
-/*
-==================
-RB_RenderDrawSurfList
-==================
-*/
 void RB_RenderDrawSurfList( drawSurf_t *drawSurfs, int numDrawSurfs ) {
 	shader_t		*shader, *oldShader;
 	int				fogNum, oldFogNum;
@@ -554,11 +545,11 @@ void RB_RenderDrawSurfList( drawSurf_t *drawSurfs, int numDrawSurfs ) {
 				if (depthRange)
 				{
 					if(!oldDepthRange)
-						glDepthRange (0, 0.3);
+						qglDepthRange (0, 0.3);
 				}
 				else
 				{
-					glDepthRange (0, 1);
+					qglDepthRange (0, 1);
 				}
 
 				oldDepthRange = depthRange;
@@ -579,7 +570,6 @@ void RB_RenderDrawSurfList( drawSurf_t *drawSurfs, int numDrawSurfs ) {
 		RB_EndSurface();
 	}
 
-
 	if (glRefConfig.framebufferObject)
 		FBO_Bind(fbo);
 
@@ -587,7 +577,7 @@ void RB_RenderDrawSurfList( drawSurf_t *drawSurfs, int numDrawSurfs ) {
 
 	GL_SetModelviewMatrix( backEnd.viewParms.world.modelMatrix );
 
-	glDepthRange (0, 1);
+	qglDepthRange (0, 1);
 }
 
 
@@ -599,6 +589,20 @@ RENDER BACK END FUNCTIONS
 ============================================================================
 */
 
+
+void Mat4Ortho( float left, float right, float bottom, float top, float znear, float zfar, float out[16] )
+{
+    float x = 1.0f/ (right - left);
+    float y = 1.0f/ (top - bottom);
+    float z = 1.0f/ (zfar - znear);
+
+	out[0] = 2.0f * x;  out[4] = 0.0f;      out[ 8] = 0.0f;     out[12] = -(right + left) * x;
+	out[1] = 0.0f;      out[5] = 2.0f * y;  out[ 9] = 0.0f;     out[13] = -(top + bottom) * y;
+	out[2] = 0.0f;      out[6] = 0.0f;      out[10] = 2.0f * z; out[14] = -(zfar + znear) * z;
+	out[3] = 0.0f;      out[7] = 0.0f;      out[11] = 0.0f;     out[15] = 1.0f;
+}
+
+
 /*
 ================
 RB_SetGL2D
@@ -606,7 +610,6 @@ RB_SetGL2D
 ================
 */
 void	RB_SetGL2D (void) {
-	mat4_t matrix;
 	int width, height;
 
 	if (backEnd.projection2D && backEnd.last2DFBO == glState.currentFBO)
@@ -627,20 +630,20 @@ void	RB_SetGL2D (void) {
 	}
 
 	// set 2D virtual screen size
-	glViewport( 0, 0, width, height );
-	glScissor( 0, 0, width, height );
+	qglViewport( 0, 0, width, height );
+	qglScissor( 0, 0, width, height );
 
-	Mat4Ortho(0, width, height, 0, 0, 1, matrix);
-	GL_SetProjectionMatrix(matrix);
-	Mat4Identity(matrix);
-	GL_SetModelviewMatrix(matrix);
+    Mat4Identity(glState.modelview);
+	Mat4Ortho(0, width, height, 0, 0, 1, glState.projection);
+	MatrixMultiply4x4_SSE(glState.modelview, glState.projection, glState.modelviewProjection);	
+
 
 	GL_State( GLS_DEPTHTEST_DISABLE |
 			  GLS_SRCBLEND_SRC_ALPHA |
 			  GLS_DSTBLEND_ONE_MINUS_SRC_ALPHA );
 
 	GL_Cull( CT_TWO_SIDED );
-	glDisable( GL_CLIP_PLANE0 );
+	qglDisable( GL_CLIP_PLANE0 );
 
 	// set time for 2D shaders
 	backEnd.refdef.time = ri.Milliseconds();
@@ -673,7 +676,7 @@ void RE_StretchRaw (int x, int y, int w, int h, int cols, int rows, const byte *
 	}
 
 	// we definitely want to sync every frame for the cinematics
-	glFinish();
+	qglFinish();
 
 	start = 0;
 	if ( r_speeds->integer ) {
@@ -694,7 +697,7 @@ void RE_StretchRaw (int x, int y, int w, int h, int cols, int rows, const byte *
 
 	if ( r_speeds->integer ) {
 		end = ri.Milliseconds();
-		ri.Printf( PRINT_ALL, "glTexSubImage2D %i, %i: %i msec\n", cols, rows, end - start );
+		ri.Printf( PRINT_ALL, "qglTexSubImage2D %i, %i: %i msec\n", cols, rows, end - start );
 	}
 
 	// FIXME: HUGE hack
@@ -753,16 +756,9 @@ void RE_UploadCinematic (int w, int h, int cols, int rows, const byte *data, int
 }
 
 
-/*
-=============
-RB_SetColor
-
-=============
-*/
-const void	*RB_SetColor( const void *data ) {
-	const setColorCommand_t	*cmd;
-
-	cmd = (const setColorCommand_t *)data;
+const void* RB_SetColor( const void *data )
+{
+	const setColorCommand_t	*cmd = (const setColorCommand_t *)data;
 
 	backEnd.color2D[0] = cmd->color[0] * 255;
 	backEnd.color2D[1] = cmd->color[1] * 255;
@@ -779,11 +775,8 @@ RB_StretchPic
 */
 const void *RB_StretchPic ( const void *data )
 {
-	const stretchPicCommand_t	*cmd;
-	shader_t *shader;
-	int		numVerts, numIndexes;
 
-	cmd = (const stretchPicCommand_t *)data;
+    const stretchPicCommand_t* cmd = (const stretchPicCommand_t *)data;
 
 	// FIXME: HUGE hack
 	if (glRefConfig.framebufferObject)
@@ -791,7 +784,7 @@ const void *RB_StretchPic ( const void *data )
 
 	RB_SetGL2D();
 
-	shader = cmd->shader;
+	shader_t* shader = cmd->shader;
 	if ( shader != tess.shader ) {
 		if ( tess.numIndexes ) {
 			RB_EndSurface();
@@ -808,57 +801,84 @@ const void *RB_StretchPic ( const void *data )
     }
 
 
-	numVerts = tess.numVertexes;
-	numIndexes = tess.numIndexes;
+	const unsigned int n0 = tess.numVertexes;
+	const unsigned int n1 = n0 + 1;
+	const unsigned int n2 = n0 + 2;
+	const unsigned int n3 = n0 + 3;
+
+	{
+		unsigned int numIndexes = tess.numIndexes;
+
+		tess.indexes[ numIndexes ] = n3;
+		tess.indexes[ numIndexes + 1 ] = n0;
+		tess.indexes[ numIndexes + 2 ] = n2;
+		tess.indexes[ numIndexes + 3 ] = n2;
+		tess.indexes[ numIndexes + 4 ] = n0;
+		tess.indexes[ numIndexes + 5 ] = n1;
+	}
+
+	{
+		const uint16_t r = backEnd.color2D[0] * 257;
+		const uint16_t g = backEnd.color2D[1] * 257;
+		const uint16_t b = backEnd.color2D[2] * 257;
+		const uint16_t a = backEnd.color2D[3] * 257;
+
+		tess.vertexColors[ n0 ][ 0 ] = r;
+		tess.vertexColors[ n0 ][ 1 ] = g;
+		tess.vertexColors[ n0 ][ 2 ] = b;
+		tess.vertexColors[ n0 ][ 3 ] = a;
+
+		tess.vertexColors[ n1 ][ 0 ] = r;
+		tess.vertexColors[ n1 ][ 1 ] = g;
+		tess.vertexColors[ n1 ][ 2 ] = b;
+		tess.vertexColors[ n1 ][ 3 ] = a;
+
+		tess.vertexColors[ n2 ][ 0 ] = r;
+		tess.vertexColors[ n2 ][ 1 ] = g;
+		tess.vertexColors[ n2 ][ 2 ] = b;
+		tess.vertexColors[ n2 ][ 3 ] = a;
+
+		tess.vertexColors[ n3 ][ 0 ] = r;
+		tess.vertexColors[ n3 ][ 1 ] = g;
+		tess.vertexColors[ n3 ][ 2 ] = b;
+		tess.vertexColors[ n3 ][ 3 ] = a;
+	}
+
+
+	{
+		tess.xyz[ n0 ][0] = cmd->x;
+		tess.xyz[ n0 ][1] = cmd->y;
+		tess.xyz[ n0 ][2] = 0;
+
+		tess.xyz[ n1 ][0] = cmd->x + cmd->w;
+		tess.xyz[ n1 ][1] = cmd->y;
+		tess.xyz[ n1 ][2] = 0;
+
+		tess.xyz[ n2 ][0] = cmd->x + cmd->w;
+		tess.xyz[ n2 ][1] = cmd->y + cmd->h;
+		tess.xyz[ n2 ][2] = 0;
+
+		tess.xyz[ n3 ][0] = cmd->x;
+		tess.xyz[ n3 ][1] = cmd->y + cmd->h;
+		tess.xyz[ n3 ][2] = 0;
+	}
+
+	{
+		tess.texCoords[ n0 ][0] = cmd->s1;
+		tess.texCoords[ n0 ][1] = cmd->t1;
+
+		tess.texCoords[ n1 ][0] = cmd->s2;
+		tess.texCoords[ n1 ][1] = cmd->t1;
+
+		tess.texCoords[ n2 ][0] = cmd->s2;
+		tess.texCoords[ n2 ][1] = cmd->t2;
+
+		tess.texCoords[ n3 ][0] = cmd->s1;
+		tess.texCoords[ n3 ][1] = cmd->t2;
+	}
 
 	tess.numVertexes += 4;
 	tess.numIndexes += 6;
-
-	tess.indexes[ numIndexes ] = numVerts + 3;
-	tess.indexes[ numIndexes + 1 ] = numVerts + 0;
-	tess.indexes[ numIndexes + 2 ] = numVerts + 2;
-	tess.indexes[ numIndexes + 3 ] = numVerts + 2;
-	tess.indexes[ numIndexes + 4 ] = numVerts + 0;
-	tess.indexes[ numIndexes + 5 ] = numVerts + 1;
-
-	{
-		uint16_t color[4];
-
-		VectorScale4(backEnd.color2D, 257, color);
-
-		VectorCopy4(color, tess.color[ numVerts ]);
-		VectorCopy4(color, tess.color[ numVerts + 1]);
-		VectorCopy4(color, tess.color[ numVerts + 2]);
-		VectorCopy4(color, tess.color[ numVerts + 3 ]);
-	}
-
-	tess.xyz[ numVerts ][0] = cmd->x;
-	tess.xyz[ numVerts ][1] = cmd->y;
-	tess.xyz[ numVerts ][2] = 0;
-
-	tess.texCoords[ numVerts ][0] = cmd->s1;
-	tess.texCoords[ numVerts ][1] = cmd->t1;
-
-	tess.xyz[ numVerts + 1 ][0] = cmd->x + cmd->w;
-	tess.xyz[ numVerts + 1 ][1] = cmd->y;
-	tess.xyz[ numVerts + 1 ][2] = 0;
-
-	tess.texCoords[ numVerts + 1 ][0] = cmd->s2;
-	tess.texCoords[ numVerts + 1 ][1] = cmd->t1;
-
-	tess.xyz[ numVerts + 2 ][0] = cmd->x + cmd->w;
-	tess.xyz[ numVerts + 2 ][1] = cmd->y + cmd->h;
-	tess.xyz[ numVerts + 2 ][2] = 0;
-
-	tess.texCoords[ numVerts + 2 ][0] = cmd->s2;
-	tess.texCoords[ numVerts + 2 ][1] = cmd->t2;
-
-	tess.xyz[ numVerts + 3 ][0] = cmd->x;
-	tess.xyz[ numVerts + 3 ][1] = cmd->y + cmd->h;
-	tess.xyz[ numVerts + 3 ][2] = 0;
-
-	tess.texCoords[ numVerts + 3 ][0] = cmd->s1;
-	tess.texCoords[ numVerts + 3 ][1] = cmd->t2;
 
 	return (const void *)(cmd + 1);
 }
@@ -892,7 +912,7 @@ const void* RB_DrawSurfs( const void *data )
 
 	if (glRefConfig.framebufferObject && (backEnd.viewParms.flags & VPF_DEPTHCLAMP) && glRefConfig.depthClamp)
 	{
-		glEnable(GL_DEPTH_CLAMP);
+		qglEnable(GL_DEPTH_CLAMP);
 	}
 
 	if (glRefConfig.framebufferObject && !(backEnd.refdef.rdflags & RDF_NOWORLDMODEL) && (r_depthPrepass->integer || isShadowView))
@@ -946,8 +966,8 @@ const void* RB_DrawSurfs( const void *data )
 				box[2] = backEnd.viewParms.viewportWidth  * tr.screenShadowFbo->width / (float)glConfig.vidWidth;
 				box[3] = backEnd.viewParms.viewportHeight * tr.screenShadowFbo->height / (float)glConfig.vidHeight;
 
-				glViewport(box[0], box[1], box[2], box[3]);
-				glScissor(box[0], box[1], box[2], box[3]);
+				qglViewport(box[0], box[1], box[2], box[3]);
+				qglScissor(box[0], box[1], box[2], box[3]);
 
 				box[0] = backEnd.viewParms.viewportX / (float)glConfig.vidWidth;
 				box[1] = backEnd.viewParms.viewportY / (float)glConfig.vidHeight;
@@ -1053,8 +1073,8 @@ const void* RB_DrawSurfs( const void *data )
 
 				FBO_Bind(tr.quarterFbo[0]);
 
-				glViewport(0, 0, tr.quarterFbo[0]->width, tr.quarterFbo[0]->height);
-				glScissor(0, 0, tr.quarterFbo[0]->width, tr.quarterFbo[0]->height);
+				qglViewport(0, 0, tr.quarterFbo[0]->width, tr.quarterFbo[0]->height);
+				qglScissor(0, 0, tr.quarterFbo[0]->width, tr.quarterFbo[0]->height);
 
 				VectorSet4(quadVerts[0], -1,  1, 0, 1);
 				VectorSet4(quadVerts[1],  1,  1, 0, 1);
@@ -1082,8 +1102,8 @@ const void* RB_DrawSurfs( const void *data )
 
 				FBO_Bind(tr.quarterFbo[1]);
 
-				glViewport(0, 0, tr.quarterFbo[1]->width, tr.quarterFbo[1]->height);
-				glScissor(0, 0, tr.quarterFbo[1]->width, tr.quarterFbo[1]->height);
+				qglViewport(0, 0, tr.quarterFbo[1]->width, tr.quarterFbo[1]->height);
+				qglScissor(0, 0, tr.quarterFbo[1]->width, tr.quarterFbo[1]->height);
 
 				GLSL_BindProgram(&tr.depthBlurShader[0]);
 
@@ -1097,8 +1117,8 @@ const void* RB_DrawSurfs( const void *data )
 
 				FBO_Bind(tr.screenSsaoFbo);
 
-				glViewport(0, 0, tr.screenSsaoFbo->width, tr.screenSsaoFbo->height);
-				glScissor(0, 0, tr.screenSsaoFbo->width, tr.screenSsaoFbo->height);
+				qglViewport(0, 0, tr.screenSsaoFbo->width, tr.screenSsaoFbo->height);
+				qglScissor(0, 0, tr.screenSsaoFbo->width, tr.screenSsaoFbo->height);
 
 				GLSL_BindProgram(&tr.depthBlurShader[1]);
 
@@ -1119,7 +1139,7 @@ const void* RB_DrawSurfs( const void *data )
 
 	if (glRefConfig.framebufferObject && (backEnd.viewParms.flags & VPF_DEPTHCLAMP) && glRefConfig.depthClamp)
 	{
-		glDisable(GL_DEPTH_CLAMP);
+		qglDisable(GL_DEPTH_CLAMP);
 	}
 
 	if (!isShadowView)
@@ -1136,8 +1156,8 @@ const void* RB_DrawSurfs( const void *data )
 			FBO_t *oldFbo = glState.currentFBO;
 			FBO_Bind(tr.sunRaysFbo);
 			
-			glClearColor( 0.0f, 0.0f, 0.0f, 1.0f );
-			glClear( GL_COLOR_BUFFER_BIT );
+			qglClearColor( 0.0f, 0.0f, 0.0f, 1.0f );
+			qglClear( GL_COLOR_BUFFER_BIT );
 
 			if (glRefConfig.occlusionQuery)
 			{
@@ -1193,12 +1213,12 @@ const void	*RB_DrawBuffer( const void *data ) {
 	if (glRefConfig.framebufferObject)
 		FBO_Bind(NULL);
 
-	glDrawBuffer( cmd->buffer );
+	qglDrawBuffer( cmd->buffer );
 
 	// clear screen for debugging
 	if ( r_clear->integer ) {
-		glClearColor( 1, 0, 0.5, 1 );
-		glClear( GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT );
+		qglClearColor( 1, 0, 0.5, 1 );
+		qglClear( GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT );
 	}
 
 	return (const void *)(cmd + 1);
@@ -1222,9 +1242,9 @@ void RB_ShowImages( void ) {
 
 	RB_SetGL2D();
 
-	glClear( GL_COLOR_BUFFER_BIT );
+	qglClear( GL_COLOR_BUFFER_BIT );
 
-	glFinish();
+	qglFinish();
 
 	start = ri.Milliseconds();
 
@@ -1256,7 +1276,7 @@ void RB_ShowImages( void ) {
 		}
 	}
 
-	glFinish();
+	qglFinish();
 
 	end = ri.Milliseconds();
 	ri.Printf( PRINT_ALL, "%i msec to draw all images\n", end - start );
@@ -1286,7 +1306,7 @@ const void *RB_ColorMask(const void *data)
 		backEnd.colorMask[3] = !cmd->rgba[3];
 	}
 
-	glColorMask(cmd->rgba[0], cmd->rgba[1], cmd->rgba[2], cmd->rgba[3]);
+	qglColorMask(cmd->rgba[0], cmd->rgba[1], cmd->rgba[2], cmd->rgba[3]);
 	
 	return (const void *)(cmd + 1);
 }
@@ -1321,13 +1341,13 @@ const void *RB_ClearDepth(const void *data)
 		}
 	}
 
-	glClear(GL_DEPTH_BUFFER_BIT);
+	qglClear(GL_DEPTH_BUFFER_BIT);
 
 	// if we're doing MSAA, clear the depth texture for the resolve buffer
 	if (tr.msaaResolveFbo)
 	{
 		FBO_Bind(tr.msaaResolveFbo);
-		glClear(GL_DEPTH_BUFFER_BIT);
+		qglClear(GL_DEPTH_BUFFER_BIT);
 	}
 
 	
@@ -1335,15 +1355,8 @@ const void *RB_ClearDepth(const void *data)
 }
 
 
-/*
-=============
-RB_SwapBuffers
-
-=============
-*/
-const void	*RB_SwapBuffers( const void *data ) {
-	const swapBuffersCommand_t	*cmd;
-
+const void	*RB_SwapBuffers( const void *data )
+{
 	// finish any 2D drawing if needed
 	if ( tess.numIndexes ) {
 		RB_EndSurface();
@@ -1354,7 +1367,7 @@ const void	*RB_SwapBuffers( const void *data ) {
 		RB_ShowImages();
 	}
 
-	cmd = (const swapBuffersCommand_t *)data;
+	const swapBuffersCommand_t* cmd = (const swapBuffersCommand_t *)data;
 
 	// we measure overdraw by reading back the stencil buffer and
 	// counting up the number of increments that have happened
@@ -1364,7 +1377,7 @@ const void	*RB_SwapBuffers( const void *data ) {
 		unsigned char *stencilReadback;
 
 		stencilReadback = ri.Hunk_AllocateTempMemory( glConfig.vidWidth * glConfig.vidHeight );
-		glReadPixels( 0, 0, glConfig.vidWidth, glConfig.vidHeight, GL_STENCIL_INDEX, GL_UNSIGNED_BYTE, stencilReadback );
+		qglReadPixels( 0, 0, glConfig.vidWidth, glConfig.vidHeight, GL_STENCIL_INDEX, GL_UNSIGNED_BYTE, stencilReadback );
 
 		for ( i = 0; i < glConfig.vidWidth * glConfig.vidHeight; i++ ) {
 			sum += stencilReadback[i];
@@ -1392,10 +1405,10 @@ const void	*RB_SwapBuffers( const void *data ) {
 	}
 
 	if ( !glState.finishCalled ) {
-		glFinish();
+		qglFinish();
 	}
 
-	ri.GLimpEndFrame();
+	GLimp_EndFrame();
 
 	backEnd.framePostProcessed = qfalse;
 	backEnd.projection2D = qfalse;
@@ -1439,18 +1452,9 @@ const void *RB_CapShadowMap(const void *data)
 }
 
 
-/*
-=============
-RB_PostProcess
-
-=============
-*/
 const void *RB_PostProcess(const void *data)
 {
 	const postProcessCommand_t *cmd = data;
-	FBO_t *srcFbo;
-	ivec4_t srcBox, dstBox;
-	qboolean autoExposure;
 
 	// finish any 2D drawing if needed
 	if(tess.numIndexes)
@@ -1468,7 +1472,7 @@ const void *RB_PostProcess(const void *data)
 		backEnd.viewParms = cmd->viewParms;
 	}
 
-	srcFbo = tr.renderFbo;
+	FBO_t* srcFbo = tr.renderFbo;
 	if (tr.msaaResolveFbo)
 	{
 		// Resolve the MSAA before anything else
@@ -1476,6 +1480,9 @@ const void *RB_PostProcess(const void *data)
 		FBO_FastBlit(tr.renderFbo, NULL, tr.msaaResolveFbo, NULL, GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT, GL_NEAREST);
 		srcFbo = tr.msaaResolveFbo;
 	}
+
+	int srcBox[4];
+    int dstBox[4];
 
 	dstBox[0] = backEnd.viewParms.viewportX;
 	dstBox[1] = backEnd.viewParms.viewportY;
@@ -1501,7 +1508,7 @@ const void *RB_PostProcess(const void *data)
 	{
 		if (r_hdr->integer && (r_toneMap->integer || r_forceToneMap->integer))
 		{
-			autoExposure = r_autoExposure->integer || r_forceAutoExposure->integer;
+			qboolean autoExposure = r_autoExposure->integer || r_forceAutoExposure->integer;
 			RB_ToneMap(srcFbo, srcBox, NULL, dstBox, autoExposure);
 		}
 		else if (r_cameraExposure->value == 0.0f)
@@ -1529,129 +1536,9 @@ const void *RB_PostProcess(const void *data)
 	else
 		RB_GaussianBlur(backEnd.refdef.blurFactor);
 
-#if 0
-	if (0)
-	{
-		vec4_t quadVerts[4];
-		vec2_t texCoords[4];
-		ivec4_t iQtrBox;
-		vec4_t box;
-		vec4_t viewInfo;
-		static float scale = 5.0f;
-
-		scale -= 0.005f;
-		if (scale < 0.01f)
-			scale = 5.0f;
-
-		FBO_FastBlit(NULL, NULL, tr.quarterFbo[0], NULL, GL_COLOR_BUFFER_BIT, GL_LINEAR);
-
-		iQtrBox[0] = backEnd.viewParms.viewportX      * tr.quarterImage[0]->width / (float)glConfig.vidWidth;
-		iQtrBox[1] = backEnd.viewParms.viewportY      * tr.quarterImage[0]->height / (float)glConfig.vidHeight;
-		iQtrBox[2] = backEnd.viewParms.viewportWidth  * tr.quarterImage[0]->width / (float)glConfig.vidWidth;
-		iQtrBox[3] = backEnd.viewParms.viewportHeight * tr.quarterImage[0]->height / (float)glConfig.vidHeight;
-
-		glViewport(iQtrBox[0], iQtrBox[1], iQtrBox[2], iQtrBox[3]);
-		glScissor(iQtrBox[0], iQtrBox[1], iQtrBox[2], iQtrBox[3]);
-
-		VectorSet4(box, 0.0f, 0.0f, 1.0f, 1.0f);
-
-		texCoords[0][0] = box[0]; texCoords[0][1] = box[3];
-		texCoords[1][0] = box[2]; texCoords[1][1] = box[3];
-		texCoords[2][0] = box[2]; texCoords[2][1] = box[1];
-		texCoords[3][0] = box[0]; texCoords[3][1] = box[1];
-
-		VectorSet4(box, -1.0f, -1.0f, 1.0f, 1.0f);
-
-		VectorSet4(quadVerts[0], box[0], box[3], 0, 1);
-		VectorSet4(quadVerts[1], box[2], box[3], 0, 1);
-		VectorSet4(quadVerts[2], box[2], box[1], 0, 1);
-		VectorSet4(quadVerts[3], box[0], box[1], 0, 1);
-
-		GL_State(GLS_DEPTHTEST_DISABLE);
-
-
-		VectorSet4(viewInfo, backEnd.viewParms.zFar / r_znear->value, backEnd.viewParms.zFar, 0.0, 0.0);
-
-		viewInfo[2] = scale / (float)(tr.quarterImage[0]->width);
-		viewInfo[3] = scale / (float)(tr.quarterImage[0]->height);
-
-		FBO_Bind(tr.quarterFbo[1]);
-		GLSL_BindProgram(&tr.depthBlurShader[2]);
-		GL_BindToTMU(tr.quarterImage[0], TB_COLORMAP);
-		GLSL_SetUniformVec4(&tr.depthBlurShader[2], UNIFORM_VIEWINFO, viewInfo);
-		RB_InstantQuad2(quadVerts, texCoords);
-
-		FBO_Bind(tr.quarterFbo[0]);
-		GLSL_BindProgram(&tr.depthBlurShader[3]);
-		GL_BindToTMU(tr.quarterImage[1], TB_COLORMAP);
-		GLSL_SetUniformVec4(&tr.depthBlurShader[3], UNIFORM_VIEWINFO, viewInfo);
-		RB_InstantQuad2(quadVerts, texCoords);
-
-		SetViewportAndScissor();
-
-		FBO_FastBlit(tr.quarterFbo[1], NULL, NULL, NULL, GL_COLOR_BUFFER_BIT, GL_LINEAR);
-		FBO_Bind(NULL);
-	}
-#endif
-
-	if (0 && r_sunlightMode->integer)
-	{
-		ivec4_t dstBox;
-		VectorSet4(dstBox, 0, glConfig.vidHeight - 128, 128, 128);
-		FBO_BlitFromTexture(tr.sunShadowDepthImage[0], NULL, NULL, NULL, dstBox, NULL, NULL, 0);
-		VectorSet4(dstBox, 128, glConfig.vidHeight - 128, 128, 128);
-		FBO_BlitFromTexture(tr.sunShadowDepthImage[1], NULL, NULL, NULL, dstBox, NULL, NULL, 0);
-		VectorSet4(dstBox, 256, glConfig.vidHeight - 128, 128, 128);
-		FBO_BlitFromTexture(tr.sunShadowDepthImage[2], NULL, NULL, NULL, dstBox, NULL, NULL, 0);
-		VectorSet4(dstBox, 384, glConfig.vidHeight - 128, 128, 128);
-		FBO_BlitFromTexture(tr.sunShadowDepthImage[3], NULL, NULL, NULL, dstBox, NULL, NULL, 0);
-	}
-
-	if (0 && r_shadows->integer == 4)
-	{
-		ivec4_t dstBox;
-		VectorSet4(dstBox, 512 + 0, glConfig.vidHeight - 128, 128, 128);
-		FBO_BlitFromTexture(tr.pshadowMaps[0], NULL, NULL, NULL, dstBox, NULL, NULL, 0);
-		VectorSet4(dstBox, 512 + 128, glConfig.vidHeight - 128, 128, 128);
-		FBO_BlitFromTexture(tr.pshadowMaps[1], NULL, NULL, NULL, dstBox, NULL, NULL, 0);
-		VectorSet4(dstBox, 512 + 256, glConfig.vidHeight - 128, 128, 128);
-		FBO_BlitFromTexture(tr.pshadowMaps[2], NULL, NULL, NULL, dstBox, NULL, NULL, 0);
-		VectorSet4(dstBox, 512 + 384, glConfig.vidHeight - 128, 128, 128);
-		FBO_BlitFromTexture(tr.pshadowMaps[3], NULL, NULL, NULL, dstBox, NULL, NULL, 0);
-	}
-
-	if (0)
-	{
-		ivec4_t dstBox;
-		VectorSet4(dstBox, 256, glConfig.vidHeight - 256, 256, 256);
-		FBO_BlitFromTexture(tr.renderDepthImage, NULL, NULL, NULL, dstBox, NULL, NULL, 0);
-		VectorSet4(dstBox, 512, glConfig.vidHeight - 256, 256, 256);
-		FBO_BlitFromTexture(tr.screenShadowImage, NULL, NULL, NULL, dstBox, NULL, NULL, 0);
-	}
-
-	if (0)
-	{
-		ivec4_t dstBox;
-		VectorSet4(dstBox, 256, glConfig.vidHeight - 256, 256, 256);
-		FBO_BlitFromTexture(tr.sunRaysImage, NULL, NULL, NULL, dstBox, NULL, NULL, 0);
-	}
-
-#if 0
-	if (r_cubeMapping->integer && tr.numCubemaps)
-	{
-		ivec4_t dstBox;
-		int cubemapIndex = R_CubemapForPoint( backEnd.viewParms.or.origin );
-
-		if (cubemapIndex)
-		{
-			VectorSet4(dstBox, 0, glConfig.vidHeight - 256, 256, 256);
-			//FBO_BlitFromTexture(tr.renderCubeImage, NULL, NULL, NULL, dstBox, &tr.testcubeShader, NULL, 0);
-			FBO_BlitFromTexture(tr.cubemaps[cubemapIndex - 1].image, NULL, NULL, NULL, dstBox, &tr.testcubeShader, NULL, 0);
-		}
-	}
-#endif
 
 	backEnd.framePostProcessed = qtrue;
+
 
 	return (const void *)(cmd + 1);
 }
@@ -1672,8 +1559,8 @@ const void *RB_ExportCubemaps(const void *data)
 	// finish any 2D drawing if needed
 	if (tess.numIndexes)
 		RB_EndSurface();
-
-	if (!glRefConfig.framebufferObject || !tr.world || tr.numCubemaps == 0)
+	
+    if (!glRefConfig.framebufferObject || !tr.world || tr.numCubemaps == 0)
 	{
 		// do nothing
 		ri.Printf(PRINT_ALL, "Nothing to export!\n");
@@ -1691,25 +1578,25 @@ const void *RB_ExportCubemaps(const void *data)
 
 		for (i = 0; i < tr.numCubemaps; i++)
 		{
-			char filename[MAX_QPATH];
+			char filename[MAX_QPATH*2];
 			cubemap_t *cubemap = &tr.cubemaps[i];
 			byte *p = cubemapPixels;
 
 			for (j = 0; j < 6; j++)
 			{
 				FBO_AttachImage(tr.renderCubeFbo, cubemap->image, GL_COLOR_ATTACHMENT0_EXT, j);
-				glReadPixels(0, 0, r_cubemapSize->integer, r_cubemapSize->integer, GL_RGBA, GL_UNSIGNED_BYTE, p);
+				qglReadPixels(0, 0, r_cubemapSize->integer, r_cubemapSize->integer, GL_RGBA, GL_UNSIGNED_BYTE, p);
 				p += sideSize;
 			}
 
 			if (cubemap->name[0])
 			{
 				stripExtension(cubemap->name, filename, MAX_QPATH);
-				Q_strcat(filename, MAX_QPATH, ".dds");
+				Q_strcat(filename, sizeof(filename), ".dds");
 			}
 			else
 			{
-				Com_sprintf(filename, MAX_QPATH, "cubemaps/%s/%03d.dds", tr.world->baseName, i);
+				snprintf(filename, sizeof(filename), "cubemaps/%s/%03d.dds", tr.world->baseName, i);
 			}
 
 			R_SaveDDS(filename, cubemapPixels, r_cubemapSize->integer, r_cubemapSize->integer, 6);
@@ -1730,10 +1617,9 @@ const void *RB_ExportCubemaps(const void *data)
 RB_ExecuteRenderCommands
 ====================
 */
-void RB_ExecuteRenderCommands( const void *data ) {
-	int		t1, t2;
-
-	t1 = ri.Milliseconds ();
+void RB_ExecuteRenderCommands( const void *data )
+{
+	int	t1 = ri.Milliseconds ();
 
 	while ( 1 ) {
 		data = PADP(data, sizeof(void *));
@@ -1766,7 +1652,7 @@ void RB_ExecuteRenderCommands( const void *data ) {
 		case RC_CLEARDEPTH:
 			data = RB_ClearDepth(data);
 			break;
-		case RC_CAPSHADOWMAP:
+        case RC_CAPSHADOWMAP:
 			data = RB_CapShadowMap(data);
 			break;
 		case RC_POSTPROCESS:
@@ -1775,15 +1661,14 @@ void RB_ExecuteRenderCommands( const void *data ) {
 		case RC_EXPORT_CUBEMAPS:
 			data = RB_ExportCubemaps(data);
 			break;
-		case RC_END_OF_LIST:
+        case RC_END_OF_LIST:
 		default:
 			// finish any 2D drawing if needed
 			if(tess.numIndexes)
 				RB_EndSurface();
 
 			// stop rendering
-			t2 = ri.Milliseconds ();
-			backEnd.pc.msec = t2 - t1;
+			backEnd.pc.msec = ri.Milliseconds () - t1;
 			return;
 		}
 	}

@@ -173,12 +173,10 @@ G_SetClientSound
 ===============
 */
 void G_SetClientSound( gentity_t *ent ) {
-#ifdef MISSIONPACK
 	if( ent->s.eFlags & EF_TICKING ) {
 		ent->client->ps.loopSound = G_SoundIndex( "sound/weapons/proxmine/wstbtick.wav");
 	}
 	else
-#endif
 	if (ent->waterlevel && (ent->watertype&(CONTENTS_LAVA|CONTENTS_SLIME)) ) {
 		ent->client->ps.loopSound = level.snd_fry;
 	} else {
@@ -245,8 +243,9 @@ void	G_TouchTriggers( gentity_t *ent ) {
 		return;
 	}
 
-	// dead clients don't activate triggers!
-	if ( ent->client->ps.stats[STAT_HEALTH] <= 0 ) {
+	//ELIMINATION LMS
+	// dead clients don't activate triggers! The reason our pm_spectators can't do anything
+	if ( ent->client->ps.stats[STAT_HEALTH] <= 0 && ent->client->ps.pm_type != PM_SPECTATOR) {
 		return;
 	}
 
@@ -270,11 +269,12 @@ void	G_TouchTriggers( gentity_t *ent ) {
 		}
 
 		// ignore most entities if a spectator
-		if ( ent->client->sess.sessionTeam == TEAM_SPECTATOR ) {
+		if ( (ent->client->sess.sessionTeam == TEAM_SPECTATOR) || ent->client->ps.pm_type == PM_SPECTATOR ) {
 			if ( hit->s.eType != ET_TELEPORT_TRIGGER &&
 				// this is ugly but adding a new ET_? type will
 				// most likely cause network incompatibilities
-				hit->touch != Touch_DoorTrigger) {
+				//We need to stop eliminated players from opening doors somewhere else /Sago007 20070814
+				hit->touch != Touch_DoorTrigger ) {
 				continue;
 			}
 		}
@@ -320,6 +320,13 @@ void SpectatorThink( gentity_t *ent, usercmd_t *ucmd ) {
 
 	client = ent->client;
 
+	if ( ( g_gametype.integer == GT_ELIMINATION || g_gametype.integer == GT_CTF_ELIMINATION) &&
+	       client->sess.spectatorState != SPECTATOR_FOLLOW &&
+	       g_elimination_lockspectator.integer>1 &&
+	       ent->client->sess.sessionTeam != TEAM_SPECTATOR ) {
+		Cmd_FollowCycle_f(ent);
+	}
+
 	if ( client->sess.spectatorState != SPECTATOR_FOLLOW ) {
 		client->ps.pm_type = PM_SPECTATOR;
 		client->ps.speed = 400;	// faster than normal
@@ -340,13 +347,23 @@ void SpectatorThink( gentity_t *ent, usercmd_t *ucmd ) {
 		G_TouchTriggers( ent );
 		trap_UnlinkEntity( ent );
 	}
-
+	
 	client->oldbuttons = client->buttons;
 	client->buttons = ucmd->buttons;
-
+	
+	//KK-OAX Changed to keep followcycle functional
 	// attack button cycles through spectators
 	if ( ( client->buttons & BUTTON_ATTACK ) && ! ( client->oldbuttons & BUTTON_ATTACK ) ) {
-		Cmd_FollowCycle_f( ent, 1 );
+		Cmd_FollowCycle_f( ent );
+	}
+
+	if ( ( client->buttons & BUTTON_USE_HOLDABLE ) && ! ( client->oldbuttons & BUTTON_USE_HOLDABLE ) ) {
+		if ( ( g_gametype.integer == GT_ELIMINATION || g_gametype.integer == GT_CTF_ELIMINATION) &&
+			g_elimination_lockspectator.integer>1 &&
+			ent->client->sess.sessionTeam != TEAM_SPECTATOR ) {
+			return;
+		}
+		StopFollowing(ent);
 	}
 }
 
@@ -391,11 +408,9 @@ ClientTimerActions
 Actions that happen once a second
 ==================
 */
-void ClientTimerActions( gentity_t *ent, int msec ) {
+static void ClientTimerActions( gentity_t *ent, int msec ) {
 	gclient_t	*client;
-#ifdef MISSIONPACK
 	int			maxHealth;
-#endif
 
 	client = ent->client;
 	client->timeResidual += msec;
@@ -403,8 +418,11 @@ void ClientTimerActions( gentity_t *ent, int msec ) {
 	while ( client->timeResidual >= 1000 ) {
 		client->timeResidual -= 1000;
 
+		//Stop in elimination!!!
+		if (client->ps.pm_flags & PMF_ELIMWARMUP)
+			continue;
+
 		// regenerate
-#ifdef MISSIONPACK
 		if( bg_itemlist[client->ps.stats[STAT_PERSISTANT_POWERUP]].giTag == PW_GUARD ) {
 			maxHealth = client->ps.stats[STAT_MAX_HEALTH] / 2;
 		}
@@ -421,33 +439,34 @@ void ClientTimerActions( gentity_t *ent, int msec ) {
 					ent->health = maxHealth * 1.1;
 				}
 				G_AddEvent( ent, EV_POWERUP_REGEN, 0 );
-			} else if ( ent->health < maxHealth * 2) {
+			}
+			else if ( ent->health < maxHealth * 2) {
 				ent->health += 5;
 				if ( ent->health > maxHealth * 2 ) {
 					ent->health = maxHealth * 2;
 				}
 				G_AddEvent( ent, EV_POWERUP_REGEN, 0 );
 			}
-#else
-		if ( client->ps.powerups[PW_REGEN] ) {
-			if ( ent->health < client->ps.stats[STAT_MAX_HEALTH]) {
-				ent->health += 15;
-				if ( ent->health > client->ps.stats[STAT_MAX_HEALTH] * 1.1 ) {
-					ent->health = client->ps.stats[STAT_MAX_HEALTH] * 1.1;
-				}
-				G_AddEvent( ent, EV_POWERUP_REGEN, 0 );
-			} else if ( ent->health < client->ps.stats[STAT_MAX_HEALTH] * 2) {
-				ent->health += 5;
-				if ( ent->health > client->ps.stats[STAT_MAX_HEALTH] * 2 ) {
-					ent->health = client->ps.stats[STAT_MAX_HEALTH] * 2;
-				}
-				G_AddEvent( ent, EV_POWERUP_REGEN, 0 );
-			}
-#endif
 		} else {
 			// count down health when over max
 			if ( ent->health > client->ps.stats[STAT_MAX_HEALTH] ) {
 				ent->health--;
+			}
+			if ( (g_gametype.integer == GT_ELIMINATION || g_gametype.integer == GT_CTF_ELIMINATION || g_gametype.integer == GT_LMS) && level.humansEliminated ) {
+				ent->damage=5;
+				G_Damage (ent, NULL, NULL, NULL, NULL, ent->damage, DAMAGE_NO_KNOCKBACK, MOD_UNKNOWN);
+			}
+			//Start killing players in LMS, if we are in overtime
+			else if (g_elimination_roundtime.integer&&g_gametype.integer==GT_LMS && TeamHealthCount( -1, TEAM_FREE ) != ent->health &&
+			         (level.roundNumber==level.roundNumberStarted)&&(level.time>=level.roundStartTime+1000*g_elimination_roundtime.integer)) {
+				ent->damage=5;
+				G_Damage (ent, NULL, NULL, NULL, NULL, ent->damage, DAMAGE_NO_ARMOR, MOD_UNKNOWN);
+			}
+			else if ( ent->health < client->ps.stats[STAT_MAX_HEALTH] ) {
+				ent->health+=g_regen.integer;
+				if (ent->health>client->ps.stats[STAT_MAX_HEALTH]) {
+					ent->health= client->ps.stats[STAT_MAX_HEALTH];
+				}
 			}
 		}
 
@@ -455,45 +474,48 @@ void ClientTimerActions( gentity_t *ent, int msec ) {
 		if ( client->ps.stats[STAT_ARMOR] > client->ps.stats[STAT_MAX_HEALTH] ) {
 			client->ps.stats[STAT_ARMOR]--;
 		}
+		
+		if (g_gametype.integer == GT_POSSESSION && ent->health > 0 && client->ps.powerups[PW_NEUTRALFLAG] ) {
+			AddScore(ent, ent->client->ps.origin, 1);
+			G_LogPrintf("POS: %i %i: %s^7 scored a point\n", ent->s.number, 1, client->pers.netname);
+		}
 	}
-#ifdef MISSIONPACK
 	if( bg_itemlist[client->ps.stats[STAT_PERSISTANT_POWERUP]].giTag == PW_AMMOREGEN ) {
 		int w, max, inc, t, i;
-    int weapList[]={WP_MACHINEGUN,WP_SHOTGUN,WP_GRENADE_LAUNCHER,WP_ROCKET_LAUNCHER,WP_LIGHTNING,WP_RAILGUN,WP_PLASMAGUN,WP_BFG,WP_NAILGUN,WP_PROX_LAUNCHER,WP_CHAINGUN};
-    int weapCount = ARRAY_LEN( weapList );
-		//
-    for (i = 0; i < weapCount; i++) {
-		  w = weapList[i];
+		int weapList[]={WP_MACHINEGUN,WP_SHOTGUN,WP_GRENADE_LAUNCHER,WP_ROCKET_LAUNCHER,WP_LIGHTNING,WP_RAILGUN,WP_PLASMAGUN,WP_BFG,WP_NAILGUN,WP_PROX_LAUNCHER,WP_CHAINGUN};
+		int weapCount = sizeof(weapList) / sizeof(int);
+			//
+		for (i = 0; i < weapCount; i++) {
+			w = weapList[i];
 
-		  switch(w) {
-			  case WP_MACHINEGUN: max = 50; inc = 4; t = 1000; break;
-			  case WP_SHOTGUN: max = 10; inc = 1; t = 1500; break;
-			  case WP_GRENADE_LAUNCHER: max = 10; inc = 1; t = 2000; break;
-			  case WP_ROCKET_LAUNCHER: max = 10; inc = 1; t = 1750; break;
-			  case WP_LIGHTNING: max = 50; inc = 5; t = 1500; break;
-			  case WP_RAILGUN: max = 10; inc = 1; t = 1750; break;
-			  case WP_PLASMAGUN: max = 50; inc = 5; t = 1500; break;
-			  case WP_BFG: max = 10; inc = 1; t = 4000; break;
-			  case WP_NAILGUN: max = 10; inc = 1; t = 1250; break;
-			  case WP_PROX_LAUNCHER: max = 5; inc = 1; t = 2000; break;
-			  case WP_CHAINGUN: max = 100; inc = 5; t = 1000; break;
-			  default: max = 0; inc = 0; t = 1000; break;
-		  }
-		  client->ammoTimes[w] += msec;
-		  if ( client->ps.ammo[w] >= max ) {
-			  client->ammoTimes[w] = 0;
-		  }
-		  if ( client->ammoTimes[w] >= t ) {
-			  while ( client->ammoTimes[w] >= t )
-				  client->ammoTimes[w] -= t;
-			  client->ps.ammo[w] += inc;
-			  if ( client->ps.ammo[w] > max ) {
-				  client->ps.ammo[w] = max;
-			  }
-		  }
-    }
+			switch(w) {
+				case WP_MACHINEGUN: max = 50; inc = 4; t = 1000; break;
+				case WP_SHOTGUN: max = 10; inc = 1; t = 1500; break;
+				case WP_GRENADE_LAUNCHER: max = 10; inc = 1; t = 2000; break;
+				case WP_ROCKET_LAUNCHER: max = 10; inc = 1; t = 1750; break;
+				case WP_LIGHTNING: max = 50; inc = 5; t = 1500; break;
+				case WP_RAILGUN: max = 10; inc = 1; t = 1750; break;
+				case WP_PLASMAGUN: max = 50; inc = 5; t = 1500; break;
+				case WP_BFG: max = 10; inc = 1; t = 4000; break;
+				case WP_NAILGUN: max = 10; inc = 1; t = 1250; break;
+				case WP_PROX_LAUNCHER: max = 5; inc = 1; t = 2000; break;
+				case WP_CHAINGUN: max = 100; inc = 5; t = 1000; break;
+				default: max = 0; inc = 0; t = 1000; break;
+			}
+			client->ammoTimes[w] += msec;
+			if ( client->ps.ammo[w] >= max ) {
+				client->ammoTimes[w] = 0;
+			}
+			if ( client->ammoTimes[w] >= t ) {
+				while ( client->ammoTimes[w] >= t )
+					client->ammoTimes[w] -= t;
+				client->ps.ammo[w] += inc;
+				if ( client->ps.ammo[w] > max ) {
+					client->ps.ammo[w] = max;
+				}
+			}
+		}
 	}
-#endif
 }
 
 /*
@@ -506,6 +528,9 @@ void ClientIntermissionThink( gclient_t *client ) {
 	client->ps.eFlags &= ~EF_FIRING;
 
 	// the level will exit when everyone wants to or after timeouts
+
+	if( g_entities[client->ps.clientNum].r.svFlags & SVF_BOT )
+		return; //Bots cannot mark themself as ready
 
 	// swap and latch button actions
 	client->oldbuttons = client->buttons;
@@ -592,7 +617,6 @@ void ClientEvents( gentity_t *ent, int oldEventSequence ) {
 				ent->client->ps.powerups[ j ] = 0;
 			}
 
-#ifdef MISSIONPACK
 			if ( g_gametype.integer == GT_HARVESTER ) {
 				if ( ent->client->ps.generic1 > 0 ) {
 					if ( ent->client->sess.sessionTeam == TEAM_RED ) {
@@ -613,8 +637,7 @@ void ClientEvents( gentity_t *ent, int oldEventSequence ) {
 					ent->client->ps.generic1 = 0;
 				}
 			}
-#endif
-			SelectSpawnPoint( ent->client->ps.origin, origin, angles, qfalse );
+			SelectSpawnPoint( ent->client->ps.origin, origin, angles, 0 );
 			TeleportPlayer( ent, origin, angles );
 			break;
 
@@ -623,7 +646,6 @@ void ClientEvents( gentity_t *ent, int oldEventSequence ) {
 
 			break;
 
-#ifdef MISSIONPACK
 		case EV_USE_ITEM3:		// kamikaze
 			// make sure the invulnerability is off
 			ent->client->invulnerabilityTime = 0;
@@ -642,7 +664,6 @@ void ClientEvents( gentity_t *ent, int oldEventSequence ) {
 		case EV_USE_ITEM5:		// invulnerability
 			ent->client->invulnerabilityTime = level.time + 10000;
 			break;
-#endif
 
 		default:
 			break;
@@ -651,7 +672,6 @@ void ClientEvents( gentity_t *ent, int oldEventSequence ) {
 
 }
 
-#ifdef MISSIONPACK
 /*
 ==============
 StuckInOtherClient
@@ -692,7 +712,6 @@ static int StuckInOtherClient(gentity_t *ent) {
 	}
 	return qfalse;
 }
-#endif
 
 void BotTestSolid(vec3_t origin);
 
@@ -768,6 +787,118 @@ void ClientThink_real( gentity_t *ent ) {
 //		G_Printf("serverTime >>>>>\n" );
 	} 
 
+//Here comes the unlagged bit!
+//unlagged - backward reconciliation #4
+	// frameOffset should be about the number of milliseconds into a frame 
+	// this command packet was received, depending on how fast the server
+	// does a G_RunFrame()
+	client->frameOffset = trap_Milliseconds() - level.frameStartTime;
+//unlagged - backward reconciliation #4
+
+
+//unlagged - lag simulation #3
+	// if the client wants to simulate outgoing packet loss
+/*	if ( client->pers.plOut ) {
+		// see if a random value is below the threshhold
+		float thresh = (float)client->pers.plOut / 100.0f;
+		if ( random() < thresh ) {
+			// do nothing at all if it is - this is a lost command
+			return;
+		}
+	}*/
+//unlagged - lag simulation #3
+
+
+//unlagged - true ping
+	// save the estimated ping in a queue for averaging later
+
+	// we use level.previousTime to account for 50ms lag correction
+	// besides, this will turn out numbers more like what players are used to
+	client->pers.pingsamples[client->pers.samplehead] = level.previousTime + client->frameOffset - ucmd->serverTime;
+	client->pers.samplehead++;
+	if ( client->pers.samplehead >= NUM_PING_SAMPLES ) {
+		client->pers.samplehead -= NUM_PING_SAMPLES;
+	}
+
+	// initialize the real ping
+	if ( g_truePing.integer ) {
+		int i, sum = 0;
+
+		// get an average of the samples we saved up
+		for ( i = 0; i < NUM_PING_SAMPLES; i++ ) {
+			sum += client->pers.pingsamples[i];
+		}
+
+		client->pers.realPing = sum / NUM_PING_SAMPLES;
+	}
+	else {
+		// if g_truePing is off, use the normal ping
+		client->pers.realPing = client->ps.ping;
+	}
+//unlagged - true ping
+
+
+//unlagged - lag simulation #2
+	// keep a queue of past commands
+/*	client->pers.cmdqueue[client->pers.cmdhead] = client->pers.cmd;
+	client->pers.cmdhead++;
+	if ( client->pers.cmdhead >= MAX_LATENT_CMDS ) {
+		client->pers.cmdhead -= MAX_LATENT_CMDS;
+	}
+
+	// if the client wants latency in commands (client-to-server latency)
+	if ( client->pers.latentCmds ) {
+		// save the actual command time
+		int time = ucmd->serverTime;
+
+		// find out which index in the queue we want
+		int cmdindex = client->pers.cmdhead - client->pers.latentCmds - 1;
+		while ( cmdindex < 0 ) {
+			cmdindex += MAX_LATENT_CMDS;
+		}
+
+		// read in the old command
+		client->pers.cmd = client->pers.cmdqueue[cmdindex];
+
+		// adjust the real ping to reflect the new latency
+		client->pers.realPing += time - ucmd->serverTime;
+	}*/
+//unlagged - lag simulation #2
+
+
+//unlagged - backward reconciliation #4
+	// save the command time *before* pmove_fixed messes with the serverTime,
+	// and *after* lag simulation messes with it :)
+	// attackTime will be used for backward reconciliation later (time shift)
+	client->attackTime = ucmd->serverTime;
+//unlagged - backward reconciliation #4
+
+
+//unlagged - smooth clients #1
+	// keep track of this for later - we'll use this to decide whether or not
+	// to send extrapolated positions for this client
+	client->lastUpdateFrame = level.framenum;
+//unlagged - smooth clients #1
+
+
+//unlagged - lag simulation #1
+	// if the client is adding latency to received snapshots (server-to-client latency)
+	/*if ( client->pers.latentSnaps ) {
+		// adjust the real ping
+		client->pers.realPing += client->pers.latentSnaps * (1000 / sv_fps.integer);
+		// adjust the attack time so backward reconciliation will work
+		client->attackTime -= client->pers.latentSnaps * (1000 / sv_fps.integer);
+	}*/
+//unlagged - lag simulation #1
+
+
+//unlagged - true ping
+	// make sure the true ping is over 0 - with cl_timenudge it can be less
+	if ( client->pers.realPing < 0 ) {
+		client->pers.realPing = 0;
+	}
+//unlagged - true ping
+
 	msec = ucmd->serverTime - client->ps.commandTime;
 	// following others may result in bad times, but we still want
 	// to check for follow toggles
@@ -800,7 +931,7 @@ void ClientThink_real( gentity_t *ent ) {
 	}
 
 	// spectators don't do much
-	if ( client->sess.sessionTeam == TEAM_SPECTATOR ) {
+	if ( (client->sess.sessionTeam == TEAM_SPECTATOR) || client->isEliminated ) {
 		if ( client->sess.spectatorState == SPECTATOR_SCOREBOARD ) {
 			return;
 		}
@@ -826,17 +957,15 @@ void ClientThink_real( gentity_t *ent ) {
 		client->ps.pm_type = PM_NORMAL;
 	}
 
-	client->ps.gravity = g_gravity.value;
+	client->ps.gravity = g_gravity.value*g_gravityModifier.value;
 
 	// set speed
 	client->ps.speed = g_speed.value;
 
-#ifdef MISSIONPACK
 	if( bg_itemlist[client->ps.stats[STAT_PERSISTANT_POWERUP]].giTag == PW_SCOUT ) {
 		client->ps.speed *= 1.5;
 	}
 	else
-#endif
 	if ( client->ps.powerups[PW_HASTE] ) {
 		client->ps.speed *= 1.3;
 	}
@@ -864,7 +993,6 @@ void ClientThink_real( gentity_t *ent ) {
 		ent->client->pers.cmd.buttons |= BUTTON_GESTURE;
 	}
 
-#ifdef MISSIONPACK
 	// check for invulnerability expansion before doing the Pmove
 	if (client->ps.powerups[PW_INVULNERABILITY] ) {
 		if ( !(client->ps.pm_flags & PMF_INVULEXPAND) ) {
@@ -889,7 +1017,6 @@ void ClientThink_real( gentity_t *ent ) {
 			trap_LinkEntity(ent);
 		}
 	}
-#endif
 
 	pm.ps = &client->ps;
 	pm.cmd = *ucmd;
@@ -909,37 +1036,45 @@ void ClientThink_real( gentity_t *ent ) {
 
 	pm.pmove_fixed = pmove_fixed.integer | client->pers.pmoveFixed;
 	pm.pmove_msec = pmove_msec.integer;
+	pm.pmove_float = pmove_float.integer;
+	pm.pmove_flags = g_dmflags.integer;
 
 	VectorCopy( client->ps.origin, client->oldOrigin );
 
 #ifdef MISSIONPACK
-		if (level.intermissionQueued != 0 && g_singlePlayer.integer) {
-			if ( level.time - level.intermissionQueued >= 1000  ) {
-				pm.cmd.buttons = 0;
-				pm.cmd.forwardmove = 0;
-				pm.cmd.rightmove = 0;
-				pm.cmd.upmove = 0;
-				if ( level.time - level.intermissionQueued >= 2000 && level.time - level.intermissionQueued <= 2500 ) {
-					trap_SendConsoleCommand( EXEC_APPEND, "centerview\n");
-				}
-				ent->client->ps.pm_type = PM_SPINTERMISSION;
+	if (level.intermissionQueued != 0 && g_singlePlayer.integer) {
+		if ( level.time - level.intermissionQueued >= 1000  ) {
+			pm.cmd.buttons = 0;
+			pm.cmd.forwardmove = 0;
+			pm.cmd.rightmove = 0;
+			pm.cmd.upmove = 0;
+			if ( level.time - level.intermissionQueued >= 2000 && level.time - level.intermissionQueued <= 2500 ) {
+				trap_SendConsoleCommand( EXEC_APPEND, "centerview\n");
 			}
+			ent->client->ps.pm_type = PM_SPINTERMISSION;
 		}
-		Pmove (&pm);
-#else
-		Pmove (&pm);
+	}
 #endif
+	Pmove (&pm);
 
 	// save results of pmove
 	if ( ent->client->ps.eventSequence != oldEventSequence ) {
 		ent->eventTime = level.time;
 	}
+//unlagged - smooth clients #2
+	// clients no longer do extrapolation if cg_smoothClients is 1, because
+	// skip correction is all handled server-side now
+	// since that's the case, it makes no sense to store the extra info
+	// in the client's snapshot entity, so let's save a little bandwidth
+/*
 	if (g_smoothClients.integer) {
 		BG_PlayerStateToEntityStateExtraPolate( &ent->client->ps, &ent->s, ent->client->ps.commandTime, qtrue );
 	}
 	else {
+*/
 		BG_PlayerStateToEntityState( &ent->client->ps, &ent->s, qtrue );
-	}
+//	}
+//unlagged - smooth clients #2
 	SendPendingPredictableEvents( &ent->client->ps );
 
 	if ( !( ent->client->ps.eFlags & EF_FIRING ) ) {
@@ -986,22 +1121,30 @@ void ClientThink_real( gentity_t *ent ) {
 	// check for respawning
 	if ( client->ps.stats[STAT_HEALTH] <= 0 ) {
 		// wait for the attack button to be pressed
-		if ( level.time > client->respawnTime ) {
-			// forcerespawn is to prevent users from waiting out powerups
-			if ( g_forcerespawn.integer > 0 && 
-				( level.time - client->respawnTime ) > g_forcerespawn.integer * 1000 ) {
-				ClientRespawn( ent );
-				return;
-			}
-		
-			// pressing attack or use is the normal respawn method
-			if ( ucmd->buttons & ( BUTTON_ATTACK | BUTTON_USE_HOLDABLE ) ) {
-				ClientRespawn( ent );
-			}
+		// forcerespawn is to prevent users from waiting out powerups
+		// In Last man standing, we force a quick respawn, since
+		// the player must be able to loose health
+		// pressing attack or use is the normal respawn method
+		if ( ( level.time > client->respawnTime ) &&
+			( ( ( g_forcerespawn.integer > 0 ) && 
+			( level.time - client->respawnTime  > g_forcerespawn.integer * 1000 ) ) ||
+			( ( ( g_gametype.integer == GT_LMS ) ||
+			( g_gametype.integer == GT_ELIMINATION ) ||
+			( g_gametype.integer == GT_CTF_ELIMINATION ) ) &&
+			( level.time - client->respawnTime > 0 ) ) ||	
+			( ucmd->buttons & ( BUTTON_ATTACK | BUTTON_USE_HOLDABLE ) ) ) ) {
+
+			ClientRespawn( ent );
 		}
 		return;
 	}
 
+        if ( g_awardpushing.integer < 2 && pm.waterlevel <= 1 && pm.ps->groundEntityNum!=ENTITYNUM_NONE && client->lastSentFlyingTime+500>level.time) {
+			if ( ! (pm.ps->pm_flags & PMF_TIME_KNOCKBACK) ) {
+				client->lastSentFlying = -1;
+			}
+	}
+        
 	// perform once-a-second actions
 	ClientTimerActions( ent, msec );
 }
@@ -1019,9 +1162,10 @@ void ClientThink( int clientNum ) {
 	ent = g_entities + clientNum;
 	trap_GetUsercmd( clientNum, &ent->client->pers.cmd );
 
+	//Unlagged: commented out
 	// mark the time we got info, so we can display the
 	// phone jack if they don't get any for a while
-	ent->client->lastCmdTime = level.time;
+	//ent->client->lastCmdTime = level.time;
 
 	if ( !(ent->r.svFlags & SVF_BOT) && !g_synchronousClients.integer ) {
 		ClientThink_real( ent );
@@ -1046,6 +1190,7 @@ SpectatorClientEndFrame
 */
 void SpectatorClientEndFrame( gentity_t *ent ) {
 	gclient_t	*cl;
+	int i, preservedScore[MAX_PERSISTANT]; //for keeping in elimination
 
 	// if we are doing a chase cam or a remote view, grab the latest info
 	if ( ent->client->sess.spectatorState == SPECTATOR_FOLLOW ) {
@@ -1063,7 +1208,16 @@ void SpectatorClientEndFrame( gentity_t *ent ) {
 			cl = &level.clients[ clientNum ];
 			if ( cl->pers.connected == CON_CONNECTED && cl->sess.sessionTeam != TEAM_SPECTATOR ) {
 				flags = (cl->ps.eFlags & ~(EF_VOTED | EF_TEAMVOTED)) | (ent->client->ps.eFlags & (EF_VOTED | EF_TEAMVOTED));
-				ent->client->ps = cl->ps;
+				//this is here LMS/Elimination goes wrong with player follow
+				if(ent->client->sess.sessionTeam!=TEAM_SPECTATOR){
+					for(i = 0; i < MAX_PERSISTANT; i++)
+						preservedScore[i] = ent->client->ps.persistant[i];
+					ent->client->ps = cl->ps;
+					for(i = 0; i < MAX_PERSISTANT; i++)
+						ent->client->ps.persistant[i] = preservedScore[i];
+				}
+				else
+					ent->client->ps = cl->ps;
 				ent->client->ps.pm_flags |= PMF_FOLLOW;
 				ent->client->ps.eFlags = flags;
 				return;
@@ -1075,6 +1229,9 @@ void SpectatorClientEndFrame( gentity_t *ent ) {
 				}
 			}
 		}
+	
+		
+			
 	}
 
 	if ( ent->client->sess.spectatorState == SPECTATOR_SCOREBOARD ) {
@@ -1096,7 +1253,11 @@ while a slow client may have multiple ClientEndFrame between ClientThink.
 void ClientEndFrame( gentity_t *ent ) {
 	int			i;
 
-	if ( ent->client->sess.sessionTeam == TEAM_SPECTATOR ) {
+//unlagged - smooth clients #1
+	int frames;
+//unlagged - smooth clients #1
+
+	if ( (ent->client->sess.sessionTeam == TEAM_SPECTATOR) || ent->client->isEliminated ) {
 		SpectatorClientEndFrame( ent );
 		return;
 	}
@@ -1108,7 +1269,6 @@ void ClientEndFrame( gentity_t *ent ) {
 		}
 	}
 
-#ifdef MISSIONPACK
 	// set powerup for player animation
 	if( bg_itemlist[ent->client->ps.stats[STAT_PERSISTANT_POWERUP]].giTag == PW_GUARD ) {
 		ent->client->ps.powerups[PW_GUARD] = level.time;
@@ -1125,7 +1285,6 @@ void ClientEndFrame( gentity_t *ent ) {
 	if ( ent->client->invulnerabilityTime > level.time ) {
 		ent->client->ps.powerups[PW_INVULNERABILITY] = level.time;
 	}
-#endif
 
 	// save network bandwidth
 #if 0
@@ -1149,25 +1308,57 @@ void ClientEndFrame( gentity_t *ent ) {
 	// apply all the damage taken this frame
 	P_DamageFeedback (ent);
 
+	//Unlagged: Commented out
 	// add the EF_CONNECTION flag if we haven't gotten commands recently
-	if ( level.time - ent->client->lastCmdTime > 1000 ) {
-		ent->client->ps.eFlags |= EF_CONNECTION;
+	/*if ( level.time - ent->client->lastCmdTime > 1000 ) {
+		ent->s.eFlags |= EF_CONNECTION;
 	} else {
-		ent->client->ps.eFlags &= ~EF_CONNECTION;
-	}
+		ent->s.eFlags &= ~EF_CONNECTION;
+	}*/
 
 	ent->client->ps.stats[STAT_HEALTH] = ent->health;	// FIXME: get rid of ent->health...
 
 	G_SetClientSound (ent);
 
+//Unlagged: Always do the else clause
 	// set the latest infor
-	if (g_smoothClients.integer) {
+/*	if (g_smoothClients.integer) {
 		BG_PlayerStateToEntityStateExtraPolate( &ent->client->ps, &ent->s, ent->client->ps.commandTime, qtrue );
 	}
-	else {
+	else { */
 		BG_PlayerStateToEntityState( &ent->client->ps, &ent->s, qtrue );
-	}
+//	}
 	SendPendingPredictableEvents( &ent->client->ps );
+
+//unlagged - smooth clients #1
+	// mark as not missing updates initially
+	ent->client->ps.eFlags &= ~EF_CONNECTION;
+
+	// see how many frames the client has missed
+	frames = level.framenum - ent->client->lastUpdateFrame - 1;
+
+	// don't extrapolate more than two frames
+	if ( frames > 2 ) {
+		frames = 2;
+
+		// if they missed more than two in a row, show the phone jack
+		ent->client->ps.eFlags |= EF_CONNECTION;
+		ent->s.eFlags |= EF_CONNECTION;
+	}
+
+	// did the client miss any frames?
+	if ( frames > 0 && g_smoothClients.integer ) {
+		// yep, missed one or more, so extrapolate the player's movement
+		G_PredictPlayerMove( ent, (float)frames / sv_fps.integer );
+		// save network bandwidth
+		SnapVector( ent->s.pos.trBase );
+	}
+//unlagged - smooth clients #1
+
+//unlagged - backward reconciliation #1
+	// store the client's position for backward reconciliation later
+	G_StoreHistory( ent );
+//unlagged - backward reconciliation #1
 
 	// set the bit for the reachability area the client is currently in
 //	i = trap_AAS_PointReachabilityAreaIndex( ent->client->ps.origin );

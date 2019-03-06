@@ -244,7 +244,7 @@ static void R_SetupEntityLightingGrid( trRefEntity_t *ent ) {
 	VectorScale( ent->ambientLight, r_ambientScale->value, ent->ambientLight );
 	VectorScale( ent->directedLight, r_directedScale->value, ent->directedLight );
 
-	FastVectorNormalize2( direction, ent->lightDir );
+	VectorNormalize2( direction, ent->lightDir );
 }
 
 
@@ -335,25 +335,13 @@ void R_SetupEntityLighting( const trRefdef_t *refdef, trRefEntity_t *ent ) {
 	//
 	// modify the light by dynamic lights
 	//
-	d = VectorLength( ent->directedLight );
+	d = VectorLen( ent->directedLight );
 	VectorScale( ent->lightDir, d, lightDir );
 
 	for ( i = 0 ; i < refdef->num_dlights ; i++ ) {
 		dl = &refdef->dlights[i];
 		VectorSubtract( dl->origin, lightOrigin, dir );
-		
-        //d = VectorLength(dir); 
-        //FastVectorNormalize( dir );
-        d = dir[0]*dir[0] + dir[1]*dir[1] + dir[2]*dir[2];
-        if(d != 0)
-        {
-            float invLen = 1.0f / sqrtf(d);
-
-	        dir[0] *= invLen;
-	        dir[1] *= invLen;
-	        dir[2] *= invLen;
-            d *=  invLen;
-        }
+		d = VectorNormalize( dir );
 
 		power = DLIGHT_AT_RADIUS * ( dl->radius * dl->radius );
 		if ( d < DLIGHT_MINIMUM_RADIUS ) {
@@ -377,13 +365,13 @@ void R_SetupEntityLighting( const trRefdef_t *refdef, trRefEntity_t *ent ) {
 	}
 
 	// save out the byte packet version
-	((byte *)&ent->ambientLightInt)[0] = (unsigned char)(ent->ambientLight[0]);
-	((byte *)&ent->ambientLightInt)[1] = (unsigned char)(ent->ambientLight[1]);
-	((byte *)&ent->ambientLightInt)[2] = (unsigned char)(ent->ambientLight[2]);
-	((byte *)&ent->ambientLightInt)[3] = 0xff;
+    ent->ambientLightRGBA[0] = (unsigned char)ent->ambientLight[0];
+    ent->ambientLightRGBA[1] = (unsigned char)ent->ambientLight[1];
+    ent->ambientLightRGBA[2] = (unsigned char)ent->ambientLight[2];
+    ent->ambientLightRGBA[3] = 255;
 	
 	// transform the direction to local space
-	FastVectorNormalize( lightDir );
+	VectorNormalize( lightDir );
 	ent->lightDir[0] = DotProduct( lightDir, ent->e.axis[0] );
 	ent->lightDir[1] = DotProduct( lightDir, ent->e.axis[1] );
 	ent->lightDir[2] = DotProduct( lightDir, ent->e.axis[2] );

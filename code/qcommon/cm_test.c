@@ -137,6 +137,43 @@ CM_BoxLeafnums
 Fills in a list of all the leafs touched
 =============
 */
+
+inline static int boxOnPlaneSide(vec3_t emins, vec3_t emaxs, struct cplane_s *p)
+{
+	float	dist[2];
+	int		sides, b, i;
+
+	// fast axial cases
+	if (p->type < 3)
+	{
+		if (p->dist <= emins[p->type])
+			return 1;
+		if (p->dist >= emaxs[p->type])
+			return 2;
+		return 3;
+	}
+
+	// general case
+	dist[0] = dist[1] = 0;
+	if (p->signbits < 8) // >= 8: default case is original code (dist[0]=dist[1]=0)
+	{
+		for (i=0 ; i<3 ; i++)
+		{
+			b = (p->signbits >> i) & 1;
+			dist[ b] += p->normal[i]*emaxs[i];
+			dist[!b] += p->normal[i]*emins[i];
+		}
+	}
+
+	sides = 0;
+	if (dist[0] >= p->dist)
+		sides = 1;
+	if (dist[1] < p->dist)
+		sides |= 2;
+
+	return sides;
+}
+
 void CM_BoxLeafnums_r( leafList_t *ll, int nodenum ) {
 	cplane_t	*plane;
 	cNode_t		*node;
@@ -150,7 +187,7 @@ void CM_BoxLeafnums_r( leafList_t *ll, int nodenum ) {
 	
 		node = &cm.nodes[nodenum];
 		plane = node->plane;
-		s = BoxOnPlaneSide( ll->bounds[0], ll->bounds[1], plane );
+		s = boxOnPlaneSide( ll->bounds[0], ll->bounds[1], plane );
 		if (s == 1) {
 			nodenum = node->children[0];
 		} else if (s == 2) {

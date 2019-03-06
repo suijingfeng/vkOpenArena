@@ -500,8 +500,11 @@ static void SV_BuildClientSnapshot( client_t *client ) {
 
 	// now that all viewpoint's areabits have been OR'd together, invert
 	// all of them to make it a mask vector, which is what the renderer wants
-	for ( i = 0 ; i < MAX_MAP_AREA_BYTES/4 ; i++ ) {
-		((int *)frame->areabits)[i] = ((int *)frame->areabits)[i] ^ -1;
+	for (i = 0 ; i < MAX_MAP_AREA_BYTES; i++)
+	{
+		//((int *)frame->areabits)[i] = ((int *)frame->areabits)[i] ^ -1;
+		(frame->areabits)[i] = (frame->areabits)[i] ^ 0xFF;
+
 	}
 
 	// copy the entity states out

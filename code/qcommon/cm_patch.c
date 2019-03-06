@@ -35,8 +35,8 @@ void CM_DrawDebugSurface( void (*drawPoly)(int color, int numPoints, flaot *poin
 
 
 WARNING: this may misbehave with meshes that have rows or columns that only
-degenerate a few triangles. 
-Completely degenerate rows and columns are handled properly.
+degenerate a few triangles.  Completely degenerate rows and columns are handled
+properly.
 */
 
 /*
@@ -80,7 +80,6 @@ typedef struct {
 #define	WRAP_POINT_EPSILON	0.1
 */
 
-
 int	c_totalPatchBlocks;
 int	c_totalPatchSurfaces;
 int	c_totalPatchEdges;
@@ -117,7 +116,6 @@ static int CM_SignbitsForNormal( vec3_t normal ) {
 	return bits;
 }
 
-
 /*
 =====================
 CM_PlaneFromPoints
@@ -126,27 +124,18 @@ Returns false if the triangle is degenrate.
 The normal will point out of the clock for clockwise ordered points
 =====================
 */
-static qboolean CM_PlaneFromPoints( vec4_t plane, vec3_t a, vec3_t b, vec3_t c )
-{
+static qboolean CM_PlaneFromPoints( vec4_t plane, vec3_t a, vec3_t b, vec3_t c ) {
 	vec3_t	d1, d2;
 
 	VectorSubtract( b, a, d1 );
 	VectorSubtract( c, a, d2 );
 	CrossProduct( d2, d1, plane );
-
-	float length = plane[0]*plane[0] + plane[1]*plane[1] + plane[2]*plane[2];
-	if ( length != 0)
-    {
-		float invLen = 1.0f / sqrtf(length);
-		plane[0] *= invLen;
-		plane[1] *= invLen;
-		plane[2] *= invLen;
-	    plane[3] = DotProduct( a, plane );
-
-        return qtrue;
+	if ( VectorNormalize( plane ) == 0 ) {
+		return qfalse;
 	}
 
-	return qfalse;
+	plane[3] = DotProduct( a, plane );
+	return qtrue;
 }
 
 
@@ -166,11 +155,11 @@ Returns true if the given quadratic curve is not flat enough for our
 collision detection purposes
 =================
 */
-static qboolean	CM_NeedsSubdivision( vec3_t a, vec3_t b, vec3_t c )
-{
+static qboolean	CM_NeedsSubdivision( vec3_t a, vec3_t b, vec3_t c ) {
 	vec3_t		cmid;
 	vec3_t		lmid;
 	vec3_t		delta;
+	float		dist;
 	int			i;
 
 	// calculate the linear midpoint
@@ -185,7 +174,7 @@ static qboolean	CM_NeedsSubdivision( vec3_t a, vec3_t b, vec3_t c )
 
 	// see if the curve is far enough away from the linear mid
 	VectorSubtract( cmid, lmid, delta );
-	float dist = sqrtf(delta[0]*delta[0] + delta[1]*delta[1] + delta[2]*delta[2]);
+	dist = VectorLength( delta );
 	
 	return dist >= SUBDIVIDE_DISTANCE;
 }
@@ -365,9 +354,10 @@ CM_ComparePoints
 ======================
 */
 #define	POINT_EPSILON	0.1
-static qboolean CM_ComparePoints( float *a, float *b )
-{
-	float d = a[0] - b[0];
+static qboolean CM_ComparePoints( float *a, float *b ) {
+	float		d;
+
+	d = a[0] - b[0];
 	if ( d < -POINT_EPSILON || d > POINT_EPSILON ) {
 		return qfalse;
 	}
@@ -438,8 +428,7 @@ static	facet_t			facets[MAX_FACETS];
 CM_PlaneEqual
 ==================
 */
-int CM_PlaneEqual(patchPlane_t *p, float plane[4], int *flipped)
-{
+int CM_PlaneEqual(patchPlane_t *p, float plane[4], int *flipped) {
 	float invplane[4];
 
 	if (
@@ -473,8 +462,7 @@ int CM_PlaneEqual(patchPlane_t *p, float plane[4], int *flipped)
 CM_SnapVector
 ==================
 */
-void CM_SnapVector(vec3_t normal)
-{
+void CM_SnapVector(vec3_t normal) {
 	int		i;
 
 	for (i=0 ; i<3 ; i++)
@@ -801,8 +789,7 @@ static qboolean CM_ValidateFacet( facet_t *facet ) {
 			return qfalse;
 		}
 		Vector4Copy( planes[ facet->borderPlanes[j] ].plane, plane );
-		if ( !facet->borderInward[j] )
-        {
+		if ( !facet->borderInward[j] ) {
 			VectorSubtract( vec3_origin, plane, plane );
 			plane[3] = -plane[3];
 		}
@@ -830,10 +817,6 @@ static qboolean CM_ValidateFacet( facet_t *facet ) {
 	}
 	return qtrue;		// winding is fine
 }
-
-
-
-
 
 /*
 ==================
@@ -913,7 +896,7 @@ void CM_AddFacetBevels( facet_t *facet ) {
 		k = (j+1)%w->numpoints;
 		VectorSubtract (w->p[j], w->p[k], vec);
 		//if it's a degenerate edge
-		if (CM_VectorNormalize(vec) < 0.5)
+		if (VectorNormalize (vec) < 0.5)
 			continue;
 		CM_SnapVector(vec);
 		for ( k = 0; k < 3 ; k++ )
@@ -931,7 +914,7 @@ void CM_AddFacetBevels( facet_t *facet ) {
 				VectorClear (vec2);
 				vec2[axis] = dir;
 				CrossProduct (vec, vec2, plane);
-				if (CM_VectorNormalize(plane) < 0.5)
+				if (VectorNormalize (plane) < 0.5)
 					continue;
 				plane[3] = DotProduct (w->p[j], plane);
 
@@ -1189,7 +1172,7 @@ collision detection with a patch mesh.
 Points is packed as concatenated rows.
 ===================
 */
-struct patchCollide_s	*CM_GeneratePatchCollide( int width, int height, vec3_t *points ) {
+struct patchCollide_s* CM_GeneratePatchCollide( int width, int height, vec3_t *points ) {
 	patchCollide_t	*pf;
 	cGrid_t			grid;
 	int				i, j;
@@ -1233,10 +1216,37 @@ struct patchCollide_s	*CM_GeneratePatchCollide( int width, int height, vec3_t *p
 	// the aproximate surface defined by these points will be
 	// collided against
 	pf = Hunk_Alloc( sizeof( *pf ), h_high );
-	ClearBounds( pf->bounds[0], pf->bounds[1] );
-	for ( i = 0 ; i < grid.width ; i++ ) {
-		for ( j = 0 ; j < grid.height ; j++ ) {
-			AddPointToBounds( grid.points[i][j], pf->bounds[0], pf->bounds[1] );
+	
+	pf->bounds[0][0] = pf->bounds[0][1] = pf->bounds[0][2] = 99999;
+	pf->bounds[1][0] = pf->bounds[1][1] = pf->bounds[1][2] = -99999;
+   
+
+    for ( i = 0 ; i < grid.width ; i++ )
+    {
+		for ( j = 0 ; j < grid.height ; j++ )
+        {
+
+            const float *v = grid.points[i][j];
+    	    if ( v[0] < pf->bounds[0][0] ) {
+    	    	pf->bounds[0][0] = v[0];
+    	    }
+        	if ( v[0] > pf->bounds[1][0]) {
+	         	pf->bounds[1][0] = v[0];
+        	}
+
+        	if ( v[1] < pf->bounds[0][1] ) {
+        		pf->bounds[0][1] = v[1];
+    	    }
+    	    if ( v[1] > pf->bounds[1][1]) {
+    	    	pf->bounds[1][1] = v[1];
+    	    }
+
+        	if ( v[2] < pf->bounds[0][2] ) {
+        		pf->bounds[0][2] = v[2];
+        	}
+        	if ( v[2] > pf->bounds[1][2]) {
+	         	pf->bounds[1][2] = v[2];
+        	}
 		}
 	}
 

@@ -1,0 +1,14 @@
+id software still uses the same coordinate system from 1992 Wolfenstein 3D (as of Doom3 this was still true). It is important to know that if you try to read the renderer source code:
+
+With id's system:
+
+    X axis = Left/Right
+    Y axis = Forward/Backward
+    Z axis = Up/Down
+
+OpenGL's coordinate system:
+
+    X axis = Left/Right
+    Y axis = Up/Down
+    Z axis = Forward/Backward
+

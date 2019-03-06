@@ -35,12 +35,9 @@ R_RegisterMD3
 */
 qhandle_t R_RegisterMD3(const char *name, model_t *mod)
 {
-	union {
-		unsigned *u;
-		void *v;
-	} buf;
+	
+	char* buf;
 	int			lod;
-	int			ident;
 	qboolean	loaded = qfalse;
 	int			numLoaded;
 	char filename[MAX_QPATH], namebuf[MAX_QPATH+20];
@@ -62,21 +59,25 @@ qhandle_t R_RegisterMD3(const char *name, model_t *mod)
 	for (lod = MD3_MAX_LODS - 1 ; lod >= 0 ; lod--)
 	{
 		if(lod)
-			Com_sprintf(namebuf, sizeof(namebuf), "%s_%d.%s", filename, lod, fext);
+			snprintf(namebuf, sizeof(namebuf), "%s_%d.%s", filename, lod, fext);
 		else
-			Com_sprintf(namebuf, sizeof(namebuf), "%s.%s", filename, fext);
+			snprintf(namebuf, sizeof(namebuf), "%s.%s", filename, fext);
 
-		ri.FS_ReadFile( namebuf, &buf.v );
-		if(!buf.u)
+		ri.R_ReadFile( namebuf, &buf );
+		if(!buf)
 			continue;
 		
-		ident = LittleLong(* (unsigned *) buf.u);
+#if defined( Q3_BIG_ENDIAN )		
+		int ident = LittleLong(*(int *)buf);
+#else
+		int ident = *(int *)buf;
+#endif
 		if (ident == MD3_IDENT)
-			loaded = R_LoadMD3(mod, lod, buf.u, name);
+			loaded = R_LoadMD3(mod, lod, buf, name);
 		else
-			ri.Printf(PRINT_WARNING,"R_RegisterMD3: unknown fileid for %s\n", name);
+			ri.Printf(PRINT_WARNING, "R_RegisterMD3: unknown fileid for %s\n", name);
 		
-		ri.FS_FreeFile(buf.v);
+		ri.FS_FreeFile(buf);
 
 		if(loaded)
 		{
@@ -115,26 +116,29 @@ R_RegisterMDR
 */
 qhandle_t R_RegisterMDR(const char *name, model_t *mod)
 {
-	union {
-		unsigned *u;
-		void *v;
-	} buf;
-	int	ident;
-	qboolean loaded = qfalse;
-	int filesize;
+	
+	char* buf;
 
-	filesize = ri.FS_ReadFile(name, (void **) &buf.v);
-	if(!buf.u)
+	qboolean loaded = qfalse;
+	int filesize = ri.R_ReadFile(name, &buf);
+	if(!buf)
 	{
 		mod->type = MOD_BAD;
 		return 0;
 	}
 	
-	ident = LittleLong(*(unsigned *)buf.u);
-	if(ident == MDR_IDENT)
-		loaded = R_LoadMDR(mod, buf.u, filesize, name);
 
-	ri.FS_FreeFile (buf.v);
+#if defined( Q3_BIG_ENDIAN )		
+	int ident = LittleLong(*(int *)buf);
+#else
+	int ident = *(int *)buf;
+#endif	
+
+	
+	if(ident == MDR_IDENT)
+		loaded = R_LoadMDR(mod, buf, filesize, name);
+
+	ri.FS_FreeFile(buf);
 	
 	if(!loaded)
 	{
@@ -153,23 +157,21 @@ R_RegisterIQM
 */
 qhandle_t R_RegisterIQM(const char *name, model_t *mod)
 {
-	union {
-		unsigned *u;
-		void *v;
-	} buf;
+	char* buf;
+	
 	qboolean loaded = qfalse;
 	int filesize;
 
-	filesize = ri.FS_ReadFile(name, (void **) &buf.v);
-	if(!buf.u)
+	filesize = ri.R_ReadFile(name, &buf);
+	if(!buf)
 	{
 		mod->type = MOD_BAD;
 		return 0;
 	}
 	
-	loaded = R_LoadIQM(mod, buf.u, filesize, name);
+	loaded = R_LoadIQM(mod, buf, filesize, name);
 
-	ri.FS_FreeFile (buf.v);
+	ri.FS_FreeFile (buf);
 	
 	if(!loaded)
 	{
@@ -303,7 +305,7 @@ qhandle_t RE_RegisterModel( const char *name ) {
 	//
 	Q_strncpyz( localName, name, MAX_QPATH );
 
-	ext = getExtension( localName );
+	ext = COM_GetExtension( localName );
 
 	if( *ext )
 	{
@@ -344,7 +346,7 @@ qhandle_t RE_RegisterModel( const char *name ) {
 		if (i == orgLoader)
 			continue;
 
-		Com_sprintf( altName, sizeof (altName), "%s.%s", localName, modelLoaders[ i ].ext );
+		snprintf( altName, sizeof (altName), "%s.%s", localName, modelLoaders[ i ].ext );
 
 		// Load
 		hModel = modelLoaders[ i ].ModelLoader( altName, mod );
@@ -527,6 +529,127 @@ static qboolean R_LoadMD3 (model_t *mod, int lod, void *buffer, const char *mod_
 
 
 /*
+=============================================================
+
+UNCOMPRESSING BONES
+
+=============================================================
+*/
+
+#define MC_BITS_X (16)
+#define MC_BITS_Y (16)
+#define MC_BITS_Z (16)
+#define MC_BITS_VECT (16)
+
+#define MC_SCALE_X (1.0f/64)
+#define MC_SCALE_Y (1.0f/64)
+#define MC_SCALE_Z (1.0f/64)
+
+#define MC_MASK_X ((1<<(MC_BITS_X))-1)
+#define MC_MASK_Y ((1<<(MC_BITS_Y))-1)
+#define MC_MASK_Z ((1<<(MC_BITS_Z))-1)
+#define MC_MASK_VECT ((1<<(MC_BITS_VECT))-1)
+
+#define MC_SCALE_VECT (1.0f/(float)((1<<(MC_BITS_VECT-1))-2))
+
+#define MC_POS_X (0)
+#define MC_SHIFT_X (0)
+
+#define MC_POS_Y ((((MC_BITS_X))/8))
+#define MC_SHIFT_Y ((((MC_BITS_X)%8)))
+
+#define MC_POS_Z ((((MC_BITS_X+MC_BITS_Y))/8))
+#define MC_SHIFT_Z ((((MC_BITS_X+MC_BITS_Y)%8)))
+
+#define MC_POS_V11 ((((MC_BITS_X+MC_BITS_Y+MC_BITS_Z))/8))
+#define MC_SHIFT_V11 ((((MC_BITS_X+MC_BITS_Y+MC_BITS_Z)%8)))
+
+#define MC_POS_V12 ((((MC_BITS_X+MC_BITS_Y+MC_BITS_Z+MC_BITS_VECT))/8))
+#define MC_SHIFT_V12 ((((MC_BITS_X+MC_BITS_Y+MC_BITS_Z+MC_BITS_VECT)%8)))
+
+#define MC_POS_V13 ((((MC_BITS_X+MC_BITS_Y+MC_BITS_Z+MC_BITS_VECT*2))/8))
+#define MC_SHIFT_V13 ((((MC_BITS_X+MC_BITS_Y+MC_BITS_Z+MC_BITS_VECT*2)%8)))
+
+#define MC_POS_V21 ((((MC_BITS_X+MC_BITS_Y+MC_BITS_Z+MC_BITS_VECT*3))/8))
+#define MC_SHIFT_V21 ((((MC_BITS_X+MC_BITS_Y+MC_BITS_Z+MC_BITS_VECT*3)%8)))
+
+#define MC_POS_V22 ((((MC_BITS_X+MC_BITS_Y+MC_BITS_Z+MC_BITS_VECT*4))/8))
+#define MC_SHIFT_V22 ((((MC_BITS_X+MC_BITS_Y+MC_BITS_Z+MC_BITS_VECT*4)%8)))
+
+#define MC_POS_V23 ((((MC_BITS_X+MC_BITS_Y+MC_BITS_Z+MC_BITS_VECT*5))/8))
+#define MC_SHIFT_V23 ((((MC_BITS_X+MC_BITS_Y+MC_BITS_Z+MC_BITS_VECT*5)%8)))
+
+#define MC_POS_V31 ((((MC_BITS_X+MC_BITS_Y+MC_BITS_Z+MC_BITS_VECT*6))/8))
+#define MC_SHIFT_V31 ((((MC_BITS_X+MC_BITS_Y+MC_BITS_Z+MC_BITS_VECT*6)%8)))
+
+#define MC_POS_V32 ((((MC_BITS_X+MC_BITS_Y+MC_BITS_Z+MC_BITS_VECT*7))/8))
+#define MC_SHIFT_V32 ((((MC_BITS_X+MC_BITS_Y+MC_BITS_Z+MC_BITS_VECT*7)%8)))
+
+#define MC_POS_V33 ((((MC_BITS_X+MC_BITS_Y+MC_BITS_Z+MC_BITS_VECT*8))/8))
+#define MC_SHIFT_V33 ((((MC_BITS_X+MC_BITS_Y+MC_BITS_Z+MC_BITS_VECT*8)%8)))
+
+void MC_UnCompress(float mat[3][4], const unsigned char* comp)
+{
+	int val;
+
+	val=(int)((unsigned short *)(comp))[0];
+	val-=1<<(MC_BITS_X-1);
+	mat[0][3]=((float)(val))*MC_SCALE_X;
+
+	val=(int)((unsigned short *)(comp))[1];
+	val-=1<<(MC_BITS_Y-1);
+	mat[1][3]=((float)(val))*MC_SCALE_Y;
+
+	val=(int)((unsigned short *)(comp))[2];
+	val-=1<<(MC_BITS_Z-1);
+	mat[2][3]=((float)(val))*MC_SCALE_Z;
+
+	val=(int)((unsigned short *)(comp))[3];
+	val-=1<<(MC_BITS_VECT-1);
+	mat[0][0]=((float)(val))*MC_SCALE_VECT;
+
+	val=(int)((unsigned short *)(comp))[4];
+	val-=1<<(MC_BITS_VECT-1);
+	mat[0][1]=((float)(val))*MC_SCALE_VECT;
+
+	val=(int)((unsigned short *)(comp))[5];
+	val-=1<<(MC_BITS_VECT-1);
+	mat[0][2]=((float)(val))*MC_SCALE_VECT;
+
+
+	val=(int)((unsigned short *)(comp))[6];
+	val-=1<<(MC_BITS_VECT-1);
+	mat[1][0]=((float)(val))*MC_SCALE_VECT;
+
+	val=(int)((unsigned short *)(comp))[7];
+	val-=1<<(MC_BITS_VECT-1);
+	mat[1][1]=((float)(val))*MC_SCALE_VECT;
+
+	val=(int)((unsigned short *)(comp))[8];
+	val-=1<<(MC_BITS_VECT-1);
+	mat[1][2]=((float)(val))*MC_SCALE_VECT;
+
+
+	val=(int)((unsigned short *)(comp))[9];
+	val-=1<<(MC_BITS_VECT-1);
+	mat[2][0]=((float)(val))*MC_SCALE_VECT;
+
+	val=(int)((unsigned short *)(comp))[10];
+	val-=1<<(MC_BITS_VECT-1);
+	mat[2][1]=((float)(val))*MC_SCALE_VECT;
+
+	val=(int)((unsigned short *)(comp))[11];
+	val-=1<<(MC_BITS_VECT-1);
+	mat[2][2]=((float)(val))*MC_SCALE_VECT;
+}
+
+
+///////////////////////////////////////////////////////////////////////////////
+
+
+
+
+/*
 =================
 R_LoadMDR
 =================
@@ -633,6 +756,7 @@ static qboolean R_LoadMDR( model_t *mod, void *buffer, int filesize, const char 
 			
 			for(j = 0; j < mdr->numBones; j++)
 			{
+#if defined( Q3_BIG_ENDIAN )				
 				for(k = 0; k < (sizeof(cframe->bones[j].Comp) / 2); k++)
 				{
 					// Do swapping for the uncompressing functions. They seem to use shorts
@@ -642,14 +766,25 @@ static qboolean R_LoadMDR( model_t *mod, void *buffer, int filesize, const char 
 					((unsigned short *)(cframe->bones[j].Comp))[k] =
 						LittleShort( ((unsigned short *)(cframe->bones[j].Comp))[k] );
 				}
-				
+#endif				
 				/* Now do the actual uncompressing */
 				MC_UnCompress(frame->bones[j].matrix, cframe->bones[j].Comp);
 			}
 			
 			// Next Frame...
-			cframe = (mdrCompFrame_t *) &cframe->bones[j];
-			frame = (mdrFrame_t *) &frame->bones[j];
+			// cframe = (mdrCompFrame_t *) &cframe->bones[j];
+			// frame = (mdrFrame_t *) &frame->bones[j];
+            // this suppress GCC strict-aliasing warning 
+            {
+			    // Next Frame...
+                mdrCompBone_t *p = &(cframe->bones[j]);
+			    cframe = (mdrCompFrame_t *) p;
+            }
+
+            {
+                mdrBone_t *p = &frame->bones[j];
+                frame = (mdrFrame_t *) p;
+            }
 		}
 	}
 	else
@@ -674,13 +809,32 @@ static qboolean R_LoadMDR( model_t *mod, void *buffer, int filesize, const char 
 			frame->radius = LittleFloat(curframe->radius);
 			Q_strncpyz(frame->name, curframe->name, sizeof(frame->name));
 			
-			for (j = 0; j < (int) (mdr->numBones * sizeof(mdrBone_t) / 4); j++) 
+            // suppress GCC strict-aliasing warning 
+#if defined( Q3_BIG_ENDIAN )
+            for (j = 0; j < (int) (mdr->numBones * sizeof(mdrBone_t) / 4); j++) 
 			{
-				((float *)frame->bones)[j] = LittleFloat( ((float *)curframe->bones)[j] );
-			}
+			    ((float *)frame->bones)[j]=FloatSwap(&((float *)curframe->bones)[j]);
+            }
+#else
+            for (j = 0; j < mdr->numBones; j++) 
+			{
+                frame->bones[j] = curframe->bones[j];
+            }
+#endif		
 			
-			curframe = (mdrFrame_t *) &curframe->bones[mdr->numBones];
-			frame = (mdrFrame_t *) &frame->bones[mdr->numBones];
+			//curframe = (mdrFrame_t *) &curframe->bones[mdr->numBones];
+			//frame = (mdrFrame_t *) &frame->bones[mdr->numBones];
+            // suppress GCC strict-aliasing warning 
+            {
+			    mdrBone_t* p = &curframe->bones[mdr->numBones];
+                curframe = (mdrFrame_t *) p;
+            }
+
+            {
+                mdrBone_t* p = &frame->bones[mdr->numBones];
+                frame = (mdrFrame_t *) p;
+            }
+
 		}
 	}
 	
@@ -1044,8 +1198,7 @@ int R_LerpTag( orientation_t *tag, qhandle_t handle, int startFrame, int endFram
 	}
 
 	if ( !start || !end ) {
-		AxisClear( tag->axis );
-		VectorClear( tag->origin );
+        memset(tag, 0, sizeof(orientation_t));
 		return qfalse;
 	}
 
@@ -1058,9 +1211,9 @@ int R_LerpTag( orientation_t *tag, qhandle_t handle, int startFrame, int endFram
 		tag->axis[1][i] = start->axis[1][i] * backLerp +  end->axis[1][i] * frontLerp;
 		tag->axis[2][i] = start->axis[2][i] * backLerp +  end->axis[2][i] * frontLerp;
 	}
-	FastVectorNormalize( tag->axis[0] );
-	FastVectorNormalize( tag->axis[1] );
-	FastVectorNormalize( tag->axis[2] );
+	VectorNormalize( tag->axis[0] );
+	VectorNormalize( tag->axis[1] );
+	VectorNormalize( tag->axis[2] );
 	return qtrue;
 }
 

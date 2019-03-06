@@ -38,19 +38,18 @@ void QDECL Com_Error( int level, const char *error, ... ) {
 	Q_vsnprintf (text, sizeof(text), error, argptr);
 	va_end (argptr);
 
-	trap_Error( text );
+	trap_Error( va("%s", text) );
 }
 
-void QDECL Com_Printf( const char *msg, ... )
-{
+void QDECL Com_Printf( const char *msg, ... ) {
 	va_list		argptr;
-	char		text[4096];
+	char		text[1024];
 
 	va_start (argptr, msg);
 	Q_vsnprintf (text, sizeof(text), msg, argptr);
 	va_end (argptr);
 
-	trap_Print( text );
+	trap_Print( va("%s", text) );
 }
 
 /*
@@ -165,7 +164,7 @@ void UI_ForceMenuOff (void)
 UI_LerpColor
 =================
 */
-void UI_LerpColor(vec4_t a, vec4_t b, vec4_t c, float t)
+void UI_LerpColor(const vec4_t a, vec4_t b, vec4_t c, float t)
 {
 	int i;
 
@@ -331,6 +330,8 @@ static int propMapB[26][3] = {
 #define PROPB_SPACE_WIDTH	12
 #define PROPB_HEIGHT		36
 
+// bk001205 - code below duplicated in cgame/cg_drawtools.c
+// bk001205 - FIXME: does this belong in ui_shared.c?
 /*
 =================
 UI_DrawBannerString
@@ -339,7 +340,7 @@ UI_DrawBannerString
 static void UI_DrawBannerString2( int x, int y, const char* str, vec4_t color )
 {
 	const char* s;
-	unsigned char	ch;
+	unsigned char	ch; // bk001204 - unsigned
 	float	ax;
 	float	ay;
 	float	aw;
@@ -446,13 +447,13 @@ int UI_ProportionalStringWidth( const char* str ) {
 	return width;
 }
 
-static void UI_DrawProportionalString2( int x, int y, const char* str, vec4_t color, float sizeScale, qhandle_t charset )
+static void UI_DrawProportionalString2( int x, int y, const char* str, const vec4_t color, float sizeScale, qhandle_t charset )
 {
 	const char* s;
-	unsigned char	ch;
+	unsigned char	ch; // bk001204 - unsigned
 	float	ax;
 	float	ay;
-	float	aw = 0;
+	float	aw = 0; // bk001204 - init
 	float	ah;
 	float	frow;
 	float	fcol;
@@ -508,14 +509,16 @@ float UI_ProportionalSizeScale( int style ) {
 UI_DrawProportionalString
 =================
 */
-void UI_DrawProportionalString( int x, int y, const char* str, int style, vec4_t color ) {
+void UI_DrawProportionalString( int x, int y, const char* str, int style, const vec4_t color )
+{
 	vec4_t	drawcolor;
 	int		width;
 	float	sizeScale;
 
 	sizeScale = UI_ProportionalSizeScale( style );
 
-	switch( style & UI_FORMATMASK ) {
+	switch( style & UI_FORMATMASK )
+    {
 		case UI_CENTER:
 			width = UI_ProportionalStringWidth( str ) * sizeScale;
 			x -= width / 2;
@@ -531,7 +534,8 @@ void UI_DrawProportionalString( int x, int y, const char* str, int style, vec4_t
 			break;
 	}
 
-	if ( style & UI_DROPSHADOW ) {
+	if ( style & UI_DROPSHADOW )
+    {
 		drawcolor[0] = drawcolor[1] = drawcolor[2] = 0;
 		drawcolor[3] = color[3];
 		UI_DrawProportionalString2( x+2, y+2, str, drawcolor, sizeScale, uis.charsetProp );
@@ -633,7 +637,7 @@ void UI_DrawProportionalString_AutoWrapped( int x, int y, int xmax, int ystep, c
 UI_DrawString2
 =================
 */
-static void UI_DrawString2( int x, int y, const char* str, vec4_t color, int charw, int charh )
+static void UI_DrawString2( int x, int y, const char* str, const vec4_t color, int charw, int charh )
 {
 	const char* s;
 	char	ch;
@@ -693,14 +697,14 @@ static void UI_DrawString2( int x, int y, const char* str, vec4_t color, int cha
 UI_DrawString
 =================
 */
-void UI_DrawString( int x, int y, const char* str, int style, vec4_t color )
+void UI_DrawString( int x, int y, const char* str, int style, const vec4_t color )
 {
 	int		len;
 	int		charw;
 	int		charh;
 	vec4_t	newcolor;
 	vec4_t	lowlight;
-	float	*drawcolor;
+	const float* drawcolor;
 	vec4_t	dropcolor;
 
 	if( !str ) {
@@ -772,7 +776,7 @@ void UI_DrawString( int x, int y, const char* str, int style, vec4_t color )
 UI_DrawChar
 =================
 */
-void UI_DrawChar( int x, int y, int ch, int style, vec4_t color )
+void UI_DrawChar( int x, int y, int ch, int style, const vec4_t color )
 {
 	char	buff[2];
 
@@ -830,6 +834,7 @@ void UI_SetActiveMenu( uiMenuCommand_t menu ) {
 		UI_InGameMenu();
 		return;
 		
+	// bk001204
 	case UIMENU_TEAM:
 	case UIMENU_POSTGAME:
 	default:
@@ -1004,45 +1009,67 @@ qboolean UI_ConsoleCommand( int realTime ) {
 	// ensure minimum menu data is available
 	Menu_Cache();
 
-	if ( Q_stricmp (cmd, "levelselect") == 0 ) {
+	if ( Q_strequal(cmd, "levelselect") ) {
 		UI_SPLevelMenu_f();
 		return qtrue;
 	}
 
-	if ( Q_stricmp (cmd, "postgame") == 0 ) {
+	if ( Q_strequal(cmd, "postgame") ) {
 		UI_SPPostgameMenu_f();
 		return qtrue;
 	}
 
-	if ( Q_stricmp (cmd, "ui_cache") == 0 ) {
+	if ( Q_strequal(cmd, "ui_cache") ) {
 		UI_Cache_f();
 		return qtrue;
 	}
 
-	if ( Q_stricmp (cmd, "ui_cinematics") == 0 ) {
+	if ( Q_strequal(cmd, "ui_cinematics") ) {
 		UI_CinematicsMenu_f();
 		return qtrue;
 	}
 
-	if ( Q_stricmp (cmd, "ui_teamOrders") == 0 ) {
+	if ( Q_strequal(cmd, "ui_teamOrders") ) {
 		UI_TeamOrdersMenu_f();
 		return qtrue;
 	}
 
-	if ( Q_stricmp (cmd, "iamacheater") == 0 ) {
+	if ( Q_strequal(cmd, "iamacheater") ) {
 		UI_SPUnlock_f();
 		return qtrue;
 	}
 
-	if ( Q_stricmp (cmd, "iamamonkey") == 0 ) {
+	if ( Q_strequal(cmd, "iamamonkey") ) {
 		UI_SPUnlockMedals_f();
 		return qtrue;
 	}
 
-	if ( Q_stricmp (cmd, "ui_cdkey") == 0 ) {
+	if ( Q_strequal(cmd, "ui_cdkey") ) {
 		UI_CDKeyMenu_f();
 		return qtrue;
 	}
+
+        if ( Q_strequal(cmd, "ui_mappage") ) {
+		mappage.pagenumber = atoi(UI_Argv( 1 ));
+                Q_strncpyz(mappage.mapname[0],UI_Argv(2),32);
+                Q_strncpyz(mappage.mapname[1],UI_Argv(3),32);
+                Q_strncpyz(mappage.mapname[2],UI_Argv(4),32);
+                Q_strncpyz(mappage.mapname[3],UI_Argv(5),32);
+                Q_strncpyz(mappage.mapname[4],UI_Argv(6),32);
+                Q_strncpyz(mappage.mapname[5],UI_Argv(7),32);
+                Q_strncpyz(mappage.mapname[6],UI_Argv(8),32);
+                Q_strncpyz(mappage.mapname[7],UI_Argv(9),32);
+                Q_strncpyz(mappage.mapname[8],UI_Argv(10),32);
+                Q_strncpyz(mappage.mapname[9],UI_Argv(11),32);
+
+                UI_VoteMapMenuInternal();
+		return qtrue;
+	}
+        
+        if ( Q_strequal(cmd, "ui_writemappools") ) {
+            WriteMapList();
+            return qtrue;
+        }
 
 	return qfalse;
 }
@@ -1055,9 +1082,12 @@ UI_Shutdown
 void UI_Shutdown( void ) {
 }
 
-
-void UI_Init( void )
-{
+/*
+=================
+UI_Init
+=================
+*/
+void UI_Init( void ) {
 	UI_RegisterCvars();
 
 	UI_InitGameinfo();
@@ -1138,6 +1168,10 @@ void UI_DrawHandlePic( float x, float y, float w, float h, qhandle_t hShader ) {
 	trap_R_DrawStretchPic( x, y, w, h, s0, t0, s1, t1, hShader );
 }
 
+void UI_DrawBackgroundPic( qhandle_t hShader ) {
+	trap_R_DrawStretchPic( 0.0, 0.0, uis.glconfig.vidWidth, uis.glconfig.vidHeight, 0, 0, 1, 1, hShader );
+}
+
 /*
 ================
 UI_FillRect
@@ -1204,10 +1238,10 @@ void UI_Refresh( int realtime )
 		{
 			// draw the background
 			if( uis.activemenu->showlogo ) {
-				UI_DrawHandlePic( 0, 0, SCREEN_WIDTH, SCREEN_HEIGHT, uis.menuBackShader );
+				UI_DrawBackgroundPic( uis.menuBackShader );
 			}
 			else {
-				UI_DrawHandlePic( 0, 0, SCREEN_WIDTH, SCREEN_HEIGHT, uis.menuBackNoLogoShader );
+				UI_DrawBackgroundPic( uis.menuBackNoLogoShader );
 			}
 		}
 

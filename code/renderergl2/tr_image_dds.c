@@ -21,8 +21,9 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 ===========================================================================
 */
 
-#include "tr_local.h"
-
+#include "../renderercommon/tr_common.h"
+#include "../renderercommon/qgl.h"
+#include "../renderercommon/ref_import.h"
 typedef unsigned int   ui32_t;
 
 typedef struct ddsHeader_s
@@ -215,10 +216,8 @@ typedef enum DXGI_FORMAT {
 
 void R_LoadDDS ( const char *filename, byte **pic, int *width, int *height, GLenum *picFormat, int *numMips )
 {
-	union {
-		byte *b;
-		void *v;
-	} buffer;
+	
+	char* buffer;
 	int len;
 	ddsHeader_t *ddsHeader = NULL;
 	ddsHeaderDxt10_t *ddsHeaderDxt10 = NULL;
@@ -244,8 +243,8 @@ void R_LoadDDS ( const char *filename, byte **pic, int *width, int *height, GLen
 	//
 	// load the file
 	//
-	len = ri.FS_ReadFile( ( char * ) filename, &buffer.v);
-	if (!buffer.b || len < 0) {
+	len = ri.R_ReadFile( filename, &buffer);
+	if (!buffer || len < 0) {
 		return;
 	}
 
@@ -255,40 +254,40 @@ void R_LoadDDS ( const char *filename, byte **pic, int *width, int *height, GLen
 	if (len < 4 + sizeof(*ddsHeader))
 	{
 		ri.Printf(PRINT_ALL, "File %s is too small to be a DDS file.\n", filename);
-		ri.FS_FreeFile(buffer.v);
+		ri.FS_FreeFile(buffer);
 		return;
 	}
 
 	//
 	// reject files that don't start with "DDS "
 	//
-	if (*((ui32_t *)(buffer.b)) != EncodeFourCC("DDS "))
+	if (*((ui32_t *)(buffer)) != EncodeFourCC("DDS "))
 	{
 		ri.Printf(PRINT_ALL, "File %s is not a DDS file.\n", filename);
-		ri.FS_FreeFile(buffer.v);
+		ri.FS_FreeFile(buffer);
 		return;
 	}
 
 	//
 	// parse header and dx10 header if available
 	//
-	ddsHeader = (ddsHeader_t *)(buffer.b + 4);
+	ddsHeader = (ddsHeader_t *)(buffer + 4);
 	if ((ddsHeader->pixelFormatFlags & DDSPF_FOURCC) && ddsHeader->fourCC == EncodeFourCC("DX10"))
 	{
 		if (len < 4 + sizeof(*ddsHeader) + sizeof(*ddsHeaderDxt10))
 		{
 			ri.Printf(PRINT_ALL, "File %s indicates a DX10 header it is too small to contain.\n", filename);
-			ri.FS_FreeFile(buffer.v);
+			ri.FS_FreeFile(buffer);
 			return;
 		}
 
-		ddsHeaderDxt10 = (ddsHeaderDxt10_t *)(buffer.b + 4 + sizeof(ddsHeader_t));
-		data = buffer.b + 4 + sizeof(*ddsHeader) + sizeof(*ddsHeaderDxt10);
+		ddsHeaderDxt10 = (ddsHeaderDxt10_t *)(buffer + 4 + sizeof(ddsHeader_t));
+		data = (unsigned char*)buffer + 4 + sizeof(*ddsHeader) + sizeof(*ddsHeaderDxt10);
 		len -= 4 + sizeof(*ddsHeader) + sizeof(*ddsHeaderDxt10);
 	}
 	else
 	{
-		data = buffer.b + 4 + sizeof(*ddsHeader);
+		data = (unsigned char*)buffer + 4 + sizeof(*ddsHeader);
 		len -= 4 + sizeof(*ddsHeader);
 	}
 
@@ -391,7 +390,7 @@ void R_LoadDDS ( const char *filename, byte **pic, int *width, int *height, GLen
 
 			default:
 				ri.Printf(PRINT_ALL, "DDS File %s has unsupported DXGI format %d.", filename, ddsHeaderDxt10->dxgiFormat);
-				ri.FS_FreeFile(buffer.v);
+				ri.FS_FreeFile(buffer);
 				return;
 				break;
 		}
@@ -425,7 +424,7 @@ void R_LoadDDS ( const char *filename, byte **pic, int *width, int *height, GLen
 			else
 			{
 				ri.Printf(PRINT_ALL, "DDS File %s has unsupported FourCC.", filename);
-				ri.FS_FreeFile(buffer.v);
+				ri.FS_FreeFile(buffer);
 				return;
 			}
 		}
@@ -441,7 +440,7 @@ void R_LoadDDS ( const char *filename, byte **pic, int *width, int *height, GLen
 		else
 		{
 			ri.Printf(PRINT_ALL, "DDS File %s has unsupported RGBA format.", filename);
-			ri.FS_FreeFile(buffer.v);
+			ri.FS_FreeFile(buffer);
 			return;
 		}
 	}
@@ -449,7 +448,7 @@ void R_LoadDDS ( const char *filename, byte **pic, int *width, int *height, GLen
 	*pic = ri.Malloc(len);
 	memcpy(*pic, data, len);
 
-	ri.FS_FreeFile(buffer.v);
+	ri.FS_FreeFile(buffer);
 }
 
 void R_SaveDDS(const char *filename, byte *pic, int width, int height, int depth)

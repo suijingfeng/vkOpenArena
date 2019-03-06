@@ -634,8 +634,12 @@ qboolean NET_GetPacket(netadr_t *net_from, msg_t *net_message, fd_set *fdr)
 
 static char socksBuf[4096];
 
-
-void Sys_SendPacket(int length, const void *data, netadr_t to)
+/*
+==================
+Sys_SendPacket
+==================
+*/
+void Sys_SendPacket( int length, const void *data, netadr_t to )
 {
 	int	ret = SOCKET_ERROR;
 	struct sockaddr_storage	addr;
@@ -1341,13 +1345,19 @@ static void NET_GetLocalAddress( void ) {
 }
 #endif
 
+/*
+====================
+NET_OpenIP
+====================
+*/
+void NET_OpenIP( void ) {
+	int		i;
+	int		err;
+	int		port;
+	int		port6;
 
-void NET_OpenIP( void )
-{
-	int	i, err;
-
-	int port = net_port->integer;
-	int port6 = net_port6->integer;
+	port = net_port->integer;
+	port6 = net_port6->integer;
 
 	NET_GetLocalAddress();
 
@@ -1408,8 +1418,7 @@ void NET_OpenIP( void )
 NET_GetCvars
 ====================
 */
-static qboolean NET_GetCvars( void )
-{
+static qboolean NET_GetCvars( void ) {
 	int modified;
 
 #ifdef DEDICATED
@@ -1567,8 +1576,6 @@ void NET_Config( qboolean enableNetworking )
 
 void NET_Init( void )
 {
-	Com_Printf(" -------- NET_Init() -------- \n" );
-
 #ifdef _WIN32
 	int	r = WSAStartup( MAKEWORD( 1, 1 ), &winsockdata );
 	if( r ) {
@@ -1583,6 +1590,7 @@ void NET_Init( void )
 	NET_Config( qtrue );
 	
 	Cmd_AddCommand ("net_restart", NET_Restart_f);
+	Com_Printf("--- NET_Init finished ---\n");
 }
 
 

@@ -22,16 +22,20 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
 #include "../qcommon/q_shared.h"
 #include "../qcommon/qcommon.h"
-#include "local.h"
+#include "sys_local.h"
 
 #ifndef DEDICATED
 #include "../client/client.h"
 #endif
 
 #include <unistd.h>
+#include <signal.h>
 #include <termios.h>
 #include <fcntl.h>
 #include <sys/time.h>
+
+
+qboolean IsStdinATTY( void );
 
 /*
 =============================================================
@@ -243,6 +247,19 @@ field_t *Hist_Next( void )
 }
 
 
+/*
+==================
+CON_SigCont
+Reinitialize console input after receiving SIGCONT, 
+as on Linux the terminal seems to lose all set attributes
+if user did CTRL+Z and then does fg again.
+==================
+*/
+void CON_SigCont(int signum)
+{
+	CON_Init();
+}
+
 
 /*
 ==================
@@ -251,9 +268,15 @@ CON_Init: Initialize the console input (tty mode if possible)
 */
 void CON_Init( void )
 {
-    Com_Printf("-------- CON_Init() --------\n");
 	struct termios tc;
 
+	// If the process is backgrounded (running non interactively)
+	// then SIGTTIN or SIGTOU is emitted, if not caught, turns into a SIGSTP
+	signal(SIGTTIN, SIG_IGN);
+	signal(SIGTTOU, SIG_IGN);
+
+	// If SIGCONT is received, reinitialize console
+	signal(SIGCONT, CON_SigCont);
 
 	// Make stdin reads non-blocking
 	fcntl(STDIN_FILENO, F_SETFL, fcntl(STDIN_FILENO, F_GETFL, 0) | O_NONBLOCK );
@@ -293,6 +316,8 @@ void CON_Init( void )
 	ttycon_on = qtrue;
 	ttycon_hide = 1; // Mark as hidden, so prompt is shown in CON_Show
 	CON_Show();
+
+    Com_Printf("CON_Init() finished. \n\n");
 }
 
 /*
@@ -475,10 +500,9 @@ void CON_Print( const char *msg )
 
 	CON_Hide();
 
-	if( com_ansiColor && com_ansiColor->integer )
-		Sys_AnsiColorPrint( msg );
-	else
-        fputs(msg, stderr);
+
+	Sys_AnsiColorPrint( msg );
+
 
 	if(!ttycon_on)
 		return; // CON_Hide didn't do anything.

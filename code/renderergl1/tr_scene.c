@@ -276,20 +276,16 @@ Rendering a scene may require multiple views to be rendered
 to handle mirrors,
 @@@@@@@@@@@@@@@@@@@@@
 */
-void RE_RenderScene( const refdef_t *fd )
-{
+void RE_RenderScene( const refdef_t *fd ) {
 	viewParms_t		parms;
-	int				startTime;
 
 	if ( !tr.registered ) {
 		return;
 	}
 
-	startTime = ri.Milliseconds();
-
+	int	startTime = ri.Milliseconds();
 	qboolean customscrn = !(fd->rdflags & RDF_NOWORLDMODEL);
-
-
+	
 	if (!tr.world && customscrn ) {
 		ri.Error (ERR_DROP, "R_RenderScene: NULL worldmodel");
 	}
@@ -314,18 +310,15 @@ void RE_RenderScene( const refdef_t *fd )
 	// copy the areamask data over and note if it has changed, which
 	// will force a reset of the visible leafs even if the view hasn't moved
 	tr.refdef.areamaskModified = qfalse;
-
-
-
-	if ( ! (tr.refdef.rdflags & RDF_NOWORLDMODEL) ) {
-		int		areaDiff;
+	if ( customscrn) {
+		int		areaDiff = 0;
 		int		i;
 
 		// compare the area bits
-		areaDiff = 0;
-		for (i = 0 ; i < MAX_MAP_AREA_BYTES/4 ; i++) {
-			areaDiff |= ((int *)tr.refdef.areamask)[i] ^ ((int *)fd->areamask)[i];
-			((int *)tr.refdef.areamask)[i] = ((int *)fd->areamask)[i];
+		for (i = 0 ; i < MAX_MAP_AREA_BYTES; i++)
+		{
+			areaDiff |= tr.refdef.areamask[i] ^ fd->areamask[i];
+			tr.refdef.areamask[i] = fd->areamask[i];
 		}
 
 		if ( areaDiff ) {
@@ -381,32 +374,6 @@ void RE_RenderScene( const refdef_t *fd )
 
 	parms.fovX = tr.refdef.fov_x;
 	parms.fovY = tr.refdef.fov_y;
-	
-	if (customscrn) // don't affect interface refdefs
-	{
-		// figure out our zoom or changed fov magnitiude from cg_fov and cg_zoomfov
-		//float zoomfov = tr.refdef.fov_x / 90;
-		// find aspect to immediately match our vidwidth for perfect match with resized screens...
-		//float erspact = tr.refdef.width / tr.refdef.height;
-		//float aspact = glConfig.vidWidth / glConfig.vidHeight;
-
-	
-		// try not to recalculate fov of ui and hud elements
-		//if (((tr.refdef.fov_x /  tr.refdef.fov_y) > 1.3) && (tr.refdef.width > 320) && (tr.refdef.height > 240))
-		//if (((tr.refdef.fov_x /  tr.refdef.fov_y) > 1.3) && (tr.refdef.width > (320 * refdefscalex)) && (tr.refdef.height > (240 * refdefscaley)))
-		float x_div_y = tr.refdef.fov_x / tr.refdef.fov_y;
-
-		if ((x_div_y > 1.34) && ((tr.refdef.width / tr.refdef.height) == (glConfig.vidWidth / glConfig.vidHeight)))
-		{
-			// undo vert-
-			parms.fovY *= x_div_y * (73.739792 / 90.0);
-			
-			// recalculate the fov
-			parms.fovX = atan( tan(parms.fovY * (M_PI / 360.0f)) * glConfig.windowAspect ) * (360.0f / M_PI);
-			parms.fovY = atan( tan(parms.fovX * (M_PI / 360.0f)) / glConfig.windowAspect ) * (360.0f / M_PI);
-		}
-	}
-
 
 	VectorCopy( fd->vieworg, parms.or.origin );
 	VectorCopy( fd->viewaxis[0], parms.or.axis[0] );

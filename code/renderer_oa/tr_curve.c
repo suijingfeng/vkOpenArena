@@ -36,12 +36,7 @@ srfGridMesh_t *R_SubdividePatchToGrid( int width, int height, drawVert_t points[
 
 #include "tr_local.h"
 
-
-
-extern refimport_t ri;
-
-
-static cvar_t* r_subdivisions;
+#define PATCH_STITCHING
 
 
 static void LerpDrawVert( drawVert_t *a, drawVert_t *b, drawVert_t *out )
@@ -137,7 +132,7 @@ static void MakeMeshNormals( int width, int height, drawVert_t ctrl[MAX_GRID_SIZ
 	for ( i = 0 ; i < height ; i++ )
     {
 		VectorSubtract( ctrl[i][0].xyz, ctrl[i][width-1].xyz, delta );
-		len = VectorLengthSquared( delta );
+		len = delta[0]*delta[0] + delta[1]*delta[1] + delta[2]*delta[2];
 		if ( len > 1.0 )
 			break;
 	}
@@ -148,7 +143,7 @@ static void MakeMeshNormals( int width, int height, drawVert_t ctrl[MAX_GRID_SIZ
 	for ( i = 0 ; i < width ; i++ )
     {
 		VectorSubtract( ctrl[0][i].xyz, ctrl[height-1][i].xyz, delta );
-		len = VectorLengthSquared( delta );
+		len = delta[0]*delta[0] + delta[1]*delta[1] + delta[2]*delta[2];
 		if ( len > 1.0 )
 			break;
 	}
@@ -157,20 +152,16 @@ static void MakeMeshNormals( int width, int height, drawVert_t ctrl[MAX_GRID_SIZ
 
 
 
-	for ( i = 0 ; i < width ; i++ )
-    {
-		for ( j = 0 ; j < height ; j++ )
-        {
+	for ( i = 0 ; i < width ; i++ ) {
+		for ( j = 0 ; j < height ; j++ ) {
 			count = 0;
 			dv = &ctrl[j][i];
 			VectorCopy( dv->xyz, base );
-			for ( k = 0 ; k < 8 ; k++ )
-            {
+			for ( k = 0 ; k < 8 ; k++ ) {
 				VectorClear( around[k] );
 				good[k] = qfalse;
 
-				for ( dist = 1 ; dist <= 3 ; dist++ )
-                {
+				for ( dist = 1 ; dist <= 3 ; dist++ ) {
 					x = i + neighbors[k][0] * dist;
 					y = j + neighbors[k][1] * dist;
 					if ( wrapWidth ) {
@@ -192,13 +183,9 @@ static void MakeMeshNormals( int width, int height, drawVert_t ctrl[MAX_GRID_SIZ
 						break;					// edge of patch
 					}
 					VectorSubtract( ctrl[y][x].xyz, base, temp );
-					
-                    if ( VectorLength( temp ) == 0 )
-                    {
+					if ( VectorNormalize2( temp, temp ) == 0 ) {
 						continue;				// degenerate edge, get more dist
-					}
-                    else
-                    {
+					} else {
 						good[k] = qtrue;
 						VectorCopy( temp, around[k] );
 						break;					// good edge
@@ -207,23 +194,21 @@ static void MakeMeshNormals( int width, int height, drawVert_t ctrl[MAX_GRID_SIZ
 			}
 
 			VectorClear( sum );
-			for ( k = 0 ; k < 8 ; k++ )
-            {
+			for ( k = 0 ; k < 8 ; k++ ) {
 				if ( !good[k] || !good[(k+1)&7] ) {
 					continue;	// didn't get two points
 				}
 				CrossProduct( around[(k+1)&7], around[k], normal );
-                
-                if ( VectorLength( normal ) == 0 )
-                {
+				if ( VectorNormalize2( normal, normal ) == 0 ) {
 					continue;
 				}
-                FastVectorNormalize(normal);
 				VectorAdd( normal, sum, sum );
 				count++;
 			}
-
-			FastVectorNormalize2( sum, dv->normal );
+			//if ( count == 0 ) {
+			//	printf("bad normal\n");
+			//}
+			VectorNormalize2( sum, dv->normal );
 		}
 	}
 }
@@ -339,7 +324,7 @@ static srfGridMesh_t *R_CreateSurfaceGridMesh(int width, int height, drawVert_t 
 	VectorAdd( grid->meshBounds[0], grid->meshBounds[1], grid->localOrigin );
 	VectorScale( grid->localOrigin, 0.5f, grid->localOrigin );
 	VectorSubtract( grid->meshBounds[0], grid->localOrigin, tmpVec );
-	grid->meshRadius = VectorLength( tmpVec );
+	grid->meshRadius = VectorLen( tmpVec );
 
 	VectorCopy( grid->localOrigin, grid->lodOrigin );
 	grid->lodRadius = grid->meshRadius;
@@ -401,12 +386,12 @@ srfGridMesh_t *R_SubdividePatchToGrid( int width, int height, drawVert_t points[
 				// dist-from-midpoint
 				VectorSubtract( midxyz, ctrl[i][j].xyz, midxyz );
 				VectorSubtract( ctrl[i][j+2].xyz, ctrl[i][j].xyz, dir );
-				FastVectorNormalize( dir );
+				VectorNormalize( dir );
 
 				d = DotProduct( midxyz, dir );
 				VectorScale( dir, d, projected );
 				VectorSubtract( midxyz, projected, midxyz2);
-				len = VectorLengthSquared( midxyz2 );			// we will do the sqrt later
+				len = midxyz2[0] * midxyz2[0] + midxyz2[1] * midxyz2[1] + midxyz2[2] * midxyz2[2];			// we will do the sqrt later
 				if ( len > maxLen ) {
 					maxLen = len;
 				}
@@ -426,8 +411,7 @@ srfGridMesh_t *R_SubdividePatchToGrid( int width, int height, drawVert_t points[
 				continue;	// can't subdivide any more
 			}
 
-			if ( maxLen <= r_subdivisions->value )
-            {
+			if ( maxLen <= r_subdivisions->value ) {
 				errorTable[dir][j+1] = 1.0f/maxLen;
 				continue;	// didn't need subdivision
 			}
@@ -514,19 +498,19 @@ srfGridMesh_t *R_SubdividePatchToGrid( int width, int height, drawVert_t points[
 R_GridInsertColumn
 ===============
 */
-srfGridMesh_t *R_GridInsertColumn( srfGridMesh_t *grid, int column, int row, vec3_t point, float loderror )
-{
+srfGridMesh_t *R_GridInsertColumn( srfGridMesh_t *grid, int column, int row, vec3_t point, float loderror ) {
 	int i, j;
-	int oldwidth = 0;
+	int width, height, oldwidth;
 	drawVert_t ctrl[MAX_GRID_SIZE][MAX_GRID_SIZE];
 	float errorTable[2][MAX_GRID_SIZE];
 	float lodRadius;
 	vec3_t lodOrigin;
 
-	int width = grid->width + 1;
+	oldwidth = 0;
+	width = grid->width + 1;
 	if (width > MAX_GRID_SIZE)
 		return NULL;
-	int height = grid->height;
+	height = grid->height;
 	for (i = 0; i < width; i++) {
 		if (i == column) {
 			//insert new column
@@ -624,9 +608,4 @@ void R_FreeSurfaceGridMesh( srfGridMesh_t *grid )
 	ri.Free(grid->widthLodError);
 	ri.Free(grid->heightLodError);
 	ri.Free(grid);
-}
-
-void R_InitCurve(void)
-{
-    r_subdivisions = ri.Cvar_Get ("r_subdivisions", "4", CVAR_ARCHIVE | CVAR_LATCH);
 }

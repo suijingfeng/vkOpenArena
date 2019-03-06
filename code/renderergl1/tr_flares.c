@@ -139,7 +139,7 @@ void RB_AddFlare( void *surface, int fogNum, vec3_t point, vec3_t color, vec3_t 
 	if(normal && (normal[0] || normal[1] || normal[2]))
 	{
 		VectorSubtract( backEnd.viewParms.or.origin, point, local );
-		FastVectorNormalize(local);
+		FastNormalize1f(local);
 		d = DotProduct(local, normal);
 
 		// If the viewer is behind the flare don't add it.
@@ -149,7 +149,8 @@ void RB_AddFlare( void *surface, int fogNum, vec3_t point, vec3_t color, vec3_t 
 
 	// if the point is off the screen, don't bother adding it
 	// calculate screen coordinates and depth
-	R_TransformModelToClip( point, backEnd.or.modelMatrix, backEnd.viewParms.projectionMatrix, eye, clip );
+	R_TransformModelToClip( point, backEnd.or.modelMatrix, 
+		backEnd.viewParms.projectionMatrix, eye, clip );
 
 	// check to see if the point is completely off screen
 	for ( i = 0 ; i < 3 ; i++ ) {
@@ -284,7 +285,7 @@ void RB_TestFlare( flare_t *f ) {
 	glState.finishCalled = qfalse;
 
 	// read back the z buffer contents
-	glReadPixels( f->windowX, f->windowY, 1, 1, GL_DEPTH_COMPONENT, GL_FLOAT, &depth );
+	qglReadPixels( f->windowX, f->windowY, 1, 1, GL_DEPTH_COMPONENT, GL_FLOAT, &depth );
 
 	screenZ = backEnd.viewParms.projectionMatrix[14] / 
 		( ( 2*depth - 1 ) * backEnd.viewParms.projectionMatrix[11] - backEnd.viewParms.projectionMatrix[10] );
@@ -308,7 +309,7 @@ void RB_TestFlare( flare_t *f ) {
 	if ( fade < 0 ) {
 		fade = 0;
 	}
-	else if ( fade > 1 ) {
+	if ( fade > 1 ) {
 		fade = 1;
 	}
 
@@ -453,14 +454,11 @@ when occluded by something in the main view, and portal flares that should
 extend past the portal edge will be overwritten.
 ==================
 */
-void RB_RenderFlares (void) {
+void RB_RenderFlares (void)
+{
 	flare_t		*f;
 	flare_t		**prev;
 	qboolean	draw;
-
-	if ( !r_flares->integer ) {
-		return;
-	}
 
 	if(r_flareCoeff->modified)
 	{
@@ -489,7 +487,8 @@ void RB_RenderFlares (void) {
 
 		// don't draw any here that aren't from this scene / portal
 		f->drawIntensity = 0;
-		if ( f->frameSceneNum == backEnd.viewParms.frameSceneNum && f->inPortal == backEnd.viewParms.isPortal ) {
+		if ( f->frameSceneNum == backEnd.viewParms.frameSceneNum
+			&& f->inPortal == backEnd.viewParms.isPortal ) {
 			RB_TestFlare( f );
 			if ( f->drawIntensity ) {
 				draw = qtrue;
@@ -510,15 +509,15 @@ void RB_RenderFlares (void) {
 	}
 
 	if ( backEnd.viewParms.isPortal ) {
-		glDisable (GL_CLIP_PLANE0);
+		qglDisable (GL_CLIP_PLANE0);
 	}
 
-	glPushMatrix();
-    glLoadIdentity();
-	glMatrixMode( GL_PROJECTION );
-	glPushMatrix();
-    glLoadIdentity();
-	glOrtho( backEnd.viewParms.viewportX, backEnd.viewParms.viewportX + backEnd.viewParms.viewportWidth,
+	qglPushMatrix();
+    qglLoadIdentity();
+	qglMatrixMode( GL_PROJECTION );
+	qglPushMatrix();
+    qglLoadIdentity();
+	qglOrtho( backEnd.viewParms.viewportX, backEnd.viewParms.viewportX + backEnd.viewParms.viewportWidth,
 			  backEnd.viewParms.viewportY, backEnd.viewParms.viewportY + backEnd.viewParms.viewportHeight,
 			  -99999, 99999 );
 
@@ -530,8 +529,8 @@ void RB_RenderFlares (void) {
 		}
 	}
 
-	glPopMatrix();
-	glMatrixMode( GL_MODELVIEW );
-	glPopMatrix();
+	qglPopMatrix();
+	qglMatrixMode( GL_MODELVIEW );
+	qglPopMatrix();
 }
 

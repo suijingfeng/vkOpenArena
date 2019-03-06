@@ -109,8 +109,7 @@ MakeMeshNormals
 Handles all the complicated wrapping and degenerate cases
 =================
 */
-static void MakeMeshNormals( int width, int height, drawVert_t ctrl[MAX_GRID_SIZE][MAX_GRID_SIZE] )
-{
+static void MakeMeshNormals( int width, int height, drawVert_t ctrl[MAX_GRID_SIZE][MAX_GRID_SIZE] ) {
 	int		i, j, k, dist;
 	vec3_t	normal;
 	vec3_t	sum;
@@ -123,12 +122,14 @@ static void MakeMeshNormals( int width, int height, drawVert_t ctrl[MAX_GRID_SIZ
 	qboolean	good[8];
 	qboolean	wrapWidth, wrapHeight;
 	float		len;
-    static	int	neighbors[8][2] = {	{0,1}, {1,1}, {1,0}, {1,-1}, {0,-1}, {-1,-1}, {-1,0}, {-1,1}};
+static	int	neighbors[8][2] = {
+	{0,1}, {1,1}, {1,0}, {1,-1}, {0,-1}, {-1,-1}, {-1,0}, {-1,1}
+	};
 
 	wrapWidth = qfalse;
 	for ( i = 0 ; i < height ; i++ ) {
 		VectorSubtract( ctrl[i][0].xyz, ctrl[i][width-1].xyz, delta );
-		len = VectorLengthSquared( delta );
+		len = delta[0]*delta[0] + delta[1]*delta[1] + delta[2]*delta[2];
 		if ( len > 1.0 ) {
 			break;
 		}
@@ -140,7 +141,7 @@ static void MakeMeshNormals( int width, int height, drawVert_t ctrl[MAX_GRID_SIZ
 	wrapHeight = qfalse;
 	for ( i = 0 ; i < width ; i++ ) {
 		VectorSubtract( ctrl[0][i].xyz, ctrl[height-1][i].xyz, delta );
-		len = VectorLengthSquared( delta );
+		len = delta[0]*delta[0] + delta[1]*delta[1] + delta[2]*delta[2];
 		if ( len > 1.0 ) {
 			break;
 		}
@@ -181,51 +182,32 @@ static void MakeMeshNormals( int width, int height, drawVert_t ctrl[MAX_GRID_SIZ
 						break;					// edge of patch
 					}
 					VectorSubtract( ctrl[y][x].xyz, base, temp );
-					
-                    float iSquareLen = temp[0]*temp[0] + temp[1]*temp[1] + temp[2]*temp[2]; 
-                    if ( iSquareLen == 0 )
-                    {
+					if ( VectorNormalize2( temp, temp ) == 0 ) {
 						continue;				// degenerate edge, get more dist
-					}
-                    else
-                    {
+					} else {
 						good[k] = qtrue;
-                        
-                        iSquareLen = 1.0f/sqrtf(iSquareLen);
-                        around[k][0] = iSquareLen * temp[0];
-                        around[k][1] = iSquareLen * temp[1];
-                        around[k][2] = iSquareLen * temp[2];
-
+						VectorCopy( temp, around[k] );
 						break;					// good edge
 					}
 				}
 			}
 
 			VectorClear( sum );
-			for ( k = 0 ; k < 8 ; k++ )
-            {
+			for ( k = 0 ; k < 8 ; k++ ) {
 				if ( !good[k] || !good[(k+1)&7] ) {
 					continue;	// didn't get two points
 				}
 				CrossProduct( around[(k+1)&7], around[k], normal );
-				
-                float iSquareLen = normal[0]*normal[0] + normal[1]*normal[1] + normal[2]*normal[2]; 
-                
-                if ( iSquareLen == 0 )
+				if ( VectorNormalize2( normal, normal ) == 0 ) {
 					continue;
-                
-                iSquareLen = 1.0f/sqrtf(iSquareLen);
-
-			    sum[0] += iSquareLen * normal[0];
-			    sum[1] += iSquareLen * normal[1];
-			    sum[2] += iSquareLen * normal[2];
-
+				}
+				VectorAdd( normal, sum, sum );
 				count++;
 			}
 			//if ( count == 0 ) {
 			//	printf("bad normal\n");
 			//}
-			FastVectorNormalize2( sum, dv->normal );
+			VectorNormalize2( sum, dv->normal );
 		}
 	}
 }
@@ -350,7 +332,7 @@ srfGridMesh_t *R_CreateSurfaceGridMesh(int width, int height,
 	VectorAdd( grid->meshBounds[0], grid->meshBounds[1], grid->localOrigin );
 	VectorScale( grid->localOrigin, 0.5f, grid->localOrigin );
 	VectorSubtract( grid->meshBounds[0], grid->localOrigin, tmpVec );
-	grid->meshRadius = VectorLength( tmpVec );
+	grid->meshRadius = VectorLen( tmpVec );
 
 	VectorCopy( grid->localOrigin, grid->lodOrigin );
 	grid->lodRadius = grid->meshRadius;
@@ -425,12 +407,12 @@ srfGridMesh_t *R_SubdividePatchToGrid( int width, int height,
 				// dist-from-midpoint
 				VectorSubtract( midxyz, ctrl[i][j].xyz, midxyz );
 				VectorSubtract( ctrl[i][j+2].xyz, ctrl[i][j].xyz, dir );
-				FastVectorNormalize( dir );
+				VectorNormalize( dir );
 
 				d = DotProduct( midxyz, dir );
 				VectorScale( dir, d, projected );
 				VectorSubtract( midxyz, projected, midxyz2);
-				len = VectorLengthSquared( midxyz2 );			// we will do the sqrt later
+				len = midxyz2[0] * midxyz2[0] + midxyz2[1] * midxyz2[1] + midxyz2[2] * midxyz2[2];			// we will do the sqrt later
 				if ( len > maxLen ) {
 					maxLen = len;
 				}

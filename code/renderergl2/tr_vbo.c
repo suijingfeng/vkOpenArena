@@ -39,7 +39,7 @@ void R_VaoPackNormal(int16_t *out, vec3_t v)
 	out[3] = 0;
 }
 
-void R_VaoPackColor(uint16_t *out, const vec4_t c)
+void R_VaoPackColor(uint16_t *out, vec4_t c)
 {
 	out[0] = c[0] * 65535.0f + 0.5f;
 	out[1] = c[1] * 65535.0f + 0.5f;
@@ -419,7 +419,7 @@ void R_InitVaos(void)
 	vertexesSize  = sizeof(tess.xyz[0]);
 	vertexesSize += sizeof(tess.normal[0]);
 	vertexesSize += sizeof(tess.tangent[0]);
-	vertexesSize += sizeof(tess.color[0]);
+	vertexesSize += sizeof(tess.vertexColors[0]);
 	vertexesSize += sizeof(tess.texCoords[0]);
 	vertexesSize += sizeof(tess.lightCoords[0]);
 	vertexesSize += sizeof(tess.lightdir[0]);
@@ -468,7 +468,7 @@ void R_InitVaos(void)
 	tess.vao->attribs[ATTR_INDEX_TANGENT       ].offset = offset; offset += sizeof(tess.tangent[0])     * SHADER_MAX_VERTEXES;
 	tess.vao->attribs[ATTR_INDEX_TEXCOORD      ].offset = offset; offset += sizeof(tess.texCoords[0])   * SHADER_MAX_VERTEXES;
 	tess.vao->attribs[ATTR_INDEX_LIGHTCOORD    ].offset = offset; offset += sizeof(tess.lightCoords[0]) * SHADER_MAX_VERTEXES;
-	tess.vao->attribs[ATTR_INDEX_COLOR         ].offset = offset; offset += sizeof(tess.color[0])       * SHADER_MAX_VERTEXES;
+	tess.vao->attribs[ATTR_INDEX_COLOR         ].offset = offset; offset += sizeof(tess.vertexColors[0])       * SHADER_MAX_VERTEXES;
 	tess.vao->attribs[ATTR_INDEX_LIGHTDIRECTION].offset = offset;
 
 	tess.vao->attribs[ATTR_INDEX_POSITION      ].stride = sizeof(tess.xyz[0]);
@@ -476,7 +476,7 @@ void R_InitVaos(void)
 	tess.vao->attribs[ATTR_INDEX_TANGENT       ].stride = sizeof(tess.tangent[0]);
 	tess.vao->attribs[ATTR_INDEX_TEXCOORD      ].stride = sizeof(tess.texCoords[0]);
 	tess.vao->attribs[ATTR_INDEX_LIGHTCOORD    ].stride = sizeof(tess.lightCoords[0]);
-	tess.vao->attribs[ATTR_INDEX_COLOR         ].stride = sizeof(tess.color[0]);
+	tess.vao->attribs[ATTR_INDEX_COLOR         ].stride = sizeof(tess.vertexColors[0]);
 	tess.vao->attribs[ATTR_INDEX_LIGHTDIRECTION].stride = sizeof(tess.lightdir[0]);
 
 	tess.attribPointers[ATTR_INDEX_POSITION]       = tess.xyz;
@@ -484,7 +484,7 @@ void R_InitVaos(void)
 	tess.attribPointers[ATTR_INDEX_TANGENT]        = tess.tangent;
 	tess.attribPointers[ATTR_INDEX_TEXCOORD]       = tess.texCoords;
 	tess.attribPointers[ATTR_INDEX_LIGHTCOORD]     = tess.lightCoords;
-	tess.attribPointers[ATTR_INDEX_COLOR]          = tess.color;
+	tess.attribPointers[ATTR_INDEX_COLOR]          = tess.vertexColors;
 	tess.attribPointers[ATTR_INDEX_LIGHTDIRECTION] = tess.lightdir;
 
 	Vao_SetVertexPointers(tess.vao);
@@ -678,8 +678,13 @@ vcq;
 // srfVert_t is 60 bytes
 // assuming each vert is referenced 4 times, need 16 bytes (4 glIndex_t) per vert
 // -> need about 4/15ths the space for indexes as vertexes
+#if GL_INDEX_TYPE == GL_UNSIGNED_SHORT
+#define VAOCACHE_VERTEX_BUFFER_SIZE (sizeof(srfVert_t) * USHRT_MAX)
+#define VAOCACHE_INDEX_BUFFER_SIZE (sizeof(glIndex_t) * USHRT_MAX * 4)
+#else // GL_UNSIGNED_INT
 #define VAOCACHE_VERTEX_BUFFER_SIZE (16 * 1024 * 1024)
 #define VAOCACHE_INDEX_BUFFER_SIZE (5 * 1024 * 1024)
+#endif
 
 typedef struct buffered_s
 {
@@ -798,9 +803,6 @@ void VaoCache_Commit(void)
 
 void VaoCache_Init(void)
 {
-	srfVert_t vert;
-	int dataSize;
-
 	vc.vao = R_CreateVao("VaoCache", NULL, VAOCACHE_VERTEX_BUFFER_SIZE, NULL, VAOCACHE_INDEX_BUFFER_SIZE, VAO_USAGE_DYNAMIC);
 
 	vc.vao->attribs[ATTR_INDEX_POSITION].enabled       = 1;
@@ -835,21 +837,21 @@ void VaoCache_Init(void)
 	vc.vao->attribs[ATTR_INDEX_LIGHTDIRECTION].normalized = GL_TRUE;
 	vc.vao->attribs[ATTR_INDEX_COLOR].normalized          = GL_TRUE;
 
-	vc.vao->attribs[ATTR_INDEX_POSITION].offset       = 0;        dataSize  = sizeof(vert.xyz);
-	vc.vao->attribs[ATTR_INDEX_TEXCOORD].offset       = dataSize; dataSize += sizeof(vert.st);
-	vc.vao->attribs[ATTR_INDEX_LIGHTCOORD].offset     = dataSize; dataSize += sizeof(vert.lightmap);
-	vc.vao->attribs[ATTR_INDEX_NORMAL].offset         = dataSize; dataSize += sizeof(vert.normal);
-	vc.vao->attribs[ATTR_INDEX_TANGENT].offset        = dataSize; dataSize += sizeof(vert.tangent);
-	vc.vao->attribs[ATTR_INDEX_LIGHTDIRECTION].offset = dataSize; dataSize += sizeof(vert.lightdir);
-	vc.vao->attribs[ATTR_INDEX_COLOR].offset          = dataSize; dataSize += sizeof(vert.color);
+	vc.vao->attribs[ATTR_INDEX_POSITION].offset       = offsetof(srfVert_t, xyz);
+	vc.vao->attribs[ATTR_INDEX_TEXCOORD].offset       = offsetof(srfVert_t, st);
+	vc.vao->attribs[ATTR_INDEX_LIGHTCOORD].offset     = offsetof(srfVert_t, lightmap);
+	vc.vao->attribs[ATTR_INDEX_NORMAL].offset         = offsetof(srfVert_t, normal);
+	vc.vao->attribs[ATTR_INDEX_TANGENT].offset        = offsetof(srfVert_t, tangent);
+	vc.vao->attribs[ATTR_INDEX_LIGHTDIRECTION].offset = offsetof(srfVert_t, lightdir);
+	vc.vao->attribs[ATTR_INDEX_COLOR].offset          = offsetof(srfVert_t, color);
 
-	vc.vao->attribs[ATTR_INDEX_POSITION].stride       = dataSize;
-	vc.vao->attribs[ATTR_INDEX_TEXCOORD].stride       = dataSize;
-	vc.vao->attribs[ATTR_INDEX_LIGHTCOORD].stride     = dataSize;
-	vc.vao->attribs[ATTR_INDEX_NORMAL].stride         = dataSize;
-	vc.vao->attribs[ATTR_INDEX_TANGENT].stride        = dataSize;
-	vc.vao->attribs[ATTR_INDEX_LIGHTDIRECTION].stride = dataSize;
-	vc.vao->attribs[ATTR_INDEX_COLOR].stride          = dataSize;
+	vc.vao->attribs[ATTR_INDEX_POSITION].stride       = sizeof(srfVert_t);
+	vc.vao->attribs[ATTR_INDEX_TEXCOORD].stride       = sizeof(srfVert_t);
+	vc.vao->attribs[ATTR_INDEX_LIGHTCOORD].stride     = sizeof(srfVert_t);
+	vc.vao->attribs[ATTR_INDEX_NORMAL].stride         = sizeof(srfVert_t);
+	vc.vao->attribs[ATTR_INDEX_TANGENT].stride        = sizeof(srfVert_t);
+	vc.vao->attribs[ATTR_INDEX_LIGHTDIRECTION].stride = sizeof(srfVert_t);
+	vc.vao->attribs[ATTR_INDEX_COLOR].stride          = sizeof(srfVert_t);
 
 	Vao_SetVertexPointers(vc.vao);
 
@@ -952,6 +954,6 @@ void VaoCache_AddSurface(srfVert_t *verts, int numVerts, glIndex_t *indexes, int
 	queueEntry->numIndexes = numIndexes;
 	vcq.numSurfaces++;
 
-	vcq.vertexCommitSize += sizeof(srfVert_t) * numVerts;;
+	vcq.vertexCommitSize += sizeof(srfVert_t) * numVerts;
 	vcq.indexCommitSize += sizeof(glIndex_t) * numIndexes;
 }

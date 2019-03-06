@@ -36,21 +36,25 @@ Q_EXPORT void dllEntry( intptr_t (QDECL  *syscallptr)( intptr_t arg,... ) ) {
 }
 
 
-int PASSFLOAT( float x ) {
-	floatint_t fi;
-	fi.f = x;
+static int PASSFLOAT( float x )
+{
+
+    union f32_i {
+	    float f;
+	    int i;
+    }fi;
+
+    fi.f = x;
 	return fi.i;
 }
 
-void trap_Print( const char *fmt ) {
+void	trap_Print( const char *fmt ) {
 	syscall( CG_PRINT, fmt );
 }
 
-void trap_Error(const char *fmt)
-{
-	syscall(CG_ERROR, fmt);
-	// shut up GCC warning about returning functions, because we know better
-	exit(1);
+void	trap_Error( const char *fmt ) {
+	syscall( CG_ERROR, fmt );
+        exit(CG_ERROR); //Will never occour but makes compiler happy
 }
 
 int		trap_Milliseconds( void ) {
@@ -395,6 +399,12 @@ int trap_RealTime(qtime_t *qtime) {
 void trap_SnapVector( float *v ) {
 	syscall( CG_SNAPVECTOR, v );
 }
+
+// leilei - particles!
+void	trap_R_LFX_ParticleEffect( int effect, const vec3_t origin, const vec3_t velocity ) {
+	syscall( CG_R_LFX_PARTICLEEFFECT, effect, origin, velocity );
+}
+
 
 // this returns a handle.  arg0 is the name in the format "idlogo.roq", set arg1 to NULL, alteredstates to qfalse (do not alter gamestate)
 int trap_CIN_PlayCinematic( const char *arg0, int xpos, int ypos, int width, int height, int bits) {

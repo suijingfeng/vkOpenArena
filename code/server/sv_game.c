@@ -29,10 +29,9 @@ botlib_export_t	*botlib_export;
 
 // these functions must be used instead of pointer arithmetic, because
 // the game allocates gentities with private information after the server shared part
-int	SV_NumForGentity( sharedEntity_t *ent ) {
-	int		num;
-
-	num = ( (byte *)ent - (byte *)sv.gentities ) / sv.gentitySize;
+int	SV_NumForGentity( sharedEntity_t *ent )
+{
+	int	num = ( (byte *)ent - (byte *)sv.gentities ) / sv.gentitySize;
 
 	return num;
 }
@@ -224,7 +223,8 @@ qboolean	SV_EntityContact( vec3_t mins, vec3_t maxs, const sharedEntity_t *gEnt,
 	angles = gEnt->r.currentAngles;
 
 	ch = SV_ClipHandleForEntity( gEnt );
-	CM_TransformedBoxTrace ( &trace, vec3_origin, vec3_origin, mins, maxs, ch, -1, origin, angles, capsule );
+	CM_TransformedBoxTrace ( &trace, vec3_origin, vec3_origin, mins, maxs,
+		ch, -1, origin, angles, capsule );
 
 	return trace.startsolid;
 }
@@ -275,66 +275,10 @@ void SV_GetUsercmd( int clientNum, usercmd_t *cmd ) {
 
 //==============================================
 
-static int	FloatAsInt( float f )
-{
+static int	FloatAsInt( float f ) {
 	floatint_t fi;
 	fi.f = f;
 	return fi.i;
-}
-
-
-/*
-** assumes "src" is normalized
-*/
-static void PerpendicularVector( vec3_t dst, const vec3_t src )
-{
-	int	pos = 0;
-	int i;
-	float minelem = 1.0F;
-	vec3_t tempvec = {0.0f, 0.0f, 0.0f};
-
-	// find the smallest magnitude axially aligned vector
-	for (i = 0; i < 3; i++ )
-	{
-        float len = fabs( src[i] );
-		if ( len < minelem )
-		{
-			pos = i;
-			minelem = len;
-		}
-	}
-	//tempvec[0] = tempvec[1] = tempvec[2] = 0.0F;
-	tempvec[pos] = 1.0F;
-
-	//project the point onto the plane defined by src
-	//float d = -DotProduct( tempvec, src );
-	VectorMA( tempvec, -src[pos], src, dst );
-
-    //normalize the result
-	float length = dst[0]*dst[0] + dst[1]*dst[1] + dst[2]*dst[2];
-
-	if( length == 0)
-        return;
-    
-    length = 1.0f / sqrtf(length);
-    
-    dst[0] *= length;
-    dst[1] *= length;
-    dst[2] *= length;
-}
-
-
-static ID_INLINE void MatrixMultiply(const float in1[3][3],const float in2[3][3], float out[3][3])
-{
-	out[0][0] = in1[0][0] * in2[0][0] + in1[0][1] * in2[1][0] +	in1[0][2] * in2[2][0];
-	out[0][1] = in1[0][0] * in2[0][1] + in1[0][1] * in2[1][1] +	in1[0][2] * in2[2][1];
-	out[0][2] = in1[0][0] * in2[0][2] + in1[0][1] * in2[1][2] +	in1[0][2] * in2[2][2];
-	out[1][0] = in1[1][0] * in2[0][0] + in1[1][1] * in2[1][0] +	in1[1][2] * in2[2][0];
-	out[1][1] = in1[1][0] * in2[0][1] + in1[1][1] * in2[1][1] + in1[1][2] * in2[2][1];
-	out[1][2] = in1[1][0] * in2[0][2] + in1[1][1] * in2[1][2] +	in1[1][2] * in2[2][2];
-	out[2][0] = in1[2][0] * in2[0][0] + in1[2][1] * in2[1][0] +	in1[2][2] * in2[2][0];
-	out[2][1] = in1[2][0] * in2[0][1] + in1[2][1] * in2[1][1] +	in1[2][2] * in2[2][1];
-	out[2][2] = in1[2][0] * in2[0][2] + in1[2][1] * in2[1][2] +	in1[2][2] * in2[2][2];
 }
 
 /*
@@ -344,7 +288,8 @@ SV_GameSystemCalls
 The module is making a system call
 ====================
 */
-intptr_t SV_GameSystemCalls( intptr_t *args ) {
+intptr_t SV_GameSystemCalls( intptr_t *args )
+{
 	switch( args[0] ) {
 	case G_PRINT:
 		Com_Printf( "%s", (const char*)VMA(1) );
@@ -380,7 +325,7 @@ intptr_t SV_GameSystemCalls( intptr_t *args ) {
 	case G_FS_FOPEN_FILE:
 		return FS_FOpenFileByMode( VMA(1), VMA(2), args[3] );
 	case G_FS_READ:
-		FS_Read2( VMA(1), args[2], args[3] );
+		FS_Read( VMA(1), args[2], args[3] );
 		return 0;
 	case G_FS_WRITE:
 		FS_Write( VMA(1), args[2], args[3] );
@@ -462,13 +407,13 @@ intptr_t SV_GameSystemCalls( intptr_t *args ) {
 		return 0;
 	case G_GET_ENTITY_TOKEN:
 		{
-			const char* s = COM_ParseExt( &sv.entityParsePoint, qtrue);
-
+			const char	*s = COM_ParseExt( &sv.entityParsePoint, qtrue );
 			Q_strncpyz( VMA(1), s, args[2] );
-			if ( !sv.entityParsePoint && !s[0] )
+			if ( !sv.entityParsePoint && !s[0] ) {
 				return qfalse;
-			else
+			} else {
 				return qtrue;
+			}
 		}
 
 	case G_DEBUG_POLYGON_CREATE:
@@ -479,7 +424,7 @@ intptr_t SV_GameSystemCalls( intptr_t *args ) {
 	case G_REAL_TIME:
 		return Com_RealTime( VMA(1) );
 	case G_SNAPVECTOR:
-		Q_SnapVector(VMA(1));
+		qsnapvectorsse(VMA(1));
 		return 0;
 
 		//====================================

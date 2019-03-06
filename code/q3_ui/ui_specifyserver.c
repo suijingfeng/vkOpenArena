@@ -26,12 +26,12 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 	SPECIFY SERVER
 *********************************************************************************/
 
-#define SPECIFYSERVER_FRAMEL	"menu/art/frame2_l"
-#define SPECIFYSERVER_FRAMER	"menu/art/frame1_r"
-#define SPECIFYSERVER_BACK0		"menu/art/back_0"
-#define SPECIFYSERVER_BACK1		"menu/art/back_1"
-#define SPECIFYSERVER_FIGHT0	"menu/art/fight_0"
-#define SPECIFYSERVER_FIGHT1	"menu/art/fight_1"
+#define SPECIFYSERVER_FRAMEL	"menu/" MENU_ART_DIR "/frame2_l"
+#define SPECIFYSERVER_FRAMER	"menu/" MENU_ART_DIR "/frame1_r"
+#define SPECIFYSERVER_BACK0	"menu/" MENU_ART_DIR "/back_0"
+#define SPECIFYSERVER_BACK1	"menu/" MENU_ART_DIR "/back_1"
+#define SPECIFYSERVER_FIGHT0	"menu/" MENU_ART_DIR "/fight_0"
+#define SPECIFYSERVER_FIGHT1	"menu/" MENU_ART_DIR "/fight_1"
 
 #define ID_SPECIFYSERVERBACK	102
 #define ID_SPECIFYSERVERGO		103

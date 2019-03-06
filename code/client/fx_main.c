@@ -30,7 +30,9 @@ cvar_t	*fx_Vibrate;
 cvar_t	*fx_Override;
 cvar_t	*fx_Debug;
 
-static ID_INLINE void fxMaskInput( const byte *mask, const void *readV, void *writeV ) {
+
+static ID_INLINE void fxMaskInput( const byte *mask, const void *readV, void *writeV )
+{
 	const long *read = (long *)readV;
 	long *write = (long*)writeV;
 
@@ -208,10 +210,12 @@ void FX_VibrateView( float scale, vec3_t origin, vec3_t angles ) {
 		return;
 	}
 
-	origin[2] += magnitude * 0.3 * sin( 1.4 * (fx.vibrate.offset + SQRTFAST(time)) );
-	angles[ROLL] += magnitude * (0.1 * sin( 0.1 * (fx.vibrate.offset + SQRTFAST(time)) ) - 0.05);
+	origin[2] += magnitude * 0.3 * sin( 1.4 * (fx.vibrate.offset + sqrtf(time)) );
+	angles[ROLL] += magnitude * (0.1 * sin( 0.1 * (fx.vibrate.offset + sqrtf(time)) ) - 0.05);
 }
-static int fxSize( void *block ) {
+
+static int fxSize( void *block )
+{
 	return ((int*)block)[-1];
 }
 
@@ -470,18 +474,18 @@ static const void *fxRunColorList( fxRun_t *run, const fxRunColorList_t *colorLi
 	return list + colorList->count;
 }
 
-static const void *fxRunColorBlend( fxRun_t *run, const fxRunColorBlend_t *colorBlend ) {
+static const void *fxRunColorBlend( fxRun_t *run, const fxRunColorBlend_t *colorBlend )
+{
 	float i;
-	unsigned int index;
-	int blend;
+
 	color4ub_t *list = (color4ub_t*)fxRunMath( run, colorBlend + 1, &i );
 	const byte *start, *end;
 
 	i *= colorBlend->count-1;
-	index = (int)( i );
+	unsigned int index = (int)( i );
 	start = list[ index % colorBlend->count ];
 	end = list[ (index + 1) % colorBlend->count ];
-	blend = Q_ftol(i * 256.0f) & 255;
+	int blend = (int)(i * 256.0f) & 255;
 
 	run->color[0] = start[0] + ((( end[0] - start[0] ) * blend) >> 8);
 	run->color[1] = start[1] + ((( end[1] - start[1] ) * blend) >> 8);
@@ -513,7 +517,8 @@ static const void *fxRunColorHue( fxRun_t *run, const void *data ) {
 	return next;
 }
 
-static const void *fxRunColorMath( fxRun_t *run, const fxRunColorMath_t *colorMath ) {
+static const void *fxRunColorMath( fxRun_t *run, const fxRunColorMath_t *colorMath )
+{
 	float i;
 	const void *next = fxRunMath( run, colorMath + 1, &i );
 	byte *color = run->color + colorMath->index;
@@ -522,14 +527,14 @@ static const void *fxRunColorMath( fxRun_t *run, const fxRunColorMath_t *colorMa
 	else if ( i > 1.0f)
 		color[0] = 255;
 	else 
-		color[0] = Q_ftol( 255 * i );
+		color[0] = 255 * i;
 	return next;
 }
 
 static const void *fxRunColorScale( fxRun_t *run, const void *data ) {
 	float i;
 	const void *next = fxRunMath( run, data, &i );
-	int s = Q_ftol(255 * i);
+	int s = 255 * i;
 	run->color[0] = (s * run->color[0]) >> 8;
 	run->color[1] = (s * run->color[1]) >> 8;
 	run->color[2] = (s * run->color[2]) >> 8;
@@ -548,7 +553,7 @@ static const void *fxRunColorFade( fxRun_t *run, const fxRunColorFade_t *colorFa
 
 static const void *fxRunAlphaFade( fxRun_t *run, const fxRunAlphaFade_t *alphaFade ) {
 	if ( run->lerp > alphaFade->delay ) {
-		unsigned int s = 255 + Q_ftol( (run->lerp - alphaFade->delay) * alphaFade->scale);
+		unsigned int s = 255 + (int)( (run->lerp - alphaFade->delay) * alphaFade->scale);
 		run->color[3] = (s * run->color[3]) >> 8;
 	}
 	return alphaFade + 1;
@@ -738,15 +743,16 @@ static const void *fxRunEmitter( fxRun_t *run, const fxRunEmitter_t *emitter ) {
 	return ((byte *)emitter) + emitter->size;
 }
 
-const void *fxRunRepeat( fxRun_t *run, const fxRunRepeat_t *repeat ) {
-	int i, count;
-	const void *next;
-	float v, loopScale;
+const void *fxRunRepeat( fxRun_t *run, const fxRunRepeat_t *repeat )
+{
+    float v;
 
-	next = fxRunMath( run, repeat + 1, &v );
-	count = Q_ftol(v);
-	loopScale = 1.0 / count;
-	for (i = 0; i < count; i++ ) {
+	const void* next = fxRunMath( run, repeat + 1, &v );
+	int count = v;
+	float loopScale = 1.0 / count;
+    int i;
+	for (i = 0; i < count; i++ )
+    {
 		run->loop = i * loopScale;
 		fxRun( run, next );
 	}

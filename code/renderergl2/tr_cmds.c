@@ -77,12 +77,7 @@ void R_PerformanceCounters( void ) {
 }
 
 
-/*
-====================
-R_IssueRenderCommands
-====================
-*/
-void R_IssueRenderCommands( qboolean runPerformanceCounters )
+static void R_IssueRenderCommands( qboolean runPerformanceCounters )
 {
 	renderCommandList_t	*cmdList = &backEndData->commands;
 	assert(cmdList);
@@ -97,8 +92,10 @@ void R_IssueRenderCommands( qboolean runPerformanceCounters )
 	}
 
 	// actually start the commands going
-    // let it start on the new batch
-    RB_ExecuteRenderCommands( cmdList->cmds );
+	if ( !r_skipBackEnd->integer ) {
+		// let it start on the new batch
+		RB_ExecuteRenderCommands( cmdList->cmds );
+	}
 }
 
 
@@ -109,11 +106,25 @@ R_IssuePendingRenderCommands
 Issue any pending commands and wait for them to complete.
 ====================
 */
-void R_IssuePendingRenderCommands( void ) {
+void R_IssuePendingRenderCommands( void )
+{
 	if ( !tr.registered ) {
 		return;
 	}
-	R_IssueRenderCommands( qfalse );
+    
+	renderCommandList_t	*cmdList = &backEndData->commands;
+	assert(cmdList);
+	// add an end-of-list command
+	*(int *)(cmdList->cmds + cmdList->used) = RC_END_OF_LIST;
+
+	// clear it out, in case this is a sync and not a buffer flip
+	cmdList->used = 0;
+
+	// actually start the commands going
+	if ( !r_skipBackEnd->integer ) {
+		// let it start on the new batch
+		RB_ExecuteRenderCommands( cmdList->cmds );
+	}
 }
 
 /*
@@ -124,9 +135,7 @@ make sure there is enough command space
 ============
 */
 void *R_GetCommandBufferReserved( int bytes, int reservedBytes ) {
-	renderCommandList_t	*cmdList;
-
-	cmdList = &backEndData->commands;
+	renderCommandList_t	*cmdList = &backEndData->commands;
 	bytes = PAD(bytes, sizeof(void *));
 
 	// always leave room for the end of list command
@@ -178,16 +187,10 @@ void	R_AddDrawSurfCmd( drawSurf_t *drawSurfs, int numDrawSurfs ) {
 }
 
 
-/*
-=============
-R_AddCapShadowmapCmd
 
-=============
-*/
-void	R_AddCapShadowmapCmd( int map, int cubeSide ) {
-	capShadowmapCommand_t	*cmd;
-
-	cmd = R_GetCommandBuffer( sizeof( *cmd ) );
+void R_AddCapShadowmapCmd( int map, int cubeSide )
+{
+	capShadowmapCommand_t* cmd = R_GetCommandBuffer( sizeof( *cmd ) );
 	if ( !cmd ) {
 		return;
 	}
@@ -204,10 +207,9 @@ R_PostProcessingCmd
 
 =============
 */
-void	R_AddPostProcessCmd( ) {
-	postProcessCommand_t	*cmd;
-
-	cmd = R_GetCommandBuffer( sizeof( *cmd ) );
+void R_AddPostProcessCmd(void)
+{
+	postProcessCommand_t* cmd = R_GetCommandBuffer( sizeof( *cmd ) );
 	if ( !cmd ) {
 		return;
 	}
@@ -224,13 +226,13 @@ RE_SetColor
 Passing NULL will set the color to white
 =============
 */
-void	RE_SetColor( const float *rgba ) {
-	setColorCommand_t	*cmd;
-
-  if ( !tr.registered ) {
-    return;
-  }
-	cmd = R_GetCommandBuffer( sizeof( *cmd ) );
+void RE_SetColor( const float *rgba )
+{
+    if ( !tr.registered ) {
+        return;
+    }
+    
+	setColorCommand_t* cmd = R_GetCommandBuffer( sizeof( *cmd ) );
 	if ( !cmd ) {
 		return;
 	}
@@ -253,14 +255,13 @@ void	RE_SetColor( const float *rgba ) {
 RE_StretchPic
 =============
 */
-void RE_StretchPic ( float x, float y, float w, float h, 
-					  float s1, float t1, float s2, float t2, qhandle_t hShader ) {
-	stretchPicCommand_t	*cmd;
-
-  if (!tr.registered) {
-    return;
-  }
-	cmd = R_GetCommandBuffer( sizeof( *cmd ) );
+void RE_StretchPic ( float x, float y, float w, float h, float s1, float t1, float s2, float t2, qhandle_t hShader )
+{
+    if (!tr.registered) {
+        return;
+    }
+    
+	stretchPicCommand_t* cmd = R_GetCommandBuffer( sizeof( *cmd ) );
 	if ( !cmd ) {
 		return;
 	}

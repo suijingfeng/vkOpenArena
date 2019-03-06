@@ -1,0 +1,1288 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<!-- saved from url=(0062)http://freespace.virgin.net/hugo.elias/radiosity/radiosity.htm -->
+<html><head><meta http-equiv="Content-Type" content="text/html; charset=ISO-8859-1">
+    <title>TGLTLSBFSSP: Radiosity</title>
+    <link rev="made" href="mailto:gerald@w3.org">
+  </head>
+<body bgcolor="#d2d2d2" text="#000000" link="#0000ff" vlink="#000099" background="./TGLTLSBFSSP  Radiosity_files/paper2.jpg">
+
+<center><h1>Radiosity</h1></center>
+																			   
+<p></p><hr><p>
+
+
+Lighting and shadow casting algorithms can be very roughly divided into two categories; Direct
+Illumination and Global Illumination. Many people will be familiar with the former
+category, and the problems associated with it. This article will briefly discuss the
+two approaches, then give an in-depth study of one Global Illumination method, Radiosity.
+
+</p><p></p><hr><p>
+
+</p><h2>Direct Illumination</h2>
+Direct Illumination is a term that covers the principal lighting methods used by old
+school rendering engines such as 3D Studio and POV. A scene consists of two types of
+entity: Objects and Lights. Lights cast light onto Objects, unless there is another
+Object in the way, in which case a shadow is left behind.<p>
+
+There are all sorts of techniques under this heading: Shadow Volumes, Z-Buffer methods,
+Ray Tracing . . . But as a general rule, they all suffer from similar problems, and
+all require some kind of fudge in order to overcome them.
+
+</p><h3>Direct Illumination Problems and Advantages</h3>
+
+<table align="center" border="1">
+<tbody><tr><td>
+<table>
+  <tbody><tr>
+    <td> </td> <td><b>Advantages</b></td> <td><b>Disadvantages</b></td>
+  </tr>
+  <tr>
+    <td align="right" valign="top"><b>Ray Tracing: </b></td>
+    <td align="left" valign="top"> - Can render both mathematically described objects and polygons<br> - Allows you to do some cool volumetric effects</td>
+    <td align="left" valign="top"> - Slow <br> - Very sharp shadows and reflections</td>
+  </tr>
+  <tr> <td>&nbsp;</td><td>&nbsp;</td><td>&nbsp;</td> </tr>
+  <tr>
+    <td align="right" valign="top"><b>Shadow Volumes: </b></td>
+    <td align="left" valign="top"> - Can be modified to render soft shadows (very tricky)</td>
+    <td align="left" valign="top"> - Tricky to implement<br> - Very sharp shadows <br> - Polygons only</td>
+  </tr>
+  <tr> <td>&nbsp;</td><td>&nbsp;</td><td>&nbsp;</td> </tr>
+  <tr>
+    <td align="right" valign="top"><b>Z-Buffer: </b></td>
+    <td align="left" valign="top"> - Easy to implement<br> - Fast (real-time)</td>
+    <td align="left" valign="top"> - Sharp shadows with aliasing problems</td>
+  </tr>
+</tbody></table>
+</td></tr>
+</tbody></table>
+
+<p>
+</p><table width="100%" border="0">
+  <tbody><tr>
+    <td width="33%" align="center"><a href="http://freespace.virgin.net/hugo.elias/radiosity/cuisine.jpg"><img src="./TGLTLSBFSSP  Radiosity_files/cuisine_t.jpg" width="160" height="112" alt="Thumbnail"></a></td>
+    <td width="33%" align="center"><a href="http://freespace.virgin.net/hugo.elias/radiosity/g002hi.jpg"><img src="./TGLTLSBFSSP  Radiosity_files/g002hi_t.jpg" width="160" height="99" alt="Thumbnail"></a></td>
+    <td width="33%" align="center"><a href="http://freespace.virgin.net/hugo.elias/radiosity/silver_chess_b.jpg"><img src="./TGLTLSBFSSP  Radiosity_files/silver_chess_b_t.jpg" width="160" height="120" alt="Thumbnail"></a></td>
+  </tr>
+</tbody></table>
+The most important thing to consider is that, while these methods can produce hyper-realistic images,
+they can only do this when given a scene with point light sources, and perfectly shiny or perfectly
+diffuse objects. Now, unless you are some kind of rich simpleton, your house probably isn't full of
+perfectly shiny spheres and point light sources. In fact, unless you live in a universe with
+completely different physics, your house probably contains hardly any super-sharp shadows.<p>
+
+It it quite common for people to claim that ray tracers and other renderers produce 'photo-realistic'
+results. But imagine someone were to show you a typical ray traced image, and claim it was a photo.
+You would claim in return that they were blind or lying.</p><p>
+
+It should also be noted that, in the real world, it is still possible to see objects that are not
+directly lit; shadows are never completely black. Direct Illumination renderers try to handle such
+situations by adding an Ambient Light term. Thus all objects receive a minimum amount of uni-directional
+light.</p><p>
+
+</p><p></p><hr><p>
+
+</p><h2>Global Illumination</h2>
+Global illumination methods try to overcome some of the problems associated with Ray Tracing. While
+a Ray Tracer tends to simulate light reflecting only once off each diffuse surface, global illumination
+renderers simulate very many reflections of light around a scene. <br>
+While each object in a Ray Traced scene must be lit by some light source for it to be visible, an
+object in a Globally Illuminated scene may be lit simply by it's surroundings.<br>
+The reason this makes a difference will become clear soon.
+
+<h3>Global Illumination Problems and Advantages</h3>
+Images produced by global illumination methods can look very convincing indeed; in a league of their own, leaving
+old skool renderers to churn out sad cartoons. But, and it's a big 'but': 'BUT!' they are slower. Just as once you
+may have left your ray tracer all day, and come back to be thrilled by the image it produced, you will be doing
+the same here. 
+
+
+<table align="center" border="1">
+<tbody><tr><td>
+<table>
+  <tbody><tr>
+    <td> </td> <td><b>Advantages</b></td> <td><b>Disadvantages</b></td>
+  </tr>
+  <tr>
+    <td align="right" valign="top"><b>Radiosity: </b></td>
+    <td align="left" valign="top"> - Very realistic lighting for diffuse surfaces <br> - Conceptually simple
+	and easy to implement <br> - Easy to optimise with 3D hardware</td>
+    <td align="left" valign="top"> - Slow <br> - Does not handle point sources well <br> - nor shiny surfaces <br> - Always over complicated and poorly explained in books</td>
+  </tr>
+  <tr> <td>&nbsp;</td><td>&nbsp;</td><td>&nbsp;</td> </tr>
+  <tr>
+    <td align="right" valign="top"><b>Monte Carlo Method: </b></td>
+    <td align="left" valign="top"> - Very, very good results.<br> - Can simulate pretty well any optical phenomenon</td>
+    <td align="left" valign="top"> - Slow <br> - Slightly difficult<br> - Requires some cleverness to optimise <br> - Always over complicated and poorly explained in books</td>
+  </tr>
+</tbody></table>
+</td></tr>
+</tbody></table>
+
+
+<p>
+</p><table width="100%" border="0">
+  <tbody><tr>
+    <td height="16">&nbsp;</td>
+    <td height="16">&nbsp;</td>
+  </tr>
+  <tr>
+    <td valign="top" align="left">
+	<h4>Lighting a simple scene with Direct Lighting</h4>
+	&nbsp;&nbsp;&nbsp;I modeled this simple scene in 3D Studio. I wanted the room to look as if it was lit by the sun shining in through the window.<p>
+
+	&nbsp;&nbsp;&nbsp;So, I set up a spotlight to shine in. When I rendered it, the entire room was pitch black, except for a couple of patches on
+	the floor that the light reached. <br>
+	&nbsp;&nbsp;&nbsp;Turning up the Ambient Light simply caused the room to appear a uniform grey, except for the uniformly red floor, and light patches.<br>
+	&nbsp;&nbsp;&nbsp;Adding a point light source in the middle of the room brought out the details, but the scene doesn't have that bright glow that you expect from a sunlit room.<br>
+	&nbsp;&nbsp;&nbsp;Lastly, I turned the background colour to white, to give the appearance of a bright sky.
+
+	</p></td>
+    <td align="right"><img src="./TGLTLSBFSSP  Radiosity_files/room01t.jpg" width="240" height="240" alt="Ray Traced Room"></td>
+  </tr>
+  <tr>
+    <td height="16">&nbsp;</td>
+    <td height="16">&nbsp;</td>
+  </tr>
+  <tr>
+    <td valign="top" align="left">
+	<h4>Lighting a simple scene with Global Lighting</h4>
+	&nbsp;&nbsp;&nbsp;I modeled the same scene in my own radiosity renderer. To provide the source of light, I rendered an image of the
+	sky with <a href="http://www.planetside.co.uk/">Terragen</a>, and placed it outside the window. No other source of light was
+	used.<p>
+
+	With no further effort on my part, the room looks realistically lit.<br>
+	Interesting points to note:
+	</p><ul>
+		<li>The entire room is lit and visible, even those surfaces facing away from the sun.</li>
+		<li>Soft shadows.</li>
+		<li>The subtle change in brightness across the wall to the left of the scene.</li>
+		<li>The grey walls, far from being grey, have a certain warmth to them. The ceiling could even be said to be ever so slightly pink.</li>
+	</ul>
+
+	</td>
+    <td align="right"><img src="./TGLTLSBFSSP  Radiosity_files/room01r.jpg" width="240" height="240" alt="Radiosity Room"></td>
+  </tr>
+</tbody></table>
+
+
+
+<p>
+</p><hr>
+<p>
+
+</p><h2>The Workings of a Radiosity Renderer</h2>
+
+Clear your mind of anything you know about normal rendering methods. Your previous experiences may simply distract you.<p>
+
+I would now like to ask an expert on shadows, who will explain to you everything they know about the subject. My expert
+is a tiny patch of paint on the wall in front of me.</p><p>
+
+
+&nbsp;&nbsp;&nbsp;&nbsp;<b>hugo:</b> "Why is it that you are in shadow, when a very similar patch of paint near you is in light?"<br>
+&nbsp;&nbsp;&nbsp;&nbsp;<b>paint:</b> "What do you mean?"<br>
+&nbsp;&nbsp;&nbsp;&nbsp;<b>hugo:</b> "How is it you know when to be in shadow, and when not to be? What do you know about shadow casting algorithms? You're just some paint."<br>
+&nbsp;&nbsp;&nbsp;&nbsp;<b>paint:</b> "Listen mate. I don't know what you're talking about. My job is a simple one: any light that hits me, I scatter back."<br>
+&nbsp;&nbsp;&nbsp;&nbsp;<b>hugo:</b> "Any light?"<br>
+&nbsp;&nbsp;&nbsp;&nbsp;<b>paint:</b> "Yes, any light at all. I don't have a preference."</p><p>
+
+
+So there you have it. The basic premise of Radiosity. Any light that hits a surface is reflected back into the scene. That's <i>any</i>
+light. Not just light that's come directly from light sources. <i>Any</i> light. That's how paint in the real world thinks, and that's
+how the radiosity renderer will work.</p><p>
+
+In my next article, I will be explaining how you can make your own talking paint.</p><p>
+
+
+So, the basic principal behind the radiosity renderer is to remove the distinction between objects and light sources. Now, you can
+consider everything to be a potential light source. <br>
+
+Anything that is visible is either emitting or reflecting light, i.e. it is a source of light. A Light Source. Everything you can
+see around you is a light source. And so, when we are considering how much light is reaching any part of a scene, we must take care
+to add up light from all possible light sources.
+
+</p><h2>Basic Premises:</h2>
+&nbsp;&nbsp;&nbsp;&nbsp;<b>1:</b> There is no difference between light sources and objects.<br>
+&nbsp;&nbsp;&nbsp;&nbsp;<b>2:</b> A surface in the scene is lit by all parts of the scene that are visible to it.<br>
+<p>
+
+Now that you have the important things in mind. I will take you through the process of performing Radiosity on a scene.
+
+</p><p>
+</p><hr>
+<p>
+
+
+</p><table width="100%">
+<tbody><tr><td><img src="./TGLTLSBFSSP  Radiosity_files/2viewsb.gif" align="left" width="259" height="365" alt="Scene View"></td>
+<td align="left" valign="top">
+<h3>A Simple Scene</h3>
+We begin with a simple scene: a room with three windows. There are a couple of pillars and some alcoves, to provide interesting
+shadows.<p>
+
+It will be lit by the scenery outside the windows, which I will assume is completely dark, except for a small, bright sun.
+
+</p></td></tr>
+</tbody></table>
+<p>
+
+</p><table width="100%">
+<tbody><tr><td><img src="./TGLTLSBFSSP  Radiosity_files/view03b.gif" align="left" width="256" height="187" alt="Scene View"></td>
+<td align="left" valign="top">
+Now, lets choose one of the surfaces in the room, and consider the lighting on it. 
+</td></tr>
+</tbody></table>
+<p>
+
+</p><table width="100%">
+<tbody><tr><td><img src="./TGLTLSBFSSP  Radiosity_files/view05bb.gif" align="left" width="256" height="256" alt="Scene View"></td>
+<td align="left" valign="top">
+As with many difficult problems in computer graphics, we'll divide it up into little patches (of paint), and try to see the world
+from their point of view.<p>
+
+From now on I'll refer to these patches of paint simply as <b>patches</b>.</p><p>
+
+</p></td></tr>
+</tbody></table>
+<p>
+
+</p><table width="100%">
+<tbody><tr><td><img src="./TGLTLSBFSSP  Radiosity_files/view06bb.gif" width="256" height="256" alt="Scene View"></td>
+<td align="left" valign="top">
+Take one of those patches. And imagine you are that patch. What does the world look like from that perspective?
+</td></tr>
+</tbody></table>
+<p>
+
+</p><table width="100%">
+<tbody><tr><td><img src="./TGLTLSBFSSP  Radiosity_files/fisheye8.gif" width="256" height="256" alt="Fisheye View"></td>
+<td align="left" valign="top">
+<h3>View from a patch</h3>
+  Placing my eye very carefully on the patch, and looking outwards, I can see what it sees. The room is very dark, because no light has
+  entered yet. But I have drawn in the edges for your benefit.<p>
+  By adding together all the light it sees, we can calculate the total amount of light from the scene reaching the patch. I'll refer to
+  this as the total <b>incident</b> light from now on.</p><p>
+
+  This patch can only see the room and the darkness outside. Adding up the incident light, we would see that no light is arriving here.  This patch is darkly lit.
+
+</p></td></tr>
+</tbody></table>
+
+
+<p>
+
+</p><table width="100%">
+<tbody><tr><td><img src="./TGLTLSBFSSP  Radiosity_files/fisheye7.gif" width="256" height="256" border="0" alt="Fisheye View"></td>
+<td align="left" valign="top">
+<h3>View from a lower patch</h3>
+Pick a patch a little further down the pillar. This patch can see the bright sun outside the window.  This time, adding up the
+incident light will show that a lot of light is arriving here (although the sun appears small, it is <i>very</i> bright). This patch is brightly lit.
+</td></tr>
+</tbody></table>
+
+<p>
+
+</p><table width="100%">
+<tbody><tr><td><img src="./TGLTLSBFSSP  Radiosity_files/view10.gif" width="256" height="256" border="0" alt="Scene View"></td>
+<td align="left" valign="top">
+<h3>Lighting on the Pillar</h3>
+Having repeated this process for all the patches, and
+added up the incident light each time, we can look back at the pillar
+and see what the lighting is like.<p>
+
+The patches nearer the top of the pillar, which could not see the
+sun, are in shadow, and those that can are brightly lit. Those that
+could see the sun partly obscured by the edge of the window are only
+dimly lit.</p><p>
+
+And so Radiosity proceeds in much the same fashion. As you have seen,
+shadows naturally appear in parts of the scene that cannot see a
+source of light.
+</p></td></tr>
+</tbody></table>
+
+
+<table>
+<tbody><tr><td><img src="./TGLTLSBFSSP  Radiosity_files/view11.gif" width="256" height="256" border="0" alt="Scene View"></td>
+<td align="left" valign="top">
+<h3>Entire Room Lit: 1<sup>st</sup> Pass</h3>
+Repeating the process for every patch in the room, gives us this
+scene. Everything is completely dark, except for surfaces that have
+received light from the sun.<p>
+
+So, this doesn't look like a very well lit scene. Ignore the fact
+that the lighting looks blocky; we can fix that by using many more
+patches. What's important to notice is that the room is completely
+dark, except for those areas that can see the sun. At the moment
+it's no improvement over any other renderer.
+
+Well, it doesn't
+end here. Now that some parts of the room are brightly lit, they
+have become sources of light themselves, and could well cast light
+onto other parts of the scene.
+</p></td></tr>
+</tbody></table>
+
+<p>
+
+</p><table>
+<tbody><tr><td><img src="./TGLTLSBFSSP  Radiosity_files/fisheye10.gif" width="256" height="256" border="0" alt="Fisheye View"></td>
+<td align="left" valign="top">
+<h3>View from the patch after 1<sup>st</sup> Pass</h3>
+Patches that could not see the sun, and so received no light, can now see the light shining on
+other surfaces. So in the next pass, this patch will come out slightly lighter than the completely
+black it is now.
+
+</td></tr>
+</tbody></table>
+
+<p>
+
+
+</p><table>
+<tbody><tr><td><img src="./TGLTLSBFSSP  Radiosity_files/view12.gif" width="256" height="256" border="0" alt="Scene View"></td>
+<td align="left" valign="top">
+<h3>Entire Room Lit: 2<sup>nd</sup> Pass</h3>
+This time, when you calculate the incident light on each patch in the scene, many patches that
+were black before are now lit. The room is beginning to take on a more realistic appearance.<p>
+
+What's happened is that sun light has reflected once from the floor and walls, onto other surfaces.
+</p></td></tr>
+</tbody></table>
+
+<p>
+
+
+</p><table>
+<tbody><tr><td width="256"><img src="./TGLTLSBFSSP  Radiosity_files/view13.gif" width="256" height="256" border="0" alt="Scene View"></td>
+<td align="left" valign="top">
+<h3>Entire Room Lit: 3<sup>rd</sup> Pass</h3>
+The third pass produces the effect of light having reflected twice in the scene. Everything looks
+pretty much the same, but is slightly brighter.<p>
+
+The next pass only looks a little brighter than the last, and even the 16 <sup>th</sup> is not a
+lot different. There's not much point in doing any more passes after that.</p><p>
+
+The radiosity process slowly converges on a solution. Each pass is a little less different than the
+last, until eventually it becomes stable. Depending on the complexity of the scene, and the
+lightness of the surfaces, it may take a few, or a few thousand passes. It's really up to you when
+to stop it, and call it done. 
+</p></td></tr>
+</tbody></table>
+
+<p>
+
+
+</p><table>
+  <tbody><tr>
+    <td><img src="./TGLTLSBFSSP  Radiosity_files/view14.gif" width="256" height="256" border="0" alt="Scene View"></td>
+    <td><img src="./TGLTLSBFSSP  Radiosity_files/view15.gif" width="256" height="256" border="0" alt="Scene View"></td>
+  </tr>
+  <tr>
+    <td>4<sup>th</sup> Pass</td>
+    <td>16<sup>th</sup> Pass</td>
+  </tr>
+
+</tbody></table>
+
+<br>
+<p></p><hr><p>
+
+</p><h2>The Algorithm In More Detail: Patches</h2>
+<p>
+<u><font size="+1">Emmision</font></u><br>
+Though I have said that we'll consider lightsources and objects to be basically
+the same, there must obviously be some source of light in the scene. In the
+real world, some objects do emit light, and some don't, and all objects absorb
+light to some extent. We must somehow distinguish between parts of the scene
+that emit light, and parts that don't. We shall handle this in radiosity by
+saying that all patches emit light, but for most patches, their light emmision
+is zero. This property of a patch, I'll call <b>emmision</b>.
+
+</p><p>
+<u><font size="+1">Reflectance</font></u><br>
+When light hits a surface, some light is absorbed and becomes heat, (we can
+ignore this) and the rest is reflected. I'll call the proportion of light
+reflected by a patch <b>reflectance</b>.
+
+</p><p>
+<u><font size="+1">Incident and Excident Light</font></u><br>
+During each pass, it will be necessary to remember two other things, how
+much light is arriving at each patch, and how much light is leaving each patch.
+I'll call these two, <b>incident_light</b> and <b>excident_light</b>. The
+excident light is the visible property of a patch. When we look at a patch,
+it is the excident light that we're seeing.
+</p><p>
+
+
+</p><pre>    <b>incident_light</b> = sum of all light that a patch can see
+    <b>excident_light</b> = (<b>incident_light</b>*<b>reflectance</b>) + <b>emmision</b>
+	
+</pre>
+
+<p>
+<u><font size="+1">Patch structure</font></u><br>
+Now that we know all the necessary properties of a patch, it's time to
+define a patch. Later, I'll explain the details of the four variables.
+
+</p><pre>  structure <b>PATCH</b>
+    <b>emmision</b>
+    <b>reflectance</b>
+    <b>incident</b>
+    <b>excident</b>
+  end structure
+</pre>
+
+<p></p><hr><p>
+
+Now that I've explained the basics of the algorithm, I'll tell it again in
+pseudocode form, to make it concrete. Clearly this is still quite high level,
+but I'll explain in more detail later.
+
+</p><h2>Radiosity Pseudocode: Level 1</h2>
+<table width="100%" border="0"> <tbody><tr><td>
+<table border="1"><tbody><tr><td>
+<pre>
+  load scene
+
+  divide each surface into roughly equal sized patches
+
+
+  <i><u>initialise_patches:</u></i>
+  for each <b>Patch</b> in the scene
+    if this <b>patch</b> is a light then
+      <b>patch.emmision</b> = some amount of light
+    else
+      <b>patch.emmision</b> = <b>black</b>
+    end if
+    <b>patch.excident</b> = <b>patch.emmision</b>
+  end <b>Patch</b> loop
+  
+
+
+  <i>Passes_Loop:</i>
+
+  <i><u>each patch collects light from the scene</u></i>
+  for each <b>Patch</b> in the scene
+    render the scene from the point of view of this patch
+    <b>patch.incident</b> = sum of incident light in rendering
+  end <b>Patch</b> loop
+
+
+  <i><u>calculate excident light from each patch:</u></i>
+  for each <b>Patch</b> in the scene
+    <b>I</b> = <b>patch.incident</b>
+    <b>R</b> = <b>patch.reflectance</b>
+    <b>E</b> = <b>patch.emmision</b>
+    <b>patch.excident</b> = (<b>I</b>*<b>R</b>) + <b>E</b>
+  end <b>Patch</b> loop
+
+  Have we done enough passes?
+    if not then goto <i>Passes_Loop</i>
+
+</pre>
+</td></tr></tbody></table>
+</td>
+
+<td align="left" valign="top">
+<font size="+2">Explanation of Code</font><br>
+<p>
+<font size="+1"><u>initialise patches:</u></font><br>
+To begin with, all patches are dark, except those that are emmiting light.
+So, those patches are initialised with some value of emmision, which would
+have been specified by the scene. All other patches are given zero emmision
+(black).
+
+</p><p>
+<font size="+1"><u>Passes Loop:</u></font><br>
+The code repeats this loop as many times as is necessary to produce acceptable
+lighting in the scene. Each time round this loop, the code simulates one more
+reflection of light in the scene.
+</p><p>
+<font size="+1"><u>each patch collects light from the scene</u></font><br>
+As I explained earlier in the article, each patch is lit by what it can
+see around it. This is achieved by simply rendering the scene from the
+point of view of the patch, and adding up the light it sees. I'll explain
+this in more detail in the next section.
+</p><p>
+<font size="+1"><u>calculate excident light from each patch:</u></font><br>
+Having worked out how much light is arriving at each patch, we can now work
+out how much light is leaving each patch.
+
+</p><p><br></p><p>
+
+This process must be repeated many times to get a good effect. If the renderer
+needs another pass, then we jump back to <i>Passes_Loop</i>.
+</p></td></tr></tbody></table>
+
+
+<p></p><hr><p>
+
+</p><h1><u>Implementing Radiosity:</u> Hemicubes</h1>
+
+
+The first thing we'll have to deal with, in implementing radiosity, is to solve
+the problem of looking at the world from the point of view of each patch.
+So far in this article I have used a fish-eye view to represent a patch's eye
+view of the scene, but this isn't easy or practical. There is a much better
+way, the Hemicube!<p>
+
+
+</p><table>
+<tbody><tr><td width="256"><img src="./TGLTLSBFSSP  Radiosity_files/hemisph1.gif" width="230" height="256" border="0" alt="Hemisphere"></td>
+<td align="left" valign="top">
+<font size="+1">The Hemisphere</font><br>
+Imagine a fish eye view wrapped onto a hemisphere. Place the hemisphere over
+a patch (left: red square), and from that patch's point of view, the scene wrapped on the inside of the hemisphere looks just like the scene from it's point of view.
+There's no difference.<p>
+
+Placing a camera in the middle of the hemisphere, you can see that the view
+looks just like any other rendering of the scene (right).</p><p>
+
+If you could find a way to render a fisheye view easily, then you could just
+sum up the brightness of every pixel to calculate the total incident light
+on the patch. However, it's not easy to render a fisheye view, and so some
+other way must be found to calculate the incident light.
+
+</p></td>
+<td width="256"><img src="./TGLTLSBFSSP  Radiosity_files/in_sphr.gif" width="256" height="192" border="0" alt="Inside Hemisphere"><br>
+Rendering from the centre of the hemisphere</td>
+</tr>
+</tbody></table>
+
+<table>
+<tbody><tr><td width="256"><img src="./TGLTLSBFSSP  Radiosity_files/hemicub1.gif" width="230" height="256" border="0" alt="Hemicube"></td>
+<td align="left" valign="top">
+<font size="+1">The Hemicube</font><br>
+
+Surprisingly (or unsurprisingly, depending on how mathematical you are) a
+hemicube looks exactly the same as a hemisphere from the patch's point of view.
+
+
+</td>
+<td width="256"><img src="./TGLTLSBFSSP  Radiosity_files/in_cube.gif" width="256" height="192" border="0" alt="Inside Hemicube"><br>
+Rendering from the centre of the hemicube</td>
+</tr>
+</tbody></table>
+
+<p>
+</p><h2>Unfolding the Hemicube</h2>
+<center>
+<img src="./TGLTLSBFSSP  Radiosity_files/fold_2.gif" width="765" height="256" alt="Unfolding Hemicube">
+</center>
+Imagine unfolding the hemicube. What are you left with? One square image
+and four rectangular images. The square image in the center is a rendering
+from the point of view of the patch, looking directly forwards. The other four
+parts of the hemicube are the views looking 90° up, down, left and
+right.<p>
+
+So, you can easily produce each of these images by placing a camera on a
+patch, and render it pointing forwards, up, down, left and right. The
+four side images are, of course, cut in half, and so, only half a rendering
+is required there.
+
+</p><p>
+</p><h2>Compensating for the hemicube's shape</h2>
+<table width="100%" border="0">
+  <tbody><tr>
+    <td width="270">
+	  <img src="./TGLTLSBFSSP  Radiosity_files/3_balls.gif" width="256" height="256" alt="3 Spheres">
+	</td>
+	<td valign="top">
+      This is view of 3 spheres, rendered with a 90° field of view. All three spheres are the same distance from the camera, but because of the properties of perspective transformation, objects at the edge of the image appear spretched and larger than ones in the middle.<p>
+
+	  If this was the middle image of a hemicube, and the three spheres were light sources, then those near the edge would cast more light onto the patch than they should. This would be inaccurate, and so we must compensate for this.</p><p>
+
+	  If you were to use a hemicube to calculate the total incident light falling on a patch, and just added together the values of all the pixel rendered in the hemicube, you would be giving an unfair weight to objects lying at the corners of the hemicube.  They would appear to cast more light onto the patch.</p><p>
+
+	  To compensate for this, it is necessary to 'dim' the pixels at the edges and corners, so that all objects contribute equally to
+	  the incident light, no matter where they may lie in the hemicube. Rather than give a full explanation, I'm just going to tell
+	  you how this is done.
+	</p></td>
+  </tr>
+  <tr>
+    <td width="270">
+      <img src="./TGLTLSBFSSP  Radiosity_files/hemicomp.gif" width="256" height="256" alt="Hemicube Perspective Compensation Map">
+	</td>
+	<td>
+	  Pixels on a surface of the hemicube are multiplied by the cosine of the angle between the direction the camera is facing in, and the line from the camera to the pixel.<p>
+
+	  On the left is an image of the map used to compensate for the distortion. (shown half size relative to the image above)
+	</p></td>
+  </tr>
+</tbody></table>
+
+
+<p></p><hr><p>
+
+</p><h2>Lambert's Cosine Law</h2>
+<table width="100%" border="0">
+  <tbody><tr>
+    <td width="270">
+      <img src="./TGLTLSBFSSP  Radiosity_files/lambert01.gif" width="256" height="256" alt="Lamberts Cos Law Map">
+	</td>
+	<td valign="top">
+	Any budding graphics programmer knows Lambert's cosine law: The apparent brightness of a surface is proportional to the cosine of
+	the angle between the surface normal, and the direction of the light. Therefore, we should be sure to apply the same law here. This
+	is simply done by multiplying pixels on the hemicube by the relevant amount.<p>
+
+	On the left is an image of the map used to apply Lambert's law to the hemicube. White represents the value 1.0, and black represents
+	the value 0.0. (shown half size relative to the image above)
+	</p></td>
+  </tr>
+</tbody></table>
+
+<p></p><hr><p>
+
+</p><h2>The two combined: The Multiplier Map</h2>
+<table width="100%" border="0">
+  <tbody><tr>
+    <td width="270">
+      <img src="./TGLTLSBFSSP  Radiosity_files/full_hemi.gif" width="256" height="256" alt="Multiplier Map">
+	</td>
+	<td valign="top">
+	Now pay attention, this is <b><u>important:</u></b><p>
+	Multiplying the two maps together gives this. This map is essential for producing an accurate radiosity solution. It is used to
+	adjust for the perspective distortion, mentioned above, that causes objects near the corners of the hemicubes to shine too much
+	light onto a patch. It also gives you Lambert's Cosine Law.</p><p>
+
+	Having created this map, you should have the value 1.0 right at the centre, and the value 0.0 at the far corners. Before it can
+	be used, the map must be normalised.</p><p>
+
+The sum of all pixels in the map should be 1.0.
+</p><ul>
+<li>Sum the total value of all pixels in the Multiplier Map.</li>
+<li>Divide each pixel by this value.</li>
+</ul>
+
+	Now, the value at the centre of the map will be much less than 1.0.
+	<p>
+	</p></td>
+  </tr>
+</tbody></table>
+
+<p></p><hr><p>
+</p><center><img src="./TGLTLSBFSSP  Radiosity_files/3hemis.gif" width="850" height="284" alt="3 Hemicubes"></center>
+
+<p></p><hr><p>
+
+</p><h2>Calculating the Incident Light</h2>
+This procedure takes a point in the scene (usually a patch), along with a normal vector, and calculates the total ammount
+of light arriving at that point. <p>
+
+First, it renders the 5 faces of the hemicube using the procedure <font face="courier"><b>RenderView</b>(point, vector, part)</font>.
+This procedure takes as it's arguments a point, telling it where the camera should be for the rendering, a vector, telling it what
+direction the camera should be pointing in, and another argument telling it which part of the final image should be rendered. These
+5 images are stored in hemicube structure called <b>H</b> (left column of images below).</p><p>
+
+Once the hemicube <b>H</b> has been rendered, it is multiplied by the multiplier hemicube <b>M</b> (middle column of images below), and the result is stored in the hemicube <b>R</b> (right column of images below).</p><p>
+
+Then the total value of the light in <b>R</b> is added up and divided by the number of pixels in a hemicube. This should give the total
+amount of light arriving at the point in question.</p><p>
+
+</p><table width="100%" border="0">
+  <tbody><tr>
+	<td valign="top">
+	<table border="1"><tbody><tr><td>
+    <pre>
+  procedure <b>Calc_Incident_Light</b>(point: <b>P</b>, vector: <b>N</b>)  
+
+    light <b>TotalLight</b>
+    hemicube <b>H, R, M</b>
+    <b>H</b> = empty
+    <b>M</b> = Multiplier Hemicube
+    <b>R</b> = empty
+
+    <b>div</b> = sum of pixels in <b>M</b>
+
+    camera <b>C</b>
+    <b>C.lens</b> = <b>P</b>
+
+    <b>C.direction</b> = <b>N</b>
+    <b>H.front</b> = <b>RenderView</b>(<b>C</b>, <b>N</b>, Full_View)
+
+    <b>C.direction</b> = <b>N</b> rotated 90° down
+    <b>H.down</b> = <b>RenderView</b>(<b>C</b>, <b>N</b>, Top_Half)
+
+    <b>C.direction</b> = <b>N</b> rotated 90° up
+    <b>H.up</b> = <b>RenderView</b>(<b>C</b>, <b>N</b>, Bottom_Half)
+
+    <b>C.direction</b> = <b>N</b> rotated 90° left
+    <b>H.left</b> = <b>RenderView</b>(<b>C</b>, <b>N</b>, Right_Half)
+
+    <b>C.direction</b> = <b>N</b> rotated 90° right
+    <b>H.right</b> = <b>RenderView</b>(<b>C</b>, <b>N</b>, Left_Half)
+
+    multiply all pixels in <b>H</b> by corresponding
+    pixels in <b>M</b>, storing the results in <b>R</b>
+
+    <b>TotalLight</b> = <b>black</b>
+
+    loop <b>p</b> through each pixel in <b>R</b>
+      add <b>p</b> to <b>TotalLight</b> 
+    end loop
+    
+    divide <b>TotalLight</b> by <b>div</b>
+
+    return <b>TotalLight</b>
+  end procedure
+	</pre>
+	</td></tr></tbody></table>
+	</td>
+	<td>
+      <img src="./TGLTLSBFSSP  Radiosity_files/hemis.gif" width="456" height="690" alt="Hemicubes Being Multiplied">
+	</td>
+  </tr>
+</tbody></table>
+
+<h3>Explanation of Variable Types in Pseudocode</h3>
+
+<u><b>light:</b></u> Used for storing any light value. For example:
+<pre>  structure <b>light</b>
+    float <b>Red</b>
+    float <b>Green</b>
+    float <b>Blue</b>
+  end structure
+</pre>
+<p>
+
+<u><b>hemicube:</b></u> used for storing the view of a scene from the point of view of some point in the scene. A Hemicube would consist
+of five images, as illustrated above, where each pixel was of type <b>light</b>. In the case of the <b>Multiplier Hemicube</b>, what is stored is not a value of light, but some multiplier value less than 1.0, as illustrated above.
+</p><pre>  structure <b>hemicube</b>
+    image <b>front</b>
+    image <b>up</b>
+    image <b>down</b>
+    image <b>left</b>
+    image <b>right</b>
+  end structure
+</pre>
+
+<u><b>camera:</b></u> for example
+<pre>  structure <b>camera</b>
+    point  <b>lens</b>
+    vector <b>direction</b>
+  end structure
+</pre>
+
+<p>
+
+</p><p></p><hr><p>
+
+</p><h2>Increasing the accuracy of the solution</h2>
+You'll be thinking to yourself, 'damn, this seems like a whole lot of rendering. A very processor intensive way of doing things.'
+You'd be right of course. Basically you have to render a texture mapped scene many thousands of times.
+<p>
+
+Fortunately, this is something people have been doing since the dawn of time. Um, since the dawn of the raster display, and since
+then there has been much work put into rendering texture mapped scenes as fast as possible. I won't go into a whole lot of detail
+here, I'm really not the person best qualified to be talking about optimised rendering. My own renderer is so slow you have to
+use cussing words to describe it. The algorithm also lends itself well to optimisation with standard 3D graphics hardware, though
+you have do some fiddling and chopping to get it to render (3x32) bit textures.
+</p><p>
+
+The speed improvement I'm going to discuss in this article does not concern optimising the actual rendering of the hemicubes, but rather
+reducing the number of hemicubes that need to be rendered.
+
+You will, of course, have noticed that the light maps illustrated in the black and white renderings above were somewhat blocky, low
+resolution. Don't fear, their resolution can be increased as far as you want.
+</p><p><br></p><p>
+
+</p><table width="100%" border="0">
+  <tbody><tr>
+    <td><img src="./TGLTLSBFSSP  Radiosity_files/red_outline.jpg" width="256" height="235" alt="Red Outline">
+	</td>
+	<td valign="top">
+	  Take a look at the surface on the left, outlined in red. The lighting is basically very simple, there's a bright bit, and a less
+	  bright bit, with a fairly sharp edge between the two.  To reproduce the edge sharply, you would normally need a high resolution
+	  light map and, therefore, have to render very many hemicubes. But it hardly seems worthwhile rendering so many hemicubes just to
+	  fill in the bright or less-bright areas which are little more than solid colour. It would be more worthwhile to render a lot of
+	  hemicubes near the sharp edge, and just a few in the other areas.<p>
+
+	  Well, it is possible, and quite straightforward. The algorithm I will describe below will render a few hemicubes scattered across
+	  the surface, then render more near the edges, and use linear interpolation to fill in the rest of the light map.
+    </p></td>
+  </tr>
+</tbody></table>
+
+<p><br></p><p>
+
+</p><table width="100%" border="0">
+  <tbody><tr>
+    <td>
+	</td>
+	<td>
+	  <b>The Algorithm:</b> On the far left you can see the light map in the process of being generated. Next to it, you can see which
+	  pixels were produced using a hemicube (red) and which were linearly interpolated (green).<p><br></p><p>
+	</p></td>
+
+  </tr>
+  <tr><td><img src="./TGLTLSBFSSP  Radiosity_files/adap1.gif" width="128" height="126" alt=""></td>
+      <td valign="top" align="left"><font size="+2">1:</font> 
+	    Use a hemicube to calculate every 4<sup>th</sup> pixel.<p>
+
+		I'll show these pixels on the right as <img src="./TGLTLSBFSSP  Radiosity_files/grid_a.gif" width="17" height="17" alt="">.
+	  </p></td>
+	  <td><img src="./TGLTLSBFSSP  Radiosity_files/grid1.gif" width="113" height="113" alt=""></td>
+  </tr>
+  <tr><td><img src="./TGLTLSBFSSP  Radiosity_files/adap2.gif" width="128" height="126" alt=""></td>
+      <td valign="top" align="left">
+	  <font size="+2">2:</font> 
+	    <u>Pass Type 1:</u> Examine the pixels <img src="./TGLTLSBFSSP  Radiosity_files/grid_b.gif" width="17" height="17" alt=""> which are horizontally or vertically halfway between previously calculated pixels <img src="./TGLTLSBFSSP  Radiosity_files/grid_a.gif" width="17" height="17" alt="">. If the neighbouring pixels
+		differ by more than some threshold amount, then calculate this pixel using a hemicube, otherwise, interpolate from the 
+        neighbouring pixels.
+	  </td>
+	  <td><img src="./TGLTLSBFSSP  Radiosity_files/grid2.gif" width="113" height="113" alt=""></td>
+  </tr>
+  <tr><td><img src="./TGLTLSBFSSP  Radiosity_files/adap3.gif" width="128" height="126" alt=""></td>
+      <td valign="top" align="left"><font size="+2">3:</font>
+	    <u>Pass Type 2:</u> Examine the pixels <img src="./TGLTLSBFSSP  Radiosity_files/grid_c.gif" width="17" height="17" alt=""> which are in the middle of a group of 4 <img src="./TGLTLSBFSSP  Radiosity_files/grid_b.gif" width="17" height="17" alt="">
+		pixels. If the neighbours differ by much, then use a hemicube for this pixel, otherwise use linear interpolation.
+	  </td>
+	  <td><img src="./TGLTLSBFSSP  Radiosity_files/grid3.gif" width="113" height="113" alt=""></td>
+  </tr>
+  <tr><td><img src="./TGLTLSBFSSP  Radiosity_files/adap4.gif" width="128" height="126" alt=""></td>
+      <td valign="top" align="left"><font size="+2">4:</font>
+	    <u>Pass Type 1:</u> Same as step 2, but with half the spacing.
+	  </td>
+	  <td><img src="./TGLTLSBFSSP  Radiosity_files/grid4.gif" width="113" height="113" alt=""></td>
+  </tr>
+  <tr><td><img src="./TGLTLSBFSSP  Radiosity_files/adap5.gif" width="128" height="126" alt=""></td>
+      <td valign="top" align="left"><font size="+2">5:</font> 
+	    <u>Pass Type 2:</u> Same as step 3, but with half the spacing.
+	  </td>
+	  <td><img src="./TGLTLSBFSSP  Radiosity_files/grid5.gif" width="113" height="113" alt=""></td>
+  </tr>
+</tbody></table>
+<p>
+You should be able to see, from the maps on the left, that most of the light map was produced using linear interpolation. In fact, from
+a total of 1769 pixels, only 563 were calculated by hemicube, and 1206 by linear interpolation. Now, since rendering a hemicube takes
+a very long time indeed, compared to the negligable time required to do a linear interpolation, it represents a speed improvement
+of about 60% !</p><p>
+
+Now, this method is not perfect, and it can occasionally miss very small details in a light map, but it's pretty good in most situations.
+There's a simple way to help it catch small details, but I'll leave that up to your own imagination.
+
+</p><table border="1">
+<tbody><tr><td>
+<pre>
+####  CODE EDITING IN PROGRESS - BIT MESSY STILL ####
+
+ float <b>ratio2</b>(float <b>a</b>, float <b>b</b>)
+ {
+     if ((<b>a</b>==<b>0</b>) &amp;&amp; (<b>b</b>==<b>0</b>))    return <b>1.0</b>;
+     if ((<b>a</b>==<b>0</b>) || (<b>b</b>==<b>0</b>))    return <b>0.0</b>;
+
+     if (<b>a</b>&gt;<b>b</b>)    return <b>b</b>/<b>a</b>;
+     else        return <b>a</b>/<b>b</b>;
+ }
+
+ float <b>ratio4</b>(float <b>a</b>, float <b>b</b>, float <b>c</b>, float <b>d</b>) 
+ {
+     float <b>q1</b> = <b>ratio2</b>(<b>a</b>,<b>b</b>);
+     float <b>q2</b> = <b>ratio2</b>(<b>c</b>,<b>d</b>);
+
+     if (<b>q1</b>&lt;<b>q2</b>)    return <b>q1</b>;
+     else          return <b>q2</b>;
+ }
+
+
+ procedure CalcLightMap()
+
+ vector  normal = LightMap.Surface_Normal
+ float   Xres   = LightMap.X_resolution
+ float   Yres   = LightMap.Y_resolution
+ point3D SamplePoint
+ light   I1, I2, I3, I4
+
+ Accuracy = Some value greater than 0.0, and less than 1.0.  
+            <i>Higher values give a better quality Light Map (and a slower render).
+            0.5 is ok for the first passes of the renderer.
+            0.98 is good for the final pass.</i>
+
+ Spacing = 4     <i>Higher values of Spacing give a slightly faster render, but
+                 will be more likely to miss fine details. I find that 4 is
+                 a pretty reasonable compromise. </i>
+
+<i>
+ // <b>1:</b> Initially, calculate an even grid of pixels across the Light Map.
+ // For each pixel calculate the 3D coordinates of the centre of the patch that
+ // corresponds to this pixel. Render a hemicube at that point, and add up
+ // the incident light. Write that value into the Light Map.
+ // The spacing in this grid is fixed. The code only comes here once per Light
+ // Map, per render pass. </i>
+
+ for (y=0; y&lt;Yres; y+=Spacing)
+     for (x=0; x&lt;Xres; x+=Spacing)
+     {
+         SamplePoint = Calculate coordinates of centre of patch
+         incidentLight = Calc_Incident_Light(SamplePoint, normal)
+         LightMap[x, y] = incidentLight
+     }
+
+ <i>// return here when another pass is required</i>
+ Passes_Loop:
+     threshold = pow(Accuracy, Spacing)
+
+
+     <i>// <b>2:</b> Part 1.</i>
+     HalfSpacing = Spacing/2;
+     for (y=HalfSpacing; y&lt;=Yres+HalfSpacing; y+=Spacing)
+     {
+         for (x=HalfSpacing; x&lt;=Xres+HalfSpacing; x+=Spacing)
+         {
+             <i>// Calculate the inbetween pixels, whose neighbours are above and below this pixel</i>
+             if (x&lt;Xres)    <i>// Don't go off the edge of the Light Map now</i>
+             {
+                 x1 = x
+                 y1 = y-HalfSpacing
+
+                 <i>// Read the 2 (left and right) neighbours from the Light Map</i>
+                 I1 = LightMap[x1+HalfSpacing, y1]
+                 I2 = LightMap[x1-HalfSpacing, y1]
+
+                 <i>// If the neighbours are very similar, then just interpolate.</i>
+                 if ( (ratio2(I1.R,I2.R) &gt; threshold) &amp;&amp;
+                      (ratio2(I1.G,I2.G) &gt; threshold) &amp;&amp;
+                      (ratio2(I1.B,I2.B) &gt; threshold) )
+                 {
+                     incidentLight.R = (I1.R+I2.R) * 0.5
+                     incidentLight.G = (I1.G+I2.G) * 0.5
+                     incidentLight.B = (I1.B+I2.B) * 0.5
+                     LightMap[x1, y1] = incidentLight
+                 }
+                 <i>// Otherwise go to the effort of rendering a hemicube, and adding it all up.</i>
+                 else
+                 {
+                     SamplePoint = Calculate coordinates of centre of patch
+                     incidentLight = Calc_Incident_Light(SamplePoint, normal)
+                     LightMap[x1, y1] = incidentLight
+                 }
+             }
+             
+
+             <i>// Calculate the inbetween pixels, whose neighbours are left and right of this pixel</i>
+             if (y&lt;Yres)    <i>// Don't go off the edge of the Light Map now</i>
+             {
+                 x1 = x-HalfSpacing
+                 y1 = y
+              
+                 <i>// Read the 2 (up and down) neighbours from the Light Map</i>
+                 I1 = LightMap[x1,y1-HalfSpacing];
+                 I2 = LightMap[x1,y1+HalfSpacing];
+
+                 <i>// If the neighbours are very similar, then just interpolate.</i>
+                 if ( (ratio2(I1.R,I2.R) &gt; threshold) &amp;&amp;
+                      (ratio2(I1.G,I2.G) &gt; threshold) &amp;&amp;
+                      (ratio2(I1.B,I2.B) &gt; threshold) )
+                 {
+                     incidentLight.R = (I1.R+I2.R) * 0.5
+                     incidentLight.G = (I1.G+I2.G) * 0.5
+                     incidentLight.B = (I1.B+I2.B) * 0.5
+                     LightMap[x1,y1] = incidentLight
+                 }
+                 <i>// Otherwise go to the effort of rendering a hemicube, and adding it all up.</i>
+                 else
+                 {
+                     SamplePoint = Calculate coordinates of centre of patch
+                     incidentLight = Calc_Incident_Light(SamplePoint, normal)
+                     LightMap[x1, y1] = incidentLight
+                 }
+
+             }//end if
+
+         }//end x loop
+     }//end y loop
+
+
+
+     <i>// <b>3:</b> Part 2</i>
+     <i>// Calculate the pixels, whose neighbours are on all 4 sides of this pixel</i>
+    
+     for (y=HalfSpacing; y&lt;=(Yres-HalfSpacing); y+=Spacing)
+     {
+         for (x=HalfSpacing; x&lt;=(Xres-HalfSpacing); x+=Spacing)
+         {
+             I1 = LightMap[x, y-HalfSpacing]
+             I2 = LightMap[x, y+HalfSpacing]
+             I3 = LightMap[x-HalfSpacing, y]
+             I4 = LightMap[x+HalfSpacing, y]
+
+             if ( (ratio4(I1.R,I2.R,I3.R,I4.R) &gt; threshold) &amp;&amp;
+                  (ratio4(I1.G,I2.G,I3.G,I4.G) &gt; threshold) &amp;&amp;
+                  (ratio4(I1.B,I2.B,I3.B,I4.B) &gt; threshold) )
+             {
+                 incidentLight.R = (I1.R + I2.R + I3.R + I4.R) * 0.25
+                 incidentLight.G = (I1.G + I2.G + I3.G + I4.G) * 0.25
+                 incidentLight.B = (I1.B + I2.B + I3.B + I4.B) * 0.25
+                 LightMap[x,y] = incidentLight
+             }
+             else
+             {
+                 SamplePoint = Calculate coordinates of centre of patch
+                 incidentLight = Calc_Incident_Light(SamplePoint, normal)
+                 LightMap[x, y] = incidentLight;
+             }
+         }
+     }
+
+
+     Spacing = Spacing / 2
+     Stop if Spacing = 1, otherwise go to Passes_Loop
+
+
+</pre>
+</td>
+</tr>
+</tbody></table>
+
+<p></p><hr><p>
+
+</p><h2>Point Light Sources</h2>
+<table width="100%">
+  <tbody><tr>
+    <td>
+It is generally considered that Radiosity does not deal well with point light sources. This is true to some extent, but it is not
+impossible to have reasonable point light sources in your scene. <p>
+
+I tried adding bright, point sized objects to my scenes, that were rendered as wu-pixels. When a hemicube was rendered, they would
+appear in the hemicube as bright points, thus shining light onto patches.
+
+They almost worked, but were subject to some unacceptable artifacts. The scene on the right was lit by three point spot lights; two on the pillars at the back, and one near the top-left, pointing towards the camera. The scene appears fine from this angle, but nasty artifacts are apparent if I turn the camera around. 
+</p><p>
+
+
+
+
+    </p></td>
+    <td>
+	  <img src="./TGLTLSBFSSP  Radiosity_files/spotlight_b_05.jpg" width="240" height="240" alt="Spotlight 05">
+	</td>
+  </tr>
+
+  <tr>
+    <td>
+You can see, on the
+bottom image, three dark lines along the wall and floor. These were caused by the the light source seeming to get lost at the very edges
+of the hemicubes. Perhaps this wouldn't have been so bad if I'd got my maths absolutely perfect and the edges of the hemicubes matched perfectly, but I'm sure that there would still have been noticable artifacts.<p>
+
+So, rather than rendering the point lights onto the hemicubes, you can use ray tracing to cast the light from point sources onto
+patches.
+    </p></td>
+    <td>
+	  <img src="./TGLTLSBFSSP  Radiosity_files/spotlight_b_02.jpg" width="240" height="240" alt="Spotlight 02">
+	</td>
+  </tr>
+</tbody></table>
+
+<p></p><hr><p>
+
+</p><h2>Optimising with 3D Rendering Hardware <img src="./TGLTLSBFSSP  Radiosity_files/gef2.gif" width="150" height="88" alt="Graphics Card"></h2>
+One of the good things about Radiosity is that it's quite easy to optimise using any 32-bit
+3D rendering hardware. As long as you can make it do straight texture mapping, with no
+shading, anti-aliasing, or mip-mapping, etc.
+<p>
+How you go about this optimisation might not be quite what you expect, but it works well,
+letting the CPU and rendering hardware work together in parallel. The hardware handles the texture
+mapping and hidden surface removal (z-buffering), and the CPU handles the rest of the radiosity.</p><p>
+
+	As far as I know, there is no rendering hardware that deals with floating point lighting values,
+	or even lighting values above 255. So there is no point trying to get them to directly render
+	scenes with such lighting. However, with a little subtlety, you can get them to do the texture
+	mapping and hidden surface removal, while you put the lighting back in with a simple, fast
+	loop.</p><p>
+
+	If 3D hardware can write 32-bit pixels to the screen, then it can be made to write 32-bit values
+	representing anything we want. 3D hardware can't write actual floating point RGBs to the screen,
+	but it can write 32-bit pointers to the patches that should be rendered there. Once it's done
+	that, you simply need to take each pixel, and use it's 32-bit value as an address to locate the
+	patch that should have been rendered there.
+
+  </p><table border="0">
+  <tbody><tr>
+	<td>
+	Here is one of the patch maps from the scene above. Each pixel has a floating point value for Red,
+	Green and Blue. And so 3D hardware will not be able to deal with this directly.
+	</td>
+	<td>
+	<img src="./TGLTLSBFSSP  Radiosity_files/tex_flot.jpg" width="116" height="244" alt="Floating point texture">
+	</td>
+	<td width="128">&nbsp;</td>
+	<td>
+	<img src="./TGLTLSBFSSP  Radiosity_files/tex_pntr.jpg" width="116" height="244" alt="Pointer Texture">
+	</td>
+	<td>
+	Now this is another map. It looks totally weird, but ignore how it looks for now. Each pixel in this
+	map is actually a 32-bit value, which is the address of the corresponding pixel on the left.<p>
+	The reason the colours appear is because the lowest three bytes in the address are interpreted
+	as colours.
+	</p></td>
+  </tr>
+	</tbody></table>
+
+<table width="100%" border="0">
+<tbody><tr><td>
+Once you make a whole set of these <b>pointer textures</b> (one for each surface in your scene), you can
+give them to the 3D hardware to render with them. The scene it comes out with will look something like this (right).<p>
+
+The scene looks totally odd, but you can make out surfaces covered with patterns similar to the one above.
+The pixels should not be interpreted as colours, but as pointers. If your graphics card used 32-bit textures, then they will be in a form something like ARGB, with A, R G and B being 8-bit values. Ignore
+this structure and treat each pixel as a 32-bit value. Use them as memory pointers back to the patches
+that should be there, and recreate the scene properly with patches.</p><p>
+
+<b>Important:</b> You <i>must</i> make sure that you render the scene purely texture mapped. That means: <b>NO linear interpolation,
+NO anti-aliasing, NO motion blur, NO shading/lighting, NO Mip Mapping, NO Fog, NO Gamma Correction</b> or anything else that isn't just a straight texture map. If you
+do not do this, the adresses produced will not point to the correct place, and your code will almost certainally crash.
+</p></td><td>
+<img src="./TGLTLSBFSSP  Radiosity_files/scn_ptr.jpg" width="256" height="254" alt="Rendered Pointers">
+</td></tr>
+</tbody></table>
+
+It should be clear how this optimises radiosity calculations. If it's not obvious, let me know and I'll try and add some more
+explanation.
+
+<p></p><hr><p>
+
+<!--
+You should be able to see that radiosity is hardly more complicated than
+texture mapping, and so if you can write your own basic texture mapping engine,
+then you can write your own radiosity renderer.<p>
+If you have tried texture mapping before, it was probably either the 8-bit
+palette or 24-bit RGB variety. This is different; 8 bits for each of R, G
+and B are not enough. Radiosity simulates real-world lighting levels. For
+example the sky is about 100 times the brightness of a lightbulb, and the
+sun is 300,000 times the brightness of the sky. So you see that trying to
+to cope with such a huge range, then limiting yourself to 0-255 is not
+enough. You really need to -->
+
+
+</p><p></p><hr><p>
+
+</p><h2>Misunderstanding and Confusion:</h2>
+<h3>(What to do with the image once you've rendered it)</h3>
+The output of a radiosity renderer is an image where each pixel consists of three floating point values, one for each of red, green
+and blue. The range of brightness values in this image may well be vast. As I have said before, the brightness of the sky is very much
+greater than the brightness of an average surface indoors. And the sun is thousands of times brighter than that. What do you do with
+such an image?<p> 
+
+Your average monitor can at best produce only dim light, not a lot brighter than a surface indoors. Clearly you cannot display your
+image directly on a monitor. To do this would require a monitor that could produce light as bright as the sun, and a graphics card
+with 32 bits per channel. These things don't exist for technical, not to mention safety, issues. So what can you do?</p><p>
+
+Most people seem to be happy to look at photographs and accept them as faithful representations of reality. They are wrong. Photographs
+are no better than monitors for displaying real-life bright images. Photographs cannot give off light as bright as the sun, but people
+never question their realism. Now this is where confusion sets in.</p><p>
+
+</p><h3>Human Vision</h3>
+Our vision is just about the most important sense we have. Every day I trust my life to it, and so far it hasn't got me killed.
+Frequently it has saved my life and limb. This was an important sense for our ancestors too, right back to the very first fish or
+whatever we evolved from.  Our eyeballs have had a long time to evolve and have been critical in our survival, and so they have become
+very good indeed. They are sensitive to very low light levels (the dimmest flash you can see is as dim as 5 photons), and yet can cope
+with looking at the very bright sky. Our eyeballs are not the only parts of our vision, perhaps even more important is the brain
+behind them. An increadibly sophisticated piece circuitry, poorly understood, and consisting of many layers of processing takes the
+output of our eyeballs and converts it to a sense of what actually exists infront of us. The brain has to be able to recognise the same
+objects no matter how they are lit, and actually does an amazing job of compensating for the different types of lighting we encounter.
+We don't even notice a difference when we walk from the outdoors lit by a bright blue sky, to the indoors lit by dim yellow lightbulbs.
+If you've ever tried to take photos in these two conditions, you may have had to change to a different type of film to stop your pictures
+coming out yellow and dark.<p>
+
+Try this: Go out in a totally overcast day. Stand infront of something white. If you look at the clouds, you will see them as being grey,
+but look at the white object, and it appears to be white. So what? Well the white thing is lit by the grey clouds and so can't possibly
+be any brighter than them (in fact it will be darker), and yet we still perceive it to be white. If you don't believe me, take a photo
+showing the white thing and the sky in the background. You will see that the white thing looks darker than the clouds.</p><p>
+
+<u>Don't trust your eyes:</u> They are a hell of a lot smarter than you are.</p><p>
+
+So what can you do? Well, since people are so willing to accept photographs as representations of reality we can take the output of
+the renderer, which is a physical model of the light in a scene, and process this with a rough approximation of a camera film. I have
+already written an article on this: <a href="http://freespace.virgin.net/hugo.elias/graphics/x_posure.htm">Exposure</a>, so I will say no more about it here.
+
+</p><p></p><hr><p>
+<font size="+2">References</font></p><p>
+
+<b><a href="http://graphics.cs.uiuc.edu/~jch/papers/pst.pdf">The Solid Map:
+Methods for Generating a 2­D Texture Map
+for Solid Texturing:</a> http://graphics.cs.uiuc.edu/~jch/papers/pst.pdf</b><br>
+&nbsp;&nbsp;&nbsp;&nbsp;This paper will be very useful if you are going to try to implement your own
+radiosity renderer. How do you apply a texture map evenly, and without distortion across some
+arbitary polygonal object? A radiosity renderer will need to do this.
+
+
+</p><p>
+
+<b><a href="http://www.helios32.com/">Helios32:</a> http://www.helios32.com/</b><br>
+&nbsp;&nbsp;&nbsp;&nbsp;Offers a platform-independent solution for developers looking for radiosity rendering capabilities.
+
+</p><p>
+
+<b><a href="http://www.flipcode.com/tutorials/tut_rad.shtml">Radiosity In English:</a> 
+http://www.flipcode.com/tutorials/tut_rad.shtml</b><br>
+&nbsp;&nbsp;&nbsp;&nbsp;As the title suggests this is an article about Radiosity, written using English words. I didn't understand it.
+
+</p><p>
+
+<b><a href="http://www.gamedev.net/reference/programming/features/rtradiosity2/">Real Time Radiosity:</a> http://www.gamedev.net/reference/programming/features/rtradiosity2/</b><br>
+&nbsp;&nbsp;&nbsp;&nbsp;That sounds a little more exciting. There doesn't seem to be a demo though.
+
+</p><p>
+
+<b><a href="http://www.cs.cmu.edu/~radiosity/emprad-tr.html">An Empirical Comparison of Radiosity Algorithms:</a> http://www.cs.cmu.edu/~radiosity/emprad-tr.html</b><br>
+&nbsp;&nbsp;&nbsp;&nbsp;A good technical article comparing matrix, progressive, and wavelet radiosity algorithms. Written by a couple of
+the masters.
+
+</p><p>
+
+<b><a href="http://graphics.stanford.edu/papers/rad/">A Rapid Hierarchical Radiosity Algorithm:</a> http://graphics.stanford.edu/papers/rad/</b><br>
+&nbsp;&nbsp;&nbsp;&nbsp;A paper that presents a rapid hierarchical radiosity algorithm for illuminating scenes containing large polygonal patches.
+
+</p><p>
+
+<b><a href="http://ls7-www.informatik.uni-dortmund.de/~kohnhors/radiosity.html">KODI's Radiosity Page :</a> http://ls7-www.informatik.uni-dortmund.de/~kohnhors/radiosity.html</b><br>
+&nbsp;&nbsp;&nbsp;&nbsp;A whole lot of good radiosity links.
+
+</p><p>
+
+<b><a href="http://web.tiscalinet.it/GiulianoCornacchiola/Eng/GraphicLinks6.htm">Graphic Links:</a> http://web.tiscalinet.it/GiulianoCornacchiola/Eng/GraphicLinks6.htm</b><br>
+&nbsp;&nbsp;&nbsp;&nbsp;Even more good links.
+
+</p><p>
+
+<b><a href="http://www.scs.leeds.ac.uk/cuddles/rover/">Rover: Radiosity for Virtual Reality Systems: </a>http://www.scs.leeds.ac.uk/cuddles/rover/</b><br>
+&nbsp;&nbsp;&nbsp;&nbsp;*Very Good* A thesis on Radiosity. Contains a large selection of good articles on radiosity, and
+very many abstracts of papers on the subject.
+
+</p><p>
+
+<b><a href="http://www.arce.ukans.edu/book/daylight/daylight.htm">Daylighting Design:</a>
+http://www.arce.ukans.edu/book/daylight/daylight.htm</b><br>
+&nbsp;&nbsp;&nbsp;&nbsp;A very indepth article about daylight.
+
+
+</p><p></p><hr><p>
+
+</p><table width="100%" border="0">
+  <tbody><tr>
+  <td>
+    <table><tbody><tr>
+	<td width="95">
+      <a href="http://freespace.virgin.net/hugo.elias">
+        <img src="./TGLTLSBFSSP  Radiosity_files/flagsmal.gif" width="95" height="50" border="0" alt="">
+	  </a>
+	</td>
+    <td>
+      <a href="http://freespace.virgin.net/hugo.elias">
+        Return to the Good Looking<br>Textured Light Sourced<br> Bouncy Fun Smart and Stretchy Page. 
+      </a>
+	</td>
+	</tr></tbody></table>
+	</td>
+	<td>
+	    <a href="http://validator.w3.org/check/referer"><img border="0" src="./TGLTLSBFSSP  Radiosity_files/valid-html401" alt="Valid HTML 4.01!" height="31" width="88"></a>
+	</td>
+	<td align="right">
+      <img align="right" src="./TGLTLSBFSSP  Radiosity_files/copyrite.gif" width="198" height="91" alt="">
+	</td>
+  </tr>
+</tbody></table>
+
+
+</body></html>
