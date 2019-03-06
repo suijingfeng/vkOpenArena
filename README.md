@@ -23,8 +23,8 @@ Install the build dependencies.
 ```sh
 $ sudo apt-get install libcurl4-openssl-dev libsdl2-dev libopenal-dev libvulkan-dev libgl1-mesa-dev
 $ sudo apt-get install clang gcc make git
-$ git clone https://github.com/suijingfeng/engine.git
-$ cd engine
+$ git clone https://github.com/suijingfeng/vkOpenArena.git
+$ cd vkOpenArena
 $ make
 ```
 
@@ -64,8 +64,8 @@ pacman -S mingw-w64-x86_64-gcc make git
 4. Grab latest openarena source code from github and compile. Note that in msys2, your drives are linked as folders in the root directory: C:\ is /c/, D:\ is /d/, and so on.
 
 ```sh
-git clone https://github.com/suijingfeng/engine.git
-cd engine
+git clone https://github.com/suijingfeng/vkOpenArena.git
+cd vkOpenArena
 make
 ```
 5. Find the executables and dlls in build/release-mingw64-x86\_64 . 
@@ -74,8 +74,7 @@ make
 
 ## RUN ##
 First, download the map packages from http://openarena.ws/download.php
-Second, extract the data files at
-~/.OpenArena/ (on linux) 
+Second, extract the data files at ~/.OpenArena/ (on linux) 
 C:\Users\youname\AppData\Roaming\OpenArena\ (on windows)
 
 
@@ -88,9 +87,7 @@ $ ./openarena.x86_64
 ## Switching renderers ##
 
 
-This feature is enabled by default. If you wish to disable it, 
-set `USE_RENDERER_DLOPEN=0` in the Makefile.
-This allow for build modular renderers and select or switch 
+This feature is enabled by default. This allow for build modular renderers and select or switch 
 the renderer at runtime rather than compiling into one binary.
 When you start OpenArena, you can switch witch dynamic library to load by passing its name. 
 
@@ -124,6 +121,7 @@ Q: How to check that Vulkan backend is really active ?
 ```
 Type \vkinfo in the console reports information about active rendering backend.
 
+If you wish to disable it, set `USE_RENDERER_DLOPEN=0` in the Makefile.
 
 
 # OpenArena gamecode
