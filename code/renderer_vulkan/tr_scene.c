@@ -339,26 +339,12 @@ void RE_RenderScene( const refdef_t *fd )
 	}
 
     tr.refdef.rd = *fd;
-/*  
-	tr.refdef.x = fd->x;
-	tr.refdef.y = fd->y;
-	tr.refdef.width = fd->width;
-	tr.refdef.height = fd->height;
-	tr.refdef.fov_x = fd->fov_x;
-	tr.refdef.fov_y = fd->fov_y;
 
-	VectorCopy( fd->vieworg, tr.refdef.vieworg );
-
-    //VectorCopy( fd->viewaxis[0], tr.refdef.viewaxis[0] );
-	//VectorCopy( fd->viewaxis[1], tr.refdef.viewaxis[1] );
-	//VectorCopy( fd->viewaxis[2], tr.refdef.viewaxis[2] );
-    Mat3x3Copy(tr.refdef.viewaxis, fd->viewaxis);
-
-	tr.refdef.time = fd->time;
-	tr.refdef.rdflags = fd->rdflags;
-
-    memcpy( tr.refdef.text, fd->text, sizeof( tr.refdef.text ) );
-*/
+    // a single frame may have multiple scenes draw inside it --
+	// a 3D game view, 3D status bar renderings, 3D menus, etc.
+	// They need to be distinguished by the light flare code, because
+	// the visibility state for a given surface may be different in
+	// each scene / view.
 
 	// derived info
 
@@ -414,8 +400,10 @@ void RE_RenderScene( const refdef_t *fd )
     Mat3x3Copy(parms.or.axis, fd->viewaxis);
 	parms.isPortal = qfalse;
 
-
-	R_RenderView( &parms );
+	if ( (parms.viewportWidth > 0) && (parms.viewportHeight > 0) ) 
+    {
+		R_RenderView( &parms );
+	}
 
 	// the next scene rendered in this frame will tack on after this one
 	r_firstSceneDrawSurf = tr.refdef.numDrawSurfs;
@@ -433,7 +421,6 @@ typedef struct {
 //	vec3_t		pvsOrigin;			// may be different than or.origin for portals
 //	qboolean	isPortal;			// true if this view is through a portal
 	qboolean	isMirror;			// the portal is a mirror, invert the face culling
-	int			frameCount;			// copied from tr.frameCount
 	cplane_t	portalPlane;		// clip anything behind this if mirroring
 //	int			viewportX, viewportY, viewportWidth, viewportHeight;
 //	float		fovX, fovY;

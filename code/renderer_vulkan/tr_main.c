@@ -818,7 +818,6 @@ static qboolean R_MirrorViewBySurface (drawSurf_t *drawSurf, int entityNum)
 	R_MirrorVector (oldParms.or.axis[2], &surface, &camera, newParms.or.axis[2]);
 
 	// OPTIMIZE: restrict the viewport on the mirrored view
-    ri.Printf(PRINT_ALL, "R_MirrorViewBySurface()\n");
 	// render the mirror view
 	R_RenderView (&newParms);
 
@@ -1260,10 +1259,6 @@ or a mirror / remote location
 void R_RenderView (viewParms_t *parms)
 {
 	int		firstDrawSurf;
-
-	if ( (parms->viewportWidth <= 0) || (parms->viewportHeight <= 0) ) {
-		return;
-	}
 
 	tr.viewCount++;
 
