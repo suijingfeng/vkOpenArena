@@ -169,7 +169,7 @@ int R_ComputeLOD( trRefEntity_t *ent )
 
 	    //ri.Printf( PRINT_ALL, "%f: \n", projectedRadius);
         
-        lod = (1.0f - projectedRadius * 5.0f) * tr.currentModel->numLods;
+        lod = (1.0f - projectedRadius * 6 ) * tr.currentModel->numLods;
 
          
         if ( lod < 0 )

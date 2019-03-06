@@ -1614,6 +1614,7 @@ Q3VKOBJ = \
   $(B)/renderer_vulkan/tr_surface.o \
   $(B)/renderer_vulkan/RB_SurfaceAnim.o \
   $(B)/renderer_vulkan/tr_flares.o \
+  $(B)/renderer_vulkan/tr_fog.o \
   $(B)/renderer_vulkan/tr_world.o \
   $(B)/renderer_vulkan/tr_common.o \
   $(B)/renderer_vulkan/tr_displayResolution.o \

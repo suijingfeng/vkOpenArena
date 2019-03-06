@@ -19,69 +19,6 @@ along with Foobar; if not, write to the Free Software
 Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 ===========================================================================
 */
-// tr_image.c
-
-#include "tr_local.h"
-#include "tr_globals.h"
-#include "vk_image.h"
-#include "../renderercommon/ref_import.h"
-
-
-
-void R_InitFogTable( void )
-{
-	uint32_t i;
-	float	exp = 0.5;
-
-	for ( i = 0 ; i < FOG_TABLE_SIZE ; i++ )
-    {
-		float d = pow ( (float)i/(FOG_TABLE_SIZE-1), exp );
-
-		tr.fogTable[i] = d;
-	}
-}
-
-/*
-================
-R_FogFactor
-
-Returns a 0.0 to 1.0 fog density value
-This is called for each texel of the fog texture on startup
-and for each vertex of transparent shaders in fog dynamically
-================
-*/
-float R_FogFactor( float s, float t )
-{
-	s -= 1.0/512;
-	if ( s < 0 ) {
-		return 0;
-	}
-	if ( t < 1.0/32 ) {
-		return 0;
-	}
-	if ( t < 31.0/32 ) {
-		s *= (t - 1.0f/32.0f) / (30.0f/32.0f);
-	}
-
-	// we need to leave a lot of clamp range
-	s *= 8;
-
-	if ( s > 1.0 ) {
-		s = 1.0;
-	}
-
-	float d = tr.fogTable[ (int)(s * (FOG_TABLE_SIZE-1)) ];
-
-	return d;
-}
-
-
-
-
-
-
-
-
 
 /*
 ============================================================================
@@ -90,6 +27,12 @@ SKINS
 
 ============================================================================
 */
+
+#include "tr_local.h"
+#include "tr_globals.h"
+#include "../renderercommon/ref_import.h"
+
+
 
 /*
 ==================
@@ -208,6 +151,7 @@ RE_RegisterSkin
 */
 qhandle_t RE_RegisterSkin( const char *name )
 {
+    
 	qhandle_t	hSkin;
 	skin_t		*skin;
 	skinSurface_t	*surf;
@@ -302,7 +246,6 @@ qhandle_t RE_RegisterSkin( const char *name )
 
 	return hSkin;
 }
-
 
 /*
 ===============

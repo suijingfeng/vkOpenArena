@@ -697,9 +697,8 @@ typedef struct {
 
 #define	MAX_DRAWIMAGES			2048
 #define	MAX_LIGHTMAPS			256
+
 #define	MAX_SKINS				1024
-
-
 #define	MAX_DRAWSURFS			0x10000
 #define	DRAWSURF_MASK			(MAX_DRAWSURFS-1)
 
@@ -743,7 +742,7 @@ typedef struct {
 	int		c_dlightSurfacesCulled;
 } frontEndCounters_t;
 
-#define	FOG_TABLE_SIZE		256
+
 #define FUNCTABLE_SIZE		1024
 #define FUNCTABLE_SIZE2		10
 #define FUNCTABLE_MASK		(FUNCTABLE_SIZE-1)
@@ -798,8 +797,6 @@ void	R_SkinList_f( void );
 // https://zerowing.idsoftware.com/bugzilla/show_bug.cgi?id=516
 
 
-void	R_InitFogTable( void );
-float	R_FogFactor( float s, float t );
 void	R_InitImages( void );
 void	R_InitSkins( void );
 skin_t	*R_GetSkinByHandle( qhandle_t hSkin );

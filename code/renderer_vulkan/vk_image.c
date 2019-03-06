@@ -6,6 +6,7 @@
 #include "vk_instance.h"
 #include "tr_globals.h"
 #include "tr_cvar.h"
+#include "tr_fog.h"
 
 
 #define IMAGE_CHUNK_SIZE        (8 * 1024 * 1024)

@@ -34,6 +34,8 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #include "R_LerpTag.h"
 #include "R_ModelBounds.h"
 #include "R_StretchRaw.h"
+#include "tr_fog.h"
+
 
 refimport_t	ri;
 

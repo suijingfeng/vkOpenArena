@@ -45,7 +45,7 @@ cd SDL
 mkdir build
 cd build
 ../configure
-make
+make -j4
 sudo make install
 ```
 
@@ -66,7 +66,7 @@ pacman -S mingw-w64-x86_64-gcc make git
 ```sh
 git clone https://github.com/suijingfeng/vkOpenArena.git
 cd vkOpenArena
-make
+make -j4
 ```
 5. Find the executables and dlls in build/release-mingw64-x86\_64 . 
 
