@@ -87,6 +87,11 @@ extern cvar_t* r_displayRefresh;
 
 extern cvar_t* r_allowResize; // make window resizable
 
+
+extern	cvar_t	*r_ambientScale;
+extern	cvar_t	*r_directedScale;
+extern	cvar_t	*r_debugLight;
+
 void R_Register( void );
 
 

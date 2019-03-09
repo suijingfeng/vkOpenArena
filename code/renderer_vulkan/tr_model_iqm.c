@@ -836,7 +836,11 @@ R_AddIQMSurfaces
 Add all surfaces of this model
 =================
 */
-void R_AddIQMSurfaces( trRefEntity_t *ent ) {
+void R_AddIQMSurfaces( trRefEntity_t *ent )
+{
+    // 
+    ri.Printf( PRINT_ALL, "Add IQM Surfaces. \n");
+
 	iqmData_t		*data;
 	srfIQModel_t		*surface;
 	int			i, j;
@@ -905,9 +909,9 @@ void R_AddIQMSurfaces( trRefEntity_t *ent ) {
 
 			for(j = 0; j < skin->numSurfaces; j++)
 			{
-				if (!strcmp(skin->surfaces[j]->name, surface->name))
+				if (!strcmp(skin->pSurfaces[j].name, surface->name))
 				{
-					shader = skin->surfaces[j]->shader;
+					shader = skin->pSurfaces[j].shader;
 					break;
 				}
 			}

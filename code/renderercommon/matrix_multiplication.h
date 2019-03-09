@@ -35,10 +35,4 @@ void TransformModelToClip( const float src[3], const float *modelMatrix, const f
 void TransformModelToClip_SSE( const float src[3], const float pMatModel[16], const float pMatProj[16], float dst[4] );
 
 
-// data print helper
-void print3f(const char* name, const float src[3]);
-void print4f(const char* name, const float src[4]);
-void printMat4x4f(const char* name, const float src[16]);
-
-
 #endif

@@ -161,26 +161,6 @@ void Mat3x3Identity( float pMat[3][3] )
 
 
 
-
-
-void print3f(const char* name, const float src[3])
-{
-    printf("\n float %s[3] = {%f, %f, %f};\n", name, src[0], src[1], src[2]);
-}
-
-void print4f(const char* name, const float src[4])
-{
-    printf("\n float %s[4] = {%f, %f, %f, %f};\n", name, src[0], src[1], src[2], src[3]);
-}
-
-void printMat4x4f(const char* name, const float src[16])
-{
-    printf("\n float %s[16] = {%f, %f, %f, %f, %f, %f, %f, %f, %f, %f, %f, %f, %f, %f, %f, %f};\n", name,
-            src[0], src[1], src[2], src[3], src[4], src[5], src[6], src[7], 
-            src[8], src[9], src[10], src[11], src[12], src[13], src[14], src[15]);
-}
-
-
 void TransformModelToClip_SSE( const float src[3], const float pMatModel[16], const float pMatProj[16], float dst[4] )
 {
 	float AugSrc[4]	= {src[0], src[1], src[2], 1.0f};

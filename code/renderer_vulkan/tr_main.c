@@ -34,6 +34,7 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
 #include "R_DEBUG.h"
 
+#include "R_PrintMat.h"
 
 
 // entities that will have procedurally generated surfaces will just
@@ -261,6 +262,10 @@ void R_RotateForEntity( const trRefEntity_t *ent, const viewParms_t *viewParms, 
 	or->viewOrigin[0] = DotProduct( delta, or->axis[0] ) * axisLength;
 	or->viewOrigin[1] = DotProduct( delta, or->axis[1] ) * axisLength;
 	or->viewOrigin[2] = DotProduct( delta, or->axis[2] ) * axisLength;
+
+    printMat1x3f("viewOrigin", or->viewOrigin);
+    printMat4x4f("modelMatrix", or->modelMatrix);
+
 }
 
 /*
@@ -1206,10 +1211,15 @@ void R_AddEntitySurfaces (void)
 			R_RotateForEntity( ent, &tr.viewParms, &tr.or );
 
 			tr.currentModel = R_GetModelByHandle( ent->e.hModel );
-			if (!tr.currentModel) {
+
+			if (!tr.currentModel)
+            {
 				R_AddDrawSurf( &entitySurface, tr.defaultShader, 0, 0 );
-			} else {
-				switch ( tr.currentModel->type ) {
+			}
+            else
+            {
+				switch ( tr.currentModel->type )
+                {
 				case MOD_MESH:
 					R_AddMD3Surfaces( ent );
 					break;
@@ -1218,6 +1228,7 @@ void R_AddEntitySurfaces (void)
 					break;
 				case MOD_IQM:
 					R_AddIQMSurfaces( ent );
+                    break;
 				case MOD_MD4:
 					R_AddAnimSurfaces( ent );
 					break;

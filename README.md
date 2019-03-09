@@ -12,7 +12,7 @@
 
 
 # OpenArena Engine 
-This project is a fork of OpenArena with specific changes to the client and server.
+This project is a fork of OpenArena with specific changes to its renderer module.
 
 
 
@@ -25,7 +25,7 @@ $ sudo apt-get install libcurl4-openssl-dev libsdl2-dev libopenal-dev libvulkan-
 $ sudo apt-get install clang gcc make git
 $ git clone https://github.com/suijingfeng/vkOpenArena.git
 $ cd vkOpenArena
-$ make
+$ make -j4
 ```
 
 Please note that vulkan renderer requires at least SDL 2.0.6. 
@@ -192,7 +192,9 @@ ri.Printf( PRINT_WARNING, "s_worldData.lightGridBounds[i]=%d\n", s_worldData.lig
 * merge rendergl1, rendereroa, renderer\_mydev to one module
 * r\_gamma shader
 * have issues with \minimize when use vulkan renderer in fullscreen. recreate the swapchain ?
-
+* flare support
+* fixing the mirror
+* RB\_AddAxis
 * Use gprof to examine the performance of the program
 ```
 gprof openarena.x86_64 gmon.out > report.txt
