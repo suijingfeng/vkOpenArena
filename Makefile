@@ -1599,7 +1599,6 @@ Q3VKOBJ = \
   $(B)/renderer_vulkan/tr_model_iqm.o \
   $(B)/renderer_vulkan/RE_RegisterModel.o \
   $(B)/renderer_vulkan/R_ModelBounds.o \
-  $(B)/renderer_vulkan/R_LoadMD4.o \
   $(B)/renderer_vulkan/R_LoadMD3.o \
   $(B)/renderer_vulkan/R_LoadMDR.o \
   $(B)/renderer_vulkan/R_LerpTag.o \

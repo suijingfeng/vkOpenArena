@@ -200,24 +200,33 @@ R_RotateForEntity
 Generates an orientation for an entity and viewParms
 Does NOT produce any GL calls
 Called by both the front end and the back end
+
+typedef struct {
+	float		modelMatrix[16] QALIGN(16);
+	float		axis[3][3];		// orientation in world
+    float		origin[3];			// in world coordinates
+	float		viewOrigin[3];		// viewParms->or.origin in local coordinates
+} orientationr_t;
+
 =================
 */
-void R_RotateForEntity( const trRefEntity_t *ent, const viewParms_t *viewParms, orientationr_t *or )
+void R_RotateForEntity(const trRefEntity_t* ent, const viewParms_t* viewParms, orientationr_t* or)
 {
 
-	if ( ent->e.reType != RT_MODEL ) {
+	if ( ent->e.reType != RT_MODEL )
+    {
 		*or = viewParms->world;
 		return;
 	}
 
-	VectorCopy( ent->e.origin, or->origin );
-
+	//VectorCopy( ent->e.origin, or->origin );
 	//VectorCopy( ent->e.axis[0], or->axis[0] );
 	//VectorCopy( ent->e.axis[1], or->axis[1] );
 	//VectorCopy( ent->e.axis[2], or->axis[2] );
+    memcpy(or->origin, ent->e.origin, 12);
     memcpy(or->axis, ent->e.axis, 36);
 
-	float	glMatrix[16] QALIGN(16);
+	float glMatrix[16] QALIGN(16);
 
 	glMatrix[0] = or->axis[0][0];
 	glMatrix[1] = or->axis[0][1];
@@ -243,17 +252,16 @@ void R_RotateForEntity( const trRefEntity_t *ent, const viewParms_t *viewParms, 
 
 	// calculate the viewer origin in the model's space
 	// needed for fog, specular, and environment mapping
-    vec3_t	delta;
+    vec3_t delta;
 
 	VectorSubtract( viewParms->or.origin, or->origin, delta );
 
 	// compensate for scale in the axes if necessary
-    float	axisLength = 1.0f;
-	if ( ent->e.nonNormalizedAxes ) {
+    float axisLength = 1.0f;
+	if ( ent->e.nonNormalizedAxes )
+    {
 		axisLength = VectorLength( ent->e.axis[0] );
-		if ( !axisLength ) {
-			axisLength = 0;
-		} else {
+		if ( axisLength ) {
 			axisLength = 1.0f / axisLength;
 		}
 	}
@@ -292,12 +300,9 @@ void R_RotateForViewer (void)
 	float viewerMatrix[16] QALIGN(16);
 	float o0, o1, o2;
 
-    tr.or.origin[0] = tr.or.origin[1] = tr.or.origin[2]=0;
-//	tr.or.axis[0][0] = 1;
-//	tr.or.axis[1][1] = 1;
-//	tr.or.axis[2][2] = 1;
-
+    tr.or.origin[0] = tr.or.origin[1] = tr.or.origin[2] = 0;
     Mat3x3Identity(tr.or.axis);
+
 
     // transform by the camera placement
 	// VectorCopy( tr.viewParms.or.origin, tr.or.viewOrigin );
@@ -306,7 +311,6 @@ void R_RotateForViewer (void)
     tr.or.viewOrigin[0] = o0 = tr.viewParms.or.origin[0];
     tr.or.viewOrigin[1] = o1 = tr.viewParms.or.origin[1];
     tr.or.viewOrigin[2] = o2 = tr.viewParms.or.origin[2];
-
 
 	viewerMatrix[0] = tr.viewParms.or.axis[0][0];
 	viewerMatrix[1] = tr.viewParms.or.axis[1][0];
@@ -1157,7 +1161,7 @@ R_AddEntitySurfaces
 */
 void R_AddEntitySurfaces (void)
 {
-	trRefEntity_t	*ent;
+
 	shader_t		*shader;
 
 	if ( !r_drawentities->integer ) {
@@ -1167,7 +1171,8 @@ void R_AddEntitySurfaces (void)
 	for ( tr.currentEntityNum = 0; 
 	      tr.currentEntityNum < tr.refdef.num_entities; 
 		  tr.currentEntityNum++ ) {
-		ent = tr.currentEntity = &tr.refdef.entities[tr.currentEntityNum];
+		
+        trRefEntity_t* ent = tr.currentEntity = &tr.refdef.entities[tr.currentEntityNum];
 
 		ent->needDlights = qfalse;
 
@@ -1207,10 +1212,14 @@ void R_AddEntitySurfaces (void)
 			R_RotateForEntity( ent, &tr.viewParms, &tr.or );
 
 			tr.currentModel = R_GetModelByHandle( ent->e.hModel );
-			if (!tr.currentModel) {
+			if (!tr.currentModel)
+            {
 				R_AddDrawSurf( &entitySurface, tr.defaultShader, 0, 0 );
-			} else {
-				switch ( tr.currentModel->type ) {
+			}
+            else
+            {
+				switch ( tr.currentModel->type )
+                {
 				case MOD_MESH:
 					R_AddMD3Surfaces( ent );
 					break;
@@ -1219,9 +1228,6 @@ void R_AddEntitySurfaces (void)
 					break;
 				case MOD_IQM:
 					R_AddIQMSurfaces( ent );
-				case MOD_MD4:
-					R_AddAnimSurfaces( ent );
-					break;
 				case MOD_BRUSH:
 					R_AddBrushModelSurfaces( ent );
 					break;

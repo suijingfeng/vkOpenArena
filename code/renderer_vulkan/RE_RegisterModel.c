@@ -16,8 +16,7 @@ static const modelExtToLoaderMap_t modelLoaders[ ] =
 {
     { "md3", R_RegisterMD3 },
 	{ "mdr", R_RegisterMDR },
-    { "iqm", R_RegisterIQM },
-	{ "md4", R_RegisterMD4 }
+    { "iqm", R_RegisterIQM }
 };
 
 static const uint32_t numModelLoaders = ARRAY_LEN(modelLoaders);
@@ -96,10 +95,6 @@ qhandle_t RE_RegisterModel( const char *name )
         {
             hModel = R_RegisterMD3(name, mod);
         }
-        else if( (dot[1] == 'm') && (dot[2] == 'd') && (dot[3] == '4') )
-        {
-            hModel = R_RegisterMD4(name, mod);
-        }
         else if( (dot[1] == 'm') && (dot[2] == 'd') && (dot[3] == 'r') )
         {
             hModel = R_RegisterMDR(name, mod);
@@ -115,7 +110,8 @@ qhandle_t RE_RegisterModel( const char *name )
     }
 	else    
 	{
-        ri.Printf( PRINT_WARNING, "RegisterModel: %s without extention. Try and find a suitable match using all the model formats supported\n ", name);
+        ri.Printf( PRINT_WARNING, "RegisterModel: %s without extention. "
+            " Try and find a suitable match using all the model formats supported\n", name);
 
         uint32_t i;
         for( i = 0; i < numModelLoaders; i++ )

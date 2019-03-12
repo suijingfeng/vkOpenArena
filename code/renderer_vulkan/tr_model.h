@@ -100,8 +100,7 @@ typedef enum {
 	MOD_BRUSH,
 	MOD_MESH,
 	MOD_MDR,
-	MOD_IQM,
-	MOD_MD4
+	MOD_IQM
 } modtype_t;
 
 typedef struct model_s {
