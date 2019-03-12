@@ -85,10 +85,6 @@ void RB_EndSurface( void )
 		return;
 	}
     
-	if (tess.shader->isSky && r_fastsky->integer) {
-		return;
-	}
-
 	if (tess.indexes[SHADER_MAX_INDEXES-1] != 0) {
 		ri.Error (ERR_DROP, "RB_EndSurface() - SHADER_MAX_INDEXES hit");
 	}	

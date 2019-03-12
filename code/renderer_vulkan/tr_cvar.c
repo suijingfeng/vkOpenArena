@@ -12,7 +12,6 @@ cvar_t	*r_znear;
 
 
 cvar_t	*r_inGameVideo;
-cvar_t	*r_fastsky;
 cvar_t	*r_dynamiclight;
 
 cvar_t	*r_norefresh;
@@ -107,7 +106,6 @@ void R_Register( void )
 	r_znear = ri.Cvar_Get( "r_znear", "4", CVAR_CHEAT );
     ri.Cvar_CheckRange( r_znear, 0.001f, 200, qtrue );
 
-	r_fastsky = ri.Cvar_Get( "r_fastsky", "0", CVAR_ARCHIVE );
 	r_inGameVideo = ri.Cvar_Get( "r_inGameVideo", "1", CVAR_ARCHIVE );
 	r_dynamiclight = ri.Cvar_Get( "r_dynamiclight", "1", CVAR_ARCHIVE );
 	r_gamma = ri.Cvar_Get( "r_gamma", "1", CVAR_ARCHIVE | CVAR_LATCH );

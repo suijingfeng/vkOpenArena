@@ -229,15 +229,6 @@ static void RB_RenderDrawSurfList( drawSurf_t* drawSurfs, int numDrawSurfs )
 	//
 
 	// ensures that depth writes are enabled for the depth clear
-    if(r_fastsky->integer && !( backEnd.refdef.rd.rdflags & RDF_NOWORLDMODEL ))
-    {
-        #ifndef NDEBUG
-        static const float fast_sky_color[4] = { 0.8f, 0.7f, 0.4f, 1.0f };
-        #else
-        static const float fast_sky_color[4] = { 0.0f, 0.0f, 0.0f, 1.0f };
-        #endif
-        vk_clearColorAttachments(fast_sky_color);
-    }
     
 
 	// VULKAN
