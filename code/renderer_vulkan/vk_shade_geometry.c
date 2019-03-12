@@ -102,7 +102,7 @@ void R_SetupProjection( float pMatProj[16] )
         o[2] = tr.viewParms.or.origin[2];
 
         float farthestCornerDistance = 0;
-        uint32_t	i;
+        uint32_t i;
 
         // set far clipping planes dynamically
         for ( i = 0; i < 8; i++ )
@@ -390,7 +390,6 @@ void updateCurDescriptor( VkDescriptorSet curDesSet, uint32_t tmu)
 
 
 
-
 void vk_shade_geometry(VkPipeline pipeline, VkBool32 multitexture, enum Vk_Depth_Range depth_range, VkBool32 indexed)
 {
 
@@ -421,7 +420,6 @@ void vk_shade_geometry(VkPipeline pipeline, VkBool32 multitexture, enum Vk_Depth
 		memcpy(dst, tess.svars.texcoords[1], tess.numVertexes * sizeof(vec2_t));
 	}
 
-    
 	qvkCmdBindVertexBuffers(vk.command_buffer, 1, multitexture ? 3 : 2, bufs, offs);
 	shadingDat.color_st_elements += tess.numVertexes;
 
@@ -488,7 +486,6 @@ void vk_bind_geometry2(float modelviewMat4x4[16])
 
         assert (shadingDat.index_buffer_offset < INDEX_BUFFER_SIZE);
 	}
-
 
 
     // push constants are another way of passing dynamic values to shaders
@@ -1066,7 +1063,6 @@ Perform dynamic lighting with another rendering pass
 */
 static void ProjectDlightTexture( void )
 {
-	float	*texCoords;
 	byte	clipBits[SHADER_MAX_VERTEXES];
 
 	if ( !backEnd.refdef.num_dlights ) {
@@ -1081,7 +1077,7 @@ static void ProjectDlightTexture( void )
 		if ( !( tess.dlightBits & ( 1 << l ) ) ) {
 			continue;	// this surface definately doesn't have any of this light
 		}
-		texCoords = tess.svars.texcoords[0][0];
+		float* texCoords = tess.svars.texcoords[0][0];
 		//colors = tess.svars.colors[0];
 
 		//dl = &backEnd.refdef.dlights[l];
@@ -1177,7 +1173,6 @@ static void ProjectDlightTexture( void )
 		if ( numIndexes == 0 ) {
 			continue;
 		}
-
 
 
 		updateCurDescriptor( tr.dlightImage->descriptor_set, 0 );

@@ -31,22 +31,44 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #define	MAX_POLYS		600
 #define	MAX_POLYVERTS	3000
 
-int		max_polys;
-int		max_polyverts;
+static int		max_polys;
+static int		max_polyverts;
 
-int			r_firstSceneDrawSurf;
+static int	r_firstSceneDrawSurf;
 
-int			r_numdlights;
-int			r_firstSceneDlight;
+static int	r_numdlights;
+static int	r_firstSceneDlight;
 
-int			r_numentities;
-int			r_firstSceneEntity;
+static int	r_numentities;
+static int	r_firstSceneEntity;
 
-int			r_numpolys;
-int			r_firstScenePoly;
+static int	r_numpolys;
+static int	r_firstScenePoly;
 
-int			r_numpolyverts;
+static int	r_numpolyverts;
 
+static int	r_frameCount;	// incremented every frame
+
+static backEndData_t* backEndData;
+
+
+void R_InitNextFrame(void)
+{
+	r_firstSceneDrawSurf = 0;
+
+	r_numdlights = 0;
+	r_firstSceneDlight = 0;
+
+	r_numentities = 0;
+	r_firstSceneEntity = 0;
+
+	r_numpolys = 0;
+	r_firstScenePoly = 0;
+
+	r_numpolyverts = 0;
+
+    r_frameCount++;
+}
 
 
 void R_InitScene(void)
@@ -68,41 +90,10 @@ void R_InitScene(void)
 	backEndData->polys = (srfPoly_t *) (ptr + sizeof( backEndData_t ));
 	backEndData->polyVerts = (polyVert_t *) (ptr + sizeof( backEndData_t ) + sizeof(srfPoly_t) * max_polys);
 
-	backEndData->commands.used = 0;
-
-	r_firstSceneDrawSurf = 0;
-
-	r_numdlights = 0;
-	r_firstSceneDlight = 0;
-
-	r_numentities = 0;
-	r_firstSceneEntity = 0;
-
-	r_numpolys = 0;
-	r_firstScenePoly = 0;
-
-	r_numpolyverts = 0;
+    R_InitNextFrame();
 }
 
 
-void R_ToggleSmpFrame(void )
-{
-
-	backEndData->commands.used = 0;
-
-	r_firstSceneDrawSurf = 0;
-
-	r_numdlights = 0;
-	r_firstSceneDlight = 0;
-
-	r_numentities = 0;
-	r_firstSceneEntity = 0;
-
-	r_numpolys = 0;
-	r_firstScenePoly = 0;
-
-	r_numpolyverts = 0;
-}
 
 void RE_ClearScene( void ) {
 	r_firstSceneDlight = r_numdlights;
@@ -125,7 +116,8 @@ R_AddPolygonSurfaces
 Adds all the scene's polys into this view's drawsurf list
 =====================
 */
-void R_AddPolygonSurfaces( void ) {
+void R_AddPolygonSurfaces( void )
+{
 	int			i;
 	shader_t	*sh;
 	srfPoly_t	*poly;

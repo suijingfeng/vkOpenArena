@@ -1124,7 +1124,8 @@ void R_SortDrawSurfs( drawSurf_t *drawSurfs, int numDrawSurfs )
 
 	// check for any pass through drawing, which
 	// may cause another view to be rendered first
-	for ( i = 0 ; i < numDrawSurfs ; i++ ) {
+	for ( i = 0 ; i < numDrawSurfs ; i++ )
+    {
 		R_DecomposeSort( (drawSurfs+i)->sort, &entityNum, &shader, &fogNum, &dlighted );
 
 		if ( shader->sort > SS_PORTAL ) {

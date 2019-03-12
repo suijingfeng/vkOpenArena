@@ -1581,7 +1581,6 @@ Q3VKOBJ = \
   $(B)/renderer_vulkan/tr_globals.o \
   $(B)/renderer_vulkan/tr_cvar.o \
   $(B)/renderer_vulkan/tr_animation.o \
-  $(B)/renderer_vulkan/tr_backend.o \
   $(B)/renderer_vulkan/tr_bsp.o \
   $(B)/renderer_vulkan/tr_cmds.o \
   $(B)/renderer_vulkan/tr_curve.o \

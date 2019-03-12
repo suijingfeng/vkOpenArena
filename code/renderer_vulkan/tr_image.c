@@ -133,7 +133,7 @@ static char *CommaParse( char **data_p )
 
 	if (len == MAX_TOKEN_CHARS)
 	{
-//		Com_Printf ("Token exceeded %i chars, discarded.\n", MAX_TOKEN_CHARS);
+		ri.Printf (PRINT_ALL, "Token exceeded %i chars, discarded.\n", MAX_TOKEN_CHARS);
 		len = 0;
 	}
 	com_token[len] = 0;
@@ -160,12 +160,12 @@ qhandle_t RE_RegisterSkin( const char *name )
 	char		surfName[MAX_QPATH];
 
 	if ( !name || !name[0] ) {
-		Com_Printf( "Empty name passed to RE_RegisterSkin\n" );
+		ri.Printf(PRINT_ALL, "Empty name passed to RE_RegisterSkin\n" );
 		return 0;
 	}
 
 	if ( (int)strlen( name ) >= MAX_QPATH ) {
-		Com_Printf( "Skin name exceeds MAX_QPATH\n" );
+		ri.Printf(PRINT_ALL, "Skin name exceeds MAX_QPATH\n" );
 		return 0;
 	}
 

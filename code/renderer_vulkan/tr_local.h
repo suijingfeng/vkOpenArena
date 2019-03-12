@@ -788,8 +788,8 @@ void R_RotateForEntity( const trRefEntity_t *ent, const viewParms_t *viewParms, 
 qboolean	R_GetEntityToken( char *buffer, int size );
 
 
-void    R_InitScene(void);
-
+void R_InitScene(void);
+void R_InitNextFrame(void);
 
 
 void	R_ImageList_f( void );
@@ -1092,7 +1092,7 @@ void RB_ExecuteRenderCommands( const void *data );
 
 
 void R_IssueRenderCommands( qboolean runPerformanceCounters );
-
+void FixRenderCommandList( int newShader );
 
 void R_AddDrawSurfCmd( drawSurf_t *drawSurfs, int numDrawSurfs );
 
