@@ -5,15 +5,6 @@
 #include "tr_model.h"
 
 
-typedef struct {
-	int		c_surfaces, c_shaders, c_vertexes, c_indexes, c_totalIndexes;
-	
-	int		c_dlightVertexes;
-	int		c_dlightIndexes;
-
-	int		msec;			// total msec for backend run
-} backEndCounters_t;
-
 
 /*
 ** trGlobals_t 
@@ -43,13 +34,11 @@ typedef struct {
 	image_t					*dlightImage;	// inverse-quare highlight for projective adding
 	image_t					*whiteImage;			// full of 0xff
 	image_t					*identityLightImage;	// full of tr.identityLightByte
-//	image_t					*fontIamge;	
 
 	shader_t				*defaultShader;
     shader_t                *cinematicShader;
 	shader_t				*shadowShader;
 	shader_t				*projectionShadowShader;
-//	shader_t				*fontShader;
 
 	int						numLightmaps;
 	image_t					*lightmaps[MAX_LIGHTMAPS];
@@ -106,37 +95,6 @@ typedef struct {
 
 
 
-// all of the information needed by the back end must be contained in a backEndData_t.
-// This entire structure is duplicated so the front and back end can run in parallel
-// on an SMP machine
-
-typedef struct
-{
-	drawSurf_t	drawSurfs[MAX_DRAWSURFS];
-	dlight_t	dlights[MAX_DLIGHTS];
-	trRefEntity_t	entities[MAX_REFENTITIES];
-	srfPoly_t	*polys;//[MAX_POLYS];
-	polyVert_t	*polyVerts;//[MAX_POLYVERTS];
-//	renderCommandList_t	commands;
-} backEndData_t;
-
-
-// all state modified by the back end is seperated
-// from the front end state
-typedef struct {
-	trRefdef_t	refdef;
-	viewParms_t	viewParms;
-	orientationr_t	or;
-	backEndCounters_t	pc;
-	qboolean	isHyperspace;
-	trRefEntity_t	*currentEntity;
-
-	qboolean	projection2D;	// if qtrue, drawstretchpic doesn't need to change modes
-	unsigned char	Color2D[4];
-	trRefEntity_t	entity2D;	// currentEntity will point at this when doing 2D rendering
-} backEndState_t;
-
-extern backEndState_t backEnd;
 extern trGlobals_t	tr;
-extern glconfig_t	glConfig;		// outside of TR since it shouldn't be cleared during ref re-init
+
 #endif

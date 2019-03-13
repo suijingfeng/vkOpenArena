@@ -29,8 +29,6 @@ trGlobals_t	tr;
 refimport_t	ri;
 
 
-
-
 static float	s_flipMatrix[16] = {
 	// convert from our coordinate system (looking down X)
 	// to OpenGL's coordinate system (looking down -Z)
@@ -627,7 +625,8 @@ Returns qtrue if it should be mirrored
 */
 qboolean R_GetPortalOrientations( drawSurf_t *drawSurf, int entityNum, 
 							 orientation_t *surface, orientation_t *camera,
-							 vec3_t pvsOrigin, qboolean *mirror ) {
+							 vec3_t pvsOrigin, qboolean *mirror )
+{
 	int			i;
 	cplane_t	originalPlane, plane;
 	trRefEntity_t	*e;

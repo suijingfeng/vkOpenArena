@@ -27,7 +27,7 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #include "vk_image.h"
 #include "tr_cvar.h"
 #include "../renderercommon/ref_import.h"
-
+#include "tr_backend.h"
 
 /*
 
@@ -1064,7 +1064,6 @@ void (*rb_surfaceTable[SF_NUM_SURFACE_TYPES])(void * ) = {
 	(void (* )(void* ))RB_SurfaceMesh,			// SF_MD3,
 	(void (* )(void* ))RB_MDRSurfaceAnim,		// SF_MDR,
 	(void (* )(void* ))RB_IQMSurfaceAnim,		// SF_IQM,
-	(void (* )(void* ))RB_SurfaceAnim,			// SF_MD4,
 	(void (* )(void* ))RB_SurfaceFlare,		// SF_FLARE,
 	(void (* )(void* ))RB_SurfaceEntity,		// SF_ENTITY
 };

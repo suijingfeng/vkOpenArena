@@ -490,7 +490,6 @@ typedef enum {
 	SF_MD3,
 	SF_MDR,
 	SF_IQM,
-	SF_MD4,
 	SF_FLARE,
 	SF_ENTITY,				// beams, rails, lightning, etc that can be determined by entity
 

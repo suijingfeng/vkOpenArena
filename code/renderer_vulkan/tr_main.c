@@ -273,8 +273,6 @@ void R_RotateForEntity(const trRefEntity_t* ent, const viewParms_t* viewParms, o
 
 /*
 =================
-R_RotateForViewer
-
 typedef struct {
 	float		modelMatrix[16] QALIGN(16);
 	float		axis[3][3];		// orientation in world
@@ -286,7 +284,7 @@ typedef struct {
 Sets up the modelview matrix for a given viewParm
 =================
 */
-void R_RotateForViewer (void) 
+static void R_RotateForViewer (void) 
 {
     const static float s_flipMatrix[16] QALIGN(16) = {
         // convert from our coordinate system (looking down X)
@@ -498,8 +496,6 @@ qboolean R_GetPortalOrientations( drawSurf_t *drawSurf, int entityNum,
 {
 	int			i;
 	cplane_t	originalPlane, plane;
-	trRefEntity_t	*e;
-	float		d;
 	vec3_t		transformed;
 
 	// create plane axis for the portal we are seeing
@@ -531,13 +527,14 @@ qboolean R_GetPortalOrientations( drawSurf_t *drawSurf, int entityNum,
 	// locate the portal entity closest to this plane.
 	// origin will be the origin of the portal, origin2 will be
 	// the origin of the camera
-	for ( i = 0 ; i < tr.refdef.num_entities ; i++ ) {
-		e = &tr.refdef.entities[i];
+	for ( i = 0 ; i < tr.refdef.num_entities ; i++ )
+    {
+		trRefEntity_t* e = &tr.refdef.entities[i];
 		if ( e->e.reType != RT_PORTALSURFACE ) {
 			continue;
 		}
 
-		d = DotProduct( e->e.origin, originalPlane.normal ) - originalPlane.dist;
+		float d = DotProduct( e->e.origin, originalPlane.normal ) - originalPlane.dist;
 		if ( d > 64 || d < -64) {
 			continue;
 		}
@@ -805,8 +802,8 @@ static qboolean R_MirrorViewBySurface (drawSurf_t *drawSurf, int entityNum)
 	// save old viewParms so we can return to it after the mirror view
 	viewParms_t oldParms = tr.viewParms;
 	viewParms_t newParms = tr.viewParms;
-	
     newParms.isPortal = qtrue;
+    
 	if ( !R_GetPortalOrientations( drawSurf, entityNum, &surface, &camera, 
 		newParms.pvsOrigin, &newParms.isMirror ) ) {
 		return qfalse;		// bad portal, no portalentity
@@ -892,7 +889,8 @@ void SWAP_DRAW_SURF(void* a, void* b)
 
 #define CUTOFF 8            /* testing shows that this is good value */
 
-static void shortsort( drawSurf_t *lo, drawSurf_t *hi ) {
+static void shortsort( drawSurf_t *lo, drawSurf_t *hi )
+{
     drawSurf_t	*p, *max;
 
     while (hi > lo) {

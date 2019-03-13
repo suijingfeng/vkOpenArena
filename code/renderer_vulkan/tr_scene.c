@@ -49,6 +49,23 @@ static int	r_numpolyverts;
 
 static int	r_frameCount;	// incremented every frame
 
+
+
+// All of the information needed by the back end must be contained in a backEndData_t.
+// This entire structure is duplicated so the front and back end can run in parallel
+// on an SMP machine
+
+typedef struct
+{
+	drawSurf_t	drawSurfs[MAX_DRAWSURFS];
+	dlight_t	dlights[MAX_DLIGHTS];
+	trRefEntity_t	entities[MAX_REFENTITIES];
+	srfPoly_t	*polys;//[MAX_POLYS];
+	polyVert_t	*polyVerts;//[MAX_POLYVERTS];
+//	renderCommandList_t	commands;
+} backEndData_t;
+
+
 static backEndData_t* backEndData;
 
 

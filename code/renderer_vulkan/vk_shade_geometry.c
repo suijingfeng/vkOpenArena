@@ -5,7 +5,7 @@
 #include "vk_image.h"
 #include "vk_pipelines.h"
 #include "../renderercommon/matrix_multiplication.h"
-
+#include "tr_backend.h"
 
 #define VERTEX_CHUNK_SIZE   (512 * 1024)
 #define INDEX_BUFFER_SIZE   (2 * 1024 * 1024)
@@ -530,7 +530,6 @@ void vk_bind_geometry(void)
 		unsigned char* dst = shadingDat.vertex_buffer_ptr + xyz_offset;
 		memcpy(dst, tess.xyz, tess.numVertexes * sizeof(vec4_t));
 
-
 		qvkCmdBindVertexBuffers(vk.command_buffer, 0, 1, &shadingDat.vertex_buffer, &xyz_offset);
 		shadingDat.xyz_elements += tess.numVertexes;
 
@@ -562,8 +561,7 @@ void vk_bind_geometry(void)
     
 
         MatrixMultiply4x4_SSE(s_modelview_matrix, backEnd.viewParms.projectionMatrix, push_constants);
-
-		// Eye space transform.
+        // Eye space transform.
 
         /*
 		// NOTE: backEnd.or.modelMatrix incorporates s_flipMatrix, so it should be taken into account 

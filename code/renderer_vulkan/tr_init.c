@@ -35,7 +35,7 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #include "R_ModelBounds.h"
 #include "R_StretchRaw.h"
 #include "tr_fog.h"
-
+#include "tr_backend.h"
 
 refimport_t	ri;
 
@@ -66,8 +66,9 @@ void R_Init( void )
 
 	// clear all our internal state
 	memset( &tr, 0, sizeof( tr ) );
-	memset( &backEnd, 0, sizeof( backEnd ) );
 	memset( &tess, 0, sizeof( tess ) );
+
+    R_ClearBackendState();
 
 	if ( (intptr_t)tess.xyz & 15 ) {
 		ri.Printf( PRINT_ALL, "WARNING: tess.xyz not 16 byte aligned\n" );

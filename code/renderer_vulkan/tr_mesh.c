@@ -306,11 +306,6 @@ void R_AddMD3Surfaces( trRefEntity_t *ent )
 	}
 
 	//
-	// see if we are in a fog volume
-	//
-	fogNum = R_ComputeFogNum( header, ent );
-
-	//
 	// draw all surfaces
 	//
 	surface = (md3Surface_t *)( (byte *)header + header->ofsSurfaces );
@@ -352,7 +347,10 @@ void R_AddMD3Surfaces( trRefEntity_t *ent )
 
 
 		// don't add third_person objects if not viewing through a portal
-		if ( !personalModel ) {
+		if ( !personalModel )
+        {
+	        // see if we are in a fog volume
+	        fogNum = R_ComputeFogNum( header, ent );
 			R_AddDrawSurf( (void *)surface, shader, fogNum, qfalse );
 		}
 

@@ -25,9 +25,10 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #include "vk_shade_geometry.h"
 
 #include "../renderercommon/ref_import.h"
-
+#include "tr_backend.h"
 #include "tr_cvar.h"
 #include "R_DEBUG.h"
+#include "RB_DrawTris.h"
 /*
 
   THIS ENTIRE FILE IS BACK END
@@ -53,8 +54,7 @@ shaderCommands_t	tess;
 RB_BeginSurface
 
 We must set some things up before beginning any tesselation,
-because a surface may be forced to perform a RB_End due
-to overflow.
+because a surface may be forced to perform a RB_End due to overflow.
 ==============
 */
 void RB_BeginSurface( shader_t *shader, int fogNum )
@@ -71,6 +71,7 @@ void RB_BeginSurface( shader_t *shader, int fogNum )
 	tess.numPasses = state->numUnfoggedPasses;
 
 	tess.shaderTime = backEnd.refdef.floatTime - tess.shader->timeOffset;
+    
 	if (tess.shader->clampTime && tess.shaderTime >= tess.shader->clampTime) {
 		tess.shaderTime = tess.shader->clampTime;
 	}
@@ -123,7 +124,7 @@ void RB_EndSurface( void )
 	//
 	if ( r_showtris->integer )
     {
-		DrawTris (&tess);
+		RB_DrawTris (&tess);
 	}
 	if ( r_shownormals->integer )
     {

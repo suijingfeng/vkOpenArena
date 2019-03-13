@@ -3,6 +3,8 @@
 
 #include "tr_globals.h"
 #include "RB_SurfaceAnim.h"
+#include "tr_backend.h"
+
 
 void RB_SurfaceAnim( md4Surface_t *surface )
 {
