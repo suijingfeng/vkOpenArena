@@ -24,6 +24,9 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #include "tr_local.h"
 #include "tr_globals.h"
 #include "../renderercommon/ref_import.h"
+#include "tr_cvar.h"
+
+
 
 #define	DLIGHT_AT_RADIUS		16
 // at the edge of a dlight's influence, this amount of light will be added
@@ -41,7 +44,8 @@ Used by both the front end (for DlightBmodel) and
 the back end (before doing the lighting calculation)
 ===============
 */
-void R_TransformDlights( int count, dlight_t *dl, orientationr_t *or) {
+void R_TransformDlights( int count, dlight_t *dl, orientationr_t *or)
+{
 	int		i;
 
 	for ( i = 0 ; i < count ; i++, dl++ )
@@ -116,9 +120,7 @@ LIGHT SAMPLING
 =============================================================================
 */
 
-extern	cvar_t	*r_ambientScale;
-extern	cvar_t	*r_directedScale;
-extern	cvar_t	*r_debugLight;
+
 
 /*
 =================

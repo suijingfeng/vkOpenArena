@@ -251,21 +251,22 @@ void R_RotateForEntity( const trRefEntity_t *ent, const viewParms_t *viewParms,
 	glMatrix[0] = or->axis[0][0];
 	glMatrix[4] = or->axis[1][0];
 	glMatrix[8] = or->axis[2][0];
-	glMatrix[12] = or->origin[0];
 
 	glMatrix[1] = or->axis[0][1];
 	glMatrix[5] = or->axis[1][1];
 	glMatrix[9] = or->axis[2][1];
-	glMatrix[13] = or->origin[1];
-
+	
 	glMatrix[2] = or->axis[0][2];
 	glMatrix[6] = or->axis[1][2];
 	glMatrix[10] = or->axis[2][2];
-	glMatrix[14] = or->origin[2];
 
 	glMatrix[3] = 0;
 	glMatrix[7] = 0;
 	glMatrix[11] = 0;
+    
+    glMatrix[12] = or->origin[0];
+    glMatrix[13] = or->origin[1];
+	glMatrix[14] = or->origin[2];
 	glMatrix[15] = 1;
 
 	myGlMultMatrix( glMatrix, viewParms->world.modelMatrix, or->modelMatrix );
@@ -289,6 +290,8 @@ void R_RotateForEntity( const trRefEntity_t *ent, const viewParms_t *viewParms,
 	or->viewOrigin[0] = DotProduct( delta, or->axis[0] ) * axisLength;
 	or->viewOrigin[1] = DotProduct( delta, or->axis[1] ) * axisLength;
 	or->viewOrigin[2] = DotProduct( delta, or->axis[2] ) * axisLength;
+
+    
 }
 
 /*

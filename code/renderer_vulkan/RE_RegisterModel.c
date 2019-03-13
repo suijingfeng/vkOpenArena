@@ -7,7 +7,7 @@
 typedef struct
 {
 	char *ext;
-	qhandle_t (*ModelLoader)( const char *, model_t * );
+	qhandle_t (* ModelLoader)( const char * , model_t * );
 } modelExtToLoaderMap_t;
 
 // Note that the ordering indicates the order of preference used
@@ -34,10 +34,10 @@ asked for again.
 */
 qhandle_t RE_RegisterModel( const char *name )
 {
+    ri.Printf( PRINT_ALL, "RegisterModel: %s. \n", name);
 
-	qboolean	orgNameFailed = qfalse;
+    qboolean	orgNameFailed = qfalse;
 	int			orgLoader = -1;
-
 
 	if ( !name || !name[0] ) {
 		ri.Printf( PRINT_WARNING, "RE_RegisterModel: NULL name\n" );

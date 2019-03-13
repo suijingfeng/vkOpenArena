@@ -244,9 +244,9 @@ void R_MDRAddAnimSurfaces( trRefEntity_t *ent )
 			
 			for(j = 0; j < skin->numSurfaces; j++)
 			{
-				if (0 == strcmp(skin->surfaces[j]->name, surface->name))
+                if (0 == strcmp(skin->pSurfaces[j].name, surface->name))
 				{
-					shader = skin->surfaces[j]->shader;
+					shader = skin->pSurfaces[j].shader;
 					break;
 				}
 			}

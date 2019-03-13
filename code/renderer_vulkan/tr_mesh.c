@@ -224,12 +224,8 @@ int R_ComputeFogNum( md3Header_t *header, trRefEntity_t *ent ) {
 	return 0;
 }
 
-/*
-=================
-R_AddMD3Surfaces
 
-=================
-*/
+
 void R_AddMD3Surfaces( trRefEntity_t *ent )
 {
 	int				i;
@@ -255,19 +251,15 @@ void R_AddMD3Surfaces( trRefEntity_t *ent )
 	// when the surfaces are rendered, they don't need to be
 	// range checked again.
 	
-    /*
+/*
 	ri.Printf( PRINT_ALL, "\n ----- R_AddMD3Surfaces ----- \n");
 
 	ri.Printf( PRINT_ALL, " frame: %d, oldframe: %d\n", ent->e.oldframe, ent->e.frame);
-	
-	ri.Printf( PRINT_ALL, " tr.currentModel: %p\n", tr.currentModel);
 
 	ri.Printf( PRINT_ALL, " tr.currentModel->name: %s\n", tr.currentModel->name);
 
-	ri.Printf( PRINT_ALL, " tr.currentModel->md3[0]: %p\n", tr.currentModel->md3[0]);
-
 	ri.Printf( PRINT_ALL, " tr.currentModel->md3[0]->numFrames: %d\n", tr.currentModel->md3[0]->numFrames);
-    */
+*/
 
 	if ( (ent->e.frame >= tr.currentModel->md3[0]->numFrames) 
 		|| (ent->e.frame < 0)
@@ -301,7 +293,7 @@ void R_AddMD3Surfaces( trRefEntity_t *ent )
 	//
 	// set up lighting now that we know we aren't culled
 	//
-	if ( !personalModel || r_shadows->integer > 1 ) {
+	if ( !personalModel) {
 		R_SetupEntityLighting( &tr.refdef, ent );
 	}
 
@@ -309,22 +301,26 @@ void R_AddMD3Surfaces( trRefEntity_t *ent )
 	// draw all surfaces
 	//
 	surface = (md3Surface_t *)( (byte *)header + header->ofsSurfaces );
-	for ( i = 0 ; i < header->numSurfaces ; i++ ) {
-
-		if ( ent->e.customShader ) {
+	for ( i = 0 ; i < header->numSurfaces ; i++ )
+    {
+		if ( ent->e.customShader )
+        {
 			shader = R_GetShaderByHandle( ent->e.customShader );
-		} else if ( ent->e.customSkin > 0 && ent->e.customSkin < tr.numSkins ) {
-			skin_t *skin;
-			int		j;
-
-			skin = R_GetSkinByHandle( ent->e.customSkin );
+		}
+        else if ( ent->e.customSkin > 0 && ent->e.customSkin < tr.numSkins )
+        {
+			skin_t *skin = R_GetSkinByHandle( ent->e.customSkin );
 
 			// match the surface name to something in the skin file
 			shader = tr.defaultShader;
-			for ( j = 0 ; j < skin->numSurfaces ; j++ ) {
+            
+            int		j;
+
+			for ( j = 0 ; j < skin->numSurfaces ; j++ )
+            {
 				// the names have both been lowercased
-				if ( !strcmp( skin->surfaces[j]->name, surface->name ) ) {
-					shader = skin->surfaces[j]->shader;
+				if ( !strcmp( skin->pSurfaces[j].name, surface->name ) ) {
+					shader = skin->pSurfaces[j].shader;
 					break;
 				}
 			}
@@ -345,7 +341,6 @@ void R_AddMD3Surfaces( trRefEntity_t *ent )
 
 		// we will add shadows even if the main object isn't visible in the view
 
-
 		// don't add third_person objects if not viewing through a portal
 		if ( !personalModel )
         {
@@ -356,5 +351,5 @@ void R_AddMD3Surfaces( trRefEntity_t *ent )
 
 		surface = (md3Surface_t *)( (byte *)surface + surface->ofsEnd );
 	}
-
 }
+

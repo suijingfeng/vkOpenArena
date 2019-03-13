@@ -34,6 +34,7 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
 #include "R_DEBUG.h"
 
+#include "R_PrintMat.h"
 
 
 // entities that will have procedurally generated surfaces will just
@@ -269,6 +270,10 @@ void R_RotateForEntity(const trRefEntity_t* ent, const viewParms_t* viewParms, o
 	or->viewOrigin[0] = DotProduct( delta, or->axis[0] ) * axisLength;
 	or->viewOrigin[1] = DotProduct( delta, or->axis[1] ) * axisLength;
 	or->viewOrigin[2] = DotProduct( delta, or->axis[2] ) * axisLength;
+
+    printMat1x3f("viewOrigin", or->viewOrigin);
+    printMat4x4f("modelMatrix", or->modelMatrix);
+
 }
 
 /*
