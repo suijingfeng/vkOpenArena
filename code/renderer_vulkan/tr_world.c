@@ -354,7 +354,8 @@ void R_AddBrushModelSurfaces ( trRefEntity_t *ent ) {
 R_RecursiveWorldNode
 ================
 */
-static void R_RecursiveWorldNode( mnode_t *node, int planeBits, int dlightBits ) {
+static void R_RecursiveWorldNode( mnode_t *node, int planeBits, int dlightBits )
+{
 
 	do {
 		int			newDlights[2];
@@ -565,7 +566,8 @@ Mark the leaves and nodes that are in the PVS for the current
 cluster
 ===============
 */
-static void R_MarkLeaves (void) {
+static void R_MarkLeaves (void)
+{
 	const byte	*vis;
 	mnode_t	*leaf, *parent;
 	int		i;

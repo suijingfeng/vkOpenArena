@@ -476,7 +476,7 @@ void R_SetupFrustum (viewParms_t *dest, float xmin, float xmax, float ymax, floa
 R_SetupProjection
 ===============
 */
-void R_SetupProjection(viewParms_t *dest, float zProj, qboolean computeFrustum)
+void R_SetupProjection(viewParms_t *dest, float zProj)
 {
 	float	xmin, xmax, ymin, ymax;
 	float	width, height;
@@ -510,10 +510,11 @@ void R_SetupProjection(viewParms_t *dest, float zProj, qboolean computeFrustum)
 	dest->projectionMatrix[7] = 0;
 	dest->projectionMatrix[11] = -1;
 	dest->projectionMatrix[15] = 0;
+
+    // Now that we have all the data for the projection matrix we can also setup the view frustum.
+
+	R_SetupFrustum(dest, xmin, xmax, ymax, zProj);
 	
-	// Now that we have all the data for the projection matrix we can also setup the view frustum.
-	if(computeFrustum)
-		R_SetupFrustum(dest, xmin, xmax, ymax, zProj);
 }
 
 /*
@@ -907,7 +908,8 @@ R_MirrorViewBySurface
 Returns qtrue if another view has been rendered
 ========================
 */
-qboolean R_MirrorViewBySurface (drawSurf_t *drawSurf, int entityNum) {
+qboolean R_MirrorViewBySurface (drawSurf_t *drawSurf, int entityNum)
+{
 	vec4_t			clipDest[128];
 	viewParms_t		newParms;
 	viewParms_t		oldParms;
@@ -1229,30 +1231,7 @@ void R_AddEntitySurfaces (void) {
 }
 
 
-/*
-====================
-R_GenerateDrawSurfs
-====================
-*/
-void R_GenerateDrawSurfs( void ) {
-	R_AddWorldSurfaces ();
 
-	R_AddPolygonSurfaces();
-
-	// set the projection matrix with the minimum zfar
-	// now that we have the world bounded
-	// this needs to be done before entities are
-	// added, because they use the projection
-	// matrix for lod calculation
-
-	// dynamically compute far clip plane distance
-	R_SetFarClip();
-
-	// we know the size of the clipping volume. Now set the rest of the projection matrix.
-	R_SetupProjectionZ (&tr.viewParms);
-
-	R_AddEntitySurfaces ();
-}
 
 /*
 ================
@@ -1338,10 +1317,26 @@ void R_RenderView (viewParms_t *parms)
 	// set viewParms.world
 	R_RotateForViewer ();
 
-	R_SetupProjection(&tr.viewParms, r_zproj->value, qtrue);
+	R_SetupProjection(&tr.viewParms, r_zproj->value);
 
-	R_GenerateDrawSurfs();
+	// R_GenerateDrawSurfs();
+	R_AddWorldSurfaces ();
 
+	R_AddPolygonSurfaces();
+
+	// set the projection matrix with the minimum zfar
+	// now that we have the world bounded
+	// this needs to be done before entities are
+	// added, because they use the projection
+	// matrix for lod calculation
+
+	// dynamically compute far clip plane distance
+	R_SetFarClip();
+
+	// we know the size of the clipping volume. Now set the rest of the projection matrix.
+	R_SetupProjectionZ (&tr.viewParms);
+
+	R_AddEntitySurfaces ();
 	// if we overflowed MAX_DRAWSURFS, the drawsurfs
 	// wrapped around in the buffer and we will be missing
 	// the first surfaces, not the last ones

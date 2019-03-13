@@ -1031,3 +1031,57 @@ static void vk_read_pixels(unsigned char* buffer)
     qvkDestroyImage(vk.device, image, NULL);
 }
 
+
+/*
+=================
+Setup that culling frustum planes for the current view
+=================
+*/
+static void R_SetupFrustum (viewParms_t * const pViewParams)
+{
+	
+    {
+        float ang = pViewParams->fovX * (M_PI / 360.0f);
+        float xs = sin( ang );
+        float xc = cos( ang );
+
+        float temp1[3];
+        float temp2[3];
+
+        VectorScale( pViewParams->or.axis[0], xs, temp1 );
+        VectorScale( pViewParams->or.axis[1], xc, temp2);
+
+        VectorAdd(temp1, temp2, pViewParams->frustum[0].normal);
+        VectorSubtract(temp1, temp2, pViewParams->frustum[1].normal);
+    }
+    // VectorMA( tr.viewParms.frustum[0].normal, xc, tr.viewParms.or.axis[1], tr.viewParms.frustum[0].normal );
+	//VectorScale( tr.viewParms.or.axis[0], xs, tr.viewParms.frustum[1].normal );
+	//VectorMA( tr.viewParms.frustum[1].normal, -xc, tr.viewParms.or.axis[1], tr.viewParms.frustum[1].normal );
+   
+    {
+        float ang = pViewParams->fovY * (M_PI / 360.0f);
+        float xs = sin( ang );
+        float xc = cos( ang );
+        float temp1[3];
+        float temp2[3];
+
+        VectorScale( pViewParams->or.axis[0], xs, temp1);
+        VectorScale( pViewParams->or.axis[2], xc, temp2);
+
+        VectorAdd(temp1, temp2, pViewParams->frustum[2].normal);
+        VectorSubtract(temp1, temp2, pViewParams->frustum[3].normal);
+    }
+
+	//VectorScale( tr.viewParms.or.axis[0], xs, tr.viewParms.frustum[2].normal );
+	//VectorMA( tr.viewParms.frustum[2].normal, xc, tr.viewParms.or.axis[2], tr.viewParms.frustum[2].normal );
+	//VectorScale( tr.viewParms.or.axis[0], xs, tr.viewParms.frustum[3].normal );
+	//VectorMA( tr.viewParms.frustum[3].normal, -xc, tr.viewParms.or.axis[2], tr.viewParms.frustum[3].normal );
+	
+    uint32_t i = 0;
+	for (i=0; i < 4; i++)
+    {
+		pViewParams->frustum[i].type = PLANE_NON_AXIAL;
+		pViewParams->frustum[i].dist = DotProduct (pViewParams->or.origin, pViewParams->frustum[i].normal);
+		SetPlaneSignbits( &pViewParams->frustum[i] );
+	}
+}

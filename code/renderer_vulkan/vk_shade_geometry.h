@@ -14,8 +14,6 @@ enum Vk_Depth_Range {
 const float * getptr_modelview_matrix(void);
 void set_modelview_matrix(const float mv[16]);
 void reset_modelview_matrix(void);
-void R_SetupProjection( float pMatProj[16] );
-
 
 void vk_shade_geometry(VkPipeline pipeline, VkBool32 multitexture, enum Vk_Depth_Range depth_range, VkBool32 indexed);
 void vk_bind_geometry(void);

@@ -60,17 +60,12 @@ union f16_u {
 };
 
 
-
-
-
 // any change in the LIGHTMAP_* defines here MUST be reflected in
 // R_FindShader() in tr_bsp.c
 #define LIGHTMAP_2D         -4	// shader is for 2D rendering
 #define LIGHTMAP_BY_VERTEX  -3	// pre-lit triangle models
 #define LIGHTMAP_WHITEIMAGE -2
 #define LIGHTMAP_NONE       -1
-
-
 
 
 
