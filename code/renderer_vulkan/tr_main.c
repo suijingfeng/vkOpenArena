@@ -327,7 +327,8 @@ static void R_MirrorVector (vec3_t in, orientation_t *surface, orientation_t *ca
 R_PlaneForSurface
 =============
 */
-void R_PlaneForSurface (surfaceType_t *surfType, cplane_t *plane) {
+void R_PlaneForSurface (surfaceType_t *surfType, cplane_t *plane)
+{
 	srfTriangles_t	*tri;
 	srfPoly_t		*poly;
 	drawVert_t		*v1, *v2, *v3;
@@ -338,7 +339,8 @@ void R_PlaneForSurface (surfaceType_t *surfType, cplane_t *plane) {
 		plane->normal[0] = 1;
 		return;
 	}
-	switch (*surfType) {
+	switch (*surfType)
+    {
 	case SF_FACE:
 		*plane = ((srfSurfaceFace_t *)surfType)->plane;
 		return;
@@ -497,8 +499,6 @@ static qboolean IsMirror( const drawSurf_t *drawSurf, int entityNum )
 {
 	int			i;
 	cplane_t	originalPlane, plane;
-	trRefEntity_t	*e;
-	float		d;
 
 	// create plane axis for the portal we are seeing
 	R_PlaneForSurface( drawSurf->surface, &originalPlane );
@@ -530,12 +530,12 @@ static qboolean IsMirror( const drawSurf_t *drawSurf, int entityNum )
 	// the origin of the camera
 	for ( i = 0 ; i < tr.refdef.num_entities ; i++ ) 
 	{
-		e = &tr.refdef.entities[i];
+		trRefEntity_t* e = &tr.refdef.entities[i];
 		if ( e->e.reType != RT_PORTALSURFACE ) {
 			continue;
 		}
 
-		d = DotProduct( e->e.origin, originalPlane.normal ) - originalPlane.dist;
+		float d = DotProduct( e->e.origin, originalPlane.normal ) - originalPlane.dist;
 		if ( d > 64 || d < -64) {
 			continue;
 		}
@@ -559,7 +559,8 @@ static qboolean IsMirror( const drawSurf_t *drawSurf, int entityNum )
 **
 ** Determines if a surface is completely offscreen.
 */
-static qboolean SurfIsOffscreen( const drawSurf_t *drawSurf, vec4_t clipDest[128] ) {
+static qboolean SurfIsOffscreen( const drawSurf_t *drawSurf, vec4_t clipDest[128] )
+{
 	float shortest = 100000000;
 	int entityNum;
 	int numTriangles;
@@ -688,7 +689,8 @@ static qboolean R_MirrorViewBySurface (drawSurf_t *drawSurf, int entityNum)
     newParms.isPortal = qtrue;
     
 	if ( !R_GetPortalOrientations( drawSurf, entityNum, &surface, &camera, 
-		newParms.pvsOrigin, &newParms.isMirror ) ) {
+		newParms.pvsOrigin, &newParms.isMirror ) )
+    {
 		return qfalse;		// bad portal, no portalentity
 	}
 
@@ -1243,8 +1245,7 @@ void R_RenderView (viewParms_t *parms)
 	// set the projection matrix with the minimum zfar
 	// now that we have the world bounded
 	// this needs to be done before entities are
-	// added, because they use the projection
-	// matrix for lod calculation
+	// added, because they use the projection matrix for LOD calculation
 	R_SetupProjection (&tr.viewParms);
 
 	R_AddEntitySurfaces (&tr.viewParms);

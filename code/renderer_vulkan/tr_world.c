@@ -32,10 +32,9 @@ Returns true if the grid is completely culled away.
 Also sets the clipped hint bit in tess
 =================
 */
-static qboolean	R_CullTriSurf( srfTriangles_t *cv ) {
-	int 	boxCull;
-
-	boxCull = R_CullLocalBox( cv->bounds );
+static qboolean	R_CullTriSurf( srfTriangles_t *cv )
+{
+	int 	boxCull = R_CullLocalBox( cv->bounds );
 
 	if ( boxCull == CULL_OUT ) {
 		return qtrue;
@@ -282,7 +281,8 @@ static int R_DlightSurface( msurface_t *surf, int dlightBits ) {
 R_AddWorldSurface
 ======================
 */
-static void R_AddWorldSurface( msurface_t *surf, int dlightBits ) {
+static void R_AddWorldSurface( msurface_t *surf, int dlightBits )
+{
 	if ( surf->viewCount == tr.viewCount ) {
 		return;		// already in this view
 	}

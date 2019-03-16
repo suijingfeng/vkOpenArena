@@ -11,8 +11,6 @@
 
 #define IMAGE_CHUNK_SIZE        (8 * 1024 * 1024)
 
-// 2 for mipmap, 4 for RGBA, 1024 width
-#define MAX_IMAGE_SIZE        (2 * 4 * 1024 * 1024)
 
 
 struct ImageChunk_t{
@@ -644,7 +642,7 @@ image_t* R_CreateImage( const char *name, unsigned char* pic, const uint32_t wid
             // except that regions of compressed images can extend as far as the
             // dimension of the image level rounded up to a complete compressed texel block.
 
-            assert(buffer_size <= MAX_IMAGE_SIZE);
+            assert(buffer_size <= IMAGE_CHUNK_SIZE);
 
             if ( r_colorMipLevels->integer ) {
                 R_BlendOverTexture( in_ptr, base_width * base_height, curMipMapLevel );
@@ -986,7 +984,7 @@ void R_InitImages( void )
 {
     memset(hashTable, 0, sizeof(hashTable));
     
-    vk_createStagingBuffer(MAX_IMAGE_SIZE);
+    vk_createStagingBuffer(IMAGE_CHUNK_SIZE);
 
     // build brightness translation tables
     R_SetColorMappings();
@@ -1011,7 +1009,7 @@ void R_InitImages( void )
 static void R_DestroySingleImage( image_t* pImg )
 {
 
-   	ri.Printf(PRINT_ALL, " Destroy %s {descriptor_set view handle} \n", pImg->imgName); 
+   	ri.Printf(PRINT_ALL, " Destroy Image: %s \n", pImg->imgName); 
     if(pImg->descriptor_set != VK_NULL_HANDLE)
     {   
         //To free allocated descriptor sets

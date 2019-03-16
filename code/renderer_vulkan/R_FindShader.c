@@ -1,10 +1,11 @@
 #include "tr_local.h"
 #include "tr_globals.h"
-#include "fun_log.h"
+
 #include "vk_image.h"
 #include "tr_cvar.h"
 #include "../renderercommon/ref_import.h"
 
+#include "R_PrintMat.h"
 
 
 #define MAX_SHADERTEXT_HASH		2048
