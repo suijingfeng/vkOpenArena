@@ -666,8 +666,8 @@ static VkPipeline vk_find_pipeline(struct Vk_Pipeline_Def* def)
     
 	s_pipeline_defs[s_numPipelines] = *def;
 	//s_pipeline_defs[s_numPipelines].pipeline = pipeline;
-	s_numPipelines++;
-    if (s_numPipelines >= MAX_VK_PIPELINES)
+
+    if (++s_numPipelines >= MAX_VK_PIPELINES)
     {
 		ri.Error(ERR_DROP, "vk_create_pipeline: MAX_VK_PIPELINES hit\n");
 	}
@@ -695,18 +695,18 @@ void create_pipelines_for_each_stage(shaderStage_t *pStage, shader_t* pShader)
     else
         ri.Error(ERR_FATAL, "Vulkan: could not create pipelines for q3 shader '%s'\n", pShader->name);
 
-    def.clipping_plane = 0;
-    def.mirror = 0;
+    def.clipping_plane = VK_FALSE;
+    def.mirror = VK_FALSE;
     pStage->vk_pipeline = vk_find_pipeline(&def);
 
 
-    def.clipping_plane = 1;
-    def.mirror = 0;
+    def.clipping_plane = VK_TRUE;
+    def.mirror = VK_FALSE;
     pStage->vk_portal_pipeline = vk_find_pipeline(&def);
 
 
-    def.clipping_plane = 1;
-    def.mirror = 1;
+    def.clipping_plane = VK_TRUE;
+    def.mirror = VK_TRUE;
     pStage->vk_mirror_pipeline = vk_find_pipeline(&def);
 }
 

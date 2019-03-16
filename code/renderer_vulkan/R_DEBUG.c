@@ -165,5 +165,4 @@ void DrawNormals (shaderCommands_t *input)
 
         i += count;
     }
-
 }

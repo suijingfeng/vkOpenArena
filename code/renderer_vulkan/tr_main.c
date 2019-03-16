@@ -38,42 +38,35 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
 
 
-/*
-=================
-R_LocalNormalToWorld
-
-=================
-*/
-void R_LocalNormalToWorld (vec3_t local, vec3_t world) {
-	world[0] = local[0] * tr.or.axis[0][0] + local[1] * tr.or.axis[1][0] + local[2] * tr.or.axis[2][0];
-	world[1] = local[0] * tr.or.axis[0][1] + local[1] * tr.or.axis[1][1] + local[2] * tr.or.axis[2][1];
-	world[2] = local[0] * tr.or.axis[0][2] + local[1] * tr.or.axis[1][2] + local[2] * tr.or.axis[2][2];
+static void R_LocalNormalToWorld (vec3_t local, const orientationr_t * const pRT, vec3_t world)
+{
+	world[0] = local[0] * pRT->axis[0][0] + local[1] * pRT->axis[1][0] + local[2] * pRT->axis[2][0];
+	world[1] = local[0] * pRT->axis[0][1] + local[1] * pRT->axis[1][1] + local[2] * pRT->axis[2][1];
+	world[2] = local[0] * pRT->axis[0][2] + local[1] * pRT->axis[1][2] + local[2] * pRT->axis[2][2];
 }
 
-/*
-=================
-R_LocalPointToWorld
 
-=================
-*/
-void R_LocalPointToWorld (vec3_t local, vec3_t world) {
-	world[0] = local[0] * tr.or.axis[0][0] + local[1] * tr.or.axis[1][0] + local[2] * tr.or.axis[2][0] + tr.or.origin[0];
-	world[1] = local[0] * tr.or.axis[0][1] + local[1] * tr.or.axis[1][1] + local[2] * tr.or.axis[2][1] + tr.or.origin[1];
-	world[2] = local[0] * tr.or.axis[0][2] + local[1] * tr.or.axis[1][2] + local[2] * tr.or.axis[2][2] + tr.or.origin[2];
+static void R_WorldVectorToLocal (vec3_t world, const float R[3][3], vec3_t local)
+{
+	local[0] = DotProduct(world, R[0]);
+	local[1] = DotProduct(world, R[1]);
+	local[2] = DotProduct(world, R[2]);
 }
 
-/*
-=================
-R_WorldToLocal
 
-=================
-*/
-void R_WorldToLocal (vec3_t world, vec3_t local) {
-	local[0] = DotProduct(world, tr.or.axis[0]);
-	local[1] = DotProduct(world, tr.or.axis[1]);
-	local[2] = DotProduct(world, tr.or.axis[2]);
+static void R_WorldPointToLocal (vec3_t world, const float R[3][3], vec3_t local)
+{
+
+//   vec3_t delta;
+
+//	VectorSubtract( viewParms->or.origin, or->origin, delta );
+
+
+
+	local[0] = DotProduct(world, R[0]);
+	local[1] = DotProduct(world, R[1]);
+	local[2] = DotProduct(world, R[2]);
 }
-
 
 
 
@@ -88,8 +81,8 @@ Called by both the front end and the back end
 typedef struct {
 	float		modelMatrix[16] QALIGN(16);
 	float		axis[3][3];		// orientation in world
-    float		origin[3];			// in world coordinates
-	float		viewOrigin[3];		// viewParms->or.origin in local coordinates
+    float		origin[3];		// in world coordinates
+	float		viewOrigin[3];	// viewParms->or.origin in local coordinates
 } orientationr_t;
 
 =================
@@ -136,10 +129,16 @@ void R_RotateForEntity(const trRefEntity_t* ent, const viewParms_t* viewParms, o
 
 	// calculate the viewer origin in the model's space
 	// needed for fog, specular, and environment mapping
+    
+    // R_WorldPointToLocal(viewParms->or.origin, or->axis, or->viewOrigin);
+  
     vec3_t delta;
 
 	VectorSubtract( viewParms->or.origin, or->origin, delta );
 
+//    R_WorldVectorToLocal(delta, or->axis, or->viewOrigin);
+
+/*    
 	// compensate for scale in the axes if necessary
     float axisLength = 1.0f;
 	if ( ent->e.nonNormalizedAxes )
@@ -153,7 +152,8 @@ void R_RotateForEntity(const trRefEntity_t* ent, const viewParms_t* viewParms, o
 	or->viewOrigin[0] = DotProduct( delta, or->axis[0] ) * axisLength;
 	or->viewOrigin[1] = DotProduct( delta, or->axis[1] ) * axisLength;
 	or->viewOrigin[2] = DotProduct( delta, or->axis[2] ) * axisLength;
-
+    }
+*/
     // printMat1x3f("viewOrigin", or->viewOrigin);
     // printMat4x4f("modelMatrix", or->modelMatrix);
 
@@ -395,7 +395,7 @@ static qboolean R_GetPortalOrientations( drawSurf_t *drawSurf, int entityNum,
 
 		// rotate the plane, but keep the non-rotated version for matching
 		// against the portalSurface entities
-		R_LocalNormalToWorld( originalPlane.normal, plane.normal );
+		R_LocalNormalToWorld( originalPlane.normal, &tr.or, plane.normal );
 		plane.dist = originalPlane.dist + DotProduct( plane.normal, tr.or.origin );
 
 		// translate the original plane
@@ -514,7 +514,7 @@ static qboolean IsMirror( const drawSurf_t *drawSurf, int entityNum )
 
 		// rotate the plane, but keep the non-rotated version for matching
 		// against the portalSurface entities
-		R_LocalNormalToWorld( originalPlane.normal, plane.normal );
+		R_LocalNormalToWorld( originalPlane.normal, &tr.or, plane.normal );
 		plane.dist = originalPlane.dist + DotProduct( plane.normal, tr.or.origin );
 
 		// translate the original plane

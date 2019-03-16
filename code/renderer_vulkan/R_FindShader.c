@@ -258,7 +258,6 @@ shader_t* R_FindShader( const char *name, int lightmapIndex, qboolean mipRawImag
     if(image != NULL)
     {
         // create the default shading commands
-
         R_CreateDefaultShadingCmds(name, image);
     }
     else
@@ -670,7 +669,6 @@ void R_RemapShader(const char *shaderName, const char *newShaderName, const char
 		sh2->timeOffset = atof(timeOffset);
 	}
 }
-
 
 
 

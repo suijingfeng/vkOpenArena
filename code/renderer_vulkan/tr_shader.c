@@ -2059,8 +2059,7 @@ void setDefaultShader(void)
 
 void R_CreateDefaultShadingCmds(const char* name, image_t* image)
 {
-    
-    ri.Printf( PRINT_ALL, "R_CreateDefaultShade: shader %s, image: %s\n", name, image->imgName );
+    // ri.Printf( PRINT_ALL, "R_CreateDefaultShade: shader %s, image: %s\n", name, image->imgName );
 
     if ( shader.lightmapIndex == LIGHTMAP_NONE )
     {

@@ -464,7 +464,7 @@ void vk_bind_geometry(void)
         /*
 		// NOTE: backEnd.or.modelMatrix incorporates s_flipMatrix, so it should be taken into account 
 		// when computing clipping plane too.
-		// Clipping plane in eye coordinates.
+
 
 		float world_plane[4];
 		world_plane[0] = backEnd.viewParms.portalPlane.normal[0];
@@ -478,8 +478,24 @@ void vk_bind_geometry(void)
         {
 			eye_xform[i] = backEnd.or.modelMatrix[(i%4)*4 + i/4 ];
 		}
-        */
+        
+		push_constants[16] = backEnd.or.modelMatrix[0];
+		push_constants[17] = backEnd.or.modelMatrix[1];
+		push_constants[18] = backEnd.or.modelMatrix[2];
 
+		push_constants[19] = backEnd.or.modelMatrix[4];
+		push_constants[20] = backEnd.or.modelMatrix[5];
+		push_constants[21] = backEnd.or.modelMatrix[6];
+
+		push_constants[22] = backEnd.or.modelMatrix[8];
+		push_constants[23] = backEnd.or.modelMatrix[9];
+		push_constants[24] = backEnd.or.modelMatrix[10];
+
+		push_constants[25] = backEnd.or.modelMatrix[12];
+		push_constants[26] = backEnd.or.modelMatrix[13];
+		push_constants[27] = backEnd.or.modelMatrix[14];
+
+    */
 		push_constants[16] = backEnd.or.modelMatrix[0];
 		push_constants[17] = backEnd.or.modelMatrix[4];
 		push_constants[18] = backEnd.or.modelMatrix[8];
@@ -494,12 +510,14 @@ void vk_bind_geometry(void)
 		push_constants[25] = backEnd.or.modelMatrix[6];
 		push_constants[26] = backEnd.or.modelMatrix[10];
 		push_constants[27] = backEnd.or.modelMatrix[14];
-
+	
+        // Clipping plane in eye coordinates.
 		float eye_plane[4];
 		eye_plane[0] = DotProduct (backEnd.viewParms.or.axis[0], backEnd.viewParms.portalPlane.normal);
 		eye_plane[1] = DotProduct (backEnd.viewParms.or.axis[1], backEnd.viewParms.portalPlane.normal);
 		eye_plane[2] = DotProduct (backEnd.viewParms.or.axis[2], backEnd.viewParms.portalPlane.normal);
 		eye_plane[3] = DotProduct (backEnd.viewParms.or.origin , backEnd.viewParms.portalPlane.normal) - backEnd.viewParms.portalPlane.dist;
+
 
 		// Apply s_flipMatrix to be in the same coordinate system as eye_xfrom.
 		push_constants[28] = -eye_plane[1];
