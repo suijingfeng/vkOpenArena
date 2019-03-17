@@ -561,7 +561,7 @@ void R_IssueRenderCommands( qboolean runPerformanceCounters )
 
             case RC_DRAW_BUFFER:
             {
-                //data = RB_DrawBuffer( data ); 
+                // data = RB_DrawBuffer( data ); 
                 // const drawBufferCommand_t * const cmd = (const drawBufferCommand_t *)data;
                 vk_resetGeometryBuffer();
                 
@@ -570,23 +570,20 @@ void R_IssueRenderCommands( qboolean runPerformanceCounters )
 
                 data += sizeof(drawBufferCommand_t);
 
-                    //begin_frame_called = qtrue;
+                // begin_frame_called = qtrue;
             } break;
 
             case RC_SWAP_BUFFERS:
             {
                 // data = RB_SwapBuffers( data );
                 // finish any 2D drawing if needed
-
                 RB_EndSurface();
-
 #ifndef NDEBUG
                 // texture swapping test
                 if ( r_showImages->integer ) {
                     RB_ShowImages();
                 }
 #endif
-
                 // VULKAN
                 vk_end_frame();
 

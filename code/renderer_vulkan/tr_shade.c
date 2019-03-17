@@ -29,6 +29,8 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #include "tr_cvar.h"
 #include "R_DEBUG.h"
 #include "RB_DrawTris.h"
+#include "RB_DrawNormals.h"
+
 /*
 
   THIS ENTIRE FILE IS BACK END
@@ -81,7 +83,6 @@ void RB_BeginSurface( shader_t *shader, int fogNum )
 
 void RB_EndSurface( void )
 {
-
 	if (tess.numIndexes == 0) {
 		return;
 	}
@@ -128,7 +129,7 @@ void RB_EndSurface( void )
 	}
 	if ( r_shownormals->integer )
     {
-		DrawNormals (&tess);
+		RB_DrawNormals (&tess);
 	}
 	// clear shader so we can tell we don't have any unclosed surfaces
 	tess.numIndexes = 0;

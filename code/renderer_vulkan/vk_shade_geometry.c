@@ -7,7 +7,7 @@
 #include "../renderercommon/matrix_multiplication.h"
 #include "tr_backend.h"
 
-#define VERTEX_CHUNK_SIZE   (512 * 1024)
+#define VERTEX_CHUNK_SIZE   (768 * 1024)
 #define INDEX_BUFFER_SIZE   (2 * 1024 * 1024)
 
 #define XYZ_SIZE            (4 * VERTEX_CHUNK_SIZE)
@@ -59,8 +59,9 @@ VkBuffer vk_getIndexBuffer(void)
 
 static float s_modelview_matrix[16] QALIGN(16);
 
-static float modelview_bak[16] QALIGN(16);
 
+/*
+static float modelview_bak[16] QALIGN(16);
 
 void PushModelView(void)
 {
@@ -71,13 +72,12 @@ void PopModelView(void)
 {
     memcpy(s_modelview_matrix, modelview_bak, 64);
 }
-
+*/
 
 void set_modelview_matrix(const float mv[16])
 {
     memcpy(s_modelview_matrix, mv, 64);
 }
-
 
 
 const float * getptr_modelview_matrix()
@@ -300,7 +300,6 @@ void updateCurDescriptor( VkDescriptorSet curDesSet, uint32_t tmu)
 
 void vk_shade_geometry(VkPipeline pipeline, VkBool32 multitexture, enum Vk_Depth_Range depth_range, VkBool32 indexed)
 {
-
 	// configure vertex data stream
 	VkBuffer bufs[3] = { shadingDat.vertex_buffer, shadingDat.vertex_buffer, shadingDat.vertex_buffer };
 	VkDeviceSize offs[3] = {
@@ -309,10 +308,10 @@ void vk_shade_geometry(VkPipeline pipeline, VkBool32 multitexture, enum Vk_Depth
 		ST1_OFFSET   + shadingDat.color_st_elements * sizeof(vec2_t)
 	};
 
-
     // color
     if ((shadingDat.color_st_elements + tess.numVertexes) * sizeof(color4ub_t) > COLOR_SIZE)
-        ri.Error(ERR_DROP, "vulkan: vertex buffer overflow (color) %ld \n", (shadingDat.color_st_elements + tess.numVertexes) * sizeof(color4ub_t));
+        ri.Error(ERR_DROP, "vulkan: vertex buffer overflow (color) %ld \n", 
+                (shadingDat.color_st_elements + tess.numVertexes) * sizeof(color4ub_t));
 
     unsigned char* dst_color = shadingDat.vertex_buffer_ptr + offs[0];
     memcpy(dst_color, tess.svars.colors, tess.numVertexes * sizeof(color4ub_t));
@@ -360,10 +359,10 @@ void vk_shade_geometry(VkPipeline pipeline, VkBool32 multitexture, enum Vk_Depth
 		qvkCmdDrawIndexed(vk.command_buffer, tess.numIndexes, 1, 0, 0, 0);
 	else
 		qvkCmdDraw(vk.command_buffer, tess.numVertexes, 1, 0, 0);
-
 	
     shadingDat.s_depth_attachment_dirty = VK_TRUE;
 }
+
 
 
 void updateMVP(VkBool32 isPortal, VkBool32 is2D, const float mvMat4x4[16])
@@ -372,11 +371,8 @@ void updateMVP(VkBool32 isPortal, VkBool32 is2D, const float mvMat4x4[16])
     {
         // mvp transform + eye transform + clipping plane in eye space
         float push_constants[32] QALIGN(16);
-        // 32 * 4 = 128 BYTES
-	    const unsigned int push_constants_size = 128;
     
         // Eye space transform.
-
         MatrixMultiply4x4_SSE(mvMat4x4, backEnd.viewParms.projectionMatrix, push_constants);
 
         // NOTE: backEnd.or.modelMatrix incorporates s_flipMatrix,
@@ -411,12 +407,11 @@ void updateMVP(VkBool32 isPortal, VkBool32 is2D, const float mvMat4x4[16])
 		push_constants[30] = -eye_plane[0];
 		push_constants[31] =  eye_plane[3];
 
-
         // As described above in section Pipeline Layouts, the pipeline layout defines shader push constants
         // which are updated via Vulkan commands rather than via writes to memory or copy commands.
         // Push constants represent a high speed path to modify constant data in pipelines
         // that is expected to outperform memory-backed resource updates.
-	    qvkCmdPushConstants(vk.command_buffer, vk.pipeline_layout, VK_SHADER_STAGE_VERTEX_BIT, 0, push_constants_size, push_constants);
+	    qvkCmdPushConstants(vk.command_buffer, vk.pipeline_layout, VK_SHADER_STAGE_VERTEX_BIT, 0, 128, push_constants);
 	}
     else
     {
@@ -438,10 +433,8 @@ void updateMVP(VkBool32 isPortal, VkBool32 is2D, const float mvMat4x4[16])
         {
             // update q3's proj matrix (opengl) to vulkan conventions:
             // z - [0, 1] instead of [-1, 1] and invert y direction
-
             MatrixMultiply4x4_SSE(mvMat4x4, backEnd.viewParms.projectionMatrix, mvp);
         }
-
 
         // As described above in section Pipeline Layouts, the pipeline layout defines shader push constants
         // which are updated via Vulkan commands rather than via writes to memory or copy commands.

@@ -144,7 +144,7 @@ void R_Register( void )
 	r_debugSurface = ri.Cvar_Get ("r_debugSurface", "0", CVAR_CHEAT);
 	r_showtris = ri.Cvar_Get ("r_showtris", "0", CVAR_CHEAT);
 	r_showsky = ri.Cvar_Get ("r_showsky", "0", CVAR_TEMP);
-	r_shownormals = ri.Cvar_Get ("r_shownormals", "0", CVAR_CHEAT);
+	r_shownormals = ri.Cvar_Get ("r_shownormals", "0", CVAR_TEMP);
 	r_offsetFactor = ri.Cvar_Get( "r_offsetfactor", "-1", CVAR_CHEAT );
 	r_offsetUnits = ri.Cvar_Get( "r_offsetunits", "-2", CVAR_CHEAT );
 	r_lockpvs = ri.Cvar_Get ("r_lockpvs", "0", CVAR_CHEAT);
