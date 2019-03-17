@@ -275,7 +275,8 @@ void R_InitSkins( void )
 R_GetSkinByHandle
 ===============
 */
-skin_t	*R_GetSkinByHandle( qhandle_t hSkin ) {
+skin_t* R_GetSkinByHandle( qhandle_t hSkin )
+{
 	if ( hSkin < 1 || hSkin >= tr.numSkins ) {
 		return tr.skins[0];
 	}

@@ -768,9 +768,7 @@ static void RB_IterateStagesGeneric( shaderCommands_t *input )
 */
 void RB_StageIteratorGeneric( void )
 {
-	shaderCommands_t *input;
-
-	input = &tess;
+	shaderCommands_t *input = &tess;
 
 	RB_DeformTessGeometry();
 
@@ -880,9 +878,9 @@ void RB_StageIteratorGeneric( void )
 ** RB_EndSurface
 */
 void RB_EndSurface( void ) {
-	shaderCommands_t *input;
 
-	input = &tess;
+    
+	shaderCommands_t *input = &tess;
 
 	if (input->numIndexes == 0) {
 		return;
@@ -897,6 +895,9 @@ void RB_EndSurface( void ) {
 	if (input->xyz[SHADER_MAX_VERTEXES-1][0] != 0) {
 		ri.Error (ERR_DROP, "RB_EndSurface() - SHADER_MAX_VERTEXES hit");
 	}
+
+
+
 
 	if ( tess.shader == tr.shadowShader ) {
 		RB_ShadowTessEnd();

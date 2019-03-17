@@ -1061,6 +1061,9 @@ void RB_StageIteratorGeneric( void )
     uploadShadingData();
     updateMVP(backEnd.viewParms.isPortal, backEnd.projection2D, 
             getptr_modelview_matrix() );
+    
+//    updateMVP(backEnd.viewParms.isPortal, backEnd.projection2D, 
+//            backEnd.or.modelMatrix);
 
     uint32_t stage = 0;
 

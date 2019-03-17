@@ -251,15 +251,6 @@ void R_AddMD3Surfaces( trRefEntity_t *ent )
 	// when the surfaces are rendered, they don't need to be
 	// range checked again.
 	
-/*
-	ri.Printf( PRINT_ALL, "\n ----- R_AddMD3Surfaces ----- \n");
-
-	ri.Printf( PRINT_ALL, " frame: %d, oldframe: %d\n", ent->e.oldframe, ent->e.frame);
-
-	ri.Printf( PRINT_ALL, " tr.currentModel->name: %s\n", tr.currentModel->name);
-
-	ri.Printf( PRINT_ALL, " tr.currentModel->md3[0]->numFrames: %d\n", tr.currentModel->md3[0]->numFrames);
-*/
 
 	if ( (ent->e.frame >= tr.currentModel->md3[0]->numFrames) 
 		|| (ent->e.frame < 0)
@@ -290,6 +281,7 @@ void R_AddMD3Surfaces( trRefEntity_t *ent )
 		return;
 	}
 
+    
 	//
 	// set up lighting now that we know we aren't culled
 	//
@@ -351,5 +343,17 @@ void R_AddMD3Surfaces( trRefEntity_t *ent )
 
 		surface = (md3Surface_t *)( (byte *)surface + surface->ofsEnd );
 	}
+
+    if(r_debugModels->integer)
+    {
+        ri.Printf( PRINT_ALL, "\n ----- R_AddMD3Surfaces ----- \n");
+
+        ri.Printf( PRINT_ALL, " frame: %d, oldframe: %d\n", ent->e.oldframe, ent->e.frame);
+
+        ri.Printf( PRINT_ALL, " tr.currentModel->name: %s\n", tr.currentModel->name);
+
+        ri.Printf( PRINT_ALL, " tr.currentModel->md3[0]->numFrames: %d\n", tr.currentModel->md3[0]->numFrames);
+    }
+
 }
 

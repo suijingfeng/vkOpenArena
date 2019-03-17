@@ -1267,13 +1267,10 @@ void R_SortDrawSurfs( drawSurf_t *drawSurfs, int numDrawSurfs ) {
 	R_AddDrawSurfCmd( drawSurfs, numDrawSurfs );
 }
 
-/*
-=============
-R_AddEntitySurfaces
-=============
-*/
-void R_AddEntitySurfaces (void) {
-	trRefEntity_t	*ent;
+
+void R_AddEntitySurfaces (void)
+{
+
 	shader_t		*shader;
 
 	if ( !r_drawentities->integer ) {
@@ -1282,8 +1279,9 @@ void R_AddEntitySurfaces (void) {
 
 	for ( tr.currentEntityNum = 0; 
 	      tr.currentEntityNum < tr.refdef.num_entities; 
-		  tr.currentEntityNum++ ) {
-		ent = tr.currentEntity = &tr.refdef.entities[tr.currentEntityNum];
+		  tr.currentEntityNum++ )
+    {
+		trRefEntity_t* ent = tr.currentEntity = &tr.refdef.entities[tr.currentEntityNum];
 
 		ent->needDlights = qfalse;
 

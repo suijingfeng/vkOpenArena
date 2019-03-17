@@ -912,7 +912,7 @@ LIGHTS
 
 void R_DlightBmodel( bmodel_t *bmodel );
 void R_SetupEntityLighting( const trRefdef_t *refdef, trRefEntity_t *ent );
-void R_TransformDlights( int count, dlight_t *dl, orientationr_t *or );
+void R_TransformDlights( int count, dlight_t *dl, const orientationr_t * const or );
 int R_LightForPoint( vec3_t point, vec3_t ambientLight, vec3_t directedLight, vec3_t lightDir );
 
 
@@ -1030,7 +1030,6 @@ typedef struct {
 
 typedef struct {
 	int		commandId;
-	int		buffer;
 } drawBufferCommand_t;
 
 typedef struct {
@@ -1047,7 +1046,6 @@ typedef struct {
 
 typedef struct {
 	int		commandId;
-	int		buffer;
 } endFrameCommand_t;
 
 typedef struct {

@@ -1012,6 +1012,8 @@ static void R_SortDrawSurfs( drawSurf_t *drawSurfs, int numDrawSurfs )
 	// the first surfaces, not the last ones
 	if ( numDrawSurfs > MAX_DRAWSURFS ) {
 		numDrawSurfs = MAX_DRAWSURFS;
+        ri.Printf(PRINT_WARNING, " numDrawSurfs overflowed. \n");
+
 	}
 
 	// sort the drawsurfs by sort type, then orientation, then shader
@@ -1235,7 +1237,7 @@ or a mirror / remote location
 */
 void R_RenderView (viewParms_t *parms)
 {
-	int		firstDrawSurf;
+	int	firstDrawSurf;
 
 	tr.viewCount++;
 

@@ -220,12 +220,7 @@ void *R_GetCommandBuffer( int bytes )
 }
 
 
-/*
-=============
-R_AddDrawSurfCmd
 
-=============
-*/
 void	R_AddDrawSurfCmd( drawSurf_t *drawSurfs, int numDrawSurfs ) {
 	drawSurfsCommand_t	*cmd;
 
@@ -240,6 +235,9 @@ void	R_AddDrawSurfCmd( drawSurf_t *drawSurfs, int numDrawSurfs ) {
 
 	cmd->refdef = tr.refdef;
 	cmd->viewParms = tr.viewParms;
+
+
+
 }
 
 
@@ -360,12 +358,11 @@ void RE_BeginFrame( void )
 	cmd->commandId = RC_DRAW_BUFFER;
 
 
-		
-		if ( !Q_stricmp( r_drawBuffer->string, "GL_FRONT" ) ) {
-			cmd->buffer = (int)GL_FRONT;
-		} else {
-			cmd->buffer = (int)GL_BACK;
-		}
+    if ( !Q_stricmp( r_drawBuffer->string, "GL_FRONT" ) ) {
+        cmd->buffer = (int)GL_FRONT;
+    } else {
+        cmd->buffer = (int)GL_BACK;
+    }
 
 }
 

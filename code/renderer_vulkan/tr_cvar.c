@@ -74,6 +74,10 @@ cvar_t	*r_maxpolyverts;
 
 cvar_t* r_allowResize; // make window resizable
 
+
+
+cvar_t* r_debugModels; // suijingfeng: why model don't display in UI setup?
+
 void R_Register( void ) 
 {
 	//
@@ -141,7 +145,7 @@ void R_Register( void )
 	r_showcluster = ri.Cvar_Get ("r_showcluster", "0", CVAR_CHEAT);
 	r_speeds = ri.Cvar_Get ("r_speeds", "0", CVAR_CHEAT);
 	r_verbose = ri.Cvar_Get( "r_verbose", "0", CVAR_CHEAT );
-	r_debugSurface = ri.Cvar_Get ("r_debugSurface", "0", CVAR_CHEAT);
+	r_debugSurface = ri.Cvar_Get ("r_debugSurface", "0", CVAR_TEMP);
 	r_showtris = ri.Cvar_Get ("r_showtris", "0", CVAR_CHEAT);
 	r_showsky = ri.Cvar_Get ("r_showsky", "0", CVAR_TEMP);
 	r_shownormals = ri.Cvar_Get ("r_shownormals", "0", CVAR_TEMP);
@@ -159,5 +163,7 @@ void R_Register( void )
     ri.Cvar_CheckRange( r_displayRefresh, 0, 200, qtrue );
 
     r_allowResize = ri.Cvar_Get( "r_allowResize", "0", CVAR_ARCHIVE | CVAR_LATCH );
+
+    r_debugModels = ri.Cvar_Get ("r_debugModels", "0", CVAR_TEMP);
 }
 

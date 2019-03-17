@@ -33,7 +33,7 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #include "vk_shade_geometry.h"
 #include "R_DEBUG.h"
 
-
+#include "R_PrintMat.h"
 
 static renderCommandList_t	BE_Commands;
 
@@ -83,6 +83,7 @@ void R_AddDrawSurfCmd( drawSurf_t *drawSurfs, int numDrawSurfs )
 
 	cmd->refdef = tr.refdef;
 	cmd->viewParms = tr.viewParms;
+
 }
 
 
@@ -209,10 +210,6 @@ static void RB_RenderDrawSurfList( drawSurf_t* drawSurfs, int numDrawSurfs )
 	shader_t		*shader, *oldShader;
 	int				fogNum, oldFogNum;
 	int				dlighted, oldDlighted;
-	int				i;
-	drawSurf_t		*drawSurf;
-	int				oldSort;
-
 	// save original time for entity shader offsets
 	float originalTime = backEnd.refdef.floatTime;
 
@@ -232,7 +229,7 @@ static void RB_RenderDrawSurfList( drawSurf_t* drawSurfs, int numDrawSurfs )
 	// VULKAN
     vk_clearDepthStencilAttachments();
 
-	if ( ( backEnd.refdef.rd.rdflags & RDF_HYPERSPACE ) )
+	if ( backEnd.refdef.rd.rdflags & RDF_HYPERSPACE )
 	{
 		//RB_Hyperspace();
         // A player has predicted a teleport, but hasn't arrived yet
@@ -257,9 +254,13 @@ static void RB_RenderDrawSurfList( drawSurf_t* drawSurfs, int numDrawSurfs )
 	oldShader = NULL;
 	oldFogNum = -1;
 	oldDlighted = qfalse;
-	oldSort = -1;
+	int oldSort = -1;
 
 	backEnd.pc.c_surfaces += numDrawSurfs;
+
+    drawSurf_t* drawSurf;
+
+    int	i;
 
 	for (i = 0, drawSurf = drawSurfs ; i < numDrawSurfs ; i++, drawSurf++)
     {
@@ -302,6 +303,19 @@ static void RB_RenderDrawSurfList( drawSurf_t* drawSurfs, int numDrawSurfs )
 				// set up the transformation matrix
 				R_RotateForEntity( backEnd.currentEntity, &backEnd.viewParms, &backEnd.or );
 
+
+                if(r_debugModels->integer)
+                {
+                    ri.Printf( PRINT_ALL, "\n backEnd.currentEntity->e.reType: %d\n", backEnd.currentEntity->e.reType);
+
+                    ri.Printf( PRINT_ALL, " entityNum: %d, oldEntityNum: %d\n", entityNum, oldEntityNum);
+
+                    printMat1x3f("backEnd.or Origin", backEnd.or.origin);
+                    printMat1x3f("backEnd.or viewOrigin", backEnd.or.viewOrigin);
+                    printMat4x4f("backEnd.or modelMatrix", backEnd.or.modelMatrix);
+                }
+
+
 				// set up the dynamic lighting if needed
 				if ( backEnd.currentEntity->needDlights ) {
 					R_TransformDlights( backEnd.refdef.num_dlights, backEnd.refdef.dlights, &backEnd.or );
@@ -320,6 +334,14 @@ static void RB_RenderDrawSurfList( drawSurf_t* drawSurfs, int numDrawSurfs )
 				// the world (like water) continue with the wrong frame
 				tess.shaderTime = backEnd.refdef.floatTime - tess.shader->timeOffset;
 				R_TransformDlights( backEnd.refdef.num_dlights, backEnd.refdef.dlights, &backEnd.or );
+
+                if(r_debugModels->integer)
+                {
+                    ri.Printf( PRINT_ALL, "\n backEnd.currentEntity->e.reType: %d\n", backEnd.currentEntity->e.reType);
+                    printMat1x3f("backEnd.viewParms.world Origin", backEnd.or.origin);
+                    printMat1x3f("backEnd.viewParms.world viewOrigin", backEnd.or.viewOrigin);
+                    printMat4x4f("backEnd.viewParms.world modelMatrix", backEnd.or.modelMatrix);
+                }
 			}
 
 
@@ -340,7 +362,7 @@ static void RB_RenderDrawSurfList( drawSurf_t* drawSurfs, int numDrawSurfs )
 	}
 
 	// go back to the world modelview matrix
-    set_modelview_matrix(backEnd.viewParms.world.modelMatrix);
+//    set_modelview_matrix(backEnd.viewParms.world.modelMatrix);
 
 
 	// darken down any stencil shadows
