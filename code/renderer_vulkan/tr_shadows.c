@@ -138,7 +138,9 @@ static void vk_renderShadowEdges(VkPipeline vk_pipeline)
 			tess.svars.colors[k][3] = 255;
 		}
 
-        vk_bind_geometry();
+        uploadShadingData();
+        updateMVP(backEnd.viewParms.isPortal, backEnd.projection2D, getptr_modelview_matrix());
+
         vk_shade_geometry(vk_pipeline, VK_FALSE, DEPTH_RANGE_NORMAL, VK_TRUE);
 
 
@@ -246,7 +248,6 @@ void RB_ShadowFinish( void )
 		return;
 	}
 
-
 	updateCurDescriptor( tr.whiteImage->descriptor_set, 0);
 
 	// VULKAN
@@ -272,20 +273,21 @@ void RB_ShadowFinish( void )
     }
     tess.numVertexes = 4;
 
+	//PushModelView();
 
+    // Com_Memcpy(tmp, vk_world.modelview_transform, 64);
 
-    float bak[16] = { 1, 0 , 0, 0,
+    float tmp[16] = { 1, 0 , 0, 0,
         0, 1, 0, 0,
         0, 0, 1, 0,
         0, 0, 0, 1};
      
-   
-    vk_bind_geometry2(bak);
+    uploadShadingData();
+    updateMVP(backEnd.viewParms.isPortal, backEnd.projection2D, tmp);
     vk_shade_geometry(g_stdPipelines.shadow_finish_pipeline, VK_FALSE, DEPTH_RANGE_NORMAL, VK_TRUE);
 
     tess.numIndexes = 0;
     tess.numVertexes = 0;
-
 }
 
 

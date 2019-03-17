@@ -584,7 +584,7 @@ void RB_StageIteratorSky( void )
 	// r_showsky will let all the sky blocks be drawn in
 	// front of everything to allow developers to see how
 	// much sky is getting sucked in draw the outer skybox
-	if ( tess.shader->sky.outerbox[0] && tess.shader->sky.outerbox[0] != tr.defaultImage )
+	if ( tess.shader->sky.outerbox[0] && (tess.shader->sky.outerbox[0] != tr.defaultImage) )
     {
 
         int		i;
@@ -691,26 +691,26 @@ void RB_StageIteratorSky( void )
                 }
             }
 
-        
             memset( tess.svars.colors, tr.identityLightByte, tess.numVertexes * 4 );
 
-        float skybox_translate[16] QALIGN(16) = {
-            1, 0, 0, 0,
-            0, 1, 0, 0,
-            0, 0, 1, 0,
-            backEnd.viewParms.or.origin[0], backEnd.viewParms.or.origin[1], backEnd.viewParms.or.origin[2], 1
-        };
+            float skybox_translate[16] QALIGN(16) = {
+                1, 0, 0, 0,
+                0, 1, 0, 0,
+                0, 0, 1, 0,
+                backEnd.viewParms.or.origin[0], backEnd.viewParms.or.origin[1], backEnd.viewParms.or.origin[2], 1
+            };
 
-        float tmp[16] QALIGN(16);
-        MatrixMultiply4x4_SSE(skybox_translate, getptr_modelview_matrix(), tmp);
+            float tmp[16] QALIGN(16);
+            MatrixMultiply4x4_SSE(skybox_translate, getptr_modelview_matrix(), tmp);
 
-        vk_bind_geometry2(tmp);
-        vk_shade_geometry(g_stdPipelines.skybox_pipeline, VK_FALSE, r_showsky->integer ? DEPTH_RANGE_ZERO : DEPTH_RANGE_ONE, VK_TRUE);
+            uploadShadingData();
+            updateMVP(backEnd.viewParms.isPortal, backEnd.projection2D, tmp);
+
+
+            vk_shade_geometry(g_stdPipelines.skybox_pipeline, VK_FALSE, r_showsky->integer ? DEPTH_RANGE_ZERO : DEPTH_RANGE_ONE, VK_TRUE);
 
         }
         
-
-
 	}
 
 	// generate the vertexes for all the clouds, which will be drawn

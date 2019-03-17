@@ -64,7 +64,9 @@ void RB_ShowImages(void)
 		
         
         updateCurDescriptor( image->descriptor_set, 0);
-        vk_bind_geometry();
+        uploadShadingData();
+        updateMVP(backEnd.viewParms.isPortal, backEnd.projection2D, getptr_modelview_matrix());
+
         vk_shade_geometry(g_stdPipelines.images_debug_pipeline, VK_FALSE, DEPTH_RANGE_NORMAL, VK_TRUE);
 
 	}

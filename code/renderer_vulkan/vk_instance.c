@@ -408,17 +408,11 @@ static void vk_selectSurfaceFormat(void)
                 ( pSurfFmts[i].colorSpace == VK_COLORSPACE_SRGB_NONLINEAR_KHR) )
             {
 
-///////////
-    VkFormatProperties props;
-    qvkGetPhysicalDeviceFormatProperties(vk.physical_device, VK_FORMAT_R8G8B8A8_UNORM, &props);
-    if (props.linearTilingFeatures & VK_FORMAT_FEATURE_SAMPLED_IMAGE_BIT)
-        ri.Printf(PRINT_ALL, "--- linearTilingFeatures supported. ---\n");
-
-//////////////
                 ri.Printf(PRINT_ALL, " format = VK_FORMAT_B8G8R8A8_UNORM \n");
                 ri.Printf(PRINT_ALL, " colorSpace = VK_COLORSPACE_SRGB_NONLINEAR_KHR \n");
                 
                 vk.surface_format = pSurfFmts[i];
+                break;
             }
         }
 
@@ -449,6 +443,26 @@ static void vk_selectSurfaceFormat(void)
     // To determine the set of valid usage bits for a given format,
     // call vkGetPhysicalDeviceFormatProperties.
 
+    // ========================= color ================
+    qvkGetPhysicalDeviceFormatProperties(vk.physical_device, vk.surface_format.format, &props);
+    
+    // Check if the device supports blitting to linear images 
+    if ( props.linearTilingFeatures & VK_FORMAT_FEATURE_SAMPLED_IMAGE_BIT )
+        ri.Printf(PRINT_ALL, "--- Linear TilingFeatures supported. ---\n");
+
+    if ( props.linearTilingFeatures & VK_FORMAT_FEATURE_BLIT_DST_BIT ) 
+    {
+        ri.Printf(PRINT_ALL, "--- Blitting from linear tiled images supported. ---\n");
+    }
+
+    if ( props.optimalTilingFeatures & VK_FORMAT_FEATURE_BLIT_SRC_BIT )
+    {
+        ri.Printf(PRINT_ALL, "--- Blitting from optimal tiled images supported. ---\n");
+        vk.isBlitSupported = VK_TRUE;
+    }
+
+
+    //=========================== depth =====================================
     qvkGetPhysicalDeviceFormatProperties(vk.physical_device, VK_FORMAT_D24_UNORM_S8_UINT, &props);
 	//glConfig.stencilBits = 8;	
     if ( props.optimalTilingFeatures & VK_FORMAT_FEATURE_DEPTH_STENCIL_ATTACHMENT_BIT )

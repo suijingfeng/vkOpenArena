@@ -38,7 +38,7 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
 
 
-static void R_LocalNormalToWorld (vec3_t local, const orientationr_t * const pRT, vec3_t world)
+static void R_LocalNormalToWorld (const vec3_t local, const orientationr_t * const pRT, vec3_t world)
 {
 	world[0] = local[0] * pRT->axis[0][0] + local[1] * pRT->axis[1][0] + local[2] * pRT->axis[2][0];
 	world[1] = local[0] * pRT->axis[0][1] + local[1] * pRT->axis[1][1] + local[2] * pRT->axis[2][1];
@@ -46,7 +46,7 @@ static void R_LocalNormalToWorld (vec3_t local, const orientationr_t * const pRT
 }
 
 
-static void R_WorldVectorToLocal (vec3_t world, const float R[3][3], vec3_t local)
+static void R_WorldVectorToLocal (const vec3_t world, const float R[3][3], vec3_t local)
 {
 	local[0] = DotProduct(world, R[0]);
 	local[1] = DotProduct(world, R[1]);
@@ -54,18 +54,15 @@ static void R_WorldVectorToLocal (vec3_t world, const float R[3][3], vec3_t loca
 }
 
 
-static void R_WorldPointToLocal (vec3_t world, const float R[3][3], vec3_t local)
+static void R_WorldPointToLocal (const vec3_t world, const orientationr_t * const pRT, vec3_t local)
 {
+    vec3_t delta;
 
-//   vec3_t delta;
+    VectorSubtract( world, pRT->origin, delta );
 
-//	VectorSubtract( viewParms->or.origin, or->origin, delta );
-
-
-
-	local[0] = DotProduct(world, R[0]);
-	local[1] = DotProduct(world, R[1]);
-	local[2] = DotProduct(world, R[2]);
+	local[0] = DotProduct(delta, pRT->axis[0]);
+	local[1] = DotProduct(delta, pRT->axis[1]);
+	local[2] = DotProduct(delta, pRT->axis[2]);
 }
 
 
@@ -130,15 +127,30 @@ void R_RotateForEntity(const trRefEntity_t* ent, const viewParms_t* viewParms, o
 	// calculate the viewer origin in the model's space
 	// needed for fog, specular, and environment mapping
     
-    // R_WorldPointToLocal(viewParms->or.origin, or->axis, or->viewOrigin);
-  
+    R_WorldPointToLocal(viewParms->or.origin, or, or->viewOrigin);
+    
+    if ( ent->e.nonNormalizedAxes )
+    {
+         if ( ent->e.nonNormalizedAxes )
+        {
+            const float * v = ent->e.axis[0];
+            float axisLength = v[0] * v[0] + v[0] * v[0] + v[2] * v[2]; 
+            if ( axisLength ) {
+                axisLength = 1.0f / sqrtf(axisLength);
+            }
+
+            or->viewOrigin[0] *= axisLength;
+            or->viewOrigin[1] *= axisLength;
+            or->viewOrigin[2] *= axisLength;
+        }
+    }
+/*  
     vec3_t delta;
 
 	VectorSubtract( viewParms->or.origin, or->origin, delta );
 
-//    R_WorldVectorToLocal(delta, or->axis, or->viewOrigin);
-
-/*    
+    R_WorldVectorToLocal(delta, or->axis, or->viewOrigin);
+    
 	// compensate for scale in the axes if necessary
     float axisLength = 1.0f;
 	if ( ent->e.nonNormalizedAxes )
@@ -152,7 +164,7 @@ void R_RotateForEntity(const trRefEntity_t* ent, const viewParms_t* viewParms, o
 	or->viewOrigin[0] = DotProduct( delta, or->axis[0] ) * axisLength;
 	or->viewOrigin[1] = DotProduct( delta, or->axis[1] ) * axisLength;
 	or->viewOrigin[2] = DotProduct( delta, or->axis[2] ) * axisLength;
-    }
+
 */
     // printMat1x3f("viewOrigin", or->viewOrigin);
     // printMat4x4f("modelMatrix", or->modelMatrix);

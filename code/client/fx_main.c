@@ -326,7 +326,10 @@ static const void* fxRunQuad( const fxRun_t *run, const fxRunRender_t* render ) 
 	re.AddPolyToScene( run->shader, 4, verts, 1 );
 	return render + 1;
 }
-static const void* fxRunAnglesModel( const fxRun_t *run, const fxRunRender_t* render ) {
+
+
+static const void* fxRunAnglesModel( const fxRun_t *run, const fxRunRender_t* render )
+{
 	refModel_t model;
 
 	memset( &model, 0, sizeof( model ));
@@ -350,6 +353,7 @@ static const void* fxRunAnglesModel( const fxRun_t *run, const fxRunRender_t* re
 	re.AddModelToScene( &model );
 	return render + 1;
 }
+
 static const void* fxRunDirModel( const fxRun_t *run, const fxRunRender_t* render ) {
 	refModel_t model;
 

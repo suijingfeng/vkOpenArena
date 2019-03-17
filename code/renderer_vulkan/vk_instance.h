@@ -197,7 +197,8 @@ struct Vk_Instance {
     // Pipeline layout: the uniform and push values referenced by 
     // the shader that can be updated at draw time
 	VkPipelineLayout pipeline_layout;
-    
+
+    VkBool32 isBlitSupported;
 #ifndef NDEBUG
     VkDebugReportCallbackEXT h_debugCB;
 #endif

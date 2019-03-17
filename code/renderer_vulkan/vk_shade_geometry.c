@@ -59,20 +59,30 @@ VkBuffer vk_getIndexBuffer(void)
 
 static float s_modelview_matrix[16] QALIGN(16);
 
+static float modelview_bak[16] QALIGN(16);
+
+
+void PushModelView(void)
+{
+    memcpy(modelview_bak, s_modelview_matrix, 64);
+}
+
+void PopModelView(void)
+{
+    memcpy(s_modelview_matrix, modelview_bak, 64);
+}
+
 
 void set_modelview_matrix(const float mv[16])
 {
     memcpy(s_modelview_matrix, mv, 64);
 }
 
+
+
 const float * getptr_modelview_matrix()
 {
     return s_modelview_matrix;
-}
-
-void reset_modelview_matrix(void)
-{
-    Mat4Identity(s_modelview_matrix);
 }
 
 
@@ -356,146 +366,22 @@ void vk_shade_geometry(VkPipeline pipeline, VkBool32 multitexture, enum Vk_Depth
 }
 
 
-void vk_bind_geometry2(float modelviewMat4x4[16]) 
+void updateMVP(VkBool32 isPortal, VkBool32 is2D, const float mvMat4x4[16])
 {
-
-	// xyz stream
-	{
-        const VkDeviceSize xyz_offset = XYZ_OFFSET + shadingDat.xyz_elements * sizeof(vec4_t);
-		unsigned char* dst = shadingDat.vertex_buffer_ptr + xyz_offset;
-		memcpy(dst, tess.xyz, tess.numVertexes * sizeof(vec4_t));
-
-
-		qvkCmdBindVertexBuffers(vk.command_buffer, 0, 1, &shadingDat.vertex_buffer, &xyz_offset);
-		shadingDat.xyz_elements += tess.numVertexes;
-
-        assert (shadingDat.xyz_elements * sizeof(vec4_t) < XYZ_SIZE);
-	}
-
-	// indexes stream
-	{
-		const uint32_t indexes_size = tess.numIndexes * sizeof(uint32_t);        
-
-		unsigned char* dst = shadingDat.index_buffer_ptr + shadingDat.index_buffer_offset;
-		memcpy(dst, tess.indexes, indexes_size);
-
-		qvkCmdBindIndexBuffer(vk.command_buffer, shadingDat.index_buffer, shadingDat.index_buffer_offset, VK_INDEX_TYPE_UINT32);
-		shadingDat.index_buffer_offset += indexes_size;
-
-        assert (shadingDat.index_buffer_offset < INDEX_BUFFER_SIZE);
-	}
-
-
-    // push constants are another way of passing dynamic values to shaders
-    // Specify push constants.
-    float mvp[16] QALIGN(16); // mvp transform + eye transform + clipping plane in eye space
-
-    if (backEnd.projection2D)
+	if (isPortal)
     {
-        float mvp0 = 2.0f / glConfig.vidWidth;
-        float mvp5 = 2.0f / glConfig.vidHeight;
-
-        mvp[0]  =  mvp0; mvp[1]  =  0.0f; mvp[2]  = 0.0f; mvp[3]  = 0.0f;
-        mvp[4]  =  0.0f; mvp[5]  =  mvp5; mvp[6]  = 0.0f; mvp[7]  = 0.0f;
-        mvp[8]  =  0.0f; mvp[9]  =  0.0f; mvp[10] = 1.0f; mvp[11] = 0.0f;
-        mvp[12] = -1.0f; mvp[13] = -1.0f; mvp[14] = 0.0f; mvp[15] = 1.0f;
-    }
-    else
-    {
-        // update q3's proj matrix (opengl) to vulkan conventions:
-        // z - [0, 1] instead of [-1, 1] and invert y direction
-
-        MatrixMultiply4x4_SSE(modelviewMat4x4, backEnd.viewParms.projectionMatrix, mvp);
-    }
-
-
-    // As described above in section Pipeline Layouts, the pipeline layout defines shader push constants
-    // which are updated via Vulkan commands rather than via writes to memory or copy commands.
-    // Push constants represent a high speed path to modify constant data in pipelines
-    // that is expected to outperform memory-backed resource updates.
-    qvkCmdPushConstants(vk.command_buffer, vk.pipeline_layout, VK_SHADER_STAGE_VERTEX_BIT, 0, 64, mvp);
-
-}
-
-
-
-void vk_bind_geometry(void) 
-{
-
-	// xyz stream
-	{
-        const VkDeviceSize xyz_offset = XYZ_OFFSET + shadingDat.xyz_elements * sizeof(vec4_t);
-		unsigned char* dst = shadingDat.vertex_buffer_ptr + xyz_offset;
-		memcpy(dst, tess.xyz, tess.numVertexes * sizeof(vec4_t));
-
-		qvkCmdBindVertexBuffers(vk.command_buffer, 0, 1, &shadingDat.vertex_buffer, &xyz_offset);
-		shadingDat.xyz_elements += tess.numVertexes;
-
-        assert (shadingDat.xyz_elements * sizeof(vec4_t) < XYZ_SIZE);
-	}
-
-	// indexes stream
-	{
-		const uint32_t indexes_size = tess.numIndexes * sizeof(uint32_t);        
-
-		unsigned char* dst = shadingDat.index_buffer_ptr + shadingDat.index_buffer_offset;
-		memcpy(dst, tess.indexes, indexes_size);
-
-		qvkCmdBindIndexBuffer(vk.command_buffer, shadingDat.index_buffer, shadingDat.index_buffer_offset, VK_INDEX_TYPE_UINT32);
-		shadingDat.index_buffer_offset += indexes_size;
-
-        assert (shadingDat.index_buffer_offset < INDEX_BUFFER_SIZE);
-	}
-
-
-
-	if (backEnd.viewParms.isPortal)
-    {
-
         // mvp transform + eye transform + clipping plane in eye space
         float push_constants[32] QALIGN(16);
         // 32 * 4 = 128 BYTES
 	    const unsigned int push_constants_size = 128;
     
-
-        MatrixMultiply4x4_SSE(s_modelview_matrix, backEnd.viewParms.projectionMatrix, push_constants);
         // Eye space transform.
 
-        /*
-		// NOTE: backEnd.or.modelMatrix incorporates s_flipMatrix, so it should be taken into account 
-		// when computing clipping plane too.
+        MatrixMultiply4x4_SSE(mvMat4x4, backEnd.viewParms.projectionMatrix, push_constants);
 
+        // NOTE: backEnd.or.modelMatrix incorporates s_flipMatrix,
+        // so it should be taken into account when computing clipping plane too.
 
-		float world_plane[4];
-		world_plane[0] = backEnd.viewParms.portalPlane.normal[0];
-		world_plane[1] = backEnd.viewParms.portalPlane.normal[1];
-		world_plane[2] = backEnd.viewParms.portalPlane.normal[2];
-		world_plane[3] = backEnd.viewParms.portalPlane.dist;
-
-        float* eye_xform = push_constants + 16;
-		unsigned int i = 0;
-		for (i = 0; i < 12; i++)
-        {
-			eye_xform[i] = backEnd.or.modelMatrix[(i%4)*4 + i/4 ];
-		}
-        
-		push_constants[16] = backEnd.or.modelMatrix[0];
-		push_constants[17] = backEnd.or.modelMatrix[1];
-		push_constants[18] = backEnd.or.modelMatrix[2];
-
-		push_constants[19] = backEnd.or.modelMatrix[4];
-		push_constants[20] = backEnd.or.modelMatrix[5];
-		push_constants[21] = backEnd.or.modelMatrix[6];
-
-		push_constants[22] = backEnd.or.modelMatrix[8];
-		push_constants[23] = backEnd.or.modelMatrix[9];
-		push_constants[24] = backEnd.or.modelMatrix[10];
-
-		push_constants[25] = backEnd.or.modelMatrix[12];
-		push_constants[26] = backEnd.or.modelMatrix[13];
-		push_constants[27] = backEnd.or.modelMatrix[14];
-
-    */
 		push_constants[16] = backEnd.or.modelMatrix[0];
 		push_constants[17] = backEnd.or.modelMatrix[4];
 		push_constants[18] = backEnd.or.modelMatrix[8];
@@ -519,7 +405,7 @@ void vk_bind_geometry(void)
 		eye_plane[3] = DotProduct (backEnd.viewParms.or.origin , backEnd.viewParms.portalPlane.normal) - backEnd.viewParms.portalPlane.dist;
 
 
-		// Apply s_flipMatrix to be in the same coordinate system as eye_xfrom.
+		// Apply s_flipMatrix to be in the same coordinate system as push_constants.
 		push_constants[28] = -eye_plane[1];
 		push_constants[29] =  eye_plane[2];
 		push_constants[30] = -eye_plane[0];
@@ -538,7 +424,7 @@ void vk_bind_geometry(void)
 		// Specify push constants.
 		float mvp[16] QALIGN(16); // mvp transform + eye transform + clipping plane in eye space
         
-        if (backEnd.projection2D)
+        if (is2D)
         {
             float mvp0 = 2.0f / glConfig.vidWidth;
             float mvp5 = 2.0f / glConfig.vidHeight;
@@ -546,14 +432,14 @@ void vk_bind_geometry(void)
             mvp[0]  =  mvp0; mvp[1]  =  0.0f; mvp[2]  = 0.0f; mvp[3]  = 0.0f;
             mvp[4]  =  0.0f; mvp[5]  =  mvp5; mvp[6]  = 0.0f; mvp[7]  = 0.0f;
             mvp[8]  =  0.0f; mvp[9]  =  0.0f; mvp[10] = 1.0f; mvp[11] = 0.0f;
-            mvp[12] = -1.0f; mvp[13] = -1.0f; mvp[14] = 0.0f; mvp[15] = 1.0f;
+            mvp[12] = -1.0f; mvp[13] =  -1.0f; mvp[14] = 0.0f; mvp[15] = 1.0f;
         }
         else
         {
             // update q3's proj matrix (opengl) to vulkan conventions:
             // z - [0, 1] instead of [-1, 1] and invert y direction
 
-            MatrixMultiply4x4_SSE(s_modelview_matrix, backEnd.viewParms.projectionMatrix, mvp);
+            MatrixMultiply4x4_SSE(mvMat4x4, backEnd.viewParms.projectionMatrix, mvp);
         }
 
 
@@ -564,6 +450,37 @@ void vk_bind_geometry(void)
 		qvkCmdPushConstants(vk.command_buffer, vk.pipeline_layout, VK_SHADER_STAGE_VERTEX_BIT, 0, 64, mvp);
     }
 }
+
+
+void uploadShadingData(void)
+{
+	// xyz stream
+	{
+        const VkDeviceSize xyz_offset = XYZ_OFFSET + shadingDat.xyz_elements * sizeof(vec4_t);
+		unsigned char* dst = shadingDat.vertex_buffer_ptr + xyz_offset;
+		memcpy(dst, tess.xyz, tess.numVertexes * sizeof(vec4_t));
+
+		qvkCmdBindVertexBuffers(vk.command_buffer, 0, 1, &shadingDat.vertex_buffer, &xyz_offset);
+		shadingDat.xyz_elements += tess.numVertexes;
+
+        assert (shadingDat.xyz_elements * sizeof(vec4_t) < XYZ_SIZE);
+	}
+
+	// indexes stream
+	{
+		const uint32_t indexes_size = tess.numIndexes * sizeof(uint32_t);        
+
+		unsigned char* dst = shadingDat.index_buffer_ptr + shadingDat.index_buffer_offset;
+		memcpy(dst, tess.indexes, indexes_size);
+
+		qvkCmdBindIndexBuffer(vk.command_buffer, shadingDat.index_buffer, shadingDat.index_buffer_offset, VK_INDEX_TYPE_UINT32);
+		shadingDat.index_buffer_offset += indexes_size;
+
+        assert (shadingDat.index_buffer_offset < INDEX_BUFFER_SIZE);
+	}
+
+}
+
 
 
 void vk_resetGeometryBuffer(void)
@@ -1147,9 +1064,11 @@ void RB_StageIteratorGeneric( void )
 	// call shader function
 	//
 	// VULKAN
+   
+    uploadShadingData();
+    updateMVP(backEnd.viewParms.isPortal, backEnd.projection2D, 
+            getptr_modelview_matrix() );
 
-	vk_bind_geometry();
-    
     uint32_t stage = 0;
 
 	for ( stage = 0; stage < MAX_SHADER_STAGES; ++stage )

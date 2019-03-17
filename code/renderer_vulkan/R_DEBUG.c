@@ -5,7 +5,7 @@
 #include "vk_image.h"
 #include "vk_pipelines.h"
 #include "tr_cvar.h"
-
+#include "tr_backend.h"
 
 void R_DebugPolygon( int color, int numPoints, float *points )
 {
@@ -83,9 +83,9 @@ void R_DebugPolygon( int color, int numPoints, float *points )
 		tess.numIndexes += 3;
 	}
 
+    uploadShadingData();
+    updateMVP(backEnd.viewParms.isPortal, backEnd.projection2D, getptr_modelview_matrix());
 
-
-    vk_bind_geometry();
     vk_shade_geometry(g_stdPipelines.surface_debug_pipeline_solid, VK_FALSE, DEPTH_RANGE_NORMAL, VK_TRUE);
 
 
@@ -100,8 +100,8 @@ void R_DebugPolygon( int color, int numPoints, float *points )
 	tess.numVertexes = numPoints * 2;
 	tess.numIndexes = 0;
 
-
-    vk_bind_geometry();
+    uploadShadingData();
+    updateMVP(backEnd.viewParms.isPortal, backEnd.projection2D, getptr_modelview_matrix());
     vk_shade_geometry(g_stdPipelines.surface_debug_pipeline_outline, VK_FALSE, DEPTH_RANGE_ZERO, VK_FALSE);
 	
     tess.numVertexes = 0;
@@ -159,8 +159,8 @@ void DrawNormals (shaderCommands_t *input)
         tess.numVertexes = 2 * count;
         tess.numIndexes = 0;
 
-
-        vk_bind_geometry();
+        uploadShadingData();
+        updateMVP(backEnd.viewParms.isPortal, backEnd.projection2D, getptr_modelview_matrix());
         vk_shade_geometry(g_stdPipelines.normals_debug_pipeline, VK_FALSE, DEPTH_RANGE_ZERO, VK_TRUE);
 
         i += count;

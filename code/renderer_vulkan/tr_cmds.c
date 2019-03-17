@@ -197,6 +197,8 @@ void RE_EndFrame( int *frontEndMsec, int *backEndMsec )
 }
 
 
+
+
 /*
 ==================
 RB_RenderDrawSurfList
@@ -206,15 +208,13 @@ static void RB_RenderDrawSurfList( drawSurf_t* drawSurfs, int numDrawSurfs )
 {
 	shader_t		*shader, *oldShader;
 	int				fogNum, oldFogNum;
-	int				entityNum, oldEntityNum;
 	int				dlighted, oldDlighted;
 	int				i;
 	drawSurf_t		*drawSurf;
 	int				oldSort;
-	float			originalTime;
 
 	// save original time for entity shader offsets
-	originalTime = backEnd.refdef.floatTime;
+	float originalTime = backEnd.refdef.floatTime;
 
     // Any mirrored or portaled views have already been drawn, 
     // so prepare to actually render the visible surfaces for this view
@@ -225,9 +225,6 @@ static void RB_RenderDrawSurfList( drawSurf_t* drawSurfs, int numDrawSurfs )
 	// 2D images again
 	backEnd.projection2D = qfalse;
 
-	//
-	// set the modelview matrix for the viewer
-	//
 
 	// ensures that depth writes are enabled for the depth clear
     
@@ -252,8 +249,10 @@ static void RB_RenderDrawSurfList( drawSurf_t* drawSurfs, int numDrawSurfs )
 		backEnd.isHyperspace = qfalse;
 	}
 
+
 	// draw everything
-	oldEntityNum = -1;
+    int entityNum;
+	int oldEntityNum = -1;
 	backEnd.currentEntity = &tr.worldEntity;
 	oldShader = NULL;
 	oldFogNum = -1;
@@ -292,8 +291,6 @@ static void RB_RenderDrawSurfList( drawSurf_t* drawSurfs, int numDrawSurfs )
 		//
 		if ( entityNum != oldEntityNum )
         {
-            oldEntityNum = entityNum;
-
 			if ( entityNum != ENTITYNUM_WORLD )
             {
 				backEnd.currentEntity = &backEnd.refdef.entities[entityNum];
@@ -328,6 +325,7 @@ static void RB_RenderDrawSurfList( drawSurf_t* drawSurfs, int numDrawSurfs )
 
 			// VULKAN
             set_modelview_matrix(backEnd.or.modelMatrix);
+            oldEntityNum = entityNum;
         }
 
 		// add the triangles for this surface
