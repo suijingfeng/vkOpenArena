@@ -304,53 +304,57 @@ R_LightScaleTexture
 Scale up the pixel values in a texture to increase the lighting range
 ================
 */
-void R_LightScaleTexture (unsigned char*in, int inwidth, int inheight, qboolean only_gamma )
+void R_LightScaleTexture (unsigned char* const in, int inwidth, int inheight, int only_gamma, unsigned char* const dst)
 {
-	if ( only_gamma )
+    int	i;
+	int nBytes = inwidth*inheight*4;
+	
+    if ( only_gamma )
 	{
 		if ( !glConfig.deviceSupportsGamma )
 		{
-			int	i, N = inwidth*inheight;
+            for (i=0; i<nBytes; i+=4)
+            {
+                unsigned int n1 = i + 1;
+                unsigned int n2 = i + 2;
+                unsigned int n3 = i + 3;
 
-			for (i=0; i < N; )
-			{
-				in[i] = s_gammatable[in[i]];
-                i++;
-				in[i] = s_gammatable[in[i]];
-                i++;
-				in[i] = s_gammatable[in[i]];
-                i = i + 2;
-			}
+                dst[i] = s_gammatable[in[i]];
+                dst[n1] = s_gammatable[in[n1]];
+                dst[n2] = s_gammatable[in[n2]];
+                dst[n3] = in[n3];
+            }
 		}
 	}
 	else
 	{
-		int	i;
-		int N = inwidth*inheight;
-
 		if ( glConfig.deviceSupportsGamma )
 		{
-			for (i=0; i<N; )
-			{
-				in[i] = s_intensitytable[in[i]];
-				i++;
-				in[i] = s_intensitytable[in[i]];
-				i++;
-				in[i] = s_intensitytable[in[i]];
-				i = i + 2;
-			}
+            for (i=0; i<nBytes; i+=4)
+            {
+                unsigned int n1 = i + 1;
+                unsigned int n2 = i + 2;
+                unsigned int n3 = i + 3;
+
+                dst[i] = s_intensitytable[in[i]];
+                dst[n1] = s_intensitytable[in[n1]];
+                dst[n2] = s_intensitytable[in[n2]];
+                dst[n3] = in[n3];
+            }
 		}
 		else
 		{
-			for (i=0; i<N; )
-			{
-				in[i] = s_gammatable[s_intensitytable[in[i]]];
-				i++;
-				in[i] = s_gammatable[s_intensitytable[in[i]]];
-				i++;
-				in[i] = s_gammatable[s_intensitytable[in[i]]];
-				i=i+2;
-			}
+            for (i=0; i<nBytes; i+=4)
+            {
+                unsigned int n1 = i + 1;
+                unsigned int n2 = i + 2;
+                unsigned int n3 = i + 3;
+
+                dst[i] = s_gammatable[s_intensitytable[in[i]]];
+                dst[n1] = s_gammatable[s_intensitytable[in[n1]]];
+                dst[n2] = s_gammatable[s_intensitytable[in[n2]]];
+                dst[n3] = in[n3];
+            }
 		}
 	}
 }
@@ -596,7 +600,7 @@ static struct Image_Upload_Data generate_image_upload_data(const byte* data, int
 
 	unsigned char* scaled_buffer = (unsigned char*) ri.Hunk_AllocateTempMemory( sizeof( unsigned ) * scaled_width * scaled_height );
 	memcpy(scaled_buffer, data, scaled_width * scaled_height * 4);
-	R_LightScaleTexture(scaled_buffer, scaled_width, scaled_height, (qboolean) !mipmap);
+	R_LightScaleTexture(scaled_buffer, scaled_width, scaled_height, (qboolean) !mipmap, scaled_buffer);
 
 	int miplevel = 0;
 	int mip_level_size = scaled_width * scaled_height * 4;
