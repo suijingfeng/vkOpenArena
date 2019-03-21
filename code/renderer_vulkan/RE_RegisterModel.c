@@ -60,6 +60,7 @@ qhandle_t RE_RegisterModel( const char *name )
         {
 			if( tr.models[hModel]->type == MOD_BAD )
             {
+                ri.Printf( PRINT_WARNING, "tr.models[%d]->type = MOD_BAD \n", hModel);
 				return 0;
 			}
 			return hModel;

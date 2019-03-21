@@ -34,24 +34,6 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #include "VKimpl.h"
 
 
-// work around, will be removed
-
-#ifndef GL_REPEAT
-#define GL_REPEAT				0x2901
-#endif
-
-#ifndef GL_CLAMP
-#define GL_CLAMP				0x2900
-#endif
-
-#ifndef GL_MODULATE
-#define GL_MODULATE				0x2100
-#endif
-
-#ifndef GL_ADD
-#define GL_ADD					0x0104
-#endif
-
 
 
 // 12 bits
@@ -267,7 +249,7 @@ typedef struct {
 #define	MAX_IMAGE_ANIMATIONS	8
 
 typedef struct {
-	image_t			*image[MAX_IMAGE_ANIMATIONS];
+	image_t*        image[MAX_IMAGE_ANIMATIONS];
 	int				numImageAnimations;
 	float			imageAnimationSpeed;
 
@@ -785,9 +767,6 @@ int R_CullPointAndRadius( vec3_t origin, float radius );
 int R_CullLocalPointAndRadius( vec3_t origin, float radius );
 
 void R_RotateForEntity( const trRefEntity_t *ent, const viewParms_t *viewParms, orientationr_t *or );
-
-
-
 
 
 

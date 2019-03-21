@@ -58,7 +58,8 @@ initialization functions, resource management functions and rendering setup func
 
 ### Initialization:
 
-* vk\_initialize/vk\_shutdown ¡ª initialize/shutdown Vulkan backend
+* vk\_initialize : initialize Vulkan backend
+* vk\_shutdown : shutdown Vulkan backend
 
 ### Resource management:
 
@@ -72,12 +73,12 @@ initialization functions, resource management functions and rendering setup func
 
 ### Rendering setup:
 
-* vk\_clear\_attachments ¡ª clears framebuffer¡¯s attachments.
+* vk\_clear\_attachments : clears framebuffer¡¯s attachments.
 
-* vk\_bind\_geometry ¡ª is called when we start drawing new geometry.
+* vk\_bind\_geometry : is called when we start drawing new geometry.
 
-* vk\_shade\_geometry ¡ª is called to shade geometry specified with vk_bind_geometry. Can be called multiple times for Q3¡¯s multi-stage shaders.
+* vk\_shade\_geometry : is called to shade geometry specified with vk\_bind\_geometry. Can be called multiple times for Q3¡¯s multi-stage shaders.
 
-* vk\_begin\_frame/vk\_end\_frame ¡ª frame setup.
+* vk\_begin\_frame/vk\_end\_frame : frame setup.
 
-* vk\_read\_pixels ¡ª takes a screenshot.
+* vk\_read\_pixels : takes a screenshot.

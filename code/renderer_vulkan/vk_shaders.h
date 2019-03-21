@@ -38,8 +38,6 @@
 
 #define GLS_DEFAULT			GLS_DEPTHMASK_TRUE
 
-
-
 enum Vk_Shader_Type {
     ST_SINGLE_TEXTURE,
 	ST_MULTI_TEXURE_MUL,

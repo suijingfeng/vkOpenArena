@@ -29,7 +29,6 @@
 */
 
 
-
 #define MAX_VK_SAMPLERS     8
 
 struct Vk_Sampler_Def
@@ -79,7 +78,11 @@ VkSampler vk_find_sampler( VkBool32 isMipmap, VkBool32 isRepeatTexture )
 
 
     // Create it, if not exist!
-
+    // VK_SAMPLER_ADDRESS_MODE_REPEAT specifies that the repeat wrap mode will be used.
+    // VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE specifies that the clamp to edge wrap mode will be used.
+    // specifying the behavior of sampling with coordinates outside 
+    // the range [0,1] for the respective u, v, or w coordinate as defined
+    // in the Wrapping Operation section
 	VkSamplerAddressMode address_mode = isRepeatTexture ?
         VK_SAMPLER_ADDRESS_MODE_REPEAT : VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE;
 
