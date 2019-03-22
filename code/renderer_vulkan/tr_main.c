@@ -418,7 +418,7 @@ static qboolean R_GetPortalOrientations( drawSurf_t *drawSurf, int entityNum,
 	}
 
 	VectorCopy( plane.normal, surface->axis[0] );
-	PerpendicularVector( surface->axis[1], surface->axis[0] );
+	VectorPerp( plane.normal, surface->axis[1] );
 	CrossProduct( surface->axis[0], surface->axis[1], surface->axis[2] );
 
 	// locate the portal entity closest to this plane.

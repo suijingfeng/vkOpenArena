@@ -285,7 +285,7 @@ void RE_RenderScene( const refdef_t *fd ) {
 
 	int	startTime = ri.Milliseconds();
 	qboolean customscrn = !(fd->rdflags & RDF_NOWORLDMODEL);
-	
+
 	if (!tr.world && customscrn ) {
 		ri.Error (ERR_DROP, "R_RenderScene: NULL worldmodel");
 	}
@@ -310,8 +310,8 @@ void RE_RenderScene( const refdef_t *fd ) {
 	// copy the areamask data over and note if it has changed, which
 	// will force a reset of the visible leafs even if the view hasn't moved
 	tr.refdef.areamaskModified = qfalse;
-	if ( customscrn) {
-		int		areaDiff = 0;
+	if ( customscrn ) {
+		int	areaDiff = 0;
 		int		i;
 
 		// compare the area bits
@@ -330,7 +330,7 @@ void RE_RenderScene( const refdef_t *fd ) {
 
 	// derived info
 
-	tr.refdef.floatTime = tr.refdef.time * 0.001;
+	tr.refdef.floatTime = tr.refdef.time * 0.001f;
 
 	tr.refdef.numDrawSurfs = r_firstSceneDrawSurf;
 	tr.refdef.drawSurfs = backEndData->drawSurfs;
@@ -346,8 +346,7 @@ void RE_RenderScene( const refdef_t *fd ) {
 
 	// turn off dynamic lighting globally by clearing all the
 	// dlights if it needs to be disabled or if vertex lighting is enabled
-	if ( r_dynamiclight->integer == 0 ||
-		 r_vertexLight->integer == 1 ) {
+	if ( r_dynamiclight->integer == 0 || r_vertexLight->integer == 1 ) {
 		tr.refdef.num_dlights = 0;
 	}
 

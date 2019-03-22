@@ -15,7 +15,7 @@ MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 GNU General Public License for more details.
 
 You should have received a copy of the GNU General Public License
-along with Foobar; if not, write to the Free Software
+along with Quake III Arena source code; if not, write to the Free Software
 Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 ===========================================================================
 */
@@ -24,8 +24,9 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #include "tr_local.h"
 #include "../renderercommon/matrix_multiplication.h"
 
+trGlobals_t	tr;
+refimport_t	ri;
 
-trGlobals_t		tr;
 
 static float	s_flipMatrix[16] = {
 	// convert from our coordinate system (looking down X)
@@ -37,11 +38,10 @@ static float	s_flipMatrix[16] = {
 };
 
 
-refimport_t	ri;
 
 // entities that will have procedurally generated surfaces will just
 // point at this for their sorting surface
-surfaceType_t	entitySurface = SF_ENTITY;
+static surfaceType_t entitySurface = SF_ENTITY;
 
 /*
 =================
@@ -255,18 +255,18 @@ void R_RotateForEntity( const trRefEntity_t *ent, const viewParms_t *viewParms,
 	glMatrix[1] = or->axis[0][1];
 	glMatrix[5] = or->axis[1][1];
 	glMatrix[9] = or->axis[2][1];
-	
+
 	glMatrix[2] = or->axis[0][2];
 	glMatrix[6] = or->axis[1][2];
 	glMatrix[10] = or->axis[2][2];
 
+	glMatrix[12] = or->origin[0];
+	glMatrix[13] = or->origin[1];
+	glMatrix[14] = or->origin[2];
+
 	glMatrix[3] = 0;
 	glMatrix[7] = 0;
 	glMatrix[11] = 0;
-    
-    glMatrix[12] = or->origin[0];
-    glMatrix[13] = or->origin[1];
-	glMatrix[14] = or->origin[2];
 	glMatrix[15] = 1;
 
 	myGlMultMatrix( glMatrix, viewParms->world.modelMatrix, or->modelMatrix );
@@ -277,7 +277,7 @@ void R_RotateForEntity( const trRefEntity_t *ent, const viewParms_t *viewParms,
 
 	// compensate for scale in the axes if necessary
 	if ( ent->e.nonNormalizedAxes ) {
-		axisLength = VectorLength( ent->e.axis[0] );
+		axisLength = VectorLen( ent->e.axis[0] );
 		if ( !axisLength ) {
 			axisLength = 0;
 		} else {
@@ -290,8 +290,6 @@ void R_RotateForEntity( const trRefEntity_t *ent, const viewParms_t *viewParms,
 	or->viewOrigin[0] = DotProduct( delta, or->axis[0] ) * axisLength;
 	or->viewOrigin[1] = DotProduct( delta, or->axis[1] ) * axisLength;
 	or->viewOrigin[2] = DotProduct( delta, or->axis[2] ) * axisLength;
-
-    
 }
 
 /*
@@ -301,7 +299,7 @@ R_RotateForViewer
 Sets up the modelview matrix for a given viewParm
 =================
 */
-void R_RotateForViewer (void) 
+static void R_RotateForViewer (void) 
 {
 	float	viewerMatrix[16];
 	vec3_t	origin;
@@ -513,7 +511,6 @@ void R_SetupFrustum (void) {
 	}
 }
 
-
 /*
 =================
 R_MirrorPoint
@@ -602,7 +599,8 @@ Returns qtrue if it should be mirrored
 */
 qboolean R_GetPortalOrientations( drawSurf_t *drawSurf, int entityNum, 
 							 orientation_t *surface, orientation_t *camera,
-							 vec3_t pvsOrigin, qboolean *mirror ) {
+							 vec3_t pvsOrigin, qboolean *mirror )
+{
 	int			i;
 	cplane_t	originalPlane, plane;
 	trRefEntity_t	*e;
@@ -613,7 +611,7 @@ qboolean R_GetPortalOrientations( drawSurf_t *drawSurf, int entityNum,
 	R_PlaneForSurface( drawSurf->surface, &originalPlane );
 
 	// rotate the plane if necessary
-	if ( entityNum != ENTITYNUM_WORLD ) {
+	if ( entityNum != REFENTITYNUM_WORLD ) {
 		tr.currentEntityNum = entityNum;
 		tr.currentEntity = &tr.refdef.entities[entityNum];
 
@@ -632,7 +630,7 @@ qboolean R_GetPortalOrientations( drawSurf_t *drawSurf, int entityNum,
 	}
 
 	VectorCopy( plane.normal, surface->axis[0] );
-	PerpendicularVector( surface->axis[1], surface->axis[0] );
+	VectorPerp( plane.normal, surface->axis[1]);
 	CrossProduct( surface->axis[0], surface->axis[1], surface->axis[2] );
 
 	// locate the portal entity closest to this plane.
@@ -673,8 +671,10 @@ qboolean R_GetPortalOrientations( drawSurf_t *drawSurf, int entityNum,
 			
 		// now get the camera origin and orientation
 		VectorCopy( e->e.oldorigin, camera->origin );
-		//AxisCopy( e->e.axis, camera->axis );
-        memcpy(camera->axis, e->e.axis, 36);
+		VectorCopy( e->e.axis[0], camera->axis[0] );
+		VectorCopy( e->e.axis[1], camera->axis[1] );
+		VectorCopy( e->e.axis[2], camera->axis[2] );
+
 		VectorSubtract( vec3_origin, camera->axis[0], camera->axis[0] );
 		VectorSubtract( vec3_origin, camera->axis[1], camera->axis[1] );
 
@@ -685,21 +685,21 @@ qboolean R_GetPortalOrientations( drawSurf_t *drawSurf, int entityNum,
 				// continuous rotate
 				d = (tr.refdef.time/1000.0f) * e->e.frame;
 				VectorCopy( camera->axis[1], transformed );
-				RotatePointAroundVector( camera->axis[1], camera->axis[0], transformed, d );
+				PointRotateAroundVector( camera->axis[1], camera->axis[0], transformed, d );
 				CrossProduct( camera->axis[0], camera->axis[1], camera->axis[2] );
 			} else {
 				// bobbing rotate, with skinNum being the rotation offset
 				d = sin( tr.refdef.time * 0.003f );
 				d = e->e.skinNum + d * 4;
 				VectorCopy( camera->axis[1], transformed );
-				RotatePointAroundVector( camera->axis[1], camera->axis[0], transformed, d );
+				PointRotateAroundVector( camera->axis[1], camera->axis[0], transformed, d );
 				CrossProduct( camera->axis[0], camera->axis[1], camera->axis[2] );
 			}
 		}
 		else if ( e->e.skinNum ) {
 			d = e->e.skinNum;
 			VectorCopy( camera->axis[1], transformed );
-			RotatePointAroundVector( camera->axis[1], camera->axis[0], transformed, d );
+			PointRotateAroundVector( camera->axis[1], camera->axis[0], transformed, d );
 			CrossProduct( camera->axis[0], camera->axis[1], camera->axis[2] );
 		}
 		*mirror = qfalse;
@@ -731,7 +731,7 @@ static qboolean IsMirror( const drawSurf_t *drawSurf, int entityNum )
 	R_PlaneForSurface( drawSurf->surface, &originalPlane );
 
 	// rotate the plane if necessary
-	if ( entityNum != ENTITYNUM_WORLD ) 
+	if ( entityNum != REFENTITYNUM_WORLD )
 	{
 		tr.currentEntityNum = entityNum;
 		tr.currentEntity = &tr.refdef.entities[entityNum];
@@ -746,10 +746,6 @@ static qboolean IsMirror( const drawSurf_t *drawSurf, int entityNum )
 
 		// translate the original plane
 		originalPlane.dist = originalPlane.dist + DotProduct( originalPlane.normal, tr.or.origin );
-	} 
-	else 
-	{
-		plane = originalPlane;
 	}
 
 	// locate the portal entity closest to this plane.
@@ -797,10 +793,6 @@ static qboolean SurfIsOffscreen( const drawSurf_t *drawSurf, vec4_t clipDest[128
 	unsigned int pointOr = 0;
 	unsigned int pointAnd = (unsigned int)~0;
 
-	if ( glConfig.smpActive ) {		// FIXME!  we can't do RB_BeginSurface/RB_EndSurface stuff with smp!
-		return qfalse;
-	}
-
 	R_RotateForViewer();
 
 	R_DecomposeSort( drawSurf->sort, &entityNum, &shader, &fogNum, &dlighted );
@@ -834,7 +826,6 @@ static qboolean SurfIsOffscreen( const drawSurf_t *drawSurf, vec4_t clipDest[128
 	// trivially reject
 	if ( pointAnd )
 	{
-        tess.numIndexes = 0;
 		return qtrue;
 	}
 
@@ -848,23 +839,22 @@ static qboolean SurfIsOffscreen( const drawSurf_t *drawSurf, vec4_t clipDest[128
 	for ( i = 0; i < tess.numIndexes; i += 3 )
 	{
 		vec3_t normal;
-		float dot;
 		float len;
 
 		VectorSubtract( tess.xyz[tess.indexes[i]], tr.viewParms.or.origin, normal );
 
-		len = VectorLengthSquared( normal );			// lose the sqrt
+		len = normal[0]*normal[0] + normal[1]*normal[1] + normal[2]*normal[2];// lose the sqrt
 		if ( len < shortest )
 		{
 			shortest = len;
 		}
 
-		if ( ( dot = DotProduct( normal, tess.normal[tess.indexes[i]] ) ) >= 0 )
+		if ( DotProduct( normal, tess.normal[tess.indexes[i]] ) >= 0 )
 		{
 			numTriangles--;
 		}
 	}
-    tess.numIndexes = 0;
+
 	if ( !numTriangles )
 	{
 		return qtrue;
@@ -892,7 +882,8 @@ R_MirrorViewBySurface
 Returns qtrue if another view has been rendered
 ========================
 */
-qboolean R_MirrorViewBySurface (drawSurf_t *drawSurf, int entityNum) {
+qboolean R_MirrorViewBySurface (drawSurf_t *drawSurf, int entityNum)
+{
 	vec4_t			clipDest[128];
 	viewParms_t		newParms;
 	viewParms_t		oldParms;
@@ -1177,7 +1168,6 @@ recurse:
 
 
 //==========================================================================================
-
 /*
 =================
 R_AddDrawSurf
@@ -1270,7 +1260,6 @@ void R_SortDrawSurfs( drawSurf_t *drawSurfs, int numDrawSurfs ) {
 
 void R_AddEntitySurfaces (void)
 {
-
 	shader_t		*shader;
 
 	if ( !r_drawentities->integer ) {
@@ -1280,7 +1269,7 @@ void R_AddEntitySurfaces (void)
 	for ( tr.currentEntityNum = 0; 
 	      tr.currentEntityNum < tr.refdef.num_entities; 
 		  tr.currentEntityNum++ )
-    {
+	{
 		trRefEntity_t* ent = tr.currentEntity = &tr.refdef.entities[tr.currentEntityNum];
 
 		ent->needDlights = qfalse;
@@ -1360,14 +1349,16 @@ void R_AddEntitySurfaces (void)
 R_DebugPolygon
 ================
 */
-void R_DebugPolygon( int color, int numPoints, float *points ) {
+void R_DebugPolygon( int color, int numPoints, float *points )
+{
+	int i = 0 ;
 	GL_State( GLS_DEPTHMASK_TRUE | GLS_SRCBLEND_ONE | GLS_DSTBLEND_ONE );
 
 	// draw solid shade
 
 	qglColor3f( color&1, (color>>1)&1, (color>>2)&1 );
 	qglBegin( GL_POLYGON );
-	for (int i = 0 ; i < numPoints ; i++ ) {
+	for ( i = 0 ; i < numPoints ; i++ ) {
 		qglVertex3fv( points + i * 3 );
 	}
 	qglEnd();
@@ -1377,13 +1368,11 @@ void R_DebugPolygon( int color, int numPoints, float *points ) {
 	qglDepthRange( 0, 0 );
 	qglColor3f( 1, 1, 1 );
 	qglBegin( GL_POLYGON );
-	for (int i = 0 ; i < numPoints ; i++ ) {
+	for ( i = 0 ; i < numPoints ; i++ ) {
 		qglVertex3fv( points + i * 3 );
 	}
 	qglEnd();
 	qglDepthRange( 0, 1 );
-
-
 }
 
 /*
@@ -1394,6 +1383,9 @@ Visualization aid for movement clipping debugging
 ====================
 */
 void R_DebugGraphics( void ) {
+	if ( tr.refdef.rdflags & RDF_NOWORLDMODEL ) {
+		return;
+	}
 	if ( !r_debugSurface->integer ) {
 		return;
 	}
@@ -1415,10 +1407,11 @@ A view may be either the actual camera view,
 or a mirror / remote location
 ================
 */
-void R_RenderView (viewParms_t *parms) {
+void R_RenderView (viewParms_t *parms)
+{
 	int		firstDrawSurf;
 
-	if ( parms->viewportWidth <= 0 || parms->viewportHeight <= 0 ) {
+	if ( (parms->viewportWidth <= 0) || (parms->viewportHeight <= 0) ) {
 		return;
 	}
 

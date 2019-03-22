@@ -271,16 +271,17 @@ void R_RotateForEntity( const trRefEntity_t *ent, const viewParms_t *viewParms,
 	glMatrix[0] = or->axis[0][0];
 	glMatrix[4] = or->axis[1][0];
 	glMatrix[8] = or->axis[2][0];
-	glMatrix[12] = or->origin[0];
 
 	glMatrix[1] = or->axis[0][1];
 	glMatrix[5] = or->axis[1][1];
 	glMatrix[9] = or->axis[2][1];
-	glMatrix[13] = or->origin[1];
 
 	glMatrix[2] = or->axis[0][2];
 	glMatrix[6] = or->axis[1][2];
 	glMatrix[10] = or->axis[2][2];
+
+	glMatrix[12] = or->origin[0];
+	glMatrix[13] = or->origin[1];
 	glMatrix[14] = or->origin[2];
 
 	glMatrix[3] = 0;
@@ -773,7 +774,7 @@ static qboolean IsMirror( const drawSurf_t *drawSurf, int entityNum )
 
 		// translate the original plane
 		originalPlane.dist = originalPlane.dist + DotProduct( originalPlane.normal, tr.or.origin );
-	} 
+	}
 
 	// locate the portal entity closest to this plane.
 	// origin will be the origin of the portal, origin2 will be
@@ -881,6 +882,7 @@ static qboolean SurfIsOffscreen( const drawSurf_t *drawSurf, vec4_t clipDest[128
 			numTriangles--;
 		}
 	}
+
 	if ( !numTriangles )
 	{
 		return qtrue;
@@ -1139,12 +1141,9 @@ void R_SortDrawSurfs( drawSurf_t *drawSurfs, int numDrawSurfs ) {
 	R_AddDrawSurfCmd( drawSurfs, numDrawSurfs );
 }
 
-/*
-=============
-R_AddEntitySurfaces
-=============
-*/
-void R_AddEntitySurfaces (void) {
+
+void R_AddEntitySurfaces (void)
+{
 	trRefEntity_t	*ent;
 	shader_t		*shader;
 
@@ -1154,7 +1153,8 @@ void R_AddEntitySurfaces (void) {
 
 	for ( tr.currentEntityNum = 0; 
 	      tr.currentEntityNum < tr.refdef.num_entities; 
-		  tr.currentEntityNum++ ) {
+		  tr.currentEntityNum++ )
+	{
 		ent = tr.currentEntity = &tr.refdef.entities[tr.currentEntityNum];
 
 		ent->needDlights = qfalse;
@@ -1231,16 +1231,14 @@ void R_AddEntitySurfaces (void) {
 }
 
 
-
-
 /*
 ================
 R_DebugPolygon
 ================
 */
-void R_DebugPolygon( int color, int numPoints, float *points ) {
-	int		i;
-
+void R_DebugPolygon( int color, int numPoints, float *points )
+{
+	int i = 0 ;
 	GL_State( GLS_DEPTHMASK_TRUE | GLS_SRCBLEND_ONE | GLS_DSTBLEND_ONE );
 
 	// draw solid shade

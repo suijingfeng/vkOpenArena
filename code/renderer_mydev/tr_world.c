@@ -15,7 +15,7 @@ MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 GNU General Public License for more details.
 
 You should have received a copy of the GNU General Public License
-along with Foobar; if not, write to the Free Software
+along with Quake III Arena source code; if not, write to the Free Software
 Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 ===========================================================================
 */
@@ -51,19 +51,18 @@ Also sets the clipped hint bit in tess
 =================
 */
 static qboolean	R_CullGrid( srfGridMesh_t *cv ) {
-	int 	boxCull;
+	int 	boxCull = CULL_OUT;
 	int 	sphereCull;
 
 	if ( r_nocurves->integer ) {
 		return qtrue;
 	}
 
-	if ( tr.currentEntityNum != ENTITYNUM_WORLD ) {
+	if ( tr.currentEntityNum != REFENTITYNUM_WORLD ) {
 		sphereCull = R_CullLocalPointAndRadius( cv->localOrigin, cv->meshRadius );
 	} else {
 		sphereCull = R_CullPointAndRadius( cv->localOrigin, cv->meshRadius );
 	}
-	boxCull = CULL_OUT;
 	
 	// check for trivial reject
 	if ( sphereCull == CULL_OUT )
@@ -651,7 +650,7 @@ void R_AddWorldSurfaces (void) {
 		return;
 	}
 
-	tr.currentEntityNum = ENTITYNUM_WORLD;
+	tr.currentEntityNum = REFENTITYNUM_WORLD;
 	tr.shiftedEntityNum = tr.currentEntityNum << QSORT_ENTITYNUM_SHIFT;
 
 	// determine which leaves are in the PVS / areamask
