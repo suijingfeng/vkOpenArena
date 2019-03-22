@@ -13,7 +13,7 @@
 ## General setup. 
 
 Single command buffer that records all the commands. Single render pass which specifies color and depth-stencil attachment. 
-Stencil buffer is used to render Q3¡¯s stencil shadows (cg\_shadows=2).
+Stencil buffer is used to render Q3's stencil shadows (cg\_shadows=2).
 
 ## Geometry. 
 Quake 3 renderer prepares geometry data for each draw call in tess.xyz and tess.indexes arrays.
@@ -77,7 +77,7 @@ initialization functions, resource management functions and rendering setup func
 
 * vk\_bind\_geometry : is called when we start drawing new geometry.
 
-* vk\_shade\_geometry : is called to shade geometry specified with vk\_bind\_geometry. Can be called multiple times for Q3¡¯s multi-stage shaders.
+* vk\_shade\_geometry : is called to shade geometry specified with vk\_bind\_geometry. Can be called multiple times for Q3's multi-stage shaders.
 
 * vk\_begin\_frame/vk\_end\_frame : frame setup.
 

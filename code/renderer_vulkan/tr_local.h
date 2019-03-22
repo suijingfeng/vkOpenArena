@@ -450,7 +450,7 @@ typedef struct {
 	vec3_t		pvsOrigin;			// may be different than or.origin for portals
 	qboolean	isPortal;			// true if this view is through a portal
 	qboolean	isMirror;			// the portal is a mirror, invert the face culling
-	cplane_t	portalPlane;		// clip anything behind this if mirroring
+//	cplane_t	portalPlane;		// clip anything behind this if mirroring
 	int			viewportX, viewportY, viewportWidth, viewportHeight;
 	float		fovX, fovY;
 	float		projectionMatrix[16] QALIGN(16);

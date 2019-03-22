@@ -7,6 +7,8 @@
 #include "../renderercommon/matrix_multiplication.h"
 #include "tr_backend.h"
 
+#include "R_PortalPlane.h"
+
 #define VERTEX_CHUNK_SIZE   (768 * 1024)
 #define INDEX_BUFFER_SIZE   (2 * 1024 * 1024)
 
@@ -394,18 +396,29 @@ void updateMVP(VkBool32 isPortal, VkBool32 is2D, const float mvMat4x4[16])
 		push_constants[27] = backEnd.or.modelMatrix[14];
 	
         // Clipping plane in eye coordinates.
-		float eye_plane[4];
-		eye_plane[0] = DotProduct (backEnd.viewParms.or.axis[0], backEnd.viewParms.portalPlane.normal);
-		eye_plane[1] = DotProduct (backEnd.viewParms.or.axis[1], backEnd.viewParms.portalPlane.normal);
-		eye_plane[2] = DotProduct (backEnd.viewParms.or.axis[2], backEnd.viewParms.portalPlane.normal);
-		eye_plane[3] = DotProduct (backEnd.viewParms.or.origin , backEnd.viewParms.portalPlane.normal) - backEnd.viewParms.portalPlane.dist;
+		struct rplane_s eye_plane;
+		// eye_plane[0] = DotProduct (backEnd.viewParms.or.axis[0], backEnd.viewParms.portalPlane.normal);
+		// eye_plane[1] = DotProduct (backEnd.viewParms.or.axis[1], backEnd.viewParms.portalPlane.normal);
+		// eye_plane[2] = DotProduct (backEnd.viewParms.or.axis[2], backEnd.viewParms.portalPlane.normal);
+		// eye_plane[3] = DotProduct (backEnd.viewParms.or.origin , backEnd.viewParms.portalPlane.normal) - backEnd.viewParms.portalPlane.dist;
+		
+        // Apply s_flipMatrix to be in the same coordinate system as push_constants.
+		//push_constants[28] = -eye_plane[1];
+		//push_constants[29] =  eye_plane[2];
+		//push_constants[30] = -eye_plane[0];
+		//push_constants[31] =  eye_plane[3];
+        R_TransformPlane(backEnd.viewParms.or.axis, backEnd.viewParms.or.origin, &eye_plane);
 
+        push_constants[28] = -eye_plane.normal[1];
+		push_constants[29] =  eye_plane.normal[2];
+		push_constants[30] = -eye_plane.normal[0];
+		push_constants[31] =  eye_plane.dist;
 
-		// Apply s_flipMatrix to be in the same coordinate system as push_constants.
-		push_constants[28] = -eye_plane[1];
-		push_constants[29] =  eye_plane[2];
-		push_constants[30] = -eye_plane[0];
-		push_constants[31] =  eye_plane[3];
+        //eye_plane[0] = DotProduct (backEnd.viewParms.or.axis[0], g_portalPlane.normal);
+		//eye_plane[1] = DotProduct (backEnd.viewParms.or.axis[1], g_portalPlane.normal);
+		//eye_plane[2] = DotProduct (backEnd.viewParms.or.axis[2], g_portalPlane.normal);
+		//eye_plane[3] = DotProduct (backEnd.viewParms.or.origin , g_portalPlane.normal) - g_portalPlane.dist;
+
 
         // As described above in section Pipeline Layouts, the pipeline layout defines shader push constants
         // which are updated via Vulkan commands rather than via writes to memory or copy commands.
@@ -471,7 +484,6 @@ void uploadShadingData(void)
 
         assert (shadingDat.index_buffer_offset < INDEX_BUFFER_SIZE);
 	}
-
 }
 
 

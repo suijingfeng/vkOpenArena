@@ -36,6 +36,7 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
 #include "R_PrintMat.h"
 
+#include "R_PortalPlane.h"
 
 
 static void R_LocalNormalToWorld (const vec3_t local, const orientationr_t * const pRT, vec3_t world)
@@ -256,7 +257,7 @@ static void R_SetupFrustum (viewParms_t * const pViewParams)
 {
 	
     {
-        float ang = pViewParams->fovX * (M_PI / 360.0f);
+        float ang = pViewParams->fovX * (float)(M_PI / 360.0f);
         float xs = sin( ang );
         float xc = cos( ang );
 
@@ -272,7 +273,7 @@ static void R_SetupFrustum (viewParms_t * const pViewParams)
 
    
     {
-        float ang = pViewParams->fovY * (M_PI / 360.0f);
+        float ang = pViewParams->fovY * (float)(M_PI / 360.0f);
         float xs = sin( ang );
         float xc = cos( ang );
         float temp1[3];
@@ -708,9 +709,10 @@ static qboolean R_MirrorViewBySurface (drawSurf_t *drawSurf, int entityNum)
 
 	R_MirrorPoint (oldParms.or.origin, &surface, &camera, newParms.or.origin );
 
-	VectorSubtract( vec3_origin, camera.axis[0], newParms.portalPlane.normal );
-	newParms.portalPlane.dist = DotProduct( camera.origin, newParms.portalPlane.normal );
-	
+	// VectorSubtract( vec3_origin, camera.axis[0], newParms.portalPlane.normal );
+	// newParms.portalPlane.dist = DotProduct( camera.origin, newParms.portalPlane.normal );
+    R_SetupPortalPlane(camera.axis, camera.origin);
+
 	R_MirrorVector (oldParms.or.axis[0], &surface, &camera, newParms.or.axis[0]);
 	R_MirrorVector (oldParms.or.axis[1], &surface, &camera, newParms.or.axis[1]);
 	R_MirrorVector (oldParms.or.axis[2], &surface, &camera, newParms.or.axis[2]);
