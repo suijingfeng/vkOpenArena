@@ -362,15 +362,12 @@ static void RB_RenderDrawSurfList( drawSurf_t* drawSurfs, int numDrawSurfs )
 	}
 
 	// go back to the world modelview matrix
-//    set_modelview_matrix(backEnd.viewParms.world.modelMatrix);
+    set_modelview_matrix(backEnd.viewParms.world.modelMatrix);
 
 
 	// darken down any stencil shadows
 	RB_ShadowFinish();		
 }
-
-
-
 
 
 
@@ -505,7 +502,6 @@ static void R_PerformanceCounters( void )
 				backEnd.pc.c_dlightVertexes, backEnd.pc.c_dlightIndexes / 3 );
 		}
 	} 
-
 
 	memset( &tr.pc, 0, sizeof( tr.pc ) );
 	memset( &backEnd.pc, 0, sizeof( backEnd.pc ) );

@@ -1149,7 +1149,6 @@ void R_AddEntitySurfaces (viewParms_t * const pViewParam)
 			ri.Error( ERR_DROP, "Add entity surfaces: Bad reType" );
 		}
 	}
-
 }
 
 

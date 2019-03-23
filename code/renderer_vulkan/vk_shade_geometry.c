@@ -153,14 +153,57 @@ static VkRect2D get_scissor_rect(void)
 	{
 		r.offset.x = backEnd.viewParms.viewportX;
 		//r.offset.y = glConfig.vidHeight - (backEnd.viewParms.viewportY + backEnd.viewParms.viewportHeight);
-        r.offset.y = backEnd.viewParms.viewportY;
+        r.offset.y = -backEnd.viewParms.viewportY;
         r.extent.width = backEnd.viewParms.viewportWidth;
 		r.extent.height = backEnd.viewParms.viewportHeight;
-        //ri.Printf(PRINT_ALL, "(%d, %d, %d, %d)\n", r.offset.x, r.offset.y, r.extent.width, r.extent.height);
+        // ri.Printf(PRINT_ALL, "(%d, %d, %d, %d)\n", r.offset.x, r.offset.y, r.extent.width, r.extent.height);
     }
 
 	return r;
 }
+
+/*
+_o : means original code, leave it here as documents
+TODO   : figure out the principle
+static VkRect2D get_viewport_rect_o(void)
+{
+	VkRect2D r;
+	if (backEnd.projection2D)
+	{
+		r.offset.x = 0.0f;
+		r.offset.y = 0.0f;
+		r.extent.width = glConfig.vidWidth;
+		r.extent.height = glConfig.vidHeight;
+	}
+	else
+	{
+		r.offset.x = backEnd.viewParms.viewportX;
+		r.offset.y = glConfig.vidHeight - (backEnd.viewParms.viewportY + backEnd.viewParms.viewportHeight);
+
+		r.extent.width = backEnd.viewParms.viewportWidth;
+		r.extent.height = backEnd.viewParms.viewportHeight;
+	}
+	return r;
+}
+
+static VkRect2D get_scissor_rect_o(void)
+{
+	VkRect2D r = get_viewport_rect_o();
+
+	if (r.offset.x < 0)
+		r.offset.x = 0;
+	if (r.offset.y < 0)
+		r.offset.y = 0;
+
+	if (r.offset.x + r.extent.width > glConfig.vidWidth)
+		r.extent.width = glConfig.vidWidth - r.offset.x;
+	if (r.offset.y + r.extent.height > glConfig.vidHeight)
+		r.extent.height = glConfig.vidHeight - r.offset.y;
+
+	return r;
+}
+
+*/
 
 
 // Vulkan memory is broken up into two categories, host memory and device memory.
