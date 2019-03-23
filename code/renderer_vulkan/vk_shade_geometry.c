@@ -64,12 +64,10 @@ static float s_modelview_matrix[16] QALIGN(16);
 
 /*
 static float modelview_bak[16] QALIGN(16);
-
 void PushModelView(void)
 {
     memcpy(modelview_bak, s_modelview_matrix, 64);
 }
-
 void PopModelView(void)
 {
     memcpy(s_modelview_matrix, modelview_bak, 64);
@@ -153,9 +151,21 @@ static VkRect2D get_scissor_rect(void)
 	{
 		r.offset.x = backEnd.viewParms.viewportX;
 		//r.offset.y = glConfig.vidHeight - (backEnd.viewParms.viewportY + backEnd.viewParms.viewportHeight);
-        r.offset.y = -backEnd.viewParms.viewportY;
+        if (r.offset.x < 0)
+		    r.offset.x = 0;
+
+        r.offset.y = backEnd.viewParms.viewportY;
+        
+        if (r.offset.y < 0)
+		    r.offset.y = 0;
         r.extent.width = backEnd.viewParms.viewportWidth;
 		r.extent.height = backEnd.viewParms.viewportHeight;
+
+        if (r.offset.x + r.extent.width > glConfig.vidWidth)
+		    r.extent.width = glConfig.vidWidth - r.offset.x;
+	    if (r.offset.y + r.extent.height > glConfig.vidHeight)
+		    r.extent.height = glConfig.vidHeight - r.offset.y;
+
         // ri.Printf(PRINT_ALL, "(%d, %d, %d, %d)\n", r.offset.x, r.offset.y, r.extent.width, r.extent.height);
     }
 
@@ -179,30 +189,24 @@ static VkRect2D get_viewport_rect_o(void)
 	{
 		r.offset.x = backEnd.viewParms.viewportX;
 		r.offset.y = glConfig.vidHeight - (backEnd.viewParms.viewportY + backEnd.viewParms.viewportHeight);
-
 		r.extent.width = backEnd.viewParms.viewportWidth;
 		r.extent.height = backEnd.viewParms.viewportHeight;
 	}
 	return r;
 }
-
 static VkRect2D get_scissor_rect_o(void)
 {
 	VkRect2D r = get_viewport_rect_o();
-
 	if (r.offset.x < 0)
 		r.offset.x = 0;
 	if (r.offset.y < 0)
 		r.offset.y = 0;
-
 	if (r.offset.x + r.extent.width > glConfig.vidWidth)
 		r.extent.width = glConfig.vidWidth - r.offset.x;
 	if (r.offset.y + r.extent.height > glConfig.vidHeight)
 		r.extent.height = glConfig.vidHeight - r.offset.y;
-
 	return r;
 }
-
 */
 
 
@@ -602,7 +606,6 @@ void vk_clearColorAttachments(const float* color)
 	clear_rect[0].baseArrayLayer = 0;
 	clear_rect[0].layerCount = 1;
 	uint32_t rect_count = 1;
-
   
 	// Split viewport rectangle into two non-overlapping rectangles.
 	// It's a HACK to prevent Vulkan validation layer's performance warning:
@@ -611,7 +614,6 @@ void vk_clearColorAttachments(const float* color)
 	// 
 	// NOTE: we don't use LOAD_OP_CLEAR for color attachment when we begin renderpass
 	// since at that point we don't know whether we need color buffer clear (usually we don't).
-
     uint32_t h = clear_rect[0].rect.extent.height / 2;
     clear_rect[0].rect.extent.height = h;
     clear_rect[1] = clear_rect[0];
@@ -923,7 +925,6 @@ static void ComputeTexCoords( shaderStage_t *pStage )
 /*
 ===================
 ProjectDlightTexture
-
 Perform dynamic lighting with another rendering pass
 ===================
 */
@@ -1059,7 +1060,6 @@ static void ProjectDlightTexture( void )
 /*
 ===================
 RB_FogPass
-
 Blends a fog texture on top of everything else
 ===================
 */
