@@ -85,7 +85,7 @@ typedef struct {
 
 =================
 */
-void R_RotateForEntity(const trRefEntity_t* ent, const viewParms_t* viewParms, orientationr_t* or)
+void R_RotateForEntity(const trRefEntity_t* const ent, const viewParms_t* const viewParms, orientationr_t* const or)
 {
 
 	if ( ent->e.reType != RT_MODEL )
@@ -268,7 +268,12 @@ static void R_SetupFrustum (viewParms_t * const pViewParams)
         VectorScale( pViewParams->or.axis[1], xc, temp2);
 
         VectorAdd(temp1, temp2, pViewParams->frustum[0].normal);
+		pViewParams->frustum[0].dist = DotProduct (pViewParams->or.origin, pViewParams->frustum[0].normal);
+        pViewParams->frustum[0].type = PLANE_NON_AXIAL;
+
         VectorSubtract(temp1, temp2, pViewParams->frustum[1].normal);
+		pViewParams->frustum[1].dist = DotProduct (pViewParams->or.origin, pViewParams->frustum[1].normal);
+        pViewParams->frustum[1].type = PLANE_NON_AXIAL;
     }
 
    
@@ -283,35 +288,34 @@ static void R_SetupFrustum (viewParms_t * const pViewParams)
         VectorScale( pViewParams->or.axis[2], xc, temp2);
 
         VectorAdd(temp1, temp2, pViewParams->frustum[2].normal);
+		pViewParams->frustum[2].dist = DotProduct (pViewParams->or.origin, pViewParams->frustum[2].normal);
+        pViewParams->frustum[2].type = PLANE_NON_AXIAL;
+
         VectorSubtract(temp1, temp2, pViewParams->frustum[3].normal);
+		pViewParams->frustum[3].dist = DotProduct (pViewParams->or.origin, pViewParams->frustum[3].normal);
+		pViewParams->frustum[3].type = PLANE_NON_AXIAL;
     }
 
 
     uint32_t i = 0;
 	for (i=0; i < 4; i++)
     {
-		pViewParams->frustum[i].type = PLANE_NON_AXIAL;
-		pViewParams->frustum[i].dist = DotProduct (pViewParams->or.origin, pViewParams->frustum[i].normal);
+		// pViewParams->frustum[i].type = PLANE_NON_AXIAL;
+		// pViewParams->frustum[i].dist = DotProduct (pViewParams->or.origin, pViewParams->frustum[i].normal);
 		SetPlaneSignbits( &pViewParams->frustum[i] );
 	}
 }
 
 
-/*
-=================
-R_MirrorPoint
-=================
-*/
-void R_MirrorPoint (vec3_t in, orientation_t *surface, orientation_t *camera, vec3_t out)
+static void R_MirrorPoint (vec3_t in, orientation_t *surface, orientation_t *camera, vec3_t out)
 {
     // ri.Printf(PRINT_ALL, "R_MirrorPoint\n");
 	int		i;
 	vec3_t	local;
-	vec3_t	transformed;
+	vec3_t	transformed = { 0, 0, 0 };
 
 	VectorSubtract( in, surface->origin, local );
 
-	VectorClear( transformed );
 	for ( i = 0 ; i < 3 ; i++ )
     {
 		float d = DotProduct(local, surface->axis[i]);
@@ -399,7 +403,7 @@ static qboolean R_GetPortalOrientations( drawSurf_t *drawSurf, int entityNum,
 	R_PlaneForSurface( drawSurf->surface, &originalPlane );
 
 	// rotate the plane if necessary
-	if ( entityNum != ENTITYNUM_WORLD ) {
+	if ( entityNum != REFENTITYNUM_WORLD ) {
 		tr.currentEntityNum = entityNum;
 		tr.currentEntity = &tr.refdef.entities[entityNum];
 
@@ -517,7 +521,7 @@ static qboolean IsMirror( const drawSurf_t *drawSurf, int entityNum )
 	R_PlaneForSurface( drawSurf->surface, &originalPlane );
 
 	// rotate the plane if necessary
-	if ( entityNum != ENTITYNUM_WORLD ) 
+	if ( entityNum != REFENTITYNUM_WORLD ) 
 	{
 		tr.currentEntityNum = entityNum;
 		tr.currentEntity = &tr.refdef.entities[entityNum];

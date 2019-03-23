@@ -139,7 +139,7 @@ void R_AddPolygonSurfaces( void )
 	shader_t	*sh;
 	srfPoly_t	*poly;
 
-	tr.currentEntityNum = ENTITYNUM_WORLD;
+	tr.currentEntityNum = REFENTITYNUM_WORLD;
 	tr.shiftedEntityNum = tr.currentEntityNum << QSORT_ENTITYNUM_SHIFT;
 
 	for ( i = 0, poly = tr.refdef.polys; i < tr.refdef.numPolys ; i++, poly++ ) {
@@ -242,7 +242,7 @@ void RE_AddRefEntityToScene( const refEntity_t *ent ) {
 		return;
 	}
   // https://zerowing.idsoftware.com/bugzilla/show_bug.cgi?id=402
-	if ( r_numentities >= ENTITYNUM_WORLD ) {
+	if ( r_numentities >= REFENTITYNUM_WORLD ) {
 		return;
 	}
 	if ( ent->reType < 0 || ent->reType >= RT_MAX_REF_ENTITY_TYPE ) {

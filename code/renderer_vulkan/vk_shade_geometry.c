@@ -397,27 +397,15 @@ void updateMVP(VkBool32 isPortal, VkBool32 is2D, const float mvMat4x4[16])
 	
         // Clipping plane in eye coordinates.
 		struct rplane_s eye_plane;
-		// eye_plane[0] = DotProduct (backEnd.viewParms.or.axis[0], backEnd.viewParms.portalPlane.normal);
-		// eye_plane[1] = DotProduct (backEnd.viewParms.or.axis[1], backEnd.viewParms.portalPlane.normal);
-		// eye_plane[2] = DotProduct (backEnd.viewParms.or.axis[2], backEnd.viewParms.portalPlane.normal);
-		// eye_plane[3] = DotProduct (backEnd.viewParms.or.origin , backEnd.viewParms.portalPlane.normal) - backEnd.viewParms.portalPlane.dist;
-		
-        // Apply s_flipMatrix to be in the same coordinate system as push_constants.
-		//push_constants[28] = -eye_plane[1];
-		//push_constants[29] =  eye_plane[2];
-		//push_constants[30] = -eye_plane[0];
-		//push_constants[31] =  eye_plane[3];
-        R_TransformPlane(backEnd.viewParms.or.axis, backEnd.viewParms.or.origin, &eye_plane);
 
+        R_TransformPlane(backEnd.viewParms.or.axis, backEnd.viewParms.or.origin, &eye_plane);
+        
+        // Apply s_flipMatrix to be in the same coordinate system as push_constants.
+        
         push_constants[28] = -eye_plane.normal[1];
 		push_constants[29] =  eye_plane.normal[2];
 		push_constants[30] = -eye_plane.normal[0];
 		push_constants[31] =  eye_plane.dist;
-
-        //eye_plane[0] = DotProduct (backEnd.viewParms.or.axis[0], g_portalPlane.normal);
-		//eye_plane[1] = DotProduct (backEnd.viewParms.or.axis[1], g_portalPlane.normal);
-		//eye_plane[2] = DotProduct (backEnd.viewParms.or.axis[2], g_portalPlane.normal);
-		//eye_plane[3] = DotProduct (backEnd.viewParms.or.origin , g_portalPlane.normal) - g_portalPlane.dist;
 
 
         // As described above in section Pipeline Layouts, the pipeline layout defines shader push constants
@@ -597,7 +585,6 @@ void vk_clearColorAttachments(const float* color)
 	qvkCmdClearAttachments(vk.command_buffer, attachment_count, &attachments, rect_count, &clear_rect);
 
 }
-
 
 
 
