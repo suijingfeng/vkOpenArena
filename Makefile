@@ -1570,7 +1570,7 @@ Q3MYDEVOBJ = \
   $(B)/renderer_mydev/qgl.o \
   $(B)/renderer_mydev/qgl_log.o \
   $(B)/renderer_mydev/loadImage.o \
-  $(B)/renderer_vulkan/matrix_multiplication.o \
+  $(B)/renderer_mydev/matrix_multiplication.o \
   $(B)/renderer_mydev/sdl_glimp.o
 
 ######################  VULKAN  ######################
@@ -1655,15 +1655,11 @@ Q3VKOBJ = \
   $(B)/renderer_vulkan/tr_image_pcx.o \
 
 
-
-
 ifeq ($(BUILD_WITH_XCB), 1)
   Q3VKOBJ += $(B)/renderer_vulkan/vk_create_window_XCB.o
 else
   Q3VKOBJ += $(B)/renderer_vulkan/vk_create_window_SDL.o
 endif
-
-
 
 ######################################################
 
@@ -2612,7 +2608,6 @@ $(B)/renderer_vulkan/%.o: $(RVULKANDIR)/%.c
 $(B)/renderer_vulkan/%.o: $(MOUNT_DIR)/renderer_vulkan/shaders/Compiled/%.c
 	$(DO_REF_CC)
 
-
 ###########################################
 	
 $(B)/renderer_oa/%.o: $(CMDIR)/%.c
@@ -2861,8 +2856,7 @@ clean2:
 	@rm -f $(OBJ_D_FILES)
 	@rm -f $(STRINGOBJ)
 	@rm -f $(TARGETS)
-	@rm -f $(VKOBJ)
-	@rm -f $(VKOBJ_D_FILES)
+	@rm -f $(Q3VKOBJ)
 
 toolsclean: toolsclean-debug toolsclean-release
 
