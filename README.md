@@ -13,6 +13,10 @@
 
 # OpenArena Engine 
 This project is a fork of OpenArena with specific changes to its renderer module.
+I am naive programmer, this repository is mainly for myself learning Vulkan and Quake3's engine.
+I actually haven't the ability to maintain it as lacking documents about Q3 and lacking knowledge about game graphics.
+I am learning by modification, however, only to find that I introduce bugs and mess the code up.
+So, Any documents, instructions, advices would be appreciated.
 
 
 
@@ -48,7 +52,6 @@ cd build
 make -j4
 sudo make install
 ```
-
 
 
 ## Building on Windows 7 or 10 ##
@@ -96,11 +99,12 @@ Example:
 
 ```sh
 
-# new vulkan renderer backend, under developing, 
+# New vulkan renderer backend, under developing, 
 # work on ubuntu 18.04, ubuntu16.04, win10, win7.
+# associate code located in code/renderer_vulkan, see readme there.
 $ ./openarena.x86_64 +set cl_renderer vulkan
 
-# Enable renderergl2:
+# Enable renderergl2( borrowed from ioq3 ):
 $ ./openarena.x86_64 +set cl_renderer opengl2
 
 # Enable the renderergl1:
@@ -121,7 +125,28 @@ Q: How to check that Vulkan backend is really active ?
 \vkinfo
 ```
 Type \vkinfo in the console reports information about active rendering backend.
+It will report something like the following:
 
+```
+Active 3D API: Vulkan
+Vk api version: 1.0.65
+Vk driver version: 1637679104
+Vk vendor id: 0x10DE (NVIDIA)
+Vk device id: 0x1B80
+Vk device type: DISCRETE_GPU
+Vk device name: GeForce GTX 1080
+
+Total Device Extension Supported:
+
+...
+
+Vk instance extensions:
+
+...
+
+Image chuck memory(device local) used: 8 M 
+
+```
 
 
 # OpenArena gamecode
