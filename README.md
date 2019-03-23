@@ -193,7 +193,6 @@ ri.Printf( PRINT_WARNING, "s_worldData.lightGridBounds[i]=%d\n", s_worldData.lig
 * r\_gamma shader
 * have issues with \minimize when use vulkan renderer in fullscreen. recreate the swapchain ?
 * flare support
-* fixing the mirror
 * RB\_AddAxis
 * Use gprof to examine the performance of the program
 ```
