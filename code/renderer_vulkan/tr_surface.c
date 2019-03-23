@@ -1007,7 +1007,7 @@ void RB_SurfaceAxis( void )
 {
     // FIXME: implement this
     //	VK_Bind( tr.whiteImage );
-	ri.Printf( PRINT_ALL, "RB_SurfaceAxis().\n" );
+	ri.Printf( PRINT_ALL, "RB_SurfaceAxis() haven't been implemented. \n" );
 
 }
 

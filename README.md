@@ -89,6 +89,7 @@ $ ./openarena.x86_64
 
 This feature is enabled by default. This allow for build modular renderers and select or switch 
 the renderer at runtime rather than compiling into one binary.
+If you wish to disable it, set `USE_RENDERER_DLOPEN=0` in the Makefile.
 When you start OpenArena, you can switch witch dynamic library to load by passing its name. 
 
 Example:
@@ -121,7 +122,6 @@ Q: How to check that Vulkan backend is really active ?
 ```
 Type \vkinfo in the console reports information about active rendering backend.
 
-If you wish to disable it, set `USE_RENDERER_DLOPEN=0` in the Makefile.
 
 
 # OpenArena gamecode
@@ -167,14 +167,14 @@ ERROR: Hunk_Alloc failed on 739360: code/renderergl2/tr_model.c, line: 535 (size
 OpenGL2 renderer seems use more memory, Upping com\_hunkmegs to 256 will generally be OK.
 
 
-* About -fno-strict-aliasing
+* Different results compile OA without -fno-strict-aliasing 
 I am using GCC7.2 and clang6.0 on ubuntu18.04.
 
 Build OA using clang with -fno-strict-aliasing removed:
 ```
 WARNING: light grid mismatch, l->filelen=103896, numGridPoints*8=95904
 ```
-This is printed by renderergl2's R_LoadLightGrid function.
+This is printed by renderergl2's R\_LoadLightGrid function.
 
     Problem solved with following line added in it.
 ```
@@ -193,7 +193,7 @@ ri.Printf( PRINT_WARNING, "s_worldData.lightGridBounds[i]=%d\n", s_worldData.lig
 * r\_gamma shader
 * have issues with \minimize when use vulkan renderer in fullscreen. recreate the swapchain ?
 * flare support
-* RB\_AddAxis
+* Implement RB\_SurfaceAxis();
 * Use gprof to examine the performance of the program
 ```
 gprof openarena.x86_64 gmon.out > report.txt
