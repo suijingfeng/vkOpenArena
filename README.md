@@ -21,7 +21,7 @@ So, Any documents, instructions, advices would be appreciated.
 For people who want to try the vulkan based renderer on quake3's map,
 go to https://github.com/suijingfeng/vkQuake3
 
-
+![](https://github.com/suijingfeng/vkOpenArena/blob/master/doc/quake3.jpg)
 
 ## Building on Ubuntu or Debian Linux ##
 
