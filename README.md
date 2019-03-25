@@ -18,7 +18,7 @@ I actually haven't the ability to maintain it as lacking documents about Q3 and 
 I am learning by modification, however, only to find that I introduce bugs and mess the code up.
 So, Any documents, instructions, advices would be appreciated.
 
-For people who want try the vulkan based renderer on quake3's map,
+For people who want to try the vulkan based renderer on quake3's map,
 go to https://github.com/suijingfeng/vkQuake3
 
 

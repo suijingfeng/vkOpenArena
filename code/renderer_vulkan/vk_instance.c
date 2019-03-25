@@ -982,7 +982,7 @@ void vk_initialize(void)
     vk_createDepthAttachment();
 
 
-    vk_createFrameBuffers();
+    vk_createFrameBuffers(glConfig.vidWidth, glConfig.vidHeight);
 
 	// Pipeline layout.
 	// You can use uniform values in shaders, which are globals similar to

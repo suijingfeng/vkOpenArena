@@ -137,7 +137,7 @@ static VkViewport get_viewport(enum Vk_Depth_Range depth_range)
 }
 
 
-static VkRect2D get_scissor_rect(void)
+VkRect2D get_scissor_rect(void)
 {
 	VkRect2D r;
 	if (backEnd.projection2D)
