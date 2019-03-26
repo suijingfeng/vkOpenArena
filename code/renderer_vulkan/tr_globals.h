@@ -4,8 +4,6 @@
 #include "tr_local.h"
 #include "tr_model.h"
 
-
-
 /*
 ** trGlobals_t 
 **
@@ -70,7 +68,7 @@ typedef struct {
 	// put large tables at the end, so most elements will be
 	// within the +/32K indexed range on risc processors
 	//
-	model_t					*models[MAX_MOD_KNOWN];
+	model_t	*               models[MAX_MOD_KNOWN];
 	int						numModels;
 
 	int						numImages;
@@ -92,8 +90,6 @@ typedef struct {
 	float					sawToothTable[FUNCTABLE_SIZE];
 	float					inverseSawToothTable[FUNCTABLE_SIZE];
 } trGlobals_t;
-
-
 
 extern trGlobals_t	tr;
 
