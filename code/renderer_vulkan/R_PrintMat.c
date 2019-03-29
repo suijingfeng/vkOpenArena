@@ -26,6 +26,15 @@ void printMat1x4f(const char* name, const float src[4])
             name, src[0], src[1], src[2], src[3]);
 }
 
+void printMat3x3f(const char* name, const float src[3][3])
+{
+    ri.Printf(PRINT_ALL, 
+        "\n float %s[3][3] = {\n%f, %f, %f, \n%f, %f, %f, \n%f, %f, %f };\n", name, 
+        src[0][0], src[0][1], src[0][2],
+        src[1][0], src[1][1], src[1][2],
+        src[2][0], src[2][1], src[2][2]);
+}
+
 void printMat4x4f(const char* name, const float src[16])
 {
     ri.Printf(PRINT_ALL, 

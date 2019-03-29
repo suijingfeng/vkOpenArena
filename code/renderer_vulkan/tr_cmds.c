@@ -34,7 +34,7 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #include "R_DEBUG.h"
 
 #include "RB_ShowImages.h"
-#include "R_PrintMat.h"
+
 
 static renderCommandList_t	BE_Commands;
 
@@ -305,18 +305,6 @@ static void RB_RenderDrawSurfList( drawSurf_t* drawSurfs, int numDrawSurfs )
 				R_RotateForEntity( backEnd.currentEntity, &backEnd.viewParms, &backEnd.or );
 
 
-                if(r_debugModels->integer)
-                {
-                    ri.Printf( PRINT_ALL, "\n backEnd.currentEntity->e.reType: %d\n", backEnd.currentEntity->e.reType);
-
-                    ri.Printf( PRINT_ALL, " entityNum: %d, oldEntityNum: %d\n", entityNum, oldEntityNum);
-
-                    printMat1x3f("backEnd.or Origin", backEnd.or.origin);
-                    printMat1x3f("backEnd.or viewOrigin", backEnd.or.viewOrigin);
-                    printMat4x4f("backEnd.or modelMatrix", backEnd.or.modelMatrix);
-                }
-
-
 				// set up the dynamic lighting if needed
 				if ( backEnd.currentEntity->needDlights ) {
 					R_TransformDlights( backEnd.refdef.num_dlights, backEnd.refdef.dlights, &backEnd.or );
@@ -335,14 +323,6 @@ static void RB_RenderDrawSurfList( drawSurf_t* drawSurfs, int numDrawSurfs )
 				// the world (like water) continue with the wrong frame
 				tess.shaderTime = backEnd.refdef.floatTime - tess.shader->timeOffset;
 				R_TransformDlights( backEnd.refdef.num_dlights, backEnd.refdef.dlights, &backEnd.or );
-
-                if(r_debugModels->integer)
-                {
-                    ri.Printf( PRINT_ALL, "\n backEnd.currentEntity->e.reType: %d\n", backEnd.currentEntity->e.reType);
-                    printMat1x3f("backEnd.viewParms.world Origin", backEnd.or.origin);
-                    printMat1x3f("backEnd.viewParms.world viewOrigin", backEnd.or.viewOrigin);
-                    printMat4x4f("backEnd.viewParms.world modelMatrix", backEnd.or.modelMatrix);
-                }
 			}
 
 

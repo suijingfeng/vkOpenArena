@@ -16,6 +16,7 @@ void printMat1x3f(const char* name, const float src[3]);
 void printMat1x4f(const char* name, const float src[4]);
 void printMat4x4f(const char* name, const float src[16]);
 void FunLogging(const char * name, char * pBuf );
+void printMat3x3f(const char* name, const float src[3][3]);
 
 
 #endif

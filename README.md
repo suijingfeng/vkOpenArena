@@ -14,9 +14,9 @@
 # OpenArena Engine 
 This project is a fork of OpenArena with specific changes to its renderer module.
 I am naive programmer, this repository is mainly for myself learning Vulkan and Quake3's engine.
-I actually haven't the ability to maintain it as lacking documents about Q3 and lacking knowledge about game graphics.
-I am learning by modification, however, only to find that I introduce bugs and mess the code up.
-So, Any documents, instructions, advices would be appreciated.
+I actually haven't the ability to maintain it as lacking knowledge about game graphics.
+I'm learning by modification, however, only to find that I introduce bugs and mess the code up.
+To keep this code alive, it needs your help, any instructions would be appreciated. 
 
 For people who want to try the vulkan based renderer on quake3's map,
 go to https://github.com/suijingfeng/vkQuake3
@@ -110,8 +110,16 @@ $ ./openarena.x86_64 +set cl_renderer vulkan
 # Enable renderergl2( borrowed from ioq3 ):
 $ ./openarena.x86_64 +set cl_renderer opengl2
 
-# Enable the renderergl1:
+# Enable the renderergl1( borrowed from ioq3 ):
 $ ./openarena.x86_64 +set cl_renderer opengl1
+
+# Enable the mydev( borrowed from Kenny):
+# This renderer module is similiar to the renderergl1's code.
+# However, its seem run faster even than vulkan, 
+# I got a good feeling play OA with this renderer enable.
+# I don't known the reason why.
+$ ./openarena.x86_64 +set cl_renderer mydev
+
 
 # Enable the default OpenArena renderer:
 # This renderer module is similiar to the renderergl1 code.

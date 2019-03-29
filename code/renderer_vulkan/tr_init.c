@@ -127,6 +127,8 @@ void R_Init( void )
 
     ri.Cmd_AddCommand( "gpuMem", gpuMemUsageInfo_f );
 
+    ri.Cmd_AddCommand( "printOR", R_PrintBackEnd_OR_f );
+
 
     R_InitScene();
 
@@ -173,6 +175,7 @@ void RE_Shutdown( qboolean destroyWindow )
 
     ri.Cmd_RemoveCommand( "gpuMem");
 
+    ri.Cmd_RemoveCommand( "printOR");
 
 	R_DoneFreeType();
 
