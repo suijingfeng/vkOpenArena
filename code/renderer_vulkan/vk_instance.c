@@ -1129,6 +1129,8 @@ void vulkanInfo_f( void )
             ri.Printf(PRINT_ALL, " %s \n", pDeviceExt[i].extensionName);
         }
         ri.Printf(PRINT_ALL, "---------- -------------------------------- ---------- \n");
+
+        free(pDeviceExt);
     }
 
     ri.Printf(PRINT_ALL, "Vk instance extensions: \n%s\n\n", glConfig.extensions_string);
