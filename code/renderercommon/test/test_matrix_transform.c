@@ -113,7 +113,24 @@ int main(int argc, char *argv[])
 
     }
 
+    {
 
+        gettimeofday(&tv_begin, NULL);
+
+        for(n = 0; n < runCount; n++ )
+        {    
+            Vec4Transform_SSE(A, x, out1);
+            A[n%16] = (n%16)/3.0f;
+            x[n%4] = (n%4)/3.0f;  
+        }
+        gettimeofday(&tv_end, NULL);
+
+        netTimeMS = (tv_end.tv_sec - tv_begin.tv_sec) * 1000 + (tv_end.tv_usec - tv_begin.tv_usec)/1000;
+
+        MM4x1Print(out1);
+        printf("Vec4Transform_SSE: %d\n", netTimeMS);
+
+    }
 
     return 1;
 }

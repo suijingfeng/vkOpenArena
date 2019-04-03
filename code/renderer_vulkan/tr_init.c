@@ -129,7 +129,6 @@ void R_Init( void )
 
     ri.Cmd_AddCommand( "printOR", R_PrintBackEnd_OR_f );
 
-
     R_InitScene();
 
     // VULKAN
@@ -169,13 +168,11 @@ void RE_Shutdown( qboolean destroyWindow )
 	ri.Cmd_RemoveCommand("skinlist");
 
     ri.Cmd_RemoveCommand("minimize");
+	
 	ri.Cmd_RemoveCommand("vkinfo");
-
     ri.Cmd_RemoveCommand("pipelineList");
-
-    ri.Cmd_RemoveCommand( "gpuMem");
-
-    ri.Cmd_RemoveCommand( "printOR");
+    ri.Cmd_RemoveCommand("gpuMem");
+    ri.Cmd_RemoveCommand("printOR");
 
 	R_DoneFreeType();
 
@@ -191,12 +188,10 @@ void RE_Shutdown( qboolean destroyWindow )
 
     vk_resetGeometryBuffer();
 
-    vk_destroyImageRes();
-
 	if ( tr.registered )
     {	
+		vk_destroyImageRes();
         tr.registered = qfalse;
-
 	}
 
     if (destroyWindow)
@@ -204,7 +199,6 @@ void RE_Shutdown( qboolean destroyWindow )
         vk_shutdown();
         vk_destroyWindow();
     }
-    
 }
 
 

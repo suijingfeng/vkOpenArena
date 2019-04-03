@@ -26,7 +26,7 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 extern refimport_t ri;
 
 
-char* SkipPath(char *pathname)
+char* R_SkipPath(char *pathname)
 {
 	char *last = pathname;
     char c;
@@ -41,7 +41,7 @@ char* SkipPath(char *pathname)
 }
 
 
-void stripExtension(const char *in, char *out, int destsize)
+void R_StripExtension(const char *in, char *out, int destsize)
 {
 	const char *dot = strrchr(in, '.');
     const char *slash = strrchr(in, '/');

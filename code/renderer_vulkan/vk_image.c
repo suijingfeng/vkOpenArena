@@ -1051,13 +1051,13 @@ void vk_destroyImageRes(void)
         R_DestroySingleImage(tr.images[i]);
 	}
 
-    memset( tr.images, 0, sizeof( tr.images ) );
-    tr.numImages = 0;
-    
     vk_destroy_staging_buffer();
     // Destroying a pool object implicitly frees all objects allocated from that pool. 
     // Specifically, destroying VkCommandPool frees all VkCommandBuffer objects that 
     // were allocated from it, and destroying VkDescriptorPool frees all 
     // VkDescriptorSet objects that were allocated from it.
     VK_CHECK(qvkResetDescriptorPool(vk.device, vk.descriptor_pool, 0));
+
+    memset( tr.images, 0, sizeof( tr.images ) );
+    tr.numImages = 0;
 }

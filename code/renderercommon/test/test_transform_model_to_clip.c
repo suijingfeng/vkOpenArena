@@ -88,7 +88,7 @@ int main(int argc, char *argv[])
         gettimeofday(&tv_end, NULL);
 
         netTimeMS = (tv_end.tv_sec - tv_begin.tv_sec) * 1000 + (tv_end.tv_usec - tv_begin.tv_usec)/1000;
-        print4f("out2", out2);
+        //MM4x1Print("out2", out2);
         printf("TransformModelToClip: %d\n", netTimeMS);
     }
 
@@ -109,7 +109,7 @@ int main(int argc, char *argv[])
         gettimeofday(&tv_end, NULL);
 
         netTimeMS = (tv_end.tv_sec - tv_begin.tv_sec) * 1000 + (tv_end.tv_usec - tv_begin.tv_usec)/1000;
-        print4f("out1", out1);
+        //MM4x1Print("out1", out1);
         printf("TransformModelToClip_SSE: %d\n", netTimeMS);
     }
 
@@ -131,7 +131,7 @@ int main(int argc, char *argv[])
         gettimeofday(&tv_end, NULL);
 
         netTimeMS = (tv_end.tv_sec - tv_begin.tv_sec) * 1000 + (tv_end.tv_usec - tv_begin.tv_usec)/1000;
-        print4f("dst", dst);
+        //MM4x1Print("dst", dst);
         printf("TransformModelToClip_SSE2: %d\n", netTimeMS);
     }
 

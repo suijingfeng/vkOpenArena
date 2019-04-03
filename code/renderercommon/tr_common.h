@@ -99,8 +99,8 @@ void RotateAroundUnitVector(float* res, const float* k, const float* p, const fl
 
 void FastNormalize1f(float v[3]);
 char *getExtension( const char *name );
-char *SkipPath(char *pathname);
-void stripExtension(const char *in, char *out, int destsize);
+char* R_SkipPath(char *pathname);
+void R_StripExtension(const char *in, char *out, int destsize);
 
 char* R_ParseExt(char** data_p, qboolean allowLineBreaks);
 int R_Compress( char *data_p );

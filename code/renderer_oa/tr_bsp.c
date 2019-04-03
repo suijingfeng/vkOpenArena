@@ -1796,9 +1796,9 @@ void RE_LoadWorldMap( const char *name )
 
 	memset( &s_worldData, 0, sizeof( s_worldData ) );
     strcpy(s_worldData.name, name);
-    strcpy(s_worldData.baseName, SkipPath( s_worldData.name ));
+    strcpy(s_worldData.baseName, R_SkipPath( s_worldData.name ));
 	
-    stripExtension(s_worldData.baseName, s_worldData.baseName, sizeof(s_worldData.baseName));
+    R_StripExtension(s_worldData.baseName, s_worldData.baseName, sizeof(s_worldData.baseName));
 
 	unsigned char* startMarker = ri.Hunk_Alloc(0, h_low);
     

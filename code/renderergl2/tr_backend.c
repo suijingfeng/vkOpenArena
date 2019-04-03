@@ -1591,7 +1591,7 @@ const void *RB_ExportCubemaps(const void *data)
 
 			if (cubemap->name[0])
 			{
-				stripExtension(cubemap->name, filename, MAX_QPATH);
+				R_StripExtension(cubemap->name, filename, MAX_QPATH);
 				Q_strcat(filename, sizeof(filename), ".dds");
 			}
 			else

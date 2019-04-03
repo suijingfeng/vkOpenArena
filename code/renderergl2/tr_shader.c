@@ -129,7 +129,7 @@ void R_RemapShader(const char *shaderName, const char *newShaderName, const char
 
 	// remap all the shaders with the given name
 	// even tho they might have different lightmaps
-	stripExtension(shaderName, strippedName, sizeof(strippedName));
+	R_StripExtension(shaderName, strippedName, sizeof(strippedName));
 	hash = generateHashValue(strippedName, FILE_HASH_SIZE);
 	for (sh = hashTable[hash]; sh; sh = sh->next) {
 		if (Q_stricmp(sh->name, strippedName) == 0) {
@@ -2255,7 +2255,7 @@ static void CollapseStagesToLightall(shaderStage_t *diffuse,
 			imgFlags_t normalFlags = (diffuseImg->flags & ~IMGFLAG_GENNORMALMAP) | IMGFLAG_NOLIGHTSCALE;
 
 			// try a normalheight image first
-			stripExtension(diffuseImg->imgName, normalName, MAX_QPATH);
+			R_StripExtension(diffuseImg->imgName, normalName, MAX_QPATH);
 			Q_strcat(normalName, MAX_QPATH, "_nh");
 
 			normalImg = R_FindImageFile(normalName, IMGTYPE_NORMALHEIGHT, normalFlags);
@@ -2300,7 +2300,7 @@ static void CollapseStagesToLightall(shaderStage_t *diffuse,
 			image_t *specularImg;
 			imgFlags_t specularFlags = (diffuseImg->flags & ~IMGFLAG_GENNORMALMAP) | IMGFLAG_NOLIGHTSCALE;
 
-			stripExtension(diffuseImg->imgName, specularName, MAX_QPATH);
+			R_StripExtension(diffuseImg->imgName, specularName, MAX_QPATH);
 			Q_strcat(specularName, MAX_QPATH, "_s");
 
 			specularImg = R_FindImageFile(specularName, IMGTYPE_COLORALPHA, specularFlags);
@@ -3063,7 +3063,7 @@ shader_t *R_FindShaderByName( const char *name ) {
 		return tr.defaultShader;
 	}
 
-	stripExtension(name, strippedName, sizeof(strippedName));
+	R_StripExtension(name, strippedName, sizeof(strippedName));
 
 	int hash = generateHashValue(strippedName, FILE_HASH_SIZE);
 
@@ -3134,7 +3134,7 @@ shader_t *R_FindShader( const char *name, int lightmapIndex, qboolean mipRawImag
 		lightmapIndex = LIGHTMAP_BY_VERTEX;
 	}
 
-	stripExtension(name, strippedName, sizeof(strippedName));
+	R_StripExtension(name, strippedName, sizeof(strippedName));
 
 	int hash = generateHashValue(strippedName, FILE_HASH_SIZE);
 

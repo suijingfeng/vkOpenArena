@@ -11,29 +11,26 @@ Also called by RE_EndRegistration
 ===============
 */
 
-void RB_ShowImages(void)
+
+
+void RB_ShowImages(const image_t ** const pImg, unsigned int N)
 {
 
     backEnd.projection2D = qtrue;
 
 	const float black[4] = {0, 0, 0, 1};
 	vk_clearColorAttachments(black);
-    
-    uint32_t i;
-	for (i = 0 ; i < tr.numImages ; i++)
-    {
-		image_t* image = tr.images[i];
+	float w = glConfig.vidWidth / 20;
+	float h = glConfig.vidHeight / 15;
+    tess.numIndexes = 6;
+    tess.numVertexes = 4;
 
-		float w = glConfig.vidWidth / 20;
-		float h = glConfig.vidHeight / 15;
+    uint32_t i;
+	for (i = 0 ; i < N; ++i)
+    {
+		//image_t* image = tr.images[i];
 		float x = i % 20 * w;
 		float y = i / 20 * h;
-
-
-		memset( tess.svars.colors, tr.identityLightByte, tess.numVertexes * 4 );
-
-		tess.numIndexes = 6;
-		tess.numVertexes = 4;
 
 		tess.indexes[0] = 0;
 		tess.indexes[1] = 1;
@@ -44,34 +41,36 @@ void RB_ShowImages(void)
 
 		tess.xyz[0][0] = x;
 		tess.xyz[0][1] = y;
-		tess.svars.texcoords[0][0][0] = 0;
-		tess.svars.texcoords[0][0][1] = 0;
 
 		tess.xyz[1][0] = x + w;
 		tess.xyz[1][1] = y;
-		tess.svars.texcoords[0][1][0] = 1;
-		tess.svars.texcoords[0][1][1] = 0;
 
 		tess.xyz[2][0] = x + w;
 		tess.xyz[2][1] = y + h;
+		
+        tess.xyz[3][0] = x;
+		tess.xyz[3][1] = y + h;
+
+		tess.svars.texcoords[0][0][0] = 0;
+		tess.svars.texcoords[0][0][1] = 0;
+		tess.svars.texcoords[0][1][0] = 1;
+		tess.svars.texcoords[0][1][1] = 0;
 		tess.svars.texcoords[0][2][0] = 1;
 		tess.svars.texcoords[0][2][1] = 1;
-
-		tess.xyz[3][0] = x;
-		tess.xyz[3][1] = y + h;
 		tess.svars.texcoords[0][3][0] = 0;
 		tess.svars.texcoords[0][3][1] = 1;
-		
+
+		memset( tess.svars.colors, 255, tess.numVertexes * 4 );
         
-        updateCurDescriptor( image->descriptor_set, 0);
-        uploadShadingData();
-        updateMVP(backEnd.viewParms.isPortal, backEnd.projection2D, getptr_modelview_matrix());
+        updateCurDescriptor( pImg[i]->descriptor_set, 0);
+
+        vk_UploadXYZI(tess.xyz, 4, tess.indexes, 6);
+
+        // updateMVP(backEnd.viewParms.isPortal, backEnd.projection2D, getptr_modelview_matrix());
+        updateMVP( 0 , 1, getptr_modelview_matrix());
 
         vk_shade_geometry(g_stdPipelines.images_debug_pipeline, VK_FALSE, DEPTH_RANGE_NORMAL, VK_TRUE);
-
 	}
 	tess.numIndexes = 0;
 	tess.numVertexes = 0;
-    
-    backEnd.projection2D = qfalse;
 }

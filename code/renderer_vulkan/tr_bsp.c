@@ -264,20 +264,13 @@ static	void R_LoadVisibility( lump_t *l )
 //===============================================================================
 
 
-/*
-===============
-ShaderForShaderNum
-===============
-*/
-static shader_t *ShaderForShaderNum( int shaderNum, int lightmapNum ) {
-	shader_t	*shader;
-	dshader_t	*dsh;
-
+static shader_t *ShaderForShaderNum( int shaderNum, int lightmapNum )
+{
 	shaderNum = LittleLong( shaderNum );
 	if ( shaderNum < 0 || shaderNum >= s_worldData.numShaders ) {
 		ri.Error( ERR_DROP, "ShaderForShaderNum: bad num %i", shaderNum );
 	}
-	dsh = &s_worldData.shaders[ shaderNum ];
+	dshader_t* dsh = &s_worldData.shaders[ shaderNum ];
 
 	if ( r_vertexLight->integer ) {
 		lightmapNum = LIGHTMAP_BY_VERTEX;
@@ -287,7 +280,7 @@ static shader_t *ShaderForShaderNum( int shaderNum, int lightmapNum ) {
 		lightmapNum = LIGHTMAP_WHITEIMAGE;
 	}
 
-	shader = R_FindShader( dsh->shader, lightmapNum, qtrue );
+	shader_t* shader = R_FindShader( dsh->shader, lightmapNum, qtrue );
 
 	// if the shader had errors, just use default shader
 	if ( shader->defaultShader ) {
@@ -1745,7 +1738,7 @@ void R_LoadEntities( lump_t *l )
 	strcpy( w->entityString, p );
 	w->entityParsePoint = w->entityString;
 
-	token = COM_ParseExt( &p, qtrue );
+	token = R_ParseExt( &p, qtrue );
 	if (!*token || *token != '{') {
 		return;
 	}
@@ -1753,7 +1746,7 @@ void R_LoadEntities( lump_t *l )
 	// only parse the world spawn
 	while ( 1 ) {	
 		// parse key
-		token = COM_ParseExt( &p, qtrue );
+		token = R_ParseExt( &p, qtrue );
 
 		if ( !*token || *token == '}' ) {
 			break;
@@ -1761,7 +1754,7 @@ void R_LoadEntities( lump_t *l )
 		Q_strncpyz(keyname, token, sizeof(keyname));
 
 		// parse value
-		token = COM_ParseExt( &p, qtrue );
+		token = R_ParseExt( &p, qtrue );
 
 		if ( !*token || *token == '}' ) {
 			break;
@@ -1802,15 +1795,10 @@ void R_LoadEntities( lump_t *l )
 	}
 }
 
-/*
-=================
-R_GetEntityToken
-=================
-*/
-qboolean R_GetEntityToken( char *buffer, int size ) {
-	const char	*s;
 
-	s = COM_Parse( &s_worldData.entityParsePoint );
+qboolean R_GetEntityToken( char *buffer, int size )
+{
+	const char* s = R_ParseExt( &s_worldData.entityParsePoint, qtrue);
 	Q_strncpyz( buffer, s, size );
 	if ( !s_worldData.entityParsePoint || !s[0] ) {
 		s_worldData.entityParsePoint = s_worldData.entityString;
@@ -1862,8 +1850,8 @@ void RE_LoadWorldMap( const char *name )
 	memset( &s_worldData, 0, sizeof( s_worldData ) );
 	Q_strncpyz( s_worldData.name, name, sizeof( s_worldData.name ) );
 
-	Q_strncpyz( s_worldData.baseName, COM_SkipPath( s_worldData.name ), sizeof( s_worldData.name ) );
-	COM_StripExtension( s_worldData.baseName, s_worldData.baseName, sizeof(s_worldData.baseName) );
+	Q_strncpyz( s_worldData.baseName, R_SkipPath( s_worldData.name ), sizeof( s_worldData.name ) );
+	R_StripExtension( s_worldData.baseName, s_worldData.baseName, sizeof(s_worldData.baseName) );
 
 	startMarker = (byte*) ri.Hunk_Alloc(0, h_low);
 

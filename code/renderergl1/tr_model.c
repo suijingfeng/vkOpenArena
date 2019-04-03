@@ -329,7 +329,7 @@ qhandle_t RE_RegisterModel( const char *name ) {
 				// try again without the extension
 				orgNameFailed = qtrue;
 				orgLoader = i;
-				stripExtension( name, localName, MAX_QPATH );
+				R_StripExtension( name, localName, MAX_QPATH );
 			}
 			else
 			{

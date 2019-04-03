@@ -146,7 +146,7 @@ void R_RemapShader(const char *shaderName, const char *newShaderName, const char
 	// remap all the shaders with the given name
 	// even tho they might have different lightmaps
     char strippedName[MAX_QPATH];
-	stripExtension(shaderName, strippedName, sizeof(strippedName));
+	R_StripExtension(shaderName, strippedName, sizeof(strippedName));
 	int hash = generateHashValue(strippedName, FILE_HASH_SIZE);
 	for (sh = hashTable[hash]; sh; sh = sh->next)
     {
@@ -3539,7 +3539,7 @@ shader_t *R_FindShaderByName( const char *name )
 		return tr.defaultShader;
 	}
 
-	stripExtension(name, strippedName, sizeof(strippedName));
+	R_StripExtension(name, strippedName, sizeof(strippedName));
 
 	long int hash = generateHashValue(strippedName, FILE_HASH_SIZE);
 
@@ -3616,7 +3616,7 @@ shader_t *R_FindShaderReal( const char *name, int lightmapIndex, qboolean mipRaw
 		lightmapIndex = LIGHTMAP_BY_VERTEX;
 	}
 
-	stripExtension(name, strippedName, sizeof(strippedName));
+	R_StripExtension(name, strippedName, sizeof(strippedName));
 
 	int hash = generateHashValue(strippedName, FILE_HASH_SIZE);
 

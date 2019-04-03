@@ -1,8 +1,8 @@
 /*
- * ==================================================================================
+ * ==========================================================================
  *       Filename:  matrix_multiplication.c
  *    Description:  4*4 matrix 
- * ==================================================================================
+ * ==========================================================================
  */
 
 #include <xmmintrin.h>
@@ -130,27 +130,57 @@ void Mat4Transform( const float in1[16], const float in2[4], float out[4] )
 }
 
 
+void Vec3Transform(const float Mat[16], const float v[3], float out[3])
+{
+    float x = v[0];
+    float y = v[1];
+    float z = v[2];
+    
+	out[0] = Mat[0] * x + Mat[4] * y + Mat[ 8] * z + Mat[12];
+	out[1] = Mat[1] * x + Mat[5] * y + Mat[ 9] * z + Mat[13];
+	out[2] = Mat[2] * x + Mat[6] * y + Mat[10] * z + Mat[14];
+}
+
+
 
 // unlucky, not faseter than Mat4Transform
 void Mat4x1Transform_SSE( const float A[16], const float x[4], float out[4] )
 {
+    __m128 r1 = _mm_mul_ps( _mm_set1_ps(x[0]), _mm_load_ps(A   ) );
+    __m128 r2 = _mm_mul_ps( _mm_set1_ps(x[1]), _mm_load_ps(A+4 ) );
+    __m128 r3 = _mm_mul_ps( _mm_set1_ps(x[2]), _mm_load_ps(A+8 ) );
+    __m128 r4 = _mm_mul_ps( _mm_set1_ps(x[3]), _mm_load_ps(A+12) );
+
+    _mm_store_ps(out, _mm_add_ps( _mm_add_ps(r1, r2), _mm_add_ps(r3, r4) ) );
+}
+
+
+#define SHUFFLE_PARAM(x, y, z, w)   ( x | y<<2 | z<<4 | w<<6 )
+#define _mm_replicate_x_ps(v)       _mm_shuffle_ps(v, v, SHUFFLE_PARAM(0, 0, 0, 0))
+#define _mm_replicate_y_ps(v)       _mm_shuffle_ps(v, v, SHUFFLE_PARAM(1, 1, 1, 1))
+#define _mm_replicate_z_ps(v)       _mm_shuffle_ps(v, v, SHUFFLE_PARAM(2, 2, 2, 2))
+#define _mm_replicate_w_ps(v)       _mm_shuffle_ps(v, v, SHUFFLE_PARAM(3, 3, 3, 3))
+
+
+void Vec4Transform_SSE( const float A[16], float v[4], float out[4] )
+{
+
+
+    __m128 x = _mm_load_ps(v);
     //   16 mult, 12 plus
-	//out[ 0] = A[ 0] * x[ 0] + A[ 4] * x[ 1] + A[ 8] * x[ 2] + A[12] * x[ 3];
-	//out[ 1] = A[ 1] * x[ 0] + A[ 5] * x[ 1] + A[ 9] * x[ 2] + A[13] * x[ 3];
-	//out[ 2] = A[ 2] * x[ 0] + A[ 6] * x[ 1] + A[10] * x[ 2] + A[14] * x[ 3];
-	//out[ 3] = A[ 3] * x[ 0] + A[ 7] * x[ 1] + A[11] * x[ 2] + A[15] * x[ 3];
+	//out[0] = A[0] * x[0] + A[4] * x[1] + A[ 8] * x[2] + A[12] * x[3];
+	//out[1] = A[1] * x[0] + A[5] * x[1] + A[ 9] * x[2] + A[13] * x[3];
+	//out[2] = A[2] * x[0] + A[6] * x[1] + A[10] * x[2] + A[14] * x[3];
+	//out[3] = A[3] * x[0] + A[7] * x[1] + A[11] * x[2] + A[15] * x[3];
     
+    // 4 mult + 3 plus + 4 broadcast + 8 load (4 _mm_set1_ps + 4 _mm_set1_ps)
+    // + 1 store
+    __m128 r1 = _mm_mul_ps( _mm_replicate_x_ps( x ), _mm_load_ps(A) );
+    __m128 r2 = _mm_mul_ps( _mm_replicate_y_ps( x ), _mm_load_ps(A+4) );
+    __m128 r3 = _mm_mul_ps( _mm_replicate_z_ps( x ), _mm_load_ps(A+8) );
+    __m128 r4 = _mm_mul_ps( _mm_replicate_w_ps( x ), _mm_load_ps(A+12) );
 
-    // 4 mult + 3 plus + 4 broadcast + 8 load (4 _mm_set1_ps + 4 _mm_set1_ps) + 1 store 
-    __m128 row = _mm_add_ps(
-            _mm_add_ps( _mm_mul_ps( _mm_set1_ps(x[0]), _mm_load_ps(A   ) ) ,
-                        _mm_mul_ps( _mm_set1_ps(x[1]), _mm_load_ps(A+4 ) ) )
-            ,
-            _mm_add_ps( _mm_mul_ps( _mm_set1_ps(x[2]), _mm_load_ps(A+8 ) ) ,
-                        _mm_mul_ps( _mm_set1_ps(x[3]), _mm_load_ps(A+12) ) )
-            );
-
-    _mm_store_ps(out, row);
+    _mm_store_ps(out, _mm_add_ps( _mm_add_ps( r1, r2 ), _mm_add_ps( r3, r4 ) ));
 }
 
 

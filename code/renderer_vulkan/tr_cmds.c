@@ -397,28 +397,9 @@ void RB_StretchPic( const stretchPicCommand_t * const cmd )
     tess.indexes[ numIndexes + 5 ] = n1;
 	
 
-/*
-    tess.vertexColors[ n0 ][ 0 ] = sf_Color2D[0];
-    tess.vertexColors[ n0 ][ 1 ] = sf_Color2D[1];
-    tess.vertexColors[ n0 ][ 2 ] = sf_Color2D[2];
-    tess.vertexColors[ n0 ][ 3 ] = sf_Color2D[3];
-
-    tess.vertexColors[ n1 ][ 0 ] = sf_Color2D[0];
-    tess.vertexColors[ n1 ][ 1 ] = sf_Color2D[1];
-    tess.vertexColors[ n1 ][ 2 ] = sf_Color2D[2];
-    tess.vertexColors[ n1 ][ 3 ] = sf_Color2D[3];
-
-    tess.vertexColors[ n2 ][ 0 ] = sf_Color2D[0];
-    tess.vertexColors[ n2 ][ 1 ] = sf_Color2D[1];
-    tess.vertexColors[ n2 ][ 2 ] = sf_Color2D[2];
-    tess.vertexColors[ n2 ][ 3 ] = sf_Color2D[3];
-
-    tess.vertexColors[ n3 ][ 0 ] = sf_Color2D[0];
-    tess.vertexColors[ n3 ][ 1 ] = sf_Color2D[1];
-    tess.vertexColors[ n3 ][ 2 ] = sf_Color2D[2];
-    tess.vertexColors[ n3 ][ 3 ] = sf_Color2D[3];
-*/
-
+    // TODO: verify does coding this way run faster in release mode ?
+    // coding this way do harm to debug version because of
+    // introduce additional 4 function call.
     memcpy(tess.vertexColors[ n0 ], backEnd.Color2D, 4);
     memcpy(tess.vertexColors[ n1 ], backEnd.Color2D, 4);
     memcpy(tess.vertexColors[ n2 ], backEnd.Color2D, 4);
@@ -455,8 +436,6 @@ void RB_StretchPic( const stretchPicCommand_t * const cmd )
 	tess.numIndexes += 6;
 
 }
-
-
 
 
 
@@ -577,12 +556,12 @@ void R_IssueRenderCommands( qboolean runPerformanceCounters )
                 // data = RB_SwapBuffers( data );
                 // finish any 2D drawing if needed
                 RB_EndSurface();
-#ifndef NDEBUG
+
                 // texture swapping test
                 if ( r_showImages->integer ) {
-                    RB_ShowImages();
+                    RB_ShowImages(tr.images, tr.numImages);
                 }
-#endif
+
                 // VULKAN
                 vk_end_frame();
 
