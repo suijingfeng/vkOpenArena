@@ -9,18 +9,12 @@
 #include "tr_fog.h"
 
 
-#define IMAGE_CHUNK_SIZE        (8 * 1024 * 1024)
+#define IMAGE_CHUNK_SIZE        (64 * 1024 * 1024)
 
 
 
-struct ImageChunk_t{
-    VkDeviceMemory devMem;
-    uint32_t memUsed;
-//    uint32_t typeIndex;
-};
 
-
-struct StagingBufferImage
+struct StagingBuffer_t
 {
     // Vulkan supports two primary resource types: buffers and images. 
     // Resources are views of memory with associated formatting and dimensionality.
@@ -31,25 +25,30 @@ struct StagingBufferImage
     // by binding them to a graphics or compute pipeline via descriptor sets or via
     // certain commands, or by directly specifying them as parameters to certain commands.
     VkBuffer buff;
-
     // Host visible memory used to copy image data to device local memory.
-    VkDeviceMemory devMemMappable;
+    VkDeviceMemory mappableMem;
+};
 
+struct deviceLocalMemory_t {
     // One large device device local memory allocation, assigned to multiple images
-    struct ImageChunk_t ImgChunks[32];
-    uint32_t chkIndex;
-// pointer to mapped staging buffer
-//    unsigned char* pBufMapped;
+    struct ImageChunk_t {
+        VkDeviceMemory block;
+        uint32_t Used;
+        // uint32_t typeIndex;
+    } Chunks[8];
+
+    uint32_t Index; // number of chunks used
 };
 
 
-struct StagingBufferImage StagImg;
+struct StagingBuffer_t StagBuf;
+struct deviceLocalMemory_t devMemImg;
 
 void gpuMemUsageInfo_f(void)
 {
     // approm	 for debug info
-    ri.Printf(PRINT_ALL, "Image chuck memory(device local) used: %d M \n", 
-            StagImg.chkIndex * (IMAGE_CHUNK_SIZE>>20) );
+    ri.Printf(PRINT_ALL, "Number of image: %d chuck memory(device local) used: %d M \n", 
+           tr.numImages, devMemImg.Index * (IMAGE_CHUNK_SIZE>>20) );
 }
 
 
@@ -74,7 +73,7 @@ uint32_t find_memory_type(uint32_t memory_type_bits, VkMemoryPropertyFlags prope
 static void vk_createStagingBuffer(uint32_t size)
 {
 
-    memset(&StagImg, 0, sizeof(StagImg));
+    memset(&StagBuf, 0, sizeof(StagBuf));
 
 
     ri.Printf(PRINT_ALL, " Create Staging Buffer: %d\n", size);
@@ -98,7 +97,7 @@ static void vk_createStagingBuffer(uint32_t size)
         // (ignored if sharingMode is not VK_SHARING_MODE_CONCURRENT).
         buffer_desc.pQueueFamilyIndices = NULL;
 
-        VK_CHECK(qvkCreateBuffer(vk.device, &buffer_desc, NULL, &StagImg.buff));
+        VK_CHECK(qvkCreateBuffer(vk.device, &buffer_desc, NULL, &StagBuf.buff));
     }
 
     // To determine the memory requirements for a buffer resource
@@ -111,7 +110,7 @@ static void vk_createStagingBuffer(uint32_t size)
 
     {
         VkMemoryRequirements memory_requirements;
-        qvkGetBufferMemoryRequirements(vk.device, StagImg.buff, &memory_requirements);
+        qvkGetBufferMemoryRequirements(vk.device, StagBuf.buff, &memory_requirements);
 
         VkMemoryAllocateInfo alloc_info;
         alloc_info.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
@@ -119,9 +118,9 @@ static void vk_createStagingBuffer(uint32_t size)
         alloc_info.allocationSize = memory_requirements.size;
         alloc_info.memoryTypeIndex = find_memory_type(memory_requirements.memoryTypeBits, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
 
-        VK_CHECK(qvkAllocateMemory(vk.device, &alloc_info, NULL, &StagImg.devMemMappable));
+        VK_CHECK(qvkAllocateMemory(vk.device, &alloc_info, NULL, &StagBuf.mappableMem));
 
-        VK_CHECK(qvkBindBufferMemory(vk.device, StagImg.buff, StagImg.devMemMappable, 0));
+        VK_CHECK(qvkBindBufferMemory(vk.device, StagBuf.buff, StagBuf.mappableMem, 0));
 
         ri.Printf(PRINT_ALL, " Stagging buffer alignment: %ld, memoryTypeBits: 0x%x, Type Index: %d. \n",
             memory_requirements.alignment, memory_requirements.memoryTypeBits, alloc_info.memoryTypeIndex);
@@ -134,25 +133,18 @@ static void vk_destroy_staging_buffer(void)
 {
     ri.Printf(PRINT_ALL, " Destroy staging buffer. \n");
 
-    if (StagImg.buff != VK_NULL_HANDLE)
+    if (StagBuf.buff != VK_NULL_HANDLE)
     {
-        qvkDestroyBuffer(vk.device, StagImg.buff, NULL);
+        qvkDestroyBuffer(vk.device, StagBuf.buff, NULL);
     }
     
-    if (StagImg.devMemMappable != VK_NULL_HANDLE)
+    if (StagBuf.mappableMem != VK_NULL_HANDLE)
     {
-        qvkFreeMemory(vk.device, StagImg.devMemMappable, NULL);
+        qvkFreeMemory(vk.device, StagBuf.mappableMem, NULL);
     }
 
-    uint32_t i; 
-    for (i = 0; i < StagImg.chkIndex; i++)
-    {
-        qvkFreeMemory(vk.device, StagImg.ImgChunks[i].devMem, NULL);
-    }
-
-    memset(&StagImg, 0, sizeof(StagImg));
+    memset(&StagBuf, 0, sizeof(StagBuf));
 }
-
 
 
 
@@ -197,7 +189,7 @@ static void vk_stagBufferToDeviceLocalMem(VkImage image, VkBufferImageCopy* pReg
 	barrier.dstAccessMask = VK_ACCESS_TRANSFER_READ_BIT;
 	barrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
 	barrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
-	barrier.buffer = StagImg.buff;
+	barrier.buffer = StagBuf.buff;
 	barrier.offset = 0;
 	barrier.size = VK_WHOLE_SIZE;
     
@@ -212,13 +204,13 @@ static void vk_stagBufferToDeviceLocalMem(VkImage image, VkBufferImageCopy* pReg
     // To copy data from a buffer object to an image object
     
     // cmd_buf is the command buffer into which the command will be recorded.
-    // StagImg.buff is the source buffer.
+    // StagBuf.buff is the source buffer.
     // image is the destination image.
     // dstImageLayout is the layout of the destination image subresources.
     // curLevel is the number of regions to copy.
     // pRegions is a pointer to an array of VkBufferImageCopy structures
     // specifying the regions to copy.
-    qvkCmdCopyBufferToImage(cmd_buf, StagImg.buff, image,
+    qvkCmdCopyBufferToImage(cmd_buf, StagBuf.buff, image,
             VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, num_region, pRegion);
 
     record_image_layout_transition(cmd_buf, image,
@@ -308,17 +300,17 @@ static void vk_createImageAndBindWithMemory(image_t* pImg)
 
 
     uint32_t i = 0;
-	for (i = 0; i < StagImg.chkIndex; i++)
+	for (i = 0; i < devMemImg.Index; i++)
     {
 		// ensure that memory region has proper alignment
-		VkDeviceSize offset_aligned = (StagImg.ImgChunks[i].memUsed + mask) & (~mask);
+		VkDeviceSize offset_aligned = (devMemImg.Chunks[i].Used + mask) & (~mask);
         VkDeviceSize end = offset_aligned + memory_requirements.size;
 		if (end <= IMAGE_CHUNK_SIZE)
         {
             VK_CHECK(qvkBindImageMemory(vk.device, pImg->handle, 
-                        StagImg.ImgChunks[i].devMem, offset_aligned));
+                        devMemImg.Chunks[i].block, offset_aligned));
 
-			StagImg.ImgChunks[i].memUsed = end;
+			devMemImg.Chunks[i].Used = end;
 			return;
 		}
 	}
@@ -336,9 +328,9 @@ static void vk_createImageAndBindWithMemory(image_t* pImg)
     VK_CHECK(qvkAllocateMemory(vk.device, &alloc_info, NULL, &memory));
     VK_CHECK(qvkBindImageMemory(vk.device, pImg->handle, memory, 0));
 
-    StagImg.ImgChunks[StagImg.chkIndex].devMem = memory;
-    StagImg.ImgChunks[StagImg.chkIndex].memUsed = memory_requirements.size;
-    StagImg.chkIndex++;
+    devMemImg.Chunks[devMemImg.Index].block = memory;
+    devMemImg.Chunks[devMemImg.Index].Used = memory_requirements.size;
+    ++devMemImg.Index;
 
 
     ri.Printf(PRINT_ALL, " --- Device memory allocation --- \n");
@@ -347,7 +339,7 @@ static void vk_createImageAndBindWithMemory(image_t* pImg)
             memory_requirements.alignment, alloc_info.memoryTypeIndex);
     
     ri.Printf(PRINT_ALL, "Image chuck memory consumed: %d M \n",
-            StagImg.chkIndex * (IMAGE_CHUNK_SIZE >> 20) );
+            devMemImg.Index * (IMAGE_CHUNK_SIZE >> 20) );
 
     ri.Printf(PRINT_ALL, " --- ------------------------ --- \n");
 
@@ -460,7 +452,7 @@ static void vk_createImageViewAndDescriptorSet(image_t* pImage)
 
 
 image_t* R_CreateImage( const char *name, unsigned char* pic, const uint32_t width, const uint32_t height,
-						VkBool32 isMipMap, VkBool32 allowPicmip, int glWrapClampMode, VkBool32 isAlone )
+						VkBool32 isMipMap, VkBool32 allowPicmip, int glWrapClampMode)
 {
     if (strlen(name) >= MAX_QPATH ) {
         ri.Error (ERR_DROP, "CreateImage: \"%s\" is too long\n", name);
@@ -665,9 +657,9 @@ image_t* R_CreateImage( const char *name, unsigned char* pic, const uint32_t wid
 
 
     void* data;
-    VK_CHECK(qvkMapMemory(vk.device, StagImg.devMemMappable, 0, VK_WHOLE_SIZE, 0, &data));
+    VK_CHECK(qvkMapMemory(vk.device, StagBuf.mappableMem, 0, VK_WHOLE_SIZE, 0, &data));
     memcpy(data, upload_buffer, buffer_size);
-    qvkUnmapMemory(vk.device, StagImg.devMemMappable);
+    qvkUnmapMemory(vk.device, StagBuf.mappableMem);
     free(upload_buffer);
 
     vk_stagBufferToDeviceLocalMem(pImage->handle, regions, pImage->mipLevels);
@@ -676,15 +668,12 @@ image_t* R_CreateImage( const char *name, unsigned char* pic, const uint32_t wid
     pImage->next = hashTable[hash];
     hashTable[hash] = pImage;
 
-
-    if(!isAlone)
-    {        
-        tr.images[tr.numImages] = pImage;
-        if ( ++tr.numImages == MAX_DRAWIMAGES )
-        {
-            ri.Error( ERR_DROP, "CreateImage: MAX_DRAWIMAGES hit\n");
-        }
+    tr.images[tr.numImages] = pImage;
+    if ( ++tr.numImages == MAX_DRAWIMAGES )
+    {
+        ri.Error( ERR_DROP, "CreateImage: MAX_DRAWIMAGES hit\n");
     }
+
 
     return pImage;
 }
@@ -740,7 +729,7 @@ image_t* R_FindImageFile(const char *name, VkBool32 mipmap, VkBool32 allowPicmip
         return NULL;
     }
 
-    image = R_CreateImage( name, pic, width, height, mipmap, allowPicmip, glWrapClampMode, VK_FALSE);
+    image = R_CreateImage( name, pic, width, height, mipmap, allowPicmip, glWrapClampMode);
 
     ri.Free( pic );
     
@@ -797,9 +786,9 @@ void RE_UploadCinematic (int w, int h, int cols, int rows, const unsigned char *
         const uint32_t buffer_size = cols * rows * 4;
 
         void* pDat;
-        VK_CHECK(qvkMapMemory(vk.device, StagImg.devMemMappable, 0, VK_WHOLE_SIZE, 0, &pDat));
+        VK_CHECK(qvkMapMemory(vk.device, StagBuf.mappableMem, 0, VK_WHOLE_SIZE, 0, &pDat));
         memcpy(pDat, data, buffer_size);
-        qvkUnmapMemory(vk.device, StagImg.devMemMappable);
+        qvkUnmapMemory(vk.device, StagBuf.mappableMem);
 
         vk_stagBufferToDeviceLocalMem(tr.scratchImage[client]->handle, &region, 1);
     }
@@ -828,9 +817,9 @@ void RE_UploadCinematic (int w, int h, int cols, int rows, const unsigned char *
         const uint32_t buffer_size = cols * rows * 4;
 
         void* pDat;
-        VK_CHECK(qvkMapMemory(vk.device, StagImg.devMemMappable, 0, VK_WHOLE_SIZE, 0, &pDat));
+        VK_CHECK(qvkMapMemory(vk.device, StagBuf.mappableMem, 0, VK_WHOLE_SIZE, 0, &pDat));
         memcpy(pDat, data, buffer_size);
-        qvkUnmapMemory(vk.device, StagImg.devMemMappable);
+        qvkUnmapMemory(vk.device, StagBuf.mappableMem);
 
         vk_stagBufferToDeviceLocalMem(tr.scratchImage[client]->handle, &region, 1);
     }
@@ -869,7 +858,7 @@ static void R_CreateDefaultImage( void )
 			data[x][DEFAULT_SIZE-1][2] =
 			data[x][DEFAULT_SIZE-1][3] = 255;
 	}
-	tr.defaultImage = R_CreateImage("*default", (unsigned char *)data, DEFAULT_SIZE, DEFAULT_SIZE, qtrue, qfalse, GL_REPEAT, VK_TRUE);
+	tr.defaultImage = R_CreateImage("*default", (unsigned char *)data, DEFAULT_SIZE, DEFAULT_SIZE, qtrue, qfalse, GL_REPEAT);
 }
 
 
@@ -879,7 +868,7 @@ static void R_CreateWhiteImage(void)
 	// we use a solid white image instead of disabling texturing
 	unsigned char data[DEFAULT_SIZE][DEFAULT_SIZE][4];
 	memset( data, 255, sizeof( data ) );
-	tr.whiteImage = R_CreateImage("*white", (unsigned char *)data, 8, 8, qfalse, qfalse, GL_REPEAT, VK_TRUE);
+	tr.whiteImage = R_CreateImage("*white", (unsigned char *)data, 8, 8, qfalse, qfalse, GL_REPEAT);
 }
 
 
@@ -898,7 +887,7 @@ static void R_CreateIdentityLightImage(void)
 			data[y][x][3] = 255;
 		}
 	}
-	tr.identityLightImage = R_CreateImage("*identityLight", (unsigned char *)data, 8, 8, qfalse, qfalse, GL_REPEAT, VK_FALSE );
+	tr.identityLightImage = R_CreateImage("*identityLight", (unsigned char *)data, 8, 8, qfalse, qfalse, GL_REPEAT);
 }
 
 
@@ -929,7 +918,7 @@ static void R_CreateDlightImage( void )
 			data[y][x][3] = 255;			
 		}
 	}
-	tr.dlightImage = R_CreateImage("*dlight", (unsigned char *)data, DLIGHT_SIZE, DLIGHT_SIZE, qfalse, qfalse, GL_CLAMP, VK_TRUE );
+	tr.dlightImage = R_CreateImage("*dlight", (unsigned char *)data, DLIGHT_SIZE, DLIGHT_SIZE, qfalse, qfalse, GL_CLAMP);
 }
 
 
@@ -959,7 +948,7 @@ static void R_CreateFogImage( void )
 	// standard openGL clamping doesn't really do what we want -- it includes
 	// the border color at the edges.  OpenGL 1.2 has clamp-to-edge, which does
 	// what we want.
-	tr.fogImage = R_CreateImage("*fog", (unsigned char *)data, FOG_S, FOG_T, qfalse, qfalse, GL_CLAMP, VK_TRUE );
+	tr.fogImage = R_CreateImage("*fog", (unsigned char *)data, FOG_S, FOG_T, qfalse, qfalse, GL_CLAMP);
 	
     free( data );
 }
@@ -974,7 +963,7 @@ static void R_CreateScratchImage(void)
     for(x=0;x<32;x++)
     {
         // scratchimage is usually used for cinematic drawing
-        tr.scratchImage[x] = R_CreateImage("*scratch", (unsigned char *)data, DEFAULT_SIZE, DEFAULT_SIZE, qfalse, qtrue, GL_CLAMP, VK_TRUE);
+        tr.scratchImage[x] = R_CreateImage("*scratch", (unsigned char *)data, DEFAULT_SIZE, DEFAULT_SIZE, qfalse, qtrue, GL_CLAMP);
     }
 }
 
@@ -984,7 +973,7 @@ void R_InitImages( void )
 {
     memset(hashTable, 0, sizeof(hashTable));
     
-    vk_createStagingBuffer(IMAGE_CHUNK_SIZE);
+    vk_createStagingBuffer(8 * 1024 * 1024);
 
     // build brightness translation tables
     R_SetColorMappings();
@@ -1031,25 +1020,20 @@ void vk_destroyImageRes(void)
 {
 	vk_free_sampler();
 
-/*
-    R_DestroySingleImage(tr.identityLightImage);
-*/
-    R_DestroySingleImage(tr.defaultImage);
-    R_DestroySingleImage(tr.whiteImage);
-    R_DestroySingleImage(tr.fogImage);
-    R_DestroySingleImage(tr.dlightImage);
-
     uint32_t i = 0;
-    for(i=0; i<32; i++)
-    {
-		// scratchimage is usually used for cinematic drawing
-		R_DestroySingleImage(tr.scratchImage[i]);
-	}
 
 	for (i = 0; i < tr.numImages; i++)
 	{
         R_DestroySingleImage(tr.images[i]);
 	}
+
+    for (i = 0; i < devMemImg.Index; i++)
+    {
+        qvkFreeMemory(vk.device, devMemImg.Chunks[i].block, NULL);
+        devMemImg.Chunks[i].Used = 0;
+    }
+    devMemImg.Index = 0;
+
 
     vk_destroy_staging_buffer();
     // Destroying a pool object implicitly frees all objects allocated from that pool. 
@@ -1060,4 +1044,6 @@ void vk_destroyImageRes(void)
 
     memset( tr.images, 0, sizeof( tr.images ) );
     tr.numImages = 0;
+
+    memset(hashTable, 0, sizeof(hashTable));
 }

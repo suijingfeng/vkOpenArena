@@ -156,7 +156,7 @@ static void LoadTGA( const char* name, unsigned char** pic, uint32_t* width, uin
 	//
 	// load the file
 	//
-	ri.R_ReadFile(name, &buffer);
+	ri.FS_ReadFile(name, &buffer);
 	if (!buffer) {
 		return;
 	}
@@ -384,7 +384,7 @@ static void LoadTGA( const char* name, unsigned char** pic, uint32_t* width, uin
 static void LoadJPG( const char* name, unsigned char** pic, uint32_t* width, uint32_t* height)
 {
     char* fbuffer;
-    int len = ri.R_ReadFile(name, &fbuffer);
+    int len = ri.FS_ReadFile(name, &fbuffer);
     if (!fbuffer) {
         return;
     }
@@ -459,7 +459,7 @@ static void LoadBMP( const char *name, unsigned char **pic, uint32_t *width, uin
 	//
 	// load the file
 	//
-	length = ri.R_ReadFile(name, &buffer);
+	length = ri.FS_ReadFile(name, &buffer);
 	if (!buffer) {
 		return;
 	}
@@ -625,7 +625,7 @@ static void LoadPCX ( const char *filename, unsigned char **pic, unsigned char *
 	//
 	// load the file
 	//
-	len = ri.R_ReadFile(filename, &raw);
+	len = ri.FS_ReadFile(filename, &raw);
 	if (!raw) {
 		return;
 	}

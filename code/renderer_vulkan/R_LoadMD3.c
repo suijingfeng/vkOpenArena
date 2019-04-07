@@ -169,7 +169,7 @@ qhandle_t R_RegisterMD3(const char* name, model_t* mod)
 	char* buf;
 	int	numLoaded = 0;
 
-	ri.R_ReadFile( name, &buf );
+	ri.FS_ReadFile( name, &buf );
 	
     if( NULL != buf)
     {
@@ -219,7 +219,7 @@ qhandle_t R_RegisterMD3(const char* name, model_t* mod)
 		char namebuf[MAX_QPATH+20] = {0};
         snprintf(namebuf, sizeof(namebuf), "%s_%d.md3", filename, lod);
 
-		ri.R_ReadFile( namebuf, &buf );
+		ri.FS_ReadFile( namebuf, &buf );
 		if(!buf)
 			continue;
 		

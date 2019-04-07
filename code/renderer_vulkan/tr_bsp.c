@@ -202,7 +202,7 @@ static	void R_LoadLightmaps( lump_t *l ) {
 			}
 		}
 		tr.lightmaps[i] = R_CreateImage( va("*lightmap%d",i), image, 
-			LIGHTMAP_SIZE, LIGHTMAP_SIZE, qfalse, qfalse, GL_CLAMP, VK_FALSE);
+			LIGHTMAP_SIZE, LIGHTMAP_SIZE, qfalse, qfalse, GL_CLAMP);
 	}
 
 	if ( r_lightmap->integer == 2 )	{
@@ -1838,7 +1838,7 @@ void RE_LoadWorldMap( const char *name )
 
 
 	// load it
-    ri.R_ReadFile( name, &buffer );
+    ri.FS_ReadFile( name, &buffer );
 	if ( !buffer ) {
 		ri.Error (ERR_DROP, "RE_LoadWorldMap: %s not found", name);
 	}
