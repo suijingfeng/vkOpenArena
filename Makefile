@@ -354,13 +354,6 @@ else
   RENDERER_LIBS = -lGL
 endif
 
-ifeq ($(BUILD_WITH_XCB), 1)
-#  XCB_CFLAGS = $(shell PKG_CONFIG --silence-errors --cflags xcb)
-  XCB_LIBS = $(shell pkg-config --libs xcb)
-  RENDERER_LIBS += $(XCB_LIBS)
-endif
-
-
 
   CLIENT_CFLAGS += $(CURL_CFLAGS)
   CLIENT_LIBS += $(CURL_LIBS)
@@ -1654,12 +1647,7 @@ Q3VKOBJ = \
   $(B)/renderer_vulkan/tr_image_tga.o \
   $(B)/renderer_vulkan/tr_image_pcx.o \
 
-
-ifeq ($(BUILD_WITH_XCB), 1)
-  Q3VKOBJ += $(B)/renderer_vulkan/vk_create_window_XCB.o
-else
   Q3VKOBJ += $(B)/renderer_vulkan/vk_create_window_SDL.o
-endif
 
 ######################################################
 
@@ -2019,7 +2007,6 @@ $(B)/renderer_vulkan_$(SHLIBNAME): $(Q3VKOBJ) $(JPGOBJ)
 	$(echo_cmd) "LD $@"
 	$(Q)$(CC) $(CFLAGS) $(SHLIBLDFLAGS) -o $@ $(Q3VKOBJ) $(JPGOBJ) \
 		$(THREAD_LIBS) $(RENDERER_LIBS) $(SDL_LIBS) $(LIBS)
-# $(XCB_LIBS)
 
 ##############################################################
 
