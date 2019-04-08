@@ -34,7 +34,7 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #define	REFENTITYNUM_WORLD	((1<<REFENTITYNUM_BITS) - 1)
 
 // renderfx flags
-#define	RF_MINLIGHT         0x0001		// allways have some light (viewmodel, some items)
+#define	RF_MINLIGHT			0x0001		// allways have some light (viewmodel, some items)
 #define	RF_THIRD_PERSON		0x0002		// don't draw through eyes, only mirrors (player bodies, chat sprites)
 #define	RF_FIRST_PERSON		0x0004		// only draw through eyes (view weapon, damage blood blob)
 #define	RF_DEPTHHACK		0x0008		// for view weapon Z crunching
@@ -44,7 +44,8 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 						// projection matrix won't be hacked to reduce the stereo separation as
 						// is done for the gun.
 
-#define	RF_NOSHADOW         0x0040		// don't add stencil shadows
+#define	RF_NOSHADOW			0x0040		// don't add stencil shadows
+
 #define RF_LIGHTING_ORIGIN	0x0080		// use refEntity->lightingOrigin instead of refEntity->origin
 						// for lighting.  This allows entities to sink into the floor
 						// with their origin going solid, and allows all parts of a
@@ -137,7 +138,6 @@ typedef struct {
 
 	// text messages for deform text shaders
 	char		text[MAX_RENDER_STRINGS][MAX_RENDER_STRING_LENGTH];
-
 } refdef_t;
 
 
@@ -151,8 +151,9 @@ typedef enum {
 /*
 ** glconfig_t
 **
-** Contains variables specific to the OpenGL configuration being run right now. 
-** These are constant once the OpenGL subsystem is initialized.
+** Contains variables specific to the OpenGL configuration
+** being run right now.  These are constant once the OpenGL
+** subsystem is initialized.
 */
 typedef enum {
 	TC_NONE,
@@ -163,7 +164,9 @@ typedef enum {
 typedef enum {
 	GLDRV_ICD,					// driver is integrated with window system
 								// WARNING: there are tests that check for > GLDRV_ICD for minidriverness,
-                                // so this should always be the lowest value in this enum set
+								// > GLDRV_ICD for minidriverness, so this
+								// should always be the lowest value in this
+								// enum set
 	GLDRV_STANDALONE,			// driver is a non-3Dfx standalone driver
 	GLDRV_VOODOO				// driver is a 3Dfx standalone driver
 } glDriverType_t;
@@ -179,10 +182,10 @@ typedef enum {
 } glHardwareType_t;
 
 typedef struct {
-	char					renderer_string[256];
-	char					vendor_string[256];
-	char					version_string[512];
-	char					extensions_string[10240];
+	char					renderer_string[MAX_STRING_CHARS];
+	char					vendor_string[MAX_STRING_CHARS];
+	char					version_string[MAX_STRING_CHARS];
+	char					extensions_string[BIG_INFO_STRING];
 
 	int						maxTextureSize;			// queried from GL
 	int						numTextureUnits;		// multitexture ability
@@ -196,19 +199,20 @@ typedef struct {
 	textureCompression_t	textureCompression;
 	qboolean				textureEnvAddAvailable;
 
-	unsigned int			vidWidth, vidHeight;
+	int						vidWidth, vidHeight;
 	// aspect is the screen's physical width / height, which may be different
 	// than scrWidth / scrHeight if the pixels are non-square
 	// normal screens should be 4/3, but wide aspect monitors may be 16/9
 	float					windowAspect;
 
-	int						refresh_rate;
-    
-    // synonymous with "does rendering consume the entire screen?"
-    qboolean				isFullscreen;
-	qboolean				stereoDisabled;
-	qboolean				smpActive;		// UNUSED, present for compatibility
+	int						displayFrequency;
 
+	// synonymous with "does rendering consume the entire screen?", therefore
+	// a Voodoo or Voodoo2 will have this set to TRUE, as will a Win32 ICD that
+	// used CDS.
+	qboolean				isFullscreen;
+	qboolean				stereoEnabled;
+	qboolean				smpActive;		// UNUSED, present for compatibility
 } glconfig_t;
 
 #endif	// __TR_TYPES_H

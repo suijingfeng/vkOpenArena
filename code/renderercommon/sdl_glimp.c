@@ -325,7 +325,7 @@ SDL_Surface* icon = SDL_CreateRGBSurfaceFrom(
 	}
 
 
-	glCfg->refresh_rate = desktopMode.refresh_rate;
+	glCfg->displayFrequency = desktopMode.refresh_rate;
 
 
 	if (mode == -2)
@@ -334,7 +334,7 @@ SDL_Surface* icon = SDL_CreateRGBSurfaceFrom(
         glCfg->vidWidth = desktopMode.w;
         glCfg->vidHeight = desktopMode.h;
         glCfg->windowAspect = (float)desktopMode.w / (float)desktopMode.h;
-        glCfg->refresh_rate = desktopMode.refresh_rate;
+        glCfg->displayFrequency = desktopMode.refresh_rate;
     }
 	else if(mode == -1)
 	{
@@ -342,7 +342,7 @@ SDL_Surface* icon = SDL_CreateRGBSurfaceFrom(
 		glCfg->vidWidth = r_customwidth->integer;
 		glCfg->vidHeight = r_customheight->integer;
 		glCfg->windowAspect = glCfg->vidWidth / (float)glCfg->vidHeight;
-        glCfg->refresh_rate = r_displayRefresh->integer;
+        glCfg->displayFrequency = r_displayRefresh->integer;
 	}
 	else if((mode >= 0) && (mode < s_numVidModes))
 	{
@@ -355,7 +355,7 @@ SDL_Surface* icon = SDL_CreateRGBSurfaceFrom(
         glCfg->vidWidth = 640;
         glCfg->vidHeight = 480;
         glCfg->windowAspect = (float)glCfg->vidWidth / (float)glCfg->vidHeight;
-        glCfg->refresh_rate = 60;
+        glCfg->displayFrequency = 60;
     }
     
     ri.Printf(PRINT_ALL, "Display mode: %d\n", mode);
@@ -596,7 +596,7 @@ success:
     glCfg->deviceSupportsGamma = qtrue ;
 
 
-	ri.Printf(PRINT_ALL,  "MODE: %s, %d x %d, refresh rate: %dhz\n", fsstrings[r_fullscreen->integer == 1], glCfg->vidWidth, glCfg->vidHeight, glCfg->refresh_rate);
+	ri.Printf(PRINT_ALL,  "MODE: %s, %d x %d, refresh rate: %dhz\n", fsstrings[r_fullscreen->integer == 1], glCfg->vidWidth, glCfg->vidHeight, glCfg->displayFrequency);
 
     
 	// This depends on SDL_INIT_VIDEO, hence having it here

@@ -23,7 +23,7 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #include "tr_local.h"
 #include "../renderercommon/image_loader.h"
 extern void (APIENTRYP qglActiveTextureARB) (GLenum texture);
-
+extern glconfig_t glConfig;
 
 static unsigned char s_intensitytable[256];
 static unsigned char s_gammatable[256];

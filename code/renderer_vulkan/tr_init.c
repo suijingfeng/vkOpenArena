@@ -23,22 +23,22 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
 #include "tr_local.h"
 #include "tr_globals.h"
-#include "tr_displayResolution.h"
 #include "tr_model.h"
 #include "tr_cvar.h"
-#include "vk_instance.h"
+
+#include "vk_init.h"
+
 #include "vk_screenshot.h"
 #include "vk_shade_geometry.h"
 #include "vk_pipelines.h"
 #include "vk_image.h"
-#include "R_LerpTag.h"
-#include "R_ModelBounds.h"
-#include "R_StretchRaw.h"
+
 #include "tr_fog.h"
 #include "tr_backend.h"
+#include "glConfig.h"
+
 
 refimport_t	ri;
-
 
 
 /*
@@ -121,7 +121,7 @@ void R_Init( void )
 	ri.Cmd_AddCommand( "skinlist", R_SkinList_f );
 
     ri.Cmd_AddCommand( "vkinfo", vulkanInfo_f );
-    ri.Cmd_AddCommand( "minimize", minimizeWindowImpl );
+    ri.Cmd_AddCommand( "minimize", vk_minimizeWindow );
 
     ri.Cmd_AddCommand( "pipelineList", R_PipelineList_f );
 
@@ -131,10 +131,15 @@ void R_Init( void )
 
     R_InitScene();
 
+    R_glConfigInit();
+
     // VULKAN
-	if ( glConfig.vidWidth == 0 )
+	if ( !isVKinitialied() )
 	{
 		vk_initialize();
+        
+        // print info
+        vulkanInfo_f();
 	}
 
 
@@ -198,15 +203,19 @@ void RE_Shutdown( qboolean destroyWindow )
     {
         vk_shutdown();
         vk_destroyWindow();
+        
+        // It is cleared not for renderer_vulkan,
+        // but fot rendergl1, renderergl2 to create the window
+        R_glConfigClear();
     }
 }
 
 
-void RE_BeginRegistration(glconfig_t *glconfigOut)
+void RE_BeginRegistration(glconfig_t * pGlCfg)
 {
 	R_Init();
 
-	*glconfigOut = glConfig;
+    R_GetGlConfig(pGlCfg);
 
 	tr.viewCluster = -1; // force markleafs to regenerate
 
@@ -216,8 +225,6 @@ void RE_BeginRegistration(glconfig_t *glconfigOut)
 
    	ri.Printf(PRINT_ALL, "RE_BeginRegistration finished.\n");
 }
-
-
 
 /*
 @@@@@@@@@@@@@@@@@@@@@

@@ -28,7 +28,7 @@ extern int max_polys;
 extern int max_polyverts;
 extern	backEndData_t *backEndData;	// the second one may not be allocated
 ///////// globals ///////////
-
+extern glconfig_t glConfig;
 trGlobals_t	tr;
 
 refimport_t	ri;

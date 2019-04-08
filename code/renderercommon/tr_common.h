@@ -28,7 +28,6 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 static const float ORIGIN[3] = {0,0,0};
 // outside of TR since it shouldn't be cleared during ref re-init
 
-extern glconfig_t glConfig;	
 // These variables should live inside glConfig but can't because of
 // compatibility issues to the original ID vms.  If you release a stand-alone
 // game and your mod uses tr_types.h from this build you can safely move them

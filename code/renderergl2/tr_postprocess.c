@@ -22,7 +22,7 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
 #include "tr_local.h"
 #include "../renderercommon/matrix_multiplication.h"
-
+extern glconfig_t glConfig;
 
 void RB_ToneMap(FBO_t *hdrFbo, int hdrBox[4], FBO_t *ldrFbo, int ldrBox[4], int autoExposure)
 {

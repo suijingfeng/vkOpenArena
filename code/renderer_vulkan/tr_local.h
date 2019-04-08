@@ -1116,6 +1116,9 @@ void R_InitFreeType(void);
 void R_DoneFreeType(void);
 
 
+void RE_StretchRaw (int x, int y, int w, int h, int cols, int rows, const unsigned char *data, int client, qboolean dirty);
+int	R_LerpTag( orientation_t *tag, qhandle_t handle, int startFrame, int endFrame, float frac, const char *tagName );
+void R_ModelBounds( qhandle_t handle, vec3_t mins, vec3_t maxs );
 extern void (*rb_surfaceTable[SF_NUM_SURFACE_TYPES])(void *);
 
 extern shaderCommands_t	tess;

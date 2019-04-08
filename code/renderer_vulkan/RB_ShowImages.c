@@ -1,7 +1,8 @@
 #include "tr_backend.h"
 #include "vk_shade_geometry.h"
-#include "tr_globals.h"
 #include "vk_pipelines.h"
+#include "glConfig.h"
+
 /*
 ===============
 Draw all the images to the screen, on top of whatever was there.
@@ -13,15 +14,23 @@ Also called by RE_EndRegistration
 
 
 
-void RB_ShowImages(const image_t ** const pImg, unsigned int N)
+void RB_ShowImages(image_t ** const pImg, unsigned int N)
 {
 
     backEnd.projection2D = qtrue;
 
 	const float black[4] = {0, 0, 0, 1};
 	vk_clearColorAttachments(black);
-	float w = glConfig.vidWidth / 20;
-	float h = glConfig.vidHeight / 15;
+   
+    int width;
+    int height;
+
+    R_GetWinResolution(&width, &height);
+
+    const float w = width / 20;
+	const float h = height / 15;
+
+
     tess.numIndexes = 6;
     tess.numVertexes = 4;
 

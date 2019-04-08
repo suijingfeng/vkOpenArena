@@ -24,7 +24,7 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #include "tr_local.h"
 #include "../renderercommon/matrix_multiplication.h"
 #include <string.h> // memcpy
-
+extern glconfig_t glConfig;
 trGlobals_t		tr;
 
 const static float s_flipMatrix[16] QALIGN(16) = {

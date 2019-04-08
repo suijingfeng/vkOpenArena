@@ -28,7 +28,9 @@ VkBuffer vk_getIndexBuffer(void);
 void vk_destroy_shading_data(void);
 
 void updateCurDescriptor( VkDescriptorSet curDesSet, uint32_t tmu);
+
 VkRect2D get_scissor_rect(void);
+
 
 void vk_clearColorAttachments(const float* color);
 void vk_clearDepthStencilAttachments(void);

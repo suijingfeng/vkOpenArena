@@ -12,6 +12,7 @@
 #include "vk_shaders.h"
 #include "vk_depth_attachment.h"
 
+
 struct Vk_Instance vk;
 
 //
@@ -222,22 +223,22 @@ static void vk_createInstance(void)
     ri.Printf(PRINT_ALL, "--- Total %d instance extensions. --- \n", nInsExt);
 
     VkExtensionProperties *pInsExt = (VkExtensionProperties *) malloc(sizeof(VkExtensionProperties) * nInsExt);
+    
     const char** ppInstanceExt = malloc( sizeof(char *) * (nInsExt) );
 
     VK_CHECK(qvkEnumerateInstanceExtensionProperties( NULL, &nInsExt, pInsExt));
 
     uint32_t i = 0;
 
-    uint32_t indicator = 0;
+    // Each platform-specific extension is an instance extension.
+    // The application must enable instance extensions with vkCreateInstance
+    // before using them.
+
+    // TODO: CHECK OUT
+    // All of the instance wxtention enabled, Does this reasonable ?
 
     for (i = 0; i < nInsExt; i++)
     {    
-        ri.Printf(PRINT_ALL, "%s\n", pInsExt[i].extensionName );
-        unsigned int len = strlen(pInsExt[i].extensionName);
-        memcpy(glConfig.extensions_string + indicator, pInsExt[i].extensionName, len);
-        indicator += len;
-        glConfig.extensions_string[indicator++] = ' ';
-
         ppInstanceExt[i] = pInsExt[i].extensionName;
     }
     
@@ -276,10 +277,10 @@ static void vk_createInstance(void)
     {
         ri.Error(ERR_FATAL, "%d, returned by qvkCreateInstance.\n", e);
     }
-    
-    free(pInsExt);
-
+   
     free(ppInstanceExt);
+
+    free(pInsExt);
 }
 
 
@@ -464,7 +465,6 @@ static void vk_selectSurfaceFormat(void)
 
     //=========================== depth =====================================
     qvkGetPhysicalDeviceFormatProperties(vk.physical_device, VK_FORMAT_D24_UNORM_S8_UINT, &props);
-	//glConfig.stencilBits = 8;	
     if ( props.optimalTilingFeatures & VK_FORMAT_FEATURE_DEPTH_STENCIL_ATTACHMENT_BIT )
     {
         ri.Printf(PRINT_ALL, " VK_FORMAT_D24_UNORM_S8_UINT optimal Tiling feature supported.\n");
@@ -764,6 +764,26 @@ void vk_getProcAddress(void)
 
 void vk_clearProcAddress(void)
 {
+
+    ri.Printf( PRINT_ALL, " Destroy logical device: vk.device. \n" );
+    // Device queues are implicitly cleaned up when the device is destroyed
+    // so we don't need to do anything in clean up
+	qvkDestroyDevice(vk.device, NULL);
+    
+    ri.Printf( PRINT_ALL, " Destroy surface: vk.surface. \n" );
+    // make sure that the surface is destroyed before the instance
+    qvkDestroySurfaceKHR(vk.instance, vk.surface, NULL);
+
+#ifndef NDEBUG
+    ri.Printf( PRINT_ALL, " Destroy callback function: vk.h_debugCB. \n" );
+
+	qvkDestroyDebugReportCallbackEXT(vk.instance, vk.h_debugCB, NULL);
+#endif
+
+    ri.Printf( PRINT_ALL, " Destroy instance: vk.instance. \n" );
+	qvkDestroyInstance(vk.instance, NULL);
+
+// ===========================================================
     ri.Printf( PRINT_ALL, " clear all proc address \n" );
 
 	qvkCreateInstance                           = NULL;
@@ -865,291 +885,6 @@ void vk_clearProcAddress(void)
 	qvkDestroySwapchainKHR						= NULL;
 	qvkGetSwapchainImagesKHR					= NULL;
 	qvkQueuePresentKHR							= NULL;
-}
-
-static void vk_create_command_pool(VkCommandPool* pPool)
-{
-    // Command pools are opaque objects that command buffer memory is allocated from,
-    // and which allow the implementation to amortize the cost of resource creation
-    // across multiple command buffers. Command pools are externally synchronized,
-    // meaning that a command pool must not be used concurrently in multiple threads.
-    // That includes use via recording commands on any command buffers allocated from
-    // the pool, as well as operations that allocate, free, and reset command buffers
-    // or the pool itself.
-
-
-    VkCommandPoolCreateInfo desc;
-    desc.sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
-    desc.pNext = NULL;
-    // VK_COMMAND_POOL_CREATE_TRANSIENT_BIT specifies that command buffers
-    // allocated from the pool will be short-lived, meaning that they will
-    // be reset or freed in a relatively short timeframe. This flag may be
-    // used by the implementation to control memory allocation behavior
-    // within the pool.
-    //
-    // VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT allows any command
-    // buffer allocated from a pool to be individually reset to the initial
-    // state; either by calling vkResetCommandBuffer, or via the implicit 
-    // reset when calling vkBeginCommandBuffer. If this flag is not set on
-    // a pool, then vkResetCommandBuffer must not be called for any command
-    // buffer allocated from that pool.
-    desc.flags = VK_COMMAND_POOL_CREATE_TRANSIENT_BIT | VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;
-    desc.queueFamilyIndex = vk.queue_family_index;
-
-    VK_CHECK(qvkCreateCommandPool(vk.device, &desc, NULL, pPool));
-}
-
-
-static void vk_create_command_buffer(VkCommandPool pool, VkCommandBuffer* pBuf)
-{
-    // Command buffers are objects used to record commands which can be
-    // subsequently submitted to a device queue for execution. There are
-    // two levels of command buffers:
-    // - primary command buffers, which can execute secondary command buffers,
-    //   and which are submitted to queues.
-    // - secondary command buffers, which can be executed by primary command buffers,
-    //   and which are not directly submitted to queues.
-    //
-    // Recorded commands include commands to bind pipelines and descriptor sets
-    // to the command buffer, commands to modify dynamic state, commands to draw
-    // (for graphics rendering), commands to dispatch (for compute), commands to
-    // execute secondary command buffers (for primary command buffers only), 
-    // commands to copy buffers and images, and other commands.
-    //
-    // Each command buffer manages state independently of other command buffers.
-    // There is no inheritance of state across primary and secondary command 
-    // buffers, or between secondary command buffers. 
-    // 
-    // When a command buffer begins recording, all state in that command buffer is undefined. 
-    // When secondary command buffer(s) are recorded to execute on a primary command buffer,
-    // the secondary command buffer inherits no state from the primary command buffer,
-    // and all state of the primary command buffer is undefined after an execute secondary
-    // command buffer command is recorded. There is one exception to this rule - if the primary
-    // command buffer is inside a render pass instance, then the render pass and subpass state
-    // is not disturbed by executing secondary command buffers. Whenever the state of a command
-    // buffer is undefined, the application must set all relevant state on the command buffer
-    // before any state dependent commands such as draws and dispatches are recorded, otherwise
-    // the behavior of executing that command buffer is undefined.
-    //
-    // Unless otherwise specified, and without explicit synchronization, the various commands
-    // submitted to a queue via command buffers may execute in arbitrary order relative to
-    // each other, and/or concurrently. Also, the memory side-effects of those commands may
-    // not be directly visible to other commands without explicit memory dependencies. 
-    // This is true within a command buffer, and across command buffers submitted to a given
-    // queue. See the synchronization chapter for information on implicit and explicit
-    // synchronization between commands.
-
-
-    VkCommandBufferAllocateInfo alloc_info;
-    alloc_info.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
-    alloc_info.pNext = NULL;
-    alloc_info.commandPool = pool;
-    // Can be submitted to a queue for execution,
-    // but cannnot be called from other command buffers.
-    alloc_info.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
-    alloc_info.commandBufferCount = 1;
-    VK_CHECK(qvkAllocateCommandBuffers(vk.device, &alloc_info, pBuf));
-}
-
-
-void vk_initialize(void)
-{
-    // This function is responsible for initializing a valid Vulkan subsystem.
-
-    vk_createWindow();
-        
-    vk_getProcAddress(); 
- 
-
-	// Swapchain. vk.physical_device required to be init. 
-	vk_createSwapChain(vk.device, vk.surface, vk.surface_format);
-
-	//
-	// Sync primitives.
-	//
-    vk_create_sync_primitives();
-
-	// we have to create a command pool before we can create command buffers
-    // command pools manage the memory that is used to store the buffers and
-    // command buffers are allocated from them.
-    ri.Printf(PRINT_ALL, " Create command pool: vk.command_pool \n");
-    vk_create_command_pool(&vk.command_pool);
-    
-    ri.Printf(PRINT_ALL, " Create command buffer: vk.command_buffer \n");
-    vk_create_command_buffer(vk.command_pool, &vk.command_buffer);
-
-    // Depth attachment image.
-    vk_createDepthAttachment();
-
-
-    vk_createFrameBuffers(glConfig.vidWidth, glConfig.vidHeight);
-
-	// Pipeline layout.
-	// You can use uniform values in shaders, which are globals similar to
-    // dynamic state variables that can be changes at the drawing time to
-    // alter the behavior of your shaders without having to recreate them.
-    // They are commonly used to create texture samplers in the fragment 
-    // shader. The uniform values need to be specified during pipeline
-    // creation by creating a VkPipelineLayout object.
-    
-    vk_createPipelineLayout();
-
-	//
-	vk_createVertexBuffer();
-    vk_createIndexBuffer();;
-	//
-	// Shader modules.
-	//
-	vk_loadShaderModules();
-
-	//
-	// Standard pipelines.
-	//
-    create_standard_pipelines();
-
-    // print info
-    vulkanInfo_f();
-}
-
-
-void vk_shutdown(void)
-{
-    ri.Printf( PRINT_ALL, "vk_shutdown()\n" );
-
-    vk_destroyDepthAttachment();
-
-    vk_destroyFrameBuffers();
-
-    vk_destroy_shading_data();
-
-    vk_destroy_sync_primitives();
-    
-    vk_destroyShaderModules();
-
-//
-    vk_destroyGlobalStagePipeline();
-//
-    // Command buffers will be automatically freed when their
-    // command pool is destroyed, so it don't need an explicit 
-    // cleanup.
-    ri.Printf( PRINT_ALL, " Free command buffers: vk.command_buffer. \n" );     
-    qvkFreeCommandBuffers(vk.device, vk.command_pool, 1, &vk.command_buffer); 
-    ri.Printf( PRINT_ALL, " Destroy command pool: vk.command_pool. \n" );
-    qvkDestroyCommandPool(vk.device, vk.command_pool, NULL);
-
-    ri.Printf( PRINT_ALL, " Destroy logical device: vk.device. \n" );
-	qvkDestroyDevice(vk.device, NULL);
-
-    ri.Printf( PRINT_ALL, " Destroy surface: vk.surface. \n" );
-    // make sure that the surface is destroyed before the instance
-    qvkDestroySurfaceKHR(vk.instance, vk.surface, NULL);
-
-#ifndef NDEBUG
-    ri.Printf( PRINT_ALL, " Destroy callback function: vk.h_debugCB. \n" );
-
-	qvkDestroyDebugReportCallbackEXT(vk.instance, vk.h_debugCB, NULL);
-#endif
-
-    ri.Printf( PRINT_ALL, " Destroy instance: vk.instance. \n" );
-	qvkDestroyInstance(vk.instance, NULL);
-
-    ri.Printf( PRINT_ALL, " clear vk struct: vk \n" );
-	memset(&vk, 0, sizeof(vk));
-
-	vk_clearProcAddress();
-}
-
-
-void vulkanInfo_f( void ) 
-{
-
-	// VULKAN
-
-    ri.Printf( PRINT_ALL, "\nActive 3D API: Vulkan\n" );
-
-    // To query general properties of physical devices once enumerated
-    VkPhysicalDeviceProperties props;
-    qvkGetPhysicalDeviceProperties(vk.physical_device, &props);
-
-    uint32_t major = VK_VERSION_MAJOR(props.apiVersion);
-    uint32_t minor = VK_VERSION_MINOR(props.apiVersion);
-    uint32_t patch = VK_VERSION_PATCH(props.apiVersion);
-
-    const char* device_type;
-    if (props.deviceType == VK_PHYSICAL_DEVICE_TYPE_INTEGRATED_GPU)
-        device_type = "INTEGRATED_GPU";
-    else if (props.deviceType == VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU)
-        device_type = "DISCRETE_GPU";
-    else if (props.deviceType == VK_PHYSICAL_DEVICE_TYPE_VIRTUAL_GPU)
-        device_type = "VIRTUAL_GPU";
-    else if (props.deviceType == VK_PHYSICAL_DEVICE_TYPE_CPU)
-        device_type = "CPU";
-    else
-        device_type = "Unknown";
-
-    const char* vendor_name = "unknown";
-    if (props.vendorID == 0x1002) {
-        vendor_name = "Advanced Micro Devices, Inc.";
-    } else if (props.vendorID == 0x10DE) {
-        vendor_name = "NVIDIA";
-    } else if (props.vendorID == 0x8086) {
-        vendor_name = "Intel Corporation";
-    }
-
-    ri.Printf(PRINT_ALL, "Vk api version: %d.%d.%d\n", major, minor, patch);
-    ri.Printf(PRINT_ALL, "Vk driver version: %d\n", props.driverVersion);
-    ri.Printf(PRINT_ALL, "Vk vendor id: 0x%X (%s)\n", props.vendorID, vendor_name);
-    ri.Printf(PRINT_ALL, "Vk device id: 0x%X\n", props.deviceID);
-    ri.Printf(PRINT_ALL, "Vk device type: %s\n", device_type);
-    ri.Printf(PRINT_ALL, "Vk device name: %s\n", props.deviceName);
-
-//    ri.Printf(PRINT_ALL, "\n The maximum number of sampler objects,  
-//    as created by vkCreateSampler, which can simultaneously exist on a device is: %d\n", 
-//        props.limits.maxSamplerAllocationCount);
-//	 4000
-
-    // Look for device extensions
-    {
-        uint32_t nDevExts = 0;
-
-        // To query the extensions available to a given physical device
-        VK_CHECK( qvkEnumerateDeviceExtensionProperties( vk.physical_device, NULL, &nDevExts, NULL) );
-
-        VkExtensionProperties* pDeviceExt = 
-            (VkExtensionProperties *) malloc(sizeof(VkExtensionProperties) * nDevExts);
-
-        qvkEnumerateDeviceExtensionProperties(
-                vk.physical_device, NULL, &nDevExts, pDeviceExt);
-
-
-        ri.Printf(PRINT_ALL, "---------- Total Device Extension Supported ---------- \n");
-        uint32_t i;
-        for (i=0; i<nDevExts; i++)
-        {
-            ri.Printf(PRINT_ALL, " %s \n", pDeviceExt[i].extensionName);
-        }
-        ri.Printf(PRINT_ALL, "---------- -------------------------------- ---------- \n");
-
-        free(pDeviceExt);
-    }
-
-    ri.Printf(PRINT_ALL, "Vk instance extensions: \n%s\n\n", glConfig.extensions_string);
-
-
-	//
-	// Info that for UI display
-	//
-	strncpy( glConfig.vendor_string, vendor_name, sizeof( glConfig.vendor_string ) );
-	strncpy( glConfig.renderer_string, props.deviceName, sizeof( glConfig.renderer_string ) );
-    if (*glConfig.renderer_string && glConfig.renderer_string[strlen(glConfig.renderer_string) - 1] == '\n')
-         glConfig.renderer_string[strlen(glConfig.renderer_string) - 1] = 0;     
-	char tmpBuf[128] = {0};
-
-    snprintf(tmpBuf, 128, " Vk api version: %d.%d.%d ", major, minor, patch);
-	
-    strncpy( glConfig.version_string, tmpBuf, sizeof( glConfig.version_string ) );
-
-    gpuMemUsageInfo_f();
 }
 
 

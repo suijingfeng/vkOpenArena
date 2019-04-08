@@ -3,10 +3,7 @@
 
 
 #include "VKimpl.h"
-//extern refimport_t ri;
 #include "../renderercommon/ref_import.h" 
-
-
 
 
 extern PFN_vkGetInstanceProcAddr						qvkGetInstanceProcAddr;
@@ -112,13 +109,7 @@ extern PFN_vkGetSwapchainImagesKHR						qvkGetSwapchainImagesKHR;
 extern PFN_vkQueuePresentKHR							qvkQueuePresentKHR;
 
 
-// After calling this function we get fully functional vulkan subsystem.
-void vk_initialize(void);
 
-// Shutdown vulkan subsystem by releasing resources acquired by Vk_Instance.
-void vk_shutdown(void);
-
-void vulkanInfo_f( void );
 // Initializes VK_Instance structure.
 void vk_getProcAddress(void);
 void vk_clearProcAddress(void);
@@ -135,11 +126,7 @@ const char * cvtResToStr(VkResult result);
 #else
 #define VK_CHECK(function_call)	\
 	function_call;
-
 #endif
-
-
-
 
 
 #define MAX_SWAPCHAIN_IMAGES    8
@@ -149,6 +136,12 @@ const char * cvtResToStr(VkResult result);
 struct Vk_Instance {
 	VkInstance instance ;
 	VkPhysicalDevice physical_device;
+
+    // Native platform surface or window objects are abstracted by surface objects,
+    // which are represented by VkSurfaceKHR handles. The VK_KHR_surface extension
+    // declares the VkSurfaceKHR object, and provides a function for destroying
+    // VkSurfaceKHR objects. Separate platform-specific extensions each provide a
+    // function for creating a VkSurfaceKHR object for the respective platform.
 	VkSurfaceKHR surface;
 	VkSurfaceFormatKHR surface_format;
     VkSurfaceCapabilitiesKHR surface_caps;
@@ -199,6 +192,9 @@ struct Vk_Instance {
 	VkPipelineLayout pipeline_layout;
 
     VkBool32 isBlitSupported;
+
+    VkBool32 isInitialized;
+
 #ifndef NDEBUG
     VkDebugReportCallbackEXT h_debugCB;
 #endif

@@ -23,7 +23,7 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #include "tr_local.h"
 #include "tr_dsa.h"
 #include "../renderercommon/image_loader.h"
-
+extern glconfig_t glConfig;
 extern cvar_t* r_ext_compressed_textures;
 static cvar_t* r_texturebits;
 static unsigned char s_intensitytable[256];

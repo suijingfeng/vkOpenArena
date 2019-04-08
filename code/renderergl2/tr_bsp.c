@@ -36,7 +36,7 @@ A single entry point:
 void RE_LoadWorldMap( const char *name );
 
 */
-
+extern glconfig_t glConfig;
 static world_t		s_worldData;
 static unsigned char* fileBase;
 
