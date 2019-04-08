@@ -147,8 +147,6 @@ static void vk_destroy_staging_buffer(void)
 }
 
 
-
-
 static void vk_stagBufferToDeviceLocalMem(VkImage image, VkBufferImageCopy* pRegion, uint32_t num_region)
 {
     // An application can copy buffer and image data using several methods
@@ -199,7 +197,6 @@ static void vk_stagBufferToDeviceLocalMem(VkImage image, VkBufferImageCopy* pReg
             0, VK_IMAGE_LAYOUT_UNDEFINED, VK_ACCESS_TRANSFER_WRITE_BIT,
             VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
 
-
     
     // To copy data from a buffer object to an image object
     
@@ -241,7 +238,6 @@ static void vk_stagBufferToDeviceLocalMem(VkImage image, VkBufferImageCopy* pReg
 
 #define FILE_HASH_SIZE	1024
 static image_t*	hashTable[FILE_HASH_SIZE];
-
 
 static int generateHashValue( const char *fname )
 {
@@ -342,7 +338,6 @@ static void vk_createImageAndBindWithMemory(image_t* pImg)
             devMemImg.Index * (IMAGE_CHUNK_SIZE >> 20) );
 
     ri.Printf(PRINT_ALL, " --- ------------------------ --- \n");
-
 }
 
 
@@ -459,7 +454,7 @@ image_t* R_CreateImage( const char *name, unsigned char* pic, const uint32_t wid
     }
 
 
-    //ri.Printf( PRINT_ALL, "R_CreateImage: %s\n", name);
+    ri.Printf( PRINT_ALL, " Create Image: %s\n", name);
     
     // Create image_t object.
 
@@ -525,10 +520,9 @@ image_t* R_CreateImage( const char *name, unsigned char* pic, const uint32_t wid
 
     pImage->uploadWidth = scaled_width;
     pImage->uploadHeight = scaled_height;
- 
     
     uint32_t buffer_size = 4 * pImage->uploadWidth * pImage->uploadHeight;
-    unsigned char * const upload_buffer = (unsigned char*) malloc ( 2 * buffer_size);
+    unsigned char * const pUploadBuffer = (unsigned char*) malloc ( 2 * buffer_size);
 
     if ((scaled_width != width) || (scaled_height != height) )
     {
@@ -537,11 +531,11 @@ image_t* R_CreateImage( const char *name, unsigned char* pic, const uint32_t wid
         //        width, height, scaled_width, scaled_height );
         
         //go down from [width, height] to [scaled_width, scaled_height]
-        ResampleTexture (upload_buffer, width, height, pic, scaled_width, scaled_height);
+        ResampleTexture (pUploadBuffer, width, height, pic, scaled_width, scaled_height);
     }
     else
     {
-        memcpy(upload_buffer, pic, buffer_size);
+        memcpy(pUploadBuffer, pic, buffer_size);
     }
 
 
@@ -579,10 +573,10 @@ image_t* R_CreateImage( const char *name, unsigned char* pic, const uint32_t wid
         uint32_t base_width = pImage->uploadWidth;
         uint32_t base_height = pImage->uploadHeight;
 
-        unsigned char* in_ptr = upload_buffer;
+        unsigned char* in_ptr = pUploadBuffer;
         unsigned char* dst_ptr = in_ptr + buffer_size;
 
-        R_LightScaleTexture(upload_buffer, upload_buffer, buffer_size);
+        R_LightScaleTexture(pUploadBuffer, pUploadBuffer, buffer_size);
 
         // Use the normal mip-mapping to go down from [scaled_width, scaled_height] to [1,1] dimensions.
 
@@ -658,9 +652,10 @@ image_t* R_CreateImage( const char *name, unsigned char* pic, const uint32_t wid
 
     void* data;
     VK_CHECK(qvkMapMemory(vk.device, StagBuf.mappableMem, 0, VK_WHOLE_SIZE, 0, &data));
-    memcpy(data, upload_buffer, buffer_size);
+    memcpy(data, pUploadBuffer, buffer_size);
     qvkUnmapMemory(vk.device, StagBuf.mappableMem);
-    free(upload_buffer);
+
+    free(pUploadBuffer);
 
     vk_stagBufferToDeviceLocalMem(pImage->handle, regions, pImage->mipLevels);
 
@@ -673,7 +668,6 @@ image_t* R_CreateImage( const char *name, unsigned char* pic, const uint32_t wid
     {
         ri.Error( ERR_DROP, "CreateImage: MAX_DRAWIMAGES hit\n");
     }
-
 
     return pImage;
 }
@@ -929,7 +923,7 @@ static void R_CreateFogImage( void )
 
 	unsigned int x,y;
 
-	unsigned char* data = (unsigned char*) malloc( FOG_S * FOG_T * 4 );
+	unsigned char* const data = (unsigned char*) malloc( FOG_S * FOG_T * 4 );
 
 	// S is distance, T is depth
 	for (x=0 ; x<FOG_S ; x++)
@@ -972,8 +966,13 @@ static void R_CreateScratchImage(void)
 void R_InitImages( void )
 {
     memset(hashTable, 0, sizeof(hashTable));
-    
+
     vk_createStagingBuffer(8 * 1024 * 1024);
+
+	// setup the overbright lighting
+
+	tr.identityLight = 1.0f;
+	tr.identityLightByte = 255 * tr.identityLight;
 
     // build brightness translation tables
     R_SetColorMappings();
