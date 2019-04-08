@@ -70,6 +70,7 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
 #include "../renderercommon/tr_common.h"
 #include "../renderercommon/ref_import.h"
+#include "tr_cvar.h"
 
 #ifdef BUILD_FREETYPE
 #include <ft2build.h>
@@ -89,8 +90,6 @@ FT_Library ftLibrary = NULL;
 #define MAX_FONTS 6
 static int registeredFontCount = 0;
 static fontInfo_t registeredFont[MAX_FONTS];
-
-static cvar_t *r_saveFontData;
 
 
 #ifdef BUILD_FREETYPE

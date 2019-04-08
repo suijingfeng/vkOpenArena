@@ -24,6 +24,7 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #include "tr_local.h"
 #include "tr_globals.h"
 
+
 #define MAX_VERTS_ON_POLY		64
 
 #define MARKER_OFFSET			0	// 1
@@ -244,14 +245,10 @@ void R_AddMarkFragments(int numClipPoints, vec3_t clipPoints[2][MAX_VERTS_ON_POL
 	(*returnedFragments)++;
 }
 
-/*
-=================
-R_MarkFragments
 
-=================
-*/
-int R_MarkFragments( int numPoints, const vec3_t *points, const vec3_t projection,
-				   int maxPoints, vec3_t pointBuffer, int maxFragments, markFragment_t *fragmentBuffer ) {
+int RE_MarkFragments( int numPoints, const vec3_t *points, const vec3_t projection,
+				   int maxPoints, vec3_t pointBuffer, int maxFragments, markFragment_t *fragmentBuffer )
+{
 	int				numsurfaces, numPlanes;
 	int				i, j, k, m, n;
 	surfaceType_t	*surfaces[64];

@@ -1,9 +1,7 @@
 #include "../renderercommon/ref_import.h"
 #include "tr_backend.h"
 #include "R_PrintMat.h"
-
-
-backEndState_t	backEnd;
+backEndState_t backEnd;
 
 
 void R_ClearBackendState(void)

@@ -22,9 +22,9 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 // tr_main.c -- main control flow for each frame
 
 #include "tr_local.h"
-
 #include "tr_globals.h"
 #include "tr_cvar.h"
+#include "tr_shader.h"
 
 #include "vk_shade_geometry.h"
 #include "vk_instance.h"
@@ -32,11 +32,9 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #include "../renderercommon/matrix_multiplication.h"
 #include "../renderercommon/ref_import.h"
 
-#include "R_DEBUG.h"
-
 #include "R_PrintMat.h"
-
 #include "R_PortalPlane.h"
+#include "R_DebugGraphics.h"
 
 
 static void R_LocalNormalToWorld (const vec3_t local, const orientationr_t * const pRT, vec3_t world)

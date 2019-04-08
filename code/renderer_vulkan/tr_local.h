@@ -26,8 +26,8 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
 #include "../qcommon/q_shared.h"
 #include "../qcommon/qfiles.h"
-#include "../qcommon/qcommon.h"
-#include "../renderercommon/tr_public.h"
+
+#include "../renderercommon/tr_types.h"
 #include "../renderercommon/tr_common.h"
 #include "tr_image.h"
 
@@ -35,25 +35,9 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
 
 
-
 // 12 bits
 // see QSORT_SHADERNUM_SHIFT
-#define	MAX_SHADERS				16384
 
-// can't be increased without changing bit packing for drawsurfs
-
-typedef struct dlight_s {
-	vec3_t	origin;
-	vec3_t	color;				// range from 0.0 to 1.0, should be color normalized
-	float	radius;
-
-	vec3_t	transformed;		// origin in local coordinate system
-	int		additive;			// texture detail is lost tho when the lightmap is dark
-} dlight_t;
-
-
-// a trRefEntity_t has all the information passed in by
-// the client game, as well as some locally derived info
 typedef struct {
 	refEntity_t	e;
 
@@ -77,32 +61,7 @@ typedef struct {
 
 //===============================================================================
 
-typedef enum {
-	SS_BAD,
-	SS_PORTAL,			// mirrors, portals, viewscreens
-	SS_ENVIRONMENT,		// sky box
-	SS_OPAQUE,			// opaque
 
-	SS_DECAL,			// scorch marks, etc.
-	SS_SEE_THROUGH,		// ladders, grates, grills that may have small blended edges
-						// in addition to alpha test
-	SS_BANNER,
-
-	SS_FOG,
-
-	SS_UNDERWATER,		// for items that should be drawn in front of the water plane
-
-	SS_BLEND0,			// regular transparency and filters
-	SS_BLEND1,			// generally only used for additive type effects
-	SS_BLEND2,
-	SS_BLEND3,
-
-	SS_BLEND6,
-	SS_STENCIL_SHADOW,
-	SS_ALMOST_NEAREST,	// gun smoke puffs
-
-	SS_NEAREST			// blood blobs
-} shaderSort_t;
 
 
 #define MAX_SHADER_STAGES 8
@@ -769,10 +728,6 @@ int R_CullLocalPointAndRadius( vec3_t origin, float radius );
 void R_RotateForEntity( const trRefEntity_t *ent, const viewParms_t *viewParms, orientationr_t *or );
 
 
-
-qboolean	R_GetEntityToken( char *buffer, int size );
-
-
 void R_InitScene(void);
 void R_InitNextFrame(void);
 
@@ -787,21 +742,18 @@ void	R_InitSkins( void );
 skin_t	*R_GetSkinByHandle( qhandle_t hSkin );
 
 
+
+
 //
 // tr_shader.c
 //
 // qhandle_t RE_RegisterShaderLightMap( const char *name, int lightmapIndex );
-qhandle_t RE_RegisterShader( const char *name );
-qhandle_t RE_RegisterShaderNoMip( const char *name );
-qhandle_t RE_RegisterShaderFromImage(const char *name, int lightmapIndex, image_t *image, qboolean mipRawImage);
-
 shader_t* R_FindShader( const char *name, int lightmapIndex, qboolean mipRawImage );
 shader_t* R_GetShaderByHandle( qhandle_t hShader );
 //shader_t* R_FindShaderByName( const char *name );
 
 void R_InitShaders( void );
 void R_ShaderList_f( void );
-void R_RemapShader(const char *oldShader, const char *newShader, const char *timeOffset);
 void R_ClearShaderHashTable(void);
 void R_SetTheShader( const char *name, int lightmapIndex );
 void R_UpdateShaderHashTable(shader_t* newShader);
@@ -879,20 +831,6 @@ WORLD MAP
 
 void R_AddBrushModelSurfaces( trRefEntity_t *e );
 void R_AddWorldSurfaces( void );
-qboolean R_inPVS( const vec3_t p1, const vec3_t p2 );
-
-/*
-============================================================
-
-LIGHTS
-
-============================================================
-*/
-
-void R_DlightBmodel( bmodel_t *bmodel );
-void R_SetupEntityLighting( const trRefdef_t *refdef, trRefEntity_t *ent );
-void R_TransformDlights( int count, dlight_t *dl, const orientationr_t * const or );
-int R_LightForPoint( vec3_t point, vec3_t ambientLight, vec3_t directedLight, vec3_t lightDir );
 
 
 /*
@@ -931,18 +869,6 @@ srfGridMesh_t *R_SubdividePatchToGrid( int width, int height,
 srfGridMesh_t *R_GridInsertColumn( srfGridMesh_t *grid, int column, int row, vec3_t point, float loderror );
 srfGridMesh_t *R_GridInsertRow( srfGridMesh_t *grid, int row, int column, vec3_t point, float loderror );
 void R_FreeSurfaceGridMesh( srfGridMesh_t *grid );
-
-/*
-============================================================
-
-MARKERS, POLYGON PROJECTION ON WORLD POLYGONS
-
-============================================================
-*/
-
-int R_MarkFragments( int numPoints, const vec3_t *points, const vec3_t projection,
-				   int maxPoints, vec3_t pointBuffer, int maxFragments, markFragment_t *fragmentBuffer );
-
 
 
 
@@ -1011,13 +937,6 @@ typedef struct {
 	int		commandId;
 } drawBufferCommand_t;
 
-typedef struct {
-	int		commandId;
-	image_t	*image;
-	int		width;
-	int		height;
-	void	*data;
-} subImageCommand_t;
 
 typedef struct {
 	int		commandId;
@@ -1043,7 +962,6 @@ typedef struct {
 	drawSurf_t *drawSurfs;
 	int		numDrawSurfs;
 } drawSurfsCommand_t;
-
 
 
 typedef enum {
@@ -1076,7 +994,6 @@ void RB_ExecuteRenderCommands( const void *data );
 
 void R_IssueRenderCommands( qboolean runPerformanceCounters );
 void FixRenderCommandList( int newShader );
-
 void R_AddDrawSurfCmd( drawSurf_t *drawSurfs, int numDrawSurfs );
 
 
@@ -1088,42 +1005,36 @@ SCENE GENERATION
 ============================================================
 */
 
-void	RE_UploadCinematic (int w, int h, int cols, int rows, const byte *data, int client, qboolean dirty);
-
-void	RE_BeginFrame( void );
-void	RE_BeginRegistration( glconfig_t *glconfig );
-void	RE_LoadWorldMap( const char *mapname );
-void	RE_SetWorldVisData( const byte *vis );
-
-qhandle_t	RE_RegisterSkin( const char *name );
-void		RE_Shutdown( qboolean destroyWindow );
-
-void RE_ClearScene( void );
-void RE_AddRefEntityToScene( const refEntity_t *ent );
-void RE_AddPolyToScene( qhandle_t hShader , int numVerts, const polyVert_t *verts, int num );
-void RE_AddLightToScene( const vec3_t org, float intensity, float r, float g, float b );
-void RE_AddAdditiveLightToScene( const vec3_t org, float intensity, float r, float g, float b );
-void RE_RenderScene( const refdef_t *fd );
-
-void RE_SetColor( const float *rgba );
-void RE_StretchPic ( float x, float y, float w, float h, 
-					  float s1, float t1, float s2, float t2, qhandle_t hShader );
-void RE_EndFrame( int *frontEndMsec, int *backEndMsec );
-void RE_RegisterFont(const char *fontName, int pointSize, fontInfo_t *font);
 
 // font stuff
 void R_InitFreeType(void);
 void R_DoneFreeType(void);
 
 
-void RE_StretchRaw (int x, int y, int w, int h, int cols, int rows, const unsigned char *data, int client, qboolean dirty);
-int	R_LerpTag( orientation_t *tag, qhandle_t handle, int startFrame, int endFrame, float frac, const char *tagName );
-void R_ModelBounds( qhandle_t handle, vec3_t mins, vec3_t maxs );
 extern void (*rb_surfaceTable[SF_NUM_SURFACE_TYPES])(void *);
 
 extern shaderCommands_t	tess;
 
 
+// ========================================
+// ========================================
+void RE_RemapShader(const char *oldShader, const char *newShader, const char *timeOffset);
+qboolean RE_GetEntityToken( char *buffer, int size );
+int	RE_LerpTag( orientation_t *tag, qhandle_t handle, int startFrame, int endFrame, float frac, const char *tagName );
+qboolean RE_inPVS( const vec3_t p1, const vec3_t p2 );
+int RE_LightForPoint( vec3_t point, vec3_t ambientLight, vec3_t directedLight, vec3_t lightDir );
+void RE_ModelBounds( qhandle_t handle, vec3_t mins, vec3_t maxs );
+/*
+============================================================
 
+MARKERS, POLYGON PROJECTION ON WORLD POLYGONS
 
+============================================================
+*/
+
+int RE_MarkFragments( int numPoints, const vec3_t *points, const vec3_t projection,
+				   int maxPoints, vec3_t pointBuffer, int maxFragments, markFragment_t *fragmentBuffer );
+void RE_ClearScene( void );
+void RE_UploadCinematic (int w, int h, int cols, int rows, const byte *data, int client, qboolean dirty);
+void RE_StretchPic ( float x, float y, float w, float h, float s1, float t1, float s2, float t2, qhandle_t hShader );
 #endif //TR_LOCAL_H

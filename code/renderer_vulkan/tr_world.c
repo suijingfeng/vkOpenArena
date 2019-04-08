@@ -23,6 +23,7 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #include "tr_globals.h"
 #include "tr_cvar.h"
 #include "../renderercommon/ref_import.h"
+#include "tr_light.h"
 
 /*
 =================
@@ -537,12 +538,8 @@ static const byte *R_ClusterPVS (int cluster) {
 	return tr.world->vis + cluster * tr.world->clusterBytes;
 }
 
-/*
-=================
-R_inPVS
-=================
-*/
-qboolean R_inPVS( const vec3_t p1, const vec3_t p2 ) {
+
+qboolean RE_inPVS( const vec3_t p1, const vec3_t p2 ) {
 	mnode_t *leaf;
 	byte	*vis;
 

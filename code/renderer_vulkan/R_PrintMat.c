@@ -37,9 +37,8 @@ void printMat3x3f(const char* name, const float src[3][3])
 
 void printMat4x4f(const char* name, const float src[16])
 {
-    ri.Printf(PRINT_ALL, 
-        "\n float %s[16] = {%f, %f, %f, %f, %f, %f, %f, %f, %f, %f, %f, %f, %f, %f, %f, %f};\n",
-        name, src[0], src[1], src[2], src[3], src[4], src[5], src[6], src[7], 
+    ri.Printf(PRINT_ALL, "\n float %s[16] = {\n %f, %f, %f, %f,\n %f, %f, %f, %f, \n %f, %f, %f, %f, \n %f, %f, %f, %f};\n", name, 
+        src[0], src[1], src[2], src[3], src[4], src[5], src[6], src[7], 
         src[8], src[9], src[10], src[11], src[12], src[13], src[14], src[15] );
 }
 

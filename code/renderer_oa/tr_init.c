@@ -219,24 +219,12 @@ static qboolean GLimp_GetProcAddresses( void )
 
     // get our config strings
 
-    strcpy( glConfig.version_string, pStr);
-    glConfig.version_string[strlen(pStr)+1] = 0;
-	ri.Printf( PRINT_ALL, "GL_VERSION: %s\n", pStr);
-
-    pStr = (char *) qglGetString(GL_VENDOR);
-    strcpy(glConfig.vendor_string, pStr);
-    glConfig.renderer_string[strlen(pStr)+1] = 0;
-	ri.Printf( PRINT_ALL, "GL_VENDOR: %s\n", pStr);
-
-    pStr = (char *) qglGetString(GL_RENDERER);
-    strcpy(glConfig.renderer_string, pStr);
-    glConfig.renderer_string[strlen(pStr)+1] = 0;
-	ri.Printf( PRINT_ALL, "GL_RENDERER: %s\n", pStr);
-
-    pStr = (char *)qglGetString(GL_EXTENSIONS);
-    strcpy(glConfig.extensions_string, pStr);
-    glConfig.extensions_string[strlen(pStr)+1] = 0;
-	ri.Printf( PRINT_ALL, "GL_EXTENSIONS: %s\n", pStr);
+    Q_strncpyz( glConfig.vendor_string, (char *) qglGetString (GL_VENDOR), sizeof( glConfig.vendor_string ) );
+    Q_strncpyz( glConfig.renderer_string, (char *) qglGetString (GL_RENDERER), sizeof( glConfig.renderer_string ) );
+    if (*glConfig.renderer_string && glConfig.renderer_string[strlen(glConfig.renderer_string) - 1] == '\n')
+        glConfig.renderer_string[strlen(glConfig.renderer_string) - 1] = 0;
+    Q_strncpyz( glConfig.version_string, (char *) qglGetString (GL_VERSION), sizeof( glConfig.version_string ) );
+    Q_strncpyz( glConfig.extensions_string, (char *)qglGetString(GL_EXTENSIONS), sizeof( glConfig.extensions_string ) );
 
 	ri.Printf( PRINT_ALL,  "\n...Initializing OpenGL extensions\n" );
 
@@ -1660,3 +1648,33 @@ refexport_t* GetRefAPI(int apiVersion, refimport_t *rimp)
 
 	return &re;
 }
+
+#ifdef USE_RENDERER_DLOPEN
+
+void QDECL Com_Printf( const char *msg, ... )
+{
+	va_list         argptr;
+	char            text[1024];
+
+	va_start(argptr, msg);
+	Q_vsnprintf(text, sizeof(text), msg, argptr);
+	va_end(argptr);
+
+	ri.Printf(PRINT_ALL, "%s", text);
+}
+
+void QDECL Com_Error( int level, const char *error, ... )
+{
+	va_list         argptr;
+	char            text[1024];
+
+	va_start(argptr, error);
+	Q_vsnprintf(text, sizeof(text), error, argptr);
+	va_end(argptr);
+
+	ri.Error(level, "%s", text);
+}
+
+#endif
+
+

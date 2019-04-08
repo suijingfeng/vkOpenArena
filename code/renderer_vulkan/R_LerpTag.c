@@ -1,6 +1,5 @@
 #include "tr_local.h"
 #include "tr_model.h"
-#include "R_LerpTag.h"
 #include "../renderercommon/ref_import.h"
 
 static md3Tag_t *R_GetTag( md3Header_t *mod, int frame, const char *tagName ) {
@@ -130,11 +129,9 @@ static int R_IQMLerpTag( orientation_t *tag, iqmData_t *data,
 }
 
 
-int R_LerpTag( orientation_t *tag, qhandle_t handle, int startFrame, int endFrame, 
+int RE_LerpTag( orientation_t *tag, qhandle_t handle, int startFrame, int endFrame, 
 					 float frac, const char *tagName )
 {
-
-    // ri.Printf(PRINT_ALL, "R_LerpTag\n");
 
 	md3Tag_t	*start, *end;
 	md3Tag_t	start_space, end_space;

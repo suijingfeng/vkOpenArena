@@ -29,20 +29,21 @@ struct StagingBuffer_t
     VkDeviceMemory mappableMem;
 };
 
-struct deviceLocalMemory_t {
-    // One large device device local memory allocation, assigned to multiple images
-    struct ImageChunk_t {
-        VkDeviceMemory block;
-        uint32_t Used;
-        // uint32_t typeIndex;
-    } Chunks[8];
-
-    uint32_t Index; // number of chunks used
+struct ImageChunk_t {
+    VkDeviceMemory block;
+    uint32_t Used;
+    // uint32_t typeIndex;
 };
 
 
-struct StagingBuffer_t StagBuf;
-struct deviceLocalMemory_t devMemImg;
+struct deviceLocalMemory_t {
+    // One large device device local memory allocation, assigned to multiple images
+	struct ImageChunk_t Chunks[8];
+	uint32_t Index; // number of chunks used
+};
+
+static struct StagingBuffer_t StagBuf;
+static struct deviceLocalMemory_t devMemImg;
 
 void gpuMemUsageInfo_f(void)
 {
@@ -125,7 +126,6 @@ static void vk_createStagingBuffer(uint32_t size)
         ri.Printf(PRINT_ALL, " Stagging buffer alignment: %ld, memoryTypeBits: 0x%x, Type Index: %d. \n",
             memory_requirements.alignment, memory_requirements.memoryTypeBits, alloc_info.memoryTypeIndex);
     }
-
 }
 
 
@@ -136,11 +136,13 @@ static void vk_destroy_staging_buffer(void)
     if (StagBuf.buff != VK_NULL_HANDLE)
     {
         qvkDestroyBuffer(vk.device, StagBuf.buff, NULL);
+        StagBuf.buff = VK_NULL_HANDLE;
     }
     
     if (StagBuf.mappableMem != VK_NULL_HANDLE)
     {
         qvkFreeMemory(vk.device, StagBuf.mappableMem, NULL);
+		StagBuf.mappableMem = VK_NULL_HANDLE;
     }
 
     memset(&StagBuf, 0, sizeof(StagBuf));
@@ -716,7 +718,13 @@ image_t* R_FindImageFile(const char *name, VkBool32 mipmap, VkBool32 allowPicmip
     //
     uint32_t width = 0, height = 0;
     unsigned char* pic = NULL;
-    R_LoadImage2( name, &pic, &width, &height );
+    
+    if(r_loadImgAPI->integer)
+        R_LoadImage2( name, &pic, &width, &height );
+    else
+        R_LoadImage( name, &pic, &width, &height );
+    
+
     if (pic == NULL)
     {
         ri.Printf( PRINT_WARNING, "R_FindImageFile: Fail loading %s the from disk\n", name);
@@ -754,13 +762,8 @@ void RE_UploadCinematic (int w, int h, int cols, int rows, const unsigned char *
         
         vk_createImageAndBindWithMemory(prtImage);
 
-        //vk_createImageView(prtImage->handle, &prtImage->view);
-        //vk_createDescriptorSet(prtImage->view , vk_find_sampler(0, 0), &prtImage->descriptor_set);
-        // vk_find_sampler(0, 0)
         vk_createImageViewAndDescriptorSet(prtImage);
-        //vk_find_sampler(isMipMap, glWrapClampMode == GL_REPEAT)
 
-        // vk_uploadSingleImage(prtImage->handle, cols, rows, data);
 
         VkBufferImageCopy region;
         region.bufferOffset = 0;
@@ -994,7 +997,7 @@ void R_InitImages( void )
 }
 
 
-static void R_DestroySingleImage( image_t* pImg )
+static void vk_destroySingleImage( image_t* pImg )
 {
 
    	ri.Printf(PRINT_ALL, " Destroy Image: %s \n", pImg->imgName); 
@@ -1011,7 +1014,6 @@ static void R_DestroySingleImage( image_t* pImg )
         qvkDestroyImage(vk.device, pImg->handle, NULL);
         pImg->handle = VK_NULL_HANDLE;
     }
-
 }
 
 
@@ -1023,7 +1025,7 @@ void vk_destroyImageRes(void)
 
 	for (i = 0; i < tr.numImages; i++)
 	{
-        R_DestroySingleImage(tr.images[i]);
+        vk_destroySingleImage(tr.images[i]);
 	}
 
     for (i = 0; i < devMemImg.Index; i++)
@@ -1031,6 +1033,7 @@ void vk_destroyImageRes(void)
         qvkFreeMemory(vk.device, devMemImg.Chunks[i].block, NULL);
         devMemImg.Chunks[i].Used = 0;
     }
+
     devMemImg.Index = 0;
 
 

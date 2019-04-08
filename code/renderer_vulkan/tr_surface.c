@@ -21,14 +21,13 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 */
 // tr_surf.c
 #include "tr_local.h"
-#include "RB_SurfaceAnim.h"
 #include "tr_flares.h"
 #include "tr_globals.h"
 #include "vk_image.h"
 #include "tr_cvar.h"
-#include "../renderercommon/ref_import.h"
 #include "tr_backend.h"
-
+#include "../renderercommon/ref_import.h"
+#include "RB_SurfaceAnim.h"
 /*
 
   THIS ENTIRE FILE IS BACK END

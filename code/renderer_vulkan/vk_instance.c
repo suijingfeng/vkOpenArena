@@ -210,7 +210,8 @@ static void vk_createInstance(void)
     // for new commands, are defined in the Khronos-supplied vulkan_core.h 
     // together with the core API. However, commands defined by extensions may
     // not be available for static linking - in which case function pointers to
-    // these commands should be queried at runtime as described in Command Function Pointers.
+    // these commands should be queried at runtime as described in Command Function
+    // Pointers.
     // Extensions may be provided by layers as well as by a Vulkan implementation.
     //
     // check extensions availability

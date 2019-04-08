@@ -1,13 +1,10 @@
-/*
- * =====================================================================================
- *    Description:  Loads any of the supported image types into a cannonical 32 bit format.
- *        Created:  2018年09月23日 22时13分19秒
- *       Compiler:  gcc
- * =====================================================================================
- */
-
 #include "tr_local.h"
 #include "../renderercommon/image_loader.h"
+#include "image_loader.h"
+
+// Description:  Loads any of the supported image types into
+// a cannonical 32 bit format.
+
 
 typedef struct
 {

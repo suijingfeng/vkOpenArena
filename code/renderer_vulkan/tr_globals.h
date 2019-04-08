@@ -4,6 +4,9 @@
 #include "tr_local.h"
 #include "tr_model.h"
 
+// 12 bits, see QSORT_SHADERNUM_SHIFT
+#define	MAX_SHADERS				16384
+
 /*
 ** trGlobals_t 
 **
@@ -90,6 +93,8 @@ typedef struct {
 	float					sawToothTable[FUNCTABLE_SIZE];
 	float					inverseSawToothTable[FUNCTABLE_SIZE];
 } trGlobals_t;
+
+
 
 extern trGlobals_t	tr;
 

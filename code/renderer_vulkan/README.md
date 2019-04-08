@@ -1,8 +1,6 @@
 # vulkan backend info
 * codes in this dir is "borrow" from https://github.com/kennyalive/Quake-III-Arena-Kenny-Edition, I convert cpp to c so that it can compile.
 
-* refcode copied from other project(vkQuake, vkQuake2), just for reference, should be cleaned in the future.
-
 * vulkan forder is copied form vulkan sdk, not all items in it is used, it need clean.
 
 * I am a naive programmer, need help, doc and instructions.
@@ -82,3 +80,69 @@ initialization functions, resource management functions and rendering setup func
 * vk\_begin\_frame/vk\_end\_frame : frame setup.
 
 * vk\_read\_pixels : takes a screenshot.
+
+
+### about turn the intensity/gamma of the drawing wondow
+
+* use r\_gamma in the pulldown window, which nonlinearly correct the image before the uploading to GPU.
+`\r_gamma 1.5` then `vid_restart`
+
+* you can also use r\_intensity which turn the intensity linearly.
+```
+# 1.5 ~ 2.0 give acceptable result
+$ \r_intensity 1.8
+$ \vid_restart
+```
+
+* but why, because original gamma setting program turn the light by setting entire destop window.
+which works on newer computer on the market 
+but not works on some machine. it is buggy and embarrasing when program abnormal quit or stall.
+
+### new cmd
+
+* pipelineList: list the pipeline we have created;
+* gpuMem: image memmory allocated on GPU;
+* printOR: print the value of backend.or;
+* displayResoList: list of the display resolution you monitor supported
+For example:
+```
+$ \displayResoList 
+
+Mode  0: 320x240
+Mode  1: 400x300
+Mode  2: 512x384
+Mode  3: 640x480 (480p)
+Mode  4: 800x600
+Mode  5: 960x720
+Mode  6: 1024x768
+Mode  7: 1152x864
+Mode  8: 1280x1024
+Mode  9: 1600x1200
+Mode 10: 2048x1536
+Mode 11: 856x480
+Mode 12: 1280x720 (720p)
+Mode 13: 1280x768
+Mode 14: 1280x800
+Mode 15: 1280x960
+Mode 16: 1360x768
+Mode 17: 1366x768
+Mode 18: 1360x1024
+Mode 19: 1400x1050
+Mode 20: 1400x900
+Mode 21: 1600x900
+Mode 22: 1680x1050
+Mode 23: 1920x1080 (1080p)
+Mode 24: 1920x1200
+Mode 25: 1920x1440
+Mode 26: 2560x1080
+Mode 27: 2560x1600
+Mode 28: 3840x2160 (4K)
+
+$ \r_mode 12
+$ \vid_restart
+```
+
+
+
+### TODO:
+* get cpu, gpu, memory usage
