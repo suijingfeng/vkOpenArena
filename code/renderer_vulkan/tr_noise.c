@@ -31,7 +31,7 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 static float s_noise_table[NOISE_SIZE];
 static int s_noise_perm[NOISE_SIZE];
 
-inline static float LerpF(float a, float b, float w )
+static inline float LerpF(float a, float b, float w )
 {
     return ( a + (b - a) * w );
 }
