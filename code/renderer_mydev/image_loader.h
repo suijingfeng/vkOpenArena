@@ -1,7 +1,6 @@
 #ifndef IMAGE_LOADER_H_
 #define IMAGE_LOADER_H_
 
-extern refimport_t ri;
 
 /*
 =============================================================

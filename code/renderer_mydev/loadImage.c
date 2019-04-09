@@ -17,7 +17,7 @@
  */
 
 #include "tr_local.h"
-#include "../renderercommon/image_loader.h"
+#include "image_loader.h"
 
 typedef struct
 {

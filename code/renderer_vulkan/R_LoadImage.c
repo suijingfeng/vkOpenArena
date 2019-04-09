@@ -1,10 +1,10 @@
 #include "tr_local.h"
-#include "../renderercommon/image_loader.h"
 #include "image_loader.h"
 
 // Description:  Loads any of the supported image types into
 // a cannonical 32 bit format.
 
+extern refimport_t ri;
 
 typedef struct
 {
