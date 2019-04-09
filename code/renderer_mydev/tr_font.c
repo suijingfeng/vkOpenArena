@@ -69,8 +69,9 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
 
 #include "../renderercommon/tr_common.h"
-#include "../renderercommon/ref_import.h"
-#include "tr_cvar.h"
+// #include "ref_import.h"
+extern	refimport_t		ri;
+
 
 #ifdef BUILD_FREETYPE
 #include <ft2build.h>
@@ -90,6 +91,8 @@ FT_Library ftLibrary = NULL;
 #define MAX_FONTS 6
 static int registeredFontCount = 0;
 static fontInfo_t registeredFont[MAX_FONTS];
+
+static cvar_t *r_saveFontData;
 
 
 #ifdef BUILD_FREETYPE
@@ -360,6 +363,7 @@ void RE_RegisterFont(const char *fontName, int pointSize, fontInfo_t *font)
 		pointSize = 12;
 	}
 
+	R_IssuePendingRenderCommands();
 
 	if (registeredFontCount >= MAX_FONTS) {
 		ri.Printf(PRINT_WARNING, "RE_RegisterFont: Too many fonts registered already.\n");
@@ -374,9 +378,9 @@ void RE_RegisterFont(const char *fontName, int pointSize, fontInfo_t *font)
 		}
 	}
 
-	int len = ri.FS_ReadFile(name, NULL);
+	int len = ri.R_ReadFile(name, NULL);
 	if (len == sizeof(fontInfo_t)) {
-		ri.FS_ReadFile(name, &faceData);
+		ri.R_ReadFile(name, &faceData);
 		fdOffset = 0;
 		fdFile = (unsigned char*)faceData;
 		for(i=0; i<GLYPHS_PER_FONT; i++) {
@@ -416,7 +420,7 @@ void RE_RegisterFont(const char *fontName, int pointSize, fontInfo_t *font)
 		return;
 	}
 
-	len = ri.FS_ReadFile(fontName, &faceData);
+	len = ri.R_ReadFile(fontName, &faceData);
 	if (len <= 0) {
 		ri.Printf(PRINT_WARNING, "RE_RegisterFont: Unable to read font file '%s'\n", fontName);
 		return;
@@ -500,10 +504,7 @@ void RE_RegisterFont(const char *fontName, int pointSize, fontInfo_t *font)
 				WriteTGA(name, imageBuff, 256, 256);
 			}
 
-			image = R_CreateImage(name, imageBuff, 256, 256, qfalse, qfalse, GL_CLAMP);
-
-            ri.Printf(PRINT_WARNING, "RE_RegisterFont: ri.Malloc failure during output image creation.\n");
-
+			image = R_CreateImage(name, imageBuff, 256, 256, IMGTYPE_COLORALPHA, IMGFLAG_CLAMPTOEDGE, 0 );
 			h = RE_RegisterShaderFromImage(name, LIGHTMAP_2D, image, qfalse);
 			for (j = lastStart; j < i; j++) {
 				font->glyphs[j].glyph = h;
@@ -556,8 +557,6 @@ void R_InitFreeType(void)
 }
 
 
-
-
 void R_DoneFreeType(void) {
 #ifdef BUILD_FREETYPE
 	if (ftLibrary) {
@@ -566,6 +565,5 @@ void R_DoneFreeType(void) {
 	}
 #endif
 	registeredFontCount = 0;
-
 }
 
