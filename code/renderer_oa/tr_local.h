@@ -34,7 +34,7 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #include "../renderercommon/qgl.h"
 #include "../renderercommon/tr_public.h"
 #include "../renderercommon/tr_common.h"
-#include "../renderercommon/image.h"
+#include "image.h"
 
 #define GLE(ret, name, ...) extern name##proc * qgl##name;
 QGL_1_1_PROCS;
