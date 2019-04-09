@@ -2262,7 +2262,7 @@ void R_LoadImage( const char *name, byte **pic, int *width, int *height, GLenum 
 
 	Q_strncpyz( localName, name, MAX_QPATH );
 
-	const char* ext = getExtension( localName );
+	const char* ext = R_GetExtension( localName );
 
 	// If compressed textures are enabled, try loading a DDS first, it'll load fastest
 	if (r_ext_compressed_textures->integer)

@@ -287,7 +287,7 @@ qhandle_t RE_RegisterModel( const char *name ) {
 	//
 	Q_strncpyz( localName, name, MAX_QPATH );
 
-	const char* ext = getExtension( localName );
+	const char* ext = R_GetExtension( localName );
 
 	if( *ext )
 	{

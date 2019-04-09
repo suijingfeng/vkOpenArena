@@ -136,7 +136,7 @@ Q: How to check that Vulkan backend is really active ?
 \vkinfo
 ```
 Type \vkinfo in the console reports information about active rendering backend.
-It will report something like the following:
+It will report something as following:
 
 ```
 Active 3D API: Vulkan
@@ -158,7 +158,9 @@ Vk instance extensions:
 Image chuck memory(device local) used: 8 M 
 
 ```
+You can also get the information from the UI: SETUP >> SYSTEM >> DRIVER INFO
 
+![](https://github.com/suijingfeng/vkOpenArena/blob/master/doc/driver_info.jpg)
 
 # OpenArena gamecode
 

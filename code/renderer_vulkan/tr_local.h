@@ -28,7 +28,7 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #include "../qcommon/qfiles.h"
 
 #include "../renderercommon/tr_types.h"
-#include "../renderercommon/tr_common.h"
+#include "tr_common.h"
 #include "tr_image.h"
 
 #include "VKimpl.h"

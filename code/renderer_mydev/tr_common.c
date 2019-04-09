@@ -63,7 +63,7 @@ void R_StripExtension(const char *in, char *out, int destsize)
 }
 
 
-
+/*
 char* getExtension( const char *name )
 {
 	char* dot = strrchr(name, '.');
@@ -74,7 +74,7 @@ char* getExtension( const char *name )
 	else
 		return "";
 }
-
+*/
 
 
 void VectorCross( const vec3_t v1, const vec3_t v2, vec3_t cross )
