@@ -51,12 +51,6 @@ void GLimp_DestroyWindow(void);
 
 void* GLimp_GetProcAddress(const char* fun);
 
-void* GLimp_RendererSleep( void );
-
-qboolean GLimp_SpawnRenderThread( void (*function)( void ) );
-
-void GLimp_WakeRenderer( void *data );
-void GLimp_FrontEndSleep( void );
 
 /////////////////////////////////////////////
 
@@ -68,7 +62,7 @@ typedef unsigned int glIndex_t;
 // everything that is needed by the backend needs
 // to be double buffered to allow it to run in
 // parallel on a dual cpu machine
-#define	SMP_FRAMES		2
+#define	SMP_FRAMES		1
 
 // 12 bits
 // see QSORT_SHADERNUM_SHIFT
@@ -925,7 +919,6 @@ typedef struct {
 // all state modified by the back end is seperated
 // from the front end state
 typedef struct {
-	int			smpFrame;
 	trRefdef_t	refdef;
 	viewParms_t	viewParms;
 	orientationr_t	or;
@@ -1030,16 +1023,6 @@ extern backEndState_t	backEnd;
 extern trGlobals_t	tr;
 extern glconfig_t	glConfig;		// outside of TR since it shouldn't be cleared during ref re-init
 extern glstate_t	glState;		// outside of TR since it shouldn't be cleared during ref re-init
-
-// VULKAN
-extern struct Vk_Instance	vk;				// shouldn't be cleared during ref re-init
-extern struct Vk_World		vk_world;		// this data is cleared during ref re-init
-
-
-//
-// cvars
-//
-//extern cvar_t	*r_renderAPI;			// 3D API to use: 0 - OpenGL, 1 - Vulkan, 2 - DX12
 
 extern cvar_t	*r_railWidth;
 extern cvar_t	*r_railCoreWidth;

@@ -1054,8 +1054,6 @@ void R_Init( void ) {
 	backEndData[0]->polys = (srfPoly_t *) ((char *) ptr + sizeof( *backEndData[0] ));
 	backEndData[0]->polyVerts = (polyVert_t *) ((char *) ptr + sizeof( *backEndData[0] ) + sizeof(srfPoly_t) * max_polys);
 
-	backEndData[1] = NULL;
-
 	R_ToggleSmpFrame();
 
 	InitRenderAPI();
