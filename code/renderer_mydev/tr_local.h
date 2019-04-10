@@ -954,8 +954,6 @@ typedef struct {
 	int						viewCount;		// incremented every view (twice a scene if portaled)
 											// and every R_MarkFragments call
 
-	int						smpFrame;		// toggles from 0 to 1 every endFrame
-
 	qboolean				worldMapLoaded;
 	world_t					*world;
 
@@ -1112,7 +1110,6 @@ extern	cvar_t	*r_portalOnly;
 
 extern	cvar_t	*r_subdivisions;
 extern	cvar_t	*r_lodCurveError;
-extern	cvar_t	*r_smp;
 extern	cvar_t	*r_showSmp;
 extern	cvar_t	*r_skipBackEnd;
 
@@ -1460,7 +1457,6 @@ RENDERER BACK END FUNCTIONS
 =============================================================
 */
 
-void RB_RenderThread( void );
 void RB_ExecuteRenderCommands( const void *data );
 
 /*
@@ -1569,14 +1565,9 @@ extern	backEndData_t	*backEndData[SMP_FRAMES];	// the second one may not be allo
 
 extern	volatile renderCommandList_t	*renderCommandList;
 
-extern	volatile qboolean	renderThreadActive;
-
 
 void *R_GetCommandBuffer( int bytes );
 void RB_ExecuteRenderCommands( const void *data );
-
-void R_InitCommandBuffers( void );
-void R_ShutdownCommandBuffers( void );
 
 void R_SyncRenderThread( void );
 

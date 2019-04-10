@@ -39,7 +39,6 @@ cvar_t	*r_verbose;
 
 cvar_t	*r_znear;
 
-cvar_t	*r_smp;
 cvar_t	*r_showSmp;
 cvar_t	*r_skipBackEnd;
 
@@ -266,7 +265,7 @@ static void InitRenderAPI( void )
 	}
 
 	// init command buffers and SMP
-	R_InitCommandBuffers();
+    glConfig.smpActive = qfalse;
 
 	// print info
 	GfxInfo_f();
@@ -824,11 +823,6 @@ void GfxInfo_f( void )
     ri.Printf( PRINT_ALL, "texenv add: %s\n", enablestrings[glConfig.textureEnvAddAvailable != 0] );
     ri.Printf( PRINT_ALL, "compressed textures: %s\n", enablestrings[glConfig.textureCompression!=TC_NONE] );
 
-    if (glConfig.smpActive) {
-        ri.Printf( PRINT_ALL, "Using dual processor acceleration\n" );
-    }
-
-
 	//
 	// Info that doesn't depend on r_renderAPI
 	//
@@ -877,7 +871,6 @@ void R_Register( void )
 	r_vertexLight = ri.Cvar_Get( "r_vertexLight", "0", CVAR_ARCHIVE | CVAR_LATCH );
 	r_uiFullScreen = ri.Cvar_Get( "r_uifullscreen", "0", 0);
 	r_subdivisions = ri.Cvar_Get ("r_subdivisions", "4", CVAR_ARCHIVE | CVAR_LATCH);
-	r_smp = ri.Cvar_Get( "r_smp", "0", CVAR_ARCHIVE | CVAR_LATCH);
 
 	//
 	// temporary latched variables that can only change over a restart
@@ -1060,14 +1053,9 @@ void R_Init( void ) {
 	backEndData[0] = (backEndData_t *) ptr;
 	backEndData[0]->polys = (srfPoly_t *) ((char *) ptr + sizeof( *backEndData[0] ));
 	backEndData[0]->polyVerts = (polyVert_t *) ((char *) ptr + sizeof( *backEndData[0] ) + sizeof(srfPoly_t) * max_polys);
-	if ( r_smp->integer ) {
-		ptr = (byte*) ri.Hunk_Alloc( sizeof( *backEndData[1] ) + sizeof(srfPoly_t) * max_polys + sizeof(polyVert_t) * max_polyverts, h_low);
-		backEndData[1] = (backEndData_t *) ptr;
-		backEndData[1]->polys = (srfPoly_t *) ((char *) ptr + sizeof( *backEndData[1] ));
-		backEndData[1]->polyVerts = (polyVert_t *) ((char *) ptr + sizeof( *backEndData[1] ) + sizeof(srfPoly_t) * max_polys);
-	} else {
-		backEndData[1] = NULL;
-	}
+
+	backEndData[1] = NULL;
+
 	R_ToggleSmpFrame();
 
 	InitRenderAPI();
@@ -1112,7 +1100,6 @@ void RE_Shutdown( qboolean destroyWindow ) {
     
     if ( tr.registered ) {
 		R_SyncRenderThread();
-		R_ShutdownCommandBuffers();
 		R_DeleteTextures();
 	}
 

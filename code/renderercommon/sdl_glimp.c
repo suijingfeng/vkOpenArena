@@ -667,23 +667,3 @@ void GLimp_SetGamma( unsigned char red[256], unsigned char green[256], unsigned 
 		ri.Printf(PRINT_ALL, "SDL_SetWindowGammaRamp() failed: %s\n", SDL_GetError() );
 	}
 }
-
-
-
-
-
-
-
-//////////////////////////////////////////////////////
-
-void GLimp_RenderThreadWrapper( void *stub ) {}
-qboolean GLimp_SpawnRenderThread( void (*function)( void ) )
-{
-	ri.Printf(PRINT_ALL, "ERROR: SMP support was disabled at compile time\n");
-  return qfalse;
-}
-void *GLimp_RendererSleep( void ) {
-  return NULL;
-}
-void GLimp_FrontEndSleep( void ) {}
-void GLimp_WakeRenderer( void *data ) {}

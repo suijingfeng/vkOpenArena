@@ -3273,24 +3273,7 @@ void CL_InitRef(void)
 	ri.Sys_SetEnv = Sys_SetEnv;
 	ri.Sys_LowPhysicalMemory = Sys_LowPhysicalMemory;
 
-/*  
-    ri.GLimpEndFrame = GLimp_EndFrame;
-    ri.GLimpInit = GLimp_Init;
-    ri.GLimpShutdown = GLimp_Shutdown;
-    ri.GLimpMinimize = GLimp_Minimize;
-    ri.GLimpSetGamma = GLimp_SetGamma;
-
-    ri.GLimpDeleteCtx = GLimp_DeleteGLContext;
-    ri.GLimpDestroyWin = GLimp_DestroyWindow;
-    ri.GLimpGetProcAddress = GLimp_GetProcAddress;
-    ri.GLimpLogComment = GLimp_LogComment;
-    ri.GLimpRendererSleep = GLimp_RendererSleep;
-    ri.GLimpSpawnRenderThread = GLimp_SpawnRenderThread;
-    ri.GLimpWakeRenderer = GLimp_WakeRenderer;
-    ri.GLimpFrontEndSleep = GLimp_FrontEndSleep;
-
-    ri.GLimpGetProcAddress = GLimp_GetProcAddress;
-*/    
+ 
     // 
 	ri.IN_Init = IN_Init;
 	ri.IN_Shutdown = IN_Shutdown;

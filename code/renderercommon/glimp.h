@@ -22,10 +22,4 @@ void GLimp_DestroyWindow(void);
 
 void* GLimp_GetProcAddress(const char* fun);
 
-void* GLimp_RendererSleep( void );
-
-qboolean GLimp_SpawnRenderThread( void (*function)( void ) );
-
-void GLimp_WakeRenderer( void *data );
-void GLimp_FrontEndSleep( void );
 #endif
