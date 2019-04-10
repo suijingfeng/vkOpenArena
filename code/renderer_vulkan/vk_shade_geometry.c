@@ -1151,12 +1151,8 @@ void RB_StageIteratorGeneric( void )
 
     uint32_t stage = 0;
 
-	for ( stage = 0; stage < MAX_SHADER_STAGES; ++stage )
+	for ( stage = 0; stage < MAX_SHADER_STAGES && (NULL != tess.xstages[stage]); ++stage )
 	{
-		if ( NULL == tess.xstages[stage])
-		{
-			break;
-		}
 
 		ComputeColors( tess.xstages[stage] );
 		ComputeTexCoords( tess.xstages[stage] );
