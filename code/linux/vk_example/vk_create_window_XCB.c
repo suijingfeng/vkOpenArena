@@ -30,9 +30,7 @@ typedef uint32_t xcb_gcontext_t;
 static xcb_window_t window;
 static xcb_screen_t *screen;
 
-// To create a VkSurfaceKHR object for an X11 window,
-// using the XCB client-side library
-static PFN_vkCreateXcbSurfaceKHR qvkCreateXcbSurfaceKHR;
+
 
 
 static unsigned int GetDesktopWidth(void)
@@ -325,23 +323,7 @@ void vk_destroyWindow(void)
 }
 
 
-void vk_createSurfaceImpl(void)
-{
-    qvkCreateXcbSurfaceKHR = (PFN_vkCreateXcbSurfaceKHR)qvkGetInstanceProcAddr(vk.instance, "vkCreateXcbSurfaceKHR");
-    if( qvkCreateXcbSurfaceKHR == NULL)
-    {
-        ri.Error(ERR_FATAL, "Failed to find entrypoint qvkCreateXcbSurfaceKHR\n"); 
-    }
-   
-    VkXcbSurfaceCreateInfoKHR createInfo;
-    createInfo.sType = VK_STRUCTURE_TYPE_XCB_SURFACE_CREATE_INFO_KHR;
-    createInfo.pNext = NULL;
-    createInfo.flags = 0;
-    createInfo.connection = connection;
-    createInfo.window = window;
 
-    qvkCreateXcbSurfaceKHR(vk.instance, &createInfo, NULL, &vk.surface);
-}
 
 
 /*

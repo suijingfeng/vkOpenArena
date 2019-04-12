@@ -1,6 +1,8 @@
 #include "VKimpl.h"
 #include <stdio.h>
 #include <dlfcn.h>
+#include "qvk.h"
+
 
 #define Sys_LoadLibrary(f)      dlopen(f,RTLD_NOW)
 #define Sys_UnloadLibrary(h)    dlclose(h)
@@ -22,7 +24,7 @@ void vk_loadLib(void)
     const char* dll_name = "libvulkan.so.1";
 #endif
 
-    printf("...calling LoadLibrary('%s')\n", dll_name);
+    printf("Loading Library: '%s'\n", dll_name);
     
     pVulkanLib_h = Sys_LoadLibrary(dll_name);
 
@@ -40,4 +42,16 @@ void vk_unLoadLib(void)
     printf(" Vulkan library unloaded. \n");
 
     pVulkanLib_h = NULL;
+}
+
+
+void vk_getInstanceProcAddrImpl(void)
+{
+    qvkGetInstanceProcAddr = (PFN_vkGetInstanceProcAddr)Sys_LoadFunction(pVulkanLib_h, "vkGetInstanceProcAddr");
+    if( qvkGetInstanceProcAddr == NULL)
+    {
+        printf("Failed to find entrypoint vkGetInstanceProcAddr\n"); 
+    }
+    
+    printf(" Get instance proc address. (using XCB)\n");
 }
