@@ -5,10 +5,9 @@
 #include <stdio.h>
 
 
-
 // Initializes VK_Instance structure.
-void vk_getProcAddress(void);
-void vk_clearProcAddress(void);
+void vk_createInstanceAndDevice(void);
+void vk_destroyInstanceAndDevice(void);
 
 #ifndef NDEDBG
 
@@ -27,8 +26,6 @@ const char * cvtResToStr(VkResult result);
 
 #endif
 
-
-#define MAX_SWAPCHAIN_IMAGES    8
 
 // Vk_Instance contains engine-specific vulkan resources that persist entire renderer lifetime.
 // This structure is initialized/deinitialized by vk_initialize/vk_shutdown functions correspondingly.
@@ -66,33 +63,7 @@ struct Vk_Instance {
 	VkDevice device;
 	VkQueue queue;
 
-	VkSwapchainKHR swapchain;
-	uint32_t swapchain_image_count ;
-	VkImage swapchain_images_array[MAX_SWAPCHAIN_IMAGES];
-	VkImageView swapchain_image_views[MAX_SWAPCHAIN_IMAGES];
-	uint32_t idx_swapchain_image;
-
-
-	VkCommandPool command_pool;
-	VkCommandBuffer command_buffer;
-
-	VkImage depth_image;
-	VkDeviceMemory depth_image_memory;
-	VkImageView depth_image_view;
-
-	VkRenderPass render_pass;
-	VkFramebuffer framebuffers[MAX_SWAPCHAIN_IMAGES];
-
-	VkDescriptorPool descriptor_pool;
-	VkDescriptorSetLayout set_layout;
-
-    // Pipeline layout: the uniform and push values referenced by 
-    // the shader that can be updated at draw time
-	VkPipelineLayout pipeline_layout;
-
     VkBool32 isBlitSupported;
-
-    VkBool32 isInitialized;
 
 #ifndef NDEBUG
     VkDebugReportCallbackEXT h_debugCB;

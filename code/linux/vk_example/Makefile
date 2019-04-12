@@ -2,7 +2,7 @@
 target = cube
 
 SRC = cube.c
-SRC2 = main.c vulkanlib.c vk_instance.c
+SRC2 = main.c vulkanlib.c vk_instance.c qvk.c
 
 ifndef CC
   CC=gcc

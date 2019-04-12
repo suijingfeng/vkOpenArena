@@ -33,18 +33,6 @@ static xcb_screen_t *screen;
 
 
 
-static unsigned int GetDesktopWidth(void)
-{
-    // hardcode now;
-    return screen->width_in_pixels;
-}
-
-static unsigned int GetDesktopHeight(void)
-{
-    // hardcode now;
-    return screen->height_in_pixels;
-}
-
 
 static void vk_resize( void )
 {

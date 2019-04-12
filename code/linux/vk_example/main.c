@@ -8,12 +8,19 @@
 #include "vk_instance.h"
 #include "qvk.h"
 
-
 // To create a VkSurfaceKHR object for an X11 window,
 // using the XCB client-side library
 static PFN_vkCreateXcbSurfaceKHR qvkCreateXcbSurfaceKHR;
+
 xcb_connection_t * connection_xcb;
 xcb_drawable_t window_xcb;
+xcb_screen_t * screen;
+
+void GetDesktopResolution_xcb(int * width, int * height)
+{
+    *width = screen->width_in_pixels;
+    *height = screen->height_in_pixels;
+}
 
 
 void vk_createSurfaceImpl(void)
@@ -32,12 +39,14 @@ void vk_createSurfaceImpl(void)
     createInfo.window = window_xcb;
 
     qvkCreateXcbSurfaceKHR(vk.instance, &createInfo, NULL, &vk.surface);
+
+    printf("qvkCreateXcbSurfaceKHR\n"); 
+
 }
 
 
 int main ()
 {
-  xcb_screen_t        *screen;
   xcb_gcontext_t       foreground;
   xcb_generic_event_t *e;
   uint32_t             mask = 0;
@@ -106,45 +115,49 @@ int main ()
 
 
   vk_loadLib();
-  vk_getProcAddress();
+  vk_createInstanceAndDevice();
   
   /* We flush the request */
   xcb_flush (connection_xcb);
 
-  while ((e = xcb_wait_for_event (connection_xcb))) {
-    switch (e->response_type & ~0x80) {
-    case XCB_EXPOSE: {
-      /* We draw the points */
-      xcb_poly_point (connection_xcb, XCB_COORD_MODE_ORIGIN, window_xcb, foreground, 4, points);
+    while ((e = xcb_wait_for_event (connection_xcb)))
+    {
+        switch (e->response_type & ~0x80)
+        {
+            case XCB_EXPOSE:
+            {
+                /* We draw the points */
+                xcb_poly_point (connection_xcb, XCB_COORD_MODE_ORIGIN, window_xcb, foreground, 4, points);
 
-      /* We draw the polygonal line */
-      xcb_poly_line (connection_xcb, XCB_COORD_MODE_PREVIOUS, window_xcb, foreground, 4, polyline);
+                /* We draw the polygonal line */
+                xcb_poly_line (connection_xcb, XCB_COORD_MODE_PREVIOUS, window_xcb, foreground, 4, polyline);
 
-      /* We draw the segements */
-      xcb_poly_segment (connection_xcb, window_xcb, foreground, 2, segments);
+                /* We draw the segements */
+                xcb_poly_segment (connection_xcb, window_xcb, foreground, 2, segments);
 
-      /* We draw the rectangles */
-      xcb_poly_rectangle (connection_xcb, window_xcb, foreground, 2, rectangles);
+                /* We draw the rectangles */
+                xcb_poly_rectangle (connection_xcb, window_xcb, foreground, 2, rectangles);
 
-      /* We draw the arcs */
-      xcb_poly_arc (connection_xcb, window_xcb, foreground, 2, arcs);
+                /* We draw the arcs */
+                xcb_poly_arc (connection_xcb, window_xcb, foreground, 2, arcs);
 
-      /* We flush the request */
-      xcb_flush (connection_xcb);
+                /* We flush the request */
+                xcb_flush (connection_xcb);
 
-      break;
+                break;
+            }
+            default:
+            {
+                /* Unknown event type, ignore it */
+                break;
+            }
+        }
+        /* Free the Generic Event */
+        free (e);
     }
-    default: {
-      /* Unknown event type, ignore it */
-      break;
-    }
-    }
-    /* Free the Generic Event */
-    free (e);
-  }
   
-    vk_clearProcAddress();
+    vk_destroyInstanceAndDevice();
     vk_unLoadLib();
-
+    qvkCreateXcbSurfaceKHR = NULL;
     return 0;
 }

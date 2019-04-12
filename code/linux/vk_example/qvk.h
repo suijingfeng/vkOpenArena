@@ -106,4 +106,10 @@ extern PFN_vkDestroySwapchainKHR						qvkDestroySwapchainKHR;
 extern PFN_vkGetSwapchainImagesKHR						qvkGetSwapchainImagesKHR;
 extern PFN_vkQueuePresentKHR							qvkQueuePresentKHR;
 
+
+void vk_loadDeviceFunctions(void);
+void vk_loadInstanceFunctions(void);
+void vk_clearProcAddress(void);
+
+
 #endif
