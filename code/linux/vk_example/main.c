@@ -40,8 +40,7 @@ void vk_createSurfaceImpl(void)
 
     qvkCreateXcbSurfaceKHR(vk.instance, &createInfo, NULL, &vk.surface);
 
-    printf("qvkCreateXcbSurfaceKHR\n"); 
-
+    printf("qvkCreateXcbSurfaceKHR\n");
 }
 
 

@@ -4,7 +4,7 @@
 #include <assert.h>
 #include "qvk.h"
 #include "vk_instance.h"
-
+#include "vk_validation.h"
 
 //
 // Vulkan API functions used by the renderer.

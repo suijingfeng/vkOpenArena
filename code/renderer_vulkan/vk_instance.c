@@ -131,7 +131,20 @@ VKAPI_ATTR VkBool32 VKAPI_CALL vk_DebugCallback(
         uint64_t object, size_t location, int32_t message_code, 
         const char* layer_prefix, const char* message, void* user_data )
 {
-    ri.Printf(PRINT_WARNING, "%s\n", message);
+
+    switch(flags)
+    {
+        case VK_DEBUG_REPORT_INFORMATION_BIT_EXT:
+            ri.Printf(PRINT_ALL, "INFORMATION: %s\n", message); break;
+        case VK_DEBUG_REPORT_WARNING_BIT_EXT:
+            ri.Printf(PRINT_WARNING, "WARNING: %s\n", message); break;
+        case VK_DEBUG_REPORT_PERFORMANCE_WARNING_BIT_EXT:
+            ri.Printf(PRINT_WARNING, "PERFORMANCE: %s\n", message); break;
+        case VK_DEBUG_REPORT_ERROR_BIT_EXT:
+            ri.Printf(PRINT_WARNING, "ERROR: %s\n", message); break;
+        case VK_DEBUG_REPORT_DEBUG_BIT_EXT:
+            ri.Printf(PRINT_WARNING, "DEBUG: %s\n", message); break;
+    }
 	return VK_FALSE;
 }
 

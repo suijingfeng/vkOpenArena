@@ -2,6 +2,7 @@
 #define VK_INSTANCE_H_
 
 #include "VKimpl.h"
+#include "VKimpl.h"
 #include <stdio.h>
 
 
@@ -9,27 +10,11 @@
 void vk_createInstanceAndDevice(void);
 void vk_destroyInstanceAndDevice(void);
 
-#ifndef NDEDBG
-
-const char * cvtResToStr(VkResult result);
-
-#define VK_CHECK(function_call) { \
-	VkResult result = function_call; \
-	if (result != VK_SUCCESS) \
-		fprintf(stderr, "Vulkan: error %s returned by %s \n", cvtResToStr(result), #function_call); \
-}
-
-#else
-
-#define VK_CHECK(function_call)	\
-	function_call;
-
-#endif
 
 
 // Vk_Instance contains engine-specific vulkan resources that persist entire renderer lifetime.
 // This structure is initialized/deinitialized by vk_initialize/vk_shutdown functions correspondingly.
-struct Vk_Instance {
+struct VkInstance_t {
 	VkInstance instance ;
 	VkPhysicalDevice physical_device;
 
@@ -72,7 +57,7 @@ struct Vk_Instance {
 
 
 
-extern struct Vk_Instance vk;
+extern struct VkInstance_t vk;
 
 
 
