@@ -1,7 +1,9 @@
 # Default target executed when no arguments are given to make.
-target = main
+target = cube
 
 SRC = cube.c
+SRC2 = main.c vulkanlib.c
+
 ifndef CC
   CC=gcc
 endif
@@ -23,7 +25,12 @@ RENDERER_LIBS = $(shell pkg-config --cflags --libs vulkan)
 
 ALL_LIBS = $(XCB_LIBS) $(RENDERER_LIBS) -ldl -lm
 
+all: main cube
+
 main: clean info
+	$(CC) $(CFLAGS) $(SRC2) -o main $(ALL_LIBS)
+
+cube: clean info
 	$(CC) $(CFLAGS) $(SRC) -o $(target) $(ALL_LIBS)
 info:
 	@echo ""
