@@ -1,6 +1,9 @@
 #ifndef VK_VALIDATION_H_
 #define VK_VALIDATION_H_
 
+#include "vk_common.h"
+
+
 #ifndef NDEBUG
 
 #include "VKimpl.h"
@@ -14,16 +17,6 @@ VKAPI_ATTR VkBool32 VKAPI_CALL vk_DebugCallback(
 
 void vk_createDebugCallback( PFN_vkDebugReportCallbackEXT qvkDebugCB);
 
-
-#define VK_CHECK(function_call) { \
-	VkResult result = function_call; \
-	if (result != VK_SUCCESS) \
-		fprintf(stderr, "Vulkan: error %s returned by %s \n", cvtResToStr(result), #function_call); \
-}
-
-#else
-
-#define VK_CHECK(function_call)     function_call;
 
 #endif
 

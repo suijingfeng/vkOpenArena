@@ -8,6 +8,7 @@
 #include "qvk.h"
 #include "vk_validation.h"
 
+
 struct VkInstance_t vk;
 
 

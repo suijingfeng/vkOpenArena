@@ -7,40 +7,63 @@
 
 
 #include "vk_texture.h"
+#include "vk_common.h"
 
 static char *tex_files[] = {"lunarg.ppm"};
 
 
 /* Convert ppm image data from header file into RGBA texture image */
-#include "lunarg.ppm.h"
-bool loadTexture(const char *filename, uint8_t *rgba_data, VkSubresourceLayout *layout, int32_t *width, int32_t *height) {
+#include "lunarg_ppm.h"
+
+bool loadTexture(const char *filename, uint8_t *rgba_data, VkSubresourceLayout *layout, int32_t * pWidth, int32_t * pHeight)
+{
     (void)filename;
-    char *cPtr;
-    cPtr = (char *)lunarg_ppm;
-    if ((unsigned char *)cPtr >= (lunarg_ppm + lunarg_ppm_len) || strncmp(cPtr, "P6\n", 3)) {
+    
+    const unsigned char * const lunarg_ppm = getPtr_ppm();
+    char * cPtr = ( char * ) lunarg_ppm;
+    const unsigned int lunarg_ppm_len = getLen_ppm();
+    
+    uint32_t width, height;
+
+    if ((unsigned char *)cPtr >= (lunarg_ppm + lunarg_ppm_len) || strncmp(cPtr, "P6\n", 3))
+    {
         return false;
     }
+    
     while (strncmp(cPtr++, "\n", 1))
         ;
-    sscanf(cPtr, "%u %u", width, height);
+    sscanf(cPtr, "%u %u", &width, &height);
+    
+    *pWidth = width;
+    *pHeight = height;
+
     if (rgba_data == NULL) {
         return true;
     }
+    
     while (strncmp(cPtr++, "\n", 1))
         ;
+    
     if ((unsigned char *)cPtr >= (lunarg_ppm + lunarg_ppm_len) || strncmp(cPtr, "255\n", 4)) {
         return false;
     }
+    
     while (strncmp(cPtr++, "\n", 1))
         ;
-    for (int y = 0; y < *height; y++) {
+    
+    for (int y = 0; y < height; ++y)
+    {
         uint8_t *rowPtr = rgba_data;
-        for (int x = 0; x < *width; x++) {
-            memcpy(rowPtr, cPtr, 3);
+        for (int x = 0; x < width; x++)
+        {
+            rowPtr[0] = cPtr[0];
+            rowPtr[1] = cPtr[1];
+            rowPtr[2] = cPtr[2];
             rowPtr[3] = 255; /* Alpha of 1 */
             rowPtr += 4;
             cPtr += 3;
         }
+        
         rgba_data += layout->rowPitch;
     }
     return true;
@@ -65,15 +88,17 @@ bool memory_type_from_properties(struct demo *demo, uint32_t typeBits, VkFlags r
 }
 
 
-static void demo_prepare_texture_image(struct demo *demo, const char *filename, struct texture_object *tex_obj,
+static void prepare_texture_image(struct demo *demo, const char *filename, struct texture_object *tex_obj,
                                        VkImageTiling tiling, VkImageUsageFlags usage, VkFlags required_props) {
     const VkFormat tex_format = VK_FORMAT_R8G8B8A8_UNORM;
     int32_t tex_width;
     int32_t tex_height;
-    VkResult  err;
     bool  pass;
 
-    if (!loadTexture(filename, NULL, NULL, &tex_width, &tex_height)) {
+    printf(" loading texture: %s\n", filename);
+
+    if (!loadTexture(filename, NULL, NULL, &tex_width, &tex_height))
+    {
         ERR_EXIT("Failed to load textures", "Load Texture Failure");
     }
 
@@ -97,8 +122,8 @@ static void demo_prepare_texture_image(struct demo *demo, const char *filename, 
 
     VkMemoryRequirements mem_reqs;
 
-    err = vkCreateImage(demo->device, &image_create_info, NULL, &tex_obj->image);
-    assert(!err);
+    VK_CHECK( vkCreateImage(demo->device, &image_create_info, NULL, &tex_obj->image) );
+
 
     vkGetImageMemoryRequirements(demo->device, tex_obj->image, &mem_reqs);
 
@@ -111,26 +136,25 @@ static void demo_prepare_texture_image(struct demo *demo, const char *filename, 
     assert(pass);
 
     /* allocate memory */
-    err = vkAllocateMemory(demo->device, &tex_obj->mem_alloc, NULL, &(tex_obj->mem));
-    assert(!err);
+    VK_CHECK( vkAllocateMemory(demo->device, &tex_obj->mem_alloc, NULL, &(tex_obj->mem)) );
 
     /* bind memory */
-    err = vkBindImageMemory(demo->device, tex_obj->image, tex_obj->mem, 0);
-    assert(!err);
+    VK_CHECK( vkBindImageMemory(demo->device, tex_obj->image, tex_obj->mem, 0) );
 
-    if (required_props & VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT) {
+    if (required_props & VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT)
+    {
         const VkImageSubresource subres = {
             .aspectMask = VK_IMAGE_ASPECT_COLOR_BIT,
             .mipLevel = 0,
             .arrayLayer = 0,
         };
+        
         VkSubresourceLayout layout;
         void *data;
 
         vkGetImageSubresourceLayout(demo->device, tex_obj->image, &subres, &layout);
 
-        err = vkMapMemory(demo->device, tex_obj->mem, 0, tex_obj->mem_alloc.allocationSize, 0, &data);
-        assert(!err);
+        VK_CHECK( vkMapMemory(demo->device, tex_obj->mem, 0, tex_obj->mem_alloc.allocationSize, 0, &data) );
 
         if (!loadTexture(filename, data, &layout, &tex_width, &tex_height)) {
             fprintf(stderr, "Error loading texture: %s\n", filename);
@@ -204,12 +228,13 @@ void vk_prepare_textures(struct demo *demo)
 
     vkGetPhysicalDeviceFormatProperties(demo->gpu, tex_format, &props);
 
-    for (i = 0; i < DEMO_TEXTURE_COUNT; i++) {
-        VkResult  err;
+    for (i = 0; i < DEMO_TEXTURE_COUNT; i++)
+    {
 
-        if ((props.linearTilingFeatures & VK_FORMAT_FEATURE_SAMPLED_IMAGE_BIT) && !demo->use_staging_buffer) {
+        if ((props.linearTilingFeatures & VK_FORMAT_FEATURE_SAMPLED_IMAGE_BIT) && !demo->use_staging_buffer)
+        {
             /* Device can texture using linear textures */
-            demo_prepare_texture_image(demo, tex_files[i], &demo->textures[i], VK_IMAGE_TILING_LINEAR, VK_IMAGE_USAGE_SAMPLED_BIT,
+            prepare_texture_image(demo, tex_files[i], &demo->textures[i], VK_IMAGE_TILING_LINEAR, VK_IMAGE_USAGE_SAMPLED_BIT,
                                        VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
             // Nothing in the pipeline needs to be complete to start, and don't allow fragment
             // shader to run until layout transition completes
@@ -217,15 +242,17 @@ void vk_prepare_textures(struct demo *demo)
                                   demo->textures[i].imageLayout, 0, VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT,
                                   VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT);
             demo->staging_texture.image = 0;
-        } else if (props.optimalTilingFeatures & VK_FORMAT_FEATURE_SAMPLED_IMAGE_BIT) {
+        }
+        else if (props.optimalTilingFeatures & VK_FORMAT_FEATURE_SAMPLED_IMAGE_BIT)
+        {
             /* Must use staging buffer to copy linear texture to optimized */
 
             memset(&demo->staging_texture, 0, sizeof(demo->staging_texture));
-            demo_prepare_texture_image(demo, tex_files[i], &demo->staging_texture, VK_IMAGE_TILING_LINEAR,
+            prepare_texture_image(demo, tex_files[i], &demo->staging_texture, VK_IMAGE_TILING_LINEAR,
                                        VK_IMAGE_USAGE_TRANSFER_SRC_BIT,
                                        VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
 
-            demo_prepare_texture_image(demo, tex_files[i], &demo->textures[i], VK_IMAGE_TILING_OPTIMAL,
+            prepare_texture_image(demo, tex_files[i], &demo->textures[i], VK_IMAGE_TILING_OPTIMAL,
                                        (VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT),
                                        VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
 
@@ -251,7 +278,8 @@ void vk_prepare_textures(struct demo *demo)
                                   demo->textures[i].imageLayout, VK_ACCESS_TRANSFER_WRITE_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT,
                                   VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT);
 
-        } else {
+        }
+        else {
             /* Can't support VK_FORMAT_R8G8B8A8_UNORM !? */
             assert(!"No support for R8G8B8A8_UNORM as texture image format");
         }
@@ -293,13 +321,12 @@ void vk_prepare_textures(struct demo *demo)
         };
 
         /* create sampler */
-        err = vkCreateSampler(demo->device, &sampler, NULL, &demo->textures[i].sampler);
-        assert(!err);
+        VK_CHECK ( vkCreateSampler(demo->device, &sampler, NULL, &demo->textures[i].sampler) );
 
         /* create image view */
         view.image = demo->textures[i].image;
-        err = vkCreateImageView(demo->device, &view, NULL, &demo->textures[i].view);
-        assert(!err);
+        
+        VK_CHECK ( vkCreateImageView(demo->device, &view, NULL, &demo->textures[i].view) );
     }
 }
 
@@ -339,37 +366,31 @@ void vk_prepare_depth(struct demo *demo)
 
     
     VkMemoryRequirements mem_reqs;
-    VkResult err;
-    bool  pass;
 
     demo->depth.format = depth_format;
 
     /* create image */
-    err = vkCreateImage(demo->device, &image, NULL, &demo->depth.image);
-    assert(!err);
+    VK_CHECK ( vkCreateImage(demo->device, &image, NULL, &demo->depth.image) );
+
 
     vkGetImageMemoryRequirements(demo->device, demo->depth.image, &mem_reqs);
-    assert(!err);
 
     demo->depth.mem_alloc.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
     demo->depth.mem_alloc.pNext = NULL;
     demo->depth.mem_alloc.allocationSize = mem_reqs.size;
     demo->depth.mem_alloc.memoryTypeIndex = 0;
 
-    pass = memory_type_from_properties(demo, mem_reqs.memoryTypeBits, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
+    bool pass = memory_type_from_properties(demo, mem_reqs.memoryTypeBits, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
                                        &demo->depth.mem_alloc.memoryTypeIndex);
     assert(pass);
 
     /* allocate memory */
-    err = vkAllocateMemory(demo->device, &demo->depth.mem_alloc, NULL, &demo->depth.mem);
-    assert(!err);
+    VK_CHECK( vkAllocateMemory(demo->device, &demo->depth.mem_alloc, NULL, &demo->depth.mem) );
 
     /* bind memory */
-    err = vkBindImageMemory(demo->device, demo->depth.image, demo->depth.mem, 0);
-    assert(!err);
+    VK_CHECK( vkBindImageMemory(demo->device, demo->depth.image, demo->depth.mem, 0) );
 
     /* create image view */
     view.image = demo->depth.image;
-    err = vkCreateImageView(demo->device, &view, NULL, &demo->depth.view);
-    assert(!err);
+    VK_CHECK( vkCreateImageView(demo->device, &view, NULL, &demo->depth.view) );
 }

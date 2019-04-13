@@ -5,7 +5,7 @@
 #include "qvk.h"
 #include "vk_instance.h"
 #include "vk_validation.h"
-
+#include "vulkanlib.h"
 //
 // Vulkan API functions used by the renderer.
 //

@@ -10,6 +10,7 @@
 void vk_createInstanceAndDevice(void);
 void vk_destroyInstanceAndDevice(void);
 
+void vk_createSurfaceImpl(void);
 
 
 // Vk_Instance contains engine-specific vulkan resources that persist entire renderer lifetime.

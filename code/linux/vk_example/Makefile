@@ -1,8 +1,10 @@
 # Default target executed when no arguments are given to make.
 target = cube
 
-SRC = cube.c model.c create_xcb_window.c vk_init.c vk_swapchain.c vk_shader.c vk_texture.c
-SRC2 = main.c vulkanlib.c qvk.c vk_instance.c vk_validation.c
+SRC = cube.c model.c create_xcb_window.c vk_init.c vk_swapchain.c \
+	  vk_shader.c vk_texture.c vk_common.c lunarg_ppm.c vk_render_pass.c vk_cmd.c
+
+SRC2 = main.c vulkanlib.c qvk.c vk_instance.c vk_validation.c vk_common.c
 
 ifndef CC
   CC=gcc

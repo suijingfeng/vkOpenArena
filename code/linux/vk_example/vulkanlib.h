@@ -3,5 +3,6 @@
 
 void vk_loadLib(void);
 void vk_unLoadLib(void);
+void vk_getInstanceProcAddrImpl(void);
 
 #endif

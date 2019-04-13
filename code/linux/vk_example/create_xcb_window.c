@@ -8,11 +8,15 @@
 #include "vk_impl_xcb.h"
 #include "demo.h"
 #include "model.h"
+#include "vk_common.h"
 
 
 
-void create_window_xcb(struct demo *demo)
+void xcb_createWindow(struct demo *demo)
 {
+
+    printf(" Create window with xcb \n");
+
     uint32_t value_mask, value_list[32];
 
     demo->xcb_window = xcb_generate_id(demo->connection);
@@ -44,35 +48,39 @@ void create_window_xcb(struct demo *demo)
 }
 
 
-void init_connection_xcb(struct demo *demo)
+void xcb_initConnection(struct demo *demo)
 {
-    const xcb_setup_t *setup;
-    xcb_screen_iterator_t iter;
+
+    printf(" xcb init connection.\n");
+
     int scr;
 
     const char *display_envar = getenv("DISPLAY");
-    if (display_envar == NULL || display_envar[0] == '\0') {
-        printf("Environment variable DISPLAY requires a valid value.\nExiting ...\n");
-        fflush(stdout);
-        exit(1);
+    
+    if (display_envar == NULL || display_envar[0] == '\0')
+    {
+        ERR_EXIT("Environment variable DISPLAY requires a valid value.\nExiting ...\n", 0);
     }
 
     demo->connection = xcb_connect(NULL, &scr);
-    if (xcb_connection_has_error(demo->connection) > 0) {
-        printf("Cannot find a compatible Vulkan installable client driver (ICD).\nExiting ...\n");
-        fflush(stdout);
-        exit(1);
+    
+    if (xcb_connection_has_error(demo->connection) > 0)
+    {
+        ERR_EXIT("Cannot find a compatible Vulkan installable client driver (ICD).\nExiting ...\n", 0);
     }
 
-    setup = xcb_get_setup(demo->connection);
-    iter = xcb_setup_roots_iterator(setup);
-    while (scr-- > 0) xcb_screen_next(&iter);
+    const xcb_setup_t * setup = xcb_get_setup(demo->connection);
+    xcb_screen_iterator_t iter = xcb_setup_roots_iterator(setup);
+    
+    while (scr-- > 0)
+        xcb_screen_next(&iter);
 
     demo->screen = iter.data;
 }
 
 
-static void demo_resize(struct demo *demo) {
+static void demo_resize(struct demo *demo)
+{
     uint32_t i;
 
     // Don't react to resize until after first initialization.
@@ -217,11 +225,15 @@ static void xcb_draw(struct demo *demo)
             // demo->swapchain is out of date (e.g. the window was resized) and
             // must be recreated:
             demo_resize(demo);
-        } else if (err == VK_SUBOPTIMAL_KHR) {
-            // demo->swapchain is not as optimal as it could be, but the platform's
-            // presentation engine will still present the image correctly.
+        }
+        else if (err == VK_SUBOPTIMAL_KHR)
+        {
+            // demo->swapchain is not as optimal as it could be, 
+            // but the platform's presentation engine will still
+            // present the image correctly.
             break;
-        } else {
+        }
+        else{
             assert(!err);
         }
     } while (err != VK_SUCCESS);
@@ -245,10 +257,11 @@ static void xcb_draw(struct demo *demo)
     submit_info.pCommandBuffers = &demo->swapchain_image_resources[demo->current_buffer].cmd;
     submit_info.signalSemaphoreCount = 1;
     submit_info.pSignalSemaphores = &demo->draw_complete_semaphores[demo->frame_index];
-    err = vkQueueSubmit(demo->graphics_queue, 1, &submit_info, demo->fences[demo->frame_index]);
-    assert(!err);
 
-    if (demo->separate_present_queue) {
+    VK_CHECK( vkQueueSubmit(demo->graphics_queue, 1, &submit_info, demo->fences[demo->frame_index]) );
+
+    if (demo->separate_present_queue)
+    {
         // If we are using separate queues, change image ownership to the
         // present queue before presenting, waiting for the draw complete
         // semaphore and signalling the ownership released semaphore when finished
@@ -260,8 +273,8 @@ static void xcb_draw(struct demo *demo)
         submit_info.pCommandBuffers = &demo->swapchain_image_resources[demo->current_buffer].graphics_to_present_cmd;
         submit_info.signalSemaphoreCount = 1;
         submit_info.pSignalSemaphores = &demo->image_ownership_semaphores[demo->frame_index];
-        err = vkQueueSubmit(demo->present_queue, 1, &submit_info, nullFence);
-        assert(!err);
+        
+        VK_CHECK( vkQueueSubmit(demo->present_queue, 1, &submit_info, nullFence) );
     }
 
     // If we are using separate queues we have to wait for image ownership,
@@ -282,14 +295,19 @@ static void xcb_draw(struct demo *demo)
     demo->frame_index += 1;
     demo->frame_index %= FRAME_LAG;
 
-    if (err == VK_ERROR_OUT_OF_DATE_KHR) {
+    if (err == VK_ERROR_OUT_OF_DATE_KHR)
+    {
         // demo->swapchain is out of date (e.g. the window was resized) and
         // must be recreated:
         demo_resize(demo);
-    } else if (err == VK_SUBOPTIMAL_KHR) {
+    }
+    else if (err == VK_SUBOPTIMAL_KHR)
+    {
         // demo->swapchain is not as optimal as it could be, but the platform's
         // presentation engine will still present the image correctly.
-    } else {
+    }
+    else
+    {
         assert(!err);
     }
 }
@@ -300,15 +318,21 @@ void run_xcb(struct demo *demo)
 {
     xcb_flush(demo->connection);
 
-    while (!demo->quit) {
+    while (!demo->quit)
+    {
         xcb_generic_event_t *event;
 
-        if (demo->pause) {
+        if (demo->pause)
+        {
             event = xcb_wait_for_event(demo->connection);
-        } else {
+        }
+        else
+        {
             event = xcb_poll_for_event(demo->connection);
         }
-        while (event) {
+
+        while (event)
+        {
             handle_xcb_event(demo, event);
             free(event);
             event = xcb_poll_for_event(demo->connection);
@@ -316,9 +340,5 @@ void run_xcb(struct demo *demo)
 
         xcb_draw(demo);
         demo->curFrame++;
-        if (demo->frameCount != INT32_MAX && demo->curFrame == demo->frameCount) demo->quit = true;
     }
 }
-
-
-

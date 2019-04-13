@@ -136,7 +136,6 @@ struct demo
 
     bool quit;
     int32_t curFrame;
-    int32_t frameCount;
     bool validate;
     bool use_break;
 
@@ -154,22 +153,12 @@ struct demo
 };
 
 
-void create_window_xcb(struct demo *demo);
-void init_connection_xcb(struct demo *demo);
+
 void run_xcb(struct demo *demo);
 void demo_prepare(struct demo *demo);
 void update_data_buffer(struct demo *demo);
 void vk_init(struct demo *demo);
-void init_vk_swapchain(struct demo *demo);
-
-#define ERR_EXIT(err_msg, err_class) \
-    do {                             \
-        printf("%s\n", err_msg);     \
-        fflush(stdout);              \
-        exit(1);                     \
-    } while (0)
 
 
-#define ARRAY_SIZE(a) (sizeof(a) / sizeof(a[0]))
 
 #endif
