@@ -87,8 +87,8 @@ static void vk_prepare_pipeline(struct demo *demo)
     VkDynamicState dynamicStateEnables[VK_DYNAMIC_STATE_RANGE_SIZE];
     VkPipelineDynamicStateCreateInfo dynamicState;
 
-    memset(dynamicStateEnables, 0, sizeof dynamicStateEnables);
-    memset(&dynamicState, 0, sizeof dynamicState);
+    memset(dynamicStateEnables, 0, sizeof(dynamicStateEnables));
+    memset(&dynamicState, 0, sizeof(dynamicState));
     dynamicState.sType = VK_STRUCTURE_TYPE_PIPELINE_DYNAMIC_STATE_CREATE_INFO;
     dynamicState.pDynamicStates = dynamicStateEnables;
 
@@ -405,7 +405,8 @@ static void vk_cleanup(struct demo *demo)
     vkDeviceWaitIdle(demo->device);
 
     // Wait for fences from present operations
-    for (i = 0; i < FRAME_LAG; i++) {
+    for (i = 0; i < FRAME_LAG; i++)
+    {
         vkWaitForFences(demo->device, 1, &demo->fences[i], VK_TRUE, UINT64_MAX);
         vkDestroyFence(demo->device, demo->fences[i], NULL);
         vkDestroySemaphore(demo->device, demo->image_acquired_semaphores[i], NULL);
@@ -416,7 +417,8 @@ static void vk_cleanup(struct demo *demo)
     }
 
     // If the window is currently minimized, demo_resize has already done some cleanup for us.
-    if (!demo->is_minimized) {
+    if (!demo->is_minimized)
+    {
         for (i = 0; i < demo->swapchainImageCount; i++) {
             vkDestroyFramebuffer(demo->device, demo->swapchain_image_resources[i].framebuffer, NULL);
         }

@@ -1,44 +1,43 @@
-#include <stdbool.h>
-#include <assert.h>
 #include <string.h>
 #include <stdlib.h>
 #include <stdio.h>
-#include <signal.h>
 
-
+#include "vk_impl_xcb.h"
+#include "vk_common.h"
 #include "vk_shader.h"
 
-
-static VkShaderModule prepare_shader_module(struct demo *demo, const uint32_t *code, size_t size) {
+static VkShaderModule prepare_shader_module(struct demo *demo, const unsigned char* code, size_t size)
+{
     VkShaderModule module;
     VkShaderModuleCreateInfo moduleCreateInfo;
-    VkResult  err;
 
     moduleCreateInfo.sType = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO;
     moduleCreateInfo.pNext = NULL;
     moduleCreateInfo.flags = 0;
     moduleCreateInfo.codeSize = size;
-    moduleCreateInfo.pCode = code;
+    moduleCreateInfo.pCode = (const uint32_t*)code;
 
-    err = vkCreateShaderModule(demo->device, &moduleCreateInfo, NULL, &module);
-    assert(!err);
+    VK_CHECK( vkCreateShaderModule(demo->device, &moduleCreateInfo, NULL, &module) );
 
     return module;
 }
 
+
+extern unsigned char cube_vert_spv[];
+extern int cube_vert_spv_size;
+
+extern unsigned char cube_frag_spv[];
+extern int cube_frag_spv_size;
+
+
 void vk_prepare_vs(struct demo *demo)
 {
-    const uint32_t vs_code[] = {
-#include "cube.vert.inc"
-    };
-    demo->vert_shader_module = prepare_shader_module(demo, vs_code, sizeof(vs_code));
+    demo->vert_shader_module =
+        prepare_shader_module(demo, cube_vert_spv, cube_vert_spv_size);
 }
 
 void vk_prepare_fs(struct demo *demo)
 {
-    const uint32_t fs_code[] =
-    {
-#include "cube.frag.inc"
-    };
-    demo->frag_shader_module = prepare_shader_module(demo, fs_code, sizeof(fs_code));
+    demo->frag_shader_module = 
+        prepare_shader_module(demo, cube_frag_spv, cube_frag_spv_size);
 }

@@ -208,7 +208,7 @@ static VkBool32 vk_check_layers(uint32_t check_count, char **check_names, uint32
 void vk_init(struct demo *demo)
 {
 
-    printf(" demo_init_vk() \n");
+    printf("---- Initial Vulkan. ----\n");
 
     VkResult err;
     uint32_t instance_extension_count = 0;
@@ -258,16 +258,18 @@ void vk_init(struct demo *demo)
     VkBool32 surfaceExtFound = 0;
     memset(demo->extension_names, 0, sizeof(demo->extension_names));
 
-    err = vkEnumerateInstanceExtensionProperties(NULL, &instance_extension_count, NULL);
-    assert(!err);
+    VK_CHECK( vkEnumerateInstanceExtensionProperties(NULL, &instance_extension_count, NULL) );
 
-    if (instance_extension_count > 0) {
-        VkExtensionProperties *instance_extensions = malloc(sizeof(VkExtensionProperties) * instance_extension_count);
-        err = vkEnumerateInstanceExtensionProperties(NULL, &instance_extension_count, instance_extensions);
-        assert(!err);
+
+    if (instance_extension_count > 0)
+    {
+        VkExtensionProperties* instance_extensions = (VkExtensionProperties* ) malloc(sizeof(VkExtensionProperties) * instance_extension_count);
+        VK_CHECK( vkEnumerateInstanceExtensionProperties(NULL, &instance_extension_count, instance_extensions) );
+
         for (uint32_t i = 0; i < instance_extension_count; i++)
         {
-            if (!strcmp(VK_KHR_SURFACE_EXTENSION_NAME, instance_extensions[i].extensionName)) {
+            if (!strcmp(VK_KHR_SURFACE_EXTENSION_NAME, instance_extensions[i].extensionName))
+            {
                 surfaceExtFound = 1;
                 demo->extension_names[demo->enabled_extension_count++] = VK_KHR_SURFACE_EXTENSION_NAME;
             }
@@ -277,13 +279,26 @@ void vk_init(struct demo *demo)
             }
             
             
-            if (!strcmp(VK_EXT_DEBUG_UTILS_EXTENSION_NAME, instance_extensions[i].extensionName)) {
+            if (!strcmp(VK_EXT_DEBUG_UTILS_EXTENSION_NAME, instance_extensions[i].extensionName))
+            {
                 if (demo->validate) {
                     demo->extension_names[demo->enabled_extension_count++] = VK_EXT_DEBUG_UTILS_EXTENSION_NAME;
                 }
             }
-            assert(demo->enabled_extension_count < 64);
         }
+
+        printf("-------- Total %d instance extensions supported --------\n", instance_extension_count);
+        for (uint32_t i = 0; i < instance_extension_count; i++)
+        {
+            printf(" %s \n", instance_extensions[i].extensionName);
+        }
+
+        printf("-------- Enabled instance extensions on this app --------\n");
+        for (uint32_t i = 0; i < demo->enabled_extension_count; i++)
+        {
+            printf(" %s \n", demo->extension_names[i]);
+        }
+
 
         free(instance_extensions);
     }

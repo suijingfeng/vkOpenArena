@@ -21,3 +21,7 @@ A library designed to work as a plug-in for the loader. It usually serves to pro
 
 ### SPIR-V
 Standard Portable Intermediate Representation ¡ª A cross-API intermediate language that natively represents parallel compute and graphics programs
+
+
+### compile shader file
+run compile.sh to cimpile cube.vert cube.frag to cube\_frag.c cube\_vert.c
