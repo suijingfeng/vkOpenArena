@@ -1,7 +1,6 @@
 #ifndef VK_CMD_H_
 #define VK_CMD_H_
 
-#include "vk_impl_xcb.h"
 #include "vk_common.h"
 #include "demo.h"
 

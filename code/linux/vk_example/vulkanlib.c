@@ -1,6 +1,8 @@
-#include "VKimpl.h"
 #include <stdio.h>
 #include <dlfcn.h>
+
+#include "vk_common.h"
+
 #include "qvk.h"
 
 

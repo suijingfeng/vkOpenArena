@@ -7,20 +7,9 @@
 
 
 #include "demo.h"
-#include "vk_impl_xcb.h"
 #include "vk_common.h"
 
 static PFN_vkGetDeviceProcAddr g_gdpa = NULL;
-
-#define GET_DEVICE_PROC_ADDR(dev, entrypoint)                                                                    \
-    {                                                                                                            \
-        if (!g_gdpa) g_gdpa = (PFN_vkGetDeviceProcAddr)vkGetInstanceProcAddr(demo->inst, "vkGetDeviceProcAddr"); \
-        demo->fp##entrypoint = (PFN_vk##entrypoint)g_gdpa(dev, "vk" #entrypoint);                                \
-        if (demo->fp##entrypoint == NULL) {                                                                      \
-            ERR_EXIT("vkGetDeviceProcAddr failed to find vk" #entrypoint, "vkGetDeviceProcAddr Failure");        \
-        }                                                                                                        \
-    }
-
 
 
 static void vk_create_device(struct demo *demo)
@@ -126,12 +115,23 @@ void init_vk_swapchain(struct demo *demo)
 
     vk_create_device(demo);
 
+#define GET_DEVICE_PROC_ADDR(dev, entrypoint)                                                           \
+{                                                                                                       \
+    if (!g_gdpa)                                                                                        \
+        g_gdpa = (PFN_vkGetDeviceProcAddr) vkGetInstanceProcAddr(demo->inst, "vkGetDeviceProcAddr");    \
+    demo->fp##entrypoint = (PFN_vk##entrypoint)g_gdpa(dev, "vk" #entrypoint);                           \
+    if (demo->fp##entrypoint == NULL) {                                                                 \
+        ERR_EXIT("vkGetDeviceProcAddr failed to find vk" #entrypoint, "vkGetDeviceProcAddr Failure");   \
+    }                                                                                                   \
+}
+
     GET_DEVICE_PROC_ADDR(demo->device, CreateSwapchainKHR);
     GET_DEVICE_PROC_ADDR(demo->device, DestroySwapchainKHR);
     GET_DEVICE_PROC_ADDR(demo->device, GetSwapchainImagesKHR);
     GET_DEVICE_PROC_ADDR(demo->device, AcquireNextImageKHR);
     GET_DEVICE_PROC_ADDR(demo->device, QueuePresentKHR);
 
+#undef GET_DEVICE_PROC_ADDR
 
     vkGetDeviceQueue(demo->device, demo->graphics_queue_family_index, 0, &demo->graphics_queue);
 
@@ -419,7 +419,6 @@ void vk_prepare_buffers(struct demo *demo)
 
         VK_CHECK( vkCreateImageView(demo->device, &color_image_view, NULL, &demo->swapchain_image_resources[i].view) );
     }
-
 
     if (NULL != presentModes) {
         free(presentModes);

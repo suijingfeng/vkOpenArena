@@ -4,7 +4,7 @@
 #include <stdbool.h>
 
 #include "linmath.h"
-#include "vk_impl_xcb.h"
+#include "vk_common.h"
 
 // Allow a maximum of two outstanding presentation operations.
 #define FRAME_LAG 2

@@ -2,7 +2,8 @@
 #error You shouldn't be including this file on non-Linux platforms
 #endif
 
-#include "VKimpl.h"
+#include "vk_common.h"
+
 
 #include <xcb/xcb.h>
 

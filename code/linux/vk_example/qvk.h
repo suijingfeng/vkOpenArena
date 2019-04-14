@@ -1,7 +1,7 @@
 #ifndef QVK_H_
 #define QVK_H_
 
-#include "VKimpl.h"
+#include "vk_common.h"
 
 
 extern PFN_vkGetInstanceProcAddr						qvkGetInstanceProcAddr;

@@ -1,7 +1,8 @@
-#include "VKimpl.h"
 #include <stdlib.h>
 #include <stdio.h>
 #include <assert.h>
+
+#include "vk_common.h"
 #include "qvk.h"
 #include "vk_instance.h"
 #include "vk_validation.h"

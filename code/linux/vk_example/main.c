@@ -3,7 +3,7 @@
 
 #include <xcb/xcb.h>
 
-#include "VKimpl.h"
+#include "vk_common.h"
 #include "vulkanlib.h"
 #include "vk_instance.h"
 #include "qvk.h"

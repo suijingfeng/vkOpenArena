@@ -1,8 +1,8 @@
 #ifndef VK_INSTANCE_H_
 #define VK_INSTANCE_H_
 
-#include "VKimpl.h"
-#include "VKimpl.h"
+#include "vk_common.h"
+#include "vk_instance.h"
 #include <stdio.h>
 
 

@@ -1,5 +1,4 @@
 #include "demo.h"
-#include "vk_impl_xcb.h"
 #include "vk_common.h"
 #include "vk_render_pass.h"
 

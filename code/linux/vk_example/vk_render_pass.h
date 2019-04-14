@@ -2,7 +2,6 @@
 #define VK_RENDER_PASS_H_
 
 #include "demo.h"
-#include "vk_impl_xcb.h"
 #include "vk_common.h"
 
 

@@ -1,9 +1,9 @@
-#include "VKimpl.h"
-#include "vk_instance.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <assert.h>
 
+#include "vk_common.h"
+#include "vk_instance.h"
 
 typedef struct vidmode_s
 {

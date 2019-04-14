@@ -7,7 +7,6 @@
 
 
 #include "demo.h"
-#include "vk_impl_xcb.h"
 #include "vk_common.h"
 
 #define APP_SHORT_NAME "cube"

@@ -2,7 +2,6 @@
 #include <stdlib.h>
 #include <stdio.h>
 
-#include "vk_impl_xcb.h"
 #include "vk_common.h"
 #include "vk_shader.h"
 

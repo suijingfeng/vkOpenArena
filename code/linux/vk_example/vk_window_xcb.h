@@ -2,7 +2,7 @@
 #define VK_WINDOW_XCB_H_
 
 
-#include "vk_impl_xcb.h"
+#include "vk_common.h"
 #include "demo.h"
 
 void xcb_createWindow(struct demo *demo);

@@ -6,7 +6,6 @@
 
 #ifndef NDEBUG
 
-#include "VKimpl.h"
 
 const char * cvtResToStr(VkResult result);
 

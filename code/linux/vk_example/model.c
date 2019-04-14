@@ -1,12 +1,14 @@
-#include "linmath.h"
-#include "vk_impl_xcb.h"
-#include "model.h"
 #include <stdbool.h>
 #include <assert.h>
 #include <string.h>
-//--------------------------------------------------------------------------------------
+
+#include "linmath.h"
+#include "vk_common.h"
+#include "model.h"
+
+//-------------------------------------------------------------------------
 // Mesh and VertexFormat Data
-//--------------------------------------------------------------------------------------
+//-------------------------------------------------------------------------
 // clang-format off
 static const float g_vertex_buffer_data[] = 
 {

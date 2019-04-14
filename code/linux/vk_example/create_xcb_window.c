@@ -5,7 +5,6 @@
 #include <stdio.h>
 
 #include "linmath.h"
-#include "vk_impl_xcb.h"
 #include "demo.h"
 #include "model.h"
 #include "vk_common.h"
