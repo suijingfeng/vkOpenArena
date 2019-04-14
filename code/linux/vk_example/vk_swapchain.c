@@ -66,22 +66,26 @@ void init_vk_swapchain(struct demo *demo)
     VK_CHECK( vkCreateXcbSurfaceKHR(demo->inst, &createInfo, NULL, &demo->surface) );
 
     // Iterate over each queue to learn whether it supports presenting:
-    VkBool32 *supportsPresent = (VkBool32 *)malloc(demo->queue_family_count * sizeof(VkBool32));
+    VkBool32 * supportsPresent = (VkBool32 *)malloc(demo->queue_family_count * sizeof(VkBool32));
     for (uint32_t i = 0; i < demo->queue_family_count; i++) {
         demo->fpGetPhysicalDeviceSurfaceSupportKHR(demo->gpu, i, demo->surface, &supportsPresent[i]);
     }
 
-    // Search for a graphics and a present queue in the array of queue
-    // families, try to find one that supports both
+    // Search for a graphics and a present queue in the array of queue families, 
+    // try to find one that supports both
     uint32_t graphicsQueueFamilyIndex = UINT32_MAX;
     uint32_t presentQueueFamilyIndex = UINT32_MAX;
-    for (uint32_t i = 0; i < demo->queue_family_count; i++) {
-        if ((demo->queue_props[i].queueFlags & VK_QUEUE_GRAPHICS_BIT) != 0) {
-            if (graphicsQueueFamilyIndex == UINT32_MAX) {
+    for (uint32_t i = 0; i < demo->queue_family_count; ++i)
+    {
+        if ((demo->queue_props[i].queueFlags & VK_QUEUE_GRAPHICS_BIT) != 0)
+        {
+            if (graphicsQueueFamilyIndex == UINT32_MAX)
+            {
                 graphicsQueueFamilyIndex = i;
             }
 
-            if (supportsPresent[i] == VK_TRUE) {
+            if (supportsPresent[i] == VK_TRUE)
+            {
                 graphicsQueueFamilyIndex = i;
                 presentQueueFamilyIndex = i;
                 break;
@@ -89,11 +93,14 @@ void init_vk_swapchain(struct demo *demo)
         }
     }
 
-    if (presentQueueFamilyIndex == UINT32_MAX) {
+    if (presentQueueFamilyIndex == UINT32_MAX)
+    {
         // If didn't find a queue that supports both graphics and present, then
         // find a separate present queue.
-        for (uint32_t i = 0; i < demo->queue_family_count; ++i) {
-            if (supportsPresent[i] == VK_TRUE) {
+        for (uint32_t i = 0; i < demo->queue_family_count; ++i)
+        {
+            if (supportsPresent[i] == VK_TRUE )
+            {
                 presentQueueFamilyIndex = i;
                 break;
             }
@@ -105,8 +112,8 @@ void init_vk_swapchain(struct demo *demo)
         ERR_EXIT("Could not find both graphics and present queues\n", "Swapchain Initialization Failure");
     }
 
-    printf("graphicsQueueFamilyIndex: %d, presentQueueFamilyIndex: %d\n",
-            graphicsQueueFamilyIndex, presentQueueFamilyIndex);
+    printf("queue_family_count: %d, graphicsQueueFamilyIndex: %d, presentQueueFamilyIndex: %d\n",
+        demo->queue_family_count, graphicsQueueFamilyIndex, presentQueueFamilyIndex);
 
     demo->graphics_queue_family_index = graphicsQueueFamilyIndex;
     demo->present_queue_family_index = presentQueueFamilyIndex;

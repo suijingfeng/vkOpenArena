@@ -13,18 +13,40 @@
 #define APP_SHORT_NAME "cube"
 
 
+void vk_selectPhysicalDevice(struct demo * const pDemo)
+{
+    uint32_t gpu_count;
+
+    /* Make initial call to query gpu_count, then second call for gpu info*/
+    VK_CHECK( vkEnumeratePhysicalDevices(pDemo->inst, &gpu_count, NULL) );
+
+    if (gpu_count > 0)
+    {
+        VkPhysicalDevice * physical_devices = (VkPhysicalDevice *) malloc(sizeof(VkPhysicalDevice) * gpu_count);
+        VK_CHECK( vkEnumeratePhysicalDevices(pDemo->inst, &gpu_count, physical_devices) );
+        /* For cube demo we just grab the first physical device */
+        pDemo->gpu = physical_devices[0];
+        free(physical_devices);
+    }
+    else
+    {
+        ERR_EXIT("vkEnumeratePhysicalDevices reported zero accessible devices.\n\n"
+            "Do you have a compatible Vulkan installable client driver (ICD) installed?\n", 0);
+    }
+    
+    printf(" Select physical device, we just grab the first physical device for this demo app. \n");
+}
+
+
 void vk_init(struct demo *demo)
 {
 
     printf("---- Initial Vulkan. ----\n");
 
-    VkResult err;
     uint32_t instance_extension_count = 0;
     
     
     demo->enabled_extension_count = 0;
-    demo->is_minimized = false;
-    demo->cmd_pool = VK_NULL_HANDLE;
 
 
     /* Look for instance extensions */
@@ -32,7 +54,6 @@ void vk_init(struct demo *demo)
     memset(demo->extension_names, 0, sizeof(demo->extension_names));
 
     VK_CHECK( vkEnumerateInstanceExtensionProperties(NULL, &instance_extension_count, NULL) );
-
 
     if (instance_extension_count > 0)
     {
@@ -50,7 +71,6 @@ void vk_init(struct demo *demo)
             if (!strcmp(VK_KHR_XCB_SURFACE_EXTENSION_NAME, instance_extensions[i].extensionName)) {
                 demo->extension_names[demo->enabled_extension_count++] = VK_KHR_XCB_SURFACE_EXTENSION_NAME;
             }
-            
             
             if (!strcmp(VK_EXT_DEBUG_UTILS_EXTENSION_NAME, instance_extensions[i].extensionName))
             {
@@ -71,7 +91,6 @@ void vk_init(struct demo *demo)
         {
             printf(" %s \n", demo->extension_names[i]);
         }
-
 
         free(instance_extensions);
     }
@@ -95,10 +114,14 @@ void vk_init(struct demo *demo)
     };
 
     uint32_t instance_layer_count = 0;
-    const char * const pInstanceValidLayer = vk_assertStandValidationLayer(demo);
-    if(NULL != pInstanceValidLayer )
-        instance_layer_count = 1;
-
+    const char * pInstanceValidLayer = NULL;
+    
+    if (demo->validate)
+    {
+        pInstanceValidLayer = vk_assertStandValidationLayer();
+        if(NULL != pInstanceValidLayer )
+            instance_layer_count = 1;
+    }
     
     // We only enable VK_LAYER_LUNARG_standard_validation,
     // so don't be so complicated
@@ -112,11 +135,8 @@ void vk_init(struct demo *demo)
         .ppEnabledExtensionNames = (const char *const *)demo->extension_names,
     };
 
-
-
-    uint32_t gpu_count;
-
-    err = vkCreateInstance(&inst_info, NULL, &demo->inst);
+    
+    VkResult err = vkCreateInstance(&inst_info, NULL, &demo->inst);
     if (err == VK_ERROR_INCOMPATIBLE_DRIVER) {
         ERR_EXIT(
             "Cannot find a compatible Vulkan installable client driver (ICD).\n\n"
@@ -135,27 +155,8 @@ void vk_init(struct demo *demo)
             "vkCreateInstance Failure");
     }
 
-    /* Make initial call to query gpu_count, then second call for gpu info*/
-    VK_CHECK( vkEnumeratePhysicalDevices(demo->inst, &gpu_count, NULL) );
-
-
-    if (gpu_count > 0)
-    {
-        VkPhysicalDevice *physical_devices = malloc(sizeof(VkPhysicalDevice) * gpu_count);
-        VK_CHECK( vkEnumeratePhysicalDevices(demo->inst, &gpu_count, physical_devices) );
-        /* For cube demo we just grab the first physical device */
-        demo->gpu = physical_devices[0];
-        free(physical_devices);
-    }
-    else
-    {
-        ERR_EXIT(
-            "vkEnumeratePhysicalDevices reported zero accessible devices.\n\n"
-            "Do you have a compatible Vulkan installable client driver (ICD) installed?\n"
-            "Please look at the Getting Started guide for additional information.\n",
-            "vkEnumeratePhysicalDevices Failure");
-    }
-
+    vk_selectPhysicalDevice(demo);
+    
 
     
     /* Look for device extensions */
@@ -180,7 +181,6 @@ void vk_init(struct demo *demo)
             assert(demo->enabled_extension_count < 64);
         }
 
-
         free(device_extensions);
     }
 
@@ -191,8 +191,10 @@ void vk_init(struct demo *demo)
                  "vkCreateInstance Failure");
     }
 
-    vk_createDebugUtils(demo);
-
+    if (demo->validate)
+    {
+        vk_createDebugUtils(demo);
+    }
     
     vkGetPhysicalDeviceProperties(demo->gpu, &demo->gpu_props);
 
@@ -200,7 +202,7 @@ void vk_init(struct demo *demo)
     vkGetPhysicalDeviceQueueFamilyProperties(demo->gpu, &demo->queue_family_count, NULL);
     assert(demo->queue_family_count >= 1);
 
-    demo->queue_props = (VkQueueFamilyProperties *)malloc(demo->queue_family_count * sizeof(VkQueueFamilyProperties));
+    demo->queue_props = (VkQueueFamilyProperties *) malloc(demo->queue_family_count * sizeof(VkQueueFamilyProperties));
     vkGetPhysicalDeviceQueueFamilyProperties(demo->gpu, &demo->queue_family_count, demo->queue_props);
 
     // Query fine-grained feature support for this device.

@@ -486,6 +486,8 @@ int main(int argc, char **argv)
     memset(&demo, 0, sizeof(struct demo));
     
     demo.presentMode = VK_PRESENT_MODE_FIFO_KHR;
+    demo.is_minimized = false;
+    demo.cmd_pool = VK_NULL_HANDLE;
 
     for (int i = 1; i < argc; i++)
     {

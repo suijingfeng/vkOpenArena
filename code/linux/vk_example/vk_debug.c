@@ -16,49 +16,48 @@ static const char instance_validation_layers_name[] = {"VK_LAYER_LUNARG_standard
 //    uint32_t enabled_layer_count;
 
 
-const char * vk_assertStandValidationLayer(struct demo * pDemo)
+const char * vk_assertStandValidationLayer(void)
 {
     // Look For Standard Validation Layer
-    VkBool32 found = 0;
+    VkBool32 found = VK_FALSE;
 
-    if (pDemo->validate)
+ 
+    uint32_t instance_layer_count = 0;
+
+    VK_CHECK( vkEnumerateInstanceLayerProperties(&instance_layer_count, NULL) );
+
+    // instance_validation_layers = instance_validation_layers_name;
+
+    assert (instance_layer_count > 0);
+
+    VkLayerProperties * instance_layers = (VkLayerProperties *) malloc( sizeof(VkLayerProperties) * instance_layer_count );
+
+    VK_CHECK( vkEnumerateInstanceLayerProperties(&instance_layer_count, instance_layers) );
+
+    printf(" ------- instance_layer_count: %d --------\n", instance_layer_count);
+    for (uint32_t j = 0; j < instance_layer_count; j++)
     {
-        uint32_t instance_layer_count = 0;
-
-        VK_CHECK( vkEnumerateInstanceLayerProperties(&instance_layer_count, NULL) );
-
-        // instance_validation_layers = instance_validation_layers_name;
-        
-        assert (instance_layer_count > 0);
-        
-        VkLayerProperties * instance_layers = (VkLayerProperties *) malloc( sizeof(VkLayerProperties) * instance_layer_count );
-
-        VK_CHECK( vkEnumerateInstanceLayerProperties(&instance_layer_count, instance_layers) );
-
-        printf(" ------- instance_layer_count: %d --------\n", instance_layer_count);
-        for (uint32_t j = 0; j < instance_layer_count; j++)
-        {
-            printf(" %s\n", instance_layers[j].layerName);
-        }
-        printf(" ------- ----------------------- --------\n");
-
-        
-        for (uint32_t j = 0; j < instance_layer_count; j++)
-        {
-            if (!strcmp(instance_validation_layers_name, instance_layers[j].layerName))
-            {
-                found = VK_TRUE;
-                printf(" Standard validation found !^_^! \n");
-                break;
-            }
-        }
-
-        free(instance_layers);
-
-            //pDemo->enabled_layer_count = ARRAY_SIZE(instance_validation_layers_name);
-            //pDemo->enabled_layers[0] = "VK_LAYER_LUNARG_standard_validation";
-        printf( "vkEnumerateInstanceLayerProperties failed to find required validation layer.\n\n");
+        printf(" %s\n", instance_layers[j].layerName);
     }
+    printf(" ------- ----------------------- --------\n");
+
+
+    for (uint32_t j = 0; j < instance_layer_count; j++)
+    {
+        if (!strcmp(instance_validation_layers_name, instance_layers[j].layerName))
+        {
+            found = VK_TRUE;
+            printf(" Standard validation found !^_^! \n");
+            break;
+        }
+    }
+
+    free(instance_layers);
+
+    //pDemo->enabled_layer_count = ARRAY_SIZE(instance_validation_layers_name);
+    //pDemo->enabled_layers[0] = "VK_LAYER_LUNARG_standard_validation";
+    printf( "vkEnumerateInstanceLayerProperties failed to find required validation layer.\n\n");
+
     
     if( found ) {
         return instance_validation_layers_name;
@@ -182,7 +181,6 @@ void vk_getDebugUtilsFnPtr(struct demo * pDemo)
              NULL == pFn_vkd.SetDebugUtilsObjectNameEXT ) {
             ERR_EXIT("GetProcAddr: Failed to init VK_EXT_debug_utils\n", "GetProcAddr: Failure");
         }
-
     }
 }
 
@@ -190,12 +188,10 @@ void vk_getDebugUtilsFnPtr(struct demo * pDemo)
 
 void vk_createDebugUtils(struct demo * pDemo)
 {
-    if (pDemo->validate)
-    {
-        vk_getDebugUtilsFnPtr(pDemo);
 
-        VK_CHECK( pFn_vkd.CreateDebugUtilsMessengerEXT(pDemo->inst, &dbg_messenger_create_info, NULL, &pDemo->dbg_messenger) );
-    }
+    vk_getDebugUtilsFnPtr(pDemo);
+
+    VK_CHECK( pFn_vkd.CreateDebugUtilsMessengerEXT(pDemo->inst, &dbg_messenger_create_info, NULL, &pDemo->dbg_messenger) );
 }
 
 

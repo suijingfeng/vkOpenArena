@@ -14,8 +14,6 @@
 void xcb_createWindow(struct demo *demo)
 {
 
-    printf(" Create window with xcb \n");
-
     uint32_t value_mask, value_list[32];
 
     demo->xcb_window = xcb_generate_id(demo->connection);
@@ -44,6 +42,8 @@ void xcb_createWindow(struct demo *demo)
     // runs
     const uint32_t coords[] = {100, 100};
     xcb_configure_window(demo->connection, demo->xcb_window, XCB_CONFIG_WINDOW_X | XCB_CONFIG_WINDOW_Y, coords);
+
+    printf(" %d x %d window created with xcb !^_^! \n", demo->width, demo->height);
 }
 
 

@@ -26,7 +26,7 @@ void vk_destroyDebugUtils(struct demo * pDemo);
 
 VkDebugUtilsMessengerCreateInfoEXT * vk_setDebugUtilsMsgInfo(struct demo * pDemo);
 
-const char * vk_assertStandValidationLayer(struct demo * pDemo);
+const char * vk_assertStandValidationLayer(void);
 
 
 #endif
