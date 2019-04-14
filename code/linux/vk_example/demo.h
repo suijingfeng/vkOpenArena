@@ -75,9 +75,8 @@ struct demo
     VkPhysicalDeviceMemoryProperties memory_properties;
 
     uint32_t enabled_extension_count;
-    uint32_t enabled_layer_count;
+
     char *extension_names[64];
-    char *enabled_layers[64];
 
     int width, height;
     VkFormat format;
@@ -139,13 +138,7 @@ struct demo
     bool validate;
     bool use_break;
 
-    PFN_vkCreateDebugUtilsMessengerEXT CreateDebugUtilsMessengerEXT;
-    PFN_vkDestroyDebugUtilsMessengerEXT DestroyDebugUtilsMessengerEXT;
-    PFN_vkSubmitDebugUtilsMessageEXT SubmitDebugUtilsMessageEXT;
-    PFN_vkCmdBeginDebugUtilsLabelEXT CmdBeginDebugUtilsLabelEXT;
-    PFN_vkCmdEndDebugUtilsLabelEXT CmdEndDebugUtilsLabelEXT;
-    PFN_vkCmdInsertDebugUtilsLabelEXT CmdInsertDebugUtilsLabelEXT;
-    PFN_vkSetDebugUtilsObjectNameEXT SetDebugUtilsObjectNameEXT;
+
     VkDebugUtilsMessengerEXT dbg_messenger;
 
     uint32_t current_buffer;

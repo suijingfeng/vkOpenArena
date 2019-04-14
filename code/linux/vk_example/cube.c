@@ -23,6 +23,7 @@
 #include "vk_render_pass.h"
 #include "vk_cmd.h"
 #include "vk_swapchain.h"
+#include "vk_debug.h"
 
 #define MILLION 1000000L
 #define BILLION 1000000000L
@@ -458,9 +459,9 @@ static void vk_cleanup(struct demo *demo)
     }
     vkDeviceWaitIdle(demo->device);
     vkDestroyDevice(demo->device, NULL);
-    if (demo->validate) {
-        demo->DestroyDebugUtilsMessengerEXT(demo->inst, demo->dbg_messenger, NULL);
-    }
+    
+    vk_destroyDebugUtils(demo);
+
     vkDestroySurfaceKHR(demo->inst, demo->surface, NULL);
 
 

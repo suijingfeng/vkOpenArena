@@ -6,6 +6,7 @@ SRC = cube.c model.c \
 	create_xcb_window.c \
 	vk_texture.c lunarg_ppm.c \
 	cube_vert.c cube_frag.c vk_shader.c \
+	vk_debug.c
 
 
 SRC2 = main.c vulkanlib.c qvk.c vk_instance.c vk_validation.c vk_common.c

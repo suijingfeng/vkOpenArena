@@ -1,5 +1,6 @@
 #include <string.h>
 #include "vk_cmd.h"
+#include "vk_debug.h"
 
 
 void flush_init_cmd(struct demo *demo)
@@ -47,7 +48,6 @@ void flush_init_cmd(struct demo *demo)
 void vk_draw_build_cmd(struct demo *demo, VkCommandBuffer cmd_buf)
 {
     VkDebugUtilsLabelEXT label;
-    
     memset(&label, 0, sizeof(label));
 
     const VkCommandBufferBeginInfo cmd_buf_info = {
@@ -86,7 +86,7 @@ void vk_draw_build_cmd(struct demo *demo, VkCommandBuffer cmd_buf)
             .pObjectName = "CubeDrawCommandBuf",
         };
 
-        demo->SetDebugUtilsObjectNameEXT(demo->device, &cmd_buf_name);
+        pFn_vkd.SetDebugUtilsObjectNameEXT(demo->device, &cmd_buf_name);
 
         label.sType = VK_STRUCTURE_TYPE_DEBUG_UTILS_LABEL_EXT;
         label.pNext = NULL;
@@ -95,7 +95,7 @@ void vk_draw_build_cmd(struct demo *demo, VkCommandBuffer cmd_buf)
         label.color[1] = 0.3f;
         label.color[2] = 0.2f;
         label.color[3] = 0.1f;
-        demo->CmdBeginDebugUtilsLabelEXT(cmd_buf, &label);
+        pFn_vkd.CmdBeginDebugUtilsLabelEXT(cmd_buf, &label);
     }
 
     vkCmdBeginRenderPass(cmd_buf, &rp_begin, VK_SUBPASS_CONTENTS_INLINE);
@@ -109,7 +109,7 @@ void vk_draw_build_cmd(struct demo *demo, VkCommandBuffer cmd_buf)
         label.color[1] = 7.3f;
         label.color[2] = 6.2f;
         label.color[3] = 7.1f;
-        demo->CmdBeginDebugUtilsLabelEXT(cmd_buf, &label);
+        pFn_vkd.CmdBeginDebugUtilsLabelEXT(cmd_buf, &label);
     }
 
     vkCmdBindPipeline(cmd_buf, VK_PIPELINE_BIND_POINT_GRAPHICS, demo->pipeline);
@@ -140,13 +140,13 @@ void vk_draw_build_cmd(struct demo *demo, VkCommandBuffer cmd_buf)
         label.color[1] = -0.3f;
         label.color[2] = -0.2f;
         label.color[3] = -0.1f;
-        demo->CmdBeginDebugUtilsLabelEXT(cmd_buf, &label);
+        pFn_vkd.CmdBeginDebugUtilsLabelEXT(cmd_buf, &label);
     }
 
     vkCmdDraw(cmd_buf, 12 * 3, 1, 0, 0);
     if (demo->validate)
     {
-        demo->CmdEndDebugUtilsLabelEXT(cmd_buf);
+        pFn_vkd.CmdEndDebugUtilsLabelEXT(cmd_buf);
     }
 
     // Note that ending the renderpass changes the image's layout from
@@ -154,7 +154,7 @@ void vk_draw_build_cmd(struct demo *demo, VkCommandBuffer cmd_buf)
     vkCmdEndRenderPass(cmd_buf);
     if (demo->validate)
     {
-        demo->CmdEndDebugUtilsLabelEXT(cmd_buf);
+        pFn_vkd.CmdEndDebugUtilsLabelEXT(cmd_buf);
     }
 
     if (demo->separate_present_queue)
@@ -178,8 +178,9 @@ void vk_draw_build_cmd(struct demo *demo, VkCommandBuffer cmd_buf)
         vkCmdPipelineBarrier(cmd_buf, VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT, VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT, 0, 0, NULL, 0,
                              NULL, 1, &image_ownership_barrier);
     }
-    if (demo->validate) {
-        demo->CmdEndDebugUtilsLabelEXT(cmd_buf);
+    if (demo->validate)
+    {
+        pFn_vkd.CmdEndDebugUtilsLabelEXT(cmd_buf);
     }
     
     

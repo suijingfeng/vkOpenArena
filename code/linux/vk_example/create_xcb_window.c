@@ -187,7 +187,6 @@ void update_data_buffer(struct demo *demo)
     mat4x4 MVP, Model, VP;
     int matrixSize = sizeof(MVP);
     uint8_t *pData;
-    VkResult err;
 
     mat4x4_mul(VP, demo->projection_matrix, demo->view_matrix);
 
@@ -196,9 +195,8 @@ void update_data_buffer(struct demo *demo)
     mat4x4_rotate(demo->model_matrix, Model, 0.0f, 1.0f, 0.0f, (float)degreesToRadians(demo->spin_angle));
     mat4x4_mul(MVP, VP, demo->model_matrix);
 
-    err = vkMapMemory(demo->device, demo->swapchain_image_resources[demo->current_buffer].uniform_memory, 0, VK_WHOLE_SIZE, 0,
-                      (void **)&pData);
-    assert(!err);
+    VK_CHECK( vkMapMemory(demo->device, demo->swapchain_image_resources[demo->current_buffer].uniform_memory, 0, VK_WHOLE_SIZE, 0,
+                      (void **)&pData) );
 
     memcpy(pData, (const void *)&MVP[0][0], matrixSize);
 
@@ -220,7 +218,8 @@ static void xcb_draw(struct demo *demo)
         err = demo->fpAcquireNextImageKHR(demo->device, demo->swapchain, UINT64_MAX,
                 demo->image_acquired_semaphores[demo->frame_index], VK_NULL_HANDLE, &demo->current_buffer);
 
-        if (err == VK_ERROR_OUT_OF_DATE_KHR) {
+        if (err == VK_ERROR_OUT_OF_DATE_KHR)
+        {
             // demo->swapchain is out of date (e.g. the window was resized) and
             // must be recreated:
             demo_resize(demo);
@@ -232,7 +231,8 @@ static void xcb_draw(struct demo *demo)
             // present the image correctly.
             break;
         }
-        else{
+        else
+        {
             assert(!err);
         }
     } while (err != VK_SUCCESS);
