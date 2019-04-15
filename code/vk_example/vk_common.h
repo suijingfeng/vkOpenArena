@@ -6,8 +6,8 @@
 //#define VK_NO_PROTOTYPES
 #define VK_USE_PLATFORM_XCB_KHR 1
 
-#include "vulkan/vulkan.h"
-#include "vulkan/vk_sdk_platform.h"
+#include "../vulkan/vulkan.h"
+#include "../vulkan/vk_sdk_platform.h"
 
 
 const char * cvtResToStr(VkResult result);

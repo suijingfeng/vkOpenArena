@@ -24,22 +24,17 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 // the window surface needs to be createdd right after the instance creation
 // because it can actually influence the physical device selection
 
+
+// Use local header for easier build
+#include "../SDL2/include/SDL.h"
+#include "../SDL2/include/SDL_vulkan.h"
+
 #include "VKimpl.h"
 #include "vk_instance.h"
 
 #include "tr_cvar.h"
 #include "icon_oa.h"
 #include "glConfig.h"
-
-
-#ifdef _WIN32
-	#include "../SDL2/include/SDL.h"
-    #include "../SDL2/include/SDL_vulkan.h"
-#else
-	#include <SDL2/SDL.h>
-    #include <SDL2/SDL_syswm.h>
-    #include <SDL2/SDL_vulkan.h>
-#endif
 
 
 static SDL_Window* window_sdl = NULL;
@@ -221,7 +216,7 @@ static int VKimp_SetMode(int mode, qboolean fullscreen)
 /*
  * This routine is responsible for initializing the OS specific portions of Vulkan
  */
-void vk_createWindow(void)
+void vk_createWindowImpl(void)
 {
 	ri.Printf(PRINT_ALL, "...Creating window (using SDL2)...\n");
 
@@ -323,7 +318,7 @@ void vk_getInstanceProcAddrImpl(void)
 }
 
 
-void vk_destroyWindow( void )
+void vk_destroyWindowImpl( void )
 {
 	ri.Printf(PRINT_ALL, " Destroy Window Subsystem.\n");
 
@@ -354,7 +349,7 @@ void vk_createSurfaceImpl(void)
 Minimize the game so that user is back at the desktop
 ===============
 */
-void vk_minimizeWindow( void )
+void vk_minimizeWindowImpl( void )
 {
     VkBool32 toggleWorked = 1;
     ri.Printf( PRINT_ALL, " Minimizing Window (SDL). \n");

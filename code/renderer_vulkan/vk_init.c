@@ -16,7 +16,7 @@
 void vk_initialize(void)
 {
     // This function is responsible for initializing a valid Vulkan subsystem.
-    vk_createWindow();
+    vk_createWindowImpl();
 
     vk_getProcAddress(); 
  
