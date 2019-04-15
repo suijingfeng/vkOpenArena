@@ -4,7 +4,7 @@
 #include "vk_common.h"
 #include "demo.h"
 
-struct VK_DebugUtils_PFN_t
+struct PFN_EXT_DebugUtils_t
 {
     PFN_vkCreateDebugUtilsMessengerEXT CreateDebugUtilsMessengerEXT;
     PFN_vkDestroyDebugUtilsMessengerEXT DestroyDebugUtilsMessengerEXT;
@@ -16,7 +16,7 @@ struct VK_DebugUtils_PFN_t
 };
 
 
-extern struct VK_DebugUtils_PFN_t pFn_vkd;
+extern struct PFN_EXT_DebugUtils_t pFn_vkd;
 
 void vk_createDebugUtils(struct demo * pDemo);
 

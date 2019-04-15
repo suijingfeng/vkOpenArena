@@ -3,12 +3,13 @@
 #include <string.h>
 #include <stdlib.h>
 #include <stdio.h>
+#include <xcb/xcb.h>
 
 #include "linmath.h"
+#include "vk_common.h"
+#include "vk_swapchain.h"
 #include "demo.h"
 #include "model.h"
-#include "vk_common.h"
-
 
 
 void xcb_createWindow(struct demo *demo)
@@ -215,7 +216,7 @@ static void xcb_draw(struct demo *demo)
 
     do {
         // Get the index of the next available swapchain image:
-        err = demo->fpAcquireNextImageKHR(demo->device, demo->swapchain, UINT64_MAX,
+        err = pFn_vkhr.fpAcquireNextImageKHR(demo->device, demo->swapchain, UINT64_MAX,
                 demo->image_acquired_semaphores[demo->frame_index], VK_NULL_HANDLE, &demo->current_buffer);
 
         if (err == VK_ERROR_OUT_OF_DATE_KHR)
@@ -290,7 +291,7 @@ static void xcb_draw(struct demo *demo)
     };
 
 
-    err = demo->fpQueuePresentKHR(demo->present_queue, &present);
+    err = pFn_vkhr.fpQueuePresentKHR(demo->present_queue, &present);
     demo->frame_index += 1;
     demo->frame_index %= FRAME_LAG;
 

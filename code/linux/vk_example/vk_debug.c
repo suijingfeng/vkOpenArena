@@ -6,7 +6,7 @@
 #include "vk_common.h"
 #include "vk_debug.h"
 
-struct VK_DebugUtils_PFN_t pFn_vkd;
+struct PFN_EXT_DebugUtils_t pFn_vkd;
 
 static VkDebugUtilsMessengerCreateInfoEXT dbg_messenger_create_info;
 
@@ -47,7 +47,7 @@ const char * vk_assertStandValidationLayer(void)
         if (!strcmp(instance_validation_layers_name, instance_layers[j].layerName))
         {
             found = VK_TRUE;
-            printf(" Standard validation found !^_^! \n");
+            printf(" Standard validation found. \n");
             break;
         }
     }

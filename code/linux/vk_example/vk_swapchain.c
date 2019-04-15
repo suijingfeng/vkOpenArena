@@ -4,13 +4,19 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <signal.h>
-
+#include <string.h>
 
 #include "demo.h"
 #include "vk_common.h"
+#include "vk_swapchain.h"
 
-static PFN_vkGetDeviceProcAddr g_gdpa = NULL;
 
+struct PFN_KHR_SurfacePresent_t pFn_vkhr;
+
+void vk_clearSurfacePresentPFN(void)
+{
+    memset(&pFn_vkhr, 0, sizeof(pFn_vkhr));
+}
 
 static void vk_create_device(struct demo *demo)
 {
@@ -50,6 +56,29 @@ static void vk_create_device(struct demo *demo)
 }
 
 
+void vk_getDeviceProcAddrKHR(struct demo * pDemo)
+{
+    static PFN_vkGetDeviceProcAddr g_gdpa;
+
+#define GET_DEVICE_PROC_ADDR(dev, entrypoint)                                                           \
+{                                                                                                       \
+    if (!g_gdpa)                                                                                        \
+        g_gdpa = (PFN_vkGetDeviceProcAddr) vkGetInstanceProcAddr(pDemo->inst, "vkGetDeviceProcAddr");    \
+    pFn_vkhr.fp##entrypoint = (PFN_vk##entrypoint)g_gdpa(dev, "vk" #entrypoint);                           \
+    if (pFn_vkhr.fp##entrypoint == NULL) {                                                                 \
+        ERR_EXIT("vkGetDeviceProcAddr failed to find vk" #entrypoint, "vkGetDeviceProcAddr Failure");   \
+    }                                                                                                   \
+}
+
+    GET_DEVICE_PROC_ADDR(pDemo->device, CreateSwapchainKHR);
+    GET_DEVICE_PROC_ADDR(pDemo->device, DestroySwapchainKHR);
+    GET_DEVICE_PROC_ADDR(pDemo->device, GetSwapchainImagesKHR);
+    GET_DEVICE_PROC_ADDR(pDemo->device, AcquireNextImageKHR);
+    GET_DEVICE_PROC_ADDR(pDemo->device, QueuePresentKHR);
+
+#undef GET_DEVICE_PROC_ADDR
+}
+
 
 void init_vk_swapchain(struct demo *demo)
 {
@@ -68,7 +97,7 @@ void init_vk_swapchain(struct demo *demo)
     // Iterate over each queue to learn whether it supports presenting:
     VkBool32 * supportsPresent = (VkBool32 *)malloc(demo->queue_family_count * sizeof(VkBool32));
     for (uint32_t i = 0; i < demo->queue_family_count; i++) {
-        demo->fpGetPhysicalDeviceSurfaceSupportKHR(demo->gpu, i, demo->surface, &supportsPresent[i]);
+        pFn_vkhr.fpGetPhysicalDeviceSurfaceSupportKHR(demo->gpu, i, demo->surface, &supportsPresent[i]);
     }
 
     // Search for a graphics and a present queue in the array of queue families, 
@@ -122,23 +151,7 @@ void init_vk_swapchain(struct demo *demo)
 
     vk_create_device(demo);
 
-#define GET_DEVICE_PROC_ADDR(dev, entrypoint)                                                           \
-{                                                                                                       \
-    if (!g_gdpa)                                                                                        \
-        g_gdpa = (PFN_vkGetDeviceProcAddr) vkGetInstanceProcAddr(demo->inst, "vkGetDeviceProcAddr");    \
-    demo->fp##entrypoint = (PFN_vk##entrypoint)g_gdpa(dev, "vk" #entrypoint);                           \
-    if (demo->fp##entrypoint == NULL) {                                                                 \
-        ERR_EXIT("vkGetDeviceProcAddr failed to find vk" #entrypoint, "vkGetDeviceProcAddr Failure");   \
-    }                                                                                                   \
-}
-
-    GET_DEVICE_PROC_ADDR(demo->device, CreateSwapchainKHR);
-    GET_DEVICE_PROC_ADDR(demo->device, DestroySwapchainKHR);
-    GET_DEVICE_PROC_ADDR(demo->device, GetSwapchainImagesKHR);
-    GET_DEVICE_PROC_ADDR(demo->device, AcquireNextImageKHR);
-    GET_DEVICE_PROC_ADDR(demo->device, QueuePresentKHR);
-
-#undef GET_DEVICE_PROC_ADDR
+    vk_getDeviceProcAddrKHR(demo);
 
     vkGetDeviceQueue(demo->device, demo->graphics_queue_family_index, 0, &demo->graphics_queue);
 
@@ -150,10 +163,10 @@ void init_vk_swapchain(struct demo *demo)
 
     // Get the list of VkFormat's that are supported:
     uint32_t formatCount;
-    VK_CHECK( demo->fpGetPhysicalDeviceSurfaceFormatsKHR(demo->gpu, demo->surface, &formatCount, NULL) );
+    VK_CHECK( pFn_vkhr.fpGetPhysicalDeviceSurfaceFormatsKHR(demo->gpu, demo->surface, &formatCount, NULL) );
 
     VkSurfaceFormatKHR *surfFormats = (VkSurfaceFormatKHR *)malloc(formatCount * sizeof(VkSurfaceFormatKHR));
-    VK_CHECK( demo->fpGetPhysicalDeviceSurfaceFormatsKHR(demo->gpu, demo->surface, &formatCount, surfFormats));
+    VK_CHECK( pFn_vkhr.fpGetPhysicalDeviceSurfaceFormatsKHR(demo->gpu, demo->surface, &formatCount, surfFormats));
 
     // If the format list includes just one entry of VK_FORMAT_UNDEFINED,
     // the surface has no preferred format.  Otherwise, at least one
@@ -208,11 +221,11 @@ void vk_prepare_buffers(struct demo *demo)
 
     // Check the surface capabilities and formats
     VkSurfaceCapabilitiesKHR surfCapabilities;
-    VK_CHECK( demo->fpGetPhysicalDeviceSurfaceCapabilitiesKHR(demo->gpu, demo->surface, &surfCapabilities) );
+    VK_CHECK( pFn_vkhr.fpGetPhysicalDeviceSurfaceCapabilitiesKHR(demo->gpu, demo->surface, &surfCapabilities) );
 
     uint32_t presentModeCount;
     
-    VK_CHECK( demo->fpGetPhysicalDeviceSurfacePresentModesKHR(demo->gpu, demo->surface, &presentModeCount, NULL) );
+    VK_CHECK( pFn_vkhr.fpGetPhysicalDeviceSurfacePresentModesKHR(demo->gpu, demo->surface, &presentModeCount, NULL) );
 
     printf("presentModeCount: %d\n", presentModeCount);
 
@@ -220,7 +233,7 @@ void vk_prepare_buffers(struct demo *demo)
     
     assert(presentModes);
     
-    VK_CHECK( demo->fpGetPhysicalDeviceSurfacePresentModesKHR(demo->gpu, demo->surface, &presentModeCount, presentModes) );
+    VK_CHECK( pFn_vkhr.fpGetPhysicalDeviceSurfacePresentModesKHR(demo->gpu, demo->surface, &presentModeCount, presentModes) );
 
     VkExtent2D swapchainExtent;
     // width and height are either both 0xFFFFFFFF, or both not 0xFFFFFFFF.
@@ -378,22 +391,22 @@ void vk_prepare_buffers(struct demo *demo)
         .clipped = true,
     };
     uint32_t i;
-    VK_CHECK( demo->fpCreateSwapchainKHR(demo->device, &swapchain_ci, NULL, &demo->swapchain) );
+    VK_CHECK( pFn_vkhr.fpCreateSwapchainKHR(demo->device, &swapchain_ci, NULL, &demo->swapchain) );
 
     // If we just re-created an existing swapchain, we should destroy the old
     // swapchain at this point.
     // Note: destroying the swapchain also cleans up all its associated
     // presentable images once the platform is done with them.
     if (oldSwapchain != VK_NULL_HANDLE) {
-        demo->fpDestroySwapchainKHR(demo->device, oldSwapchain, NULL);
+        pFn_vkhr.fpDestroySwapchainKHR(demo->device, oldSwapchain, NULL);
     }
 
-    VK_CHECK( demo->fpGetSwapchainImagesKHR(demo->device, demo->swapchain, &demo->swapchainImageCount, NULL) );
+    VK_CHECK( pFn_vkhr.fpGetSwapchainImagesKHR(demo->device, demo->swapchain, &demo->swapchainImageCount, NULL) );
 
     VkImage* swapchainImages = (VkImage *)malloc(demo->swapchainImageCount * sizeof(VkImage));
     assert(swapchainImages);
 
-    VK_CHECK( demo->fpGetSwapchainImagesKHR(demo->device, demo->swapchain, &demo->swapchainImageCount, swapchainImages) );
+    VK_CHECK( pFn_vkhr.fpGetSwapchainImagesKHR(demo->device, demo->swapchain, &demo->swapchainImageCount, swapchainImages) );
 
 
     demo->swapchain_image_resources =

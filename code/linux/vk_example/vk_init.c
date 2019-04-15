@@ -9,6 +9,7 @@
 #include "demo.h"
 #include "vk_common.h"
 #include "vk_debug.h"
+#include "vk_swapchain.h"
 
 #define APP_SHORT_NAME "cube"
 
@@ -38,26 +39,19 @@ void vk_selectPhysicalDevice(struct demo * const pDemo)
 }
 
 
-void vk_init(struct demo *demo)
+void vk_checkSurfaceExtension(struct demo * const pDemo)
 {
-
-    printf("---- Initial Vulkan. ----\n");
-
     uint32_t instance_extension_count = 0;
-    
-    
-    demo->enabled_extension_count = 0;
-
-
     /* Look for instance extensions */
     VkBool32 surfaceExtFound = 0;
-    memset(demo->extension_names, 0, sizeof(demo->extension_names));
+    memset(pDemo->extension_names, 0, sizeof(pDemo->extension_names));
 
     VK_CHECK( vkEnumerateInstanceExtensionProperties(NULL, &instance_extension_count, NULL) );
 
     if (instance_extension_count > 0)
     {
-        VkExtensionProperties* instance_extensions = (VkExtensionProperties* ) malloc(sizeof(VkExtensionProperties) * instance_extension_count);
+        VkExtensionProperties* instance_extensions = 
+            (VkExtensionProperties* ) malloc(sizeof(VkExtensionProperties) * instance_extension_count);
         VK_CHECK( vkEnumerateInstanceExtensionProperties(NULL, &instance_extension_count, instance_extensions) );
 
         for (uint32_t i = 0; i < instance_extension_count; i++)
@@ -65,17 +59,17 @@ void vk_init(struct demo *demo)
             if (!strcmp(VK_KHR_SURFACE_EXTENSION_NAME, instance_extensions[i].extensionName))
             {
                 surfaceExtFound = 1;
-                demo->extension_names[demo->enabled_extension_count++] = VK_KHR_SURFACE_EXTENSION_NAME;
+                pDemo->extension_names[pDemo->enabled_extension_count++] = VK_KHR_SURFACE_EXTENSION_NAME;
             }
 
             if (!strcmp(VK_KHR_XCB_SURFACE_EXTENSION_NAME, instance_extensions[i].extensionName)) {
-                demo->extension_names[demo->enabled_extension_count++] = VK_KHR_XCB_SURFACE_EXTENSION_NAME;
+                pDemo->extension_names[pDemo->enabled_extension_count++] = VK_KHR_XCB_SURFACE_EXTENSION_NAME;
             }
             
             if (!strcmp(VK_EXT_DEBUG_UTILS_EXTENSION_NAME, instance_extensions[i].extensionName))
             {
-                if (demo->validate) {
-                    demo->extension_names[demo->enabled_extension_count++] = VK_EXT_DEBUG_UTILS_EXTENSION_NAME;
+                if (pDemo->validate) {
+                    pDemo->extension_names[pDemo->enabled_extension_count++] = VK_EXT_DEBUG_UTILS_EXTENSION_NAME;
                 }
             }
         }
@@ -87,11 +81,11 @@ void vk_init(struct demo *demo)
         }
 
         printf("-------- Enabled instance extensions on this app --------\n");
-        for (uint32_t i = 0; i < demo->enabled_extension_count; i++)
+        for (uint32_t i = 0; i < pDemo->enabled_extension_count; ++i)
         {
-            printf(" %s \n", demo->extension_names[i]);
+            printf(" %s \n", pDemo->extension_names[i]);
         }
-
+        printf("-------- --------------------------------------- --------\n");
         free(instance_extensions);
     }
 
@@ -102,6 +96,11 @@ void vk_init(struct demo *demo)
                  "Please look at the Getting Started guide for additional information.\n",
                  "vkCreateInstance Failure");
     }
+}
+
+
+void vk_createInstance(struct demo * pDemo)
+{
 
     const VkApplicationInfo app = {
         .sType = VK_STRUCTURE_TYPE_APPLICATION_INFO,
@@ -116,7 +115,7 @@ void vk_init(struct demo *demo)
     uint32_t instance_layer_count = 0;
     const char * pInstanceValidLayer = NULL;
     
-    if (demo->validate)
+    if (pDemo->validate)
     {
         pInstanceValidLayer = vk_assertStandValidationLayer();
         if(NULL != pInstanceValidLayer )
@@ -127,16 +126,16 @@ void vk_init(struct demo *demo)
     // so don't be so complicated
     VkInstanceCreateInfo inst_info = {
         .sType = VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO,
-        .pNext = (demo->validate ? vk_setDebugUtilsMsgInfo(demo) : NULL),
+        .pNext = (pDemo->validate ? vk_setDebugUtilsMsgInfo(pDemo) : NULL),
         .pApplicationInfo = &app,
-        .enabledLayerCount = (demo->validate ? instance_layer_count : 0),
+        .enabledLayerCount = (pDemo->validate ? instance_layer_count : 0),
         .ppEnabledLayerNames = &pInstanceValidLayer,
-        .enabledExtensionCount = demo->enabled_extension_count,
-        .ppEnabledExtensionNames = (const char *const *)demo->extension_names,
+        .enabledExtensionCount = pDemo->enabled_extension_count,
+        .ppEnabledExtensionNames = (const char *const *)pDemo->extension_names,
     };
 
     
-    VkResult err = vkCreateInstance(&inst_info, NULL, &demo->inst);
+    VkResult err = vkCreateInstance(&inst_info, NULL, &pDemo->inst);
     if (err == VK_ERROR_INCOMPATIBLE_DRIVER) {
         ERR_EXIT(
             "Cannot find a compatible Vulkan installable client driver (ICD).\n\n"
@@ -154,32 +153,73 @@ void vk_init(struct demo *demo)
             "Please look at the Getting Started guide for additional information.\n",
             "vkCreateInstance Failure");
     }
-
-    vk_selectPhysicalDevice(demo);
     
+    printf(" Vulkan Instance Created. !^_^! \n\n");
+}
 
-    
+
+void vk_getInstanceProcAddrKHR(struct demo * pDemo)
+{
+#define GET_INSTANCE_PROC_ADDR(inst, entrypoint)                                                            \
+{                                                                                                           \
+    pFn_vkhr.fp##entrypoint = (PFN_vk##entrypoint)vkGetInstanceProcAddr(inst, "vk" #entrypoint);            \
+    if (pFn_vkhr.fp##entrypoint == NULL) {                                                                  \
+        ERR_EXIT("vkGetInstanceProcAddr failed to find vk" #entrypoint, "vkGetInstanceProcAddr Failure");   \
+    }                                                                                                       \
+}
+
+    GET_INSTANCE_PROC_ADDR(pDemo->inst, GetPhysicalDeviceSurfaceSupportKHR);
+    GET_INSTANCE_PROC_ADDR(pDemo->inst, GetPhysicalDeviceSurfaceCapabilitiesKHR);
+    GET_INSTANCE_PROC_ADDR(pDemo->inst, GetPhysicalDeviceSurfaceFormatsKHR);
+    GET_INSTANCE_PROC_ADDR(pDemo->inst, GetPhysicalDeviceSurfacePresentModesKHR);
+//    GET_INSTANCE_PROC_ADDR(pDemo->inst, GetSwapchainImagesKHR);
+
+#undef GET_INSTANCE_PROC_ADDR
+}
+
+
+void vk_checkSwapchainExt(struct demo * pDemo)
+{
     /* Look for device extensions */
     uint32_t device_extension_count = 0;
     VkBool32 swapchainExtFound = 0;
-    demo->enabled_extension_count = 0;
-    memset(demo->extension_names, 0, sizeof(demo->extension_names));
+    
+    pDemo->enabled_extension_count = 0;
+    
+    memset(pDemo->extension_names, 0, sizeof(pDemo->extension_names));
 
-    VK_CHECK( vkEnumerateDeviceExtensionProperties(demo->gpu, NULL, &device_extension_count, NULL) );
+    VK_CHECK( vkEnumerateDeviceExtensionProperties(pDemo->gpu, NULL, &device_extension_count, NULL) );
 
-    if (device_extension_count > 0)
+    assert (device_extension_count > 0);
+    
     {
-        VkExtensionProperties * device_extensions = (VkExtensionProperties *)malloc(sizeof(VkExtensionProperties) * device_extension_count);
-        VK_CHECK( vkEnumerateDeviceExtensionProperties(demo->gpu, NULL, &device_extension_count, device_extensions) );
+        VkExtensionProperties * device_extensions = 
+            (VkExtensionProperties *) malloc( sizeof(VkExtensionProperties) * device_extension_count );
+        VK_CHECK( vkEnumerateDeviceExtensionProperties(pDemo->gpu, NULL, &device_extension_count, device_extensions) );
 
         for (uint32_t i = 0; i < device_extension_count; i++)
         {
-            if (!strcmp(VK_KHR_SWAPCHAIN_EXTENSION_NAME, device_extensions[i].extensionName)) {
+            if (!strcmp(VK_KHR_SWAPCHAIN_EXTENSION_NAME, device_extensions[i].extensionName))
+            {
                 swapchainExtFound = 1;
-                demo->extension_names[demo->enabled_extension_count++] = VK_KHR_SWAPCHAIN_EXTENSION_NAME;
+                pDemo->extension_names[pDemo->enabled_extension_count++] = VK_KHR_SWAPCHAIN_EXTENSION_NAME;
+                break;
             }
-            assert(demo->enabled_extension_count < 64);
         }
+
+        printf("-------- Total %d device extensions supported --------\n", device_extension_count);
+        for (uint32_t i = 0; i < device_extension_count; i++)
+        {
+            printf(" %s \n", device_extensions[i].extensionName);
+        }
+
+        printf("-------- Enabled device extensions on this app --------\n");
+        for (uint32_t i = 0; i < pDemo->enabled_extension_count; ++i)
+        {
+            printf(" %s \n", pDemo->extension_names[i]);
+        }
+        printf("-------- --------------------------------------- --------\n");
+
 
         free(device_extensions);
     }
@@ -190,6 +230,22 @@ void vk_init(struct demo *demo)
                  "Please look at the Getting Started guide for additional information.\n",
                  "vkCreateInstance Failure");
     }
+}
+
+
+void vk_init(struct demo *demo)
+{
+    printf("---- Initial Vulkan. ----\n");
+
+    demo->enabled_extension_count = 0;
+
+    vk_checkSurfaceExtension(demo);
+
+    vk_createInstance(demo);
+
+    vk_selectPhysicalDevice(demo);
+    
+    vk_checkSwapchainExt(demo);
 
     if (demo->validate)
     {
@@ -202,7 +258,8 @@ void vk_init(struct demo *demo)
     vkGetPhysicalDeviceQueueFamilyProperties(demo->gpu, &demo->queue_family_count, NULL);
     assert(demo->queue_family_count >= 1);
 
-    demo->queue_props = (VkQueueFamilyProperties *) malloc(demo->queue_family_count * sizeof(VkQueueFamilyProperties));
+    demo->queue_props = (VkQueueFamilyProperties *) 
+        malloc( demo->queue_family_count * sizeof(VkQueueFamilyProperties) );
     vkGetPhysicalDeviceQueueFamilyProperties(demo->gpu, &demo->queue_family_count, demo->queue_props);
 
     // Query fine-grained feature support for this device.
@@ -211,19 +268,5 @@ void vk_init(struct demo *demo)
     VkPhysicalDeviceFeatures physDevFeatures;
     vkGetPhysicalDeviceFeatures(demo->gpu, &physDevFeatures);
 
-#define GET_INSTANCE_PROC_ADDR(inst, entrypoint)                                                              \
-    {                                                                                                         \
-        demo->fp##entrypoint = (PFN_vk##entrypoint)vkGetInstanceProcAddr(inst, "vk" #entrypoint);             \
-        if (demo->fp##entrypoint == NULL) {                                                                   \
-            ERR_EXIT("vkGetInstanceProcAddr failed to find vk" #entrypoint, "vkGetInstanceProcAddr Failure"); \
-        }                                                                                                     \
-    }
-
-    GET_INSTANCE_PROC_ADDR(demo->inst, GetPhysicalDeviceSurfaceSupportKHR);
-    GET_INSTANCE_PROC_ADDR(demo->inst, GetPhysicalDeviceSurfaceCapabilitiesKHR);
-    GET_INSTANCE_PROC_ADDR(demo->inst, GetPhysicalDeviceSurfaceFormatsKHR);
-    GET_INSTANCE_PROC_ADDR(demo->inst, GetPhysicalDeviceSurfacePresentModesKHR);
-    GET_INSTANCE_PROC_ADDR(demo->inst, GetSwapchainImagesKHR);
-
-#undef GET_INSTANCE_PROC_ADDR
+    vk_getInstanceProcAddrKHR(demo);
 }

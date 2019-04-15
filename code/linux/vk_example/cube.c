@@ -5,10 +5,8 @@
 #include <stdlib.h>
 #include <string.h>
 #include <assert.h>
-#include <signal.h>
 #include <stdbool.h>
 
-#include <X11/Xutil.h>
 
 #include "vk_window_xcb.h"
 
@@ -437,7 +435,7 @@ static void vk_cleanup(struct demo *demo)
             vkFreeMemory(demo->device, demo->textures[i].mem, NULL);
             vkDestroySampler(demo->device, demo->textures[i].sampler, NULL);
         }
-        demo->fpDestroySwapchainKHR(demo->device, demo->swapchain, NULL);
+        pFn_vkhr.fpDestroySwapchainKHR(demo->device, demo->swapchain, NULL);
 
         vkDestroyImageView(demo->device, demo->depth.view, NULL);
         vkDestroyImage(demo->device, demo->depth.image, NULL);
@@ -464,7 +462,7 @@ static void vk_cleanup(struct demo *demo)
 
     vkDestroySurfaceKHR(demo->inst, demo->surface, NULL);
 
-
+    vk_clearSurfacePresentPFN();
 
     xcb_destroy_window(demo->connection, demo->xcb_window);
     xcb_disconnect(demo->connection);
