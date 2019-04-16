@@ -1,6 +1,5 @@
 #include "tr_local.h"
 #include "vk_instance.h"
-#include "vk_shaders.h"
 #include "vk_pipelines.h"
 #include "tr_shader.h"
 // The graphics pipeline is the sequence of operations that take the vertices
@@ -38,29 +37,8 @@
 //
 
 
+struct GlobalPipelinesManager_t g_stdPipelines;
 
-// used with cg_shadows == 2
-enum Vk_Shadow_Phase {
-    SHADOWS_RENDERING_DISABLED,
-	SHADOWS_RENDERING_EDGES,
-    SHADOWS_RENDERING_FULLSCREEN_QUAD
-};
-
-
-struct Vk_Pipeline_Def {
-    VkPipeline pipeline;
-    uint32_t state_bits; // GLS_XXX flags
-	cullType_t face_culling;// cullType_t
-	VkBool32 polygon_offset;
-	VkBool32 clipping_plane;
-	VkBool32 mirror;
-	VkBool32 line_primitives;
-    enum Vk_Shader_Type shader_type;
-	enum Vk_Shadow_Phase shadow_phase;
-};
-
-
-struct GlobalPipelineManager g_stdPipelines;
 
 #define MAX_VK_PIPELINES        1024
 static struct Vk_Pipeline_Def s_pipeline_defs[MAX_VK_PIPELINES];
@@ -194,7 +172,7 @@ void vk_createPipelineLayout(void)
 }
 
 
-static void vk_create_pipeline(const struct Vk_Pipeline_Def* def, VkPipeline* pPipeLine)
+void vk_create_pipeline(const struct Vk_Pipeline_Def* def, VkPipeline* pPipeLine)
 {
 
 	struct Specialization_Data {
@@ -676,8 +654,10 @@ static VkPipeline vk_find_pipeline(struct Vk_Pipeline_Def* def)
 
 
 
-void create_pipelines_for_each_stage(shaderStage_t *pStage, shader_t* pShader)
+void vk_create_shader_stage_pipelines(shaderStage_t *pStage, shader_t* pShader)
 {
+    ri.Printf(PRINT_ALL, " Create shader stage pipelines. \n");
+
     struct Vk_Pipeline_Def def;
 
     def.line_primitives = 0;
@@ -711,8 +691,7 @@ void create_pipelines_for_each_stage(shaderStage_t *pStage, shader_t* pShader)
 }
 
 
-
-void create_standard_pipelines(void)
+void vk_createStandardPipelines(void)
 {
       
     ri.Printf(PRINT_ALL, " Create skybox pipeline \n");
@@ -824,73 +803,13 @@ void create_standard_pipelines(void)
             }
         }
     }
-
-
-    // debug pipelines
-    ri.Printf(PRINT_ALL, " Create tris debug pipeline \n");
-    {
-        struct Vk_Pipeline_Def def;
-        memset(&def, 0, sizeof(def));
-
-        def.state_bits = GLS_POLYMODE_LINE | GLS_DEPTHMASK_TRUE;
-        vk_create_pipeline(&def, &g_stdPipelines.tris_debug_pipeline);
-    }
-
-    
-    ri.Printf(PRINT_ALL, " Create tris mirror debug pipeline \n");
-    {
-        struct Vk_Pipeline_Def def;
-        memset(&def, 0, sizeof(def));
-
-        def.state_bits = GLS_POLYMODE_LINE | GLS_DEPTHMASK_TRUE;
-        def.face_culling = CT_BACK_SIDED;
-        vk_create_pipeline(&def, &g_stdPipelines.tris_mirror_debug_pipeline);
-    }
-
-    ri.Printf(PRINT_ALL, " Create normals debug pipeline \n");
-    {
-        struct Vk_Pipeline_Def def;
-        memset(&def, 0, sizeof(def));
-
-        def.state_bits = GLS_DEPTHMASK_TRUE;
-        def.line_primitives = VK_TRUE;
-        vk_create_pipeline(&def, &g_stdPipelines.normals_debug_pipeline);
-    }
-
-
-    ri.Printf(PRINT_ALL, " Create surface debug pipeline \n");
-    {
-        struct Vk_Pipeline_Def def;
-        memset(&def, 0, sizeof(def));
-
-        def.state_bits = GLS_DEPTHMASK_TRUE | GLS_SRCBLEND_ONE | GLS_DSTBLEND_ONE;
-        vk_create_pipeline(&def, &g_stdPipelines.surface_debug_pipeline_solid);
-    }
-
-    ri.Printf(PRINT_ALL, " Create surface debug outline pipeline \n");
-    {
-        struct Vk_Pipeline_Def def;
-        memset(&def, 0, sizeof(def));
-
-        def.state_bits = GLS_POLYMODE_LINE | GLS_DEPTHMASK_TRUE | GLS_SRCBLEND_ONE | GLS_DSTBLEND_ONE;
-        def.line_primitives = VK_TRUE;
-        vk_create_pipeline(&def, &g_stdPipelines.surface_debug_pipeline_outline);
-    }
-    
-    ri.Printf(PRINT_ALL, " Create images debug pipeline \n");
-    {
-        struct Vk_Pipeline_Def def;
-        memset(&def, 0, sizeof(def));
-
-        def.state_bits = GLS_DEPTHTEST_DISABLE | GLS_SRCBLEND_SRC_ALPHA | GLS_DSTBLEND_ONE_MINUS_SRC_ALPHA;
-        vk_create_pipeline(&def, &g_stdPipelines.images_debug_pipeline);
-    }
 }
 
 
 void vk_destroyShaderStagePipeline(void)
 {
-    // shader stage
+    ri.Printf(PRINT_ALL, " Destroy %d shader stage pipeline. \n", s_numPipelines);
+    // 
     qvkDeviceWaitIdle(vk.device);
     uint32_t i;
     for (i = 0; i < s_numPipelines; i++)
@@ -902,8 +821,11 @@ void vk_destroyShaderStagePipeline(void)
 }
 
 
+
 void vk_destroyGlobalStagePipeline(void)
 {
+    ri.Printf(PRINT_ALL, " Destroy global stage pipeline. \n");
+    
     int i, j, k;
 
 	qvkDestroyDescriptorSetLayout(vk.device, vk.set_layout, NULL); 
@@ -923,18 +845,14 @@ void vk_destroyGlobalStagePipeline(void)
     qvkDestroyPipeline(vk.device, g_stdPipelines.shadow_finish_pipeline, NULL);
 	
     
-    for (i = 0; i < 2; i++)
+    for (i = 0; i < 2; i++) {
 		for (j = 0; j < 3; j++)
 			for (k = 0; k < 2; k++)
             {
 				qvkDestroyPipeline(vk.device, g_stdPipelines.fog_pipelines[i][j][k], NULL);
 				qvkDestroyPipeline(vk.device, g_stdPipelines.dlight_pipelines[i][j][k], NULL);
 			}
+    }
 
-	qvkDestroyPipeline(vk.device, g_stdPipelines.tris_debug_pipeline, NULL);
-	qvkDestroyPipeline(vk.device, g_stdPipelines.tris_mirror_debug_pipeline, NULL);
-	qvkDestroyPipeline(vk.device, g_stdPipelines.normals_debug_pipeline, NULL);
-	qvkDestroyPipeline(vk.device, g_stdPipelines.surface_debug_pipeline_solid, NULL);
-	qvkDestroyPipeline(vk.device, g_stdPipelines.surface_debug_pipeline_outline, NULL);
-	qvkDestroyPipeline(vk.device, g_stdPipelines.images_debug_pipeline, NULL);
+    memset(&g_stdPipelines, 0, sizeof(g_stdPipelines));
 }

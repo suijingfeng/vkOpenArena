@@ -124,7 +124,7 @@ void RB_EndSurface( void )
 	//
 	if ( r_showtris->integer )
     {
-		RB_DrawTris (&tess);
+		RB_DrawTris (&tess, backEnd.viewParms.isMirror);
 	}
 	if ( r_shownormals->integer )
     {

@@ -36,7 +36,7 @@ void RB_DrawNormals (shaderCommands_t* pTess, int numVertexes )
         vk_UploadXYZI(pTess->xyz, pTess->numVertexes, NULL, 0);
         
         updateMVP(backEnd.viewParms.isPortal, backEnd.projection2D, getptr_modelview_matrix());
-        vk_shade_geometry(g_stdPipelines.normals_debug_pipeline, VK_FALSE, DEPTH_RANGE_ZERO, VK_FALSE);
+        vk_shade_geometry(g_debugPipelines.normals, VK_FALSE, DEPTH_RANGE_ZERO, VK_FALSE);
 
         i += count;
     }

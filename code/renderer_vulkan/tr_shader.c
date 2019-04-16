@@ -1923,7 +1923,7 @@ shader_t* FinishShader( void )
     int i = 0;
     for (i=0; i < iStage; i++)
     {
-        create_pipelines_for_each_stage(&stages[i], &shader); 
+        vk_create_shader_stage_pipelines(&stages[i], &shader); 
     }
 
 	return GeneratePermanentShader();

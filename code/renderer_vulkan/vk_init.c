@@ -67,7 +67,11 @@ void vk_initialize(void)
 	//
 	// Standard pipelines.
 	//
-    create_standard_pipelines();
+    vk_createStandardPipelines();
+    //
+    // debug pipelines
+    // 
+    vk_createDebugPipelines();
 
     vk.isInitialized = VK_TRUE;
 }
@@ -94,7 +98,10 @@ void vk_shutdown(void)
     vk_destroyShaderModules();
 
 //
+//  Those pipelines can be used across different maps ?
+//  so we only destroy it want the client quit.
     vk_destroyGlobalStagePipeline();
+    vk_destroyDebugPipelines();
 //
     vk_destroy_commands();
 

@@ -1578,14 +1578,12 @@ Q3VKOBJ = \
   $(B)/renderer_vulkan/tr_curve.o \
   $(B)/renderer_vulkan/tr_font.o \
   $(B)/renderer_vulkan/tr_image.o \
-  $(B)/renderer_vulkan/R_FindShader.o \
-  $(B)/renderer_vulkan/R_ListShader.o \
-  $(B)/renderer_vulkan/R_ImageProcess.o \
   $(B)/renderer_vulkan/tr_init.o \
   $(B)/renderer_vulkan/tr_light.o \
   $(B)/renderer_vulkan/tr_main.o \
   $(B)/renderer_vulkan/tr_marks.o \
   $(B)/renderer_vulkan/tr_mesh.o \
+  \
   $(B)/renderer_vulkan/tr_model.o \
   $(B)/renderer_vulkan/tr_model_iqm.o \
   $(B)/renderer_vulkan/RE_RegisterModel.o \
@@ -1593,11 +1591,16 @@ Q3VKOBJ = \
   $(B)/renderer_vulkan/R_LoadMD3.o \
   $(B)/renderer_vulkan/R_LoadMDR.o \
   $(B)/renderer_vulkan/R_LerpTag.o \
+  \
   $(B)/renderer_vulkan/tr_noise.o \
   $(B)/renderer_vulkan/tr_scene.o \
   $(B)/renderer_vulkan/tr_shade.o \
   $(B)/renderer_vulkan/tr_shade_calc.o \
+  \
   $(B)/renderer_vulkan/tr_shader.o \
+  $(B)/renderer_vulkan/R_FindShader.o \
+  $(B)/renderer_vulkan/R_ListShader.o \
+  \
   $(B)/renderer_vulkan/tr_shadows.o \
   $(B)/renderer_vulkan/tr_sky.o \
   $(B)/renderer_vulkan/tr_surface.o \
@@ -1609,9 +1612,14 @@ Q3VKOBJ = \
   $(B)/renderer_vulkan/vk_instance.o \
   $(B)/renderer_vulkan/vk_init.o \
   $(B)/renderer_vulkan/vk_cmd.o \
+  \
   $(B)/renderer_vulkan/vk_image.o \
   $(B)/renderer_vulkan/vk_image_sampler2.o \
+  $(B)/renderer_vulkan/R_ImageProcess.o \
+  \
   $(B)/renderer_vulkan/vk_pipelines.o \
+  $(B)/renderer_vulkan/vk_debug_pipelines.o \
+  \
   $(B)/renderer_vulkan/vk_frame.o \
   $(B)/renderer_vulkan/vk_swapchain.o \
   $(B)/renderer_vulkan/vk_screenshot.o \

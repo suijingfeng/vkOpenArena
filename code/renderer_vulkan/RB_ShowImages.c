@@ -78,7 +78,7 @@ void RB_ShowImages(image_t ** const pImg, unsigned int N)
         // updateMVP(backEnd.viewParms.isPortal, backEnd.projection2D, getptr_modelview_matrix());
         updateMVP( 0 , 1, getptr_modelview_matrix());
 
-        vk_shade_geometry(g_stdPipelines.images_debug_pipeline, VK_FALSE, DEPTH_RANGE_NORMAL, VK_TRUE);
+        vk_shade_geometry(g_debugPipelines.images, VK_FALSE, DEPTH_RANGE_NORMAL, VK_TRUE);
 	}
 	tess.numIndexes = 0;
 	tess.numVertexes = 0;

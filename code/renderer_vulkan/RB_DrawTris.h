@@ -2,6 +2,6 @@
 #define RB_DRAWTRIS_H_
 struct shaderCommands_s;
 
-void RB_DrawTris (struct shaderCommands_s *input);
+void RB_DrawTris (struct shaderCommands_s *input, int isMirror);
 
 #endif
