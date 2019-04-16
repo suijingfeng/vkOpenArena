@@ -678,7 +678,7 @@ static void DrawSkyBox( shader_t *shader, float matMV[16] )
         
         updateMVP(backEnd.viewParms.isPortal, backEnd.projection2D, matMV);
 
-        vk_shade_geometry(g_stdPipelines.skybox_pipeline, VK_FALSE, r_showsky->integer ? DEPTH_RANGE_ZERO : DEPTH_RANGE_ONE, VK_TRUE);
+        vk_shade_geometry(g_globalPipelines.skybox_pipeline, VK_FALSE, r_showsky->integer ? DEPTH_RANGE_ZERO : DEPTH_RANGE_ONE, VK_TRUE);
 	}
 }
 

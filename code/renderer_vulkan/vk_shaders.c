@@ -9,21 +9,7 @@
 // render targets.
 
 
-/*
-static VkPipelineShaderStageCreateInfo get_shader_stage_desc(
-        VkShaderStageFlagBits stage, VkShaderModule shader_module, const char* entry)
-{
-	VkPipelineShaderStageCreateInfo desc;
-	desc.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
-	desc.pNext = NULL;
-	desc.flags = 0;
-	desc.stage = stage;
-	desc.module = shader_module;
-	desc.pName = entry;
-	desc.pSpecializationInfo = NULL;
-	return desc;
-};
-*/
+
 
 struct StageShaderModuleManager{
 	//
@@ -62,13 +48,11 @@ static void create_shader_module(const unsigned char* pBytes, const int count, V
 }
 
 
-
 // The VkShaderModule object is just a dumb wrapper around the bytecode buffer
 // The shaders aren't linked to each other yet and they haven't even been given
 // a purpose yet.
 void vk_loadShaderModules(void)
 {
-
     extern unsigned char single_texture_vert_spv[];
     extern int single_texture_vert_spv_size;
     
@@ -167,7 +151,6 @@ void vk_specifyShaderModule(const enum Vk_Shader_Type shader_type, const VkBool3
         }
 
     }
-
 }
 
 

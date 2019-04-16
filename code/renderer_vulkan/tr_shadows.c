@@ -223,8 +223,8 @@ void RB_ShadowTessEnd( void ) {
 	// mirrors have the culling order reversed
 
 	// VULKAN
-	vk_renderShadowEdges(g_stdPipelines.shadow_volume_pipelines[0][backEnd.viewParms.isMirror]);
-	vk_renderShadowEdges(g_stdPipelines.shadow_volume_pipelines[1][backEnd.viewParms.isMirror]);
+	vk_renderShadowEdges(g_globalPipelines.shadow_volume_pipelines[0][backEnd.viewParms.isMirror]);
+	vk_renderShadowEdges(g_globalPipelines.shadow_volume_pipelines[1][backEnd.viewParms.isMirror]);
 
 }
 
@@ -281,7 +281,7 @@ void RB_ShadowFinish( void )
      
     vk_UploadXYZI(tess.xyz, tess.numVertexes, tess.indexes, tess.numIndexes);
     updateMVP(backEnd.viewParms.isPortal, backEnd.projection2D, tmp);
-    vk_shade_geometry(g_stdPipelines.shadow_finish_pipeline, VK_FALSE, DEPTH_RANGE_NORMAL, VK_TRUE);
+    vk_shade_geometry(g_globalPipelines.shadow_finish_pipeline, VK_FALSE, DEPTH_RANGE_NORMAL, VK_TRUE);
 
     tess.numIndexes = 0;
     tess.numVertexes = 0;

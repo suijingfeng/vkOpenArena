@@ -31,8 +31,8 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 // tr_shader.c -- this file deals with the parsing and definition of shaders
 
 
-// the shader is parsed into these global variables, then copied into
-// dynamically allocated memory if it is valid.
+// the shader is parsed into these global variables, 
+// then copied into dynamically allocated memory if it is valid.
 static	shaderStage_t	stages[MAX_SHADER_STAGES] = {0};		
 static	shader_t		shader;
 static	texModInfo_t	texMods[MAX_SHADER_STAGES][TR_MAX_TEXMODS];
@@ -1964,7 +1964,6 @@ void R_SetDefaultShader( void )
 	shader.defaultShader = qtrue;
 }
 
-
 /*
 ==============
 SortNewShader
@@ -2052,10 +2051,7 @@ shader_t* GeneratePermanentShader( void )
 	return newShader;
 }
 
-void setDefaultShader(void)
-{
-    shader.defaultShader = qtrue;
-}
+
 
 void R_CreateDefaultShadingCmds(const char* name, image_t* image)
 {
@@ -2119,8 +2115,6 @@ void R_CreateDefaultShadingCmds(const char* name, image_t* image)
     }
 
 }
-
-
 
 
 

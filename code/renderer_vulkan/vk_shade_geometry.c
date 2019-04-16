@@ -1092,7 +1092,7 @@ static void ProjectDlightTexture( void )
 
 		// VULKAN
 
-		vk_shade_geometry(g_stdPipelines.dlight_pipelines[backEnd.refdef.dlights[l].additive > 0 ? 1 : 0][tess.shader->cullType][tess.shader->polygonOffset],
+		vk_shade_geometry(g_globalPipelines.dlight_pipelines[backEnd.refdef.dlights[l].additive > 0 ? 1 : 0][tess.shader->cullType][tess.shader->polygonOffset],
                 VK_FALSE, DEPTH_RANGE_NORMAL, VK_TRUE);
 
 	}
@@ -1128,7 +1128,7 @@ static void RB_FogPass( void ) {
 	// VULKAN
 
     assert(tess.shader->fogPass > 0);
-    VkPipeline pipeline = g_stdPipelines.fog_pipelines[tess.shader->fogPass - 1][tess.shader->cullType][tess.shader->polygonOffset];
+    VkPipeline pipeline = g_globalPipelines.fog_pipelines[tess.shader->fogPass - 1][tess.shader->cullType][tess.shader->polygonOffset];
     vk_shade_geometry(pipeline, VK_FALSE, DEPTH_RANGE_NORMAL, VK_TRUE);
 }
 

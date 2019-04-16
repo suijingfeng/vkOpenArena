@@ -77,7 +77,7 @@ void R_PipelineList_f(void);
 
 
 
-extern struct GlobalPipelinesManager_t g_stdPipelines;
+extern struct GlobalPipelinesManager_t g_globalPipelines;
 extern struct DebugPipelinesManager_t g_debugPipelines;
 
 

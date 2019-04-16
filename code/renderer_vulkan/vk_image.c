@@ -77,7 +77,7 @@ static void vk_createStagingBuffer(uint32_t size)
     memset(&StagBuf, 0, sizeof(StagBuf));
 
 
-    ri.Printf(PRINT_ALL, " Create Staging Buffer: %d\n", size);
+    ri.Printf(PRINT_ALL, " Create staging buffer (%d MB) \n", (size >> 20));
 
     {
         VkBufferCreateInfo buffer_desc;

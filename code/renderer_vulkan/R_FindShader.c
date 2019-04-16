@@ -137,8 +137,6 @@ most world construction surfaces.
 ===============
 */
 
-extern void setDefaultShader(void);
-
 
 shader_t* R_FindShader( const char *name, int lightmapIndex, qboolean mipRawImage )
 {
@@ -261,7 +259,7 @@ shader_t* R_FindShader( const char *name, int lightmapIndex, qboolean mipRawImag
     }
     else
 	{
-	    setDefaultShader();
+	    R_SetDefaultShader();
 	}
 
 
@@ -359,9 +357,7 @@ qhandle_t RE_RegisterShaderFromImage(const char *name, int lightmapIndex, image_
         sh = sh->next;
 	}
 
-
     R_SetTheShader( name, lightmapIndex );
-
 
 	//
 	// create the default shading commands
