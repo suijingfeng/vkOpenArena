@@ -10,6 +10,7 @@
 #include "R_PortalPlane.h"
 #include "tr_light.h"
 #include "tr_shader.h"
+#include "R_ShaderCommands.h"
 
 #define VERTEX_CHUNK_SIZE   (768 * 1024)
 #define INDEX_BUFFER_SIZE   (2 * 1024 * 1024)
@@ -330,18 +331,18 @@ void vk_shade_geometry(VkPipeline pipeline, VkBool32 multitexture, enum Vk_Depth
 	// configure vertex data stream
 	VkBuffer bufs[3] = { shadingDat.vertex_buffer, shadingDat.vertex_buffer, shadingDat.vertex_buffer };
 	VkDeviceSize offs[3] = {
-		COLOR_OFFSET + shadingDat.color_st_elements * sizeof(color4ub_t),
+		COLOR_OFFSET + shadingDat.color_st_elements * 4, // sizeof(color4ub_t)
 		ST0_OFFSET   + shadingDat.color_st_elements * sizeof(vec2_t),
 		ST1_OFFSET   + shadingDat.color_st_elements * sizeof(vec2_t)
 	};
 
-    // color
-    if ((shadingDat.color_st_elements + tess.numVertexes) * sizeof(color4ub_t) > COLOR_SIZE)
-        ri.Error(ERR_DROP, "vulkan: vertex buffer overflow (color) %ld \n", 
-                (shadingDat.color_st_elements + tess.numVertexes) * sizeof(color4ub_t));
+    // color, sizeof(color4ub_t)
+    if ((shadingDat.color_st_elements + tess.numVertexes) * 4 > COLOR_SIZE)
+        ri.Error(ERR_DROP, "vulkan: vertex buffer overflow (color) %d \n", 
+                (shadingDat.color_st_elements + tess.numVertexes) * 4);
 
     unsigned char* dst_color = shadingDat.vertex_buffer_ptr + offs[0];
-    memcpy(dst_color, tess.svars.colors, tess.numVertexes * sizeof(color4ub_t));
+    memcpy(dst_color, tess.svars.colors, tess.numVertexes * 4);
     // st0
 
     unsigned char* dst_st0 = shadingDat.vertex_buffer_ptr + offs[1];

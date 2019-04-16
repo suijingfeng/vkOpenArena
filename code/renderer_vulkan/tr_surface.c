@@ -28,6 +28,8 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #include "tr_backend.h"
 #include "../renderercommon/ref_import.h"
 #include "RB_SurfaceAnim.h"
+#include "tr_surface.h"
+#include "R_ShaderCommands.h"
 /*
 
   THIS ENTIRE FILE IS BACK END
@@ -44,6 +46,17 @@ use the shader system.
 
 
 //============================================================================
+
+void RB_CHECKOVERFLOW(uint32_t v, uint32_t i)
+{
+    if ( (tess.numVertexes + v >= SHADER_MAX_VERTEXES) ||
+         (tess.numIndexes + i >= SHADER_MAX_INDEXES) )
+    {
+        RB_CheckOverflow(v, i);
+    }
+}
+
+
 void RB_CheckOverflow( int verts, int indexes )
 {
 	if ( (tess.numVertexes + verts < SHADER_MAX_VERTEXES) &&
@@ -199,12 +212,9 @@ static void RB_SurfaceSprite( void )
 }
 
 
-/*
-=============
-RB_SurfacePolychain
-=============
-*/
-void RB_SurfacePolychain( srfPoly_t *p ) {
+
+static void RB_SurfacePolychain( srfPoly_t *p )
+{
 	int		i;
 
 	RB_CHECKOVERFLOW( p->numVerts, 3*(p->numVerts - 2) );

@@ -38,7 +38,13 @@
 
 
 #define MAX_VK_PIPELINES        256
-static struct Vk_Pipeline_Def s_pipeline_defs[MAX_VK_PIPELINES];
+
+struct VK_PipelineMgr_t {
+    VkPipeline pipeline;
+    struct PipelineParameter_t par;
+};
+
+static struct VK_PipelineMgr_t s_created_ppl[MAX_VK_PIPELINES];
 static uint32_t s_numPipelines = 0;
 
 
@@ -169,7 +175,15 @@ void vk_createPipelineLayout(void)
 }
 
 
-void vk_create_pipeline(const struct Vk_Pipeline_Def* def, VkBool32 isLine, enum Vk_Shadow_Phase shadow_phase,
+void vk_create_pipeline(
+        uint32_t state_bits,
+        enum Vk_Shader_Type shader_type,
+        enum CullType_t face_culling,
+        enum Vk_Shadow_Phase shadow_phase,
+        VkBool32 clipping_plane,
+        VkBool32 mirror,
+        VkBool32 polygon_offset,
+        VkBool32 isLine, 
         VkPipeline* pPipeLine)
 {
 
@@ -177,13 +191,14 @@ void vk_create_pipeline(const struct Vk_Pipeline_Def* def, VkBool32 isLine, enum
 		int32_t alpha_test_func;
 	} specialization_data;
 
-	if ((def->state_bits & GLS_ATEST_BITS) == 0)
+
+	if ((state_bits & GLS_ATEST_BITS) == 0)
 		specialization_data.alpha_test_func = 0;
-	else if (def->state_bits & GLS_ATEST_GT_0)
+	else if (state_bits & GLS_ATEST_GT_0)
 		specialization_data.alpha_test_func = 1;
-	else if (def->state_bits & GLS_ATEST_LT_80)
+	else if (state_bits & GLS_ATEST_LT_80)
 		specialization_data.alpha_test_func = 2;
-	else if (def->state_bits & GLS_ATEST_GE_80)
+	else if (state_bits & GLS_ATEST_GE_80)
 		specialization_data.alpha_test_func = 3;
 	else
 		ri.Error(ERR_DROP, "create_pipeline: invalid alpha test state bits\n");
@@ -225,9 +240,9 @@ void vk_create_pipeline(const struct Vk_Pipeline_Def* def, VkBool32 isLine, enum
     // variables at render time, because the compiler can do optimizations.
 
 	shaderStages[1].pSpecializationInfo =
-        (def->state_bits & GLS_ATEST_BITS) ? &specialization_info : NULL;
+        (state_bits & GLS_ATEST_BITS) ? &specialization_info : NULL;
 
-    vk_specifyShaderModule(def->shader_type, def->clipping_plane, &shaderStages[0].module, &shaderStages[1].module);
+    vk_specifyShaderModule(shader_type, clipping_plane, &shaderStages[0].module, &shaderStages[1].module);
 
 	// ============== Vertex Input Description =================
     // Applications specify vertex input attribute and vertex input binding
@@ -245,7 +260,7 @@ void vk_create_pipeline(const struct Vk_Pipeline_Def* def, VkBool32 isLine, enum
         bindings[0].inputRate = VK_VERTEX_INPUT_RATE_VERTEX;
         // color array
         bindings[1].binding = 1;
-        bindings[1].stride = sizeof(color4ub_t);
+        bindings[1].stride = 4; //sizeof(color4ub_t);
         bindings[1].inputRate = VK_VERTEX_INPUT_RATE_VERTEX;
         // st0 array
         bindings[2].binding = 2;
@@ -286,9 +301,9 @@ void vk_create_pipeline(const struct Vk_Pipeline_Def* def, VkBool32 isLine, enum
 	vertex_input_state.sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;
 	vertex_input_state.pNext = NULL;
 	vertex_input_state.flags = 0;
-	vertex_input_state.vertexBindingDescriptionCount = (def->shader_type == ST_SINGLE_TEXTURE) ? 3 : 4;
+	vertex_input_state.vertexBindingDescriptionCount = (shader_type == ST_SINGLE_TEXTURE) ? 3 : 4;
 	vertex_input_state.pVertexBindingDescriptions = bindings;
-	vertex_input_state.vertexAttributeDescriptionCount = (def->shader_type == ST_SINGLE_TEXTURE) ? 3 : 4;
+	vertex_input_state.vertexAttributeDescriptionCount = (shader_type == ST_SINGLE_TEXTURE) ? 3 : 4;
 	vertex_input_state.pVertexAttributeDescriptions = attribs;
 
 	//
@@ -325,20 +340,20 @@ void vk_create_pipeline(const struct Vk_Pipeline_Def* def, VkBool32 isLine, enum
 	rasterization_state.flags = 0;
 	rasterization_state.depthClampEnable = VK_FALSE;
 	rasterization_state.rasterizerDiscardEnable = VK_FALSE;
-	rasterization_state.polygonMode = (def->state_bits & GLS_POLYMODE_LINE) ? VK_POLYGON_MODE_LINE : VK_POLYGON_MODE_FILL;
+	rasterization_state.polygonMode = (state_bits & GLS_POLYMODE_LINE) ? VK_POLYGON_MODE_LINE : VK_POLYGON_MODE_FILL;
 
-    switch ( def->face_culling )
+    switch ( face_culling )
     {
         case CT_TWO_SIDED:
             rasterization_state.cullMode = VK_CULL_MODE_NONE;
             break;
         case CT_FRONT_SIDED:
             rasterization_state.cullMode = 
-                (def->mirror ? VK_CULL_MODE_FRONT_BIT : VK_CULL_MODE_BACK_BIT);
+                (mirror ? VK_CULL_MODE_FRONT_BIT : VK_CULL_MODE_BACK_BIT);
             break;
         case CT_BACK_SIDED:
             rasterization_state.cullMode = 
-                (def->mirror ? VK_CULL_MODE_BACK_BIT : VK_CULL_MODE_FRONT_BIT);
+                (mirror ? VK_CULL_MODE_BACK_BIT : VK_CULL_MODE_FRONT_BIT);
             break;
     }
 
@@ -346,7 +361,7 @@ void vk_create_pipeline(const struct Vk_Pipeline_Def* def, VkBool32 isLine, enum
     // how fragments are generated for geometry.
 	rasterization_state.frontFace = VK_FRONT_FACE_CLOCKWISE; // Q3 defaults to clockwise vertex order
 
-	rasterization_state.depthBiasEnable = def->polygon_offset ? VK_TRUE : VK_FALSE;
+	rasterization_state.depthBiasEnable = polygon_offset ? VK_TRUE : VK_FALSE;
 	rasterization_state.depthBiasConstantFactor = 0.0f; // dynamic depth bias state
 	rasterization_state.depthBiasClamp = 0.0f; // dynamic depth bias state
 	rasterization_state.depthBiasSlopeFactor = 0.0f; // dynamic depth bias state
@@ -369,9 +384,9 @@ void vk_create_pipeline(const struct Vk_Pipeline_Def* def, VkBool32 isLine, enum
 	depth_stencil_state.sType = VK_STRUCTURE_TYPE_PIPELINE_DEPTH_STENCIL_STATE_CREATE_INFO;
 	depth_stencil_state.pNext = NULL;
 	depth_stencil_state.flags = 0;
-	depth_stencil_state.depthTestEnable = (def->state_bits & GLS_DEPTHTEST_DISABLE) ? VK_FALSE : VK_TRUE;
-	depth_stencil_state.depthWriteEnable = (def->state_bits & GLS_DEPTHMASK_TRUE) ? VK_TRUE : VK_FALSE;
-	depth_stencil_state.depthCompareOp = (def->state_bits & GLS_DEPTHFUNC_EQUAL) ? VK_COMPARE_OP_EQUAL : VK_COMPARE_OP_LESS_OR_EQUAL;
+	depth_stencil_state.depthTestEnable = (state_bits & GLS_DEPTHTEST_DISABLE) ? VK_FALSE : VK_TRUE;
+	depth_stencil_state.depthWriteEnable = (state_bits & GLS_DEPTHMASK_TRUE) ? VK_TRUE : VK_FALSE;
+	depth_stencil_state.depthCompareOp = (state_bits & GLS_DEPTHFUNC_EQUAL) ? VK_COMPARE_OP_EQUAL : VK_COMPARE_OP_LESS_OR_EQUAL;
 	depth_stencil_state.depthBoundsTestEnable = VK_FALSE;
 	
     switch (shadow_phase) 
@@ -387,8 +402,8 @@ void vk_create_pipeline(const struct Vk_Pipeline_Def* def, VkBool32 isLine, enum
             depth_stencil_state.stencilTestEnable = VK_TRUE;
 
         	depth_stencil_state.front.failOp = VK_STENCIL_OP_KEEP;
-            depth_stencil_state.front.passOp = ( (def->face_culling == CT_FRONT_SIDED) ? 
-                VK_STENCIL_OP_INCREMENT_AND_CLAMP : VK_STENCIL_OP_DECREMENT_AND_CLAMP );
+            depth_stencil_state.front.passOp = ( face_culling == CT_FRONT_SIDED ? 
+              VK_STENCIL_OP_INCREMENT_AND_CLAMP : VK_STENCIL_OP_DECREMENT_AND_CLAMP );
             depth_stencil_state.front.depthFailOp = VK_STENCIL_OP_KEEP;
             depth_stencil_state.front.compareOp = VK_COMPARE_OP_ALWAYS;
             depth_stencil_state.front.compareMask = 255;
@@ -428,7 +443,7 @@ void vk_create_pipeline(const struct Vk_Pipeline_Def* def, VkBool32 isLine, enum
     // contains the configuraturation per attached framebuffer
     
 	VkPipelineColorBlendAttachmentState attachment_blend_state = {};
-	attachment_blend_state.blendEnable = (def->state_bits & (GLS_SRCBLEND_BITS | GLS_DSTBLEND_BITS)) ? VK_TRUE : VK_FALSE;
+	attachment_blend_state.blendEnable = (state_bits & (GLS_SRCBLEND_BITS | GLS_DSTBLEND_BITS)) ? VK_TRUE : VK_FALSE;
 
 	if (shadow_phase == SHADOWS_RENDERING_EDGES)
 		attachment_blend_state.colorWriteMask = 0;
@@ -437,7 +452,7 @@ void vk_create_pipeline(const struct Vk_Pipeline_Def* def, VkBool32 isLine, enum
 	
 	if (attachment_blend_state.blendEnable)
     {
-		switch (def->state_bits & GLS_SRCBLEND_BITS)
+		switch (state_bits & GLS_SRCBLEND_BITS)
         {
 			case GLS_SRCBLEND_ZERO:
 				attachment_blend_state.srcColorBlendFactor = VK_BLEND_FACTOR_ZERO;
@@ -470,7 +485,7 @@ void vk_create_pipeline(const struct Vk_Pipeline_Def* def, VkBool32 isLine, enum
 				ri.Error( ERR_DROP, "create_pipeline: invalid src blend state bits\n" );
 				break;
 		}
-		switch (def->state_bits & GLS_DSTBLEND_BITS)
+		switch (state_bits & GLS_DSTBLEND_BITS)
         {
 			case GLS_DSTBLEND_ZERO:
 				attachment_blend_state.dstColorBlendFactor = VK_BLEND_FACTOR_ZERO;
@@ -622,76 +637,100 @@ void vk_create_pipeline(const struct Vk_Pipeline_Def* def, VkBool32 isLine, enum
     // 1 is the length of the pCreateInfos and pPipelines arrays.
     //
 	VK_CHECK(qvkCreateGraphicsPipelines(vk.device, VK_NULL_HANDLE, 1, &create_info, NULL, pPipeLine));
-}
 
-
-
-static VkPipeline vk_find_pipeline(struct Vk_Pipeline_Def* def, VkBool32 isLine, enum Vk_Shadow_Phase shadow_phase)
-{
-    uint32_t i = 0;
-	for (i = 0; i < s_numPipelines; i++)
-    {
-		if (s_pipeline_defs[i].shader_type == def->shader_type &&
-			s_pipeline_defs[i].state_bits == def->state_bits &&
-			s_pipeline_defs[i].face_culling == def->face_culling &&
-			s_pipeline_defs[i].polygon_offset == def->polygon_offset &&
-			s_pipeline_defs[i].clipping_plane == def->clipping_plane &&
-			s_pipeline_defs[i].mirror == def->mirror 
-			// && s_pipeline_defs[i].line_primitives == def->line_primitives
-			// && s_pipeline_defs[i].shadow_phase == def->shadow_phase
-            )
-		{
-			return s_pipeline_defs[i].pipeline;
-		}
-	}
-
-
-    vk_create_pipeline(def, isLine, shadow_phase, &def->pipeline);
-    
-	s_pipeline_defs[s_numPipelines] = *def;
-	//s_pipeline_defs[s_numPipelines].pipeline = pipeline;
+/*
+    s_created_ppl[s_numPipelines].pipeline = *pPipeLine;
+    s_created_ppl[s_numPipelines].par.shader_type = shader_type;
+    s_created_ppl[s_numPipelines].par.state_bits = state_bits;
+    s_created_ppl[s_numPipelines].par.face_culling = face_culling;
+    s_created_ppl[s_numPipelines].par.shadow_phase = shadow_phase;
+    s_created_ppl[s_numPipelines].par.polygon_offset = polygon_offset;
+    s_created_ppl[s_numPipelines].par.clipping_plane = clipping_plane;
+    s_created_ppl[s_numPipelines].par.mirror = mirror;
+    s_created_ppl[s_numPipelines].par.line_primitives = isLine;
 
     if (++s_numPipelines >= MAX_VK_PIPELINES)
     {
 		ri.Error(ERR_DROP, " MAX MUNBERS OF PIPELINES HIT \n");
 	}
-	return def->pipeline;
+*/
 }
+
+
+static void vk_find_pipeline( uint32_t state_bits,
+        enum Vk_Shader_Type shader_type,
+        enum CullType_t face_culling,
+        enum Vk_Shadow_Phase shadow_phase,
+        VkBool32 isClippingPlane,
+        VkBool32 isMirror,
+        VkBool32 isPolygonOffset,
+        VkBool32 isLine, 
+        VkPipeline *pPl )
+{
+    uint32_t i = 0;
+	for (i = 0; i < s_numPipelines; i++)
+    {
+		if ( (s_created_ppl[i].par.state_bits == state_bits) &&
+             (s_created_ppl[i].par.shader_type == shader_type) &&
+			 (s_created_ppl[i].par.face_culling == face_culling) &&
+			 (s_created_ppl[i].par.polygon_offset == isPolygonOffset) &&
+             (s_created_ppl[i].par.shadow_phase == shadow_phase) &&
+			 (s_created_ppl[i].par.clipping_plane == isClippingPlane) &&
+			 (s_created_ppl[i].par.mirror == isMirror) &&
+             (s_created_ppl[i].par.line_primitives == isLine) )
+		{
+			*pPl = s_created_ppl[i].pipeline;
+            return;
+		}
+	}
+
+    vk_create_pipeline(state_bits, shader_type, face_culling, shadow_phase, 
+            isClippingPlane, isMirror, isPolygonOffset, isLine, pPl);
+  
+	s_created_ppl[s_numPipelines].pipeline = *pPl;
+    s_created_ppl[s_numPipelines].par.shader_type = shader_type;
+    s_created_ppl[s_numPipelines].par.state_bits = state_bits;
+    s_created_ppl[s_numPipelines].par.face_culling = face_culling;
+    s_created_ppl[s_numPipelines].par.shadow_phase = shadow_phase;
+    s_created_ppl[s_numPipelines].par.polygon_offset = isPolygonOffset;
+    s_created_ppl[s_numPipelines].par.clipping_plane = isClippingPlane;
+    s_created_ppl[s_numPipelines].par.mirror = isMirror;
+    s_created_ppl[s_numPipelines].par.line_primitives = isLine;
+
+    if (++s_numPipelines >= MAX_VK_PIPELINES)
+    {
+        // TODO: if not enough, Create new buffer, copy the old to the new buffer
+		ri.Error(ERR_DROP, " MAX MUNBERS OF PIPELINES HIT \n");
+	}
+}
+
 
 
 
 void vk_create_shader_stage_pipelines(shaderStage_t *pStage, shader_t* pShader)
 {
     ri.Printf(PRINT_ALL, " Create shader stage pipelines. \n");
-
-    struct Vk_Pipeline_Def def;
-
-    def.face_culling = pShader->cullType;
-    def.polygon_offset = pShader->polygonOffset;
-    def.state_bits = pStage->stateBits;
-
+    
+    enum Vk_Shader_Type def_shader_type = ST_SINGLE_TEXTURE;
+ 
     if (pStage->bundle[1].image[0] == NULL)
-        def.shader_type = ST_SINGLE_TEXTURE;
+        def_shader_type = ST_SINGLE_TEXTURE;
     else if (pShader->multitextureEnv == GL_MODULATE)
-        def.shader_type = ST_MULTI_TEXURE_MUL;
+        def_shader_type = ST_MULTI_TEXURE_MUL;
     else if (pShader->multitextureEnv == GL_ADD)
-        def.shader_type = ST_MULTI_TEXURE_ADD;
+        def_shader_type = ST_MULTI_TEXURE_ADD;
     else
         ri.Error(ERR_FATAL, "Vulkan: could not create pipelines for q3 shader '%s'\n", pShader->name);
 
-    def.clipping_plane = VK_FALSE;
-    def.mirror = VK_FALSE;
-    pStage->vk_pipeline = vk_find_pipeline(&def, VK_FALSE, SHADOWS_RENDERING_DISABLED);
 
+     vk_find_pipeline( pStage->stateBits, def_shader_type, pShader->cullType, SHADOWS_RENDERING_DISABLED,
+            VK_FALSE, VK_FALSE, pShader->polygonOffset, VK_FALSE, &pStage->vk_pipeline);
 
-    def.clipping_plane = VK_TRUE;
-    def.mirror = VK_FALSE;
-    pStage->vk_portal_pipeline = vk_find_pipeline(&def, VK_FALSE, SHADOWS_RENDERING_DISABLED);
+     vk_find_pipeline( pStage->stateBits, def_shader_type, pShader->cullType, SHADOWS_RENDERING_DISABLED,
+            VK_TRUE, VK_FALSE, pShader->polygonOffset, VK_FALSE, &pStage->vk_portal_pipeline);
 
-
-    def.clipping_plane = VK_TRUE;
-    def.mirror = VK_TRUE;
-    pStage->vk_mirror_pipeline = vk_find_pipeline(&def, VK_FALSE, SHADOWS_RENDERING_DISABLED);
+     vk_find_pipeline( pStage->stateBits, def_shader_type, pShader->cullType, SHADOWS_RENDERING_DISABLED,
+            VK_TRUE, VK_TRUE, pShader->polygonOffset, VK_FALSE, &pStage->vk_mirror_pipeline);
 }
 
 
@@ -704,8 +743,8 @@ void vk_destroyShaderStagePipeline(void)
     uint32_t i;
     for (i = 0; i < s_numPipelines; i++)
     {
-		qvkDestroyPipeline(vk.device, s_pipeline_defs[i].pipeline, NULL);
-        memset(&s_pipeline_defs[i], 0, sizeof(struct Vk_Pipeline_Def));
+		qvkDestroyPipeline(vk.device, s_created_ppl[i].pipeline, NULL);
+        memset(&s_created_ppl[i], 0, sizeof(struct VK_PipelineMgr_t));
     }
     s_numPipelines = 0;
 }

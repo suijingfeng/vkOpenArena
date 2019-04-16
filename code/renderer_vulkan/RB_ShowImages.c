@@ -2,6 +2,9 @@
 #include "vk_shade_geometry.h"
 #include "vk_pipelines.h"
 #include "glConfig.h"
+#include "R_ShaderCommands.h"
+
+
 
 /*
 ===============

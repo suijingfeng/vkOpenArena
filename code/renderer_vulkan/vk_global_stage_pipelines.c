@@ -8,118 +8,327 @@ struct GlobalPipelinesManager_t g_globalPipelines;
 
 
 void vk_createStandardPipelines(void)
-{      
-    ri.Printf(PRINT_ALL, " Create skybox pipeline \n");
-    {
+{
+    ////
+    ri.Printf(PRINT_ALL, " Create skybox pipeline. \n");
+   
+    vk_create_pipeline( 0, 
+            ST_SINGLE_TEXTURE, CT_FRONT_SIDED, SHADOWS_RENDERING_DISABLED, 
+            VK_FALSE, VK_FALSE, VK_FALSE, VK_FALSE,
+            &g_globalPipelines.skybox_pipeline );
 
-        struct Vk_Pipeline_Def def;
-        memset(&def, 0, sizeof(def));
+    
+    ////
+    ri.Printf(PRINT_ALL, " Create Q3 stencil shadows volume pipelines. \n");
+    
+    vk_create_pipeline( 0, 
+            ST_SINGLE_TEXTURE, CT_FRONT_SIDED, SHADOWS_RENDERING_EDGES, 
+            VK_FALSE, VK_FALSE, VK_FALSE, VK_FALSE,
+            &g_globalPipelines.shadow_volume_pipelines[0][0] );
 
-        def.shader_type = ST_SINGLE_TEXTURE;
-        def.state_bits = 0;
-        def.face_culling = CT_FRONT_SIDED;
-        def.polygon_offset = VK_FALSE;
-        def.clipping_plane = VK_FALSE;
-        def.mirror = VK_FALSE;
-        
-        vk_create_pipeline(&def, VK_FALSE, SHADOWS_RENDERING_DISABLED, &g_globalPipelines.skybox_pipeline);
-    }
+    vk_create_pipeline( 0, 
+            ST_SINGLE_TEXTURE, CT_FRONT_SIDED, SHADOWS_RENDERING_EDGES, 
+            VK_FALSE, VK_TRUE, VK_FALSE, VK_FALSE,
+            &g_globalPipelines.shadow_volume_pipelines[0][1] );
 
-    ri.Printf(PRINT_ALL, " Create Q3 stencil shadows pipeline \n");
-    {
-        {
-            struct Vk_Pipeline_Def def;
-            memset(&def, 0, sizeof(def));
+    vk_create_pipeline( 0, 
+            ST_SINGLE_TEXTURE, CT_BACK_SIDED, SHADOWS_RENDERING_EDGES, 
+            VK_FALSE, VK_FALSE, VK_FALSE, VK_FALSE,
+            &g_globalPipelines.shadow_volume_pipelines[1][0] );
 
-
-            def.polygon_offset = VK_FALSE;
-            def.state_bits = 0;
-            def.shader_type = ST_SINGLE_TEXTURE;
-            def.clipping_plane = VK_FALSE;
-
-            cullType_t cull_types[2] = {CT_FRONT_SIDED, CT_BACK_SIDED};
-            VkBool32 mirror_flags[2] = {VK_TRUE, VK_FALSE};
-
-            int i = 0; 
-            int j = 0;
-
-            for (i = 0; i < 2; i++)
-            {
-                def.face_culling = cull_types[i];
-                for (j = 0; j < 2; j++)
-                {
-                    def.mirror = mirror_flags[j];
-                    
-                    vk_create_pipeline(&def, VK_FALSE ,SHADOWS_RENDERING_EDGES, 
-                            &g_globalPipelines.shadow_volume_pipelines[i][j]);
-                }
-            }
-        }
-
-        {
-            struct Vk_Pipeline_Def def;
-            memset(&def, 0, sizeof(def));
-
-            def.face_culling = CT_FRONT_SIDED;
-            def.polygon_offset = VK_FALSE;
-            def.state_bits = GLS_DEPTHMASK_TRUE | GLS_SRCBLEND_DST_COLOR | GLS_DSTBLEND_ZERO;
-            def.shader_type = ST_SINGLE_TEXTURE;
-            def.clipping_plane = VK_FALSE;
-            def.mirror = VK_FALSE;
-            
-            vk_create_pipeline(&def, VK_FALSE, SHADOWS_RENDERING_FULLSCREEN_QUAD, 
-                    &g_globalPipelines.shadow_finish_pipeline);
-        }
-    }
+    vk_create_pipeline( 0, 
+            ST_SINGLE_TEXTURE, CT_BACK_SIDED, SHADOWS_RENDERING_EDGES, 
+            VK_FALSE, VK_TRUE, VK_FALSE, VK_FALSE,
+            &g_globalPipelines.shadow_volume_pipelines[1][1] );
 
 
-    ri.Printf(PRINT_ALL, " Create fog and dlights pipeline \n");
-    {
-        struct Vk_Pipeline_Def def;
-        memset(&def, 0, sizeof(def));
+    ////
+    ri.Printf(PRINT_ALL, " Create Q3 stencil shadows finish pipeline. \n");
+
+    vk_create_pipeline( 
+            GLS_DEPTHMASK_TRUE | GLS_SRCBLEND_DST_COLOR | GLS_DSTBLEND_ZERO, 
+            ST_SINGLE_TEXTURE, 
+            CT_FRONT_SIDED,
+            SHADOWS_RENDERING_FULLSCREEN_QUAD, 
+            VK_FALSE, 
+            VK_FALSE, 
+            VK_FALSE,
+            VK_FALSE,
+            &g_globalPipelines.shadow_finish_pipeline );
 
 
-        def.shader_type = ST_SINGLE_TEXTURE;
-        def.clipping_plane = VK_FALSE;
-        def.mirror = VK_FALSE;
+    ////
+    ri.Printf(PRINT_ALL, " Create fog pipeline \n");
 
-        unsigned int fog_state_bits[2] = {
-            GLS_SRCBLEND_SRC_ALPHA | GLS_DSTBLEND_ONE_MINUS_SRC_ALPHA | GLS_DEPTHFUNC_EQUAL,
-            GLS_SRCBLEND_SRC_ALPHA | GLS_DSTBLEND_ONE_MINUS_SRC_ALPHA
-        };
-        unsigned int dlight_state_bits[2] = {
-            GLS_SRCBLEND_DST_COLOR | GLS_DSTBLEND_ONE | GLS_DEPTHFUNC_EQUAL,
-            GLS_SRCBLEND_ONE | GLS_DSTBLEND_ONE | GLS_DEPTHFUNC_EQUAL
-        };
-        
-        VkBool32 polygon_offset[2] = {VK_FALSE, VK_TRUE};
+    unsigned int fog_state_bits[2] = {
+        GLS_SRCBLEND_SRC_ALPHA | GLS_DSTBLEND_ONE_MINUS_SRC_ALPHA | GLS_DEPTHFUNC_EQUAL,
+        GLS_SRCBLEND_SRC_ALPHA | GLS_DSTBLEND_ONE_MINUS_SRC_ALPHA
+    };
 
-        int i = 0, j = 0, k = 0;
+///////////////////  i = 0
+// j = 0
+    vk_create_pipeline( fog_state_bits[0], 
+            ST_SINGLE_TEXTURE, 
+            CT_FRONT_SIDED,
+            SHADOWS_RENDERING_DISABLED, 
+            VK_FALSE, 
+            VK_FALSE, 
+            VK_FALSE, // polygon_offset[0]
+            VK_FALSE,
+            &g_globalPipelines.fog_pipelines[0][0][0] );
 
-        for (i = 0; i < 2; i++)
-        {
-            unsigned fog_state = fog_state_bits[i];
-            unsigned dlight_state = dlight_state_bits[i];
+    vk_create_pipeline( fog_state_bits[0], 
+            ST_SINGLE_TEXTURE, 
+            CT_FRONT_SIDED,
+            SHADOWS_RENDERING_DISABLED, 
+            VK_FALSE, 
+            VK_FALSE, 
+            VK_TRUE, // polygon_offset[1]
+            VK_FALSE,
+            &g_globalPipelines.fog_pipelines[0][0][1] );
 
-            for (j = 0; j < 3; j++)
-            {
-                def.face_culling = j; // cullType_t value
+    // j = 1
+    vk_create_pipeline( fog_state_bits[0], 
+            ST_SINGLE_TEXTURE, 
+            CT_BACK_SIDED,
+            SHADOWS_RENDERING_DISABLED, 
+            VK_FALSE, 
+            VK_FALSE, 
+            VK_FALSE, // polygon_offset[0]
+            VK_FALSE,
+            &g_globalPipelines.fog_pipelines[0][1][0] );
 
-                for ( k = 0; k < 2; k++)
-                {
-                    def.polygon_offset = polygon_offset[k];
+    vk_create_pipeline( fog_state_bits[0], 
+            ST_SINGLE_TEXTURE, 
+            CT_BACK_SIDED,
+            SHADOWS_RENDERING_DISABLED, 
+            VK_FALSE, 
+            VK_FALSE, 
+            VK_TRUE, // polygon_offset[1]
+            VK_FALSE,
+            &g_globalPipelines.fog_pipelines[0][1][1] );
 
-                    def.state_bits = fog_state;
-                    vk_create_pipeline(&def, VK_FALSE, SHADOWS_RENDERING_DISABLED, 
-                            &g_globalPipelines.fog_pipelines[i][j][k]);
+    // j = 2
+    vk_create_pipeline( fog_state_bits[0], 
+            ST_SINGLE_TEXTURE, 
+            CT_TWO_SIDED,
+            SHADOWS_RENDERING_DISABLED, 
+            VK_FALSE, 
+            VK_FALSE, 
+            VK_FALSE, // polygon_offset[0]
+            VK_FALSE,
+            &g_globalPipelines.fog_pipelines[0][2][0] );
 
-                    def.state_bits = dlight_state;
-                    vk_create_pipeline(&def, VK_FALSE, SHADOWS_RENDERING_DISABLED, 
-                            &g_globalPipelines.dlight_pipelines[i][j][k]);
-                }
-            }
-        }
-    }
+    vk_create_pipeline( fog_state_bits[0], 
+            ST_SINGLE_TEXTURE, 
+            CT_TWO_SIDED,
+            SHADOWS_RENDERING_DISABLED, 
+            VK_FALSE, 
+            VK_FALSE, 
+            VK_TRUE, // polygon_offset[1]
+            VK_FALSE,
+            &g_globalPipelines.fog_pipelines[0][2][1] );
+
+///////////////////  i = 1
+
+    // j = 0
+    vk_create_pipeline( fog_state_bits[1], 
+            ST_SINGLE_TEXTURE, 
+            CT_FRONT_SIDED,
+            SHADOWS_RENDERING_DISABLED, 
+            VK_FALSE, 
+            VK_FALSE, 
+            VK_FALSE, // polygon_offset[0]
+            VK_FALSE,
+            &g_globalPipelines.fog_pipelines[1][0][0] );
+
+    vk_create_pipeline( fog_state_bits[1], 
+            ST_SINGLE_TEXTURE, 
+            CT_FRONT_SIDED,
+            SHADOWS_RENDERING_DISABLED, 
+            VK_FALSE, 
+            VK_FALSE, 
+            VK_TRUE, // polygon_offset[1]
+            VK_FALSE,
+            &g_globalPipelines.fog_pipelines[1][0][1] );
+
+    // j = 1
+    vk_create_pipeline( fog_state_bits[1], 
+            ST_SINGLE_TEXTURE, 
+            CT_BACK_SIDED,
+            SHADOWS_RENDERING_DISABLED, 
+            VK_FALSE, 
+            VK_FALSE, 
+            VK_FALSE, // polygon_offset[0]
+            VK_FALSE,
+            &g_globalPipelines.fog_pipelines[1][1][0] );
+
+    vk_create_pipeline( fog_state_bits[1], 
+            ST_SINGLE_TEXTURE, 
+            CT_BACK_SIDED,
+            SHADOWS_RENDERING_DISABLED, 
+            VK_FALSE, 
+            VK_FALSE, 
+            VK_TRUE, // polygon_offset[1]
+            VK_FALSE,
+            &g_globalPipelines.fog_pipelines[1][1][1] );
+
+    // j = 2
+    vk_create_pipeline( fog_state_bits[1], 
+            ST_SINGLE_TEXTURE, 
+            CT_TWO_SIDED,
+            SHADOWS_RENDERING_DISABLED, 
+            VK_FALSE, 
+            VK_FALSE, 
+            VK_FALSE, // polygon_offset[0]
+            VK_FALSE,
+            &g_globalPipelines.fog_pipelines[1][2][0] );
+
+    vk_create_pipeline( fog_state_bits[1], 
+            ST_SINGLE_TEXTURE, 
+            CT_TWO_SIDED,
+            SHADOWS_RENDERING_DISABLED, 
+            VK_FALSE, 
+            VK_FALSE, 
+            VK_TRUE, // polygon_offset[1]
+            VK_FALSE,
+            &g_globalPipelines.fog_pipelines[1][2][1] );
+
+
+
+
+    ri.Printf(PRINT_ALL, " Create dlights pipeline \n");
+    unsigned int dlight_state_bits[2] = {
+        GLS_SRCBLEND_DST_COLOR | GLS_DSTBLEND_ONE | GLS_DEPTHFUNC_EQUAL,
+        GLS_SRCBLEND_ONE | GLS_DSTBLEND_ONE | GLS_DEPTHFUNC_EQUAL
+    };
+
+    // j = 0
+    vk_create_pipeline( dlight_state_bits[0], 
+            ST_SINGLE_TEXTURE, 
+            CT_FRONT_SIDED,
+            SHADOWS_RENDERING_DISABLED, 
+            VK_FALSE, 
+            VK_FALSE, 
+            VK_FALSE, // polygon_offset[0]
+            VK_FALSE,
+            &g_globalPipelines.dlight_pipelines[0][0][0] );
+
+    vk_create_pipeline( dlight_state_bits[0], 
+            ST_SINGLE_TEXTURE, 
+            CT_FRONT_SIDED,
+            SHADOWS_RENDERING_DISABLED, 
+            VK_FALSE, 
+            VK_FALSE, 
+            VK_TRUE, // polygon_offset[1]
+            VK_FALSE,
+            &g_globalPipelines.dlight_pipelines[0][0][1] );
+
+    // j = 1
+    vk_create_pipeline( dlight_state_bits[0], 
+            ST_SINGLE_TEXTURE, 
+            CT_BACK_SIDED,
+            SHADOWS_RENDERING_DISABLED, 
+            VK_FALSE, 
+            VK_FALSE, 
+            VK_FALSE, // polygon_offset[0]
+            VK_FALSE,
+            &g_globalPipelines.dlight_pipelines[0][1][0] );
+
+    vk_create_pipeline( dlight_state_bits[0], 
+            ST_SINGLE_TEXTURE, 
+            CT_BACK_SIDED,
+            SHADOWS_RENDERING_DISABLED, 
+            VK_FALSE, 
+            VK_FALSE, 
+            VK_TRUE, // polygon_offset[1]
+            VK_FALSE,
+            &g_globalPipelines.dlight_pipelines[0][1][1] );
+
+    // j = 2
+    vk_create_pipeline( dlight_state_bits[0], 
+            ST_SINGLE_TEXTURE, 
+            CT_TWO_SIDED,
+            SHADOWS_RENDERING_DISABLED, 
+            VK_FALSE, 
+            VK_FALSE, 
+            VK_FALSE, // polygon_offset[0]
+            VK_FALSE,
+            &g_globalPipelines.dlight_pipelines[0][2][0] );
+
+    vk_create_pipeline( dlight_state_bits[0], 
+            ST_SINGLE_TEXTURE, 
+            CT_TWO_SIDED,
+            SHADOWS_RENDERING_DISABLED, 
+            VK_FALSE, 
+            VK_FALSE, 
+            VK_TRUE, // polygon_offset[1]
+            VK_FALSE,
+            &g_globalPipelines.dlight_pipelines[0][2][1] );
+
+///////////////////  i = 1
+    // j = 0
+    vk_create_pipeline( dlight_state_bits[1], 
+            ST_SINGLE_TEXTURE, 
+            CT_FRONT_SIDED,
+            SHADOWS_RENDERING_DISABLED, 
+            VK_FALSE, 
+            VK_FALSE, 
+            VK_FALSE, // polygon_offset[0]
+            VK_FALSE,
+            &g_globalPipelines.dlight_pipelines[1][0][0] );
+
+    vk_create_pipeline( dlight_state_bits[1], 
+            ST_SINGLE_TEXTURE, 
+            CT_FRONT_SIDED,
+            SHADOWS_RENDERING_DISABLED, 
+            VK_FALSE, 
+            VK_FALSE, 
+            VK_TRUE, // polygon_offset[1]
+            VK_FALSE,
+            &g_globalPipelines.dlight_pipelines[1][0][1] );
+
+    // j = 1
+    vk_create_pipeline( dlight_state_bits[1], 
+            ST_SINGLE_TEXTURE, 
+            CT_BACK_SIDED,
+            SHADOWS_RENDERING_DISABLED, 
+            VK_FALSE, 
+            VK_FALSE, 
+            VK_FALSE, // polygon_offset[0]
+            VK_FALSE,
+            &g_globalPipelines.dlight_pipelines[1][1][0] );
+
+    vk_create_pipeline( dlight_state_bits[1], 
+            ST_SINGLE_TEXTURE, 
+            CT_BACK_SIDED,
+            SHADOWS_RENDERING_DISABLED, 
+            VK_FALSE, 
+            VK_FALSE, 
+            VK_TRUE, // polygon_offset[1]
+            VK_FALSE,
+            &g_globalPipelines.dlight_pipelines[1][1][1] );
+
+    // j = 2
+    vk_create_pipeline( dlight_state_bits[1], 
+            ST_SINGLE_TEXTURE, 
+            CT_TWO_SIDED,
+            SHADOWS_RENDERING_DISABLED, 
+            VK_FALSE, 
+            VK_FALSE, 
+            VK_FALSE, // polygon_offset[0]
+            VK_FALSE,
+            &g_globalPipelines.dlight_pipelines[1][2][0] );
+
+    vk_create_pipeline( dlight_state_bits[1], 
+            ST_SINGLE_TEXTURE, 
+            CT_TWO_SIDED,
+            SHADOWS_RENDERING_DISABLED, 
+            VK_FALSE, 
+            VK_FALSE, 
+            VK_TRUE, // polygon_offset[1]
+            VK_FALSE,
+            &g_globalPipelines.dlight_pipelines[1][2][1] );
 }
 
 

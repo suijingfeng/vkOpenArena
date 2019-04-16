@@ -30,6 +30,8 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #include "../renderercommon/matrix_multiplication.h"
 #include "../renderercommon/ref_import.h"
 #include "tr_backend.h"
+#include "R_ShaderCommands.h"
+
 #define SKY_SUBDIVISIONS		8
 #define HALF_SKY_SUBDIVISIONS	(SKY_SUBDIVISIONS/2)
 
@@ -262,11 +264,7 @@ static void ClearSkyBox (void) {
 	}
 }
 
-/*
-================
-RB_ClipSkyPolygons
-================
-*/
+
 void RB_ClipSkyPolygons( shaderCommands_t *input )
 {
 	vec3_t		p[5];	// need one extra point for clipping

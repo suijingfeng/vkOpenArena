@@ -29,6 +29,8 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #include "../renderercommon/ref_import.h"
 #include "tr_shader.h"
 #include "tr_light.h"
+#include "tr_surface.h"
+#include "R_ShaderCommands.h"
 
 #define	LL(x) x=LittleLong(x)
 
@@ -1011,10 +1013,10 @@ void RB_IQMSurfaceAnim( surfaceType_t *surface )
 	float		jointMats[IQM_MAX_JOINTS * 12];
 	int		i;
 
-	vec4_t		*outXYZ;
-	vec4_t		*outNormal;
-	vec2_t		(*outTexCoord)[2];
-	color4ub_t	*outColor;
+	vec4_t * outXYZ;
+	vec4_t * outNormal;
+	vec2_t ( * outTexCoord )[2];
+
 
 	int	frame = data->num_frames ? backEnd.currentEntity->e.frame % data->num_frames : 0;
 	int	oldframe = data->num_frames ? backEnd.currentEntity->e.oldframe % data->num_frames : 0;
@@ -1029,7 +1031,7 @@ void RB_IQMSurfaceAnim( surfaceType_t *surface )
 	outXYZ = &tess.xyz[tess.numVertexes];
 	outNormal = &tess.normal[tess.numVertexes];
 	outTexCoord = &tess.texCoords[tess.numVertexes];
-	outColor = &tess.vertexColors[tess.numVertexes];
+	uint8_t (*outColor)[4] = &tess.vertexColors[tess.numVertexes];
 
 	// compute interpolated joint matrices
 	if ( data->num_poses > 0 ) {

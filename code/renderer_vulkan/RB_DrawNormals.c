@@ -2,6 +2,8 @@
 #include "vk_shade_geometry.h"
 #include "tr_globals.h"
 #include "vk_pipelines.h"
+#include "R_ShaderCommands.h"
+
 
 /*
 ================
@@ -15,7 +17,7 @@ void RB_DrawNormals (shaderCommands_t* pTess, int numVertexes )
     vec4_t xyz[SHADER_MAX_VERTEXES];
     memcpy(xyz, pTess->xyz, numVertexes * sizeof(vec4_t));
    
-    memset(pTess->svars.colors, tr.identityLightByte, SHADER_MAX_VERTEXES * sizeof(color4ub_t));
+    memset(pTess->svars.colors, tr.identityLightByte, SHADER_MAX_VERTEXES * 4);
 
     int i = 0;
     while (i < numVertexes)

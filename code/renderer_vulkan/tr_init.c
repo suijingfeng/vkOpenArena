@@ -37,6 +37,7 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #include "tr_backend.h"
 #include "glConfig.h"
 #include "ref_import.h"
+#include "R_ShaderCommands.h"
 
 
 void R_Init( void )
@@ -48,7 +49,8 @@ void R_Init( void )
 
 	// clear all our internal state
 	memset( &tr, 0, sizeof( tr ) );
-	memset( &tess, 0, sizeof( tess ) );
+
+    R_ClearShaderCommand();
 
     R_ClearBackendState();
 

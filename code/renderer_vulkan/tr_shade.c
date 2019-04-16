@@ -29,6 +29,7 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #include "tr_cvar.h"
 #include "RB_DrawTris.h"
 #include "RB_DrawNormals.h"
+#include "R_ShaderCommands.h"
 
 /*
 
@@ -47,8 +48,6 @@ SURFACE SHADERS
 =============================================================
 */
 
-shaderCommands_t	tess;
-
 
 /*
 ==============
@@ -60,7 +59,6 @@ because a surface may be forced to perform a RB_End due to overflow.
 */
 void RB_BeginSurface( shader_t *shader, int fogNum )
 {
-
 	shader_t *state = (shader->remappedShader) ? shader->remappedShader : shader;
 
 	tess.numIndexes = 0;
@@ -133,6 +131,5 @@ void RB_EndSurface( void )
 	// clear shader so we can tell we don't have any unclosed surfaces
 	tess.numIndexes = 0;
     tess.numVertexes = 0;
-
 }
 

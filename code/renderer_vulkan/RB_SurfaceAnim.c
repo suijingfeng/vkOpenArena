@@ -4,6 +4,10 @@
 #include "tr_globals.h"
 #include "RB_SurfaceAnim.h"
 #include "tr_backend.h"
+#include "tr_surface.h"
+#include "R_ShaderCommands.h"
+
+
 
 void RB_MDRSurfaceAnim( mdrSurface_t *surface )
 {

@@ -1600,6 +1600,7 @@ Q3VKOBJ = \
   $(B)/renderer_vulkan/tr_shader.o \
   $(B)/renderer_vulkan/R_FindShader.o \
   $(B)/renderer_vulkan/R_ListShader.o \
+  $(B)/renderer_vulkan/R_ShaderCommands.o \
   \
   $(B)/renderer_vulkan/tr_shadows.o \
   $(B)/renderer_vulkan/tr_sky.o \
@@ -1641,11 +1642,15 @@ Q3VKOBJ = \
   $(B)/renderer_vulkan/RB_ShowImages.o \
   $(B)/renderer_vulkan/RB_DrawNormals.o \
   $(B)/renderer_vulkan/RB_DrawTris.o \
+  $(B)/renderer_vulkan/R_PrintMat.o \
+  \
   $(B)/renderer_vulkan/tr_backend.o \
   $(B)/renderer_vulkan/tr_Cull.o \
   $(B)/renderer_vulkan/glConfig.o \
+  \
   $(B)/renderer_vulkan/R_PortalPlane.o \
-  $(B)/renderer_vulkan/R_PrintMat.o \
+  $(B)/renderer_vulkan/R_Portal.o \
+  \
   $(B)/renderer_vulkan/ref_import.o \
   $(B)/renderer_vulkan/render_export.o \
   \

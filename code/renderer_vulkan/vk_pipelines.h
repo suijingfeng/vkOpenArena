@@ -12,16 +12,18 @@ enum Vk_Shadow_Phase {
 };
 
 
-struct Vk_Pipeline_Def {
-    VkPipeline pipeline;
+
+struct PipelineParameter_t {
     uint32_t state_bits; // GLS_XXX flags
-	cullType_t face_culling;// cullType_t
-	VkBool32 polygon_offset;
+	
+    enum CullType_t face_culling;
+    enum Vk_Shader_Type shader_type;
+	enum Vk_Shadow_Phase shadow_phase;
+
+    VkBool32 polygon_offset;
 	VkBool32 clipping_plane;
 	VkBool32 mirror;
-//	VkBool32 line_primitives;
-    enum Vk_Shader_Type shader_type;
-//	enum Vk_Shadow_Phase shadow_phase;
+	VkBool32 line_primitives;
 };
 
 
@@ -59,7 +61,15 @@ struct DebugPipelinesManager_t {
 };
 
 
-void vk_create_pipeline(const struct Vk_Pipeline_Def* def, VkBool32 isLine, enum Vk_Shadow_Phase shadow_phase,
+void vk_create_pipeline(
+        uint32_t state_bits,
+        enum Vk_Shader_Type shader_type,
+        enum CullType_t face_culling,
+        enum Vk_Shadow_Phase shadow_phase,
+        VkBool32 clipping_plane,
+        VkBool32 mirror,
+        VkBool32 polygon_offset,
+        VkBool32 isLine, 
         VkPipeline* pPipeLine);
 
 void vk_createStandardPipelines(void);

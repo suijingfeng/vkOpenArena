@@ -7,6 +7,8 @@
 #include "tr_backend.h"
 #include "../renderercommon/ref_import.h"
 #include "../renderercommon/matrix_multiplication.h"
+#include "R_ShaderCommands.h"
+
 
 
 void R_DebugPolygon( int color, int numPoints, float *points )
@@ -72,7 +74,7 @@ void R_DebugPolygon( int color, int numPoints, float *points )
 
 
 	// Outline.
-	memset(tess.svars.colors, tr.identityLightByte, numPoints * 2 * sizeof(color4ub_t));
+	memset(tess.svars.colors, tr.identityLightByte, numPoints * 2 * 4);
 
 	for (i = 0; i < numPoints; i++)
     {

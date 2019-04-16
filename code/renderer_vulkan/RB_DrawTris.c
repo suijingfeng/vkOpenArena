@@ -2,7 +2,11 @@
 #include "tr_globals.h"
 #include "vk_shade_geometry.h"
 #include "vk_pipelines.h"
-#include "tr_backend.h"
+//#include "tr_backend.h"
+#include "R_ShaderCommands.h"
+
+
+
 /*
 ================
 Draws triangle outlines for debugging

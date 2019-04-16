@@ -26,6 +26,10 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #include "vk_image.h"
 #include "tr_cvar.h"
 #include "tr_backend.h"
+
+#include "R_ShaderCommands.h"
+// tess
+
 /*
 
   for a projection shadow:
@@ -61,6 +65,7 @@ static void R_AddEdgeDef( int i1, int i2, int facing ) {
 
 	numEdgeDefs[ i1 ]++;
 }
+
 
 static void R_ExtrudeShadowEdges( void ) {
 	int		i;
@@ -134,7 +139,9 @@ static void vk_renderShadowEdges(VkPipeline vk_pipeline)
 
 		for (k = 0; k < tess.numVertexes; k++)
         {
-			VectorSet(tess.svars.colors[k], 50, 50, 50);
+			tess.svars.colors[k][0] = 50;
+            tess.svars.colors[k][1] = 50;
+			tess.svars.colors[k][2] = 50;
 			tess.svars.colors[k][3] = 255;
 		}
         
@@ -265,7 +272,9 @@ void RB_ShadowFinish( void )
 
     for (i = 0; i < 4; i++)
     {
-        VectorSet(tess.svars.colors[i], 153, 153, 153);
+        tess.svars.colors[i][0] = 153;
+        tess.svars.colors[i][1] = 153;
+        tess.svars.colors[i][2] = 153;
         tess.svars.colors[i][3] = 255;
     }
     tess.numVertexes = 4;
