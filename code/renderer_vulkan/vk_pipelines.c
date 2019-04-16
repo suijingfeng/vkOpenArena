@@ -40,7 +40,7 @@
 struct GlobalPipelinesManager_t g_stdPipelines;
 
 
-#define MAX_VK_PIPELINES        1024
+#define MAX_VK_PIPELINES        256
 static struct Vk_Pipeline_Def s_pipeline_defs[MAX_VK_PIPELINES];
 static uint32_t s_numPipelines = 0;
 
@@ -172,7 +172,8 @@ void vk_createPipelineLayout(void)
 }
 
 
-void vk_create_pipeline(const struct Vk_Pipeline_Def* def, VkPipeline* pPipeLine)
+void vk_create_pipeline(const struct Vk_Pipeline_Def* def, VkBool32 isLine, enum Vk_Shadow_Phase shadow_phase,
+        VkPipeline* pPipeLine)
 {
 
 	struct Specialization_Data {
@@ -300,7 +301,7 @@ void vk_create_pipeline(const struct Vk_Pipeline_Def* def, VkPipeline* pPipeLine
 	input_assembly_state.sType = VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO;
 	input_assembly_state.pNext = NULL;
 	input_assembly_state.flags = 0;
-	input_assembly_state.topology = def->line_primitives ? VK_PRIMITIVE_TOPOLOGY_LINE_LIST : VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
+	input_assembly_state.topology = isLine ? VK_PRIMITIVE_TOPOLOGY_LINE_LIST : VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
 	input_assembly_state.primitiveRestartEnable = VK_FALSE;
 
 	//
@@ -375,37 +376,46 @@ void vk_create_pipeline(const struct Vk_Pipeline_Def* def, VkPipeline* pPipeLine
 	depth_stencil_state.depthWriteEnable = (def->state_bits & GLS_DEPTHMASK_TRUE) ? VK_TRUE : VK_FALSE;
 	depth_stencil_state.depthCompareOp = (def->state_bits & GLS_DEPTHFUNC_EQUAL) ? VK_COMPARE_OP_EQUAL : VK_COMPARE_OP_LESS_OR_EQUAL;
 	depth_stencil_state.depthBoundsTestEnable = VK_FALSE;
-	depth_stencil_state.stencilTestEnable = (def->shadow_phase != SHADOWS_RENDERING_DISABLED) ? VK_TRUE : VK_FALSE;
-
-	if (def->shadow_phase == SHADOWS_RENDERING_EDGES)
+	
+    switch (shadow_phase) 
     {
-		depth_stencil_state.front.failOp = VK_STENCIL_OP_KEEP;
-		depth_stencil_state.front.passOp = (def->face_culling == CT_FRONT_SIDED) ? VK_STENCIL_OP_INCREMENT_AND_CLAMP : VK_STENCIL_OP_DECREMENT_AND_CLAMP;
-		depth_stencil_state.front.depthFailOp = VK_STENCIL_OP_KEEP;
-		depth_stencil_state.front.compareOp = VK_COMPARE_OP_ALWAYS;
-		depth_stencil_state.front.compareMask = 255;
-		depth_stencil_state.front.writeMask = 255;
-		depth_stencil_state.front.reference = 0;
+        case SHADOWS_RENDERING_DISABLED:
+        {
+            depth_stencil_state.stencilTestEnable = VK_FALSE;
+	    	memset(&depth_stencil_state.front, 0, sizeof(depth_stencil_state.front));
+		    memset(&depth_stencil_state.back, 0, sizeof(depth_stencil_state.back));
+        }break;
+        case SHADOWS_RENDERING_EDGES:
+        {
+            depth_stencil_state.stencilTestEnable = VK_TRUE;
 
-		depth_stencil_state.back = depth_stencil_state.front;
+        	depth_stencil_state.front.failOp = VK_STENCIL_OP_KEEP;
+            depth_stencil_state.front.passOp = ( (def->face_culling == CT_FRONT_SIDED) ? 
+                VK_STENCIL_OP_INCREMENT_AND_CLAMP : VK_STENCIL_OP_DECREMENT_AND_CLAMP );
+            depth_stencil_state.front.depthFailOp = VK_STENCIL_OP_KEEP;
+            depth_stencil_state.front.compareOp = VK_COMPARE_OP_ALWAYS;
+            depth_stencil_state.front.compareMask = 255;
+            depth_stencil_state.front.writeMask = 255;
+            depth_stencil_state.front.reference = 0;
+
+            depth_stencil_state.back = depth_stencil_state.front;
+        }break;
+        
+        case SHADOWS_RENDERING_FULLSCREEN_QUAD:
+        {
+            depth_stencil_state.stencilTestEnable = VK_TRUE;
+
+            depth_stencil_state.front.failOp = VK_STENCIL_OP_KEEP;
+            depth_stencil_state.front.passOp = VK_STENCIL_OP_KEEP;
+            depth_stencil_state.front.depthFailOp = VK_STENCIL_OP_KEEP;
+            depth_stencil_state.front.compareOp = VK_COMPARE_OP_NOT_EQUAL;
+            depth_stencil_state.front.compareMask = 255;
+            depth_stencil_state.front.writeMask = 255;
+            depth_stencil_state.front.reference = 0;
+
+            depth_stencil_state.back = depth_stencil_state.front;
+        }break;
     }
-    else if (def->shadow_phase == SHADOWS_RENDERING_FULLSCREEN_QUAD)
-    {
-		depth_stencil_state.front.failOp = VK_STENCIL_OP_KEEP;
-		depth_stencil_state.front.passOp = VK_STENCIL_OP_KEEP;
-		depth_stencil_state.front.depthFailOp = VK_STENCIL_OP_KEEP;
-		depth_stencil_state.front.compareOp = VK_COMPARE_OP_NOT_EQUAL;
-		depth_stencil_state.front.compareMask = 255;
-		depth_stencil_state.front.writeMask = 255;
-		depth_stencil_state.front.reference = 0;
-
-		depth_stencil_state.back = depth_stencil_state.front;
-	}
-    else
-    {
-		memset(&depth_stencil_state.front, 0, sizeof(depth_stencil_state.front));
-		memset(&depth_stencil_state.back, 0, sizeof(depth_stencil_state.back));
-	}
 
 	depth_stencil_state.minDepthBounds = 0.0;
 	depth_stencil_state.maxDepthBounds = 0.0;
@@ -423,7 +433,7 @@ void vk_create_pipeline(const struct Vk_Pipeline_Def* def, VkPipeline* pPipeLine
 	VkPipelineColorBlendAttachmentState attachment_blend_state = {};
 	attachment_blend_state.blendEnable = (def->state_bits & (GLS_SRCBLEND_BITS | GLS_DSTBLEND_BITS)) ? VK_TRUE : VK_FALSE;
 
-	if (def->shadow_phase == SHADOWS_RENDERING_EDGES)
+	if (shadow_phase == SHADOWS_RENDERING_EDGES)
 		attachment_blend_state.colorWriteMask = 0;
 	else
 		attachment_blend_state.colorWriteMask = VK_COLOR_COMPONENT_R_BIT | VK_COLOR_COMPONENT_G_BIT | VK_COLOR_COMPONENT_B_BIT | VK_COLOR_COMPONENT_A_BIT;
@@ -619,7 +629,7 @@ void vk_create_pipeline(const struct Vk_Pipeline_Def* def, VkPipeline* pPipeLine
 
 
 
-static VkPipeline vk_find_pipeline(struct Vk_Pipeline_Def* def)
+static VkPipeline vk_find_pipeline(struct Vk_Pipeline_Def* def, VkBool32 isLine, enum Vk_Shadow_Phase shadow_phase)
 {
     uint32_t i = 0;
 	for (i = 0; i < s_numPipelines; i++)
@@ -640,14 +650,14 @@ static VkPipeline vk_find_pipeline(struct Vk_Pipeline_Def* def)
 
 
 	//VkPipeline pipeline;
-    vk_create_pipeline(def, &def->pipeline);
+    vk_create_pipeline(def, isLine, shadow_phase ,&def->pipeline);
     
 	s_pipeline_defs[s_numPipelines] = *def;
 	//s_pipeline_defs[s_numPipelines].pipeline = pipeline;
 
     if (++s_numPipelines >= MAX_VK_PIPELINES)
     {
-		ri.Error(ERR_DROP, "vk_create_pipeline: MAX_VK_PIPELINES hit\n");
+		ri.Error(ERR_DROP, " MAX MUNBERS OF PIPELINES HIT \n");
 	}
 	return def->pipeline;
 }
@@ -660,8 +670,6 @@ void vk_create_shader_stage_pipelines(shaderStage_t *pStage, shader_t* pShader)
 
     struct Vk_Pipeline_Def def;
 
-    def.line_primitives = 0;
-    def.shadow_phase = 0;
     def.face_culling = pShader->cullType;
     def.polygon_offset = pShader->polygonOffset;
     def.state_bits = pStage->stateBits;
@@ -677,17 +685,17 @@ void vk_create_shader_stage_pipelines(shaderStage_t *pStage, shader_t* pShader)
 
     def.clipping_plane = VK_FALSE;
     def.mirror = VK_FALSE;
-    pStage->vk_pipeline = vk_find_pipeline(&def);
+    pStage->vk_pipeline = vk_find_pipeline(&def, VK_FALSE, SHADOWS_RENDERING_DISABLED);
 
 
     def.clipping_plane = VK_TRUE;
     def.mirror = VK_FALSE;
-    pStage->vk_portal_pipeline = vk_find_pipeline(&def);
+    pStage->vk_portal_pipeline = vk_find_pipeline(&def, VK_FALSE, SHADOWS_RENDERING_DISABLED);
 
 
     def.clipping_plane = VK_TRUE;
     def.mirror = VK_TRUE;
-    pStage->vk_mirror_pipeline = vk_find_pipeline(&def);
+    pStage->vk_mirror_pipeline = vk_find_pipeline(&def, VK_FALSE, SHADOWS_RENDERING_DISABLED);
 }
 
 
@@ -707,7 +715,7 @@ void vk_createStandardPipelines(void)
         def.clipping_plane = VK_FALSE;
         def.mirror = VK_FALSE;
         
-        vk_create_pipeline(&def, &g_stdPipelines.skybox_pipeline);
+        vk_create_pipeline(&def, VK_FALSE, SHADOWS_RENDERING_DISABLED, &g_stdPipelines.skybox_pipeline);
     }
 
     ri.Printf(PRINT_ALL, " Create Q3 stencil shadows pipeline \n");
@@ -721,7 +729,6 @@ void vk_createStandardPipelines(void)
             def.state_bits = 0;
             def.shader_type = ST_SINGLE_TEXTURE;
             def.clipping_plane = VK_FALSE;
-            def.shadow_phase = SHADOWS_RENDERING_EDGES;
 
             cullType_t cull_types[2] = {CT_FRONT_SIDED, CT_BACK_SIDED};
             VkBool32 mirror_flags[2] = {VK_TRUE, VK_FALSE};
@@ -736,7 +743,8 @@ void vk_createStandardPipelines(void)
                 {
                     def.mirror = mirror_flags[j];
                     
-                    vk_create_pipeline(&def, &g_stdPipelines.shadow_volume_pipelines[i][j]);
+                    vk_create_pipeline(&def, VK_FALSE ,SHADOWS_RENDERING_EDGES, 
+                            &g_stdPipelines.shadow_volume_pipelines[i][j]);
                 }
             }
         }
@@ -751,9 +759,9 @@ void vk_createStandardPipelines(void)
             def.shader_type = ST_SINGLE_TEXTURE;
             def.clipping_plane = VK_FALSE;
             def.mirror = VK_FALSE;
-            def.shadow_phase = SHADOWS_RENDERING_FULLSCREEN_QUAD;
             
-            vk_create_pipeline(&def, &g_stdPipelines.shadow_finish_pipeline);
+            vk_create_pipeline(&def, VK_FALSE, SHADOWS_RENDERING_FULLSCREEN_QUAD, 
+                    &g_stdPipelines.shadow_finish_pipeline);
         }
     }
 
@@ -795,10 +803,12 @@ void vk_createStandardPipelines(void)
                     def.polygon_offset = polygon_offset[k];
 
                     def.state_bits = fog_state;
-                    vk_create_pipeline(&def, &g_stdPipelines.fog_pipelines[i][j][k]);
+                    vk_create_pipeline(&def, VK_FALSE, SHADOWS_RENDERING_DISABLED, 
+                            &g_stdPipelines.fog_pipelines[i][j][k]);
 
                     def.state_bits = dlight_state;
-                    vk_create_pipeline(&def, &g_stdPipelines.dlight_pipelines[i][j][k]);
+                    vk_create_pipeline(&def, VK_FALSE, SHADOWS_RENDERING_DISABLED, 
+                            &g_stdPipelines.dlight_pipelines[i][j][k]);
                 }
             }
         }

@@ -13,7 +13,7 @@ void vk_createDebugPipelines(void)
         memset(&def, 0, sizeof(def));
 
         def.state_bits = GLS_POLYMODE_LINE | GLS_DEPTHMASK_TRUE;
-        vk_create_pipeline(&def, &g_debugPipelines.tris);
+        vk_create_pipeline(&def, VK_FALSE, SHADOWS_RENDERING_DISABLED, &g_debugPipelines.tris);
     }
     
     ri.Printf(PRINT_ALL, " Create tris mirror debug pipeline \n");
@@ -23,7 +23,7 @@ void vk_createDebugPipelines(void)
 
         def.state_bits = GLS_POLYMODE_LINE | GLS_DEPTHMASK_TRUE;
         def.face_culling = CT_BACK_SIDED;
-        vk_create_pipeline(&def, &g_debugPipelines.tris_mirror);
+        vk_create_pipeline(&def, VK_FALSE, SHADOWS_RENDERING_DISABLED, &g_debugPipelines.tris_mirror);
     }
 
     ri.Printf(PRINT_ALL, " Create normals debug pipeline \n");
@@ -32,8 +32,7 @@ void vk_createDebugPipelines(void)
         memset(&def, 0, sizeof(def));
 
         def.state_bits = GLS_DEPTHMASK_TRUE;
-        def.line_primitives = VK_TRUE;
-        vk_create_pipeline(&def, &g_debugPipelines.normals);
+        vk_create_pipeline(&def, VK_TRUE, SHADOWS_RENDERING_DISABLED, &g_debugPipelines.normals);
     }
 
 
@@ -43,7 +42,7 @@ void vk_createDebugPipelines(void)
         memset(&def, 0, sizeof(def));
 
         def.state_bits = GLS_DEPTHMASK_TRUE | GLS_SRCBLEND_ONE | GLS_DSTBLEND_ONE;
-        vk_create_pipeline(&def, &g_debugPipelines.surface_solid);
+        vk_create_pipeline(&def, VK_FALSE, SHADOWS_RENDERING_DISABLED, &g_debugPipelines.surface_solid);
     }
 
     ri.Printf(PRINT_ALL, " Create surface debug outline pipeline \n");
@@ -52,8 +51,7 @@ void vk_createDebugPipelines(void)
         memset(&def, 0, sizeof(def));
 
         def.state_bits = GLS_POLYMODE_LINE | GLS_DEPTHMASK_TRUE | GLS_SRCBLEND_ONE | GLS_DSTBLEND_ONE;
-        def.line_primitives = VK_TRUE;
-        vk_create_pipeline(&def, &g_debugPipelines.surface_outline);
+        vk_create_pipeline(&def, VK_TRUE, SHADOWS_RENDERING_DISABLED, &g_debugPipelines.surface_outline);
     }
     
     ri.Printf(PRINT_ALL, " Create images debug pipeline \n");
@@ -62,7 +60,7 @@ void vk_createDebugPipelines(void)
         memset(&def, 0, sizeof(def));
 
         def.state_bits = GLS_DEPTHTEST_DISABLE | GLS_SRCBLEND_SRC_ALPHA | GLS_DSTBLEND_ONE_MINUS_SRC_ALPHA;
-        vk_create_pipeline(&def, &g_debugPipelines.images);
+        vk_create_pipeline(&def, VK_FALSE, SHADOWS_RENDERING_DISABLED, &g_debugPipelines.images);
     }
 }
 

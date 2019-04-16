@@ -19,9 +19,9 @@ struct Vk_Pipeline_Def {
 	VkBool32 polygon_offset;
 	VkBool32 clipping_plane;
 	VkBool32 mirror;
-	VkBool32 line_primitives;
+//	VkBool32 line_primitives;
     enum Vk_Shader_Type shader_type;
-	enum Vk_Shadow_Phase shadow_phase;
+//	enum Vk_Shadow_Phase shadow_phase;
 };
 
 
@@ -59,7 +59,8 @@ struct DebugPipelinesManager_t {
 };
 
 
-void vk_create_pipeline(const struct Vk_Pipeline_Def* def, VkPipeline* pPipeLine);
+void vk_create_pipeline(const struct Vk_Pipeline_Def* def, VkBool32 isLine, enum Vk_Shadow_Phase shadow_phase,
+        VkPipeline* pPipeLine);
 
 void vk_createStandardPipelines(void);
 void vk_createDebugPipelines(void);
