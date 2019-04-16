@@ -103,7 +103,11 @@ but not works on some machine. it is buggy and embarrasing when program abnormal
 * pipelineList: list the pipeline we have created;
 * gpuMem: image memmory allocated on GPU;
 * printOR: print the value of backend.or;
+
+* pipelineList: list the number of pipelines created (about 100, seem to much ?)
+
 * displayResoList: list of the display resolution you monitor supported
+
 For example:
 ```
 $ \displayResoList 
