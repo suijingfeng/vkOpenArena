@@ -1975,15 +1975,15 @@ shaders.
 Sets shader->sortedIndex
 ==============
 */
-static void SortNewShader( void )
+static void SortNewShader( shader_t* pShader )
 {
-	int		i;
-	shader_t* newShader = tr.shaders[ tr.numShaders - 1 ];
-	float sort = newShader->sort;
+	int	i;
+	float sort = pShader->sort;
 
 	for ( i = tr.numShaders - 2 ; i >= 0 ; i-- )
     {
-		if ( tr.sortedShaders[ i ]->sort <= sort ) {
+		if ( tr.sortedShaders[ i ]->sort <= sort )
+        {
 			break;
 		}
 		tr.sortedShaders[i+1] = tr.sortedShaders[i];
@@ -1994,8 +1994,8 @@ static void SortNewShader( void )
 	// https://zerowing.idsoftware.com/bugzilla/show_bug.cgi?id=493
 	FixRenderCommandList( i+1 );
 
-	newShader->sortedIndex = i+1;
-	tr.sortedShaders[i+1] = newShader;
+	pShader->sortedIndex = i+1;
+	tr.sortedShaders[i+1] = pShader;
 }
 
 
@@ -2003,7 +2003,7 @@ static void SortNewShader( void )
 
 shader_t* GeneratePermanentShader( void )
 {
-	int			i;
+	int	i;
 
 	if ( tr.numShaders == MAX_SHADERS ) {
 		ri.Printf( PRINT_WARNING, "WARNING: GeneratePermanentShader - MAX_SHADERS hit\n");
@@ -2044,7 +2044,7 @@ shader_t* GeneratePermanentShader( void )
 		}
 	}
 
-	SortNewShader();
+	SortNewShader(tr.shaders[ tr.numShaders - 1 ]);
 
     R_UpdateShaderHashTable(newShader);
 
