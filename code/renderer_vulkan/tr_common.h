@@ -73,15 +73,6 @@ void  R_NoiseInit( void );
 
 
 void R_IssuePendingRenderCommands( void );
-//qhandle_t RE_RegisterShaderLightMap( const char *name, int lightmapIndex );
-qhandle_t RE_RegisterShader( const char *name );
-qhandle_t RE_RegisterShaderNoMip( const char *name );
-
-
-// font stuff
-void R_InitFreeType( void );
-void R_DoneFreeType( void );
-void RE_RegisterFont(const char *fontName, int pointSize, fontInfo_t *font);
 
 
 /*

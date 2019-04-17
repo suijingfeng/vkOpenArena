@@ -15,4 +15,6 @@ void RB_AddQuadStampExt( vec3_t origin, vec3_t left, vec3_t up, byte *color, flo
 void RB_AddQuadStamp( vec3_t origin, vec3_t left, vec3_t up, byte *color );
 
 
+extern void (*rb_surfaceTable[SF_NUM_SURFACE_TYPES])(void *);
+
 #endif

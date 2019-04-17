@@ -32,7 +32,7 @@ SKINS
 #include "tr_globals.h"
 #include "../renderercommon/ref_import.h"
 #include "tr_shader.h"
-
+#include "R_FindShader.h"
 
 /*
 ==================

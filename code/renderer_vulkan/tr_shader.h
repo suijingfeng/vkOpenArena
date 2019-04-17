@@ -152,5 +152,6 @@ typedef struct shader_s
 	struct	shader_s	*next;
 } shader_t;
 
+shader_t* R_GetShaderByHandle( qhandle_t hShader );
 
 #endif

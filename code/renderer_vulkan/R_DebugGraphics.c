@@ -8,6 +8,7 @@
 #include "../renderercommon/ref_import.h"
 #include "../renderercommon/matrix_multiplication.h"
 #include "R_ShaderCommands.h"
+#include "tr_cmds.h"
 
 
 

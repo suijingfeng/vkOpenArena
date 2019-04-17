@@ -36,7 +36,7 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
 #include "R_DebugGraphics.h"
 #include "R_Portal.h"
-
+#include "tr_cmds.h"
 
 
 static void R_WorldVectorToLocal (const vec3_t world, const float R[3][3], vec3_t local)

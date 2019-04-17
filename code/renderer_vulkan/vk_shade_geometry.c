@@ -11,6 +11,8 @@
 #include "tr_light.h"
 #include "tr_shader.h"
 #include "R_ShaderCommands.h"
+#include "tr_shade.h"
+
 
 #define VERTEX_CHUNK_SIZE   (768 * 1024)
 #define INDEX_BUFFER_SIZE   (2 * 1024 * 1024)

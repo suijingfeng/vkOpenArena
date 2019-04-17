@@ -33,5 +33,5 @@ typedef struct image_s {
 	struct image_s*	next;
 } image_t;
 
-
+void R_SkinList_f( void );
 #endif

@@ -38,6 +38,8 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #include "glConfig.h"
 #include "ref_import.h"
 #include "R_ShaderCommands.h"
+#include "tr_font.h"
+#include "tr_cmds.h"
 
 
 void R_Init( void )

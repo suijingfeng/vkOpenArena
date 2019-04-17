@@ -27,9 +27,11 @@ image_t* R_CreateImage( const char *name, unsigned char* pic, uint32_t width, ui
 void R_LoadImage(const char *name, unsigned char **pic, uint32_t* width, uint32_t* height );
 void R_LoadImage2(const char *name, unsigned char **pic, uint32_t* width, uint32_t* height );
 
-
+void R_InitImages( void );
 
 void gpuMemUsageInfo_f(void);
 
 
+// TODO ; impl this
+// void R_ImageList_f( void );
 #endif

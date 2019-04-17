@@ -637,23 +637,6 @@ void vk_create_pipeline(
     // 1 is the length of the pCreateInfos and pPipelines arrays.
     //
 	VK_CHECK(qvkCreateGraphicsPipelines(vk.device, VK_NULL_HANDLE, 1, &create_info, NULL, pPipeLine));
-
-/*
-    s_created_ppl[s_numPipelines].pipeline = *pPipeLine;
-    s_created_ppl[s_numPipelines].par.shader_type = shader_type;
-    s_created_ppl[s_numPipelines].par.state_bits = state_bits;
-    s_created_ppl[s_numPipelines].par.face_culling = face_culling;
-    s_created_ppl[s_numPipelines].par.shadow_phase = shadow_phase;
-    s_created_ppl[s_numPipelines].par.polygon_offset = polygon_offset;
-    s_created_ppl[s_numPipelines].par.clipping_plane = clipping_plane;
-    s_created_ppl[s_numPipelines].par.mirror = mirror;
-    s_created_ppl[s_numPipelines].par.line_primitives = isLine;
-
-    if (++s_numPipelines >= MAX_VK_PIPELINES)
-    {
-		ri.Error(ERR_DROP, " MAX MUNBERS OF PIPELINES HIT \n");
-	}
-*/
 }
 
 
@@ -709,7 +692,7 @@ static void vk_find_pipeline( uint32_t state_bits,
 
 void vk_create_shader_stage_pipelines(shaderStage_t *pStage, shader_t* pShader)
 {
-    ri.Printf(PRINT_ALL, " Create shader stage pipelines. \n");
+    ri.Printf(PRINT_ALL, " Create shader stage pipeline for %s. \n", pShader->name);
     
     enum Vk_Shader_Type def_shader_type = ST_SINGLE_TEXTURE;
  

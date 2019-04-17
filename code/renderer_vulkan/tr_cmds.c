@@ -35,6 +35,7 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #include "R_ShaderCommands.h"
 #include "tr_shade.h"
 #include "tr_surface.h"
+#include "tr_cmds.h"
 
 static renderCommandList_t	BE_Commands;
 

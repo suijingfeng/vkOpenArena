@@ -31,6 +31,8 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #include "tr_light.h"
 #include "tr_surface.h"
 #include "R_ShaderCommands.h"
+#include "R_FindShader.h"
+
 
 #define	LL(x) x=LittleLong(x)
 

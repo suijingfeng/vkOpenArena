@@ -67,10 +67,6 @@ typedef struct {
 #define TR_MAX_TEXMODS 4
 
 
-struct shaderCommands_s;
-
-
-
 
 // trRefdef_t holds everything that comes in refdef_t,
 // as well as the locally generated scene information
@@ -403,19 +399,7 @@ the bits are allocated as follows:
 
 
 
-/*
-** performanceCounters_t
-*/
-typedef struct {
-	int		c_sphere_cull_patch_in, c_sphere_cull_patch_clip, c_sphere_cull_patch_out;
-	int		c_box_cull_patch_in, c_box_cull_patch_clip, c_box_cull_patch_out;
-	int		c_sphere_cull_md3_in, c_sphere_cull_md3_clip, c_sphere_cull_md3_out;
-	int		c_box_cull_md3_in, c_box_cull_md3_clip, c_box_cull_md3_out;
 
-	int		c_leafs;
-	int		c_dlightSurfaces;
-	int		c_dlightSurfacesCulled;
-} frontEndCounters_t;
 
 
 #define FUNCTABLE_SIZE		1024
@@ -430,7 +414,6 @@ void  R_NoiseInit( void );
 
 void R_RenderView( viewParms_t *parms );
 
-void R_AddMD3Surfaces( trRefEntity_t *e );
 
 void R_AddPolygonSurfaces( void );
 
@@ -438,7 +421,7 @@ void R_DecomposeSort( unsigned sort, int *entityNum, shader_t **shader,
 					 int *fogNum, int *dlightMap );
 
 void R_AddDrawSurf( surfaceType_t *surface, shader_t *shader, int fogIndex, int dlightMap );
-void ScanAndLoadShaderFiles( void );
+
 shader_t * GeneratePermanentShader( void );
 qboolean ParseShader( char **text );
 
@@ -460,12 +443,10 @@ void R_InitScene(void);
 void R_InitNextFrame(void);
 
 
-void	R_ImageList_f( void );
-void	R_SkinList_f( void );
 // https://zerowing.idsoftware.com/bugzilla/show_bug.cgi?id=516
 
 
-void	R_InitImages( void );
+
 void	R_InitSkins( void );
 skin_t	*R_GetSkinByHandle( qhandle_t hSkin );
 
@@ -476,9 +457,7 @@ skin_t	*R_GetSkinByHandle( qhandle_t hSkin );
 // tr_shader.c
 //
 // qhandle_t RE_RegisterShaderLightMap( const char *name, int lightmapIndex );
-shader_t* R_FindShader( const char *name, int lightmapIndex, qboolean mipRawImage );
-shader_t* R_GetShaderByHandle( qhandle_t hShader );
-//shader_t* R_FindShaderByName( const char *name );
+
 
 void R_InitShaders( void );
 void R_ShaderList_f( void );
@@ -493,8 +472,7 @@ void R_CreateDefaultShadingCmds(const char* name, image_t* image);
 
 
 
-void RB_StageIteratorGeneric( void );
-void RB_StageIteratorSky( void );
+
 
 /*
 ============================================================
@@ -520,14 +498,7 @@ void RB_ShadowTessEnd( void );
 void RB_ShadowFinish( void );
 void RB_ProjectionShadowDeform( void );
 
-/*
-============================================================
 
-SKIES
-
-============================================================
-*/
-void R_InitSkyTexCoords( float cloudLayerHeight );
 
 /*
 ============================================================
@@ -547,130 +518,6 @@ void R_FreeSurfaceGridMesh( srfGridMesh_t *grid );
 
 
 
-/*
-=============================================================
-
-ANIMATED MODELS
-
-=============================================================
-*/
-void R_MDRAddAnimSurfaces( trRefEntity_t *ent );
-void R_AddAnimSurfaces( trRefEntity_t *ent );
-void R_AddIQMSurfaces( trRefEntity_t *ent );
-
-/*
-=============================================================
-=============================================================
-*/
-
-
-void	RB_DeformTessGeometry( void );
-
-void	RB_CalcEnvironmentTexCoords( float *dstTexCoords );
-void	RB_CalcFogTexCoords( float *dstTexCoords );
-void	RB_CalcScrollTexCoords( const float scroll[2], float *dstTexCoords );
-void	RB_CalcRotateTexCoords( float rotSpeed, float *dstTexCoords );
-void	RB_CalcScaleTexCoords( const float scale[2], float *dstTexCoords );
-void	RB_CalcTurbulentTexCoords( const waveForm_t *wf, float *dstTexCoords );
-void	RB_CalcTransformTexCoords( const texModInfo_t *tmi, float *dstTexCoords );
-void	RB_CalcModulateColorsByFog( unsigned char *dstColors );
-void	RB_CalcModulateAlphasByFog( unsigned char *dstColors );
-void	RB_CalcModulateRGBAsByFog( unsigned char *dstColors );
-void	RB_CalcWaveAlpha( const waveForm_t *wf, unsigned char *dstColors );
-void	RB_CalcWaveColor( const waveForm_t *wf, unsigned char (*dstColors)[4] );
-void	RB_CalcAlphaFromEntity( unsigned char *dstColors );
-void	RB_CalcAlphaFromOneMinusEntity( unsigned char *dstColors );
-void	RB_CalcStretchTexCoords( const waveForm_t *wf, float *texCoords );
-void	RB_CalcColorFromEntity( unsigned char (*dstColors)[4] );
-void	RB_CalcColorFromOneMinusEntity( unsigned char (*dstColors)[4] );
-void	RB_CalcSpecularAlpha( unsigned char *alphas );
-void	RB_CalcDiffuseColor( unsigned char (*colors)[4] );
-
-
-
-/*
-=============================================================
-
-RENDERER BACK END COMMAND QUEUE
-
-=============================================================
-*/
-
-#define	MAX_RENDER_COMMANDS	0x40000
-
-typedef struct {
-	byte	cmds[MAX_RENDER_COMMANDS];
-	int		used;
-} renderCommandList_t;
-
-typedef struct {
-	int		commandId;
-	float	color[4];
-} setColorCommand_t;
-
-typedef struct {
-	int		commandId;
-} drawBufferCommand_t;
-
-
-typedef struct {
-	int		commandId;
-} swapBuffersCommand_t;
-
-typedef struct {
-	int		commandId;
-} endFrameCommand_t;
-
-typedef struct {
-	int		commandId;
-	shader_t	*shader;
-	float	x, y;
-	float	w, h;
-	float	s1, t1;
-	float	s2, t2;
-} stretchPicCommand_t;
-
-typedef struct {
-	int		commandId;
-	trRefdef_t	refdef;
-	viewParms_t	viewParms;
-	drawSurf_t *drawSurfs;
-	int		numDrawSurfs;
-} drawSurfsCommand_t;
-
-
-typedef enum {
-	RC_END_OF_LIST,
-	RC_SET_COLOR,
-	RC_STRETCH_PIC,
-	RC_DRAW_SURFS,
-	RC_DRAW_BUFFER,
-	RC_SWAP_BUFFERS,
-	RC_SCREENSHOT,
-    RC_VIDEOFRAME
-} renderCommand_t;
-
-
-
-
-
-/*
-=============================================================
-
-RENDERER BACK END FUNCTIONS
-
-=============================================================
-*/
-
-
-void *R_GetCommandBuffer( int bytes );
-void RB_ExecuteRenderCommands( const void *data );
-
-
-void R_IssueRenderCommands( qboolean runPerformanceCounters );
-void FixRenderCommandList( int newShader );
-void R_AddDrawSurfCmd( drawSurf_t *drawSurfs, int numDrawSurfs );
-
 
 /*
 ============================================================
@@ -680,13 +527,6 @@ SCENE GENERATION
 ============================================================
 */
 
-
-// font stuff
-void R_InitFreeType(void);
-void R_DoneFreeType(void);
-
-
-extern void (*rb_surfaceTable[SF_NUM_SURFACE_TYPES])(void *);
 
 
 // ========================================

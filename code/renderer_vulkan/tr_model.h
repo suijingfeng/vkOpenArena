@@ -97,6 +97,16 @@ void R_AddIQMSurfaces( trRefEntity_t *ent );
 void RB_IQMSurfaceAnim( surfaceType_t *surface );
 void ComputePoseMats( iqmData_t *data, int frame, int oldframe, float backlerp, float *mat ); 
 
+/*
+=============================================================
 
+ANIMATED MODELS
 
+=============================================================
+*/
+void R_MDRAddAnimSurfaces( trRefEntity_t *ent );
+void R_AddAnimSurfaces( trRefEntity_t *ent );
+void R_AddIQMSurfaces( trRefEntity_t *ent );
+
+void R_AddMD3Surfaces( trRefEntity_t *e );
 #endif
