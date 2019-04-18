@@ -1,5 +1,5 @@
-#ifndef IMAGE_LOADER_H_
-#define IMAGE_LOADER_H_
+#ifndef R_LOAD_IMAGE_H_
+#define R_LOAD_IMAGE_H_
 
 
 /*

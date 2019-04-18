@@ -42,7 +42,10 @@ struct VK_PipelineMgr_t {
     struct PipelineParameter_t par;
 };
 
+
 static struct VK_PipelineMgr_t s_created_ppl[MAX_VK_PIPELINES];
+
+
 static uint32_t s_numPipelines = 0;
 
 
@@ -51,6 +54,27 @@ void R_PipelineList_f(void)
     ri.Printf(PRINT_ALL, " Total pipeline created: %d\n", s_numPipelines);
 }
 
+
+static int comparepPplPar(struct PipelineParameter_t* par1, struct PipelineParameter_t* par2)
+{
+    int64_t i1 = (par1->state_bits << 10) + 
+        (par1->face_culling << 8) +
+        (par1->shader_type << 6) + 
+        (par1->shadow_phase << 4) + 
+        (par1->polygon_offset << 3) +
+        (par1->clipping_plane << 2) +
+        (par1->mirror << 1) ;
+
+    int64_t i2 = (par2->state_bits << 10) + 
+        (par2->face_culling << 8) +
+        (par2->shader_type << 6) + 
+        (par2->shadow_phase << 4) + 
+        (par2->polygon_offset << 3) +
+        (par2->clipping_plane << 2) +
+        (par2->mirror << 1) ;
+
+    return i1 - i2;
+}
 
 
 // uniform values in the shaders need to be specified during pipeline creation
@@ -729,3 +753,5 @@ void vk_destroyShaderStagePipeline(void)
     }
     s_numPipelines = 0;
 }
+
+
