@@ -1,11 +1,12 @@
-#include "R_Portal.h"
 #include "R_ShaderCommands.h"
-#include "tr_surface.h"
+
 #include "../renderercommon/matrix_multiplication.h"
 #include "../renderercommon/ref_import.h"
 
 #include "R_PortalPlane.h"
 
+#include "tr_main.h"
+#include "R_Portal.h"
 
 
 static void R_LocalNormalToWorld (const vec3_t local, const orientationr_t * const pRT, vec3_t world)

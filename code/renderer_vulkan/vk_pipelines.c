@@ -1,4 +1,3 @@
-#include "tr_local.h"
 #include "vk_instance.h"
 #include "vk_pipelines.h"
 #include "tr_shader.h"
@@ -36,7 +35,6 @@
 // each other, add up or be mixed based opon transparency.
 //
 
-
 #define MAX_VK_PIPELINES        256
 
 struct VK_PipelineMgr_t {
@@ -60,7 +58,7 @@ void R_PipelineList_f(void)
 // in the fragment shader.
 
 
-void vk_createPipelineLayout(void)
+void vk_createPipelineLayout(uint32_t numDes)
 {
     ri.Printf(PRINT_ALL, " Create: vk.descriptor_pool, vk.set_layout, vk.pipeline_layout\n");
  
@@ -69,13 +67,13 @@ void vk_createPipelineLayout(void)
 	{
 		VkDescriptorPoolSize pool_size;
 		pool_size.type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-		pool_size.descriptorCount = MAX_DRAWIMAGES;
+		pool_size.descriptorCount = numDes;
 
 		VkDescriptorPoolCreateInfo desc;
 		desc.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
 		desc.pNext = NULL;
 		desc.flags = VK_DESCRIPTOR_POOL_CREATE_FREE_DESCRIPTOR_SET_BIT; // used by the cinematic images
-		desc.maxSets = MAX_DRAWIMAGES;
+		desc.maxSets = numDes;
 		desc.poolSizeCount = 1;
         // pPoolSizes is a pointer to an array of VkDescriptorPoolSize structures,
         // each containing a descriptor type and number of descriptors of 

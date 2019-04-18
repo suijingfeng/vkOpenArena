@@ -1,4 +1,3 @@
-#include "tr_local.h"
 #include "vk_instance.h"
 #include "vk_pipelines.h"
 #include "tr_shader.h"

@@ -54,7 +54,8 @@ void vk_initialize(void)
     // shader. The uniform values need to be specified during pipeline
     // creation by creating a VkPipelineLayout object.
     
-    vk_createPipelineLayout();
+    // MAX_DRAWIMAGES = 2048
+    vk_createPipelineLayout(2048);
 
 	//
 	vk_createVertexBuffer();

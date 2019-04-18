@@ -13,6 +13,7 @@
 #include "R_ShaderCommands.h"
 #include "tr_shade.h"
 
+void SetTessFogColor(unsigned char (*pcolor)[4], int fnum, int nvert);
 
 #define VERTEX_CHUNK_SIZE   (768 * 1024)
 #define INDEX_BUFFER_SIZE   (2 * 1024 * 1024)
@@ -748,17 +749,7 @@ static void ComputeColors( shaderStage_t *pStage )
 			break;
 		case CGEN_FOG:
 		{
-			fog_t* fog = tr.world->fogs + tess.fogNum;
-
-            nVerts = tess.numVertexes;
-
-			for (i = 0; i < nVerts; i++)
-			{
-				tess.svars.colors[i][0] = fog->colorRGBA[0];
-				tess.svars.colors[i][1] = fog->colorRGBA[1];
-				tess.svars.colors[i][2] = fog->colorRGBA[2];
-				tess.svars.colors[i][3] = fog->colorRGBA[3];
-			}
+            SetTessFogColor(tess.svars.colors, tess.fogNum, tess.numVertexes);
 		}break;
 		case CGEN_WAVEFORM:
 			RB_CalcWaveColor( &pStage->rgbWave, tess.svars.colors );
@@ -1102,7 +1093,6 @@ static void ProjectDlightTexture( void )
 }
 
 
-
 /*
 ===================
 RB_FogPass
@@ -1111,18 +1101,7 @@ Blends a fog texture on top of everything else
 */
 static void RB_FogPass( void ) {
 
-	unsigned int i;
-
-	fog_t* fog = tr.world->fogs + tess.fogNum;
-
-    const unsigned int nVerts = tess.numVertexes;
-	for (i = 0; i < nVerts; i++)
-	{
-		tess.svars.colors[i][0] = fog->colorRGBA[0];
-		tess.svars.colors[i][1] = fog->colorRGBA[1];
-		tess.svars.colors[i][2] = fog->colorRGBA[2];
-		tess.svars.colors[i][3] = fog->colorRGBA[3];
-	}
+    SetTessFogColor(tess.svars.colors, tess.fogNum, tess.numVertexes);
 
 	RB_CalcFogTexCoords( ( float * ) tess.svars.texcoords[0] );
 

@@ -19,7 +19,6 @@ along with Foobar; if not, write to the Free Software
 Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 ===========================================================================
 */
-#include "tr_local.h"
 #include "tr_globals.h"
 #include "tr_backend.h"
 #include "tr_cvar.h"
@@ -35,7 +34,10 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #include "R_ShaderCommands.h"
 #include "tr_shade.h"
 #include "tr_surface.h"
+#include "tr_scene.h"
 #include "tr_cmds.h"
+#include "tr_main.h"
+#include "tr_shadows.h"
 
 static renderCommandList_t	BE_Commands;
 

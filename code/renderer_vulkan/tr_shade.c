@@ -30,7 +30,7 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #include "RB_DrawTris.h"
 #include "RB_DrawNormals.h"
 #include "R_ShaderCommands.h"
-
+#include "tr_shadows.h"
 /*
 
   THIS ENTIRE FILE IS BACK END

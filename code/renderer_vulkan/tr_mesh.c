@@ -21,14 +21,15 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 */
 // tr_mesh.c: triangle model functions
 
-#include "tr_local.h"
 #include "tr_globals.h"
 #include "tr_cvar.h"
 #include "vk_shade_geometry.h"
 
 #include "../renderercommon/ref_import.h"
 #include "tr_light.h"
-
+#include "tr_Cull.h"
+#include "tr_model.h"
+#include "tr_world.h"
 
 static int R_CullModel( md3Header_t *header, trRefEntity_t *ent )
 {

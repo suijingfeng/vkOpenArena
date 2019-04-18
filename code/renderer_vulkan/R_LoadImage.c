@@ -1,6 +1,5 @@
-#include "tr_local.h"
 #include "image_loader.h"
-
+#include "ref_import.h"
 // Description:  Loads any of the supported image types into
 // a cannonical 32 bit format.
 

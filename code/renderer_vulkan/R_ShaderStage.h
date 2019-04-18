@@ -93,7 +93,7 @@ typedef struct {
 
 
 typedef struct {
-	image_t*        image[MAX_IMAGE_ANIMATIONS];
+	struct image_s* image[MAX_IMAGE_ANIMATIONS];
 	int				numImageAnimations;
 	float			imageAnimationSpeed;
 

@@ -16,7 +16,7 @@
 
 
 #define	MAX_SHADER_DEFORMS      3
-
+#define TR_MAX_TEXMODS 4
 
 // any change in the LIGHTMAP_* defines here MUST be reflected in
 // R_FindShader() in tr_bsp.c
@@ -153,5 +153,17 @@ typedef struct shader_s
 } shader_t;
 
 shader_t* R_GetShaderByHandle( qhandle_t hShader );
+shader_t* GeneratePermanentShader( void );
+qboolean ParseShader( char **text );
+
+void R_InitShaders( void );
+void R_ShaderList_f( void );
+void R_ClearShaderHashTable(void);
+void R_SetTheShader( const char *name, int lightmapIndex );
+void R_UpdateShaderHashTable(shader_t* newShader);
+
+void R_SetDefaultShader( void );
+shader_t *FinishShader( void );
+void R_CreateDefaultShadingCmds(const char* name, image_t* image);
 
 #endif

@@ -20,7 +20,6 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 ===========================================================================
 */
 // tr_surf.c
-#include "tr_local.h"
 #include "tr_flares.h"
 #include "tr_globals.h"
 #include "vk_image.h"
@@ -138,11 +137,12 @@ void RB_AddQuadStampExt( vec3_t origin, vec3_t left, vec3_t up, byte *color, flo
 
 	// constant color all the way around
 	// should this be identity and let the shader specify from entity?
-	// * ( unsigned int * ) &tess.vertexColors[ndx0] = 
-	// * ( unsigned int * ) &tess.vertexColors[ndx1] = 
-	// * ( unsigned int * ) &tess.vertexColors[ndx2] = 
-	// * ( unsigned int * ) &tess.vertexColors[ndx3] = 
-	//	* ( unsigned int * )color;
+    //  strict alias warnning on gcc 4.8
+	* ( unsigned int * ) &tess.vertexColors[ndx0] = 
+	* ( unsigned int * ) &tess.vertexColors[ndx1] = 
+	* ( unsigned int * ) &tess.vertexColors[ndx2] = 
+    * ( unsigned int * ) &tess.vertexColors[ndx3] = 
+	* ( unsigned int * ) color;
 
     /*
     tess.vertexColors[ndx0][0] = color[0];
@@ -165,11 +165,13 @@ void RB_AddQuadStampExt( vec3_t origin, vec3_t left, vec3_t up, byte *color, flo
 	tess.vertexColors[ndx3][2] = color[2];
 	tess.vertexColors[ndx3][3] = color[3];
     */
+
+    /*
     memcpy(tess.vertexColors[ndx0], color, 4);
     memcpy(tess.vertexColors[ndx1], color, 4);
     memcpy(tess.vertexColors[ndx2], color, 4);
     memcpy(tess.vertexColors[ndx3], color, 4);
-
+    */
 
 	tess.numVertexes += 4;
 	tess.numIndexes += 6;
@@ -250,7 +252,8 @@ static void RB_SurfacePolychain( srfPoly_t *p )
 RB_SurfaceTriangles
 =============
 */
-void RB_SurfaceTriangles( srfTriangles_t *srf ) {
+void RB_SurfaceTriangles( srfTriangles_t *srf )
+{
 	int			i;
 	drawVert_t	*dv;
 	float		*xyz, *normal, *texCoords;

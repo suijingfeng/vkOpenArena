@@ -1,14 +1,12 @@
-#include "tr_local.h"
-#include "vk_image_sampler.h"
-#include "R_ImageProcess.h"
-#include "vk_image.h"
+#include "VKimpl.h"
 #include "vk_cmd.h"
 #include "vk_instance.h"
 #include "tr_globals.h"
 #include "tr_cvar.h"
 #include "tr_fog.h"
-
-
+#include "vk_image_sampler.h"
+#include "vk_image.h"
+#include "R_ImageProcess.h"
 #define IMAGE_CHUNK_SIZE        (64 * 1024 * 1024)
 
 

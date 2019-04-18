@@ -21,7 +21,6 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 */
 // tr_shade_calc.c
 
-#include "tr_local.h"
 #include "tr_globals.h"
 #include "tr_fog.h"
 #include "tr_backend.h"
@@ -29,7 +28,9 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #include "tr_surface.h"
 #include "R_ShaderCommands.h"
 #include "tr_shade.h"
-
+#include "tr_noise.h"
+#include "tr_shadows.h"
+#include "tr_world.h"
 #define	WAVEVALUE( table, base, amplitude, phase, freq )  ((base) + table[ (int)( ( ( (phase) + tess.shaderTime * (freq) ) * FUNCTABLE_SIZE ) ) & FUNCTABLE_MASK ] * (amplitude))
 
 static float *TableForFunc( genFunc_t func ) 

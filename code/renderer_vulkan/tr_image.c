@@ -28,11 +28,18 @@ SKINS
 ============================================================================
 */
 
-#include "tr_local.h"
 #include "tr_globals.h"
 #include "../renderercommon/ref_import.h"
 #include "tr_shader.h"
 #include "R_FindShader.h"
+
+//=================================================================================
+
+// max surfaces per-skin
+// This is an arbitry limit. Vanilla Q3 only supported 32 surfaces in skins but failed to
+// enforce the maximum limit when reading skin files. It was possile to use more than 32
+// surfaces which accessed out of bounds memory past end of skin->surfaces hunk block.
+#define MAX_SKIN_SURFACES	256
 
 /*
 ==================

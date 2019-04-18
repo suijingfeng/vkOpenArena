@@ -1,6 +1,7 @@
-#include "tr_local.h"
 #include "tr_model.h"
 
+#include "../qcommon/q_shared.h"
+#include "../qcommon/qfiles.h"
 
 void RE_ModelBounds( qhandle_t handle, vec3_t mins, vec3_t maxs )
 {

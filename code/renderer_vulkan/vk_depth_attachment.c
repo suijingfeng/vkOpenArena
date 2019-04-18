@@ -1,4 +1,3 @@
-#include "tr_local.h"
 #include "vk_instance.h"
 #include "vk_image.h"
 #include "vk_cmd.h"

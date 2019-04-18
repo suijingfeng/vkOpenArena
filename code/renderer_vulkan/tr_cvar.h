@@ -80,10 +80,10 @@ extern	cvar_t	*r_saveFontData;
 extern cvar_t	*r_maxpolys;
 extern cvar_t	*r_maxpolyverts;
 
-
-extern	cvar_t	*r_ambientScale;
-extern	cvar_t	*r_directedScale;
-extern	cvar_t	*r_debugLight;
+extern cvar_t   *r_flares;
+extern cvar_t	*r_ambientScale;
+extern cvar_t	*r_directedScale;
+extern cvar_t	*r_debugLight;
 
 extern cvar_t* r_allowResize; // make window resizable
 extern cvar_t* r_mode;

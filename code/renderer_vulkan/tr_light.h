@@ -14,7 +14,7 @@ typedef struct dlight_s {
 
 
 
-void R_DlightBmodel( bmodel_t *bmodel );
+
 void R_SetupEntityLighting( const trRefdef_t *refdef, trRefEntity_t *ent );
 void R_TransformDlights( int count, dlight_t *dl, const orientationr_t * const or );
 

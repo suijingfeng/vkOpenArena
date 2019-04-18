@@ -21,14 +21,16 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 */
 // tr_map.c
 
-#include "tr_local.h"
 #include "tr_globals.h"
 #include "vk_image.h"
 #include "tr_cvar.h"
 #include "R_FindShader.h"
-
+#include "tr_curve.h"
+#include "tr_flares.h"
 #include "../renderercommon/ref_import.h"
-
+#include "render_export.h"
+#include "tr_world.h"
+#include "tr_model.h"
 /*
 
 Loads and prepares a map file for scene rendering.

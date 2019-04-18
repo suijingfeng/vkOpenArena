@@ -1,5 +1,6 @@
 #include "../renderercommon/ref_import.h"
 #include "tr_globals.h"
+#include "render_export.h"
 
 /*
 =============

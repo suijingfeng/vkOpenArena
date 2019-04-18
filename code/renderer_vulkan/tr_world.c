@@ -19,11 +19,15 @@ along with Foobar; if not, write to the Free Software
 Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 ===========================================================================
 */
-#include "tr_local.h"
 #include "tr_globals.h"
 #include "tr_cvar.h"
 #include "../renderercommon/ref_import.h"
 #include "tr_light.h"
+#include "tr_Cull.h"
+#include "tr_world.h"
+#include "tr_model.h"
+
+extern void R_DlightBmodel( struct bmodel_s * bmodel );
 
 /*
 =================
@@ -665,3 +669,25 @@ void R_AddWorldSurfaces (void)
 	}
 	R_RecursiveWorldNode( tr.world->nodes, 15, ( 1 << tr.refdef.num_dlights ) - 1 );
 }
+
+
+void R_GetWorldBaseName(char* checkname)
+{
+    sprintf( checkname, "levelshots/%s.tga", tr.world->baseName );
+}
+
+void SetTessFogColor(unsigned char (*pcolor)[4], int fnum, int nVerts)
+{
+    fog_t* fog = tr.world->fogs + fnum;
+
+    uint32_t i; 
+    for (i = 0; i < nVerts; i++)
+    {
+        pcolor[i][0] = fog->colorRGBA[0];
+        pcolor[i][1] = fog->colorRGBA[1];
+        pcolor[i][2] = fog->colorRGBA[2];
+        pcolor[i][3] = fog->colorRGBA[3];
+    }
+}
+
+

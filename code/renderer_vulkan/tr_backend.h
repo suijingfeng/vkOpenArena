@@ -1,7 +1,8 @@
 #ifndef TR_BACKEND_H_
 #define TR_BACKEND_H_
 
-#include "tr_local.h"
+#include "viewParms.h"
+#include "trRefDef.h"
 
 typedef struct {
 	int	c_surfaces;

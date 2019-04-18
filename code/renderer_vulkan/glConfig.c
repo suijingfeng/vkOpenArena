@@ -1,4 +1,3 @@
-#include "tr_local.h"
 #include "tr_cvar.h"
 
 #include "../renderercommon/tr_types.h"

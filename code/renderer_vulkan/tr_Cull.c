@@ -1,6 +1,8 @@
-#include "tr_local.h"
 #include "tr_cvar.h"
 #include "tr_globals.h"
+
+#include "tr_Cull.h"
+
 /*
 =================
 

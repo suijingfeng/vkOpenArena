@@ -21,7 +21,6 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 ===========================================================================
 */
 
-#include "tr_local.h"
 #include "tr_globals.h"
 #include "tr_backend.h"
 #include "tr_model.h"
@@ -32,7 +31,9 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #include "tr_surface.h"
 #include "R_ShaderCommands.h"
 #include "R_FindShader.h"
-
+#include "tr_Cull.h"
+#include "tr_model.h"
+#include "tr_world.h"
 
 #define	LL(x) x=LittleLong(x)
 

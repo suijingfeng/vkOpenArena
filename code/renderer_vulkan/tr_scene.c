@@ -25,6 +25,9 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #include "../renderercommon/ref_import.h"
 #include "../renderercommon/matrix_multiplication.h"
 #include "tr_light.h"
+#include "tr_main.h"
+#include "tr_surface.h"
+#include "tr_world.h"
 // these are sort of arbitrary limits.
 // the limits apply to the sum of all scenes in a frame --
 // the main view, all the 3D icons, etc

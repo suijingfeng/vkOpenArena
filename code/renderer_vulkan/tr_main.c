@@ -21,14 +21,10 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 */
 // tr_main.c -- main control flow for each frame
 
-#include "tr_local.h"
 #include "tr_globals.h"
 #include "tr_cvar.h"
 #include "tr_shader.h"
 
-#include "vk_shade_geometry.h"
-#include "vk_instance.h"
-#include "vk_image.h"
 #include "../renderercommon/matrix_multiplication.h"
 #include "../renderercommon/ref_import.h"
 
@@ -37,6 +33,9 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #include "R_DebugGraphics.h"
 #include "R_Portal.h"
 #include "tr_cmds.h"
+#include "tr_scene.h"
+#include "tr_world.h"
+#include "tr_model.h"
 
 
 static void R_WorldVectorToLocal (const vec3_t world, const float R[3][3], vec3_t local)

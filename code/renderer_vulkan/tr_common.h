@@ -38,25 +38,6 @@ union uInt4bytes{
     unsigned char uc[4];
 };
 
-union f32_u {
-	float f;
-	uint32_t ui;
-    unsigned char uc[4];
-	struct {
-		unsigned int fraction:23;
-		unsigned int exponent:8;
-		unsigned int sign:1;
-	} pack;
-};
-
-union f16_u {
-	uint16_t ui;
-	struct {
-		unsigned int fraction:10;
-		unsigned int exponent:5;
-		unsigned int sign:1;
-	} pack;
-};
 
 
 // any change in the LIGHTMAP_* defines here MUST be reflected in
@@ -68,8 +49,10 @@ union f16_u {
 
 
 
-float R_NoiseGet4f( float x, float y, float z, float t );
-void  R_NoiseInit( void );
+#define FUNCTABLE_SIZE		1024
+#define FUNCTABLE_SIZE2		10
+#define FUNCTABLE_MASK		(FUNCTABLE_SIZE-1)
+
 
 
 void R_IssuePendingRenderCommands( void );

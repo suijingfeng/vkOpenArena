@@ -47,7 +47,7 @@ typedef struct {
 	int		commandId;
 	trRefdef_t	refdef;
 	viewParms_t	viewParms;
-	drawSurf_t *drawSurfs;
+	struct drawSurf_s * drawSurfs;
 	int		numDrawSurfs;
 } drawSurfsCommand_t;
 
@@ -78,6 +78,6 @@ void RB_ExecuteRenderCommands( const void *data );
 
 void R_IssueRenderCommands( qboolean runPerformanceCounters );
 void FixRenderCommandList( int newShader );
-void R_AddDrawSurfCmd( drawSurf_t *drawSurfs, int numDrawSurfs );
+void R_AddDrawSurfCmd( struct drawSurf_s *drawSurfs, int numDrawSurfs );
 
 #endif

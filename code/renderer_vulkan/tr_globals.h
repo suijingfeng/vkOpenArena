@@ -1,12 +1,51 @@
 #ifndef TR_GLOBALS_H_
 #define TR_GLOBALS_H_
 
-#include "tr_local.h"
-#include "tr_model.h"
+#include "../qcommon/q_shared.h"
+#include "../qcommon/qfiles.h"
+#include "tr_common.h"
+
+#include "tr_shader.h"
+#include "tr_image.h"
+#include "viewParms.h"
+#include "trRefDef.h"
+
+
+#define	MAX_DRAWIMAGES			2048
+#define	MAX_LIGHTMAPS			256
+
+#define	MAX_SKINS				1024
+#define	MAX_DRAWSURFS			0x10000
+#define	DRAWSURF_MASK			(MAX_DRAWSURFS-1)
+
+/*
+
+the drawsurf sort data is packed into a single 32 bit value so it can be
+compared quickly during the qsorting process
+
+the bits are allocated as follows:
+
+21 - 31	: sorted shader index
+11 - 20	: entity index
+2 - 6	: fog index
+//2		: used to be clipped flag REMOVED - 03.21.00 rad
+0 - 1	: dlightmap index
+
+	TTimo - 1.32
+17-31 : sorted shader index
+7-16  : entity index
+2-6   : fog index
+0-1   : dlightmap index
+*/
+#define	QSORT_FOGNUM_SHIFT	2
+#define	QSORT_ENTITYNUM_SHIFT	7
+#define	QSORT_SHADERNUM_SHIFT	17
+
+
 
 // 12 bits, see QSORT_SHADERNUM_SHIFT
 #define	MAX_SHADERS				16384
-
+#define	MAX_MOD_KNOWN	1024
 /*
 ** trGlobals_t 
 **
@@ -30,7 +69,9 @@ typedef struct {
 	int		c_dlightSurfacesCulled;
 } frontEndCounters_t;
 
-typedef struct {
+
+typedef struct
+{
 	qboolean				registered;		// cleared at shutdown, set at beginRegistration
 
 	int						visCount;		// incremented every time a new vis cluster is entered
@@ -38,7 +79,7 @@ typedef struct {
 											// and every R_MarkFragments call
 
 	qboolean				worldMapLoaded;
-	world_t					*world;
+	struct world_s *        world;
 
 	const unsigned char		*externalVisData;	// from RE_SetWorldVisData, shared with CM_Load
 
@@ -61,7 +102,7 @@ typedef struct {
 	trRefEntity_t			worldEntity;		// point currentEntity at this when rendering world
 	int						currentEntityNum;
 	int						shiftedEntityNum;	// currentEntityNum << QSORT_ENTITYNUM_SHIFT
-	model_t					*currentModel;
+	struct model_s *        currentModel;
 
 	viewParms_t				viewParms;
 
@@ -84,7 +125,7 @@ typedef struct {
 	// put large tables at the end, so most elements will be
 	// within the +/32K indexed range on risc processors
 	//
-	model_t	*               models[MAX_MOD_KNOWN];
+	struct model_s *        models[MAX_MOD_KNOWN];
 	int						numModels;
 
 	int						numImages;

@@ -1,7 +1,7 @@
 #ifndef VK_PIPELINES_H_
 #define VK_PIPELINES_H_
 
-#include "tr_local.h"
+#include "tr_shader.h"
 #include "vk_shaders.h"
 
 // used with cg_shadows == 2
@@ -77,7 +77,7 @@ void vk_createDebugPipelines(void);
 
 // create pipelines for each stage
 void vk_create_shader_stage_pipelines(shaderStage_t *pStage, shader_t* pShader);
-void vk_createPipelineLayout(void);
+void vk_createPipelineLayout(uint32_t numDes);
 
 void vk_destroyShaderStagePipeline(void);
 void vk_destroyGlobalStagePipeline(void);

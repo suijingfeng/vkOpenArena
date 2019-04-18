@@ -2,9 +2,23 @@
 #define TR_MODEL_H_
 
 #include "../renderercommon/iqm.h"
+#include "tr_surface.h"
+#include "trRefDef.h"
 
 
+typedef struct msurface_s {
+	int					viewCount;		// if == tr.viewCount, already added
+	struct shader_s		*shader;
+	int					fogIndex;
 
+	surfaceType_t		*data;			// any of srf*_t
+} msurface_t;
+
+typedef struct bmodel_s{
+	float		bounds[2][3];		// for culling
+	msurface_t	*firstSurface;
+	int			numSurfaces;
+} bmodel_t;
 
 typedef enum {
 	MOD_BAD,
@@ -28,7 +42,7 @@ typedef struct model_s {
 } model_t;
 
 
-#define	MAX_MOD_KNOWN	1024
+
 
 void        R_ModelInit( void );
 model_t*    R_GetModelByHandle( qhandle_t hModel );

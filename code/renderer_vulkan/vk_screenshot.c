@@ -42,6 +42,7 @@ Implementations may support additional limits and capabilities beyond those list
 
 */
 
+extern void R_GetWorldBaseName(char* checkname);
 
 static void imgFlipY(unsigned char * pBuf, const uint32_t w, const uint32_t h)
 {
@@ -353,7 +354,8 @@ static void R_LevelShot( int W, int H )
 	float		xScale, yScale;
 	int			xx, yy;
     int i = 0;
-	sprintf( checkname, "levelshots/%s.tga", tr.world->baseName );
+
+    R_GetWorldBaseName(checkname);
 
 	source = (unsigned char*) ri.Hunk_AllocateTempMemory( W * H * 3 );
 

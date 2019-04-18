@@ -3,17 +3,11 @@
 
 #include "tr_image.h"
 
-/*
-============================================================
-
-SKIES
-
-============================================================
-*/
 
 typedef struct {
-	float		cloudHeight;
-	image_t		*outerbox[6], *innerbox[6];
+	float       cloudHeight;
+	struct image_s *   outerbox[6];
+    struct image_s *   innerbox[6];
 } skyParms_t;
 
 void RB_StageIteratorSky( void );

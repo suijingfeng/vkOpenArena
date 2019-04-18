@@ -1,4 +1,3 @@
-#include "tr_local.h"
 #include "../renderercommon/ref_import.h"
 
 static void* q3_stbi_malloc(size_t size) {

@@ -21,7 +21,6 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 */
 // tr_models.c -- model loading and caching
 
-#include "tr_local.h"
 #include "tr_globals.h"
 
 #include "tr_model.h"

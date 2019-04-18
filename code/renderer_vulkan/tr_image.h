@@ -2,6 +2,10 @@
 #define TR_IMAGE_H_
 
 #include "VKimpl.h"
+#include "../qcommon/q_shared.h"
+
+
+
 
 
 typedef struct image_s {
@@ -33,5 +37,21 @@ typedef struct image_s {
 	struct image_s*	next;
 } image_t;
 
+
+// skins allow models to be retextured without modifying the model file
+typedef struct {
+	char		name[MAX_QPATH];
+	struct shader_s* shader;
+} skinSurface_t;
+
+typedef struct skin_s {
+	char		name[MAX_QPATH];		// game path, including extension
+	int			numSurfaces;
+	skinSurface_t* pSurfaces;    // dynamically allocated array of surfaces
+} skin_t;
+
+void R_InitSkins( void );
+skin_t* R_GetSkinByHandle( qhandle_t hSkin );
 void R_SkinList_f( void );
+
 #endif
