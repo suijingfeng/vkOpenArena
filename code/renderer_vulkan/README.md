@@ -111,7 +111,7 @@ but not works on some machine. it is buggy and embarrasing when program abnormal
 * printDeviceExtensions: list the device extensions supported on you device/GPU
 * printInstanceExtensions: list the instance extensions supported on you device/GPU
 
-```
+
 
 For example:
 ```
@@ -650,3 +650,4 @@ $ \printImgHashTable
   
  Top 5: 34, 4, 3, 3, 3
 -----------------------------------------------------
+```
