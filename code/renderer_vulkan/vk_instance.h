@@ -3,8 +3,7 @@
 
 
 #include "VKimpl.h"
-#include "../renderercommon/ref_import.h" 
-
+#include "ref_import.h" 
 
 extern PFN_vkGetInstanceProcAddr						qvkGetInstanceProcAddr;
 

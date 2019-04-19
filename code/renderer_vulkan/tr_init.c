@@ -21,6 +21,7 @@
 #include "tr_noise.h"
 #include "tr_scene.h"
 #include "render_export.h"
+#include "vk_utils.h"
 
 void R_Init( void )
 {	
@@ -86,7 +87,12 @@ void R_Init( void )
 	ri.Cmd_AddCommand( "shaderlist", R_ShaderList_f );
 	ri.Cmd_AddCommand( "skinlist", R_SkinList_f );
 
-    ri.Cmd_AddCommand( "vkinfo", vulkanInfo_f );
+
+    ri.Cmd_AddCommand( "vkinfo", printVulkanInfo_f );
+    ri.Cmd_AddCommand( "printDeviceExtensions", printDeviceExtensionsSupported_f );
+    ri.Cmd_AddCommand( "printInstanceExtensions", printInstanceExtensionsSupported_f );
+
+
     ri.Cmd_AddCommand( "minimize", vk_minimizeWindowImpl );
 
     ri.Cmd_AddCommand( "pipelineList", R_PipelineList_f );
@@ -98,15 +104,16 @@ void R_Init( void )
     ri.Cmd_AddCommand( "printImgHashTable", printImageHashTable_f );
     R_InitScene();
 
-    R_glConfigInit();
+    glConfig_Init();
 
     // VULKAN
 	if ( !isVKinitialied() )
 	{
 		vk_initialize();
         
+        glConfig_FillString();
         // print info
-        vulkanInfo_f();
+        // vulkanInfo_f();
 	}
 
 
@@ -142,6 +149,10 @@ void RE_Shutdown( qboolean destroyWindow )
     ri.Cmd_RemoveCommand("minimize");
 	
 	ri.Cmd_RemoveCommand("vkinfo");
+    ri.Cmd_RemoveCommand("printDeviceExtensions");
+    ri.Cmd_RemoveCommand("printInstanceExtensions");
+
+
     ri.Cmd_RemoveCommand("pipelineList");
     ri.Cmd_RemoveCommand("gpuMem");
     ri.Cmd_RemoveCommand("printOR");
@@ -174,7 +185,7 @@ void RE_Shutdown( qboolean destroyWindow )
         
         // It is cleared not for renderer_vulkan,
         // but fot rendergl1, renderergl2 to create the window
-        R_glConfigClear();
+        glConfig_Clear();
     }
 }
 
@@ -183,7 +194,7 @@ void RE_BeginRegistration(glconfig_t * pGlCfg)
 {
 	R_Init();
 
-    R_GetGlConfig(pGlCfg);
+    glConfig_Get(pGlCfg);
 
 	tr.viewCluster = -1; // force markleafs to regenerate
 
