@@ -327,6 +327,9 @@ void vk_destroyWindowImpl( void )
 
     SDL_DestroyWindow( window_sdl );
     window_sdl = NULL;
+
+    //  Does this is need ?
+    SDL_Vulkan_UnloadLibrary();
 }
 
 

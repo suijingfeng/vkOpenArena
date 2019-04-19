@@ -71,7 +71,7 @@ initialization functions, resource management functions and rendering setup func
 
 ### Rendering setup:
 
-* vk\_clear\_attachments : clears framebuffer¡¯s attachments.
+* vk\_clear\_attachments : clears framebuffer's attachments.
 
 * vk\_bind\_geometry : is called when we start drawing new geometry.
 

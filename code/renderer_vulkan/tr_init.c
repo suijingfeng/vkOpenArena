@@ -190,10 +190,10 @@ void RE_Shutdown( qboolean destroyWindow )
 }
 
 
-void RE_BeginRegistration(glconfig_t * pGlCfg)
+void RE_BeginRegistration(glconfig_t * const pGlCfg)
 {
 	R_Init();
-
+    
     glConfig_Get(pGlCfg);
 
 	tr.viewCluster = -1; // force markleafs to regenerate

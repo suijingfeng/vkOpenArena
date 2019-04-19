@@ -222,7 +222,7 @@ static void prepare_descriptor_set(struct demo *demo)
 
     VkDescriptorBufferInfo buffer_info;
     buffer_info.offset = 0;
-    buffer_info.range = sizeof(struct vktexcube_vs_uniform);
+    buffer_info.range = sizeof(struct texcube_vs_uniform);
 
     memset(&tex_descs, 0, sizeof(tex_descs));
     

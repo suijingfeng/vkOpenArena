@@ -134,7 +134,7 @@ void glConfig_Clear(void)
 
 
 //IN: a pointer to the glConfig struct
-void GlConfig_Get(glconfig_t * const pCfg)
+void glConfig_Get(glconfig_t * const pCfg)
 {
 	*pCfg = glConfig;
 }
