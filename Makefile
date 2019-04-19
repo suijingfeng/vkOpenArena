@@ -1655,7 +1655,6 @@ Q3VKOBJ = \
   $(B)/renderer_vulkan/ref_import.o \
   $(B)/renderer_vulkan/render_export.o \
   \
-  $(B)/renderer_vulkan/R_LoadImage2.o \
   $(B)/renderer_vulkan/R_LoadImage.o \
   $(B)/renderer_vulkan/R_ImageJPG.o \
   $(B)/renderer_vulkan/R_ImageTGA.o \

@@ -761,7 +761,6 @@ image_t* R_FindImageFile(const char *name, VkBool32 mipmap, VkBool32 allowPicmip
         ri.Printf( PRINT_WARNING, "Find Image File: NULL\n");
 		return NULL;
 	}
-    // ri.Printf( PRINT_WARNING, "Find Image File: %s\n", name);
 
 	int hash = generateHashValue(name);
 
@@ -789,17 +788,13 @@ image_t* R_FindImageFile(const char *name, VkBool32 mipmap, VkBool32 allowPicmip
 		}
 	}
 
-	//
-	// load the pic from disk
+    //
+	// Not find from already loadied, load the pic from disk
     //
     uint32_t width = 0, height = 0;
     unsigned char* pic = NULL;
     
-    if(r_loadImgAPI->integer)
-        R_LoadImage2( name, &pic, &width, &height );
-    else
-        R_LoadImage( name, &pic, &width, &height );
-    
+    R_LoadImage( name, &pic, &width, &height );
 
     if (pic == NULL)
     {
