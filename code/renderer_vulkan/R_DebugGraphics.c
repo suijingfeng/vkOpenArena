@@ -5,7 +5,7 @@
 #include "vk_pipelines.h"
 #include "tr_cvar.h"
 #include "tr_backend.h"
-#include "../renderercommon/ref_import.h"
+#include "ref_import.h"
 #include "../renderercommon/matrix_multiplication.h"
 #include "R_ShaderCommands.h"
 #include "tr_cmds.h"

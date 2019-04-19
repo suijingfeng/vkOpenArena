@@ -34,4 +34,6 @@ void gpuMemUsageInfo_f(void);
 
 // TODO ; impl this
 // void R_ImageList_f( void );
+void printImageHashTable_f(void);
+
 #endif

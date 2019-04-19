@@ -6,7 +6,7 @@
 
 #include "R_ImageProcess.h"
 #include "R_ImageJPG.h"
-#include "../renderercommon/ref_import.h"
+#include "ref_import.h"
 #include "glConfig.h"
 #include "tr_cmds.h"
 /* 

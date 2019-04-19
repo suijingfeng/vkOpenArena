@@ -21,7 +21,7 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 */
 // tr_light.c
 #include "tr_globals.h"
-#include "../renderercommon/ref_import.h"
+#include "ref_import.h"
 #include "tr_cvar.h"
 #include "tr_light.h"
 #include "tr_curve.h"

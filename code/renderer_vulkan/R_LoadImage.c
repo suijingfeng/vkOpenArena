@@ -6,12 +6,13 @@
 enum IMAGE_EXT_TYPE_t { 
     IMG_EXT_TGA = 0,
     IMG_EXT_JPG = 1,
-    IMG_EXT_PNG = 2,
-    IMG_EXT_PCX = 3,
-    IMG_EXT_BMP = 4,
+    IMG_EXT_BMP = 2,
+    IMG_EXT_PNG = 3,
+    IMG_EXT_PCX = 4,
     IMG_EXT_CNT = 5
 };
 
+static const char * ExTable[5]={".tga",".jpg",".bmp",".png",".pcx"};
 
 const static void (* fnImgLdrs[5])(const char *, unsigned char **, int *, int * ) = {
     R_LoadTGA,
@@ -28,7 +29,6 @@ R_LoadNSE(const char * const pName, unsigned char **pic, int *width, int *height
 {
     *pic = NULL;
 
-    static const char * ExTable[5]={".tga",".jpg",".png",".pcx",".bmp"};
 
 	char localName[128];
     strncpy(localName, pName, 128);
@@ -61,8 +61,15 @@ R_LoadNSE(const char * const pName, unsigned char **pic, int *width, int *height
     uint32_t i; 
     for(i = 0; i < IMG_EXT_CNT; ++i)
     {
-        strncpy(pPt, ExTable[i], 5); 
+        // strncpy(pPt, ExTable[i], 5); 
+        pPt[0] = ExTable[i][0];
+        pPt[1] = ExTable[i][1];
+        pPt[2] = ExTable[i][2];
+        pPt[3] = ExTable[i][3];
+        pPt[4] = ExTable[i][4];
+
         ri.Printf( PRINT_WARNING, " Loading %s \n", localName);
+        
         fnImgLdrs[i](localName, pic, width, height );
 
         if(*pic != NULL)
@@ -77,6 +84,7 @@ R_LoadNSE(const char * const pName, unsigned char **pic, int *width, int *height
 void R_LoadImage(const char * pName, unsigned char **pic, int *width, int *height )
 {
     const char* pExt = NULL;
+
     const char* pSrc = pName;
     *pic = NULL;
     for( ; *pSrc != 0; ++pSrc)
@@ -89,7 +97,6 @@ void R_LoadImage(const char * pName, unsigned char **pic, int *width, int *heigh
             break;
         }
     }
-    
 
     if( pExt != NULL )
     {

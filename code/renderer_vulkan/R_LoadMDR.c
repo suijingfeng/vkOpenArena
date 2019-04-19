@@ -1,5 +1,5 @@
 #include "tr_model.h"
-#include "../renderercommon/ref_import.h"
+#include "ref_import.h"
 #include "R_FindShader.h"
 
 #define	LL(x) x=LittleLong(x)

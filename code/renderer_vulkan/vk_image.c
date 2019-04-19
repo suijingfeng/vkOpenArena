@@ -244,16 +244,94 @@ static int generateHashValue( const char *fname )
 	uint32_t i = 0;
 	int	hash = 0;
 
-	while (fname[i] != '\0') {
+	while (fname[i] != '\0')
+    {
 		char letter = tolower(fname[i]);
 		if (letter =='.') break;		// don't include extension
 		if (letter =='\\') letter = '/';	// damn path names
-		hash+=(long)(letter)*(i+119);
+		hash+=(int)(letter)*(i+119);
 		i++;
 	}
 	hash &= (FILE_HASH_SIZE-1);
 	return hash;
 }
+
+
+void swap(int v[], int i, int j)
+{
+	int temp;
+	temp = v[i];
+	v[i] = v[j];
+	v[j] = temp;
+}
+
+
+void quicksort(int v[], int left, int right)
+{
+	int i, last;
+
+	if(left >= right) // do nothing if array contains fewer than two elements
+		return;
+	
+	swap(v, left, (left+right)/2);
+	
+	last = left;
+	for(i = left+1; i<=right; i++)
+		if(v[i] > v[left])
+			swap(v, ++last, i);
+
+	swap(v,left,last);
+
+	quicksort(v, left, last-1);
+	quicksort(v, last+1, right);
+}
+
+
+
+void printImageHashTable_f(void)
+{
+    int i = 0;
+
+    int tmpTab[FILE_HASH_SIZE] = {0};
+    ri.Printf(PRINT_ALL, "\n\n-----------------------------------------------------\n"); 
+    for(i = 0; i < FILE_HASH_SIZE; i++)
+    {
+        image_t * pImg = hashTable[i];
+
+        while(pImg != NULL)
+        {
+            
+            ri.Printf(PRINT_ALL, "[%d] mipLevels: %d\tsize: %dx%d\t%s\n", 
+                    i, pImg->mipLevels, pImg->width, pImg->height, pImg->imgName);
+            
+            ++tmpTab[i];
+            
+            pImg = pImg->next;
+        }
+    }
+
+    quicksort(tmpTab, 0, FILE_HASH_SIZE-1);
+
+    int count = 0;
+    int total = 0;
+
+    for(i = 0; i < FILE_HASH_SIZE; i++)
+    {
+        if(tmpTab[i]) {
+            ++count;
+            total += tmpTab[i];
+        }
+    }
+    
+    ri.Printf(PRINT_ALL, "\n Total %d images, hash Table used: %d/%d\n",
+            total, count, FILE_HASH_SIZE);
+    
+    ri.Printf(PRINT_ALL, "\n Top 5: %d, %d, %d, %d, %d\n",
+            tmpTab[0], tmpTab[1], tmpTab[2], tmpTab[3], tmpTab[4]);
+
+    ri.Printf(PRINT_ALL, "-----------------------------------------------------\n\n"); 
+}
+
 
 
 /*

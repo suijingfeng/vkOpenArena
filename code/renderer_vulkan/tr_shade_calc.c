@@ -24,7 +24,7 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #include "tr_globals.h"
 #include "tr_fog.h"
 #include "tr_backend.h"
-#include "../renderercommon/ref_import.h"
+#include "ref_import.h"
 #include "tr_surface.h"
 #include "R_ShaderCommands.h"
 #include "tr_shade.h"
