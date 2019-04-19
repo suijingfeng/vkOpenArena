@@ -14,12 +14,14 @@ enum IMAGE_EXT_TYPE_t {
 
 static const char * ExTable[5]={".tga",".jpg",".bmp",".png",".pcx"};
 
-const static void (* fnImgLdrs[5])(const char *, unsigned char **, int *, int * ) = {
+typedef void (* pFnImageLoader_t)(const char *, unsigned char **, int *, int * );
+
+const static pFnImageLoader_t fnImgLdrs[5] = {
     R_LoadTGA,
     R_LoadJPG,
     R_LoadBMP,
     R_LoadPNG,
-    R_LoadPCX,
+    R_LoadPCX
 };
 
 
@@ -28,7 +30,6 @@ static void
 R_LoadNSE(const char * const pName, unsigned char **pic, int *width, int *height)
 {
     *pic = NULL;
-
 
 	char localName[128];
     strncpy(localName, pName, 128);
@@ -48,12 +49,10 @@ R_LoadNSE(const char * const pName, unsigned char **pic, int *width, int *height
     if(pPt != NULL)
     {
         *pPt = 0;
-        // strip ext
     }
     else
     {
         pPt = pSrc;
-        // end of str
     }
     // no ext now
 

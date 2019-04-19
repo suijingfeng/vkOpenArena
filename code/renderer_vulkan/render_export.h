@@ -17,7 +17,7 @@ qhandle_t RE_RegisterShader( const char *name );
 qhandle_t RE_RegisterShaderNoMip( const char *name );
 
 void RE_LoadWorldMap( const char *mapname );
-void RE_SetWorldVisData( const byte *vis );
+void RE_SetWorldVisData( const unsigned char *vis );
 void RE_EndRegistration( void );
 void RE_ClearScene( void );
 void RE_AddRefEntityToScene( const refEntity_t *ent );
@@ -33,7 +33,7 @@ void RE_StretchPic ( float x, float y, float w, float h, float s1, float t1, flo
 void RE_StretchRaw (int x, int y, int w, int h, int cols, int rows, const unsigned char *data, int client, qboolean dirty);
 void RE_UploadCinematic (int w, int h, int cols, int rows, const byte *data, int client, qboolean dirty);
 
-void RE_BeginFrame( stereoFrame_t stereoFrame );
+void RE_BeginFrame( void );
 void RE_EndFrame( int *frontEndMsec, int *backEndMsec );
 
 
