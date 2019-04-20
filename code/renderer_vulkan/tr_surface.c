@@ -810,7 +810,8 @@ void RB_SurfaceFace( srfSurfaceFace_t *surf ) {
 }
 
 
-static float	LodErrorForVolume( vec3_t local, float radius ) {
+static float LodErrorForVolume( vec3_t local, float radius )
+{
 	vec3_t		world;
 	float		d;
 
@@ -1034,7 +1035,8 @@ Entities that have a single procedurally generated surface
 */
 void RB_SurfaceEntity( surfaceType_t *surfType )
 {
-	switch( backEnd.currentEntity->e.reType ) {
+	switch( backEnd.currentEntity->e.reType )
+    {
 	case RT_SPRITE:
 		RB_SurfaceSprite();
 		break;
@@ -1064,9 +1066,8 @@ void RB_SurfaceBad( surfaceType_t *surfType ) {
 void RB_SurfaceSkip( void *surf ) {
 }
 
-
-
-void (*rb_surfaceTable[SF_NUM_SURFACE_TYPES])(void * ) = {
+const Fn_RB_SurfaceTable_t rb_surfaceTable[SF_NUM_SURFACE_TYPES] =
+{
 	(void (* )(void* ))RB_SurfaceBad,			// SF_BAD, 
 	(void (* )(void* ))RB_SurfaceSkip,			// SF_SKIP, 
 	(void (* )(void* ))RB_SurfaceFace,			// SF_FACE,
@@ -1079,3 +1080,4 @@ void (*rb_surfaceTable[SF_NUM_SURFACE_TYPES])(void * ) = {
 	(void (* )(void* ))RB_SurfaceFlare,		// SF_FLARE,
 	(void (* )(void* ))RB_SurfaceEntity,		// SF_ENTITY
 };
+

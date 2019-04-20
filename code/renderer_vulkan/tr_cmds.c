@@ -26,20 +26,21 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
 #include "vk_instance.h"
 #include "vk_frame.h"
-#include "vk_screenshot.h"
 #include "vk_shade_geometry.h"
 #include "RB_ShowImages.h"
 #include "R_PrintMat.h"
-#include "tr_light.h"
+
 #include "R_ShaderCommands.h"
 #include "tr_shade.h"
 #include "tr_surface.h"
 #include "tr_scene.h"
 #include "tr_cmds.h"
-#include "tr_main.h"
-#include "tr_shadows.h"
+
+#include "RB_RenderDrawSurfList.h"
+#include "vk_screenshot.h"
 
 static renderCommandList_t	BE_Commands;
+
 
 /*
 ============
@@ -204,154 +205,6 @@ void RE_EndFrame( int *frontEndMsec, int *backEndMsec )
 
 
 
-/*
-==================
-RB_RenderDrawSurfList
-==================
-*/
-static void RB_RenderDrawSurfList( drawSurf_t* drawSurfs, int numDrawSurfs )
-{
-	shader_t		*shader, *oldShader;
-	int				fogNum, oldFogNum;
-	int				dlighted, oldDlighted;
-	// save original time for entity shader offsets
-	float originalTime = backEnd.refdef.floatTime;
-
-    // Any mirrored or portaled views have already been drawn, 
-    // so prepare to actually render the visible surfaces for this view
-	// clear the z buffer, set the modelview, etc
-	// RB_BeginDrawingView ();
-
-	// we will need to change the projection matrix before drawing
-	// 2D images again
-	backEnd.projection2D = qfalse;
-
-
-	// ensures that depth writes are enabled for the depth clear
-    
-
-	// VULKAN
-    vk_clearDepthStencilAttachments();
-
-	if ( backEnd.refdef.rd.rdflags & RDF_HYPERSPACE )
-	{
-		//RB_Hyperspace();
-        // A player has predicted a teleport, but hasn't arrived yet
-        const float c = ( backEnd.refdef.rd.time & 255 ) / 255.0f;
-        const float color[4] = { c, c, c, 1 };
-
-        // so short, do we really need this?
-	    vk_clearColorAttachments(color);
-
-	    backEnd.isHyperspace = qtrue;
-	}
-	else
-	{
-		backEnd.isHyperspace = qfalse;
-	}
-
-
-	// draw everything
-    int entityNum;
-	int oldEntityNum = -1;
-	backEnd.currentEntity = &tr.worldEntity;
-	oldShader = NULL;
-	oldFogNum = -1;
-	oldDlighted = qfalse;
-	int oldSort = -1;
-
-	backEnd.pc.c_surfaces += numDrawSurfs;
-
-    drawSurf_t* drawSurf;
-
-    int	i;
-
-	for (i = 0, drawSurf = drawSurfs ; i < numDrawSurfs ; i++, drawSurf++)
-    {
-		if ( (int)drawSurf->sort == oldSort ) {
-			// fast path, same as previous sort
-			rb_surfaceTable[ *drawSurf->surface ]( drawSurf->surface );
-			continue;
-		}
-		oldSort = drawSurf->sort;
-		R_DecomposeSort( drawSurf->sort, &entityNum, &shader, &fogNum, &dlighted );
-
-		//
-		// change the tess parameters if needed
-		// a "entityMergable" shader is a shader that can have surfaces from seperate
-		// entities merged into a single batch, like smoke and blood puff sprites
-		if (shader != oldShader || fogNum != oldFogNum || dlighted != oldDlighted 
-			|| ( entityNum != oldEntityNum && !shader->entityMergable ) ) {
-			if (oldShader != NULL) {
-				RB_EndSurface();
-			}
-			RB_BeginSurface( shader, fogNum );
-			oldShader = shader;
-			oldFogNum = fogNum;
-			oldDlighted = dlighted;
-		}
-
-		//
-		// change the modelview matrix if needed
-		//
-		if ( entityNum != oldEntityNum )
-        {
-			if ( entityNum != REFENTITYNUM_WORLD )
-            {
-				backEnd.currentEntity = &backEnd.refdef.entities[entityNum];
-				backEnd.refdef.floatTime = originalTime - backEnd.currentEntity->e.shaderTime;
-				// we have to reset the shaderTime as well otherwise image animations start
-				// from the wrong frame
-				tess.shaderTime = backEnd.refdef.floatTime - tess.shader->timeOffset;
-
-				// set up the transformation matrix
-				R_RotateForEntity( backEnd.currentEntity, &backEnd.viewParms, &backEnd.or );
-
-
-				// set up the dynamic lighting if needed
-				if ( backEnd.currentEntity->needDlights ) {
-					R_TransformDlights( backEnd.refdef.num_dlights, backEnd.refdef.dlights, &backEnd.or );
-				}
-
-				if ( backEnd.currentEntity->e.renderfx & RF_DEPTHHACK ) {
-					// hack the depth range to prevent view model from poking into walls
-				}
-			}
-            else
-            {
-				backEnd.currentEntity = &tr.worldEntity;
-				backEnd.refdef.floatTime = originalTime;
-				backEnd.or = backEnd.viewParms.world;
-				// we have to reset the shaderTime as well otherwise image animations on
-				// the world (like water) continue with the wrong frame
-				tess.shaderTime = backEnd.refdef.floatTime - tess.shader->timeOffset;
-				R_TransformDlights( backEnd.refdef.num_dlights, backEnd.refdef.dlights, &backEnd.or );
-			}
-
-
-			// VULKAN
-            set_modelview_matrix(backEnd.or.modelMatrix);
-            oldEntityNum = entityNum;
-        }
-
-		// add the triangles for this surface
-		rb_surfaceTable[ *drawSurf->surface ]( drawSurf->surface );
-	}
-
-	backEnd.refdef.floatTime = originalTime;
-
-	// draw the contents of the last shader batch
-	if (oldShader != NULL) {
-		RB_EndSurface();
-	}
-
-	// go back to the world modelview matrix
-    set_modelview_matrix(backEnd.viewParms.world.modelMatrix);
-
-
-	// darken down any stencil shadows
-	RB_ShadowFinish();		
-}
 
 
 
@@ -598,79 +451,4 @@ void R_IssueRenderCommands( qboolean runPerformanceCounters )
                 return;
         }
     }
-}
-
-
-/*
-=============
-
-FixRenderCommandList
-https://zerowing.idsoftware.com/bugzilla/show_bug.cgi?id=493
-Arnout: this is a nasty issue. Shaders can be registered after drawsurfaces are generated
-but before the frame is rendered. This will, for the duration of one frame, cause drawsurfaces
-to be rendered with bad shaders. To fix this, need to go through all render commands and fix
-sortedIndex.
-==============
-*/
-void FixRenderCommandList( int newShader )
-{
-	renderCommandList_t	*cmdList = &BE_Commands;
-
-	if( cmdList ) {
-		const void *curCmd = cmdList->cmds;
-
-		while ( 1 ) {
-			switch ( *(const int *)curCmd ) {
-			case RC_SET_COLOR:
-				{
-				const setColorCommand_t *sc_cmd = (const setColorCommand_t *)curCmd;
-				curCmd = (const void *)(sc_cmd + 1);
-				break;
-				}
-			case RC_STRETCH_PIC:
-				{
-				const stretchPicCommand_t *sp_cmd = (const stretchPicCommand_t *)curCmd;
-				curCmd = (const void *)(sp_cmd + 1);
-				break;
-				}
-			case RC_DRAW_SURFS:
-				{
-				int i;
-				drawSurf_t	*drawSurf;
-				shader_t	*shader;
-				int			fogNum;
-				int			entityNum;
-				int			dlightMap;
-				int			sortedIndex;
-				const drawSurfsCommand_t *ds_cmd =  (const drawSurfsCommand_t *)curCmd;
-
-				for( i = 0, drawSurf = ds_cmd->drawSurfs; i < ds_cmd->numDrawSurfs; i++, drawSurf++ ) {
-					R_DecomposeSort( drawSurf->sort, &entityNum, &shader, &fogNum, &dlightMap );
-                    sortedIndex = (( drawSurf->sort >> QSORT_SHADERNUM_SHIFT ) & (MAX_SHADERS-1));
-					if( sortedIndex >= newShader ) {
-						sortedIndex++;
-						drawSurf->sort = (sortedIndex << QSORT_SHADERNUM_SHIFT) | entityNum | ( fogNum << QSORT_FOGNUM_SHIFT ) | (int)dlightMap;
-					}
-				}
-				curCmd = (const void *)(ds_cmd + 1);
-				break;
-				}
-			case RC_DRAW_BUFFER:
-				{
-				const drawBufferCommand_t *db_cmd = (const drawBufferCommand_t *)curCmd;
-				curCmd = (const void *)(db_cmd + 1);
-				break;
-				}
-			case RC_SWAP_BUFFERS:
-				{
-				const swapBuffersCommand_t *sb_cmd = (const swapBuffersCommand_t *)curCmd;
-				curCmd = (const void *)(sb_cmd + 1);
-				break;
-				}
-			case RC_END_OF_LIST:
-			default:
-				return;
-			}
-		}
-	}
 }

@@ -25,6 +25,11 @@ typedef enum {
 	SF_MAX = 0x7fffffff			// ensures that sizeof( surfaceType_t ) == sizeof( int )
 } surfaceType_t;
 
+typedef void (* Fn_RB_SurfaceTable_t)(void *); 
+
+
+extern const Fn_RB_SurfaceTable_t rb_surfaceTable[SF_NUM_SURFACE_TYPES];
+
 typedef struct srfGridMesh_s {
 	surfaceType_t	surfaceType;
 
@@ -54,7 +59,7 @@ typedef struct srfGridMesh_s {
 
 
 typedef struct drawSurf_s {
-	unsigned		sort;			// bit combination for fast compares
+	unsigned int	sort;			// bit combination for fast compares
 	surfaceType_t * surface;		// any of surface*_t
 } drawSurf_t;
 
@@ -119,7 +124,6 @@ typedef struct {
 
 
 
-
 void RB_CHECKOVERFLOW(uint32_t v, uint32_t i);
 
 
@@ -130,6 +134,6 @@ void RB_AddQuadStampExt( vec3_t origin, vec3_t left, vec3_t up, byte *color, flo
 void RB_AddQuadStamp( vec3_t origin, vec3_t left, vec3_t up, byte *color );
 
 void R_AddDrawSurf( surfaceType_t *surface, shader_t *shader, int fogIndex, int dlightMap );
-extern void (*rb_surfaceTable[SF_NUM_SURFACE_TYPES])(void *);
+
 
 #endif

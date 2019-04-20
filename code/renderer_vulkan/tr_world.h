@@ -1,6 +1,8 @@
 #ifndef TR_WORLD_H_
 #define TR_WORLD_H_
 
+//#include "viewParms.h"
+#include "trRefDef.h"
 
 /*
 ==============================================================================

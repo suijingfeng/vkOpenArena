@@ -18,33 +18,11 @@
 #define	MAX_DRAWSURFS			0x10000
 #define	DRAWSURF_MASK			(MAX_DRAWSURFS-1)
 
-/*
-
-the drawsurf sort data is packed into a single 32 bit value so it can be
-compared quickly during the qsorting process
-
-the bits are allocated as follows:
-
-21 - 31	: sorted shader index
-11 - 20	: entity index
-2 - 6	: fog index
-//2		: used to be clipped flag REMOVED - 03.21.00 rad
-0 - 1	: dlightmap index
-
-	TTimo - 1.32
-17-31 : sorted shader index
-7-16  : entity index
-2-6   : fog index
-0-1   : dlightmap index
-*/
-#define	QSORT_FOGNUM_SHIFT	2
-#define	QSORT_ENTITYNUM_SHIFT	7
-#define	QSORT_SHADERNUM_SHIFT	17
 
 
 
 // 12 bits, see QSORT_SHADERNUM_SHIFT
-#define	MAX_SHADERS				16384
+#define	MAX_SHADERS		16384
 #define	MAX_MOD_KNOWN	1024
 /*
 ** trGlobals_t 
@@ -136,7 +114,7 @@ typedef struct
 	// lower indexed sortedShaders must be rendered first (opaque surfaces before translucent)
 	int						numShaders;
 	shader_t				*shaders[MAX_SHADERS];
-	shader_t				*sortedShaders[MAX_SHADERS];
+//	shader_t				*sortedShaders[MAX_SHADERS];
 
 	int						numSkins;
 	skin_t					*skins[MAX_SKINS];

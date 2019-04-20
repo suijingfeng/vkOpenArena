@@ -16,7 +16,7 @@ static const char * ExTable[5]={".tga",".jpg",".bmp",".png",".pcx"};
 
 typedef void (* pFnImageLoader_t)(const char *, unsigned char **, int *, int *);
 
-
+//TODO : STB SUPPORT
 #ifdef USE_STB_IMAGE_LIB
 
 const static pFnImageLoader_t fnImgLdrs[5] = {

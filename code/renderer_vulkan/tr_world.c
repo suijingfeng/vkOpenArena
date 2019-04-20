@@ -26,6 +26,7 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #include "tr_Cull.h"
 #include "tr_world.h"
 #include "tr_model.h"
+#include "R_SortDrawSurfs.h"
 
 extern void R_DlightBmodel( struct bmodel_s * bmodel );
 

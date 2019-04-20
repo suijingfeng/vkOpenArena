@@ -21,7 +21,10 @@
 #include "tr_noise.h"
 #include "tr_scene.h"
 #include "render_export.h"
+#include "FixRenderCommandList.h"
 #include "vk_utils.h"
+
+
 
 void R_Init( void )
 {	
@@ -29,9 +32,10 @@ void R_Init( void )
 
 	ri.Printf( PRINT_ALL, "----- R_Init -----\n" );
 
-
 	// clear all our internal state
 	memset( &tr, 0, sizeof( tr ) );
+
+    R_ClearSortedShaders();
 
     R_ClearShaderCommand();
 
@@ -85,13 +89,14 @@ void R_Init( void )
 	ri.Cmd_AddCommand( "screenshotJPEG", R_ScreenShotJPEG_f );
 	ri.Cmd_AddCommand( "screenshot", R_ScreenShot_f );
 	ri.Cmd_AddCommand( "shaderlist", R_ShaderList_f );
+    ri.Cmd_AddCommand( "listSortedShader", listSortedShader_f );
+
 	ri.Cmd_AddCommand( "skinlist", R_SkinList_f );
 
 
     ri.Cmd_AddCommand( "vkinfo", printVulkanInfo_f );
     ri.Cmd_AddCommand( "printDeviceExtensions", printDeviceExtensionsSupported_f );
     ri.Cmd_AddCommand( "printInstanceExtensions", printInstanceExtensionsSupported_f );
-
 
     ri.Cmd_AddCommand( "minimize", vk_minimizeWindowImpl );
 
@@ -102,6 +107,7 @@ void R_Init( void )
     ri.Cmd_AddCommand( "printOR", R_PrintBackEnd_OR_f );
 
     ri.Cmd_AddCommand( "printImgHashTable", printImageHashTable_f );
+    
     R_InitScene();
 
     glConfig_Init();
@@ -157,6 +163,8 @@ void RE_Shutdown( qboolean destroyWindow )
     ri.Cmd_RemoveCommand("gpuMem");
     ri.Cmd_RemoveCommand("printOR");
     ri.Cmd_RemoveCommand("printImgHashTable");
+    ri.Cmd_RemoveCommand("listSortedShader");
+
 
 	R_DoneFreeType();
 
@@ -187,6 +195,8 @@ void RE_Shutdown( qboolean destroyWindow )
         // but fot rendergl1, renderergl2 to create the window
         glConfig_Clear();
     }
+
+    R_ClearSortedShaders();
 }
 
 
