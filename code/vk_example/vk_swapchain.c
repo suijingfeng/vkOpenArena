@@ -232,7 +232,6 @@ void vk_create_semaphores(struct demo *demo)
 
 void init_vk_swapchain(struct demo *demo)
 {
-
 //  Create a WSI surface for the window:
     vk_create_surface(demo);
 
@@ -268,17 +267,6 @@ void vk_prepare_buffers(struct demo *demo)
     VkSurfaceCapabilitiesKHR surfCapabilities;
     VK_CHECK( pFn_vkhr.fpGetPhysicalDeviceSurfaceCapabilitiesKHR(demo->gpu, demo->surface, &surfCapabilities) );
 
-    uint32_t presentModeCount;
-    
-    VK_CHECK( pFn_vkhr.fpGetPhysicalDeviceSurfacePresentModesKHR(demo->gpu, demo->surface, &presentModeCount, NULL) );
-
-    printf("presentModeCount: %d\n", presentModeCount);
-
-    VkPresentModeKHR* presentModes = (VkPresentModeKHR *) malloc( presentModeCount * sizeof(VkPresentModeKHR) );
-    
-    assert(presentModes);
-    
-    VK_CHECK( pFn_vkhr.fpGetPhysicalDeviceSurfacePresentModesKHR(demo->gpu, demo->surface, &presentModeCount, presentModes) );
 
     VkExtent2D swapchainExtent;
     // width and height are either both 0xFFFFFFFF, or both not 0xFFFFFFFF.
@@ -325,6 +313,19 @@ void vk_prepare_buffers(struct demo *demo)
     {
         demo->is_minimized = false;
     }
+
+   
+
+
+    uint32_t presentModeCount;
+    VK_CHECK( pFn_vkhr.fpGetPhysicalDeviceSurfacePresentModesKHR(demo->gpu, demo->surface, &presentModeCount, NULL) );
+    VkPresentModeKHR* presentModes = (VkPresentModeKHR *) malloc( presentModeCount * sizeof(VkPresentModeKHR) );
+    printf("presentModeCount: %d\n", presentModeCount);
+
+    assert(presentModes);
+    
+    VK_CHECK( pFn_vkhr.fpGetPhysicalDeviceSurfacePresentModesKHR(demo->gpu, demo->surface, &presentModeCount, presentModes) );
+
 
     // The FIFO present mode is guaranteed by the spec to be supported
     // and to have no tearing.  It's a great default present mode to use.
@@ -437,6 +438,7 @@ void vk_prepare_buffers(struct demo *demo)
     };
     uint32_t i;
     VK_CHECK( pFn_vkhr.fpCreateSwapchainKHR(demo->device, &swapchain_ci, NULL, &demo->swapchain) );
+
 
     // If we just re-created an existing swapchain, we should destroy the old
     // swapchain at this point.
