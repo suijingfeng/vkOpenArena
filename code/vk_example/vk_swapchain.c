@@ -20,6 +20,7 @@ void vk_clearSurfacePresentPFN(void)
 
 static void vk_create_device(struct demo *demo)
 {
+
     float queue_priorities[1] = {0.0};
     VkDeviceQueueCreateInfo queues[2];
     queues[0].sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO;
@@ -80,33 +81,41 @@ void vk_getDeviceProcAddrKHR(struct demo * pDemo)
 }
 
 
-void init_vk_swapchain(struct demo *demo)
+void vk_create_surface(struct demo *pDemo)
 {
-
-//  Create a WSI surface for the window:
+    printf("vk_create_surface. \n");
 
     VkXcbSurfaceCreateInfoKHR createInfo;
     createInfo.sType = VK_STRUCTURE_TYPE_XCB_SURFACE_CREATE_INFO_KHR;
     createInfo.pNext = NULL;
     createInfo.flags = 0;
-    createInfo.connection = demo->connection;
-    createInfo.window = demo->xcb_window;
+    createInfo.connection = pDemo->connection;
+    createInfo.window = pDemo->xcb_window;
+    VK_CHECK( vkCreateXcbSurfaceKHR(pDemo->inst, &createInfo, NULL, &pDemo->surface) );
+}
 
-    VK_CHECK( vkCreateXcbSurfaceKHR(demo->inst, &createInfo, NULL, &demo->surface) );
+
+void vk_selectGraphicAndPresentQueue(struct demo *pDemo)
+{
+    printf("vk_selectGraphicAndPresentQueue. \n");
 
     // Iterate over each queue to learn whether it supports presenting:
-    VkBool32 * supportsPresent = (VkBool32 *)malloc(demo->queue_family_count * sizeof(VkBool32));
-    for (uint32_t i = 0; i < demo->queue_family_count; i++) {
-        pFn_vkhr.fpGetPhysicalDeviceSurfaceSupportKHR(demo->gpu, i, demo->surface, &supportsPresent[i]);
+    VkBool32 * supportsPresent = (VkBool32 *)malloc(pDemo->queue_family_count * sizeof(VkBool32));
+    
+    for (uint32_t i = 0; i < pDemo->queue_family_count; i++)
+    {
+        pFn_vkhr.fpGetPhysicalDeviceSurfaceSupportKHR(
+                pDemo->gpu, i, pDemo->surface, &supportsPresent[i]);
     }
 
     // Search for a graphics and a present queue in the array of queue families, 
     // try to find one that supports both
     uint32_t graphicsQueueFamilyIndex = UINT32_MAX;
     uint32_t presentQueueFamilyIndex = UINT32_MAX;
-    for (uint32_t i = 0; i < demo->queue_family_count; ++i)
+
+    for (uint32_t i = 0; i < pDemo->queue_family_count; ++i)
     {
-        if ((demo->queue_props[i].queueFlags & VK_QUEUE_GRAPHICS_BIT) != 0)
+        if ((pDemo->queue_props[i].queueFlags & VK_QUEUE_GRAPHICS_BIT) != 0)
         {
             if (graphicsQueueFamilyIndex == UINT32_MAX)
             {
@@ -126,7 +135,7 @@ void init_vk_swapchain(struct demo *demo)
     {
         // If didn't find a queue that supports both graphics and present, then
         // find a separate present queue.
-        for (uint32_t i = 0; i < demo->queue_family_count; ++i)
+        for (uint32_t i = 0; i < pDemo->queue_family_count; ++i)
         {
             if (supportsPresent[i] == VK_TRUE )
             {
@@ -141,46 +150,56 @@ void init_vk_swapchain(struct demo *demo)
         ERR_EXIT("Could not find both graphics and present queues\n", "Swapchain Initialization Failure");
     }
 
+
+    pDemo->graphics_queue_family_index = graphicsQueueFamilyIndex;
+    pDemo->present_queue_family_index = presentQueueFamilyIndex;
+    pDemo->separate_present_queue = (pDemo->graphics_queue_family_index != pDemo->present_queue_family_index);
+
+
     printf("queue_family_count: %d, graphicsQueueFamilyIndex: %d, presentQueueFamilyIndex: %d\n",
-        demo->queue_family_count, graphicsQueueFamilyIndex, presentQueueFamilyIndex);
+        pDemo->queue_family_count, graphicsQueueFamilyIndex, presentQueueFamilyIndex);
+    
+    printf("separate present queue: %d\n", pDemo->separate_present_queue);
+    
 
-    demo->graphics_queue_family_index = graphicsQueueFamilyIndex;
-    demo->present_queue_family_index = presentQueueFamilyIndex;
-    demo->separate_present_queue = (demo->graphics_queue_family_index != demo->present_queue_family_index);
     free(supportsPresent);
+}
 
-    vk_create_device(demo);
 
-    vk_getDeviceProcAddrKHR(demo);
-
-    vkGetDeviceQueue(demo->device, demo->graphics_queue_family_index, 0, &demo->graphics_queue);
-
-    if (!demo->separate_present_queue) {
-        demo->present_queue = demo->graphics_queue;
-    } else {
-        vkGetDeviceQueue(demo->device, demo->present_queue_family_index, 0, &demo->present_queue);
-    }
+void vk_chooseSurfaceFormat(struct demo *demo)
+{
+    printf("vk_chooseSurfaceFormat\n");
 
     // Get the list of VkFormat's that are supported:
     uint32_t formatCount;
+    
     VK_CHECK( pFn_vkhr.fpGetPhysicalDeviceSurfaceFormatsKHR(demo->gpu, demo->surface, &formatCount, NULL) );
 
-    VkSurfaceFormatKHR *surfFormats = (VkSurfaceFormatKHR *)malloc(formatCount * sizeof(VkSurfaceFormatKHR));
+    VkSurfaceFormatKHR * surfFormats = (VkSurfaceFormatKHR *)malloc(formatCount * sizeof(VkSurfaceFormatKHR));
+
     VK_CHECK( pFn_vkhr.fpGetPhysicalDeviceSurfaceFormatsKHR(demo->gpu, demo->surface, &formatCount, surfFormats));
 
     // If the format list includes just one entry of VK_FORMAT_UNDEFINED,
     // the surface has no preferred format.  Otherwise, at least one
     // supported format will be returned.
-    if (formatCount == 1 && surfFormats[0].format == VK_FORMAT_UNDEFINED) {
+    if (formatCount == 1 && surfFormats[0].format == VK_FORMAT_UNDEFINED)
+    {
         demo->format = VK_FORMAT_B8G8R8A8_UNORM;
-    } else {
+    }
+    else
+    {
         assert(formatCount >= 1);
         demo->format = surfFormats[0].format;
     }
     demo->color_space = surfFormats[0].colorSpace;
 
-    demo->quit = false;
-    demo->curFrame = 0;
+    free(surfFormats);
+}
+
+
+void vk_create_semaphores(struct demo *demo)
+{
+    printf("vk_create_semaphores\n");
 
     // Create semaphores to synchronize acquiring presentable buffers before
     // rendering and waiting for drawing to be complete before presenting
@@ -208,8 +227,34 @@ void init_vk_swapchain(struct demo *demo)
             VK_CHECK( vkCreateSemaphore(demo->device, &semaphoreCreateInfo, NULL, &demo->image_ownership_semaphores[i]) );
         }
     }
-    demo->frame_index = 0;
+}
 
+
+void init_vk_swapchain(struct demo *demo)
+{
+
+//  Create a WSI surface for the window:
+    vk_create_surface(demo);
+
+    vk_selectGraphicAndPresentQueue(demo);
+
+    vk_create_device(demo);
+
+    
+    vkGetDeviceQueue(demo->device, demo->graphics_queue_family_index, 0, &demo->graphics_queue);
+    if (!demo->separate_present_queue) {
+        demo->present_queue = demo->graphics_queue;
+    } else {
+        vkGetDeviceQueue(demo->device, demo->present_queue_family_index, 0, &demo->present_queue);
+    }
+
+
+    vk_getDeviceProcAddrKHR(demo);
+
+    vk_chooseSurfaceFormat(demo);
+
+    vk_create_semaphores(demo);
+    
     // Get Memory information and properties
     vkGetPhysicalDeviceMemoryProperties(demo->gpu, &demo->memory_properties);
 }

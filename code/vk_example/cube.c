@@ -486,7 +486,10 @@ int main(int argc, char **argv)
     demo.presentMode = VK_PRESENT_MODE_FIFO_KHR;
     demo.is_minimized = false;
     demo.cmd_pool = VK_NULL_HANDLE;
-
+    demo.quit = false;
+    demo.curFrame = 0;
+    demo.frame_index = 0;
+    
     for (int i = 1; i < argc; i++)
     {
         if (strcmp(argv[i], "--use_staging") == 0) {
