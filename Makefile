@@ -1569,6 +1569,7 @@ Q3MYDEVOBJ = \
 ######################  VULKAN  ######################
 
 Q3VKOBJ = \
+  $(B)/renderer_vulkan/R_GetMicroSeconds.o \
   $(B)/renderer_vulkan/matrix_multiplication.o \
   $(B)/renderer_vulkan/tr_globals.o \
   $(B)/renderer_vulkan/tr_cvar.o \
@@ -1619,10 +1620,6 @@ Q3VKOBJ = \
   $(B)/renderer_vulkan/vk_utils.o \
   $(B)/renderer_vulkan/vk_cmd.o \
   \
-  $(B)/renderer_vulkan/vk_image.o \
-  $(B)/renderer_vulkan/vk_image_sampler2.o \
-  $(B)/renderer_vulkan/R_ImageProcess.o \
-  \
   $(B)/renderer_vulkan/vk_pipelines.o \
   $(B)/renderer_vulkan/vk_global_stage_pipelines.o \
   $(B)/renderer_vulkan/vk_debug_pipelines.o \
@@ -1660,6 +1657,9 @@ Q3VKOBJ = \
   $(B)/renderer_vulkan/ref_import.o \
   $(B)/renderer_vulkan/render_export.o \
   \
+  $(B)/renderer_vulkan/vk_image.o \
+  $(B)/renderer_vulkan/vk_image_sampler2.o \
+  $(B)/renderer_vulkan/R_ImageProcess.o \
   $(B)/renderer_vulkan/R_LoadImage.o \
   $(B)/renderer_vulkan/R_ImageJPG.o \
   $(B)/renderer_vulkan/R_ImageTGA.o \

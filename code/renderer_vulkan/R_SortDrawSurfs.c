@@ -9,6 +9,8 @@
 #include "tr_cvar.h"
 
 #include "FixRenderCommandList.h"
+#include "R_GetMicroSeconds.h"
+
 /*
 ==========================================================================
 
@@ -17,7 +19,70 @@ DRAWSURF SORTING
 ==========================================================================
 */
 
-static inline void SWAP_DRAW_SURF( drawSurf_t *a, drawSurf_t* b )
+
+/* 
+ * this parameter defines the cutoff between using quick sort and
+   insertion sort for arrays; arrays with lengths shorter or equal to the
+   below value use insertion sort 
+
+   testing shows that this is good value
+*/
+#define CUTOFF  8
+
+
+static void Algo_SwapDrawSurf(struct drawSurf_s* const base, int left, int right)
+{
+    struct drawSurf_s tmp = base[left];
+    base[left] = base[right];
+    base[right] = tmp;
+}
+
+
+static void Algo_InsertSort( drawSurf_t* const v, int left, int right)
+{
+    while (right > left)
+    {
+        int max = left;
+        for (int i = left + 1; i <= right; ++i)
+        {
+            if ( v[i].sort > v[max].sort )
+            {
+                max = i;
+            }
+        }
+        Algo_SwapDrawSurf(v, max, right);
+        --right;
+    }
+}
+
+
+void Algo_QuickSort( drawSurf_t* const v, int left, int right)
+{
+	int i, last;
+
+	if(left >= right) // do nothing if array contains fewer than two elements
+		return;
+/*
+    if (right - left <= CUTOFF)
+    {
+         Algo_InsertSort(v, left, right);
+    }
+*/
+	Algo_SwapDrawSurf(v, left, (left+right)/2);
+	
+	last = left;
+	for(i = left+1; i<=right; ++i)
+		if(v[i].sort < v[left].sort)
+			Algo_SwapDrawSurf(v, ++last, i);
+
+	Algo_SwapDrawSurf(v, left, last);
+
+	Algo_QuickSort(v, left, last-1);
+	Algo_QuickSort(v, last+1, right);
+}
+
+
+static void SWAP_DRAW_SURF( drawSurf_t *a, drawSurf_t* b )
 {
     drawSurf_t tmp = *a;
     *a = *b;
@@ -30,18 +95,6 @@ static inline void SWAP_DRAW_SURF( drawSurf_t *a, drawSurf_t* b )
 */
 }
 
-static void swap_surf(drawSurf_t* const base, int left, int right)
-{
-    drawSurf_t tmp = base[left];
-    base[left] = base[right];
-    base[right] = tmp;
-}
-
-/* this parameter defines the cutoff between using quick sort and
-   insertion sort for arrays; arrays with lengths shorter or equal to the
-   below value use insertion sort */
-
-#define CUTOFF 8            /* testing shows that this is good value */
 
 static void shortsort( drawSurf_t * const lo, drawSurf_t * hi )
 {
@@ -59,49 +112,6 @@ static void shortsort( drawSurf_t * const lo, drawSurf_t * hi )
         SWAP_DRAW_SURF(max, hi);
         --hi;
     }
-}
-
-static void insert_sort( drawSurf_t* const v, int left, int right )
-{
-    while (right > left)
-    {
-        int max = left;
-        for (int i = left + 1; i <= right; ++i)
-        {
-            if ( v[i].sort > v[max].sort )
-            {
-                max = i;
-            }
-        }
-        swap_surf(v, max, right);
-        --right;
-    }
-}
-
-
-void quicksort_surf( drawSurf_t v[], int left, int right)
-{
-	int i, last;
-
-	if(left >= right) // do nothing if array contains fewer than two elements
-		return;
-
-    if (right - left <= CUTOFF)
-    {
-         insert_sort(v, left, right);
-    }
-
-	swap_surf(v, left, (left+right)/2);
-	
-	last = left;
-	for(i = left+1; i<=right; ++i)
-		if(v[i].sort < v[left].sort)
-			swap_surf(v, ++last, i);
-
-	swap_surf(v, left, last);
-
-	quicksort_surf(v, left, last-1);
-	quicksort_surf(v, last+1, right);
 }
 
 
@@ -264,6 +274,61 @@ recurse:
 }
 
 
+
+/*
+===============
+R_Radix
+===============
+*/
+static void R_Radix( int byte, int size, drawSurf_t *source, drawSurf_t *dest )
+{
+  int           count[ 256 ] = { 0 };
+  int           index[ 256 ];
+  int           i;
+  unsigned char *sortKey = NULL;
+  unsigned char *end = NULL;
+
+  sortKey = ( (unsigned char *)&source[ 0 ].sort ) + byte;
+  end = sortKey + ( size * sizeof( drawSurf_t ) );
+  for( ; sortKey < end; sortKey += sizeof( drawSurf_t ) )
+    ++count[ *sortKey ];
+
+  index[ 0 ] = 0;
+
+  for( i = 1; i < 256; ++i )
+    index[ i ] = index[ i - 1 ] + count[ i - 1 ];
+
+  sortKey = ( (unsigned char *)&source[ 0 ].sort ) + byte;
+  for( i = 0; i < size; ++i, sortKey += sizeof( drawSurf_t ) )
+    dest[ index[ *sortKey ]++ ] = source[ i ];
+}
+
+/*
+===============
+R_RadixSort
+
+Radix sort with 4 byte size buckets
+===============
+*/
+static void R_RadixSort( drawSurf_t *source, int size )
+{
+  static drawSurf_t scratch[ MAX_DRAWSURFS ];
+#ifdef Q3_LITTLE_ENDIAN
+  R_Radix( 0, size, source, scratch );
+  R_Radix( 1, size, scratch, source );
+  R_Radix( 2, size, source, scratch );
+  R_Radix( 3, size, scratch, source );
+#else
+  R_Radix( 3, size, source, scratch );
+  R_Radix( 2, size, scratch, source );
+  R_Radix( 1, size, source, scratch );
+  R_Radix( 0, size, scratch, source );
+#endif //Q3_LITTLE_ENDIAN
+}
+
+
+
+
 void R_SortDrawSurfs( drawSurf_t *drawSurfs, int numDrawSurfs )
 {
 	shader_t		*shader;
@@ -286,14 +351,28 @@ void R_SortDrawSurfs( drawSurf_t *drawSurfs, int numDrawSurfs )
 		numDrawSurfs = MAX_DRAWSURFS;
         ri.Printf(PRINT_WARNING, " numDrawSurfs overflowed. \n");
 	}
-
-	// sort the drawsurfs by sort type, then orientation, then shader
-// ORIGINAL ->
-    // qsortFast (drawSurfs, numDrawSurfs, sizeof(drawSurf_t) );
     
-    quicksort_surf(drawSurfs, 0, numDrawSurfs - 1);
-    // try slow algorithm, still run very good
-    //shortsort(drawSurfs, drawSurfs + numDrawSurfs - 1);
+    // ri.Printf(PRINT_WARNING, " numDrawSurfs:%d \n", numDrawSurfs);
+	
+    
+    uint64_t start = R_GetTimeMicroSeconds();
+    // sort the drawsurfs by sort type, then orientation, then shader
+    
+    // 85 us
+    // Algo_QuickSort(drawSurfs, 0, numDrawSurfs - 1);
+    // ORIGINAL
+    // qsortFast (drawSurfs, numDrawSurfs, sizeof(drawSurf_t) );
+    //
+    // try slow algorithm, still run, but about 1000ms
+    // shortsort(drawSurfs, drawSurfs + numDrawSurfs - 1);
+    //
+    // fastest 20-30
+    R_RadixSort (drawSurfs, numDrawSurfs);
+
+    if(numDrawSurfs > 10)
+    {
+        ri.Printf(PRINT_WARNING, " numDrawSurfs: %ld us \n", R_GetTimeMicroSeconds() - start);
+    }
 
 	// check for any pass through drawing, which
 	// may cause another view to be rendered first

@@ -1,4 +1,7 @@
 #include <assert.h>
+#include <stdint.h>
+
+#include "R_GetMicroSeconds.h"
 
 #if defined(_WIN32)
 
@@ -14,7 +17,7 @@
 
 #endif
 
-uint64_t getTimeInNanoseconds(void)
+uint64_t R_GetTimeMicroSeconds(void)
 {
 #if defined(_WIN32)
     LARGE_INTEGER freq;

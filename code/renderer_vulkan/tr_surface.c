@@ -652,7 +652,8 @@ static void LerpMeshVertexes (md3Surface_t *surf, float backlerp)
 
 	numVerts = surf->numVerts;
 
-	if ( backlerp == 0 ) {
+	if ( backlerp == 0 )
+    {
 		//
 		// just copy the vertexes
 		//
