@@ -183,6 +183,8 @@ void RB_AddQuadStamp( vec3_t origin, vec3_t left, vec3_t up, unsigned char *colo
 	RB_AddQuadStampExt( origin, left, up, color, 0, 0, 1, 1 );
 }
 
+
+
 static void RB_SurfaceSprite( void )
 {
 	vec3_t left, up;
@@ -196,15 +198,20 @@ static void RB_SurfaceSprite( void )
 	}
     else
     {
-		float ang = (M_PI / 180)* backEnd.currentEntity->e.rotation ;
-		float s = sin( ang );
-		float c = cos( ang );
+		float ang = (M_PI / 180) * backEnd.currentEntity->e.rotation ;
+		// float s = sin( ang );
+		// float c = cos( ang );
 
-		VectorScale( backEnd.viewParms.or.axis[1], c * radius, left );
-		VectorMA( left, -s * radius, backEnd.viewParms.or.axis[2], left );
+        float c_r = cos( ang ) * radius;
+        float s_r = sin( ang ) * radius;
 
-		VectorScale( backEnd.viewParms.or.axis[2], c * radius, up );
-		VectorMA( up, s * radius, backEnd.viewParms.or.axis[1], up );
+		VectorScale( backEnd.viewParms.or.axis[1], c_r, left );
+		//VectorScale( backEnd.viewParms.or.axis[2], s_r, temp1);
+        //VectorSubtract( left, temp1, left);
+        VectorMA( left, -s_r, backEnd.viewParms.or.axis[2], left );
+
+		VectorScale( backEnd.viewParms.or.axis[2], c_r, up );
+        VectorMA( up, s_r, backEnd.viewParms.or.axis[1], up );
 	}
 	if ( backEnd.viewParms.isMirror ) {
 		VectorSubtract( vec3_origin, left, left );
@@ -312,11 +319,10 @@ void RB_SurfaceTriangles( srfTriangles_t *srf )
 void RB_SurfaceBeam( void ) 
 {
 #define NUM_BEAM_SEGS 6
-	refEntity_t *e;
+	refEntity_t *e = &backEnd.currentEntity->e;
 	vec3_t direction, normalized_direction;
 	vec3_t oldorigin, origin;
 
-	e = &backEnd.currentEntity->e;
 
 	oldorigin[0] = e->oldorigin[0];
 	oldorigin[1] = e->oldorigin[1];
@@ -341,56 +347,73 @@ void RB_SurfaceBeam( void )
 
 static void DoRailCore( const vec3_t start, const vec3_t end, const vec3_t up, float len, float spanWidth )
 {
-	float		spanWidth2;
-	int			vbase;
-	float		t = len / 256.0f;
+	float t = len / 256.0f;
 
-	vbase = tess.numVertexes;
+//	int vbase = tess.numVertexes;
 
-	spanWidth2 = -spanWidth;
+    const uint32_t n0 = tess.numVertexes;
+    const uint32_t n1 = tess.numVertexes + 1;
+    const uint32_t n2 = tess.numVertexes + 2;
+    const uint32_t n3 = tess.numVertexes + 3;
+    const uint32_t idx = tess.numIndexes;
+
+    tess.indexes[idx  ] = n0;
+	tess.indexes[idx+1] = n1;
+	tess.indexes[idx+2] = n2;
+	tess.indexes[idx+3] = n2;
+	tess.indexes[idx+4] = n1;
+	tess.indexes[idx+5] = n3;
+
 
 	// FIXME: use quad stamp?
-	VectorMA( start, spanWidth, up, tess.xyz[tess.numVertexes] );
-	tess.texCoords[tess.numVertexes][0][0] = 0;
-	tess.texCoords[tess.numVertexes][0][1] = 0;
-	tess.vertexColors[tess.numVertexes][0] = backEnd.currentEntity->e.shaderRGBA[0] * 0.25;
-	tess.vertexColors[tess.numVertexes][1] = backEnd.currentEntity->e.shaderRGBA[1] * 0.25;
-	tess.vertexColors[tess.numVertexes][2] = backEnd.currentEntity->e.shaderRGBA[2] * 0.25;
-	tess.numVertexes++;
+//	float spanWidth2 = -spanWidth;
+//	VectorMA( start, spanWidth, up, tess.xyz[n0] );
+//	VectorMA( start, spanWidth2, up, tess.xyz[n1] );
+//	VectorMA( end, spanWidth, up, tess.xyz[n2] );
+//	VectorMA( end, spanWidth2, up, tess.xyz[n3] );
 
-	VectorMA( start, spanWidth2, up, tess.xyz[tess.numVertexes] );
-	tess.texCoords[tess.numVertexes][0][0] = 0;
-	tess.texCoords[tess.numVertexes][0][1] = 1;
-	tess.vertexColors[tess.numVertexes][0] = backEnd.currentEntity->e.shaderRGBA[0];
-	tess.vertexColors[tess.numVertexes][1] = backEnd.currentEntity->e.shaderRGBA[1];
-	tess.vertexColors[tess.numVertexes][2] = backEnd.currentEntity->e.shaderRGBA[2];
-	tess.numVertexes++;
+    float tmp[3];
+    VectorScale(up, spanWidth, tmp);
+    
+    VectorAdd( start, tmp, tess.xyz[n0] );
+    VectorSubtract( start, tmp, tess.xyz[n1] );
+	VectorAdd( end, tmp, tess.xyz[n2] );
+	VectorSubtract( end, tmp, tess.xyz[n3] );
 
-	VectorMA( end, spanWidth, up, tess.xyz[tess.numVertexes] );
 
-	tess.texCoords[tess.numVertexes][0][0] = t;
-	tess.texCoords[tess.numVertexes][0][1] = 0;
-	tess.vertexColors[tess.numVertexes][0] = backEnd.currentEntity->e.shaderRGBA[0];
-	tess.vertexColors[tess.numVertexes][1] = backEnd.currentEntity->e.shaderRGBA[1];
-	tess.vertexColors[tess.numVertexes][2] = backEnd.currentEntity->e.shaderRGBA[2];
-	tess.numVertexes++;
+	tess.texCoords[n0][0][0] = 0;
+	tess.texCoords[n0][0][1] = 0;
 
-	VectorMA( end, spanWidth2, up, tess.xyz[tess.numVertexes] );
-	tess.texCoords[tess.numVertexes][0][0] = t;
-	tess.texCoords[tess.numVertexes][0][1] = 1;
-	tess.vertexColors[tess.numVertexes][0] = backEnd.currentEntity->e.shaderRGBA[0];
-	tess.vertexColors[tess.numVertexes][1] = backEnd.currentEntity->e.shaderRGBA[1];
-	tess.vertexColors[tess.numVertexes][2] = backEnd.currentEntity->e.shaderRGBA[2];
-	tess.numVertexes++;
+    tess.texCoords[n1][0][0] = 0;
+	tess.texCoords[n1][0][1] = 1;
+	
+    tess.texCoords[n2][0][0] = t;
+	tess.texCoords[n2][0][1] = 0;
+	
+    tess.texCoords[n3][0][0] = t;
+	tess.texCoords[n3][0][1] = 1;
 
-	tess.indexes[tess.numIndexes++] = vbase;
-	tess.indexes[tess.numIndexes++] = vbase + 1;
-	tess.indexes[tess.numIndexes++] = vbase + 2;
 
-	tess.indexes[tess.numIndexes++] = vbase + 2;
-	tess.indexes[tess.numIndexes++] = vbase + 1;
-	tess.indexes[tess.numIndexes++] = vbase + 3;
+	tess.vertexColors[n0][0] = backEnd.currentEntity->e.shaderRGBA[0] * 0.25;
+	tess.vertexColors[n0][1] = backEnd.currentEntity->e.shaderRGBA[1] * 0.25;
+	tess.vertexColors[n0][2] = backEnd.currentEntity->e.shaderRGBA[2] * 0.25;
+
+    tess.vertexColors[n1][0] = backEnd.currentEntity->e.shaderRGBA[0];
+	tess.vertexColors[n1][1] = backEnd.currentEntity->e.shaderRGBA[1];
+	tess.vertexColors[n1][2] = backEnd.currentEntity->e.shaderRGBA[2];
+
+	tess.vertexColors[n2][0] = backEnd.currentEntity->e.shaderRGBA[0];
+	tess.vertexColors[n2][1] = backEnd.currentEntity->e.shaderRGBA[1];
+	tess.vertexColors[n2][2] = backEnd.currentEntity->e.shaderRGBA[2];
+
+	tess.vertexColors[n3][0] = backEnd.currentEntity->e.shaderRGBA[0];
+	tess.vertexColors[n3][1] = backEnd.currentEntity->e.shaderRGBA[1];
+	tess.vertexColors[n3][2] = backEnd.currentEntity->e.shaderRGBA[2];
+
+    tess.numIndexes += 6;
+    tess.numVertexes += 4;
 }
+
 
 static void DoRailDiscs( int numSegs, const vec3_t start, const vec3_t dir, const vec3_t right, const vec3_t up )
 {
@@ -747,7 +770,6 @@ void RB_SurfaceMesh(md3Surface_t *surface) {
 	}
 
 	tess.numVertexes += surface->numVerts;
-
 }
 
 
