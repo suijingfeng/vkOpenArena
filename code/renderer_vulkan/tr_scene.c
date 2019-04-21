@@ -25,9 +25,11 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #include "ref_import.h"
 #include "../renderercommon/matrix_multiplication.h"
 #include "tr_light.h"
-#include "tr_main.h"
 #include "tr_surface.h"
 #include "tr_world.h"
+#include "R_RotateForViewer.h"
+#include "R_SortDrawSurfs.h"
+
 // these are sort of arbitrary limits.
 // the limits apply to the sum of all scenes in a frame --
 // the main view, all the 3D icons, etc
@@ -70,6 +72,37 @@ typedef struct
 
 
 static backEndData_t* backEndData;
+
+void R_SceneSetRefDef(void)
+{
+    // a single frame may have multiple scenes draw inside it --
+	// a 3D game view, 3D status bar renderings, 3D menus, etc.
+	// They need to be distinguished by the light flare code, because
+	// the visibility state for a given surface may be different in
+	// each scene / view.
+
+	// derived info
+
+	tr.refdef.floatTime = tr.refdef.rd.time * 0.001f;
+
+	tr.refdef.numDrawSurfs = r_firstSceneDrawSurf;
+	tr.refdef.drawSurfs = backEndData->drawSurfs;
+
+	tr.refdef.num_entities = r_numentities - r_firstSceneEntity;
+	tr.refdef.entities = &backEndData->entities[r_firstSceneEntity];
+
+	tr.refdef.num_dlights = r_numdlights - r_firstSceneDlight;
+	tr.refdef.dlights = &backEndData->dlights[r_firstSceneDlight];
+
+	tr.refdef.numPolys = r_numpolys - r_firstScenePoly;
+	tr.refdef.polys = &backEndData->polys[r_firstScenePoly];
+
+	// turn off dynamic lighting globally by clearing all the
+	// dlights if it needs to be disabled or if vertex lighting is enabled
+	if ( r_dynamiclight->integer == 0 || r_vertexLight->integer == 1 ) {
+		tr.refdef.num_dlights = 0;
+	}
+}
 
 
 void R_InitNextFrame(void)
@@ -121,6 +154,14 @@ void RE_ClearScene( void ) {
 	r_firstScenePoly = r_numpolys;
 }
 
+
+void R_TheNextScene(void)
+{
+	r_firstSceneDrawSurf = tr.refdef.numDrawSurfs;
+	r_firstSceneEntity = r_numentities;
+	r_firstSceneDlight = r_numdlights;
+	r_firstScenePoly = r_numpolys;
+}
 /*
 ===========================================================================
 
@@ -307,138 +348,3 @@ void RE_AddAdditiveLightToScene( const vec3_t org, float intensity, float r, flo
 }
 
 
-/*
-@@@@@@@@@@@@@@@@@@@@@
-RE_RenderScene
-
-Draw a 3D view into a part of the window, then return
-to 2D drawing.
-
-Rendering a scene may require multiple views to be rendered
-to handle mirrors,
-@@@@@@@@@@@@@@@@@@@@@
-*/
-void RE_RenderScene( const refdef_t *fd )
-{
-	if ( !tr.registered ) {
-		return;
-	}
-
-	if ( r_norefresh->integer ) {
-		return;
-	}
-
-	int startTime = ri.Milliseconds();
-
-	tr.refdef.AreamaskModified = qfalse;
-	
-    if ( ! (fd->rdflags & RDF_NOWORLDMODEL) )
-    {
-		int	i;
-        // check if the areamask data has changed, which will force 
-        // a reset of the visible leafs even if the view hasn't moved
-		// compare the area bits
-		for (i = 0 ; i < MAX_MAP_AREA_BYTES; i++)
-        {
-
-			if( tr.refdef.rd.areamask[i] ^ fd->areamask[i] )
-            {
-			    tr.refdef.AreamaskModified = qtrue;
-                //ri.Printf(PRINT_ALL, "%d:%d,%d\n", i, tr.refdef.rd.areamask[i], fd->areamask[i]);
-                break;
-            }
-		}
-	}
-
-    tr.refdef.rd = *fd;
-
-    // a single frame may have multiple scenes draw inside it --
-	// a 3D game view, 3D status bar renderings, 3D menus, etc.
-	// They need to be distinguished by the light flare code, because
-	// the visibility state for a given surface may be different in
-	// each scene / view.
-
-	// derived info
-
-	tr.refdef.floatTime = tr.refdef.rd.time * 0.001f;
-
-	tr.refdef.numDrawSurfs = r_firstSceneDrawSurf;
-	tr.refdef.drawSurfs = backEndData->drawSurfs;
-
-	tr.refdef.num_entities = r_numentities - r_firstSceneEntity;
-	tr.refdef.entities = &backEndData->entities[r_firstSceneEntity];
-
-	tr.refdef.num_dlights = r_numdlights - r_firstSceneDlight;
-	tr.refdef.dlights = &backEndData->dlights[r_firstSceneDlight];
-
-	tr.refdef.numPolys = r_numpolys - r_firstScenePoly;
-	tr.refdef.polys = &backEndData->polys[r_firstScenePoly];
-
-	// turn off dynamic lighting globally by clearing all the
-	// dlights if it needs to be disabled or if vertex lighting is enabled
-	if ( r_dynamiclight->integer == 0 || r_vertexLight->integer == 1 ) {
-		tr.refdef.num_dlights = 0;
-	}
-    
-    // ri.Printf(PRINT_ALL, "(%d, %d, %d, %d)\n", tr.refdef.x, tr.refdef.y, tr.refdef.width, tr.refdef.height);
-	// setup view parms for the initial view
-	//
-	// set up viewport
-	// The refdef takes 0-at-the-top y coordinates
-    // 0 +-------> x
-    //   |
-    //   |
-    //   |
-    //   y
-    viewParms_t		parms;
-	memset( &parms, 0, sizeof( parms ) );
-
-
-    parms.viewportX = fd->x;
-	parms.viewportY =  fd->y;
-
-    parms.viewportWidth = fd->width;
-	parms.viewportHeight = fd->height;
-
-	parms.fovX = fd->fov_x;
-	parms.fovY = fd->fov_y;
-
-	VectorCopy( fd->vieworg, parms.or.origin );
-	//VectorCopy( fd->viewaxis[0], parms.or.axis[0] );
-	//VectorCopy( fd->viewaxis[1], parms.or.axis[1] );
-	//VectorCopy( fd->viewaxis[2], parms.or.axis[2] );
-	VectorCopy( fd->vieworg, parms.pvsOrigin );
-
-    Mat3x3Copy(parms.or.axis, fd->viewaxis);
-	parms.isPortal = qfalse;
-
-	if ( (parms.viewportWidth > 0) && (parms.viewportHeight > 0) ) 
-    {
-		R_RenderView( &parms );
-	}
-
-	// the next scene rendered in this frame will tack on after this one
-	r_firstSceneDrawSurf = tr.refdef.numDrawSurfs;
-	r_firstSceneEntity = r_numentities;
-	r_firstSceneDlight = r_numdlights;
-	r_firstScenePoly = r_numpolys;
-
-	tr.frontEndMsec += ri.Milliseconds() - startTime;
-}
-
-/*
-typedef struct {
-/	orientationr_t	or;
-	orientationr_t	world;
-//	vec3_t		pvsOrigin;			// may be different than or.origin for portals
-//	qboolean	isPortal;			// true if this view is through a portal
-	qboolean	isMirror;			// the portal is a mirror, invert the face culling
-	cplane_t	portalPlane;		// clip anything behind this if mirroring
-//	int			viewportX, viewportY, viewportWidth, viewportHeight;
-//	float		fovX, fovY;
-	float		projectionMatrix[16] QALIGN(16);
-	cplane_t	frustum[4];
-	vec3_t		visBounds[2];
-	float		zFar;
-} viewParms_t;
-*/

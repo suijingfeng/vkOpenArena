@@ -29,6 +29,8 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #include "ref_import.h"
 #include "tr_cmds.h"
 #include "R_FindShader.h"
+#include "FixRenderCommandList.h"
+
 // tr_shader.c -- this file deals with the parsing and definition of shaders
 
 
@@ -1927,7 +1929,7 @@ shader_t* FinishShader( void )
         vk_create_shader_stage_pipelines(&stages[i], &shader); 
     }
 
-	return GeneratePermanentShader();
+	return R_GeneratePermanentShader( stages, &shader );
 }
 
 //========================================================================================
@@ -1964,94 +1966,6 @@ void R_SetDefaultShader( void )
 {
 	shader.defaultShader = qtrue;
 }
-
-/*
-==============
-SortNewShader
-
-Positions the most recently created shader in the tr.sortedShaders[]
-array so that the shader->sort key is sorted reletive to the other
-shaders.
-
-Sets shader->sortedIndex
-==============
-*/
-static void SortNewShader( shader_t* pShader )
-{
-	int	i;
-	float sort = pShader->sort;
-
-	for ( i = tr.numShaders - 2 ; i >= 0 ; i-- )
-    {
-		if ( tr.sortedShaders[ i ]->sort <= sort )
-        {
-			break;
-		}
-		tr.sortedShaders[i+1] = tr.sortedShaders[i];
-		tr.sortedShaders[i+1]->sortedIndex++;
-	}
-
-	// Arnout: fix rendercommandlist
-	// https://zerowing.idsoftware.com/bugzilla/show_bug.cgi?id=493
-	FixRenderCommandList( i+1 );
-
-	pShader->sortedIndex = i+1;
-	tr.sortedShaders[i+1] = pShader;
-}
-
-
-
-
-shader_t* GeneratePermanentShader( void )
-{
-	int	i;
-
-	if ( tr.numShaders == MAX_SHADERS ) {
-		ri.Printf( PRINT_WARNING, "WARNING: GeneratePermanentShader - MAX_SHADERS hit\n");
-		return tr.defaultShader;
-	}
-
-	shader_t* newShader = (shader_t*) ri.Hunk_Alloc( sizeof( shader_t ), h_low );
-
-    *newShader = shader;
-
-	if ( newShader->sort <= SS_OPAQUE )
-		newShader->fogPass = FP_EQUAL;
-	else if ( newShader->contentFlags & CONTENTS_FOG )
-		newShader->fogPass = FP_LE;
-
-	tr.shaders[ tr.numShaders ] = newShader;
-	newShader->index = tr.numShaders;
-	
-	tr.sortedShaders[ tr.numShaders ] = newShader;
-	newShader->sortedIndex = tr.numShaders;
-
-	tr.numShaders++;
-
-	for ( i = 0 ; i < newShader->numUnfoggedPasses ; i++ )
-    {
-		if ( !stages[i].active ) {
-			break;
-		}
-		newShader->stages[i] = (shaderStage_t*) ri.Hunk_Alloc( sizeof( stages[i] ), h_low );
-		*newShader->stages[i] = stages[i];
-
-        int b;
-		for ( b = 0 ; b < NUM_TEXTURE_BUNDLES ; b++ )
-        {
-			int size = newShader->stages[i]->bundle[b].numTexMods * sizeof( texModInfo_t );
-			newShader->stages[i]->bundle[b].texMods = (texModInfo_t*) ri.Hunk_Alloc( size, h_low );
-			memcpy( newShader->stages[i]->bundle[b].texMods, stages[i].bundle[b].texMods, size );
-		}
-	}
-
-	SortNewShader(tr.shaders[ tr.numShaders - 1 ]);
-
-    R_UpdateShaderHashTable(newShader);
-
-	return newShader;
-}
-
 
 
 void R_CreateDefaultShadingCmds(const char* name, image_t* image)

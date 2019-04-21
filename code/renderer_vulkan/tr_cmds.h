@@ -1,18 +1,20 @@
 #ifndef TR_CMDS_H_
 #define TR_CMDS_H_
 
+#include "trRefDef.h"
+#include "viewParms.h"
 /*
-=============================================================
+=========================================================
 
 RENDERER BACK END COMMAND QUEUE
 
-=============================================================
+=========================================================
 */
 
 #define	MAX_RENDER_COMMANDS	0x40000
 
 typedef struct {
-	byte	cmds[MAX_RENDER_COMMANDS];
+	unsigned char cmds[MAX_RENDER_COMMANDS];
 	int		used;
 } renderCommandList_t;
 
@@ -72,12 +74,11 @@ RENDERER BACK END FUNCTIONS
 */
 
 
-void *R_GetCommandBuffer( int bytes );
+void* R_GetCommandBuffer( int bytes );
 void RB_ExecuteRenderCommands( const void *data );
 
-
 void R_IssueRenderCommands( qboolean runPerformanceCounters );
-void FixRenderCommandList( int newShader );
+
 void R_AddDrawSurfCmd( struct drawSurf_s *drawSurfs, int numDrawSurfs );
 
 #endif

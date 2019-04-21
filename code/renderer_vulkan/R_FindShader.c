@@ -447,8 +447,8 @@ static void Shader_DoSimpleCheck(char* name, char* p)
 
 static void SetShaderTextHashTableSizes( void )
 {
-    int shaderTextHashTableSizes[MAX_SHADERTEXT_HASH];
-	memset(shaderTextHashTableSizes, 0, sizeof(shaderTextHashTableSizes));
+    int shaderTextHashTableSizes[MAX_SHADERTEXT_HASH] = { 0 };
+	// memset(shaderTextHashTableSizes, 0, sizeof(shaderTextHashTableSizes));
 	
     int size = 0;
 
@@ -469,7 +469,6 @@ static void SetShaderTextHashTableSizes( void )
     }
 
 	size += MAX_SHADERTEXT_HASH;
-
 
     char* hashMem = (char*)ri.Hunk_Alloc( size * sizeof(char *), h_low );
     

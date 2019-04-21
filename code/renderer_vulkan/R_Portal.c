@@ -4,9 +4,14 @@
 #include "ref_import.h"
 
 #include "R_PortalPlane.h"
-
-#include "tr_main.h"
 #include "R_Portal.h"
+#include "FixRenderCommandList.h"
+#include "R_RotateForViewer.h"
+#include "tr_globals.h"
+#include "tr_cvar.h"
+
+
+extern void R_RenderView (viewParms_t *parms);
 
 
 static void R_LocalNormalToWorld (const vec3_t local, const orientationr_t * const pRT, vec3_t world)
@@ -298,7 +303,8 @@ static qboolean SurfIsOffscreen( const drawSurf_t *drawSurf, vec4_t clipDest[128
 
 	R_DecomposeSort( drawSurf->sort, &entityNum, &shader, &fogNum, &dlighted );
 	RB_BeginSurface( shader, fogNum );
-	rb_surfaceTable[ *drawSurf->surface ]( drawSurf->surface );
+	
+    rb_surfaceTable[ *drawSurf->surface ]( drawSurf->surface );
 
 	assert( tess.numVertexes < 128 );
 
@@ -435,3 +441,5 @@ qboolean R_MirrorViewBySurface (drawSurf_t *drawSurf, int entityNum)
 
 	return qtrue;
 }
+
+

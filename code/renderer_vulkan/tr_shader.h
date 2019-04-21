@@ -142,7 +142,7 @@ typedef struct shader_s
 	deformStage_t	deforms[MAX_SHADER_DEFORMS];
 
 	int			numUnfoggedPasses;
-	shaderStage_t	*stages[MAX_SHADER_STAGES];		
+	shaderStage_t* stages[MAX_SHADER_STAGES];		
 
     float clampTime;                                  // time this shader is clamped to
     float timeOffset;                                 // current time offset for this shader
@@ -152,8 +152,10 @@ typedef struct shader_s
 	struct	shader_s	*next;
 } shader_t;
 
+
+
 shader_t* R_GetShaderByHandle( qhandle_t hShader );
-shader_t* GeneratePermanentShader( void );
+
 qboolean ParseShader( char **text );
 
 void R_InitShaders( void );

@@ -1599,12 +1599,16 @@ Q3VKOBJ = \
   \
   $(B)/renderer_vulkan/tr_shader.o \
   $(B)/renderer_vulkan/R_FindShader.o \
-  $(B)/renderer_vulkan/R_ListShader.o \
   $(B)/renderer_vulkan/R_ShaderCommands.o \
+  $(B)/renderer_vulkan/FixRenderCommandList.o \
   \
   $(B)/renderer_vulkan/tr_shadows.o \
   $(B)/renderer_vulkan/tr_sky.o \
+  \
   $(B)/renderer_vulkan/tr_surface.o \
+  $(B)/renderer_vulkan/R_SortDrawSurfs.o \
+  $(B)/renderer_vulkan/RB_RenderDrawSurfList.o \
+  \
   $(B)/renderer_vulkan/RB_SurfaceAnim.o \
   $(B)/renderer_vulkan/tr_flares.o \
   $(B)/renderer_vulkan/tr_fog.o \
@@ -1651,11 +1655,11 @@ Q3VKOBJ = \
   \
   $(B)/renderer_vulkan/R_PortalPlane.o \
   $(B)/renderer_vulkan/R_Portal.o \
+  $(B)/renderer_vulkan/R_RotateForViewer.o \
   \
   $(B)/renderer_vulkan/ref_import.o \
   $(B)/renderer_vulkan/render_export.o \
   \
-  $(B)/renderer_vulkan/R_LoadImage2.o \
   $(B)/renderer_vulkan/R_LoadImage.o \
   $(B)/renderer_vulkan/R_ImageJPG.o \
   $(B)/renderer_vulkan/R_ImageTGA.o \
