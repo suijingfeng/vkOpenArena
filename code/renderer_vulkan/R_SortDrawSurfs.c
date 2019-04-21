@@ -355,7 +355,7 @@ void R_SortDrawSurfs( drawSurf_t *drawSurfs, int numDrawSurfs )
     // ri.Printf(PRINT_WARNING, " numDrawSurfs:%d \n", numDrawSurfs);
 	
     
-    uint64_t start = R_GetTimeMicroSeconds();
+//    uint64_t start = R_GetTimeMicroSeconds();
     // sort the drawsurfs by sort type, then orientation, then shader
     
     // 85 us
@@ -369,11 +369,12 @@ void R_SortDrawSurfs( drawSurf_t *drawSurfs, int numDrawSurfs )
     // fastest 20-30
     R_RadixSort (drawSurfs, numDrawSurfs);
 
+/*
     if(numDrawSurfs > 10)
     {
         ri.Printf(PRINT_WARNING, " numDrawSurfs: %ld us \n", R_GetTimeMicroSeconds() - start);
     }
-
+*/
 	// check for any pass through drawing, which
 	// may cause another view to be rendered first
 	for ( i = 0 ; i < numDrawSurfs ; i++ )

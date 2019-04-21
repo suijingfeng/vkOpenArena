@@ -204,13 +204,9 @@ void RE_EndFrame( int *frontEndMsec, int *backEndMsec )
 
 
 
-
-
-
-
 void RB_StretchPic( const stretchPicCommand_t * const cmd )
 {
-
+    // called every frame
 	if ( qfalse == backEnd.projection2D )
     {
 
@@ -256,11 +252,15 @@ void RB_StretchPic( const stretchPicCommand_t * const cmd )
     // TODO: verify does coding this way run faster in release mode ?
     // coding this way do harm to debug version because of
     // introduce additional 4 function call.
-    memcpy(tess.vertexColors[ n0 ], backEnd.Color2D, 4);
-    memcpy(tess.vertexColors[ n1 ], backEnd.Color2D, 4);
-    memcpy(tess.vertexColors[ n2 ], backEnd.Color2D, 4);
-    memcpy(tess.vertexColors[ n3 ], backEnd.Color2D, 4);
-
+    // memcpy(tess.vertexColors[n0], backEnd.Color2D, 4);
+    // memcpy(tess.vertexColors[n1], backEnd.Color2D, 4);
+    // memcpy(tess.vertexColors[n2], backEnd.Color2D, 4);
+    // memcpy(tess.vertexColors[n3], backEnd.Color2D, 4);
+    // don't worry about strict aliasing 
+	*(int *)tess.vertexColors[n0] =
+		*(int *)tess.vertexColors[n1] =
+		*(int *)tess.vertexColors[n2] =
+		*(int *)tess.vertexColors[n3] = *(int *)backEnd.Color2D;
 
     tess.xyz[ n0 ][0] = cmd->x;
     tess.xyz[ n0 ][1] = cmd->y;
