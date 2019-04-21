@@ -19,8 +19,7 @@ DRAWSURF SORTING
 
 static inline void SWAP_DRAW_SURF( drawSurf_t *a, drawSurf_t* b )
 {
-    drawSurf_t tmp;
-    tmp = *a;
+    drawSurf_t tmp = *a;
     *a = *b;
     *b = tmp;
 /*
@@ -31,6 +30,12 @@ static inline void SWAP_DRAW_SURF( drawSurf_t *a, drawSurf_t* b )
 */
 }
 
+static void swap_surf(drawSurf_t* const base, int left, int right)
+{
+    drawSurf_t tmp = base[left];
+    base[left] = base[right];
+    base[right] = tmp;
+}
 
 /* this parameter defines the cutoff between using quick sort and
    insertion sort for arrays; arrays with lengths shorter or equal to the
@@ -54,6 +59,49 @@ static void shortsort( drawSurf_t * const lo, drawSurf_t * hi )
         SWAP_DRAW_SURF(max, hi);
         --hi;
     }
+}
+
+static void insert_sort( drawSurf_t* const v, int left, int right )
+{
+    while (right > left)
+    {
+        int max = left;
+        for (int i = left + 1; i <= right; ++i)
+        {
+            if ( v[i].sort > v[max].sort )
+            {
+                max = i;
+            }
+        }
+        swap_surf(v, max, right);
+        --right;
+    }
+}
+
+
+void quicksort_surf( drawSurf_t v[], int left, int right)
+{
+	int i, last;
+
+	if(left >= right) // do nothing if array contains fewer than two elements
+		return;
+
+    if (right - left <= CUTOFF)
+    {
+         insert_sort(v, left, right);
+    }
+
+	swap_surf(v, left, (left+right)/2);
+	
+	last = left;
+	for(i = left+1; i<=right; ++i)
+		if(v[i].sort < v[left].sort)
+			swap_surf(v, ++last, i);
+
+	swap_surf(v, left, last);
+
+	quicksort_surf(v, left, last-1);
+	quicksort_surf(v, last+1, right);
 }
 
 
@@ -241,8 +289,9 @@ void R_SortDrawSurfs( drawSurf_t *drawSurfs, int numDrawSurfs )
 
 	// sort the drawsurfs by sort type, then orientation, then shader
 // ORIGINAL ->
-    qsortFast (drawSurfs, numDrawSurfs, sizeof(drawSurf_t) );
-
+    // qsortFast (drawSurfs, numDrawSurfs, sizeof(drawSurf_t) );
+    
+    quicksort_surf(drawSurfs, 0, numDrawSurfs - 1);
     // try slow algorithm, still run very good
     //shortsort(drawSurfs, drawSurfs + numDrawSurfs - 1);
 
