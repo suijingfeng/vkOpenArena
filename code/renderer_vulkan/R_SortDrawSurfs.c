@@ -10,11 +10,11 @@
 
 #include "FixRenderCommandList.h"
 /*
-==========================================================================================
+==========================================================================
 
 DRAWSURF SORTING
 
-==========================================================================================
+==========================================================================
 */
 
 static inline void SWAP_DRAW_SURF( drawSurf_t *a, drawSurf_t* b )
@@ -79,8 +79,8 @@ static void qsortFast ( drawSurf_t * base,  unsigned num, unsigned width )
     int stkptr = 0;                 /* initialize stack */
     
     /* ends of sub-array currently sorting */
-    char* lo = base;
-    char* hi = base + (num-1);
+    char * lo = (char *)base;
+    char * hi = (char *)(base + (num-1));
     /* initialize limits */
 
     /* this entry point is for pseudo-recursion calling: setting
