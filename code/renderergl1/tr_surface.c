@@ -199,12 +199,13 @@ static void RB_SurfacePolychain( srfPoly_t *p )
 
 	// fan triangles into the tess array
 	int numv = tess.numVertexes;
-	for ( i = 0; i < p->numVerts; i++ )
+	int sn = p->numVerts;
+	for(i = 0; i < sn; i++)
     {
 		VectorCopy( p->verts[i].xyz, tess.xyz[numv] );
 		tess.texCoords[numv][0][0] = p->verts[i].st[0];
 		tess.texCoords[numv][0][1] = p->verts[i].st[1];
-			
+		
 		tess.vertexColors[numv][0] = p->verts[ i ].modulate[0];
 		tess.vertexColors[numv][1] = p->verts[ i ].modulate[1];
 		tess.vertexColors[numv][2] = p->verts[ i ].modulate[2];
@@ -215,7 +216,7 @@ static void RB_SurfacePolychain( srfPoly_t *p )
 
 	// generate fan indexes into the tess array
 	for ( i = 0; i < p->numVerts-2; i++ )
-    {
+	{
 		tess.indexes[tess.numIndexes + 0] = tess.numVertexes;
 		tess.indexes[tess.numIndexes + 1] = tess.numVertexes + i + 1;
 		tess.indexes[tess.numIndexes + 2] = tess.numVertexes + i + 2;
@@ -278,6 +279,7 @@ static void RB_SurfaceTriangles( srfTriangles_t *srf )
 		color[1] = dv->color[1];
 		color[2] = dv->color[2];
 		color[3] = dv->color[3];
+
 	}
 
 	for ( i = 0 ; i < srf->numVerts ; i++ )
@@ -287,6 +289,7 @@ static void RB_SurfaceTriangles( srfTriangles_t *srf )
 
 	tess.numVertexes += srf->numVerts;
 }
+
 
 
 static void RB_SurfaceBeam( void )
@@ -300,6 +303,7 @@ static void RB_SurfaceBeam( void )
 	direction[0] = backEnd.currentEntity->e.oldorigin[0] - backEnd.currentEntity->e.origin[0];
 	direction[1] = backEnd.currentEntity->e.oldorigin[1] - backEnd.currentEntity->e.origin[1];
 	direction[2] = backEnd.currentEntity->e.oldorigin[2] - backEnd.currentEntity->e.origin[2];
+
 
 	// this rotate and negate guarantees a vector not colinear with the original
   	perpvec[1] = -direction[0];
@@ -1023,6 +1027,8 @@ static void RB_SurfaceGrid( srfGridMesh_t *cv ) {
 				color[1] = dv->color[1];
 				color[2] = dv->color[2];
 				color[3] = dv->color[3];
+				
+				
 				*vDlightBits++ = dlightBits;
 				xyz += 4;
 				normal += 4;

@@ -407,13 +407,15 @@ void RE_RenderScene( const refdef_t *fd )
         // check if the areamask data has changed, which will force 
         // a reset of the visible leafs even if the view hasn't moved
 		// compare the area bits
-		for (i = 0 ; i < MAX_MAP_AREA_BYTES; i++)
+		for (i = 0 ; i < MAX_MAP_AREA_BYTES; ++i)
         {
 
 			if( tr.refdef.rd.areamask[i] ^ fd->areamask[i] )
             {
 			    tr.refdef.AreamaskModified = qtrue;
-                //ri.Printf(PRINT_ALL, "%d:%d,%d\n", i, tr.refdef.rd.areamask[i], fd->areamask[i]);
+//                if(tr.refdef.AreamaskModified)
+//                    ri.Printf(PRINT_ALL, "%d:%d,%d\n",
+//                            i, tr.refdef.rd.areamask[i], fd->areamask[i]);
                 break;
             }
 		}

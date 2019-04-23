@@ -182,7 +182,7 @@ static void RB_SurfaceSprite( void )
 	}
     else
     {
-		float ang = M_PI * backEnd.currentEntity->e.rotation / 180;
+		float ang = (M_PI / 180)* backEnd.currentEntity->e.rotation ;
 		float s = sin( ang );
 		float c = cos( ang );
 
@@ -195,7 +195,7 @@ static void RB_SurfaceSprite( void )
 
 	if ( backEnd.viewParms.isMirror )
     {
-		VectorSubtract(ORIGIN, left, left );
+		VectorSubtract( ORIGIN, left, left );
 	}
 
 	RB_AddQuadStamp( backEnd.currentEntity->e.origin, left, up, backEnd.currentEntity->e.shaderRGBA );
@@ -1297,8 +1297,7 @@ void RB_MDRSurfaceAnim( mdrSurface_t *surface )
 	}
 
 	tess.numVertexes += surface->numVerts;
-
- }
+}
 
 
 void (*rb_surfaceTable[SF_NUM_SURFACE_TYPES])( void *) =

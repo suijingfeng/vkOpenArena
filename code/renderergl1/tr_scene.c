@@ -322,6 +322,9 @@ void RE_RenderScene( const refdef_t *fd ) {
 		}
 
 		if ( areaDiff ) {
+            
+            ri.Printf(PRINT_ALL, "%d\n", i);
+
 			// a door just opened or something
 			tr.refdef.areamaskModified = qtrue;
 		}

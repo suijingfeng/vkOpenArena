@@ -3,6 +3,7 @@
 #include "vk_shade_geometry.h"
 #include "vk_frame.h"
 #include "vk_swapchain.h"
+#include "R_GetMicroSeconds.h"
 
 //  Synchronization of access to resources is primarily the responsibility
 //  of the application in Vulkan. The order of execution of commands with
@@ -78,6 +79,10 @@ VkFence fence_renderFinished;
    of that command, and defines a fence signal operation which sets the fence
    to the signaled state.
 */
+
+// static uint64_t t_frame_start = 0;
+
+
 
 void vk_create_sync_primitives(void)
 {
@@ -423,7 +428,8 @@ void vk_destroyFrameBuffers(void)
 
 void vk_begin_frame(void)
 {
-  
+    // t_frame_start = R_GetTimeMicroSeconds() ;
+
     // An application can acquire use of a presentable image with vkAcquireNextImageKHR. 
     // After acquiring a presentable image and before modifying it, the application must
     // use a synchronization primitive to ensure that the presentation engine has 
@@ -633,6 +639,8 @@ void vk_end_frame(void)
     VkResult result = qvkQueuePresentKHR(vk.queue, &present_info);
     if(result == VK_SUCCESS)
     {
+        // ri.Printf(PRINT_ALL, "frame time: %ld us \n", R_GetTimeMicroSeconds() - t_frame_start);
+
         return;
     }
     else if( (result == VK_ERROR_OUT_OF_DATE_KHR) || (result == VK_ERROR_SURFACE_LOST_KHR))
