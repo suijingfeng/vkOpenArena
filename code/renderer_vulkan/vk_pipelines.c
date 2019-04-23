@@ -36,12 +36,7 @@
 //
 
 #define MAX_VK_PIPELINES        256
-/*
-struct VK_PipelineMgr_t {
-    VkPipeline pipeline;
-    struct PipelineParameter_t par;
-};
-*/
+
 
 struct pipeline_tree_s {
 
@@ -57,22 +52,6 @@ static struct pipeline_tree_s mem_alloced[MAX_VK_PIPELINES];
 
 //static struct VK_PipelineMgr_t s_created_ppl[MAX_VK_PIPELINES];
 static uint32_t s_numPipelines = 0;
-
-
-/*
-struct PipelineParameter_t {
-    uint32_t state_bits; // GLS_XXX flags
-	
-    enum CullType_t face_culling;
-    enum Vk_Shader_Type shader_type;
-	enum Vk_Shadow_Phase shadow_phase;
-
-    VkBool32 polygon_offset;
-	VkBool32 clipping_plane;
-	VkBool32 mirror;
-	VkBool32 line_primitives;
-};
-*/
 
 
 static int32_t ComparepPplPar(const struct pipeline_tree_s * const pTree, 
@@ -781,55 +760,6 @@ void vk_create_pipeline(
 	VK_CHECK(qvkCreateGraphicsPipelines(vk.device, VK_NULL_HANDLE, 1, &create_info, NULL, pPipeLine));
 }
 
-/*
-static void vk_find_pipeline( uint32_t state_bits,
-        enum Vk_Shader_Type shader_type,
-        enum CullType_t face_culling,
-        enum Vk_Shadow_Phase shadow_phase,
-        VkBool32 isClippingPlane,
-        VkBool32 isMirror,
-        VkBool32 isPolygonOffset,
-        VkBool32 isLine, 
-        VkPipeline *pPl )
-{
-    uint32_t i = 0;
-	for (i = 0; i < s_numPipelines; i++)
-    {
-		if ( (s_created_ppl[i].par.state_bits == state_bits) &&
-             (s_created_ppl[i].par.shader_type == shader_type) &&
-			 (s_created_ppl[i].par.face_culling == face_culling) &&
-			 (s_created_ppl[i].par.polygon_offset == isPolygonOffset) &&
-             (s_created_ppl[i].par.shadow_phase == shadow_phase) &&
-			 (s_created_ppl[i].par.clipping_plane == isClippingPlane) &&
-			 (s_created_ppl[i].par.mirror == isMirror) &&
-             (s_created_ppl[i].par.line_primitives == isLine) )
-		{
-			*pPl = s_created_ppl[i].pipeline;
-            return;
-		}
-	}
-
-    vk_create_pipeline(state_bits, shader_type, face_culling, shadow_phase, 
-            isClippingPlane, isMirror, isPolygonOffset, isLine, pPl);
-  
-	s_created_ppl[s_numPipelines].pipeline = *pPl;
-    s_created_ppl[s_numPipelines].par.shader_type = shader_type;
-    s_created_ppl[s_numPipelines].par.state_bits = state_bits;
-    s_created_ppl[s_numPipelines].par.face_culling = face_culling;
-    s_created_ppl[s_numPipelines].par.shadow_phase = shadow_phase;
-    s_created_ppl[s_numPipelines].par.polygon_offset = isPolygonOffset;
-    s_created_ppl[s_numPipelines].par.clipping_plane = isClippingPlane;
-    s_created_ppl[s_numPipelines].par.mirror = isMirror;
-    s_created_ppl[s_numPipelines].par.line_primitives = isLine;
-
-    if (++s_numPipelines >= MAX_VK_PIPELINES)
-    {
-        // TODO: if not enough, Create new buffer, copy the old to the new buffer
-		ri.Error(ERR_DROP, " MAX MUNBERS OF PIPELINES HIT \n");
-	}
-}
-
-*/
 
 void vk_create_shader_stage_pipelines(shaderStage_t *pStage, shader_t* pShader)
 {
@@ -971,8 +901,4 @@ void vk_InitShaderStagePipeline(void)
             &plPar.pipeline );
 
     pPlRoot = InsertPipelineToTree(NULL, &plPar);
-
-//    mem_alloced[0].pipeline = plPar.pipeline;
-//    mem_alloced[0].par = plPar;
-//    s_numPipelines = 1;
 }
