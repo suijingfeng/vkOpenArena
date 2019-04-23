@@ -14,6 +14,7 @@ enum Vk_Shadow_Phase {
 
 
 struct PipelineParameter_t {
+    VkPipeline pipeline; // saved a copy for destroy. 
     uint32_t state_bits; // GLS_XXX flags
 	
     enum CullType_t face_culling;

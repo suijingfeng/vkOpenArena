@@ -44,16 +44,14 @@ struct VK_PipelineMgr_t {
 */
 
 struct pipeline_tree_s {
-    VkPipeline pipeline;
-    uint32_t count;
+
     struct PipelineParameter_t par;
+    
 	struct pipeline_tree_s * left; //left child
 	struct pipeline_tree_s * right; //right child
 };
 
 static struct pipeline_tree_s * pPlRoot = NULL;
-static struct pipeline_tree_s * pTemp = NULL; 
-
 
 static struct pipeline_tree_s mem_alloced[MAX_VK_PIPELINES];
 
@@ -107,8 +105,9 @@ static int32_t ComparepPplPar(const struct pipeline_tree_s * const pTree,
 }
 
 
+
 struct pipeline_tree_s *
-AddPipelineToTree(struct pipeline_tree_s * pTree, const struct PipelineParameter_t * const par)
+InsertPipelineToTree(struct pipeline_tree_s * pTree, const struct PipelineParameter_t * const par)
 {
     if( pTree == NULL)
 	{
@@ -116,35 +115,21 @@ AddPipelineToTree(struct pipeline_tree_s * pTree, const struct PipelineParameter
         // pTree = (struct pipeline_tree_s *) malloc( sizeof(struct pipeline_tree_s) );
 
         pTree = &mem_alloced[s_numPipelines++];
-
         pTree->par = *par;
-        pTree->count = 1;
-        // make new node
-
-        vk_create_pipeline( 
-         par->state_bits, par->shader_type, par->face_culling, par->shadow_phase,
-         par->clipping_plane, par->mirror, par->polygon_offset, par->line_primitives, 
-         &pTree->pipeline );
-
-        //////////
-        // s_created_ppl[s_numPipelines].pipeline = pTree->pipeline;
-        // s_created_ppl[s_numPipelines].par = *par;
-        // s_numPipelines++;
-        //////////
-
         pTree->left = pTree->right = NULL;
+
+        // Create and return a one-node tree;
     }
     else
     {
-        int64_t comp = ComparepPplPar(pTree, par);
+        int32_t comp = ComparepPplPar(pTree, par);
 
-        if ( comp == 0 ) {
-            pTree->count++;
-        }
-        else if( comp < 0 )
-		    pTree->left = AddPipelineToTree(pTree->left, par);
-        else
-		    pTree->right = AddPipelineToTree(pTree->right, par);
+        if( comp < 0 )
+		    pTree->left = InsertPipelineToTree(pTree->left, par);
+        else if( comp > 0 )
+		    pTree->right = InsertPipelineToTree(pTree->right, par);
+
+        // Else X is in the tree already,
     }
 
     return pTree;
@@ -157,48 +142,43 @@ void printPipelineTree(struct pipeline_tree_s * pTree)
 	{
 		printPipelineTree(pTree->left);
 
-        ri.Printf(PRINT_ALL, "state_bits:%d, count:%d\n", 
-            pTree->par.state_bits, pTree->count);
+        ri.Printf(PRINT_ALL, "state bits:%d, face culling:%d\n", 
+            pTree->par.state_bits, pTree->par.face_culling);
 
 		printPipelineTree(pTree->right);
 	}
 }
 
 
-void findPipelineTree(struct pipeline_tree_s * pTree , const struct PipelineParameter_t * const par)
+struct pipeline_tree_s *
+FindPipelineFromTree(struct pipeline_tree_s * pTree , const struct PipelineParameter_t * const par)
 {
-	if(pTree != NULL)
-	{
-        int64_t comp = ComparepPplPar(pTree, par);
-        if ( comp == 0 ) {
-              pTemp = pTree; 
-              return;
-        }
-        else if( comp < 0 )
-    		findPipelineTree(pTree->left, par);
-        else
-		    findPipelineTree(pTree->right, par);
-	}
+    if(pTree == NULL)
+        return NULL;
+    
+    int32_t comp = ComparepPplPar(pTree, par);
+    
+    if( comp < 0 )
+        return FindPipelineFromTree(pTree->left, par);
+    else if(comp > 0)
+        return FindPipelineFromTree(pTree->right, par);
+    else
+        return pTree;
 }
 
-void destroyPipelineTree(struct pipeline_tree_s * pTree)
+
+void DestroySearchTree(struct pipeline_tree_s * pTree)
 {
 	if(pTree != NULL)
 	{
 
-        if(pTree->left != NULL)
-        {
-            destroyPipelineTree(pTree->left);
-            ri.Printf(PRINT_ALL, "free left child.\n");
-        }
-        if(pTree->right != NULL)
-        {
-            destroyPipelineTree(pTree->right);
-            ri.Printf(PRINT_ALL, "free right child.\n");
-        }
+        DestroySearchTree(pTree->left);
+        ri.Printf(PRINT_ALL, "free left child.\n");
+        DestroySearchTree(pTree->right);
+        ri.Printf(PRINT_ALL, "free right child.\n");
 
-        
-        free(pTree);
+        qvkDestroyPipeline(vk.device, pTree->par.pipeline, NULL);
+        // free(pTree);
         memset(pTree, 0, sizeof(struct pipeline_tree_s));
 	}
 }
@@ -867,7 +847,7 @@ void vk_create_shader_stage_pipelines(shaderStage_t *pStage, shader_t* pShader)
         ri.Error(ERR_FATAL, "Vulkan: could not create pipelines for q3 shader '%s'\n", pShader->name);
 
     struct PipelineParameter_t plPar;
-//    struct pipeline_tree_s * plTr = NULL; 
+    struct pipeline_tree_s * plTr = NULL; 
     
 
     plPar.state_bits = pStage->stateBits; 
@@ -884,44 +864,99 @@ void vk_create_shader_stage_pipelines(shaderStage_t *pStage, shader_t* pShader)
     vk_find_pipeline( pStage->stateBits, def_shader_type, pShader->cullType, SHADOWS_RENDERING_DISABLED,
             VK_FALSE, VK_FALSE, pShader->polygonOffset, VK_FALSE, &pStage->vk_pipeline);
 */  
-    AddPipelineToTree(pPlRoot, &plPar);
-    findPipelineTree(pPlRoot, &plPar);
+    plTr = FindPipelineFromTree(pPlRoot, &plPar);
+    
+    if(plTr == NULL)
+    {
+        vk_create_pipeline( 
+         plPar.state_bits, plPar.shader_type, plPar.face_culling, plPar.shadow_phase,
+         plPar.clipping_plane, plPar.mirror, plPar.polygon_offset, plPar.line_primitives, 
+         &plPar.pipeline );
 
-    pStage->vk_pipeline = pTemp->pipeline;
+        InsertPipelineToTree(pPlRoot, &plPar);
 
+        pStage->vk_pipeline = plPar.pipeline;
+    }
+    else 
+    {
+        pStage->vk_pipeline = plTr->par.pipeline;
+    }
 
     plPar.clipping_plane = VK_TRUE;
 /*
     vk_find_pipeline( pStage->stateBits, def_shader_type, pShader->cullType, SHADOWS_RENDERING_DISABLED,
             VK_TRUE, VK_FALSE, pShader->polygonOffset, VK_FALSE, &pStage->vk_portal_pipeline);
 */
-    AddPipelineToTree(pPlRoot, &plPar);
-    findPipelineTree(pPlRoot, &plPar);
+    plTr = FindPipelineFromTree(pPlRoot, &plPar);
+    
+    if(plTr == NULL)
+    {
+        vk_create_pipeline( 
+         plPar.state_bits, plPar.shader_type, plPar.face_culling, plPar.shadow_phase,
+         plPar.clipping_plane, plPar.mirror, plPar.polygon_offset, plPar.line_primitives, 
+         &plPar.pipeline );
 
-    pStage->vk_portal_pipeline = pTemp->pipeline;
+        InsertPipelineToTree(pPlRoot, &plPar);
+
+        pStage->vk_portal_pipeline = plPar.pipeline;
+    }
+    else 
+    {
+        pStage->vk_portal_pipeline = plTr->par.pipeline;
+    }
  
     plPar.mirror = VK_TRUE;
 /*
     vk_find_pipeline( pStage->stateBits, def_shader_type, pShader->cullType, SHADOWS_RENDERING_DISABLED,
             VK_TRUE, VK_TRUE, pShader->polygonOffset, VK_FALSE, &pStage->vk_mirror_pipeline);
 */
-    AddPipelineToTree(pPlRoot, &plPar);
-    findPipelineTree(pPlRoot, &plPar);
+    plTr = FindPipelineFromTree(pPlRoot, &plPar);
+    
+    if(plTr == NULL)
+    {
+        vk_create_pipeline( 
+         plPar.state_bits, plPar.shader_type, plPar.face_culling, plPar.shadow_phase,
+         plPar.clipping_plane, plPar.mirror, plPar.polygon_offset, plPar.line_primitives, 
+         &plPar.pipeline );
 
-    pStage->vk_mirror_pipeline = pTemp->pipeline;
+        InsertPipelineToTree(pPlRoot, &plPar);
 
-
+        pStage->vk_mirror_pipeline = plPar.pipeline;
+    }
+    else 
+    {
+        pStage->vk_mirror_pipeline = plTr->par.pipeline;
+    }
 }
 
+void vk_destroyShaderStagePipeline(void)
+{
+    ri.Printf(PRINT_ALL, " Destroy %d shader stage pipeline. \n", s_numPipelines);
+    // 
+    qvkDeviceWaitIdle(vk.device);
 
+    DestroySearchTree(pPlRoot);
+    pPlRoot = NULL;
+
+    memset(mem_alloced, 0, s_numPipelines);
+    s_numPipelines = 0;
+}
 
 void vk_InitShaderStagePipeline(void)
 {
-    //pPlRoot = NULL;
+    if(pPlRoot != NULL)
+    {
+        DestroySearchTree(pPlRoot);
+        pPlRoot = NULL;
+        
+        memset(mem_alloced, 0, s_numPipelines);
+        s_numPipelines = 0;
+    }
 
+    
     struct PipelineParameter_t plPar;
     
-    plPar.state_bits = 0; 
+    plPar.state_bits = 256; 
     plPar.face_culling = CT_FRONT_SIDED;
     plPar.shader_type = ST_SINGLE_TEXTURE; 
     plPar.shadow_phase = SHADOWS_RENDERING_DISABLED;
@@ -930,37 +965,14 @@ void vk_InitShaderStagePipeline(void)
     plPar.clipping_plane = VK_FALSE;
     plPar.mirror = VK_FALSE;
 
-    pPlRoot = AddPipelineToTree(NULL, &plPar);
+    vk_create_pipeline( 
+            plPar.state_bits, plPar.shader_type, plPar.face_culling, plPar.shadow_phase,
+            plPar.clipping_plane, plPar.mirror, plPar.polygon_offset, plPar.line_primitives, 
+            &plPar.pipeline );
 
-    mem_alloced[0].pipeline = pPlRoot->pipeline;
-    mem_alloced[0].par = plPar;
+    pPlRoot = InsertPipelineToTree(NULL, &plPar);
 
-    s_numPipelines = 1;
-
+//    mem_alloced[0].pipeline = plPar.pipeline;
+//    mem_alloced[0].par = plPar;
+//    s_numPipelines = 1;
 }
-
-
-void vk_destroyShaderStagePipeline(void)
-{
-    ri.Printf(PRINT_ALL, " Destroy %d shader stage pipeline. \n", s_numPipelines);
-    // 
-    qvkDeviceWaitIdle(vk.device);
-    uint32_t i;
-    for (i = 0; i < s_numPipelines; i++)
-    {
-//		qvkDestroyPipeline(vk.device, s_created_ppl[i].pipeline, NULL);
-//      memset(&s_created_ppl[i], 0, sizeof(struct VK_PipelineMgr_t));
-        
-        qvkDestroyPipeline(vk.device, mem_alloced[i].pipeline, NULL);
-    }
-
-    memset(mem_alloced, 0, s_numPipelines);
-
-    s_numPipelines = 0;
-
-//    destroyPipelineTree(pPlRoot);
-
-    pPlRoot = NULL;
-}
-
-
