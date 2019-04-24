@@ -1324,7 +1324,7 @@ The current text pointer is at the explicit text definition of the shader.
 Parse it into the global shader variable.  Later functions will optimize it.
 =================
 */
-qboolean ParseShader( char **text )
+qboolean ParseShader( char ** text )
 {
 
 	int s = 0;

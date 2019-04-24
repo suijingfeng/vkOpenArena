@@ -1,0 +1,7 @@
+#ifndef R_SHADER_TEXT_H_
+#define R_SHADER_TEXT_H_
+
+void SetShaderTextHashTableSizes( char * const pText );
+char* FindShaderInShaderText( const char * pShaderName, char * const pShaderText );
+
+#endif

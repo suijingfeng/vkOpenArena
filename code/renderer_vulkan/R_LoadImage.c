@@ -81,7 +81,7 @@ R_LoadNSE(const char * const pName, unsigned char **pic, int *width, int *height
         pPt[3] = ExTable[i][3];
         pPt[4] = ExTable[i][4];
 
-        ri.Printf( PRINT_WARNING, " Loading %s \n", localName);
+        // ri.Printf( PRINT_WARNING, " Loading %s \n", localName);
         
         fnImgLdrs[i](localName, pic, width, height );
 
@@ -89,7 +89,7 @@ R_LoadNSE(const char * const pName, unsigned char **pic, int *width, int *height
             return;
     }
 
-    ri.Printf( PRINT_ERROR, " Failed loading %s. \n", pName);
+//    ri.Printf( PRINT_WARNING, " Failed loading %s. \n", pName);
 }
 
 
@@ -107,7 +107,7 @@ void R_LoadImage(const char * pName, unsigned char **pic, int *width, int *heigh
         {
             // have extention
             pExt = pSrc + 1;
-            break;
+            // break;
         }
     }
 
@@ -151,7 +151,7 @@ void R_LoadImage(const char * pName, unsigned char **pic, int *width, int *heigh
                 return;
         }
         else {
-            ri.Printf( PRINT_WARNING, " Unsupported image extension: %s.\n", pName);
+            ri.Printf( PRINT_WARNING, " Unsupported image extension: %s \n", pName);
         }
     }
 

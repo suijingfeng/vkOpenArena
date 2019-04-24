@@ -2493,7 +2493,7 @@ shader_t *R_FindShader( const char *name, int lightmapIndex, qboolean mipRawImag
 		}
 
 		if ( !ParseShader( &shaderText ) ) {
-			// had errors, so use default shader
+			ri.Printf( PRINT_WARNING, "ParseShader: %s had errors\n", strippedName );
 			shader.defaultShader = qtrue;
 		}
 		sh = FinishShader();

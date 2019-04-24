@@ -32,7 +32,7 @@ asked for again.
 */
 qhandle_t RE_RegisterModel( const char *name )
 {
-    ri.Printf( PRINT_ALL, "RegisterModel: %s. \n", name);
+//    ri.Printf( PRINT_ALL, "RegisterModel: %s. \n", name);
 
     qboolean	orgNameFailed = qfalse;
 	int			orgLoader = -1;
@@ -67,7 +67,7 @@ qhandle_t RE_RegisterModel( const char *name )
 
 
 	// allocate a new model_t
-    ri.Printf( PRINT_ALL, "Allocate Memory for %s. \n", name);
+    // ri.Printf( PRINT_ALL, "Allocate Memory for %s. \n", name);
 	
     model_t* mod = ri.Hunk_Alloc( sizeof( model_t ), h_low );
 

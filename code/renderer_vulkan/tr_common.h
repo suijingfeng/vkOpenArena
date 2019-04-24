@@ -75,10 +75,7 @@ void FastNormalize1f(float v[3]);
 char* R_SkipPath(char *pathname);
 void R_StripExtension(const char *in, char *out, int destsize);
 
-char* R_ParseExt(char** data_p, qboolean allowLineBreaks);
-int R_Compress( char *data_p );
-int R_GetCurrentParseLine( void );
-void R_BeginParseSession(const char* name);
+
 
 void SetPlaneSignbits( struct cplane_s *out );
 int BoxOnPlaneSide (vec3_t emins, vec3_t emaxs, struct cplane_s *plane);
@@ -90,8 +87,6 @@ float MakeTwoPerpVectors(const float forward[3], float right[3], float up[3]);
 
 
 void ClearBounds( vec3_t mins, vec3_t maxs );
-qboolean SkipBracedSection (char **program, int depth);
-
 
 
 #define VectorCopy2(a,b)		((b)[0]=(a)[0],(b)[1]=(a)[1])

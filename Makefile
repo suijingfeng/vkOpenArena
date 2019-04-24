@@ -1599,6 +1599,8 @@ Q3VKOBJ = \
   $(B)/renderer_vulkan/tr_shade_calc.o \
   \
   $(B)/renderer_vulkan/tr_shader.o \
+  $(B)/renderer_vulkan/R_Parser.o \
+  $(B)/renderer_vulkan/R_ShaderText.o \
   $(B)/renderer_vulkan/R_FindShader.o \
   $(B)/renderer_vulkan/R_ShaderCommands.o \
   $(B)/renderer_vulkan/FixRenderCommandList.o \
