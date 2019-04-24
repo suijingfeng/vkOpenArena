@@ -13,7 +13,7 @@ static char** shaderTextHashTable[MAX_SHADERTEXT_HASH] ={ 0 };
 static shader_t* hashTable[FILE_HASH_SIZE] = {0};
 
 
-static char *s_shaderText = NULL;
+static char * s_shaderText = NULL;
 
 /*
 ================
@@ -368,32 +368,26 @@ qhandle_t RE_RegisterShaderFromImage(const char *name, int lightmapIndex, image_
 }
 
 
-/*
-====================
-ScanAndLoadShaderFiles
-
-Finds and loads all .shader files, combining them into
-a single large text block that can be scanned for shader names
-=====================
-*/
 
 static void BuildSingleLargeBuffer(char* buffers[], const int nShaderFiles, const int sum)
 {
 	// build single large buffer
 	s_shaderText = ri.Hunk_Alloc( sum + nShaderFiles*2, h_low );
-	s_shaderText[ 0 ] = '\0';
 
-    char* textEnd = s_shaderText;
-    int n = nShaderFiles - 1;
+	memset( s_shaderText, 0, nShaderFiles*2);
+
+    char* pTextEnd = s_shaderText;
+    
+    int n;
     // free in reverse order, so the temp files are all dumped
-    for ( n = nShaderFiles - 1; n >= 0 ; n-- )
+    for ( n = nShaderFiles - 1; n >= 0 ; --n )
     {
         if ( buffers[n] )
         {
-            strcat( textEnd, buffers[n] );
-            strcat( textEnd, "\n" );
+            strcat( pTextEnd, buffers[n] );
+            strcat( pTextEnd, "\n" );
 
-            textEnd += strlen(buffers[n]) + 1;
+            pTextEnd += strlen(buffers[n]) + 1;
 
             ri.FS_FreeFile( buffers[n] );
         }
@@ -501,53 +495,106 @@ static void SetShaderTextHashTableSizes( void )
 }
 
 
+/*
+====================
+ScanAndLoadShaderFiles
+
+Finds and loads all .shader files, combining them into
+a single large text block that can be scanned for shader names
+=====================
+*/
+
 #define	MAX_SHADER_FILES	4096
 void ScanAndLoadShaderFiles( void )
 {
-    ri.Printf( PRINT_ALL, "ScanAndLoadShaderFiles\n" );
+    ri.Printf( PRINT_ALL, " ScanAndLoadShaderFiles \n" );
 
-	char *buffers[MAX_SHADER_FILES] = {0};
-	int numShaderFiles = 0;
-
+	uint32_t numShaderFiles = 0;
 
 	// scan for shader files
-	char** shaderFiles = ri.FS_ListFiles( "scripts", ".shader", &numShaderFiles );
+	char** ppShaderFiles = ri.FS_ListFiles( "scripts", ".shader", &numShaderFiles );
 
-	if ( !shaderFiles || !numShaderFiles )
+	if ( (ppShaderFiles == NULL) || (numShaderFiles == 0 ))
 	{
 		ri.Printf( PRINT_WARNING, "WARNING: no shader files found\n" );
 		return;
 	}
 
-	if ( numShaderFiles > MAX_SHADER_FILES ) {
+	if ( numShaderFiles > MAX_SHADER_FILES )
+    {
 		numShaderFiles = MAX_SHADER_FILES;
         ri.Printf( PRINT_WARNING, "numShaderFiles > MAX_SHADER_FILES\n" );
 	}
 
+
 	// load and parse shader files
     long sum = 0;
-    int i;
-	for ( i = 0; i < numShaderFiles; i++ )
-	{
-		char filename[128] = {0};
+    char * pBuffers[MAX_SHADER_FILES] = {0};
 
-		snprintf( filename, sizeof( filename ), "scripts/%s", shaderFiles[i] );
-		ri.Printf( PRINT_ALL, "...loading '%s'\n", filename );
-		long summand = ri.FS_ReadFile( filename, &buffers[i] );
+    uint32_t i;
+	for ( i = 0; i < numShaderFiles; ++i )
+	{
+		char filename[MAX_QPATH] = {0};
+
+		snprintf( filename, sizeof( filename ), "scripts/%s", ppShaderFiles[i] );
 		
-		if ( !buffers[i] )
+        // ri.Printf( PRINT_ALL, "...loading '%s'\n", filename );
+		
+        long summand = ri.FS_ReadFile( filename, &pBuffers[i] );
+		
+		if ( NULL == pBuffers[i] )
 			ri.Error( ERR_DROP, "Couldn't load %s", filename );
 		
 		// Do a simple check on the shader structure in that file
         // to make sure one bad shader file cannot fuck up all other shaders.
-	    Shader_DoSimpleCheck(filename, buffers[i]);
+	    // Shader_DoSimpleCheck(filename, buffers[i]);
 
-		if (buffers[i])
+
+		// Do a simple check on the shader structure in that file to make sure one bad shader file cannot fuck up all other shaders.
+		char* p = pBuffers[i];
+		R_BeginParseSession(filename);
+		while(1)
+		{
+			char* token = R_ParseExt(&p, qtrue);
+			char shaderName[MAX_QPATH]={0};
+			if(!*token)
+				break;
+
+			strncpy(shaderName, token, sizeof(shaderName));
+			int shaderLine = R_GetCurrentParseLine();
+
+			token = R_ParseExt(&p, qtrue);
+			if(token[0] != '{' || token[1] != '\0')
+			{
+				ri.Printf(PRINT_WARNING, "WARNING: Ignoring shader file %s. Shader \"%s\" on line %d missing opening brace",
+							filename, shaderName, shaderLine);
+				if (token[0])
+				{
+					ri.Printf(PRINT_WARNING, " (found \"%s\" on line %d)", token, R_GetCurrentParseLine());
+				}
+				ri.Printf(PRINT_WARNING, ".\n");
+				ri.FS_FreeFile(pBuffers[i]);
+				pBuffers[i] = NULL;
+				break;
+			}
+
+			if(!SkipBracedSection(&p, 1))
+			{
+				ri.Printf(PRINT_WARNING, "WARNING: Ignoring shader file %s. Shader \"%s\" on line %d missing closing brace.\n",
+							filename, shaderName, shaderLine);
+				ri.FS_FreeFile(pBuffers[i]);
+				pBuffers[i] = NULL;
+				break;
+			}
+		}
+
+
+		if (pBuffers[i])
 			sum += summand;		
 	}
 
 	// build single large buffer
-    BuildSingleLargeBuffer(buffers, numShaderFiles, sum);
+    BuildSingleLargeBuffer(pBuffers, numShaderFiles, sum);
    
     FunLogging("BuildSingleLargeBuffer.txt", s_shaderText);
 	
@@ -557,7 +604,7 @@ void ScanAndLoadShaderFiles( void )
 
 
 	// free up memory
-	ri.FS_FreeFileList( shaderFiles );
+	ri.FS_FreeFileList( ppShaderFiles );
 
 
     SetShaderTextHashTableSizes();

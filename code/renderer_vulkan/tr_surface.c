@@ -535,26 +535,24 @@ void RB_SurfaceRailCore( void ) {
 	DoRailCore( start, end, right, len, r_railCoreWidth->integer );
 }
 
-/*
-** RB_SurfaceLightningBolt
-*/
-void RB_SurfaceLightningBolt( void ) {
-	refEntity_t *e;
-	int			len;
+
+
+void RB_SurfaceLightningBolt( void )
+{
 	vec3_t		right;
 	vec3_t		vec;
 	vec3_t		start, end;
 	vec3_t		v1, v2;
 	int			i;
 
-	e = &backEnd.currentEntity->e;
+	refEntity_t * e = &backEnd.currentEntity->e;
 
 	VectorCopy( e->oldorigin, end );
 	VectorCopy( e->origin, start );
 
 	// compute variables
 	VectorSubtract( end, start, vec );
-	len = VectorNormalize( vec );
+	int len = VectorNormalize( vec );
 
 	// compute side vector
 	VectorSubtract( start, backEnd.viewParms.or.origin, v1 );
@@ -564,10 +562,11 @@ void RB_SurfaceLightningBolt( void ) {
 	CrossProduct( v1, v2, right );
 	VectorNormalize( right );
 
-	for ( i = 0 ; i < 4 ; i++ ) {
+	for ( i = 0 ; i < 4 ; i++ )
+    {
 		vec3_t	temp;
 
-		DoRailCore( start, end, right, len, 8 );
+		DoRailCore( start, end, right, len, 16);
 		RotatePointAroundVector( temp, vec, right, 45 );
 		VectorCopy( temp, right );
 	}
@@ -779,7 +778,8 @@ void RB_SurfaceMesh(md3Surface_t *surface) {
 RB_SurfaceFace
 ==============
 */
-void RB_SurfaceFace( srfSurfaceFace_t *surf ) {
+void RB_SurfaceFace( srfSurfaceFace_t *surf )
+{
 	int			i;
 	unsigned	*indices, *tessIndexes;
 	float		*v;

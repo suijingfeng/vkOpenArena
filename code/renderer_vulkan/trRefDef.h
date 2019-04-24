@@ -54,10 +54,10 @@ typedef struct {
 	struct dlight_s	*dlights;
 
 	int			numPolys;
-	struct srfPoly_s	*polys;
+	struct srfPoly_s* polys;
 
 	int			numDrawSurfs;
-	struct drawSurf_s	*drawSurfs;
+	struct drawSurf_s * drawSurfs;
 } trRefdef_t;
 
 #endif

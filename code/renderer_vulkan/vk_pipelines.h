@@ -13,21 +13,6 @@ enum Vk_Shadow_Phase {
 
 
 
-struct PipelineParameter_t {
-    VkPipeline pipeline; // saved a copy for destroy. 
-    uint32_t state_bits; // GLS_XXX flags
-	
-    enum CullType_t face_culling;
-    enum Vk_Shader_Type shader_type;
-	enum Vk_Shadow_Phase shadow_phase;
-
-    VkBool32 polygon_offset;
-	VkBool32 clipping_plane;
-	VkBool32 mirror;
-	VkBool32 line_primitives;
-};
-
-
 struct GlobalPipelinesManager_t
 {
 	//

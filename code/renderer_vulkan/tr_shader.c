@@ -46,16 +46,16 @@ static	texModInfo_t	texMods[MAX_SHADER_STAGES][TR_MAX_TEXMODS];
 ParseVector
 ===============
 */
-static qboolean ParseVector( char **text, int count, float *v ) {
-	char	*token;
-	int		i;
-
+static qboolean ParseVector( char **text, int count, float *v )
+{
 	// FIXME: spaces are currently required after parens, should change parseext...
-	token = R_ParseExt( text, qfalse );
+	char* token = R_ParseExt( text, qfalse );
 	if ( strcmp( token, "(" ) ) {
 		ri.Printf( PRINT_WARNING, "WARNING: missing parenthesis in shader '%s'\n", shader.name );
 		return qfalse;
 	}
+
+    int	i;
 
 	for ( i = 0 ; i < count ; i++ ) {
 		token = R_ParseExt( text, qfalse );
@@ -2113,7 +2113,7 @@ static void CreateExternalShaders( void )
 void R_InitShaders( void )
 {
 	
-    ri.Printf( PRINT_ALL, "Initializing Shaders\n" );
+    ri.Printf( PRINT_ALL, " Initializing Shaders \n" );
     
     R_ClearShaderHashTable();
 

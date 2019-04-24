@@ -9,11 +9,16 @@
 
 #include "FixRenderCommandList.h"
 
-void RB_RenderDrawSurfList( drawSurf_t* drawSurfs, int numDrawSurfs )
+void RB_RenderDrawSurfList( drawSurf_t* pDrawSurfs, int numDrawSurfs, trRefdef_t * pRefdef, viewParms_t * pViewPar )
 {
-	shader_t		*shader, *oldShader;
-	int				fogNum, oldFogNum;
-	int				dlighted, oldDlighted;
+
+    backEnd.refdef = *pRefdef;
+    backEnd.viewParms = *pViewPar;
+
+
+	shader_t		*oldShader;
+	int				oldFogNum;
+	int				oldDlighted;
 	// save original time for entity shader offsets
 	float originalTime = backEnd.refdef.floatTime;
 
@@ -51,36 +56,47 @@ void RB_RenderDrawSurfList( drawSurf_t* drawSurfs, int numDrawSurfs )
 
 
 	// draw everything
-    int entityNum;
+
 	int oldEntityNum = -1;
 	backEnd.currentEntity = &tr.worldEntity;
 	oldShader = NULL;
 	oldFogNum = -1;
 	oldDlighted = qfalse;
-	int oldSort = -1;
+
+	unsigned int oldSort = -1;
 
 	backEnd.pc.c_surfaces += numDrawSurfs;
 
-    drawSurf_t* drawSurf;
+
+    drawSurf_t* pSurf = pDrawSurfs;
+
 
     int	i;
 
-	for (i = 0, drawSurf = drawSurfs ; i < numDrawSurfs ; i++, drawSurf++)
+	for (i = 0; i < numDrawSurfs; ++i, ++pSurf)
     {
-		if ( (int)drawSurf->sort == oldSort ) {
+		
+        if ( pSurf->sort == oldSort )
+        {
 			// fast path, same as previous sort
-			rb_surfaceTable[ *drawSurf->surface ]( drawSurf->surface );
+			rb_surfaceTable[ *pSurf->surface ]( pSurf->surface );
 			continue;
 		}
-		oldSort = drawSurf->sort;
-		R_DecomposeSort( drawSurf->sort, &entityNum, &shader, &fogNum, &dlighted );
+
+		oldSort = pSurf->sort;
+		
+        int entityNum, fogNum, dlighted;
+        shader_t* shader;
+
+        R_DecomposeSort( pSurf->sort, &entityNum, &shader, &fogNum, &dlighted );
 
 		//
 		// change the tess parameters if needed
 		// a "entityMergable" shader is a shader that can have surfaces from seperate
 		// entities merged into a single batch, like smoke and blood puff sprites
-		if (shader != oldShader || fogNum != oldFogNum || dlighted != oldDlighted 
-			|| ( entityNum != oldEntityNum && !shader->entityMergable ) ) {
+		if ( (shader != oldShader) || (fogNum != oldFogNum) || (dlighted != oldDlighted)
+			|| ( entityNum != oldEntityNum && !shader->entityMergable ) )
+        {
 			if (oldShader != NULL) {
 				RB_EndSurface();
 			}
@@ -134,7 +150,7 @@ void RB_RenderDrawSurfList( drawSurf_t* drawSurfs, int numDrawSurfs )
         }
 
 		// add the triangles for this surface
-		rb_surfaceTable[ *drawSurf->surface ]( drawSurf->surface );
+		rb_surfaceTable[ *pSurf->surface ]( pSurf->surface );
 	}
 
 	backEnd.refdef.floatTime = originalTime;

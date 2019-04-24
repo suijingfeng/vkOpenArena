@@ -38,6 +38,21 @@
 #define MAX_VK_PIPELINES        256
 
 
+struct PipelineParameter_t {
+    VkPipeline pipeline; // saved a copy for destroy. 
+    uint32_t state_bits; // GLS_XXX flags
+	
+    enum CullType_t face_culling;
+    enum Vk_Shader_Type shader_type;
+	enum Vk_Shadow_Phase shadow_phase;
+
+    VkBool32 polygon_offset;
+	VkBool32 clipping_plane;
+	VkBool32 mirror;
+	VkBool32 line_primitives;
+};
+
+
 struct pipeline_tree_s {
 
     struct PipelineParameter_t par;
@@ -148,13 +163,15 @@ FindPipelineFromTree(struct pipeline_tree_s * pTree , const struct PipelineParam
 
 void DestroySearchTree(struct pipeline_tree_s * pTree)
 {
+    // 
+    qvkDeviceWaitIdle(vk.device);
 	if(pTree != NULL)
 	{
 
         DestroySearchTree(pTree->left);
-        ri.Printf(PRINT_ALL, "free left child.\n");
+        // ri.Printf(PRINT_ALL, "free left child.\n");
         DestroySearchTree(pTree->right);
-        ri.Printf(PRINT_ALL, "free right child.\n");
+        // ri.Printf(PRINT_ALL, "free right child.\n");
 
         qvkDestroyPipeline(vk.device, pTree->par.pipeline, NULL);
         // free(pTree);
@@ -763,7 +780,7 @@ void vk_create_pipeline(
 
 void vk_create_shader_stage_pipelines(shaderStage_t *pStage, shader_t* pShader)
 {
-    ri.Printf(PRINT_ALL, " Create shader stage pipeline for %s. \n", pShader->name);
+    // ri.Printf(PRINT_ALL, " Create shader stage pipeline for %s. \n", pShader->name);
     
     enum Vk_Shader_Type def_shader_type = ST_SINGLE_TEXTURE;
  
@@ -862,8 +879,7 @@ void vk_create_shader_stage_pipelines(shaderStage_t *pStage, shader_t* pShader)
 void vk_destroyShaderStagePipeline(void)
 {
     ri.Printf(PRINT_ALL, " Destroy %d shader stage pipeline. \n", s_numPipelines);
-    // 
-    qvkDeviceWaitIdle(vk.device);
+
 
     DestroySearchTree(pPlRoot);
     pPlRoot = NULL;
@@ -882,7 +898,6 @@ void vk_InitShaderStagePipeline(void)
         memset(mem_alloced, 0, s_numPipelines);
         s_numPipelines = 0;
     }
-
     
     struct PipelineParameter_t plPar;
     

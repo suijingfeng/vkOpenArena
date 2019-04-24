@@ -385,10 +385,8 @@ void R_IssueRenderCommands( qboolean runPerformanceCounters )
                     RB_EndSurface();
                 }
 
-                backEnd.refdef = cmd->refdef;
-                backEnd.viewParms = cmd->viewParms;
 
-                RB_RenderDrawSurfList( cmd->drawSurfs, cmd->numDrawSurfs );
+                RB_RenderDrawSurfList( cmd->drawSurfs, cmd->numDrawSurfs, &cmd->refdef, &cmd->viewParms );
                 
                 data += sizeof(drawSurfsCommand_t);
             } break;

@@ -248,8 +248,8 @@ shader_t* R_GeneratePermanentShader(shaderStage_t* pStgTab, shader_t* pSdr)
     
     R_UpdateShaderHashTable(newShader);
 
-    ri.Printf( PRINT_WARNING, "index:%d, newindex:%d, %s\n",
-            newShader->index, newShader->sortedIndex, newShader->name);
+//    ri.Printf( PRINT_WARNING, "index:%d, newindex:%d, %s\n",
+//            newShader->index, newShader->sortedIndex, newShader->name);
 	
     return newShader;
 }
