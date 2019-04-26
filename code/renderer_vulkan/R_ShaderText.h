@@ -4,4 +4,6 @@
 void SetShaderTextHashTableSizes(const char * const pText );
 char* FindShaderInShaderText( const char * pShaderName );
 
+void printShaderTextHashTable_f(void);
+
 #endif

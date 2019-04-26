@@ -5,7 +5,7 @@ char* R_ParseExt(char** data_p, qboolean allowLineBreaks);
 int R_Compress( char *data_p );
 int R_GetCurrentParseLine( void );
 void R_BeginParseSession(const char* name);
-qboolean SkipBracedSection(char **program, int depth);
+qboolean SkipBracedSection(const char **program, int depth);
 
 
 #endif

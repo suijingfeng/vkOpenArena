@@ -1935,7 +1935,7 @@ shader_t* FinishShader( void )
 //========================================================================================
 
 
-void R_SetTheShader( const char *name, int lightmapIndex )
+void R_SetTheShader( const char * name, int lightmapIndex )
 {
 
 	// clear the global shader

@@ -16,6 +16,7 @@
 #include "glConfig.h"
 #include "ref_import.h"
 #include "R_ShaderCommands.h"
+#include "R_ShaderText.h"
 #include "tr_font.h"
 #include "tr_cmds.h"
 #include "tr_noise.h"
@@ -110,6 +111,7 @@ void R_Init( void )
 
     ri.Cmd_AddCommand( "printPipelineTree", printPipelineTree_f );
 
+    ri.Cmd_AddCommand( "printShaderTextHashTable", printShaderTextHashTable_f);
 
     R_InitScene();
 
@@ -170,6 +172,7 @@ void RE_Shutdown( qboolean destroyWindow )
     ri.Cmd_RemoveCommand("listSortedShader");
     ri.Cmd_RemoveCommand("printPipelineTree");
 
+    ri.Cmd_RemoveCommand("printShaderTextHashTable");
 
 	R_DoneFreeType();
 

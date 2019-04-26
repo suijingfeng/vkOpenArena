@@ -11,7 +11,7 @@
 static shader_t* hashTable[FILE_HASH_SIZE] = {0};
 
 
-static char * s_shaderText = NULL;
+static char * s_pShaderText = NULL;
 
 /*
 ================
@@ -79,7 +79,7 @@ most world construction surfaces.
 
 shader_t* R_FindShader( const char *name, int lightmapIndex, qboolean mipRawImage )
 {
-	char strippedName[MAX_QPATH] = {0};
+
 
 	if ( name == NULL )
     {
@@ -99,11 +99,14 @@ shader_t* R_FindShader( const char *name, int lightmapIndex, qboolean mipRawImag
 		ri.Printf( PRINT_WARNING, "WARNING: shader '%s' has invalid lightmap index of %d\n", name, lightmapIndex  );
 		lightmapIndex = LIGHTMAP_BY_VERTEX;
 	}
-    
+   
+
+    char strippedName[MAX_QPATH] = {0};
 
 	R_StripExtension(name, strippedName, sizeof(strippedName));
 
-    int	hash = generateHashValue(strippedName, FILE_HASH_SIZE);
+
+    uint32_t hash = generateHashValue(strippedName, FILE_HASH_SIZE);
 
 	//
 	// see if the shader is already loaded
@@ -116,7 +119,7 @@ shader_t* R_FindShader( const char *name, int lightmapIndex, qboolean mipRawImag
             // then a default shader is created with lightmapIndex == LIGHTMAP_NONE, so we
             // have to check all default shaders otherwise for every call to R_findShader
             // with that same strippedName a new default shader is created.
-            if ( ( 0 == Q_stricmp(sh->name, strippedName) ) &&  (sh->lightmapIndex == lightmapIndex || sh->defaultShader) )
+            if ( ( 0 == Q_stricmp(sh->name, strippedName) ) && ((sh->lightmapIndex == lightmapIndex) || sh->defaultShader) )
             {
                 // match found
                 return sh;
@@ -131,7 +134,7 @@ shader_t* R_FindShader( const char *name, int lightmapIndex, qboolean mipRawImag
 	//
 	// attempt to define shader from an explicit parameter file
 	//
-    //char* pShaText = FindShaderInShaderText( strippedName, s_shaderText );
+    //char* pShaText = FindShaderInShaderText( strippedName, s_pShaderText );
     char* pShaText = FindShaderInShaderText( strippedName );
     if ( pShaText )
     {
@@ -301,11 +304,11 @@ static void BuildSingleLargeBuffer(char* buffers[], const int nShaderFiles, cons
 {
     ri.Printf( PRINT_ALL, " Build single large buffer. \n");
     
-    s_shaderText = ri.Hunk_Alloc( sum + nShaderFiles*2, h_low );
+    s_pShaderText = ri.Hunk_Alloc( sum + nShaderFiles*2, h_low );
 
-	memset( s_shaderText, 0, sum + nShaderFiles*2 );
+	memset( s_pShaderText, 0, sum + nShaderFiles*2 );
 
-    char* pTextEnd = s_shaderText;
+    char* pTextEnd = s_pShaderText;
     
     int n;
     // free in reverse order, so the temp files are all dumped
@@ -435,21 +438,20 @@ void ScanAndLoadShaderFiles( void )
 	// build single large buffer
     BuildSingleLargeBuffer(pBuffers, numShaderFiles, sum);
    
-    FunLogging("BuildSingleLargeBuffer.txt", s_shaderText);
+    FunLogging("BuildSingleLargeBuffer.txt", s_pShaderText);
 	
-    R_Compress( s_shaderText );
+    R_Compress( s_pShaderText );
 
-    FunLogging("after_R_Compress.txt", s_shaderText);
+    FunLogging("after_R_Compress.txt", s_pShaderText);
 
 
 	// free up memory
 	ri.FS_FreeFileList( ppShaderFiles );
 
 
-    SetShaderTextHashTableSizes( s_shaderText );
+    SetShaderTextHashTableSizes( s_pShaderText );
 
 	return;
-
 }
 
 
@@ -515,7 +517,7 @@ void RE_RemapShader(const char *shaderName, const char *newShaderName, const cha
 
             if( (sh2 == tr.defaultShader) || (sh2 == NULL) )
             {
-                ri.Printf( PRINT_WARNING, "WARNING: R_RemapShader: shader %s not found\n", newShaderName );
+                ri.Printf( PRINT_WARNING, "WARNING: shader %s not found\n", newShaderName );
             }
         }
     }
@@ -552,9 +554,9 @@ void RE_RemapShader(const char *shaderName, const char *newShaderName, const cha
 
 
 
-void R_UpdateShaderHashTable(shader_t* newShader)
+void R_UpdateShaderHashTable(shader_t* pNewShader)
 {
-	int hash = generateHashValue(newShader->name, FILE_HASH_SIZE);
-	newShader->next = hashTable[hash];
-	hashTable[hash] = newShader;
+	uint32_t hash = generateHashValue(pNewShader->name, FILE_HASH_SIZE);
+	pNewShader->next = hashTable[hash];
+	hashTable[hash] = pNewShader;
 }

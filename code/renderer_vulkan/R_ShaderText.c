@@ -2,6 +2,7 @@
 #include <stdlib.h>
 #include "ref_import.h"
 #include "R_Parser.h"
+#include "R_SortAlgorithm.h"
 
 
 struct ShaderTextHashArray_t {
@@ -9,7 +10,9 @@ struct ShaderTextHashArray_t {
     uint32_t Count;
 };
 
-#define MAX_SHADERTEXT_HASH		2048
+// increase to 4096 ?
+#define MAX_SHADERTEXT_HASH		4096
+
 static struct ShaderTextHashArray_t s_ShaderNameTab[MAX_SHADERTEXT_HASH] = {0};
 
 
@@ -27,14 +30,56 @@ static uint32_t GenHashValue( const char *fname, const uint32_t size )
         if ((letter =='\\') || (letter == PATH_SEP))
             letter = '/';		// damn path names
 
-        hash += letter * (i+119);
+        hash += letter * (i+89);
         ++i;
     }
 
-    hash = (hash ^ (hash >> 10) ^ (hash >> 20));
+//    hash = (hash ^ (hash >> 10) ^ (hash >> 20));
     return (hash & (size-1));
 }
 
+
+
+void printShaderTextHashTable_f(void)
+{
+    uint32_t i = 0;
+    uint32_t count = 0;
+    uint32_t total = 0;
+
+    uint32_t tmpTab[MAX_SHADERTEXT_HASH] = {0};
+    ri.Printf(PRINT_ALL, "\n\n-----------------------------------------------------\n"); 
+    
+   
+    for(i = 0; i < MAX_SHADERTEXT_HASH; ++i)
+    {
+        tmpTab[i] = s_ShaderNameTab[i].Count;
+        if(tmpTab[i]) {
+            ++count;
+            total += tmpTab[i];
+        }
+    }
+
+    quicksort(tmpTab, 0, MAX_SHADERTEXT_HASH-1);
+
+
+    uint32_t collisionCount = 0;
+    for(i = 0; i < MAX_SHADERTEXT_HASH; ++i)
+    {
+        if(tmpTab[i] > 1)
+        {
+            ri.Printf(PRINT_ALL, "%d, ", tmpTab[i]);
+            ++collisionCount;
+            if(collisionCount % 16 == 0)
+                ri.Printf(PRINT_ALL, "\n");
+        }
+    }
+
+    ri.Printf(PRINT_ALL, "\n Total %d Shaders, hash Table usage: %d/%d, Collision:%d \n",
+            total, count, MAX_SHADERTEXT_HASH, collisionCount);
+    
+
+    ri.Printf(PRINT_ALL, "-----------------------------------------------------\n\n"); 
+}
 
 
 /*

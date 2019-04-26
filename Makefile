@@ -1609,6 +1609,7 @@ Q3VKOBJ = \
   $(B)/renderer_vulkan/tr_sky.o \
   \
   $(B)/renderer_vulkan/tr_surface.o \
+  $(B)/renderer_vulkan/R_SortAlgorithm.o \
   $(B)/renderer_vulkan/R_SortDrawSurfs.o \
   $(B)/renderer_vulkan/RB_RenderDrawSurfList.o \
   \
