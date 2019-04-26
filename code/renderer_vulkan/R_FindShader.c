@@ -123,7 +123,7 @@ shader_t* R_FindShader( const char *name, int lightmapIndex, qboolean mipRawImag
             }
 
             sh = sh->next;
-        }    
+        }
     }
   
     R_SetTheShader( strippedName, lightmapIndex );
@@ -131,7 +131,8 @@ shader_t* R_FindShader( const char *name, int lightmapIndex, qboolean mipRawImag
 	//
 	// attempt to define shader from an explicit parameter file
 	//
-    char* pShaText = FindShaderInShaderText( strippedName, s_shaderText );
+    //char* pShaText = FindShaderInShaderText( strippedName, s_shaderText );
+    char* pShaText = FindShaderInShaderText( strippedName );
     if ( pShaText )
     {
         // enable this when building a pak file to get a global list

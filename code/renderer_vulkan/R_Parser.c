@@ -132,7 +132,7 @@ string will be returned if the next token is a newline.
 char* R_ParseExt(char** data_p, qboolean allowLineBreaks)
 {
     unsigned int len = 0;
-	char *data = *data_p;
+	const char *data = *data_p;
 
     unsigned char c;
     static char r_token[512] = {0}; 
@@ -250,7 +250,7 @@ char* R_ParseExt(char** data_p, qboolean allowLineBreaks)
 	return r_token;
 }
 
-qboolean SkipBracedSection(char **program, int depth)
+qboolean SkipBracedSection(const char **program, int depth)
 {
 	do
     {
