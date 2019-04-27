@@ -149,26 +149,6 @@ void R_SortNewShader( shader_t* pShader )
 
 
 /*
-
-texModInfo_t: "pure" struct, have no pointer in it; 
-
-typedef struct {
-	struct image_s* image[MAX_IMAGE_ANIMATIONS];
-	int				numImageAnimations;
-	float			imageAnimationSpeed;
-
-	int				numTexMods;
-	texModInfo_t	*texMods;
-
-} textureBundle_t;
-
-typedef struct {
-	qboolean		active;
-	
-	textureBundle_t	bundle[NUM_TEXTURE_BUNDLES];
-} shaderStage_t;
-
-
 typedef struct shader_s
 {
     // ...
@@ -220,27 +200,29 @@ shader_t* R_GeneratePermanentShader(shaderStage_t* pStgTab, shader_t* pSdr)
 		}
         
         // update pointer, to point to a new memory location
-        shaderStage_t* pSS = newShader->stages[i] = 
+        newShader->stages[i] = 
             (shaderStage_t *) ri.Hunk_Alloc( sizeof(shaderStage_t), h_low );
         
         // struct assign, give it a new value
         // *(newShader->stages[i]) = pStgTab[i];
-        *pSS = pStgTab[i];
+        *newShader->stages[i] = pStgTab[i];
         // very like c++ copy-assign constructor
-
-        int b;
+/*
+        shaderStage_t* pSS = newShader->stages[i]
+        uint32_t b;
 		for ( b = 0; b < NUM_TEXTURE_BUNDLES; ++b )
         {
             textureBundle_t* pTM = &pSS->bundle[b];
 
            
-			int size = pTM->numTexMods * sizeof( texModInfo_t );
+			uint32_t size = pTM->numTexMods * sizeof( texModInfo_t );
 
             // again, change the pointer to point another location
 			pTM->texMods = (texModInfo_t*) ri.Hunk_Alloc( size, h_low );
 			// copy old content to there
             memcpy( pTM->texMods, pStgTab[i].bundle[b].texMods, size );
 		}
+*/
 	}
 
     // data already, sort it

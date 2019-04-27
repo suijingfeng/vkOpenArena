@@ -163,8 +163,6 @@ FindPipelineFromTree(struct pipeline_tree_s * pTree , const struct PipelineParam
 
 void DestroySearchTree(struct pipeline_tree_s * pTree)
 {
-    // 
-    qvkDeviceWaitIdle(vk.device);
 	if(pTree != NULL)
 	{
 
@@ -174,8 +172,9 @@ void DestroySearchTree(struct pipeline_tree_s * pTree)
         // ri.Printf(PRINT_ALL, "free right child.\n");
 
         qvkDestroyPipeline(vk.device, pTree->par.pipeline, NULL);
+        
         // free(pTree);
-        memset(pTree, 0, sizeof(struct pipeline_tree_s));
+        // memset(pTree, 0, sizeof(struct pipeline_tree_s));
 	}
 }
 
@@ -876,27 +875,47 @@ void vk_create_shader_stage_pipelines(shaderStage_t *pStage, shader_t* pShader)
     }
 }
 
+
 void vk_destroyShaderStagePipeline(void)
 {
     ri.Printf(PRINT_ALL, " Destroy %d shader stage pipeline. \n", s_numPipelines);
+    qvkDeviceWaitIdle(vk.device);
 
-
-    DestroySearchTree(pPlRoot);
-    pPlRoot = NULL;
+    uint32_t i;
+    for(i = 0; i < s_numPipelines; ++i)
+        if(mem_alloced[i].par.pipeline != VK_NULL_HANDLE) {
+            qvkDestroyPipeline(vk.device, mem_alloced[i].par.pipeline, NULL);
+            mem_alloced[i].par.pipeline = VK_NULL_HANDLE;
+        }
 
     memset(mem_alloced, 0, s_numPipelines);
     s_numPipelines = 0;
-}
 
-void vk_InitShaderStagePipeline(void)
-{
     if(pPlRoot != NULL)
     {
         DestroySearchTree(pPlRoot);
         pPlRoot = NULL;
-        
-        memset(mem_alloced, 0, s_numPipelines);
-        s_numPipelines = 0;
+    }
+}
+
+
+void vk_InitShaderStagePipeline(void)
+{
+
+    uint32_t i;
+    for(i = 0; i < s_numPipelines; ++i)
+        if(mem_alloced[i].par.pipeline != VK_NULL_HANDLE) {
+            qvkDestroyPipeline(vk.device, mem_alloced[i].par.pipeline, NULL);
+            mem_alloced[i].par.pipeline = VK_NULL_HANDLE;
+        }
+
+    memset(mem_alloced, 0, s_numPipelines);
+    s_numPipelines = 0;
+
+    if(pPlRoot != NULL)
+    {
+        DestroySearchTree(pPlRoot);
+        pPlRoot = NULL;
     }
     
     struct PipelineParameter_t plPar;

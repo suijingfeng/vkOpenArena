@@ -172,7 +172,6 @@ struct Vk_Instance {
 	VkImageView swapchain_image_views[MAX_SWAPCHAIN_IMAGES];
 	uint32_t idx_swapchain_image;
 
-
 	VkCommandPool command_pool;
 	VkCommandBuffer command_buffer;
 

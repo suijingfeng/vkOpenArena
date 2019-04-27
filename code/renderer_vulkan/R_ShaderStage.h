@@ -91,6 +91,23 @@ typedef struct {
 
 } texModInfo_t;
 
+/*
+typedef struct {
+	struct image_s* image[MAX_IMAGE_ANIMATIONS];
+	int				numImageAnimations;
+	float			imageAnimationSpeed;
+
+	texCoordGen_t	tcGen;
+	vec3_t			tcGenVectors[2];
+
+	int				numTexMods;
+	texModInfo_t*   texMods;
+
+	int				videoMapHandle;
+	qboolean		isLightmap;
+	qboolean		isVideoMap;
+} textureBundle_t;
+*/
 
 typedef struct {
 	struct image_s* image[MAX_IMAGE_ANIMATIONS];
@@ -101,13 +118,13 @@ typedef struct {
 	vec3_t			tcGenVectors[2];
 
 	int				numTexMods;
-	texModInfo_t	*texMods;
+    // TR_MAX_TEXMODS = 4
+	texModInfo_t    texMods[4];
 
 	int				videoMapHandle;
 	qboolean		isLightmap;
 	qboolean		isVideoMap;
 } textureBundle_t;
-
 
 typedef struct {
 	qboolean		active;

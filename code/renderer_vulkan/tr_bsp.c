@@ -15,7 +15,7 @@ MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 GNU General Public License for more details.
 
 You should have received a copy of the GNU General Public License
-along with Foobar; if not, write to the Free Software
+along with Quake III Arena source code; if not, write to the Free Software
 Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 ===========================================================================
 */
@@ -179,7 +179,7 @@ static	void R_LoadLightmaps( lump_t *l ) {
 				float g = buf_p[j*3+1];
 				float b = buf_p[j*3+2];
 				float intensity;
-				float out[3] = {0};
+				float out[3] = {0.0, 0.0, 0.0};
 
 				intensity = 0.33f * r + 0.685f * g + 0.063f * b;
 
@@ -1312,7 +1312,6 @@ static	void R_LoadSurfaces( lump_t *surfs, lump_t *verts, lump_t *indexLump ) {
 }
 
 
-
 /*
 =================
 R_LoadSubmodels
@@ -1320,15 +1319,12 @@ R_LoadSubmodels
 */
 static	void R_LoadSubmodels( lump_t *l )
 {
-
     ri.Printf (PRINT_ALL, "\n---R_LoadSubmodels---\n");
 
-
-	dmodel_t	*in;
 	bmodel_t	*out;
 	int			i, j, count;
 
-	in = (dmodel_t*) (void *)(fileBase + l->fileofs);
+	dmodel_t* in = (dmodel_t*) (fileBase + l->fileofs);
 	if (l->filelen % sizeof(*in))
 		ri.Error (ERR_DROP, "LoadMap: funny lump size in %s",s_worldData.name);
 	count = l->filelen / sizeof(*in);
@@ -1343,18 +1339,19 @@ static	void R_LoadSubmodels( lump_t *l )
         assert( model != NULL );			// this should never happen
 
         model->index = tr.numModels;
+        tr.models[tr.numModels] = model;
         model->type = MOD_BRUSH;
 		model->bmodel = out;
 		snprintf( model->name, sizeof( model->name ), "*%d", i );
 
-        tr.models[tr.numModels] = model;
+
 
         if ( ++tr.numModels == MAX_MOD_KNOWN )
         {
             ri.Printf(PRINT_WARNING, "R_AllocModel: MAX_MOD_KNOWN.\n");
 	    }
-        ri.Printf( PRINT_ALL, "Allocate Memory for %s model. \n", model->name);
 
+        // ri.Printf( PRINT_ALL, "Allocate Memory for %s model. \n", model->name);
 		for (j=0 ; j<3 ; j++) {
 			out->bounds[0][j] = LittleFloat (in->mins[j]);
 			out->bounds[1][j] = LittleFloat (in->maxs[j]);
@@ -1484,7 +1481,8 @@ static	void R_LoadShaders( lump_t *l ) {
 
 	memcpy( out, in, count*sizeof(*out) );
 
-	for ( i=0 ; i<count ; i++ ) {
+	for ( i=0 ; i<count ; i++ )
+    {
 		out[i].surfaceFlags = LittleLong( out[i].surfaceFlags );
 		out[i].contentFlags = LittleLong( out[i].contentFlags );
 	}
@@ -1644,6 +1642,7 @@ static	void R_LoadFogs( lump_t *l, lump_t *brushesLump, lump_t *sidesLump ) {
 		shader = R_FindShader( fogs->shader, LIGHTMAP_NONE, qtrue );
 
 		out->parms = shader->fogParms;
+
 
         out->colorRGBA[0] = shader->fogParms.color[0] * tr.identityLight * 255;
         out->colorRGBA[1] = shader->fogParms.color[1] * tr.identityLight * 255;
@@ -1870,7 +1869,7 @@ void RE_LoadWorldMap( const char *name )
 		((int *)header)[i] = LittleLong ( ((int *)header)[i]);
 	}
 
-	// load into heap
+    // load into heap
 	R_LoadShaders( &header->lumps[LUMP_SHADERS] );
 	R_LoadLightmaps( &header->lumps[LUMP_LIGHTMAPS] );
 	R_LoadPlanes (&header->lumps[LUMP_PLANES]);

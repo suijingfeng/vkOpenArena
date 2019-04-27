@@ -182,10 +182,11 @@ void RE_Shutdown( qboolean destroyWindow )
     // (the state we have after vk_initialize call).
 
     // contains vulkan resources/state, reinitialized on a map change.
+    
+    R_ClearSortedShaders();
 
     vk_destroyShaderStagePipeline();
  
-
     vk_resetGeometryBuffer();
 
 	if ( tr.registered )
@@ -204,7 +205,7 @@ void RE_Shutdown( qboolean destroyWindow )
         glConfig_Clear();
     }
 
-    R_ClearSortedShaders();
+
 }
 
 

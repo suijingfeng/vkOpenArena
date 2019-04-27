@@ -39,6 +39,7 @@ void vk_selectPhysicalDevice(struct demo * const pDemo)
 }
 
 
+
 void vk_checkSurfaceExtension(struct demo * const pDemo)
 {
     uint32_t instance_extension_count = 0;

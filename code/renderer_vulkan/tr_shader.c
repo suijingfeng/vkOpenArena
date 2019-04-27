@@ -38,7 +38,8 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 // then copied into dynamically allocated memory if it is valid.
 static	shaderStage_t	stages[MAX_SHADER_STAGES] = {0};		
 static	shader_t		shader;
-static	texModInfo_t	texMods[MAX_SHADER_STAGES][TR_MAX_TEXMODS];
+
+// static	texModInfo_t	texMods[MAX_SHADER_STAGES][TR_MAX_TEXMODS];
 
 
 /*
@@ -289,19 +290,17 @@ ParseTexMod
 */
 static void ParseTexMod( char *_text, shaderStage_t *stage )
 {
-	const char *token;
 	char **text = &_text;
-	texModInfo_t *tmi;
 
 	if ( stage->bundle[0].numTexMods == TR_MAX_TEXMODS ) {
 		ri.Error( ERR_DROP, "ERROR: too many tcMod stages in shader '%s'\n", shader.name );
 		return;
 	}
 
-	tmi = &stage->bundle[0].texMods[stage->bundle[0].numTexMods];
+	texModInfo_t * tmi = &stage->bundle[0].texMods[stage->bundle[0].numTexMods];
 	stage->bundle[0].numTexMods++;
 
-	token = R_ParseExt( text, qfalse );
+	const char * token = R_ParseExt( text, qfalse );
 
 	//
 	// turb
@@ -1580,8 +1579,6 @@ static collapse_t	collapse[] = {
 
 /*
 ================
-CollapseMultitexture
-
 Attempt to combine two stages into a single multitexture stage
 FIXME: I think modulated add + modulated add collapses incorrectly
 =================
@@ -1589,7 +1586,6 @@ FIXME: I think modulated add + modulated add collapses incorrectly
 static qboolean CollapseMultitexture( void ) {
 	int abits, bbits;
 	int i;
-	textureBundle_t tmpBundle;
 
 	// make sure both stages are active
 	if ( !stages[0].active || !stages[1].active ) {
@@ -1658,7 +1654,7 @@ static qboolean CollapseMultitexture( void ) {
 	// make sure that lightmaps are in bundle 1 for 3dfx
 	if ( stages[0].bundle[0].isLightmap )
 	{
-		tmpBundle = stages[0].bundle[0];
+		textureBundle_t tmpBundle = stages[0].bundle[0];
 		stages[0].bundle[0] = stages[1].bundle[0];
 		stages[0].bundle[1] = tmpBundle;
 	}
@@ -1695,20 +1691,21 @@ what it is supposed to look like.
 */
 static void VertexLightingCollapse( void )
 {
-	int		stage;
-	shaderStage_t	*bestStage;
 	int		bestImageRank;
 	int		rank;
 
 	// if we aren't opaque, just use the first pass
-	if ( shader.sort == SS_OPAQUE ) {
+	if ( shader.sort == SS_OPAQUE )
+    {
 
 		// pick the best texture for the single pass
-		bestStage = &stages[0];
+		shaderStage_t* bestStage = &stages[0];
 		bestImageRank = -999999;
+        uint32_t nStage;
 
-		for ( stage = 0; stage < MAX_SHADER_STAGES; stage++ ) {
-			shaderStage_t *pStage = &stages[stage];
+		for ( nStage = 0; nStage < MAX_SHADER_STAGES; ++nStage )
+        {
+			shaderStage_t *pStage = &stages[nStage];
 
 			if ( !pStage->active ) {
 				break;
@@ -1743,7 +1740,9 @@ static void VertexLightingCollapse( void )
 			stages[0].rgbGen = CGEN_EXACT_VERTEX;
 		}
 		stages[0].alphaGen = AGEN_SKIP;		
-	} else {
+	}
+    else
+    {
 		// don't use a lightmap (tesla coils)
 		if ( stages[0].bundle[0].isLightmap ) {
 			stages[0] = stages[1];
@@ -1763,14 +1762,18 @@ static void VertexLightingCollapse( void )
 		}
 	}
 
-	for ( stage = 1; stage < MAX_SHADER_STAGES; stage++ ) {
-		shaderStage_t *pStage = &stages[stage];
 
-		if ( !pStage->active ) {
+    uint32_t i;
+	for ( i = 1; i < MAX_SHADER_STAGES; ++i )
+    {
+		//shaderStage_t *pStage = &stages[i];
+
+		if ( !stages[i].active )
+        {
 			break;
 		}
 
-		memset( pStage, 0, sizeof( *pStage ) );
+		memset( &stages[i], 0, sizeof( shaderStage_t ) );
 	}
 }
 
@@ -1803,7 +1806,7 @@ shader_t* FinishShader( void )
 	// set appropriate stage information
 	//
     int iStage;
-	for ( iStage = 0; iStage < MAX_SHADER_STAGES; iStage++ )
+	for ( iStage = 0; iStage < MAX_SHADER_STAGES; ++iStage )
     {
 		shaderStage_t *pStage = &stages[iStage];
 
@@ -1953,12 +1956,14 @@ void R_SetTheShader( const char * name, int lightmapIndex )
 
     // stages
 	memset( &stages, 0, sizeof( stages ) );
-    int i;
-	for ( i = 0 ; i < MAX_SHADER_STAGES ; i++ )
+/*
+    uint32_t i;
+	for ( i = 0 ; i < MAX_SHADER_STAGES ; ++i )
     {
 		stages[i].bundle[0].texMods = texMods[i];
+    	memset( &stages[i].bundle[0].texMods, 0, sizeof(texMods[i]));
 	}
-
+*/
 }
 
 

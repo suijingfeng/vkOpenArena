@@ -106,12 +106,10 @@ void vk_shutdown(void)
 //
     vk_destroy_commands();
 
-	vk_clearProcAddress();
+	
+    vk_clearProcAddress();
 
     ri.Printf( PRINT_ALL, " clear vk struct: vk \n" );
 	memset(&vk, 0, sizeof(vk));
-
-
-    vk.isInitialized = VK_FALSE;
 }
 

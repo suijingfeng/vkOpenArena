@@ -23,4 +23,8 @@ void vk_createSurfaceImpl(void);
 
 void vk_minimizeWindowImpl( void );
 
+void vk_fillRequiredInstanceExtention( 
+        const VkExtensionProperties * const pInsExt, const uint32_t nInsExt, 
+        const char ** const ppInsExt, uint32_t * nExt );
+
 #endif

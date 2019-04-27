@@ -142,14 +142,14 @@ typedef struct shader_s
 	deformStage_t	deforms[MAX_SHADER_DEFORMS];
 
 	int			numUnfoggedPasses;
-	shaderStage_t* stages[MAX_SHADER_STAGES];		
+	shaderStage_t* stages[MAX_SHADER_STAGES];
 
     float clampTime;                                  // time this shader is clamped to
     float timeOffset;                                 // current time offset for this shader
 
-    struct shader_s *remappedShader;                  // current shader this one is remapped too
+    struct shader_s * remappedShader;   // current shader this one is remapped too
 
-	struct	shader_s	*next;
+	struct shader_s * next;
 } shader_t;
 
 

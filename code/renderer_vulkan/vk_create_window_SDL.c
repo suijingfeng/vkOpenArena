@@ -141,10 +141,6 @@ static int VKimp_SetMode(int mode, qboolean fullscreen)
 	if ( r_allowResize->integer )
 		flags |= SDL_WINDOW_RESIZABLE;
 
-
-	ri.Printf(PRINT_ALL,  "...VKimp_SetMode()...\n");
-
-
     SDL_GetNumVideoDisplays();
 
 	int display_mode_count = SDL_GetNumDisplayModes(r_displayIndex->integer);
@@ -158,7 +154,8 @@ static int VKimp_SetMode(int mode, qboolean fullscreen)
 	if( (tmp == 0) && (desktopMode.h > 0) )
     {
     	Uint32 f = desktopMode.format;
-        ri.Printf(PRINT_ALL, "bpp %i\t%s\t%i x %i, refresh_rate: %dHz\n", SDL_BITSPERPIXEL(f), SDL_GetPixelFormatName(f), desktopMode.w, desktopMode.h, desktopMode.refresh_rate);
+        ri.Printf(PRINT_ALL, "bpp %i\t%s\t%i x %i, refresh_rate: %dHz\n", 
+            SDL_BITSPERPIXEL(f), SDL_GetPixelFormatName(f), desktopMode.w, desktopMode.h, desktopMode.refresh_rate);
     }
     else if (SDL_GetDisplayMode(r_displayIndex->integer, 0, &desktopMode) != 0)
 	{
@@ -315,6 +312,65 @@ void vk_getInstanceProcAddrImpl(void)
     }
     
     ri.Printf(PRINT_ALL,  " Get instance proc address. (using SDL2)\n");
+}
+
+
+void vk_fillRequiredInstanceExtention( 
+        const VkExtensionProperties * const pInsExt, const uint32_t nInsExt, 
+        const char ** const ppInsExt, uint32_t * nExt )
+{
+
+#if defined(_WIN32)
+
+    // TODO: CHECK OUT
+    // All of the instance wxtention enabled, Does this reasonable ?
+
+    uint32_t i = 0;
+    for (i = 0; i < nInsExt; ++i)
+    {    
+        ppInsExt[i] = pInsExt[i].extensionName;
+    }
+
+
+#elif defined(__unix__) || defined(__linux) || defined(__linux__)
+
+#ifndef VK_KHR_XCB_SURFACE_EXTENSION_NAME
+    #define VK_KHR_XCB_SURFACE_EXTENSION_NAME "VK_KHR_xcb_surface"
+#endif
+
+#ifndef VK_KHR_XLIB_SURFACE_EXTENSION_NAME
+    #define VK_KHR_XLIB_SURFACE_EXTENSION_NAME "VK_KHR_xlib_surface"
+#endif
+    
+    ppInsExt[0] = VK_KHR_SURFACE_EXTENSION_NAME;
+    ppInsExt[1] = VK_KHR_XCB_SURFACE_EXTENSION_NAME;
+    ppInsExt[2] = VK_KHR_XLIB_SURFACE_EXTENSION_NAME;
+
+    *nExt = 3;
+
+#ifndef NDEBUG
+    ppInsExt[*nExt] = VK_EXT_DEBUG_REPORT_EXTENSION_NAME;
+    ++*nExt;
+#endif
+
+//    instanceCreateInfo.enabledExtensionCount = nInsExt;
+//	instanceCreateInfo.ppEnabledExtensionNames = ppInstanceExt;
+    
+#elif defined(__APPLE__)
+
+    // TODO: CHECK OUT
+    // All of the instance wxtention enabled, Does this reasonable ?
+
+    uint32_t i = 0;
+    for (i = 0; i < nInsExt; ++i)
+    {    
+        ppInsExt[i] = pInsExt[i].extensionName;
+    }
+
+#else
+    #error "Not implemented for target OS"
+#endif
+
 }
 
 

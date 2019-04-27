@@ -230,35 +230,40 @@ static void vk_createInstance(void)
     //
     // check extensions availability
 	uint32_t nInsExt = 0;
+    uint32_t i = 0;
+	uint32_t EnableInsExtCount = 0;
     // To retrieve a list of supported extensions before creating an instance
 	VK_CHECK( qvkEnumerateInstanceExtensionProperties( NULL, &nInsExt, NULL) );
 
     assert(nInsExt > 0);
 
-    ri.Printf(PRINT_ALL, "--- Total %d instance extensions. --- \n", nInsExt);
-
-    VkExtensionProperties *pInsExt = (VkExtensionProperties *) malloc(sizeof(VkExtensionProperties) * nInsExt);
-    
-    const char** ppInstanceExt = malloc( sizeof(char *) * (nInsExt) );
-
+    VkExtensionProperties * pInsExt = (VkExtensionProperties *) malloc(sizeof(VkExtensionProperties) * nInsExt);
     VK_CHECK(qvkEnumerateInstanceExtensionProperties( NULL, &nInsExt, pInsExt));
 
-    uint32_t i = 0;
+
+    const char** const ppInstanceExtEnabled = malloc( sizeof(char *) * (nInsExt) );
 
     // Each platform-specific extension is an instance extension.
     // The application must enable instance extensions with vkCreateInstance
     // before using them.
+    vk_fillRequiredInstanceExtention(pInsExt, nInsExt, ppInstanceExtEnabled, &EnableInsExtCount);
 
-    // TODO: CHECK OUT
-    // All of the instance wxtention enabled, Does this reasonable ?
-
-    for (i = 0; i < nInsExt; i++)
+    ri.Printf(PRINT_ALL, "\n -------- Total %d instance extensions. -------- \n", nInsExt);
+    for (i = 0; i < nInsExt; ++i)
     {    
-        ppInstanceExt[i] = pInsExt[i].extensionName;
+        ri.Printf(PRINT_ALL, " %s \n", pInsExt[i].extensionName);
     }
-    
-    instanceCreateInfo.enabledExtensionCount = nInsExt;
-	instanceCreateInfo.ppEnabledExtensionNames = ppInstanceExt;
+
+    ri.Printf(PRINT_ALL, "\n -------- %d instance extensions Enable. -------- \n", EnableInsExtCount);
+    for (i = 0; i < EnableInsExtCount; ++i)
+    {    
+        ri.Printf(PRINT_ALL, " %s \n", ppInstanceExtEnabled[i]);
+    }
+    ri.Printf(PRINT_ALL, " -------- ----------------------------- -------- \n\n");
+
+
+    instanceCreateInfo.enabledExtensionCount = EnableInsExtCount;
+	instanceCreateInfo.ppEnabledExtensionNames = ppInstanceExtEnabled;
 
 #ifndef NDEBUG
     ri.Printf(PRINT_ALL, "Using VK_LAYER_LUNARG_standard_validation\n");
@@ -293,7 +298,7 @@ static void vk_createInstance(void)
         ri.Error(ERR_FATAL, "%d, returned by qvkCreateInstance.\n", e);
     }
    
-    free(ppInstanceExt);
+    free(ppInstanceExtEnabled);
 
     free(pInsExt);
 }
@@ -503,10 +508,19 @@ static void vk_selectSurfaceFormat(void)
         }
     }
 
-    ri.Printf(PRINT_ALL, " -------- --------------------------- --------\n");
+    ri.Printf(PRINT_ALL, " -------- --------------------------- --------\n\n");
 }
 
 
+// Vulkan device execute work that is submitted to queues.
+// each device will have one or more queues, and each of those queues
+// will belong to one of the device's queue families. A queue family
+// is a group of queues that have identical capabilities but are 
+// able to run in parallel.
+//
+// The number of queue families, the capabilities of each family,
+// and the number of queues belonging to each family are all
+// properties of the physical device.
 static void vk_selectQueueFamilyForPresentation(void)
 {
     // Almosty every operation in Vulkan, anything from drawing textures,
@@ -519,23 +533,73 @@ static void vk_selectQueueFamilyForPresentation(void)
     // the device and which one of these supports the commands that we use.
 
 
-    uint32_t nSurfmt;
-    qvkGetPhysicalDeviceQueueFamilyProperties(vk.physical_device, &nSurfmt, NULL);
+    uint32_t nQueueFamily;
+    uint32_t i;
+
+    qvkGetPhysicalDeviceQueueFamilyProperties(vk.physical_device, &nQueueFamily, NULL);
     
-    assert(nSurfmt > 0);
+    assert(nQueueFamily > 0);
 
     VkQueueFamilyProperties* pQueueFamilies = (VkQueueFamilyProperties *) malloc (
-            nSurfmt * sizeof(VkQueueFamilyProperties) );
+            nQueueFamily * sizeof(VkQueueFamilyProperties) );
 
     // To query properties of queues available on a physical device
-    qvkGetPhysicalDeviceQueueFamilyProperties(vk.physical_device, &nSurfmt, pQueueFamilies);
+    qvkGetPhysicalDeviceQueueFamilyProperties(vk.physical_device, &nQueueFamily, pQueueFamilies);
+
+    ri.Printf(PRINT_ALL, "\n -------- Total %d Queue families -------- \n",  nQueueFamily);
+
+    // info
+    // Queues within a family are essentially identical. 
+    // Queues in different families may have different internal capabilities
+    // that can't be expressed easily in the Vulkan API. For this reason,
+    // an implementation might choose to report similar queues as members 
+    // of different families.
+    //
+    // All commands that are allowed on a queue that supports transfer operations are
+    // also allowed on a queue that supports either graphics or compute operations.
+    // Thus, if the capabilities of a queue family include VK_QUEUE_GRAPHICS_BIT or
+    // VK_QUEUE_COMPUTE_BIT, then reporting the VK_QUEUE_TRANSFER_BIT capability
+    // separately for that queue family is OPTIONAL.
+    // 
+    for (i = 0; i < nQueueFamily; ++i)
+    {
+        // print every queue family's capability
+        ri.Printf(PRINT_ALL, " Queue family [%d]: %d queues, ", 
+                i, pQueueFamilies[i].queueCount );
+
+        if( pQueueFamilies[i].queueFlags & VK_QUEUE_GRAPHICS_BIT )
+            ri.Printf(PRINT_ALL, " Graphic, ");
+        
+        if( pQueueFamilies[i].queueFlags & VK_QUEUE_COMPUTE_BIT )
+            ri.Printf(PRINT_ALL, " Compute, ");
+
+        if( pQueueFamilies[i].queueFlags & VK_QUEUE_TRANSFER_BIT )
+            ri.Printf(PRINT_ALL, " Transfer, ");
+
+        if( pQueueFamilies[i].queueFlags & VK_QUEUE_SPARSE_BINDING_BIT )
+            ri.Printf(PRINT_ALL, " Sparse, ");
+
+
+        VkBool32 isPresentSupported = VK_FALSE;
+        VK_CHECK(qvkGetPhysicalDeviceSurfaceSupportKHR(
+                    vk.physical_device, i, vk.surface, &isPresentSupported));
+
+        if (isPresentSupported)
+        {
+            ri.Printf(PRINT_ALL, " presentation supported. \n --------\n");
+        }
+        else
+        {
+            ri.Printf(PRINT_ALL, " \n -------- \n");
+        }
+    }
+
 
     // Select queue family with presentation and graphics support
     // Iterate over each queue to learn whether it supports presenting:
     vk.queue_family_index = -1;
     
-    uint32_t i;
-    for (i = 0; i < nSurfmt; ++i)
+    for (i = 0; i < nQueueFamily; ++i)
     {
         // To look for a queue family that has the capability of presenting
         // to our window surface
@@ -556,6 +620,7 @@ static void vk_selectQueueFamilyForPresentation(void)
         }
     }
 
+
     free(pQueueFamilies);
 
     if (vk.queue_family_index == -1)
@@ -563,11 +628,11 @@ static void vk_selectQueueFamilyForPresentation(void)
 }
 
 
-static void vk_createLogicalDevice(void)
+
+void vk_checkSwapChainExtention(const char * const pName)
 {
-    static const char* device_extensions[1] = {
-        VK_KHR_SWAPCHAIN_EXTENSION_NAME
-    };
+    /* Look for device extensions */
+
 
     //  Not all graphics cards are capble of presenting images directly
     //  to a screen for various reasons, for example because they are 
@@ -577,6 +642,7 @@ static void vk_createLogicalDevice(void)
     //  not actually part of the vulkan core. You have to enable the
     //  VK_KHR_swapchain device extension after querying for its support.
     uint32_t nDevExts = 0;
+    
     VkBool32 swapchainExtFound = 0;
 
     // To query the numbers of extensions available to a given physical device
@@ -585,7 +651,7 @@ static void vk_createLogicalDevice(void)
     qvkEnumerateDeviceExtensionProperties( vk.physical_device, NULL, &nDevExts, NULL);
 
     VkExtensionProperties* pDeviceExt = 
-        (VkExtensionProperties *) malloc(sizeof(VkExtensionProperties) * nDevExts);
+        (VkExtensionProperties *) malloc( sizeof(VkExtensionProperties) * nDevExts );
 
     qvkEnumerateDeviceExtensionProperties( vk.physical_device, NULL, &nDevExts, pDeviceExt);
 
@@ -593,17 +659,43 @@ static void vk_createLogicalDevice(void)
     uint32_t j;
     for (j = 0; j < nDevExts; j++)
     {
-        if (!strcmp(device_extensions[0], pDeviceExt[j].extensionName))
+        if (0 == strcmp(pName, pDeviceExt[j].extensionName))
         {
             swapchainExtFound = VK_TRUE;
             break;
         }
     }
+    
     if (VK_FALSE == swapchainExtFound)
-        ri.Error(ERR_FATAL, "VK_KHR_SWAPCHAIN_EXTENSION_NAME is not available");
+        ri.Error(ERR_FATAL, "VK_KHR_SWAPCHAIN_EXTENSION_NAME is not available on you GPU driver.");
+
+    // info
+    ri.Printf( PRINT_ALL, "-------- Total %d device extensions supported --------\n", nDevExts);
+    for (j = 0; j < nDevExts; ++j)
+    {
+        ri.Printf( PRINT_ALL, "%s \n", pDeviceExt[j].extensionName);
+    }
+
+    ri.Printf(PRINT_ALL, "-------- Enabled device extensions on this app --------\n");
+    
+    ri.Printf(PRINT_ALL, " %s \n", pName);
+
+    ri.Printf(PRINT_ALL, "-------- --------------------------------------- ------\n\n");
+
 
     free(pDeviceExt);
+}
 
+
+
+static void vk_createLogicalDevice(void)
+{
+////////////////////////
+    const char* enable_ext_names[1] = {
+        VK_KHR_SWAPCHAIN_EXTENSION_NAME
+    };
+
+    vk_checkSwapChainExtention(enable_ext_names[0]);
 
     const float priority = 1.0;
     VkDeviceQueueCreateInfo queue_desc;
@@ -634,11 +726,12 @@ static void vk_createLogicalDevice(void)
     device_desc.pNext = NULL;
     device_desc.flags = 0;
     device_desc.queueCreateInfoCount = 1;
+    // Creating a logical device also creates the queues associated with that device.
     device_desc.pQueueCreateInfos = &queue_desc;
     device_desc.enabledLayerCount = 0;
     device_desc.ppEnabledLayerNames = NULL;
     device_desc.enabledExtensionCount = 1;
-    device_desc.ppEnabledExtensionNames = device_extensions;
+    device_desc.ppEnabledExtensionNames = enable_ext_names;
     device_desc.pEnabledFeatures = &features;
     
 
@@ -769,22 +862,39 @@ void vk_getProcAddress(void)
 
     vk_createLogicalDevice();
 
-    // Get device level functions.
+    // Get device level functions. depended on the created logical device
+    // thus must be called AFTER vk_createLogicalDevice.
     vk_loadDeviceFunctions();
 
     // a call to retrieve queue handle
 	qvkGetDeviceQueue(vk.device, vk.queue_family_index, 0, &vk.queue);
+    //
+    //     Queue Family Index
+    //
+    // The queue family index is used in multiple places in Vulkan in order to
+    // tie operations to a specific family of queues. When retrieving a handle 
+    // to the queue via vkGetDeviceQueue, the queue family index is used to
+    // select which queue family to retrieve the VkQueue handle from.
+    // 
+    // When creating a VkCommandPool object, a queue family index is specified
+    // in the VkCommandPoolCreateInfo structure. Command buffers from this pool
+    // can only be submitted on queues corresponding to this queue family.
+    //
+    // When creating VkImage (see Images) and VkBuffer (see Buffers) resources,
+    // a set of queue families is included in the VkImageCreateInfo and 
+    // VkBufferCreateInfo structures to specify the queue families that can 
+    // access the resource.
+    //
+    // When inserting a VkBufferMemoryBarrier or VkImageMemoryBarrier
+    // a source and destination queue family index is specified to allow the 
+    // ownership of a buffer or image to be transferred from one queue family
+    // to another.
 }
 
 
 void vk_clearProcAddress(void)
 {
 
-    ri.Printf( PRINT_ALL, " Destroy logical device: vk.device. \n" );
-    // Device queues are implicitly cleaned up when the device is destroyed
-    // so we don't need to do anything in clean up
-	qvkDestroyDevice(vk.device, NULL);
-    
     ri.Printf( PRINT_ALL, " Destroy surface: vk.surface. \n" );
     // make sure that the surface is destroyed before the instance
     qvkDestroySurfaceKHR(vk.instance, vk.surface, NULL);
@@ -794,6 +904,11 @@ void vk_clearProcAddress(void)
 
 	qvkDestroyDebugReportCallbackEXT(vk.instance, vk.h_debugCB, NULL);
 #endif
+
+    ri.Printf( PRINT_ALL, " Destroy logical device: vk.device. \n" );
+    // Device queues are implicitly cleaned up when the device is destroyed
+    // so we don't need to do anything in clean up
+	qvkDestroyDevice(vk.device, NULL);
 
     ri.Printf( PRINT_ALL, " Destroy instance: vk.instance. \n" );
 	qvkDestroyInstance(vk.instance, NULL);
