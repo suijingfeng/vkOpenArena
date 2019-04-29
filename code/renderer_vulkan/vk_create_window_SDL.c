@@ -342,12 +342,18 @@ void vk_fillRequiredInstanceExtention(
     #define VK_KHR_XLIB_SURFACE_EXTENSION_NAME "VK_KHR_xlib_surface"
 #endif
     
-    ppInsExt[0] = VK_KHR_SURFACE_EXTENSION_NAME;
-    ppInsExt[1] = VK_KHR_XCB_SURFACE_EXTENSION_NAME;
-    ppInsExt[2] = VK_KHR_XLIB_SURFACE_EXTENSION_NAME;
+//    ppInsExt[0] = VK_KHR_SURFACE_EXTENSION_NAME;
+//    ppInsExt[1] = VK_KHR_XCB_SURFACE_EXTENSION_NAME;
+//    ppInsExt[2] = VK_KHR_XLIB_SURFACE_EXTENSION_NAME;
 
-    *nExt = 3;
+//    *nExt = 3;
 
+    uint32_t i = 0;
+    for (i = 0; i < nInsExt; ++i)
+    {    
+        ppInsExt[i] = pInsExt[i].extensionName;
+    }
+    *nExt = nInsExt;
 #ifndef NDEBUG
     ppInsExt[*nExt] = VK_EXT_DEBUG_REPORT_EXTENSION_NAME;
     ++*nExt;

@@ -66,13 +66,23 @@ void vk_checkSurfaceExtension(struct demo * const pDemo)
             if (!strcmp(VK_KHR_XCB_SURFACE_EXTENSION_NAME, instance_extensions[i].extensionName)) {
                 pDemo->extension_names[pDemo->enabled_extension_count++] = VK_KHR_XCB_SURFACE_EXTENSION_NAME;
             }
-            
+
+            if (!strcmp(VK_EXT_DIRECT_MODE_DISPLAY_EXTENSION_NAME, instance_extensions[i].extensionName)) {
+                pDemo->extension_names[pDemo->enabled_extension_count++] = VK_EXT_DIRECT_MODE_DISPLAY_EXTENSION_NAME;
+            }
+
+            if (!strcmp(VK_EXT_DISPLAY_SURFACE_COUNTER_EXTENSION_NAME, instance_extensions[i].extensionName)) {
+                pDemo->extension_names[pDemo->enabled_extension_count++] = VK_EXT_DISPLAY_SURFACE_COUNTER_EXTENSION_NAME;
+            }
+
+#ifndef NDEBUG
             if (!strcmp(VK_EXT_DEBUG_UTILS_EXTENSION_NAME, instance_extensions[i].extensionName))
             {
                 if (pDemo->validate) {
                     pDemo->extension_names[pDemo->enabled_extension_count++] = VK_EXT_DEBUG_UTILS_EXTENSION_NAME;
                 }
             }
+#endif
         }
 
         printf("-------- Total %d instance extensions supported --------\n", instance_extension_count);
