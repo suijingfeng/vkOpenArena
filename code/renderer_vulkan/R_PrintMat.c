@@ -64,3 +64,24 @@ void FunLogging(const char * name, char * pBuf )
     fclose( log_fp );
 	log_fp = NULL;
 }
+
+void Fun_ppCharLogging(const char * const name, char (*pp)[64], uint32_t size )
+{
+
+    log_fp = fopen( name, "wt" );
+
+
+	if ( log_fp )
+	{
+        uint32_t i;
+        for(i=0; i<size; ++i)
+		    fprintf( log_fp, "%s\n", pp[i] );
+	}
+    else
+    {
+        fprintf(stderr, "Error open %s\n", name);
+    }
+
+    fclose( log_fp );
+	log_fp = NULL;
+}

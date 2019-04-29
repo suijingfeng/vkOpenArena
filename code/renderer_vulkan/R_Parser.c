@@ -135,7 +135,7 @@ char* R_ParseExt(char** data_p, qboolean allowLineBreaks)
 	const char *data = *data_p;
 
     unsigned char c;
-    static char r_token[512] = {0}; 
+    static char r_token[256] = {0}; 
     r_token[0] = 0;
 	r_tokenline = 0;
 

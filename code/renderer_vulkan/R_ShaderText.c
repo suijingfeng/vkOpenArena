@@ -3,7 +3,7 @@
 #include "ref_import.h"
 #include "R_Parser.h"
 #include "R_SortAlgorithm.h"
-
+#include "R_PrintMat.h"
 
 struct ShaderTextHashArray_t {
     char ** ppShaderName; // char * ppShaderName[count]; but count variary
@@ -125,6 +125,7 @@ static uint32_t HashCollisionCount(const char * pText, struct ShaderTextHashArra
 {    
     // look for shader names
     uint32_t tSize = 0;
+    // uint32_t maxLen = 0;
     while ( 1 )
     {
         char* token = R_ParseExt( &pText, qtrue );
@@ -133,15 +134,23 @@ static uint32_t HashCollisionCount(const char * pText, struct ShaderTextHashArra
             break;
         }
 
-        ++tSize;
+        // uint32_t len = strlen(token);
+        // if( len > maxLen)
+        //    maxLen = len;
 
         uint32_t hash = GenHashValue(token, MAX_SHADERTEXT_HASH);
-
         ++pTable[hash].Count;
+        
+        // ppName[tSize++] = pText;
+        // strncpy(ppTok[tSize], token, 64);
+        
+        ++tSize;
 
         // "{ ... }" are skiped.
         SkipBracedSection(&pText, 0);
     }
+
+    // ri.Printf(PRINT_ALL, "maxLen: %d", maxLen);
     return tSize;
 }
 
@@ -150,16 +159,16 @@ static void allocateMemoryForHashTable(uint32_t size, struct ShaderTextHashArray
 {
     uint32_t i;
 
-    char ** pMemOffset = (char ** )ri.Hunk_Alloc( size * sizeof(char *), h_low );
-    memset(pMemOffset, 0, size);
+    char * pMemOffset = (char *) ri.Hunk_Alloc( size * sizeof(char *), h_low );
+    memset(pMemOffset, 0, size * sizeof(char *));
 
     for (i = 0; i < MAX_SHADERTEXT_HASH; ++i)
     {
         // There no need to allocate memory for the NOT use hash table
         if(pTable[i].Count != 0)
         {
-            pTable[i].ppShaderName = pMemOffset;
-            pMemOffset += pTable[i].Count;
+            pTable[i].ppShaderName = (char * *)pMemOffset;
+            pMemOffset += pTable[i].Count * sizeof(char *);
             // ri.Hunk_Alloc( pTable[i].Count * sizeof(char *), h_low );
         }
     }
@@ -169,7 +178,6 @@ static void allocateMemoryForHashTable(uint32_t size, struct ShaderTextHashArray
 // can we parse only once?
 static void FillHashTableWithShaderNames(const char * pText, struct ShaderTextHashArray_t* const pTable)
 {
-
     uint32_t itemsCountTab[MAX_SHADERTEXT_HASH] = { 0 };
     const char * p = pText;
 
@@ -195,6 +203,24 @@ static void FillHashTableWithShaderNames(const char * pText, struct ShaderTextHa
 }
 
 
+/*
+static void FillHashTableWithTokens(char (*ppTok)[64], uint32_t size, 
+        struct ShaderTextHashArray_t* const pTable)
+{
+    uint32_t itemsCountTab[MAX_SHADERTEXT_HASH] = { 0 };
+
+    uint32_t i;
+    for( i = 0; i < size; ++i )
+    {
+        char* token = R_ParseExt( ppTok[i], qtrue );
+
+        uint32_t hash = GenHashValue(token, MAX_SHADERTEXT_HASH);
+        pTable[hash].ppShaderName[itemsCountTab[hash]++] = ppTok[i];
+    }
+}
+*/
+
+
 void SetShaderTextHashTableSizes(const char * const pText)
 {
     ri.Printf( PRINT_ALL, "SetShaderTextHashTableSizes \n");
@@ -202,9 +228,20 @@ void SetShaderTextHashTableSizes(const char * const pText)
     memset(s_ShaderNameTab, 0, sizeof(s_ShaderNameTab));
     // look for shader names
     // text in { } are skiped
+    
+    // char ppToken[7192][64] = {0}; 
+    // memset(ppToken, 0, 4096*2*sizeof(char *));
+
     uint32_t size = HashCollisionCount(pText, s_ShaderNameTab);
+    
+    // Fun_ppCharLogging("ppToken.txt", ppToken, size);
+    
     ri.Printf( PRINT_ALL, "shader name token size: %d\n", size);
 
     allocateMemoryForHashTable(size, s_ShaderNameTab);
+    
     FillHashTableWithShaderNames(pText, s_ShaderNameTab);
+    
+    // FillHashTableWithTokens(ppToken, size, s_ShaderNameTab);
+    // free(ppToToken);
 }
