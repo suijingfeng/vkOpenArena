@@ -330,7 +330,7 @@ void vk_fillRequiredInstanceExtention(
     {    
         ppInsExt[i] = pInsExt[i].extensionName;
     }
-
+    *nExt = nInsExt;
 
 #elif defined(__unix__) || defined(__linux) || defined(__linux__)
 
