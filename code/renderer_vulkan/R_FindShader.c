@@ -302,8 +302,10 @@ qhandle_t RE_RegisterShaderFromImage(const char *name, int lightmapIndex, image_
 
 static void BuildSingleLargeBuffer(char* buffers[], const int nShaderFiles, const int sum)
 {
-    ri.Printf( PRINT_ALL, " Build single large buffer. \n");
+    ri.Printf( PRINT_ALL, " Concatenate %d shader files into a single large buffer. \n", nShaderFiles);
     
+    // nShaderFiles*2
+    // one for "\n", another for what ?
     s_pShaderText = ri.Hunk_Alloc( sum + nShaderFiles*2, h_low );
 
 	memset( s_pShaderText, 0, sum + nShaderFiles*2 );
@@ -418,6 +420,7 @@ void ScanAndLoadShaderFiles( void )
 		
         // ri.Printf( PRINT_ALL, "...loading '%s'\n", filename );
 		
+        // summand is the file length
         long summand = ri.FS_ReadFile( filename, &pBuffers[i] );
 		
 		if ( NULL == pBuffers[i] )
