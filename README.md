@@ -239,7 +239,7 @@ gprof openarena.x86_64 gmon.out > report.txt
 ## developing notes
 ```
 \com_speed 1
-# win10, i5-5200U, GeForce 840
+# win10, i5-5200U, GeForce 840 1366x768
 
 frame:76190 all:  3 sv:  0 ev:  5 cl:  0 gm:  0 rf:  0 bk:  3
 frame:76191 all:  3 sv:  0 ev:  5 cl:  0 gm:  0 rf:  0 bk:  3
@@ -255,10 +255,6 @@ frame:76198 all:  2 sv:  0 ev:  5 cl:  0 gm:  0 rf:  0 bk:  2
  
 3398 frames 16.0 seconds 211.9 fps 2.0/4.7/47.0/2.1 ms
 
-# hash function on window seems collision much
- Total 490 images, hash Table used: 366/1024
-
- Top 10 Collision: 34, 4, 3, 3, 3, 3, 3, 3, 3, 3
 
 \printInstanceExtensions
  
@@ -328,4 +324,83 @@ total 2 Queue families:
  Queue family [1]: 1 queues,  Transfer,
 
 
+#######################################################################
+
+ubuntu 18.04 gnome Aspire v3-772G i7-4702MQ GTX760M 1920x1080
+
+----- Total 14 Instance Extension Supported -----
+VK_EXT_acquire_xlib_display
+VK_EXT_debug_report
+VK_EXT_direct_mode_display
+VK_EXT_display_surface_counter
+VK_KHR_display
+VK_KHR_get_physical_device_properties2
+VK_KHR_get_surface_capabilities2
+VK_KHR_surface
+VK_KHR_xcb_surface
+VK_KHR_xlib_surface
+VK_KHR_external_fence_capabilities
+VK_KHR_external_memory_capabilities
+VK_KHR_external_semaphore_capabilities
+VK_EXT_debug_utils
+----- ------------------------------------- -----
+
+]\printDeviceExtensions 
+--------- Total 33 Device Extension Supported ---------
+ VK_KHR_swapchain 
+ VK_KHR_16bit_storage 
+ VK_KHR_bind_memory2 
+ VK_KHR_dedicated_allocation 
+ VK_KHR_descriptor_update_template 
+ VK_KHR_get_memory_requirements2 
+ VK_KHR_image_format_list 
+ VK_KHR_maintenance1 
+ VK_KHR_maintenance2 
+ VK_KHR_push_descriptor 
+ VK_KHR_relaxed_block_layout 
+ VK_KHR_sampler_mirror_clamp_to_edge 
+ VK_KHR_sampler_ycbcr_conversion 
+ VK_KHR_shader_draw_parameters 
+ VK_KHR_storage_buffer_storage_class 
+ VK_KHR_external_memory 
+ VK_KHR_external_memory_fd 
+ VK_KHR_external_semaphore 
+ VK_KHR_external_semaphore_fd 
+ VK_KHR_external_fence 
+ VK_KHR_external_fence_fd 
+ VK_KHR_variable_pointers 
+ VK_KHX_device_group 
+ VK_KHX_multiview 
+ VK_EXT_depth_range_unrestricted 
+ VK_EXT_discard_rectangles 
+ VK_EXT_display_control 
+ VK_EXT_shader_subgroup_ballot 
+ VK_EXT_shader_subgroup_vote 
+ VK_NV_dedicated_allocation 
+ VK_NV_glsl_shader 
+ VK_NVX_device_generated_commands 
+ VK_NVX_multiview_per_view_attributes 
+--------- ----------------------------------- ---------
+
+
+3398 frames 15.0 seconds 225.9 fps 2.0/4.4/9.0/0.7 ms
+
+
+frame:62212 all:  2 sv:  0 ev:  6 cl:  1 gm:  0 rf:  0 bk:  1
+frame:62213 all:  2 sv:  0 ev:  6 cl:  0 gm:  0 rf:  0 bk:  2
+frame:62214 all:  2 sv:  0 ev:  6 cl:  1 gm:  0 rf:  0 bk:  1
+frame:62215 all:  2 sv:  0 ev:  6 cl:  1 gm:  0 rf:  0 bk:  1
+frame:62216 all:  3 sv:  0 ev:  7 cl:  1 gm:  0 rf:  0 bk:  2
+frame:62217 all:  2 sv:  0 ev:  4 cl:  0 gm:  0 rf:  1 bk:  1
+frame:62218 all:  1 sv:  0 ev:  6 cl:  0 gm:  0 rf:  0 bk:  1
+frame:62219 all:  2 sv:  0 ev:  7 cl:  0 gm:  0 rf:  1 bk:  1
+frame:62220 all:  2 sv:  0 ev:  6 cl:  0 gm:  0 rf:  0 bk:  2
+frame:62221 all:  2 sv:  0 ev:  6 cl:  0 gm:  0 rf:  1 bk:  1
+frame:62222 all:  3 sv:  0 ev:  6 cl:  0 gm:  0 rf:  1 bk:  2
+frame:62223 all:  2 sv:  0 ev:  5 cl:  0 gm:  0 rf:  0 bk:  2
+frame:62224 all:  1 sv:  0 ev:  6 cl:  1 gm:  0 rf:  0 bk:  0
+
+# bk time never get to 3
+
 ```
+
