@@ -131,6 +131,45 @@ Q: How to enable vulkan support from the pulldown console ?
 \cl_renerer vulkan
 \vid_restart
 ```
+
+Q: How to use check FPS or using it as a benchmarking tool?
+```
+\timedemo 1
+\demo demo088-test1 
+
+render_vulkan: 3398 frames 3.6 seconds 935.6 fps 0.0/1.1/2.0/0.3 ms
+render_gl2:    3398 frames 6.8 seconds 503.2 fps 1.0/2.0/6.0/0.6 ms
+render_gl1:    3398 frames 5.4 seconds 629.7 fps 1.0/1.6/4.0/0.6 ms
+render_mydev:  3398 frames 5.0 seconds 686.2 fps 1.0/1.5/3.0/0.5 ms
+render_oa:     3398 frames 5.3 seconds 646.9 fps 1.0/1.5/4.0/0.5 ms
+
+# This is the result tested on Ubuntu18.04 with AMD2700X CPU, GTX1080 GPU, 1920x1080 60 hz LG display
+# without loading some non-existing resource which waste some time, I guess this game can got 1000 FPS.
+
+# render_vulkan:
+\com_speed 1
+
+frame:36203 all:  1 sv:  0 ev:  8 cl:  0 gm:  0 rf:  0 bk:  1
+frame:36204 all:  0 sv:  0 ev:  7 cl:  0 gm:  0 rf:  0 bk:  0
+frame:36205 all:  0 sv:  0 ev:  8 cl:  0 gm:  0 rf:  0 bk:  0
+frame:36206 all:  1 sv:  0 ev:  8 cl:  0 gm:  0 rf:  0 bk:  1
+frame:36207 all:  0 sv:  0 ev:  7 cl:  0 gm:  0 rf:  0 bk:  0
+frame:36208 all:  0 sv:  0 ev:  8 cl:  0 gm:  0 rf:  0 bk:  0
+frame:36209 all:  0 sv:  0 ev:  8 cl:  0 gm:  0 rf:  0 bk:  0
+frame:36210 all:  0 sv:  0 ev:  7 cl:  0 gm:  0 rf:  0 bk:  0
+frame:36211 all:  0 sv:  0 ev:  8 cl:  0 gm:  0 rf:  0 bk:  0
+frame:36212 all:  0 sv:  0 ev:  8 cl:  0 gm:  0 rf:  0 bk:  0
+frame:36213 all:  0 sv:  0 ev:  8 cl:  0 gm:  0 rf:  0 bk:  0
+frame:36214 all:  0 sv:  0 ev:  8 cl:  0 gm:  0 rf:  0 bk:  0
+frame:36215 all:  1 sv:  0 ev:  8 cl:  0 gm:  0 rf:  0 bk:  1
+frame:36216 all:  0 sv:  0 ev:  7 cl:  0 gm:  0 rf:  0 bk:  0
+frame:36217 all:  0 sv:  0 ev:  8 cl:  0 gm:  0 rf:  0 bk:  0
+
+# TODO : make the game run at 1000 FPS.
+
+```
+
+
 Q: How to check that Vulkan backend is really active ? 
 ```sh
 \vkinfo
@@ -383,7 +422,7 @@ VK_EXT_debug_utils
 --------- ----------------------------------- ---------
 
 
-3398 frames 15.0 seconds 225.9 fps 2.0/4.4/9.0/0.7 ms
+render_vulkan: 3398 frames 15.0 seconds 225.9 fps 2.0/4.4/9.0/0.7 ms
 
 
 frame:62212 all:  2 sv:  0 ev:  6 cl:  1 gm:  0 rf:  0 bk:  1
