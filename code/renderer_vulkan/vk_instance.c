@@ -21,9 +21,13 @@ struct Vk_Instance vk;
 //
 PFN_vkGetInstanceProcAddr						qvkGetInstanceProcAddr;
 
+// Global Level
 PFN_vkCreateInstance							qvkCreateInstance;
 PFN_vkEnumerateInstanceExtensionProperties		qvkEnumerateInstanceExtensionProperties;
+PFN_vkEnumerateInstanceLayerProperties          qvkEnumerateInstanceLayerProperties;
 
+
+// Instance Level
 PFN_vkCreateDevice								qvkCreateDevice;
 PFN_vkDestroyInstance							qvkDestroyInstance;
 PFN_vkEnumerateDeviceExtensionProperties		qvkEnumerateDeviceExtensionProperties;
@@ -47,6 +51,8 @@ PFN_vkCreateDebugReportCallbackEXT				qvkCreateDebugReportCallbackEXT;
 PFN_vkDestroyDebugReportCallbackEXT				qvkDestroyDebugReportCallbackEXT;
 #endif
 
+
+// Device Level
 PFN_vkAllocateCommandBuffers					qvkAllocateCommandBuffers;
 PFN_vkAllocateDescriptorSets					qvkAllocateDescriptorSets;
 PFN_vkAllocateMemory							qvkAllocateMemory;
@@ -167,6 +173,55 @@ static void vk_createDebugCallback( PFN_vkDebugReportCallbackEXT qvkDebugCB)
 }
 
 #endif
+
+
+static void vk_assertStandValidationLayer(void)
+{
+    // Look For Standard Validation Layer
+    VkBool32 found = VK_FALSE;
+    
+    static const char instance_validation_layers_name[] = {"VK_LAYER_LUNARG_standard_validation"};
+
+    uint32_t instance_layer_count = 0;
+
+    VK_CHECK( qvkEnumerateInstanceLayerProperties(&instance_layer_count, NULL) );
+
+    if (instance_layer_count > 0)
+    {
+
+        VkLayerProperties * instance_layers = (VkLayerProperties *) 
+            malloc( sizeof(VkLayerProperties) * instance_layer_count );
+
+        VK_CHECK( qvkEnumerateInstanceLayerProperties(&instance_layer_count, instance_layers) );
+
+        ri.Printf(PRINT_ALL, " ------- %d instance layer available -------- \n", instance_layer_count);
+        uint32_t j;
+        for (j = 0; j < instance_layer_count; ++j)
+        {
+            ri.Printf(PRINT_ALL, " %s\n", instance_layers[j].layerName);
+        }
+
+        for (j = 0; j < instance_layer_count; ++j)
+        {
+            if (!strcmp(instance_validation_layers_name, instance_layers[j].layerName))
+            {
+                found = VK_TRUE;
+                ri.Printf(PRINT_ALL, " Standard validation found. \n");
+                break;
+            }
+        }
+
+        free(instance_layers);
+        
+        if(found == 0) {
+            ri.Printf(PRINT_WARNING, " Failed to find required validation layer.\n\n");
+        }
+    }
+    else
+    {
+        ri.Printf(PRINT_WARNING, "No instance layer available! \n");
+    }
+}
 
 
 static void vk_createInstance(void)
@@ -303,33 +358,81 @@ static void vk_createInstance(void)
     free(pInsExt);
 }
 
+// Vulkan functions can be divided into three levels, 
+// which are global, instance, and device. 
+// 
+// Device-level functions are used to perform typical operations
+// such as drawing, shader-modules creation, image creation, or data copying.
+//
+// Instance-level functions allow us to create logical devices. 
+// To do all this, and to load device and instance-level functions,
+// we need to create an Instance. 
+//
+// This operation is performed with global-level functions, 
+// which we need to load first.
 
-
-static void vk_loadGlobalFunctions(void)
+static void vk_loadGlobalLevelFunctions(void)
 {
     ri.Printf(PRINT_ALL, " Loading vulkan instance functions \n");
 
+    // In Vulkan, there are only three global-level functions:
+    // vkEnumerateInstanceExtensionProperties(), 
+    // vkEnumerateInstanceLayerProperties(), and
+    // vkCreateInstance(). 
+    //
+    // They are used during Instance creation to check, 
+    // what instance-level extensions and layers are available
+    // and to create the Instance itself.
+
+    // qvkGetInstanceProcAddr 
     vk_getInstanceProcAddrImpl();
 
-    #define INIT_INSTANCE_FUNCTION(func)                                \
-    q##func = (PFN_ ## func)qvkGetInstanceProcAddr(vk.instance, #func); \
+
+#define INIT_GLOBAL_LEVEL_FUNCTION( func )                          \
+    q##func = (PFN_##func) qvkGetInstanceProcAddr( NULL, #func );   \
+    if( q##func == NULL ) {                                         \
+        ri.Error(ERR_FATAL, "Failed to find entrypoint %s", #func); \
+}
+	INIT_GLOBAL_LEVEL_FUNCTION(vkCreateInstance)
+	INIT_GLOBAL_LEVEL_FUNCTION(vkEnumerateInstanceExtensionProperties)
+    // This embarrassing, i get NULL if loding this fun after create instance
+    // on ubuntu 16.04, 1.0.49
+    INIT_GLOBAL_LEVEL_FUNCTION(vkEnumerateInstanceLayerProperties)
+
+#undef INIT_GLOBAL_LEVEL_FUNCTION
+}
+
+
+
+static void vk_loadInstanceLevelFunctions(void)
+{
+
+    ri.Printf(PRINT_ALL, " Loading Instance level functions. \n");
+
+    vk_createInstance();
+
+    // Loading instance-level functions
+
+    // We have created a Vulkan Instance object. 
+    // The next step is to enumerate physical devices, 
+    // choose one of them, and create a logical device from it.
+    // These operations are performed with instance-level functions,
+    // of which we need to acquire the addresses.
+
+    // Instance-level functions are used mainly for operations on
+    // physical devices. There are multiple instance-level functions.
+    
+#define INIT_INSTANCE_FUNCTION(func)                                    \
+    q##func = (PFN_##func)qvkGetInstanceProcAddr(vk.instance, #func);   \
     if (q##func == NULL) {                                              \
         ri.Error(ERR_FATAL, "Failed to find entrypoint %s", #func);     \
     }
-
-	INIT_INSTANCE_FUNCTION(vkCreateInstance)
-	INIT_INSTANCE_FUNCTION(vkEnumerateInstanceExtensionProperties)
-
-    //
-	// Get instance level functions.
-	//
-	vk_createInstance();
-
 
 	INIT_INSTANCE_FUNCTION(vkCreateDevice)
 	INIT_INSTANCE_FUNCTION(vkDestroyInstance)
     INIT_INSTANCE_FUNCTION(vkDestroySurfaceKHR)
 	INIT_INSTANCE_FUNCTION(vkEnumerateDeviceExtensionProperties)
+
 	INIT_INSTANCE_FUNCTION(vkEnumeratePhysicalDevices)
 	INIT_INSTANCE_FUNCTION(vkGetDeviceProcAddr)
 
@@ -343,17 +446,18 @@ static void vk_loadGlobalFunctions(void)
 	INIT_INSTANCE_FUNCTION(vkGetPhysicalDeviceSurfaceFormatsKHR)
 	INIT_INSTANCE_FUNCTION(vkGetPhysicalDeviceSurfacePresentModesKHR)
 	INIT_INSTANCE_FUNCTION(vkGetPhysicalDeviceSurfaceSupportKHR)
-   
 
 #ifndef NDEBUG
     INIT_INSTANCE_FUNCTION(vkCreateDebugReportCallbackEXT)
 	INIT_INSTANCE_FUNCTION(vkDestroyDebugReportCallbackEXT)	//
 #endif
 
-    #undef INIT_INSTANCE_FUNCTION
+#undef INIT_INSTANCE_FUNCTION
 
-    ri.Printf(PRINT_ALL, " Init global functions done. \n");
+
 }
+
+
 
 ////////////////////////////////
 
@@ -842,7 +946,12 @@ static void vk_loadDeviceFunctions(void)
 
 void vk_getProcAddress(void)
 {
-    vk_loadGlobalFunctions();
+    vk_loadGlobalLevelFunctions();
+
+    vk_assertStandValidationLayer();
+
+
+    vk_loadInstanceLevelFunctions();
 
 #ifndef NDEBUG
 	// Create debug callback.
@@ -922,6 +1031,7 @@ void vk_clearProcAddress(void)
 	qvkCreateDevice								= NULL;
 	qvkDestroyInstance							= NULL;
 	qvkEnumerateDeviceExtensionProperties		= NULL;
+    qvkEnumerateInstanceLayerProperties         = NULL; //
 	qvkEnumeratePhysicalDevices					= NULL;
 	qvkGetDeviceProcAddr						= NULL;
 	qvkGetPhysicalDeviceFeatures				= NULL;

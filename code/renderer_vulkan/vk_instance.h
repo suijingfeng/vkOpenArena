@@ -12,6 +12,7 @@ extern PFN_vkEnumerateInstanceExtensionProperties		qvkEnumerateInstanceExtension
 
 extern PFN_vkCreateDevice								qvkCreateDevice;
 extern PFN_vkDestroyInstance							qvkDestroyInstance;
+extern PFN_vkEnumerateInstanceLayerProperties           qvkEnumerateInstanceLayerProperties;//
 extern PFN_vkEnumerateDeviceExtensionProperties	    	qvkEnumerateDeviceExtensionProperties;
 extern PFN_vkEnumeratePhysicalDevices					qvkEnumeratePhysicalDevices;
 extern PFN_vkGetDeviceProcAddr							qvkGetDeviceProcAddr;

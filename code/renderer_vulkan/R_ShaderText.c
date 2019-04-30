@@ -24,20 +24,21 @@ static uint32_t GenHashValue( const char *fname, const uint32_t size )
     while (fname[i] != '\0')
     {
         uint32_t letter = tolower(fname[i]);
-
+        
         if (letter == '.')
             break;				// don't include extension
         if ((letter =='\\') || (letter == PATH_SEP))
             letter = '/';		// damn path names
 
-        hash += letter * (i+89);
+        hash += letter * (i+79);
         ++i;
     }
 
-//    hash = (hash ^ (hash >> 10) ^ (hash >> 20));
+//  this line doesn't improve the result 
+//  hash = (hash ^ (hash >> 10) ^ (hash >> 20));
+
     return (hash & (size-1));
 }
-
 
 
 void printShaderTextHashTable_f(void)

@@ -298,12 +298,12 @@ success:
 	ri.IN_Init(window_sdl, 0);
 }
 
-
+// I can do this ourself
+// I do this way for SDL2, fear of SDL2 may use vulkan function
+// need to check that
 void vk_getInstanceProcAddrImpl(void)
 {
-
 	SDL_Vulkan_LoadLibrary(NULL);    
-    // Create the window 
 
     qvkGetInstanceProcAddr = (PFN_vkGetInstanceProcAddr) SDL_Vulkan_GetVkGetInstanceProcAddr();
     if( qvkGetInstanceProcAddr == NULL)
