@@ -3,27 +3,10 @@
 
 #include "../renderercommon/tr_types.h"
 #include "tr_shader.h"
+#include "surface_type.h"
+
 #define	MAX_GRID_SIZE		65			// max dimensions of a grid mesh in memory
 
-
-
-// any changes in surfaceType must be mirrored in rb_surfaceTable[]
-typedef enum {
-	SF_BAD,
-	SF_SKIP,				// ignore
-	SF_FACE,
-	SF_GRID,
-	SF_TRIANGLES,
-	SF_POLY,
-	SF_MD3,
-	SF_MDR,
-	SF_IQM,
-	SF_FLARE,
-	SF_ENTITY,				// beams, rails, lightning, etc that can be determined by entity
-
-	SF_NUM_SURFACE_TYPES,
-	SF_MAX = 0x7fffffff			// ensures that sizeof( surfaceType_t ) == sizeof( int )
-} surfaceType_t;
 
 typedef void (* Fn_RB_SurfaceTable_t)(void *); 
 
@@ -57,61 +40,6 @@ typedef struct srfGridMesh_s {
 } srfGridMesh_t;
 
 
-
-typedef struct drawSurf_s {
-	unsigned int	sort;			// bit combination for fast compares
-	surfaceType_t * surface;		// any of surface*_t
-} drawSurf_t;
-
-
-
-// when cgame directly specifies a polygon, it becomes a srfPoly_t
-// as soon as it is called
-typedef struct srfPoly_s {
-	surfaceType_t	surfaceType;
-	qhandle_t		hShader;
-	int				fogIndex;
-	int				numVerts;
-	polyVert_t		*verts;
-} srfPoly_t;
-
-
-#define	VERTEXSIZE	8
-typedef struct {
-	surfaceType_t	surfaceType;
-	cplane_t	plane;
-
-	// dynamic lighting information
-	int			dlightBits;
-
-	// triangle definitions (no normals at points)
-	int			numPoints;
-	int			numIndices;
-	int			ofsIndices;
-	float		points[1][VERTEXSIZE];	// variable sized
-										// there is a variable length list of indices here also
-} srfSurfaceFace_t;
-
-
-// misc_models in maps are turned into direct geometry by q3map
-typedef struct {
-	surfaceType_t	surfaceType;
-
-	// dynamic lighting information
-	int				dlightBits;
-
-	// culling information (FIXME: use this!)
-	vec3_t			bounds[2];
-	vec3_t			localOrigin;
-	float			radius;
-
-	// triangle definitions
-	int				numIndexes;
-	int				*indexes;
-
-	int				numVerts;
-	drawVert_t		*verts;
-} srfTriangles_t;
 
 
 //

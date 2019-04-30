@@ -9,6 +9,13 @@
 #include "R_RotateForViewer.h"
 #include "tr_globals.h"
 #include "tr_cvar.h"
+#include "srfTriangles_type.h"
+#include "srfPoly_type.h"
+#include "srfSurfaceFace_type.h"
+#include "srfSurfaceFace_type.h"
+#include "tr_surface.h"
+
+
 
 
 extern void R_RenderView (viewParms_t *parms);
@@ -406,7 +413,8 @@ qboolean R_MirrorViewBySurface (drawSurf_t *drawSurf, int entityNum)
 	}
 
 	// trivially reject portal/mirror
-	if ( SurfIsOffscreen( drawSurf, clipDest ) ) {
+	if ( SurfIsOffscreen( drawSurf, clipDest ) )
+    {
         //ri.Printf(PRINT_ALL, "isSurfOffscreen: 1\n");
 		return qfalse;
 	}

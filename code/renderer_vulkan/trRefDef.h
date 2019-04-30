@@ -3,8 +3,12 @@
 
 #include "../qcommon/q_shared.h"
 
-
 #include "../renderercommon/tr_types.h"
+
+
+#include "surface_type.h"
+
+
 // 12 bits
 // see QSORT_SHADERNUM_SHIFT
 
@@ -23,6 +27,7 @@ typedef struct {
 
 
 //===============================================================================
+
 
 
 // trRefdef_t holds everything that comes in refdef_t,

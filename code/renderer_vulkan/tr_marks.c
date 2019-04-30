@@ -25,6 +25,7 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #include "tr_curve.h"
 #include "tr_model.h"
 #include "tr_world.h"
+#include "srfSurfaceFace_type.h"
 
 #define MAX_VERTS_ON_POLY		64
 

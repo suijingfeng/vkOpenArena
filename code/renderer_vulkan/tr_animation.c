@@ -240,7 +240,7 @@ void R_MDRAddAnimSurfaces( trRefEntity_t *ent )
 
 	mdrSurface_t* surface = (mdrSurface_t *)( (unsigned char *)lod + lod->ofsSurfaces );
 
-	for ( i = 0 ; i < lod->numSurfaces ; i++ )
+	for( i = 0; i < lod->numSurfaces; ++i )
 	{
 		if(ent->e.customShader)
 			shader = R_GetShaderByHandle(ent->e.customShader);

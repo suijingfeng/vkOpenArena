@@ -29,6 +29,8 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #include "tr_world.h"
 #include "R_RotateForViewer.h"
 #include "R_SortDrawSurfs.h"
+#include "srfPoly_type.h"
+
 
 // these are sort of arbitrary limits.
 // the limits apply to the sum of all scenes in a frame --
@@ -179,16 +181,21 @@ Adds all the scene's polys into this view's drawsurf list
 */
 void R_AddPolygonSurfaces( void )
 {
-	int			i;
-	shader_t	*sh;
-	srfPoly_t	*poly;
 
 	tr.currentEntityNum = REFENTITYNUM_WORLD;
 	tr.shiftedEntityNum = tr.currentEntityNum << QSORT_ENTITYNUM_SHIFT;
 
-	for ( i = 0, poly = tr.refdef.polys; i < tr.refdef.numPolys ; i++, poly++ ) {
-		sh = R_GetShaderByHandle( poly->hShader );
+
+    srfPoly_t* poly = tr.refdef.polys;
+
+
+    int	i;
+
+	for(i = 0; i < tr.refdef.numPolys; ++i)
+    {
+		shader_t* sh = R_GetShaderByHandle( poly->hShader );
 		R_AddDrawSurf( (surfaceType_t*) ( void * )poly, sh, poly->fogIndex, qfalse );
+        poly++;
 	}
 }
 

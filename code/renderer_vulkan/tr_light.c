@@ -27,6 +27,8 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #include "tr_curve.h"
 #include "tr_model.h"
 #include "tr_world.h"
+#include "srfTriangles_type.h"
+#include "srfSurfaceFace_type.h"
 
 #define	DLIGHT_AT_RADIUS		16
 // at the edge of a dlight's influence, this amount of light will be added

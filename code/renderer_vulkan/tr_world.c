@@ -27,6 +27,8 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #include "tr_world.h"
 #include "tr_model.h"
 #include "R_SortDrawSurfs.h"
+#include "srfTriangles_type.h"
+#include "srfSurfaceFace_type.h"
 
 extern void R_DlightBmodel( struct bmodel_s * bmodel );
 
@@ -645,7 +647,7 @@ static void R_MarkLeaves (void)
 R_AddWorldSurfaces
 =============
 */
-void R_AddWorldSurfaces (void)
+void R_AddWorldSurfaces (viewParms_t * const pViewParams)
 {
 	if ( !r_drawworld->integer ) {
 		return;
@@ -662,7 +664,7 @@ void R_AddWorldSurfaces (void)
 	R_MarkLeaves ();
 
 	// clear out the visible min/max
-	ClearBounds( tr.viewParms.visBounds[0], tr.viewParms.visBounds[1] );
+	ClearBounds( pViewParams->visBounds[0], pViewParams->visBounds[1] );
 
 	// perform frustum culling and add all the potentially visible surfaces
 	if ( tr.refdef.num_dlights > 32 ) {

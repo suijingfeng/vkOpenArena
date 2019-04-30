@@ -29,6 +29,10 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #include "RB_SurfaceAnim.h"
 #include "tr_surface.h"
 #include "R_ShaderCommands.h"
+#include "srfTriangles_type.h"
+#include "srfPoly_type.h"
+#include "srfSurfaceFace_type.h"
+
 /*
 
   THIS ENTIRE FILE IS BACK END

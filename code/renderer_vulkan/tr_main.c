@@ -157,10 +157,8 @@ static void R_AddEntitySurfaces (viewParms_t * const pViewParam)
 {
     // entities that will have procedurally generated surfaces will just
     // point at this for their sorting surface
-    static surfaceType_t	entitySurface = SF_ENTITY;
-	if ( !r_drawentities->integer ) {
-		return;
-	}
+    static surfaceType_t entitySurface = SF_ENTITY;
+
 
 	for ( tr.currentEntityNum = 0; 
 	      tr.currentEntityNum < tr.refdef.num_entities; 
@@ -237,10 +235,7 @@ static void R_AddEntitySurfaces (viewParms_t * const pViewParam)
 					shader = R_GetShaderByHandle( ent->e.customShader );
 					R_AddDrawSurf( &entitySurface, tr.defaultShader, 0, 0 );
 					break;
-				default:
-					ri.Error( ERR_DROP, "Add entity surfaces: Bad modeltype" );
-					break;
-				}
+                }
 			}
 			break;
 		default:
@@ -250,7 +245,7 @@ static void R_AddEntitySurfaces (viewParms_t * const pViewParam)
 }
 
 
-static void R_SetupProjection( viewParms_t * const pViewParams)
+static void R_SetupProjection( viewParms_t * const pViewParams, VkBool32 noWorld)
 {
 	float zFar;
 
@@ -262,7 +257,7 @@ static void R_SetupProjection( viewParms_t * const pViewParams)
 	// dynamically compute far clip plane distance
 	// if not rendering the world (icons, menus, etc), set a 2k far clip plane
 
-	if ( tr.refdef.rd.rdflags & RDF_NOWORLDMODEL )
+	if ( noWorld )
     {
 		pViewParams->zFar = zFar = 2048.0f;
 	}
@@ -354,7 +349,7 @@ void R_RenderView (viewParms_t *parms)
     // Setup that culling frustum planes for the current view
 	R_SetupFrustum (&tr.viewParms);
 
-	R_AddWorldSurfaces ();
+	R_AddWorldSurfaces (&tr.viewParms);
 
 	R_AddPolygonSurfaces();
 
@@ -362,9 +357,15 @@ void R_RenderView (viewParms_t *parms)
 	// now that we have the world bounded
 	// this needs to be done before entities are
 	// added, because they use the projection matrix for LOD calculation
-	R_SetupProjection (&tr.viewParms);
+    //
+        
+	R_SetupProjection (&tr.viewParms, tr.refdef.rd.rdflags & RDF_NOWORLDMODEL);
 
-	R_AddEntitySurfaces (&tr.viewParms);
+    if ( r_drawentities->integer ) {
+	    R_AddEntitySurfaces (&tr.viewParms);
+	}
+
+
 
 	R_SortDrawSurfs( tr.refdef.drawSurfs + firstDrawSurf, tr.refdef.numDrawSurfs - firstDrawSurf );
 

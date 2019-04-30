@@ -32,6 +32,10 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #include "render_export.h"
 #include "tr_world.h"
 #include "tr_model.h"
+#include "srfTriangles_type.h"
+#include "srfSurfaceFace_type.h"
+
+
 /*
 
 Loads and prepares a map file for scene rendering.

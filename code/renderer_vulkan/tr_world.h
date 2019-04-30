@@ -1,7 +1,7 @@
 #ifndef TR_WORLD_H_
 #define TR_WORLD_H_
 
-//#include "viewParms.h"
+#include "viewParms.h"
 #include "trRefDef.h"
 
 /*
@@ -90,7 +90,7 @@ WORLD MAP
 */
 
 void R_AddBrushModelSurfaces( trRefEntity_t *e );
-void R_AddWorldSurfaces( void );
+void R_AddWorldSurfaces(viewParms_t * const pViewParams);
 void R_GetWorldBaseName(char* checkname);
 void SetTessFogColor(unsigned char (*pcolor)[4], int fnum, int nvert);
 

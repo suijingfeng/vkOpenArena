@@ -1,4 +1,4 @@
-#include "tr_globals.h"
+#include "tr_globals.h" //tr.worldEn
 #include "tr_backend.h"
 #include "vk_shade_geometry.h"
 #include "tr_surface.h"
@@ -9,16 +9,13 @@
 
 #include "FixRenderCommandList.h"
 
-void RB_RenderDrawSurfList( drawSurf_t* pDrawSurfs, int numDrawSurfs, trRefdef_t * pRefdef, viewParms_t * pViewPar )
+void RB_RenderDrawSurfList(const drawSurf_t* const pDrawSurfs, int numDrawSurfs, const trRefdef_t * const pRefdef, viewParms_t * pViewPar )
 {
 
     backEnd.refdef = *pRefdef;
     backEnd.viewParms = *pViewPar;
 
 
-	shader_t		*oldShader;
-	int				oldFogNum;
-	int				oldDlighted;
 	// save original time for entity shader offsets
 	float originalTime = backEnd.refdef.floatTime;
 
@@ -58,21 +55,21 @@ void RB_RenderDrawSurfList( drawSurf_t* pDrawSurfs, int numDrawSurfs, trRefdef_t
 	// draw everything
 
 	int oldEntityNum = -1;
-	backEnd.currentEntity = &tr.worldEntity;
-	oldShader = NULL;
-	oldFogNum = -1;
-	oldDlighted = qfalse;
-
+	int oldFogNum = -1;
+	int oldDlighted = qfalse;
 	unsigned int oldSort = -1;
+    
 
+
+    shader_t* oldShader = NULL;
+
+	backEnd.currentEntity = &tr.worldEntity;
 	backEnd.pc.c_surfaces += numDrawSurfs;
 
 
-    drawSurf_t* pSurf = pDrawSurfs;
-
 
     int	i;
-
+	const drawSurf_t* pSurf = pDrawSurfs;
 	for (i = 0; i < numDrawSurfs; ++i, ++pSurf)
     {
 		
@@ -85,6 +82,7 @@ void RB_RenderDrawSurfList( drawSurf_t* pDrawSurfs, int numDrawSurfs, trRefdef_t
 
 		oldSort = pSurf->sort;
 		
+
         int entityNum, fogNum, dlighted;
         shader_t* shader;
 
@@ -94,8 +92,10 @@ void RB_RenderDrawSurfList( drawSurf_t* pDrawSurfs, int numDrawSurfs, trRefdef_t
 		// change the tess parameters if needed
 		// a "entityMergable" shader is a shader that can have surfaces from seperate
 		// entities merged into a single batch, like smoke and blood puff sprites
-		if ( (shader != oldShader) || (fogNum != oldFogNum) || (dlighted != oldDlighted)
-			|| ( entityNum != oldEntityNum && !shader->entityMergable ) )
+		if ( (shader != oldShader) || 
+             (fogNum != oldFogNum) || 
+             (dlighted != oldDlighted) || 
+             (entityNum != oldEntityNum && !shader->entityMergable) )
         {
 			if (oldShader != NULL) {
 				RB_EndSurface();
@@ -151,6 +151,7 @@ void RB_RenderDrawSurfList( drawSurf_t* pDrawSurfs, int numDrawSurfs, trRefdef_t
 
 		// add the triangles for this surface
 		rb_surfaceTable[ *pSurf->surface ]( pSurf->surface );
+
 	}
 
 	backEnd.refdef.floatTime = originalTime;
@@ -165,6 +166,6 @@ void RB_RenderDrawSurfList( drawSurf_t* pDrawSurfs, int numDrawSurfs, trRefdef_t
 
 
 	// darken down any stencil shadows
-	RB_ShadowFinish();		
+	RB_ShadowFinish();
 }
 

@@ -2,7 +2,7 @@
 #define R_PORTAL_H_
 
 
-#include "tr_surface.h"
+#include "surface_type.h"
 
 qboolean R_MirrorViewBySurface (drawSurf_t * drawSurf, int entityNum);
 
