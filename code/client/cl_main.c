@@ -3245,9 +3245,7 @@ void CL_InitRef(void)
 	ri.CM_DrawDebugSurface = CM_DrawDebugSurface;
 
 	ri.FS_ReadFile = FS_ReadFile;
-////////////////
-    ri.R_ReadFile = R_ReadFile;
-///////////////
+
 	ri.FS_FreeFile = FS_FreeFile;
 	ri.FS_WriteFile = FS_WriteFile;
 	ri.FS_FreeFileList = FS_FreeFileList;

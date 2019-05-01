@@ -63,7 +63,7 @@ qhandle_t R_RegisterMD3(const char *name, model_t *mod)
 		else
 			snprintf(namebuf, sizeof(namebuf), "%s.%s", filename, fext);
 
-		ri.R_ReadFile( namebuf, &buf );
+		ri.FS_ReadFile( namebuf, &buf );
 		if(!buf)
 			continue;
 		
@@ -120,7 +120,7 @@ qhandle_t R_RegisterMDR(const char *name, model_t *mod)
 	char* buf;
 
 	qboolean loaded = qfalse;
-	int filesize = ri.R_ReadFile(name, &buf);
+	int filesize = ri.FS_ReadFile(name, &buf);
 	if(!buf)
 	{
 		mod->type = MOD_BAD;
@@ -162,7 +162,7 @@ qhandle_t R_RegisterIQM(const char *name, model_t *mod)
 	qboolean loaded = qfalse;
 	int filesize;
 
-	filesize = ri.R_ReadFile(name, &buf);
+	filesize = ri.FS_ReadFile(name, &buf);
 	if(!buf)
 	{
 		mod->type = MOD_BAD;

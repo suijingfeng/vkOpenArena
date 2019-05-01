@@ -378,9 +378,9 @@ void RE_RegisterFont(const char *fontName, int pointSize, fontInfo_t *font)
 		}
 	}
 
-	int len = ri.R_ReadFile(name, NULL);
+	int len = ri.FS_ReadFile(name, NULL);
 	if (len == sizeof(fontInfo_t)) {
-		ri.R_ReadFile(name, &faceData);
+		ri.FS_ReadFile(name, &faceData);
 		fdOffset = 0;
 		fdFile = (unsigned char*)faceData;
 		for(i=0; i<GLYPHS_PER_FONT; i++) {
@@ -420,7 +420,7 @@ void RE_RegisterFont(const char *fontName, int pointSize, fontInfo_t *font)
 		return;
 	}
 
-	len = ri.R_ReadFile(fontName, &faceData);
+	len = ri.FS_ReadFile(fontName, &faceData);
 	if (len <= 0) {
 		ri.Printf(PRINT_WARNING, "RE_RegisterFont: Unable to read font file '%s'\n", fontName);
 		return;

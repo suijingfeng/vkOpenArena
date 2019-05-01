@@ -244,7 +244,7 @@ void R_LoadDDS ( const char *filename, byte **pic, int *width, int *height, GLen
 	//
 	// load the file
 	//
-	len = ri.R_ReadFile( filename, &buffer);
+	len = ri.FS_ReadFile( filename, &buffer);
 	if (!buffer || len < 0) {
 		return;
 	}

@@ -2755,7 +2755,7 @@ static void ScanAndLoadShaderFiles( void )
 
 		snprintf( filename, sizeof( filename ), "scripts/%s", shaderFiles[i] );
 		ri.Printf( PRINT_DEVELOPER, "...loading '%s'\n", filename );
-		summand = ri.R_ReadFile( filename, &buffers[i] );
+		summand = ri.FS_ReadFile( filename, &buffers[i] );
 		
 		if ( !buffers[i] )
 			ri.Error( ERR_DROP, "Couldn't load %s", filename );

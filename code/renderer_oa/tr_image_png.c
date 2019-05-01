@@ -252,7 +252,7 @@ static struct BufferedFile *ReadBufferedFile(const char *name)
 	 *  Read the file.
 	 */
 
-	BF->Length = ri.R_ReadFile(name, &buffer);
+	BF->Length = ri.FS_ReadFile(name, &buffer);
 	BF->Buffer = (unsigned char*)buffer;
 
 	/*

@@ -324,7 +324,7 @@ static	void R_LoadLightmaps( lump_t *l, lump_t *surfs ) {
 				snprintf( filename, sizeof( filename ), "maps/%s/lm_%04d.hdr", s_worldData.baseName, i * (tr.worldDeluxeMapping ? 2 : 1) );
 				//ri.Printf(PRINT_ALL, "looking for %s\n", filename);
 
-				size = ri.R_ReadFile(filename, &hdrLightmap);
+				size = ri.FS_ReadFile(filename, &hdrLightmap);
 			}
 
 			if (hdrLightmap)
@@ -1729,7 +1729,7 @@ static	void R_LoadSurfaces( lump_t *surfs, lump_t *verts, lump_t *indexLump ) {
 		snprintf( filename, sizeof( filename ), "maps/%s/vertlight.raw", s_worldData.baseName);
 		ri.Printf(PRINT_ALL, "looking for %s\n", filename);
 
-		size = ri.R_ReadFile(filename, &hdrVertColors);
+		size = ri.FS_ReadFile(filename, &hdrVertColors);
 
 		if (hdrVertColors)
 		{
@@ -2210,7 +2210,7 @@ void R_LoadLightGrid( lump_t *l )
 		snprintf( filename, sizeof( filename ), "maps/%s/lightgrid.raw", s_worldData.baseName);
 		ri.Printf(PRINT_ALL, "looking for %s\n", filename);
 
-		size = ri.R_ReadFile(filename, &hdrLightGrid);
+		size = ri.FS_ReadFile(filename, &hdrLightGrid);
 
 		if (hdrLightGrid)
 		{
@@ -2457,7 +2457,7 @@ void R_LoadEnvironmentJson(const char *baseName)
 
 	snprintf(filename, MAX_QPATH, "cubemaps/%s/env.json", baseName);
 
-	filelen = ri.R_ReadFile(filename, &buffer);
+	filelen = ri.FS_ReadFile(filename, &buffer);
 	if (!buffer)
 		return;
 	char * bufferEnd = buffer + filelen;
@@ -2731,7 +2731,7 @@ void RE_LoadWorldMap( const char *name ) {
 	tr.worldMapLoaded = qtrue;
 
 	// load it
-    ri.R_ReadFile( name, &buffer );
+    ri.FS_ReadFile( name, &buffer );
 	if ( NULL == buffer ) {
 		ri.Error (ERR_DROP, "RE_LoadWorldMap: %s not found", name);
 	}

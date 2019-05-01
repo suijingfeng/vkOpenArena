@@ -140,7 +140,6 @@ typedef struct {
 	// NULL can be passed for buf to just determine existance
 	int		(*FS_FileIsInPAK)( const char *name, int *pCheckSum );
 	long (*FS_ReadFile)( const char *name, void **buf );
-	long (*R_ReadFile)( const char *name, char **buf );
 	void	(*FS_FreeFile)( void *buf );
 	char **	(*FS_ListFiles)( const char *name, const char *extension, int *numfilesfound );
 	void	(*FS_FreeFileList)( char **filelist );

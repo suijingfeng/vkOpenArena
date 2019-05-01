@@ -147,7 +147,7 @@ qhandle_t RE_RegisterModel( const char *name ) {
 			strcat( filename, namebuf );
 		}
 
-		ri.R_ReadFile( filename, &buf );
+		ri.FS_ReadFile( filename, &buf );
 		if ( !buf ) {
 			continue;
 		}
