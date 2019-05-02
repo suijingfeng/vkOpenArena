@@ -96,24 +96,6 @@ static void SWAP_DRAW_SURF( drawSurf_t *a, drawSurf_t* b )
 }
 
 
-static void shortsort( drawSurf_t * const lo, drawSurf_t * hi )
-{
-    while (hi > lo)
-    {
-        drawSurf_t * max = lo;
-        drawSurf_t * p;
-        for (p = lo + 1; p <= hi; ++p)
-        {
-            if ( p->sort > max->sort )
-            {
-                max = p;
-            }
-        }
-        SWAP_DRAW_SURF(max, hi);
-        --hi;
-    }
-}
-
 /*
 ===============
 R_Radix
@@ -201,9 +183,6 @@ void R_SortDrawSurfs( drawSurf_t *drawSurfs, int numDrawSurfs )
     // Algo_QuickSort(drawSurfs, 0, numDrawSurfs - 1);
     // ORIGINAL
     // qsortFast (drawSurfs, numDrawSurfs, sizeof(drawSurf_t) );
-    //
-    // try slow algorithm, still run, but about 1000ms
-    // shortsort(drawSurfs, drawSurfs + numDrawSurfs - 1);
     //
     // fastest 20-30
     R_RadixSort (drawSurfs, numDrawSurfs);
