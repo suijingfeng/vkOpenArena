@@ -71,8 +71,6 @@ void vk_destroyGlobalStagePipeline(void);
 void vk_destroyDebugPipelines(void);
 
 void R_PipelineList_f(void);
-void printPipelineTree_f(void);
-
 
 
 extern struct GlobalPipelinesManager_t g_globalPipelines;

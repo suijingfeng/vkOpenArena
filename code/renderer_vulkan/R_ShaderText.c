@@ -47,7 +47,7 @@ void printShaderTextHashTable_f(void)
     uint32_t count = 0;
     uint32_t total = 0;
 
-    uint32_t tmpTab[MAX_SHADERTEXT_HASH] = {0};
+    int32_t tmpTab[MAX_SHADERTEXT_HASH] = {0};
     ri.Printf(PRINT_ALL, "\n\n-----------------------------------------------------\n"); 
     
    

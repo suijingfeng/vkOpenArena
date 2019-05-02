@@ -109,8 +109,6 @@ void R_Init( void )
 
     ri.Cmd_AddCommand( "printImgHashTable", printImageHashTable_f );
 
-    ri.Cmd_AddCommand( "printPipelineTree", printPipelineTree_f );
-
     ri.Cmd_AddCommand( "printShaderTextHashTable", printShaderTextHashTable_f);
 
     R_InitScene();
@@ -170,7 +168,6 @@ void RE_Shutdown( qboolean destroyWindow )
     ri.Cmd_RemoveCommand("printOR");
     ri.Cmd_RemoveCommand("printImgHashTable");
     ri.Cmd_RemoveCommand("listSortedShader");
-    ri.Cmd_RemoveCommand("printPipelineTree");
 
     ri.Cmd_RemoveCommand("printShaderTextHashTable");
 

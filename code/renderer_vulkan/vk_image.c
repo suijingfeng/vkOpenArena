@@ -247,13 +247,15 @@ static int generateHashValue( const char *fname )
 	while (fname[i] != '\0')
     {
 		char letter = tolower(fname[i]);
-		if (letter =='.') break;		// don't include extension
-		if (letter =='\\') letter = '/';	// damn path names
+		if (letter =='.')
+            break;		// don't include extension
+		if (letter =='\\')
+            letter = '/';	// damn path names
 		hash+=(int)(letter)*(i+119);
-		i++;
+		++i;
 	}
-	hash &= (FILE_HASH_SIZE-1);
-	return hash;
+
+    return hash & (FILE_HASH_SIZE-1);
 }
 
 
@@ -261,7 +263,7 @@ void printImageHashTable_f(void)
 {
     uint32_t i = 0;
 
-    uint32_t tmpTab[FILE_HASH_SIZE] = {0};
+    int32_t tmpTab[FILE_HASH_SIZE] = {0};
     ri.Printf(PRINT_ALL, "\n\n-----------------------------------------------------\n"); 
     for(i = 0; i < FILE_HASH_SIZE; ++i)
     {

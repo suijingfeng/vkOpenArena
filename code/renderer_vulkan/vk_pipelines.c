@@ -179,16 +179,10 @@ void DestroySearchTree(struct pipeline_tree_s * pTree)
 }
 
 
-void printPipelineTree_f(void)
-{
-    printPipelineTree(pPlRoot);
-}
-
-
-
 void R_PipelineList_f(void)
 {
     ri.Printf(PRINT_ALL, " Total pipeline created: %d\n", s_numPipelines);
+    printPipelineTree(pPlRoot);
 }
 
 
@@ -684,7 +678,7 @@ void vk_create_pipeline(
 	dynamic_state.pNext = NULL;
 	dynamic_state.flags = 0;
 	dynamic_state.dynamicStateCount = 3;
-	VkDynamicState dynamic_state_array[3] = { VK_DYNAMIC_STATE_VIEWPORT, VK_DYNAMIC_STATE_SCISSOR, VK_DYNAMIC_STATE_DEPTH_BIAS };
+	const VkDynamicState dynamic_state_array[3] = { VK_DYNAMIC_STATE_VIEWPORT, VK_DYNAMIC_STATE_SCISSOR, VK_DYNAMIC_STATE_DEPTH_BIAS };
 	dynamic_state.pDynamicStates = dynamic_state_array;
 
 
