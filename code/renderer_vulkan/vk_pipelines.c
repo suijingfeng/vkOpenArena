@@ -191,82 +191,17 @@ void R_PipelineList_f(void)
 // in the fragment shader.
 
 
-void vk_createPipelineLayout(uint32_t numDes)
+
+void vk_createPipelineLayout(void)
 {
-    ri.Printf(PRINT_ALL, " Create: vk.descriptor_pool, vk.set_layout, vk.pipeline_layout\n");
+    ri.Printf(PRINT_ALL, " Create ipeline layout. \n");
  
-    // Like command buffers, descriptor sets are allocated from a pool. 
-    // So we must first create the Descriptor pool.
-	{
-		VkDescriptorPoolSize pool_size;
-		pool_size.type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-		pool_size.descriptorCount = numDes;
-
-		VkDescriptorPoolCreateInfo desc;
-		desc.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
-		desc.pNext = NULL;
-		desc.flags = VK_DESCRIPTOR_POOL_CREATE_FREE_DESCRIPTOR_SET_BIT; // used by the cinematic images
-		desc.maxSets = numDes;
-		desc.poolSizeCount = 1;
-        // pPoolSizes is a pointer to an array of VkDescriptorPoolSize structures,
-        // each containing a descriptor type and number of descriptors of 
-        // that type to be allocated in the pool.
-		desc.pPoolSizes = &pool_size;
-
-		VK_CHECK(qvkCreateDescriptorPool(vk.device, &desc, NULL, &vk.descriptor_pool));
-	}
-
-
-	//
-	// Descriptor set layout.
-
-	{
-		VkDescriptorSetLayoutBinding descriptor_binding;
-        // is the binding number of this entry and corresponds to 
-        // a resource of the same binding number in the shader stages
-		descriptor_binding.binding = 0;
-        // descriptorType is a VkDescriptorType specifying which type of
-        // resource descriptors are used for this binding.
-		descriptor_binding.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-        // 1 is the number of descriptors contained in the binding,
-        // accessed in a shader as an array
-		descriptor_binding.descriptorCount = 1;
-        // stageFlags member is a bitmask of VkShaderStageFlagBits specifying 
-        // which pipeline shader stages can access a resource for this binding
-		descriptor_binding.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
-        // pImmutableSamplers affects initialization of samplers. If descriptorType
-        // specifies a VK_DESCRIPTOR_TYPE_SAMPLER or 
-        // VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER type descriptor, then 
-        // pImmutableSamplers can be used to initialize a set of immutable samplers.
-        // Immutable samplers are permanently bound into the set layout;
-        // later binding a sampler into an immutable sampler slot in a descriptor
-        // set is not allowed. If pImmutableSamplers is not NULL, then it is
-        // considered to be a pointer to an array of sampler handles that
-        // will be consumed by the set layout and used for the corresponding binding.
-        // If pImmutableSamplers is NULL, then the sampler slots are dynamic 
-        // and sampler handles must be bound into descriptor sets using this layout.
-        // If descriptorType is not one of these descriptor types, 
-        // then pImmutableSamplers is ignored.
-		descriptor_binding.pImmutableSamplers = NULL;
-
-		VkDescriptorSetLayoutCreateInfo desc;
-		desc.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
-		desc.pNext = NULL;
-		desc.flags = 0;
-		desc.bindingCount = 1;
-		desc.pBindings = &descriptor_binding;
-        
-        // To create descriptor set layout objects
-		VK_CHECK(qvkCreateDescriptorSetLayout(vk.device, &desc, NULL, &vk.set_layout));
-	}
-
-
     VkPushConstantRange push_range;
     push_range.stageFlags = VK_SHADER_STAGE_VERTEX_BIT;
     push_range.offset = 0;
     push_range.size = 128; // 16 mvp floats + 16
 
-    VkDescriptorSetLayout set_layouts[2] = {vk.set_layout, vk.set_layout};
+    VkDescriptorSetLayout setLayoutArray[2] = {vk.set_layout, vk.set_layout};
 
     VkPipelineLayoutCreateInfo desc;
     desc.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
@@ -275,8 +210,9 @@ void vk_createPipelineLayout(uint32_t numDes)
 
     // setLayoutCount: the number of descriptor sets included in the pipeline layout.
     // pSetLayouts: a pointer to an array of VkDescriptorSetLayout objects.
+    // The maximum number of the descriptor sets that can be bound at once at least 4.
     desc.setLayoutCount = 2;
-    desc.pSetLayouts = set_layouts;
+    desc.pSetLayouts = setLayoutArray;
 
     // pushConstantRangeCount is the number of push constant ranges 
     // included in the pipeline layout.

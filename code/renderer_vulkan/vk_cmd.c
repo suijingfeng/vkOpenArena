@@ -69,7 +69,7 @@ void vk_create_command_pool(VkCommandPool* pPool)
     // That includes use via recording commands on any command buffers allocated from
     // the pool, as well as operations that allocate, free, and reset command buffers
     // or the pool itself.
-
+    ri.Printf(PRINT_ALL, " Create command pool: vk.command_pool \n");
 
     VkCommandPoolCreateInfo desc;
     desc.sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
@@ -131,7 +131,7 @@ void vk_create_command_buffer(VkCommandPool pool, VkCommandBuffer* pBuf)
     // This is true within a command buffer, and across command buffers submitted to a given
     // queue. See the synchronization chapter for information on implicit and explicit
     // synchronization between commands.
-
+    ri.Printf(PRINT_ALL, " Create command buffer: vk.command_buffer \n");
 
     VkCommandBufferAllocateInfo alloc_info;
     alloc_info.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;

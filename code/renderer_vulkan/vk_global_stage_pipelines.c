@@ -373,12 +373,7 @@ void vk_destroyGlobalStagePipeline(void)
     ri.Printf(PRINT_ALL, " Dlights pipeline destroyed. \n");
 
 
-    qvkDestroyDescriptorSetLayout(vk.device, vk.set_layout, NULL); 
-    qvkDestroyPipelineLayout(vk.device, vk.pipeline_layout, NULL);
-    // You don't need to explicitly clean up descriptor sets,
-    // because they will be automaticall freed when the descripter pool
-    // is destroyed.
-   	qvkDestroyDescriptorPool(vk.device, vk.descriptor_pool, NULL);    
+
     
 
     memset(&g_globalPipelines, 0, sizeof(g_globalPipelines));

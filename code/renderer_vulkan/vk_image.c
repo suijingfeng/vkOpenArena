@@ -8,6 +8,8 @@
 #include "vk_image.h"
 #include "R_ImageProcess.h"
 #include "R_SortAlgorithm.h"
+#include "vk_descriptor_sets.h"
+
 
 #define IMAGE_CHUNK_SIZE        (64 * 1024 * 1024)
 
@@ -395,7 +397,7 @@ static void vk_createImageAndBindWithMemory(image_t* pImg)
 static void vk_createImageViewAndDescriptorSet(image_t* pImage)
 {
 
-    VkImageView imageView;
+    // VkImageView imageView;
 
     VkImageViewCreateInfo desc;
     desc.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
@@ -406,7 +408,7 @@ static void vk_createImageViewAndDescriptorSet(image_t* pImage)
     // format is a VkFormat describing the format and type used 
     // to interpret data elements in the image.
     desc.format = VK_FORMAT_R8G8B8A8_UNORM;
-    
+
     // the components field allows you to swizzle the color channels around
     desc.components.r = VK_COMPONENT_SWIZZLE_IDENTITY;
     desc.components.g = VK_COMPONENT_SWIZZLE_IDENTITY;
@@ -434,10 +436,10 @@ static void vk_createImageViewAndDescriptorSet(image_t* pImage)
     //
     // This implicit parameter can be overriden by chaining a VkImageViewUsageCreateInfo structure
     // through the pNext member to VkImageViewCreateInfo.
-    VK_CHECK(qvkCreateImageView(vk.device, &desc, NULL, &imageView));
+    VK_CHECK(qvkCreateImageView(vk.device, &desc, NULL, &pImage->view));
 
     /////  save it just for destroy ???
-    pImage->view = imageView;
+    // pImage->view = imageView;
 
 
     ///////////////////////////////////////////////////////
@@ -445,9 +447,9 @@ static void vk_createImageViewAndDescriptorSet(image_t* pImage)
     ///////////////////////////////////////////////////////
     // Allocate a descriptor set from the pool. 
     // Note that we have to provide the descriptor set layout that 
-    // we defined in the pipeline_layout sample. 
     // This layout describes how the descriptor set is to be allocated.
 
+    /*
     VkDescriptorSet desSet;
 
     VkDescriptorSetAllocateInfo descSetAllocInfo;
@@ -458,20 +460,24 @@ static void vk_createImageViewAndDescriptorSet(image_t* pImage)
     descSetAllocInfo.pSetLayouts = &vk.set_layout;
 
     VK_CHECK(qvkAllocateDescriptorSets(vk.device, &descSetAllocInfo, &desSet));
-    
+    */
+
+    vk_allocOneDescptrSet(&pImage->descriptor_set);
+
+
     /////  save it for destroy and update current descriptor
-    pImage->descriptor_set = desSet;
+    // pImage->descriptor_set = desSet;
 
     //ri.Printf(PRINT_ALL, " Allocate Descriptor Sets \n");
     VkWriteDescriptorSet descriptor_write;
 
     VkDescriptorImageInfo image_info;
     image_info.sampler = vk_find_sampler(pImage->mipmap, pImage->wrapClampMode == GL_REPEAT);
-    image_info.imageView = imageView;
+    image_info.imageView = pImage->view;
     image_info.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
 
     descriptor_write.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-    descriptor_write.dstSet = desSet;
+    descriptor_write.dstSet = pImage->descriptor_set;
     descriptor_write.dstBinding = 0;
     descriptor_write.dstArrayElement = 0;
     descriptor_write.descriptorCount = 1;
@@ -480,7 +486,7 @@ static void vk_createImageViewAndDescriptorSet(image_t* pImage)
     descriptor_write.pImageInfo = &image_info;
     descriptor_write.pBufferInfo = NULL;
     descriptor_write.pTexelBufferView = NULL;
-    
+
 
     qvkUpdateDescriptorSets(vk.device, 1, &descriptor_write, 0, NULL);
 

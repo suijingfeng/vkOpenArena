@@ -6,8 +6,10 @@
 #include "vk_pipelines.h"
 #include "vk_shade_geometry.h"
 #include "vk_shaders.h"
+#include "vk_descriptor_sets.h"
 #include "glConfig.h"
 #include "ref_import.h" 
+
 
 // vk_init have nothing to do with tr_init
 // vk_instance should be small
@@ -29,10 +31,8 @@ void vk_initialize(void)
 	// we have to create a command pool before we can create command buffers
     // command pools manage the memory that is used to store the buffers and
     // command buffers are allocated from them.
-    ri.Printf(PRINT_ALL, " Create command pool: vk.command_pool \n");
     vk_create_command_pool(&vk.command_pool);
     
-    ri.Printf(PRINT_ALL, " Create command buffer: vk.command_buffer \n");
     vk_create_command_buffer(vk.command_pool, &vk.command_buffer);
 
 
@@ -55,7 +55,15 @@ void vk_initialize(void)
     // creation by creating a VkPipelineLayout object.
     
     // MAX_DRAWIMAGES = 2048
-    vk_createPipelineLayout(2048);
+    vk_createDescriptorPool(2048);
+    // The set of sets that are accessible to a pipeline are grouped into 
+    // pipeline layout. Pipelines are created with respect to this pipeline
+    // layout. Those descriptor sets can be bound into command buffers 
+    // along with compatible pipelines to allow those pipeline to access
+    // the resources in them.
+    vk_createDescriptorSetLayout();
+    // These descriptor sets layouts are aggregated into a single pipeline layout.
+    vk_createPipelineLayout();
 
 	//
 	vk_createVertexBuffer();
@@ -98,11 +106,20 @@ void vk_shutdown(void)
     
     vk_destroyShaderModules();
 
-//
 //  Those pipelines can be used across different maps ?
-//  so we only destroy it want the client quit.
+//  so we only destroy it when the client quit.
     vk_destroyGlobalStagePipeline();
     vk_destroyDebugPipelines();
+
+    
+    qvkDestroyPipelineLayout(vk.device, vk.pipeline_layout, NULL);
+    qvkDestroyDescriptorSetLayout(vk.device, vk.set_layout, NULL); 
+
+    // You don't need to explicitly clean up descriptor sets,
+    // because they will be automaticall freed when the descripter pool
+    // is destroyed.
+   	qvkDestroyDescriptorPool(vk.device, vk.descriptor_pool, NULL);    
+
 //
     vk_destroy_commands();
 

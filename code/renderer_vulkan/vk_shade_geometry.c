@@ -586,9 +586,6 @@ void vk_destroy_shading_data(void)
 	qvkDestroyBuffer(vk.device, shadingDat.index_buffer, NULL);
 
     memset(&shadingDat, 0, sizeof(shadingDat));
-
-
-    VK_CHECK(qvkResetDescriptorPool(vk.device, vk.descriptor_pool, 0));
 }
 
 

@@ -69,8 +69,8 @@ void Algo_QuickSort( drawSurf_t* const v, int left, int right)
 	
         last = left;
         for(i = left+1; i<=right; ++i)
-        if(v[i].sort < v[left].sort)
-        Algo_SwapDrawSurf(v, ++last, i);
+            if(v[i].sort < v[left].sort)
+                Algo_SwapDrawSurf(v, ++last, i);
 
         Algo_SwapDrawSurf(v, left, last);
 
@@ -81,19 +81,6 @@ void Algo_QuickSort( drawSurf_t* const v, int left, int right)
         Algo_InsertSort(v, left, right);
 }
 
-
-static void SWAP_DRAW_SURF( drawSurf_t *a, drawSurf_t* b )
-{
-    drawSurf_t tmp = *a;
-    *a = *b;
-    *b = tmp;
-/*
-    char buf[sizeof(drawSurf_t)];
-    memcpy(buf, a, sizeof(drawSurf_t));
-    memcpy(a, b, sizeof(drawSurf_t));
-    memcpy(b, buf, sizeof(drawSurf_t));
-*/
-}
 
 
 /*

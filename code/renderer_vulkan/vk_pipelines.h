@@ -63,7 +63,9 @@ void vk_createDebugPipelines(void);
 
 // create pipelines for each stage
 void vk_create_shader_stage_pipelines(shaderStage_t *pStage, shader_t* pShader);
-void vk_createPipelineLayout(uint32_t numDes);
+
+
+void vk_createPipelineLayout(void);
 void vk_InitShaderStagePipeline(void);
 
 void vk_destroyShaderStagePipeline(void);
