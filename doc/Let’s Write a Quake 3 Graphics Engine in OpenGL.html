@@ -1,0 +1,163 @@
+<html><head>
+<meta http-equiv="Content-Type" content="text/html; charset=windows-1252">
+<meta name="Generator" content="Microsoft Word 97">
+<title>Let’s Write a Quake 3 Graphics Engine in OpenGL</title>
+<meta name="Template" content="C:\PROGRAM FILES\MICROSOFT OFFICE\OFFICE\html.dot">
+</head>
+<body vlink="#800080" link="#0000ff">
+
+<b><font size="4" face="Arial" color="#0000ff"><p align="CENTER">Let’s Write a Quake 3 Graphics Engine in OpenGL!</p>
+</font></b><font size="2"><p align="CENTER">by Bryan McNett</p>
+</font><b><font size="4" face="Arial" color="#0000ff"><p align="CENTER">Article 2</p>
+<p align="CENTER">OpenGL commands for light-mapping, bump-mapping, texture-mapping and specular-mapping in Quake 3</p>
+</font></b><font size="2"><p>Before you begin, you should read my article on <a href="http://www.bigpanda.com/trinity/article1.html">Multitexture and the Quake 3 Graphics Engine</a>.
+ If you can, play with the accompanying Photoshop file to get a feel for
+ texture editing in Quake 3. Now, let’s proceed to write a Quake 3 
+graphics engine in OpenGL!</p>
+<p>This article will explain in plain language how to implement the 
+multitexture effects of Quake 3 in the OpenGL graphics language. You are
+ expected to understand a pseudocode that looks like C++. Concepts like 
+the multiplication of colors should be familiar to you. Other Quake 
+graphics technologies are not covered by this article. With the 
+exception of dynamic LOD geometry management, you will find many fine 
+tutorials on the remaining Quake graphics technologies in books and on 
+the Internet. Please refer to them if you have any questions after 
+reading this article.</p>
+<p>It is possible to implement multitexture in OpenGL using its alpha 
+blend unit, multiple texture units, or a combination of both. In May, 
+1998, very few people own multiple texture units. Correspondingly, Quake
+ 3’s important multitexture effects should not require multiple texture 
+units - but they <i>will</i> require an alpha blend unit. For this reason and for the sake of simplicity, this article will cover only the alpha blend unit.</p>
+<p>First, I will explain what the alpha blend unit is and how it works.</p>
+</font><b><i><font face="Arial" color="#0000ff"><p align="CENTER">&nbsp;</p>
+<p align="CENTER">Introducing OpenGL’s alpha blend unit</p>
+</font><font face="Arial"><p align="CENTER">&nbsp;</p>
+</font></i></b><font size="2"><p>When OpenGL is drawing a polygon, it 
+has the option of blending the polygon with the colors already on the 
+screen. This is customarily called "alpha blending". </p>
+<p>The following OpenGL function controls the blending process:</p>
+</font><font color="#ff0000"><tt></tt></font><tt></tt><p><tt><font color="#ff0000">void</font></tt><font size="2" color="#ff0000"> <b>BlendFunc</b> ( </font><font color="#ff0000"><tt>enum</tt></font><font size="2" color="#ff0000"> <em>src</em>, </font><font color="#ff0000"><tt>enum</tt></font><font size="2" color="#ff0000"> <em>dst</em> ) </font><font color="#ff0000"><tt>;</tt></font><font size="2" color="#ff0000"> </font></p><font size="2" color="#ff0000">
+</font><font size="2"><p>For example, the following OpenGL function makes all subsequent polygons translucent:</p>
+</font><b><font size="2" color="#ff0000"></font></b><font size="2" color="#ff0000"></font><p><font size="2" color="#ff0000"><b>BlendFunc</b> ( SRC_ALPHA, ONE_MINUS_SRC_ALPHA ) </font><font color="#ff0000"><tt>;</tt></font><font size="2" color="#ff0000"> </font></p><font size="2" color="#ff0000">
+</font><font size="2"><p>…and the following OpenGL function makes all subsequent polygons opaque:</p>
+</font><b><font size="2" color="#ff0000"></font></b><font size="2" color="#ff0000"></font><p><font size="2" color="#ff0000"><b>BlendFunc</b> ( ONE, ZERO ) </font><font color="#ff0000"><tt>;</tt></font><font size="2" color="#ff0000"> </font></p><font size="2" color="#ff0000">
+</font><font size="2"><p>Unless you understand the inner workings of the
+ alpha blend unit, however, it may not be clear what the terms 
+SRC_ALPHA, ONE_MINUS_SRC_ALPHA, ONE, or ZERO are supposed to mean in 
+this context. Now to explain:</p>
+</font><b><i><font face="Arial" color="#0000ff"><p align="CENTER">&nbsp;</p>
+<p align="CENTER">How does the alpha blend unit work?</p>
+</font><font face="Arial"><p align="CENTER">&nbsp;</p>
+</font></i></b><font size="2"><p>Once this OpenGL function is called:</p>
+</font><font color="#ff0000"><tt></tt></font><tt></tt><p><tt><font color="#ff0000">void</font></tt><font size="2" color="#ff0000"> <b>BlendFunc</b> ( </font><font color="#ff0000"><tt>enum</tt></font><font size="2" color="#ff0000"> <em>src</em>, </font><font color="#ff0000"><tt>enum</tt></font><font size="2" color="#ff0000"> <em>dst</em> ) </font><font color="#ff0000"><tt>;</tt></font><font size="2" color="#ff0000"> </font></p><font size="2" color="#ff0000">
+</font><font size="2"><p>The alpha blend unit blends subsequent polygons
+ with the screen via the following function, which is executed once for 
+each pixel in each polygon:</p>
+</font><font color="#ff0000"><pre>screen = polygon * src + screen * dst;
+</pre>
+</font><b><i><font face="Arial" color="#0000ff"><p align="CENTER">&nbsp;</p>
+<p align="CENTER">How does the alpha blend unit make translucent polygons?</p>
+<p align="CENTER">&nbsp;</p>
+</font></i></b><font size="2"><p>When we plug the following terms into the function:</p>
+</font><b><font size="2" color="#ff0000"></font></b><font size="2" color="#ff0000"></font><p><font size="2" color="#ff0000"><b>BlendFunc</b> ( SRC_ALPHA, ONE_MINUS_SRC_ALPHA ) </font><font color="#ff0000"><tt>;</tt></font><font size="2" color="#ff0000"> </font></p><font size="2" color="#ff0000">
+</font><font size="2"></font><p><font size="2">We can replace </font><font size="2" face="Courier New">src</font><font size="2"> and </font><font size="2" face="Courier New">dest</font><font size="2"> in the above pseudocode with </font><font size="2" face="Courier New">alpha</font><font size="2"> and </font><font size="2" face="Courier New">1-alpha</font><font size="2">:</font></p><font size="2">
+</font><font color="#ff0000"><pre>screen = polygon * alpha + screen * (1-alpha);
+</pre>
+</font><font size="2" face="Courier New" color="#ff0000"></font><p><font size="2" face="Courier New" color="#ff0000">alpha</font><font size="2"> represents the opacity of the polygon. </font><font size="2" face="Courier New" color="#ff0000">alpha</font><font size="2"> can be a constant value, it can come from a texture map, or it can come from "Gouraud shading". </font></p><font size="2">
+<p>&nbsp;</p>
+</font><p><font size="2">We can simplify the above pseudocode when </font><font size="2" face="Courier New" color="#ff0000">alpha</font><font size="2"> is equal to one:</font></p><font size="2">
+</font><font color="#ff0000"><pre>screen = polygon * 1 + screen * 0;</pre>
+</font><font size="2"><p>or simplified further…</p>
+</font><font color="#ff0000"><pre>screen = polygon;
+</pre>
+</font><font size="2"></font><p><font size="2">And where </font><font size="2" face="Courier New" color="#ff0000">alpha</font><font size="2"> is equal to zero, we can simplify the pseudocode so:</font></p><font size="2">
+</font><font color="#ff0000"><pre>screen = polygon * 0 + screen * 1;</pre>
+</font><font size="2"><p>or simplified further…</p>
+</font><font color="#ff0000"><pre>screen = screen;
+</pre>
+</font><font size="2"></font><p><font size="2">Therefore, as </font><font size="2" face="Courier New" color="#ff0000">alpha</font><font size="2">
+ varies from zero to one, the polygon varies from complete transparency 
+to complete opacity. This is a translucent polygon, as we have noted 
+before.</font></p><font size="2">
+</font><b><i><font face="Arial" color="#0000ff"><p align="CENTER">&nbsp;</p>
+<p align="CENTER">How does the alpha blend unit make opaque polygons?</p>
+<p align="CENTER">&nbsp;</p>
+</font></i></b><font size="2"><p>When we plug these terms into OpenGL’s alpha blending function:</p>
+</font><b><font size="2" color="#ff0000"></font></b><font size="2" color="#ff0000"></font><p><font size="2" color="#ff0000"><b>BlendFunc</b> ( ONE, ZERO ) </font><font color="#ff0000"><tt>;</tt></font><font size="2" color="#ff0000"> </font></p><font size="2" color="#ff0000">
+</font><font size="2"><p>The pseudocode executes as follows:</p>
+</font><font color="#ff0000"><pre>screen = polygon * 1 + screen * 0;</pre>
+</font><font size="2"><p>Algebra can simplify this to the following:</p>
+</font><font color="#ff0000"><pre>screen = polygon;</pre>
+</font><font size="2"><p>Therefore, no blending takes place. The polygon
+ is copied directly to the screen. This is an opaque polygon, as we have
+ noted before.</p>
+</font><b><i><font face="Arial" color="#0000ff"><p align="CENTER">&nbsp;</p>
+<p align="CENTER">Adding and multiplying polygons using the alpha blend unit</p>
+<p align="CENTER">&nbsp;</p>
+</font></i></b><font size="2"><p>Just as it is possible to draw an opaque or a translucent polygon, it is possible to <i>add</i> a polygon to the screen, or to <i>multiply</i> the screen by a polygon. If this makes no sense to you, you may wish to refer to <a href="http://www.bigpanda.com/trinity/article1.html">Multitexture and the Quake 3 Graphics Engine</a>, which attempts to explain these ideas using plain language.</p>
+</font><b><i><font face="Arial" color="#0000ff"><p align="CENTER">&nbsp;</p>
+<p align="CENTER">Adding a polygon to the screen</p>
+<p align="CENTER">&nbsp;</p>
+</font></i></b><font size="2"><p>To add subsequent polygons to the screen, issue the following OpenGL command:</p>
+</font><b><font size="2" color="#ff0000"></font></b><font size="2" color="#ff0000"></font><p><font size="2" color="#ff0000"><b>BlendFunc</b> ( ONE, ONE ) </font><font color="#ff0000"><tt>;</tt></font><font size="2" color="#ff0000"> </font></p><font size="2" color="#ff0000">
+</font><font size="2"><p>The pseudocode is as follows:</p>
+</font><font color="#ff0000"><pre>screen = polygon * 1 + screen * 1;</pre>
+</font><font size="2"><p>which can be simplified via algebra to the following:</p>
+</font><font color="#ff0000"><pre>screen = polygon + screen;</pre>
+</font><font size="2"><p>Clearly, subsequent polygons will be added to the screen, as we noted previously.</p>
+</font><b><i><font face="Arial" color="#0000ff"><p align="CENTER">&nbsp;</p>
+<p align="CENTER">Multiplying the screen by a polygon</p>
+<p align="CENTER">&nbsp;</p>
+</font></i></b><font size="2"><p>To multiply the screen by subsequent polygons, issue the following OpenGL command:</p>
+</font><b><font size="2" color="#ff0000"></font></b><font size="2" color="#ff0000"></font><p><font size="2" color="#ff0000"><b>BlendFunc</b> ( DST_COLOR, ZERO ) </font><font color="#ff0000"><tt>;</tt></font><font size="2" color="#ff0000"> </font></p><font size="2" color="#ff0000">
+</font><p>The pseudocode is as follows:</p>
+<font color="#ff0000"><pre>screen = polygon * screen + screen * 0;</pre>
+</font><font size="2"><p>which can be simplified to the following:</p>
+</font><font color="#ff0000"><pre>screen = polygon * screen;</pre>
+</font><font size="2"><p>Clearly, the screen will be multiplied by subsequent polygons, as we noted previously.</p>
+</font><b><i><font face="Arial" color="#0000ff"><p align="CENTER">&nbsp;</p>
+<p align="CENTER">Surprise! You now know the three OpenGL functions for multitexture in Quake 3!</p>
+<p align="CENTER">&nbsp;</p>
+</font></i></b><font size="2"><p>You may not realize that we’ve just covered the three OpenGL commands used for multitexture in Quake 3:</p>
+</font><b><font color="#ff0000"></font></b><font color="#ff0000"><pre><b>BlendFunc</b>(ONE,ZERO)<tt>;</tt>        // copy the polygon to the screen
+<b>BlendFunc</b>(ONE,ONE)<tt>;</tt>         // add the polygon to the screen
+<b>BlendFunc</b>(DST_COLOR,ZERO)<tt>;</tt>  // multiply the polygon with the screen</pre>
+</font><font size="2">
+<p>The following code fragment tells you where these three commands are used:</p>
+</font><b><font color="#ff0000"></font></b><font color="#ff0000"><pre><b>// we now begin drawing one polygon
+BlendFunc</b> ( ONE, ZERO ) <tt>;</tt>          <b>// screen = polygon
+// draw the light map here
+BlendFunc</b> ( ONE, ONE ) <tt>;</tt>           <b>// screen = screen + polygon
+// draw all the bump maps here
+BlendFunc</b> ( DST_COLOR, ZERO ) <tt>;</tt>    <b>// screen = screen * polygon
+// draw the texture map here
+BlendFunc</b> ( ONE, ONE ) <tt>;</tt>           <b>// screen = screen + polygon
+// draw the specular map here
+// we now end drawing one polygon </b></pre><b>
+</b></font><font size="2">
+<p>note: To copy polygons without blending in the real world, you will 
+probably want to disable alpha blending with Disable(BLEND) rather than 
+by calling BlendFunc(ONE,ZERO)! We use BlendFunc(ONE,ZERO) only as an 
+example to help explain the concept of blending.</p>
+<p>Let’s extract the pseudocode from the comments on the right:</p>
+</font><b><font color="#ff0000"><pre>screen = polygon
+screen = screen + polygon
+screen = screen * polygon
+screen = screen + polygon</pre>
+</font></b><font size="2"><p>&nbsp;</p>
+<p>Now let’s replace the word "polygon" with the names of the respective maps:</p>
+</font><b><font color="#ff0000"><pre>screen = light
+screen = screen + bumps
+screen = screen * texture
+screen = screen + specular
+</pre>
+</font></b><font size="2"><p>using algebra, we can simplify further…</p>
+</font><b><font color="#ff0000"><pre>screen = (light + bumps) * texture + specular
+</pre>
+</font></b><font size="2"><p>Hey… this looks a lot like the equation from <a href="http://www.bigpanda.com/trinity/article1.html">Multitexture and the Quake 3 Graphics Engine</a>:</p>
+<center><img src="Let%E2%80%99s%20Write%20a%20Quake%203%20Graphics%20Engine%20in%20OpenGL_files/Image3.gif"></center>
+<p>&nbsp;</p>
+<p>&nbsp;</p>
+<p>&nbsp;</p></font>
+
+</body></html>

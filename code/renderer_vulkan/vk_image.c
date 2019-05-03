@@ -438,29 +438,12 @@ static void vk_createImageViewAndDescriptorSet(image_t* pImage)
     // through the pNext member to VkImageViewCreateInfo.
     VK_CHECK(qvkCreateImageView(vk.device, &desc, NULL, &pImage->view));
 
-    /////  save it just for destroy ???
-    // pImage->view = imageView;
-
-
     ///////////////////////////////////////////////////////
     // create associated descriptor set
     ///////////////////////////////////////////////////////
     // Allocate a descriptor set from the pool. 
     // Note that we have to provide the descriptor set layout that 
     // This layout describes how the descriptor set is to be allocated.
-
-    /*
-    VkDescriptorSet desSet;
-
-    VkDescriptorSetAllocateInfo descSetAllocInfo;
-    descSetAllocInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
-    descSetAllocInfo.pNext = NULL;
-    descSetAllocInfo.descriptorPool = vk.descriptor_pool;
-    descSetAllocInfo.descriptorSetCount = 1;
-    descSetAllocInfo.pSetLayouts = &vk.set_layout;
-
-    VK_CHECK(qvkAllocateDescriptorSets(vk.device, &descSetAllocInfo, &desSet));
-    */
 
     vk_allocOneDescptrSet(&pImage->descriptor_set);
 
