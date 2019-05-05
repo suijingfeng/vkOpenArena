@@ -1,22 +1,6 @@
-
-    ,---------------------------------------------------------------------------.
-    |    ______                                                                 |
-    |   / ____ \                            /\                                  |
-    |  / /    \ \                          //\\                                 |
-    | / /      \ \  _____  ____    _____  //  \\    _   _  ____    _____ ____   |
-    | \ \      / / //  // //  \\  //  // //====\\   || // //  \\  //  // ___\\  |
-    |  \ \____/ / //__//  \\__// //  // //      \\  ||//  \\__// //  // //   \\ |
-    |   \______/ //        \___ //  // //        \\ ||     \___ //  //  \\___// |
-    |                                                                           |
-    `---------------------------- http://openarena.ws --------------------------'
-
-
 # OpenArena Engine 
 This project is a fork of OpenArena with specific changes to its renderer module.
 I am naive programmer, this repository is mainly for myself learning Vulkan and Quake3's engine.
-I actually haven't the ability to maintain it as lacking knowledge about game graphics.
-I'm learning by modification, however, only to find that I introduce bugs and mess the code up.
-To keep this code alive, it needs your help, any instructions would be appreciated. 
 
 For people who want to try the vulkan based renderer on quake3's map,
 go to https://github.com/suijingfeng/vkQuake3
@@ -92,10 +76,28 @@ $ ./openarena.x86_64
 
 ## Switching renderers ##
 
+Q: How to enable vulkan support from the pulldown console ?
 
-This feature is enabled by default. This allow for build modular renderers and select or switch 
-the renderer at runtime rather than compiling into one binary.
-If you wish to disable it, set `USE_RENDERER_DLOPEN=0` in the Makefile.
+```sh
+
+\cl_renerer vulkan
+\vid_restart
+
+# then play
+
+# Enable renderergl2 ported from ioq3
+\cl_renerer opengl2
+\vid_restart
+
+# Enable renderergl1 ported from ioq3
+\cl_renerer opengl1
+\vid_restart
+
+# Enable openarena
+\cl_renerer openarena
+\vid_restart
+```
+
 When you start OpenArena, you can switch witch dynamic library to load by passing its name. 
 
 Example:
@@ -113,29 +115,24 @@ $ ./openarena.x86_64 +set cl_renderer opengl2
 # Enable the renderergl1( borrowed from ioq3 ):
 $ ./openarena.x86_64 +set cl_renderer opengl1
 
-# Enable the mydev( borrowed from Kenny):
-# This renderer module is similiar to the renderergl1's code.
-# However, its seem run faster even than vulkan, 
-# I got a good feeling play OA with this renderer enable.
-# I don't known the reason why.
-$ ./openarena.x86_64 +set cl_renderer mydev
-
 
 # Enable the default OpenArena renderer:
 # This renderer module is similiar to the renderergl1 code.
 $ ./openarena.x86_64 +set cl_renderer openarena
 ```
 
-Q: How to enable vulkan support from the pulldown console ?
-```sh
-\cl_renerer vulkan
-\vid_restart
-```
-
 Q: How to use check FPS or using it as a benchmarking tool?
+
 ```
 \timedemo 1
 \demo demo088-test1 
+```
+
+### AMD2700X CPU, GTX1080 GPU, 1920x1080 60 hz LG display ###
+
+```
+# Testing on Ubuntu18.04
+# Frames  TotalTime  averageFPS  minimum/average/maximum/std deviation
 
 render_vulkan: 3398 frames 3.6 seconds 935.6 fps 0.0/1.1/2.0/0.3 ms
 render_gl2:    3398 frames 6.8 seconds 503.2 fps 1.0/2.0/6.0/0.6 ms
@@ -143,10 +140,8 @@ render_gl1:    3398 frames 5.4 seconds 629.7 fps 1.0/1.6/4.0/0.6 ms
 render_mydev:  3398 frames 5.0 seconds 686.2 fps 1.0/1.5/3.0/0.5 ms
 render_oa:     3398 frames 5.3 seconds 646.9 fps 1.0/1.5/4.0/0.5 ms
 
-# This is the result tested on Ubuntu18.04 with AMD2700X CPU, GTX1080 GPU, 1920x1080 60 hz LG display
-# without loading some non-existing resource which waste some time, I guess this game can got 1000 FPS.
 
-# render_vulkan:
+# render_vulkan on Ubuntu18.04
 \com_speed 1
 
 frame:36203 all:  1 sv:  0 ev:  8 cl:  0 gm:  0 rf:  0 bk:  1
@@ -166,6 +161,56 @@ frame:36216 all:  0 sv:  0 ev:  7 cl:  0 gm:  0 rf:  0 bk:  0
 frame:36217 all:  0 sv:  0 ev:  8 cl:  0 gm:  0 rf:  0 bk:  0
 
 # TODO : make the game run at 1000 FPS.
+# Without loading some non-existing resource which waste some time, I guess this game can got 1000 FPS.
+
+```
+
+### HardWare: Aspire E5-471G-51SP, i5-5200U, GeForce 840M, 1366x768 ###
+
+```
+\timedemo 1
+\demo demo088-test1
+
+# only render_vulkan are tested
+
+WIN10(installed on machiniary disk): 3398 frames 16.0 seconds 211.9 fps 2.0/4.7/47.0/2.1 ms
+UBUNTU 16.04(installed on SSD disk): 3398 frames 14.6 seconds 232.1 fps 2.0/4.3/9.0/1.0 ms
+
+# ON Ubuntu
+
+\com_speed 1
+frame:76190 all:  3 sv:  0 ev:  5 cl:  0 gm:  0 rf:  0 bk:  3
+frame:76191 all:  3 sv:  0 ev:  5 cl:  0 gm:  0 rf:  0 bk:  3
+frame:76192 all:  2 sv:  0 ev:  5 cl:  0 gm:  0 rf:  0 bk:  2
+frame:76193 all:  2 sv:  0 ev:  6 cl:  0 gm:  0 rf:  0 bk:  2
+frame:76194 all:  2 sv:  0 ev:  6 cl:  0 gm:  0 rf:  0 bk:  2
+frame:76195 all:  3 sv:  0 ev:  6 cl:  0 gm:  0 rf:  0 bk:  3
+frame:76196 all:  3 sv:  0 ev:  5 cl:  0 gm:  0 rf:  0 bk:  3
+frame:76197 all:  3 sv:  0 ev:  5 cl:  0 gm:  0 rf:  0 bk:  3
+frame:76198 all:  2 sv:  0 ev:  5 cl:  0 gm:  0 rf:  0 bk:  2
+```
+
+### Aspire v3-772G i7-4702MQ GTX760M 1920x1080 ###
+
+```
+# Testing on ubuntu 18.04 gnome 
+
+render_vulkan: 3398 frames 15.0 seconds 225.9 fps 2.0/4.4/9.0/0.7 ms
+
+
+frame:62212 all:  2 sv:  0 ev:  6 cl:  1 gm:  0 rf:  0 bk:  1
+frame:62213 all:  2 sv:  0 ev:  6 cl:  0 gm:  0 rf:  0 bk:  2
+frame:62214 all:  2 sv:  0 ev:  6 cl:  1 gm:  0 rf:  0 bk:  1
+frame:62215 all:  2 sv:  0 ev:  6 cl:  1 gm:  0 rf:  0 bk:  1
+frame:62216 all:  3 sv:  0 ev:  7 cl:  1 gm:  0 rf:  0 bk:  2
+frame:62217 all:  2 sv:  0 ev:  4 cl:  0 gm:  0 rf:  1 bk:  1
+frame:62218 all:  1 sv:  0 ev:  6 cl:  0 gm:  0 rf:  0 bk:  1
+frame:62219 all:  2 sv:  0 ev:  7 cl:  0 gm:  0 rf:  1 bk:  1
+frame:62220 all:  2 sv:  0 ev:  6 cl:  0 gm:  0 rf:  0 bk:  2
+frame:62221 all:  2 sv:  0 ev:  6 cl:  0 gm:  0 rf:  1 bk:  1
+frame:62222 all:  3 sv:  0 ev:  6 cl:  0 gm:  0 rf:  1 bk:  2
+frame:62223 all:  2 sv:  0 ev:  5 cl:  0 gm:  0 rf:  0 bk:  2
+frame:62224 all:  1 sv:  0 ev:  6 cl:  1 gm:  0 rf:  0 bk:  0
 
 ```
 
@@ -200,6 +245,7 @@ Image chuck memory(device local) used: 8 M
 You can also get the information from the UI: SETUP >> SYSTEM >> DRIVER INFO
 
 ![](https://github.com/suijingfeng/vkOpenArena/blob/master/doc/driver_info.jpg)
+
 
 # OpenArena gamecode
 
@@ -275,26 +321,11 @@ ri.Printf( PRINT_WARNING, "s_worldData.lightGridBounds[i]=%d\n", s_worldData.lig
 ```
 gprof openarena.x86_64 gmon.out > report.txt
 ```
-## developing notes
+
+
+## Developing notes
+
 ```
-\com_speed 1
-# win10, i5-5200U, GeForce 840 1366x768
-
-frame:76190 all:  3 sv:  0 ev:  5 cl:  0 gm:  0 rf:  0 bk:  3
-frame:76191 all:  3 sv:  0 ev:  5 cl:  0 gm:  0 rf:  0 bk:  3
-frame:76192 all:  2 sv:  0 ev:  5 cl:  0 gm:  0 rf:  0 bk:  2
-frame:76193 all:  2 sv:  0 ev:  6 cl:  0 gm:  0 rf:  0 bk:  2
-frame:76194 all:  2 sv:  0 ev:  6 cl:  0 gm:  0 rf:  0 bk:  2
-frame:76195 all:  3 sv:  0 ev:  6 cl:  0 gm:  0 rf:  0 bk:  3
-frame:76196 all:  3 sv:  0 ev:  5 cl:  0 gm:  0 rf:  0 bk:  3
-frame:76197 all:  3 sv:  0 ev:  5 cl:  0 gm:  0 rf:  0 bk:  3
-frame:76198 all:  2 sv:  0 ev:  5 cl:  0 gm:  0 rf:  0 bk:  2
-
-\timedemo 1
- 
-3398 frames 16.0 seconds 211.9 fps 2.0/4.7/47.0/2.1 ms
-
-
 \printInstanceExtensions
  
 ----- Total 12 Instance Extension Supported -----
@@ -312,7 +343,8 @@ VK_NV_external_memory_capabilities
 VK_EXT_debug_utils
 ----- ------------------------------------- -----
 
-# \printDeviceExtensions
+\printDeviceExtensions
+
 --------- Total 40 Device Extension Supported ---------
  VK_KHR_swapchain
  VK_KHR_16bit_storage
@@ -362,11 +394,11 @@ total 2 Queue families:
  Queue family [0]: 16 queues,  Graphic,  Compute,  Transfer,  Sparse,  presentation supported.
  Queue family [1]: 1 queues,  Transfer,
 
-
-#######################################################################
+```
 
 ubuntu 18.04 gnome Aspire v3-772G i7-4702MQ GTX760M 1920x1080
 
+```
 ----- Total 14 Instance Extension Supported -----
 VK_EXT_acquire_xlib_display
 VK_EXT_debug_report
@@ -384,7 +416,8 @@ VK_KHR_external_semaphore_capabilities
 VK_EXT_debug_utils
 ----- ------------------------------------- -----
 
-]\printDeviceExtensions 
+\printDeviceExtensions 
+
 --------- Total 33 Device Extension Supported ---------
  VK_KHR_swapchain 
  VK_KHR_16bit_storage 
@@ -421,25 +454,4 @@ VK_EXT_debug_utils
  VK_NVX_multiview_per_view_attributes 
 --------- ----------------------------------- ---------
 
-
-render_vulkan: 3398 frames 15.0 seconds 225.9 fps 2.0/4.4/9.0/0.7 ms
-
-
-frame:62212 all:  2 sv:  0 ev:  6 cl:  1 gm:  0 rf:  0 bk:  1
-frame:62213 all:  2 sv:  0 ev:  6 cl:  0 gm:  0 rf:  0 bk:  2
-frame:62214 all:  2 sv:  0 ev:  6 cl:  1 gm:  0 rf:  0 bk:  1
-frame:62215 all:  2 sv:  0 ev:  6 cl:  1 gm:  0 rf:  0 bk:  1
-frame:62216 all:  3 sv:  0 ev:  7 cl:  1 gm:  0 rf:  0 bk:  2
-frame:62217 all:  2 sv:  0 ev:  4 cl:  0 gm:  0 rf:  1 bk:  1
-frame:62218 all:  1 sv:  0 ev:  6 cl:  0 gm:  0 rf:  0 bk:  1
-frame:62219 all:  2 sv:  0 ev:  7 cl:  0 gm:  0 rf:  1 bk:  1
-frame:62220 all:  2 sv:  0 ev:  6 cl:  0 gm:  0 rf:  0 bk:  2
-frame:62221 all:  2 sv:  0 ev:  6 cl:  0 gm:  0 rf:  1 bk:  1
-frame:62222 all:  3 sv:  0 ev:  6 cl:  0 gm:  0 rf:  1 bk:  2
-frame:62223 all:  2 sv:  0 ev:  5 cl:  0 gm:  0 rf:  0 bk:  2
-frame:62224 all:  1 sv:  0 ev:  6 cl:  1 gm:  0 rf:  0 bk:  0
-
-# bk time never get to 3
-
 ```
-
