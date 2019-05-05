@@ -173,8 +173,14 @@ frame:36217 all:  0 sv:  0 ev:  8 cl:  0 gm:  0 rf:  0 bk:  0
 
 # only render_vulkan are tested
 
-WIN10(installed on machiniary disk): 3398 frames 16.0 seconds 211.9 fps 2.0/4.7/47.0/2.1 ms
-UBUNTU 16.04(installed on SSD disk): 3398 frames 14.6 seconds 232.1 fps 2.0/4.3/9.0/1.0 ms
+# Testing on UBUNTU 16.04 
+vulkan : 3398 frames 14.6 seconds 232.1 fps 2.0/4.3/9.0/1.0 ms
+opengl2: 3398 frames 22.2 seconds 153.2 fps 3.0/6.5/15.0/1.4 ms
+
+# Testing on WIN10 
+vulkan : 3398 frames 16.0 seconds 211.9 fps 2.0/4.7/47.0/2.1 ms
+
+
 
 # ON Ubuntu
 
