@@ -118,7 +118,7 @@ typedef struct
 //	shader_t				*sortedShaders[MAX_SHADERS];
 
 	int						numSkins;
-	skin_t *                skins[MAX_SKINS];
+	struct skin_s *         skins[MAX_SKINS];
 
 	float					sinTable[FUNCTABLE_SIZE];
 	float					squareTable[FUNCTABLE_SIZE];

@@ -6,6 +6,4 @@
 void vk_free_sampler(void);
 VkSampler vk_find_sampler( VkBool32 isMipmap, VkBool32 isRepeatTexture );
 
-//void vk_set_sampler(int m);
-
 #endif

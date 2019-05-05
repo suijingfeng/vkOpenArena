@@ -253,7 +253,8 @@ static int generateHashValue( const char *fname )
 
 	while (fname[i] != '\0')
     {
-		char letter = tolower(fname[i]);
+		// char letter = tolower(fname[i]);
+        char letter = fname[i];
 		if (letter =='.')
             break;		// don't include extension
 		if (letter =='\\')
@@ -353,7 +354,7 @@ static void vk_createImageAndBindWithMemory(image_t* pImg)
 
 
     uint32_t i = 0;
-	for (i = 0; i < devMemImg.Index; i++)
+	for (i = 0; i < devMemImg.Index; ++i)
     {
 		// ensure that memory region has proper alignment
 		VkDeviceSize offset_aligned = (devMemImg.Chunks[i].Used + mask) & (~mask);
@@ -454,18 +455,6 @@ static void vk_createImageViewAndDescriptorSet(image_t* pImage)
     // Note that we have to provide the descriptor set layout that 
     // This layout describes how the descriptor set is to be allocated.
 
-    /*
-    VkDescriptorSet desSet;
-
-    VkDescriptorSetAllocateInfo descSetAllocInfo;
-    descSetAllocInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
-    descSetAllocInfo.pNext = NULL;
-    descSetAllocInfo.descriptorPool = vk.descriptor_pool;
-    descSetAllocInfo.descriptorSetCount = 1;
-    descSetAllocInfo.pSetLayouts = &vk.set_layout;
-
-    VK_CHECK(qvkAllocateDescriptorSets(vk.device, &descSetAllocInfo, &desSet));
-    */
 
     vk_allocOneDescptrSet(&pImage->descriptor_set);
 
