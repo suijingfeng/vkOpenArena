@@ -642,13 +642,13 @@ static void vk_loadInstanceLevelFunctions(void)
     {
         ri.Printf(PRINT_ALL, " VK_KHR_Display Supported, Loading associate functions for this instance extention. \n");
 
-        INIT_INSTANCE_FUNCTION( vkGetPhysicalDeviceDisplayPropertiesKHR);
-        INIT_INSTANCE_FUNCTION( vkGetPhysicalDeviceDisplayPlanePropertiesKHR);
-        INIT_INSTANCE_FUNCTION( vkGetDisplayPlaneSupportedDisplaysKHR);
-        INIT_INSTANCE_FUNCTION( vkGetDisplayModePropertiesKHR);
-        INIT_INSTANCE_FUNCTION( vkCreateDisplayModeKHR);
-        INIT_INSTANCE_FUNCTION( vkGetDisplayPlaneCapabilitiesKHR);
-        INIT_INSTANCE_FUNCTION( vkCreateDisplayPlaneSurfaceKHR);
+        INIT_INSTANCE_FUNCTION(vkGetPhysicalDeviceDisplayPropertiesKHR);
+        INIT_INSTANCE_FUNCTION(vkGetPhysicalDeviceDisplayPlanePropertiesKHR);
+        INIT_INSTANCE_FUNCTION(vkGetDisplayPlaneSupportedDisplaysKHR);
+        INIT_INSTANCE_FUNCTION(vkGetDisplayModePropertiesKHR);
+        INIT_INSTANCE_FUNCTION(vkCreateDisplayModeKHR);
+        INIT_INSTANCE_FUNCTION(vkGetDisplayPlaneCapabilitiesKHR);
+        INIT_INSTANCE_FUNCTION(vkCreateDisplayPlaneSurfaceKHR);
     }
 
 #ifndef NDEBUG
