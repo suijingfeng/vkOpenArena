@@ -52,7 +52,7 @@ void R_Init( void )
 	//
 	for ( i = 0; i < FUNCTABLE_SIZE; i++ )
 	{
-		tr.sinTable[i]		= sin( DEG2RAD( i * 360.0f / ( ( float ) ( FUNCTABLE_SIZE - 1 ) ) ) );
+		tr.sinTable[i]		= sin( i * ( 2.0 * M_PI / (float)(FUNCTABLE_SIZE - 1) ) );
 		tr.squareTable[i]	= ( i < FUNCTABLE_SIZE/2 ) ? 1.0f : -1.0f;
 		tr.sawToothTable[i] = (float)i / FUNCTABLE_SIZE;
 		tr.inverseSawToothTable[i] = 1.0f - tr.sawToothTable[i];
@@ -201,7 +201,6 @@ void RE_Shutdown( qboolean destroyWindow )
         // but fot rendergl1, renderergl2 to create the window
         glConfig_Clear();
     }
-
 
 }
 

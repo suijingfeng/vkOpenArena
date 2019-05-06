@@ -191,6 +191,8 @@ struct Vk_Instance {
 	VkPipelineLayout pipeline_layout;
 
     VkBool32 isBlitSupported;
+    
+    VkBool32 isKhrDisplaySupported;
 
     VkBool32 isInitialized;
 

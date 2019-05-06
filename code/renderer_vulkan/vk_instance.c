@@ -224,6 +224,176 @@ static void vk_assertStandValidationLayer(void)
 }
 
 
+//// Platform dependent code, not elegant :(
+//
+static void vk_fillRequiredInstanceExtention( 
+        const VkExtensionProperties * const pInsExt, const uint32_t nInsExt, 
+        const char ** const ppInsExt, uint32_t * nExt )
+{
+    uint32_t enExtCnt = 0;
+    uint32_t i = 0;
+#if defined(_WIN32)
+
+    #ifndef VK_KHR_WIN32_SURFACE_EXTENSION_NAME
+    #define VK_KHR_WIN32_SURFACE_EXTENSION_NAME "VK_KHR_win32_surface"
+    #endif
+    
+    for (i = 0; i < nInsExt; ++i)
+    {
+        // Platform dependent stuff,
+        // Enable VK_KHR_win32_surface
+        if( 0 == strcmp(VK_KHR_WIN32_SURFACE_EXTENSION_NAME, pInsExt[i].extensionName) )
+        {
+            ppInsExt[enExtCnt] = pInsExt[i].extensionName;
+            enExtCnt += 1;
+            continue;
+        }
+
+        // common part
+
+        // Enable VK_EXT_direct_mode_display
+        // TODO: add doc why enable this, what's the useful ?
+        if( 0 == strcmp(VK_EXT_DIRECT_MODE_DISPLAY_EXTENSION_NAME, pInsExt[i].extensionName) )
+        {
+            ppInsExt[enExtCnt] = pInsExt[i].extensionName;
+            enExtCnt += 1;
+            continue;
+        }
+
+        // Enable VK_EXT_display_surface_counter
+        // TODO: add doc why enable this, what's the useful ?
+        if( 0 == strcmp(VK_EXT_DISPLAY_SURFACE_COUNTER_EXTENSION_NAME, pInsExt[i].extensionName) )
+        {
+            ppInsExt[enExtCnt] = pInsExt[i].extensionName;
+            enExtCnt += 1;
+            continue;
+        }
+
+        // Enable VK_KHR_display
+        // TODO: add doc why enable this, what's the useful ?
+        if( 0 == strcmp(VK_KHR_DISPLAY_EXTENSION_NAME, pInsExt[i].extensionName) )
+        {
+            ppInsExt[enExtCnt] = pInsExt[i].extensionName;
+            enExtCnt += 1;
+            continue;
+        }
+
+        // Enable VK_KHR_surface
+        if( 0 == strcmp(VK_KHR_SURFACE_EXTENSION_NAME, pInsExt[i].extensionName) )
+        {
+            ppInsExt[enExtCnt] = pInsExt[i].extensionName;
+            enExtCnt += 1;
+            vk.isKhrDisplaySupported = VK_TRUE;
+            continue;
+        }
+    }
+
+    #ifndef NDEBUG
+    //  VK_EXT_debug_report 
+    ppInsExt[enExtCnt] = VK_EXT_DEBUG_REPORT_EXTENSION_NAME;
+    enExtCnt += 1;
+    #endif
+
+#elif defined(__unix__) || defined(__linux) || defined(__linux__)
+
+    #ifndef VK_KHR_XCB_SURFACE_EXTENSION_NAME
+    #define VK_KHR_XCB_SURFACE_EXTENSION_NAME "VK_KHR_xcb_surface"
+    #endif
+
+    #ifndef VK_KHR_XLIB_SURFACE_EXTENSION_NAME
+    #define VK_KHR_XLIB_SURFACE_EXTENSION_NAME "VK_KHR_xlib_surface"
+    #endif
+
+    #ifndef VK_EXT_ACQUIRE_XLIB_DISPLAY_EXTENSION_NAME
+    #define VK_EXT_ACQUIRE_XLIB_DISPLAY_EXTENSION_NAME "VK_EXT_acquire_xlib_display"
+    #endif 
+
+    for (i = 0; i < nInsExt; ++i)
+    {
+
+        // Platform dependent stuff,
+        // Enable VK_KHR_xcb_surface
+        // TODO: How can i force SDL2 using XCB instead XLIB ???
+        if( 0 == strcmp(VK_KHR_XCB_SURFACE_EXTENSION_NAME, pInsExt[i].extensionName) )
+        {
+            ppInsExt[enExtCnt] = pInsExt[i].extensionName;
+            enExtCnt += 1;
+            continue;
+        }
+
+        // Enable VK_KHR_xlib_surface
+        if( 0 == strcmp(VK_KHR_XLIB_SURFACE_EXTENSION_NAME, pInsExt[i].extensionName) )
+        {
+            ppInsExt[enExtCnt] = pInsExt[i].extensionName;
+            enExtCnt += 1;
+            continue;
+        }
+
+        // Enable VK_EXT_acquire_xlib_display
+        if( 0 == strcmp(VK_EXT_ACQUIRE_XLIB_DISPLAY_EXTENSION_NAME, pInsExt[i].extensionName) )
+        {
+            ppInsExt[enExtCnt] = pInsExt[i].extensionName;
+            enExtCnt += 1;
+            continue;
+        }
+
+
+        // common part
+        // Enable VK_EXT_direct_mode_display
+        // TODO: add doc why enable this, what's the useful ?
+        if( 0 == strcmp(VK_EXT_DIRECT_MODE_DISPLAY_EXTENSION_NAME, pInsExt[i].extensionName) )
+        {
+            ppInsExt[enExtCnt] = pInsExt[i].extensionName;
+            enExtCnt += 1;
+            continue;
+        }
+
+        // Enable VK_EXT_display_surface_counter
+        // TODO: add doc why enable this, what's the useful ?
+        if( 0 == strcmp(VK_EXT_DISPLAY_SURFACE_COUNTER_EXTENSION_NAME, pInsExt[i].extensionName) )
+        {
+            ppInsExt[enExtCnt] = pInsExt[i].extensionName;
+            enExtCnt += 1;
+            continue;
+        }
+
+        // Enable VK_KHR_display
+        // TODO: add doc why enable this, what's the useful ?
+        if( 0 == strcmp(VK_KHR_DISPLAY_EXTENSION_NAME, pInsExt[i].extensionName) )
+        {
+            ppInsExt[enExtCnt] = pInsExt[i].extensionName;
+            enExtCnt += 1;
+            continue;
+        }
+
+        // Enable VK_KHR_surface
+        if( 0 == strcmp(VK_KHR_SURFACE_EXTENSION_NAME, pInsExt[i].extensionName) )
+        {
+            ppInsExt[enExtCnt] = pInsExt[i].extensionName;
+            enExtCnt += 1;
+            continue;
+        }
+    }
+
+    #ifndef NDEBUG
+    //  VK_EXT_debug_report 
+    ppInsExt[enExtCnt] = VK_EXT_DEBUG_REPORT_EXTENSION_NAME;
+    enExtCnt += 1;
+    #endif
+
+#else
+    // TODO: CHECK OUT
+    // All of the instance extention enabled, Does this reasonable ?
+    for (i = 0; i < nInsExt; ++i)
+    {    
+        ppInsExt[i] = pInsExt[i].extensionName;
+    }
+#endif
+
+    *nExt = enExtCnt;
+}
+
+
 static void vk_createInstance(void)
 {
     // There is no global state in Vulkan and all per-application state
@@ -446,6 +616,18 @@ static void vk_loadInstanceLevelFunctions(void)
 	INIT_INSTANCE_FUNCTION(vkGetPhysicalDeviceSurfaceFormatsKHR)
 	INIT_INSTANCE_FUNCTION(vkGetPhysicalDeviceSurfacePresentModesKHR)
 	INIT_INSTANCE_FUNCTION(vkGetPhysicalDeviceSurfaceSupportKHR)
+
+
+    // The platform-specific extensions allow a VkSurface object to be
+    // created that represents a native window owned by the operating
+    // system or window system. These extensions are typically used to
+    // render into a window with no border that covers an entire display
+    // it is more often efficient to render directly to a display instead.
+    if(vk.isKhrDisplaySupported)
+    {
+        ri.Printf(PRINT_ALL, " VK_KHR_Display Supported, Loading associate functions fot this. \n");
+        
+    }
 
 #ifndef NDEBUG
     INIT_INSTANCE_FUNCTION(vkCreateDebugReportCallbackEXT)
