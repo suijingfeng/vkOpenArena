@@ -1617,6 +1617,8 @@ Q3VKOBJ = \
   $(B)/renderer_vulkan/tr_flares.o \
   $(B)/renderer_vulkan/tr_fog.o \
   $(B)/renderer_vulkan/tr_world.o \
+  $(B)/renderer_vulkan/tr_backend.o \
+  $(B)/renderer_vulkan/tr_Cull.o \
   $(B)/renderer_vulkan/tr_common.o \
   $(B)/renderer_vulkan/vk_instance.o \
   $(B)/renderer_vulkan/vk_init.o \
@@ -1650,9 +1652,8 @@ Q3VKOBJ = \
   $(B)/renderer_vulkan/RB_DrawTris.o \
   $(B)/renderer_vulkan/R_PrintMat.o \
   \
-  $(B)/renderer_vulkan/tr_backend.o \
-  $(B)/renderer_vulkan/tr_Cull.o \
   $(B)/renderer_vulkan/glConfig.o \
+  $(B)/renderer_vulkan/vk_khr_display.o \
   \
   $(B)/renderer_vulkan/R_PortalPlane.o \
   $(B)/renderer_vulkan/R_Portal.o \

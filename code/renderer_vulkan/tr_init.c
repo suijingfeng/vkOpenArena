@@ -25,7 +25,7 @@
 #include "FixRenderCommandList.h"
 #include "vk_utils.h"
 
-
+#include "vk_khr_display.h"
 
 void R_Init( void )
 {	
@@ -52,7 +52,7 @@ void R_Init( void )
 	//
 	for ( i = 0; i < FUNCTABLE_SIZE; i++ )
 	{
-		tr.sinTable[i]		= sin( DEG2RAD( i * 360.0f / ( ( float ) ( FUNCTABLE_SIZE - 1 ) ) ) );
+		tr.sinTable[i]		= sin( i * ( 2.0 * M_PI / (float)(FUNCTABLE_SIZE - 1) ) );
 		tr.squareTable[i]	= ( i < FUNCTABLE_SIZE/2 ) ? 1.0f : -1.0f;
 		tr.sawToothTable[i] = (float)i / FUNCTABLE_SIZE;
 		tr.inverseSawToothTable[i] = 1.0f - tr.sawToothTable[i];
@@ -85,6 +85,7 @@ void R_Init( void )
 	// make sure all the commands added here are also
 	// removed in R_Shutdown
     ri.Cmd_AddCommand( "displayResoList", R_DisplayResolutionList_f );
+    ri.Cmd_AddCommand( "monitorInfo", vk_displayInfo_f );
 
     ri.Cmd_AddCommand( "modellist", R_Modellist_f );
 	ri.Cmd_AddCommand( "screenshotJPEG", R_ScreenShotJPEG_f );
@@ -149,6 +150,7 @@ void RE_Shutdown( qboolean destroyWindow )
 	ri.Printf( PRINT_ALL, "RE_Shutdown( %i )\n", destroyWindow );
     
     ri.Cmd_RemoveCommand("displayResoList");
+    ri.Cmd_RemoveCommand("monitorInfo");
 
 	ri.Cmd_RemoveCommand("modellist");
 	ri.Cmd_RemoveCommand("screenshotJPEG");
@@ -170,6 +172,7 @@ void RE_Shutdown( qboolean destroyWindow )
     ri.Cmd_RemoveCommand("listSortedShader");
 
     ri.Cmd_RemoveCommand("printShaderTextHashTable");
+
 
 	R_DoneFreeType();
 
@@ -201,7 +204,6 @@ void RE_Shutdown( qboolean destroyWindow )
         // but fot rendergl1, renderergl2 to create the window
         glConfig_Clear();
     }
-
 
 }
 

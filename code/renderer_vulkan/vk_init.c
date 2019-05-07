@@ -67,7 +67,7 @@ void vk_initialize(void)
 
 	//
 	vk_createVertexBuffer();
-    vk_createIndexBuffer();;
+    vk_createIndexBuffer();
 	//
 	// Shader modules.
 	//
@@ -111,18 +111,11 @@ void vk_shutdown(void)
     vk_destroyGlobalStagePipeline();
     vk_destroyDebugPipelines();
 
-    
-    qvkDestroyPipelineLayout(vk.device, vk.pipeline_layout, NULL);
-    qvkDestroyDescriptorSetLayout(vk.device, vk.set_layout, NULL); 
+    vk_destroy_pipeline_layout();
 
-    // You don't need to explicitly clean up descriptor sets,
-    // because they will be automaticall freed when the descripter pool
-    // is destroyed.
-   	qvkDestroyDescriptorPool(vk.device, vk.descriptor_pool, NULL);    
+    vk_destroy_descriptor_pool();
 
-//
     vk_destroy_commands();
-
 	
     vk_clearProcAddress();
 

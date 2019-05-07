@@ -16,4 +16,5 @@ void glConfig_FillString( void );
 void glConfig_Get(glconfig_t * const pOut);
 void glConfig_Clear(void);
 
+
 #endif

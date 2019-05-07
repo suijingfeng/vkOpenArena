@@ -246,7 +246,7 @@ void R_MDRAddAnimSurfaces( trRefEntity_t *ent )
 			shader = R_GetShaderByHandle(ent->e.customShader);
 		else if((ent->e.customSkin > 0) && (ent->e.customSkin < tr.numSkins))
 		{
-			skin_t* skin = tr.skins[ent->e.customSkin];
+			struct skin_s * skin = tr.skins[ent->e.customSkin];
 			shader = tr.defaultShader;
 			
 			for(j = 0; j < skin->numSurfaces; j++)

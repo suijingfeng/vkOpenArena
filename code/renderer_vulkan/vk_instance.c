@@ -46,6 +46,15 @@ PFN_vkGetPhysicalDeviceSurfaceFormatsKHR		qvkGetPhysicalDeviceSurfaceFormatsKHR;
 PFN_vkGetPhysicalDeviceSurfacePresentModesKHR	qvkGetPhysicalDeviceSurfacePresentModesKHR;
 PFN_vkGetPhysicalDeviceSurfaceSupportKHR		qvkGetPhysicalDeviceSurfaceSupportKHR;
 
+// VK_KHR_display
+PFN_vkGetPhysicalDeviceDisplayPropertiesKHR         qvkGetPhysicalDeviceDisplayPropertiesKHR;
+PFN_vkGetPhysicalDeviceDisplayPlanePropertiesKHR    qvkGetPhysicalDeviceDisplayPlanePropertiesKHR;
+PFN_vkGetDisplayPlaneSupportedDisplaysKHR           qvkGetDisplayPlaneSupportedDisplaysKHR;
+PFN_vkGetDisplayModePropertiesKHR                   qvkGetDisplayModePropertiesKHR;
+PFN_vkCreateDisplayModeKHR                          qvkCreateDisplayModeKHR;
+PFN_vkGetDisplayPlaneCapabilitiesKHR                qvkGetDisplayPlaneCapabilitiesKHR;
+PFN_vkCreateDisplayPlaneSurfaceKHR                  qvkCreateDisplayPlaneSurfaceKHR;
+
 #ifndef NDEBUG
 PFN_vkCreateDebugReportCallbackEXT				qvkCreateDebugReportCallbackEXT;
 PFN_vkDestroyDebugReportCallbackEXT				qvkDestroyDebugReportCallbackEXT;
@@ -142,15 +151,20 @@ VKAPI_ATTR VkBool32 VKAPI_CALL vk_DebugCallback(
     switch(flags)
     {
         case VK_DEBUG_REPORT_INFORMATION_BIT_EXT:
-            ri.Printf(PRINT_ALL, "INFORMATION: %s\n", message); break;
+            ri.Printf(PRINT_ALL, "INFORMATION: %s\n", message);
+            break;
         case VK_DEBUG_REPORT_WARNING_BIT_EXT:
-            ri.Printf(PRINT_WARNING, "WARNING: %s\n", message); break;
+            ri.Printf(PRINT_WARNING, "WARNING: %s\n", message);
+            break;
         case VK_DEBUG_REPORT_PERFORMANCE_WARNING_BIT_EXT:
-            ri.Printf(PRINT_WARNING, "PERFORMANCE: %s\n", message); break;
+            ri.Printf(PRINT_WARNING, "PERFORMANCE: %s\n", message);
+            break;
         case VK_DEBUG_REPORT_ERROR_BIT_EXT:
-            ri.Printf(PRINT_WARNING, "ERROR: %s\n", message); break;
+            ri.Printf(PRINT_WARNING, "ERROR: %s\n", message);
+            break;
         case VK_DEBUG_REPORT_DEBUG_BIT_EXT:
-            ri.Printf(PRINT_WARNING, "DEBUG: %s\n", message); break;
+            ri.Printf(PRINT_WARNING, "DEBUG: %s\n", message);
+            break;
     }
 	return VK_FALSE;
 }
@@ -224,6 +238,177 @@ static void vk_assertStandValidationLayer(void)
 }
 
 
+//// Platform dependent code, not elegant :(
+//
+static void vk_fillRequiredInstanceExtention( 
+        const VkExtensionProperties * const pInsExt, const uint32_t nInsExt, 
+        const char ** const ppInsExt, uint32_t * nExt )
+{
+    uint32_t enExtCnt = 0;
+    uint32_t i = 0;
+#if defined(_WIN32)
+
+    #ifndef VK_KHR_WIN32_SURFACE_EXTENSION_NAME
+    #define VK_KHR_WIN32_SURFACE_EXTENSION_NAME "VK_KHR_win32_surface"
+    #endif
+    
+    for (i = 0; i < nInsExt; ++i)
+    {
+        // Platform dependent stuff,
+        // Enable VK_KHR_win32_surface
+        if( 0 == strcmp(VK_KHR_WIN32_SURFACE_EXTENSION_NAME, pInsExt[i].extensionName) )
+        {
+            ppInsExt[enExtCnt] = pInsExt[i].extensionName;
+            enExtCnt += 1;
+            continue;
+        }
+
+        // common part
+
+        // Enable VK_EXT_direct_mode_display
+        // TODO: add doc why enable this, what's the useful ?
+        if( 0 == strcmp(VK_EXT_DIRECT_MODE_DISPLAY_EXTENSION_NAME, pInsExt[i].extensionName) )
+        {
+            ppInsExt[enExtCnt] = pInsExt[i].extensionName;
+            enExtCnt += 1;
+            continue;
+        }
+
+        // Enable VK_EXT_display_surface_counter
+        // TODO: add doc why enable this, what's the useful ?
+        if( 0 == strcmp(VK_EXT_DISPLAY_SURFACE_COUNTER_EXTENSION_NAME, pInsExt[i].extensionName) )
+        {
+            ppInsExt[enExtCnt] = pInsExt[i].extensionName;
+            enExtCnt += 1;
+            continue;
+        }
+
+        // Enable VK_KHR_display
+        // TODO: add doc why enable this, what's the useful ?
+        if( 0 == strcmp(VK_KHR_DISPLAY_EXTENSION_NAME, pInsExt[i].extensionName) )
+        {
+            ppInsExt[enExtCnt] = pInsExt[i].extensionName;
+            enExtCnt += 1;
+            vk.isKhrDisplaySupported = VK_TRUE;
+            continue;
+        }
+
+        // Enable VK_KHR_surface
+        if( 0 == strcmp(VK_KHR_SURFACE_EXTENSION_NAME, pInsExt[i].extensionName) )
+        {
+            ppInsExt[enExtCnt] = pInsExt[i].extensionName;
+            enExtCnt += 1;
+            continue;
+        }
+    }
+
+    #ifndef NDEBUG
+    //  VK_EXT_debug_report 
+    ppInsExt[enExtCnt] = VK_EXT_DEBUG_REPORT_EXTENSION_NAME;
+    enExtCnt += 1;
+    #endif
+
+#elif defined(__unix__) || defined(__linux) || defined(__linux__)
+
+    #ifndef VK_KHR_XCB_SURFACE_EXTENSION_NAME
+    #define VK_KHR_XCB_SURFACE_EXTENSION_NAME "VK_KHR_xcb_surface"
+    #endif
+
+    #ifndef VK_KHR_XLIB_SURFACE_EXTENSION_NAME
+    #define VK_KHR_XLIB_SURFACE_EXTENSION_NAME "VK_KHR_xlib_surface"
+    #endif
+
+    #ifndef VK_EXT_ACQUIRE_XLIB_DISPLAY_EXTENSION_NAME
+    #define VK_EXT_ACQUIRE_XLIB_DISPLAY_EXTENSION_NAME "VK_EXT_acquire_xlib_display"
+    #endif 
+
+    for (i = 0; i < nInsExt; ++i)
+    {
+
+        // Platform dependent stuff,
+        // Enable VK_KHR_xcb_surface
+        // TODO: How can i force SDL2 using XCB instead XLIB ???
+        if( 0 == strcmp(VK_KHR_XCB_SURFACE_EXTENSION_NAME, pInsExt[i].extensionName) )
+        {
+            ppInsExt[enExtCnt] = pInsExt[i].extensionName;
+            enExtCnt += 1;
+            continue;
+        }
+
+        // Enable VK_KHR_xlib_surface
+        if( 0 == strcmp(VK_KHR_XLIB_SURFACE_EXTENSION_NAME, pInsExt[i].extensionName) )
+        {
+            ppInsExt[enExtCnt] = pInsExt[i].extensionName;
+            enExtCnt += 1;
+            continue;
+        }
+
+        // Enable VK_EXT_acquire_xlib_display
+        if( 0 == strcmp(VK_EXT_ACQUIRE_XLIB_DISPLAY_EXTENSION_NAME, pInsExt[i].extensionName) )
+        {
+            ppInsExt[enExtCnt] = pInsExt[i].extensionName;
+            enExtCnt += 1;
+            continue;
+        }
+
+
+        // common part
+        // Enable VK_EXT_direct_mode_display
+        // TODO: add doc why enable this, what's the useful ?
+        if( 0 == strcmp(VK_EXT_DIRECT_MODE_DISPLAY_EXTENSION_NAME, pInsExt[i].extensionName) )
+        {
+            ppInsExt[enExtCnt] = pInsExt[i].extensionName;
+            enExtCnt += 1;
+            continue;
+        }
+
+        // Enable VK_EXT_display_surface_counter
+        // TODO: add doc why enable this, what's the useful ?
+        if( 0 == strcmp(VK_EXT_DISPLAY_SURFACE_COUNTER_EXTENSION_NAME, pInsExt[i].extensionName) )
+        {
+            ppInsExt[enExtCnt] = pInsExt[i].extensionName;
+            enExtCnt += 1;
+            continue;
+        }
+
+        // Enable VK_KHR_display
+        // TODO: add doc why enable this, what's the useful ?
+        if( 0 == strcmp(VK_KHR_DISPLAY_EXTENSION_NAME, pInsExt[i].extensionName) )
+        {
+            ppInsExt[enExtCnt] = pInsExt[i].extensionName;
+            enExtCnt += 1;
+            vk.isKhrDisplaySupported = VK_TRUE;
+            continue;
+        }
+
+        // Enable VK_KHR_surface
+        if( 0 == strcmp(VK_KHR_SURFACE_EXTENSION_NAME, pInsExt[i].extensionName) )
+        {
+            ppInsExt[enExtCnt] = pInsExt[i].extensionName;
+            enExtCnt += 1;
+            continue;
+        }
+    }
+
+    #ifndef NDEBUG
+    //  VK_EXT_debug_report 
+    ppInsExt[enExtCnt] = VK_EXT_DEBUG_REPORT_EXTENSION_NAME;
+    enExtCnt += 1;
+    #endif
+
+#else
+    // TODO: CHECK OUT
+    // All of the instance extention enabled, Does this reasonable ?
+    for (i = 0; i < nInsExt; ++i)
+    {    
+        ppInsExt[i] = pInsExt[i].extensionName;
+    }
+#endif
+
+    *nExt = enExtCnt;
+}
+
+
 static void vk_createInstance(void)
 {
     // There is no global state in Vulkan and all per-application state
@@ -246,7 +431,7 @@ static void vk_createInstance(void)
     appInfo.pNext = NULL;
 	appInfo.pApplicationName = "OpenArena";
 	appInfo.applicationVersion = VK_MAKE_VERSION(1, 0, 0);
-	appInfo.pEngineName = "VulkanArena";
+	appInfo.pEngineName = "VulKan Arena";
 	appInfo.engineVersion = VK_MAKE_VERSION(1, 0, 0);
     // apiVersion must be the highest version of Vulkan that the
     // application is designed to use, encoded as described in the
@@ -447,13 +632,31 @@ static void vk_loadInstanceLevelFunctions(void)
 	INIT_INSTANCE_FUNCTION(vkGetPhysicalDeviceSurfacePresentModesKHR)
 	INIT_INSTANCE_FUNCTION(vkGetPhysicalDeviceSurfaceSupportKHR)
 
+
+    // The platform-specific extensions allow a VkSurface object to be
+    // created that represents a native window owned by the operating
+    // system or window system. These extensions are typically used to
+    // render into a window with no border that covers an entire display
+    // it is more often efficient to render directly to a display instead.
+    if(vk.isKhrDisplaySupported)
+    {
+        ri.Printf(PRINT_ALL, " VK_KHR_Display Supported, Loading associate functions for this instance extention. \n");
+
+        INIT_INSTANCE_FUNCTION(vkGetPhysicalDeviceDisplayPropertiesKHR);
+        INIT_INSTANCE_FUNCTION(vkGetPhysicalDeviceDisplayPlanePropertiesKHR);
+        INIT_INSTANCE_FUNCTION(vkGetDisplayPlaneSupportedDisplaysKHR);
+        INIT_INSTANCE_FUNCTION(vkGetDisplayModePropertiesKHR);
+        INIT_INSTANCE_FUNCTION(vkCreateDisplayModeKHR);
+        INIT_INSTANCE_FUNCTION(vkGetDisplayPlaneCapabilitiesKHR);
+        INIT_INSTANCE_FUNCTION(vkCreateDisplayPlaneSurfaceKHR);
+    }
+
 #ifndef NDEBUG
     INIT_INSTANCE_FUNCTION(vkCreateDebugReportCallbackEXT)
 	INIT_INSTANCE_FUNCTION(vkDestroyDebugReportCallbackEXT)	//
 #endif
 
 #undef INIT_INSTANCE_FUNCTION
-
 
 }
 
@@ -492,25 +695,72 @@ static void vk_selectPhysicalDevice(void)
 }
 
 
+const char * ColorSpaceEnum2str(enum VkColorSpaceKHR cs)
+{
+    switch(cs)
+    {
+        case VK_COLOR_SPACE_SRGB_NONLINEAR_KHR:
+            return "VK_COLOR_SPACE_SRGB_NONLINEAR_KHR";
+        case VK_COLOR_SPACE_DISPLAY_P3_NONLINEAR_EXT:
+            return "VK_COLOR_SPACE_DISPLAY_P3_NONLINEAR_EXT";
+        case VK_COLOR_SPACE_EXTENDED_SRGB_LINEAR_EXT:
+            return "VK_COLOR_SPACE_EXTENDED_SRGB_LINEAR_EXT";
+        case VK_COLOR_SPACE_DCI_P3_LINEAR_EXT:
+            return "VK_COLOR_SPACE_DCI_P3_LINEAR_EXT";
+        case VK_COLOR_SPACE_DCI_P3_NONLINEAR_EXT:
+            return "VK_COLOR_SPACE_DCI_P3_NONLINEAR_EXT";
+        case VK_COLOR_SPACE_BT709_LINEAR_EXT:
+            return "VK_COLOR_SPACE_BT709_LINEAR_EXT";
+        case VK_COLOR_SPACE_BT709_NONLINEAR_EXT:
+            return "VK_COLOR_SPACE_BT709_NONLINEAR_EXT";
+        case VK_COLOR_SPACE_BT2020_LINEAR_EXT:
+            return "VK_COLOR_SPACE_BT2020_LINEAR_EXT";
+        case VK_COLOR_SPACE_HDR10_ST2084_EXT:
+            return "VK_COLOR_SPACE_HDR10_ST2084_EXT";
+        case VK_COLOR_SPACE_DOLBYVISION_EXT:
+            return "VK_COLOR_SPACE_DOLBYVISION_EXT";
+        case VK_COLOR_SPACE_HDR10_HLG_EXT:
+            return "VK_COLOR_SPACE_HDR10_HLG_EXT";
+        case VK_COLOR_SPACE_ADOBERGB_LINEAR_EXT:
+            return "VK_COLOR_SPACE_ADOBERGB_LINEAR_EXT";
+        case VK_COLOR_SPACE_ADOBERGB_NONLINEAR_EXT:
+            return "VK_COLOR_SPACE_ADOBERGB_NONLINEAR_EXT";
+        case VK_COLOR_SPACE_PASS_THROUGH_EXT:
+            return "VK_COLOR_SPACE_PASS_THROUGH_EXT";
+        case VK_COLOR_SPACE_EXTENDED_SRGB_NONLINEAR_EXT:
+            return "VK_COLOR_SPACE_EXTENDED_SRGB_NONLINEAR_EXT";
+        default:
+            return "Not_Known";
+    }
+}
+
 
 static void vk_selectSurfaceFormat(void)
 {
     uint32_t nSurfmt;
-    
-    ri.Printf(PRINT_ALL, "\n -------- vk_selectSurfaceFormat() -------- \n");
-
+    uint32_t i;
 
     // Get the numbers of VkFormat's that are supported
     // "vk.surface" is the surface that will be associated with the swapchain.
     // "vk.surface" must be a valid VkSurfaceKHR handle
-    VK_CHECK(qvkGetPhysicalDeviceSurfaceFormatsKHR(vk.physical_device, vk.surface, &nSurfmt, NULL));
+    VK_CHECK( qvkGetPhysicalDeviceSurfaceFormatsKHR(vk.physical_device, vk.surface, &nSurfmt, NULL) );
     assert(nSurfmt > 0);
 
-    VkSurfaceFormatKHR *pSurfFmts = 
-        (VkSurfaceFormatKHR *) malloc ( nSurfmt * sizeof(VkSurfaceFormatKHR) );
+    VkSurfaceFormatKHR * pSurfFmts = 
+        (VkSurfaceFormatKHR *) malloc( nSurfmt * sizeof(VkSurfaceFormatKHR) );
 
     // To query the supported swapchain format-color space pairs for a surface
-    VK_CHECK(qvkGetPhysicalDeviceSurfaceFormatsKHR(vk.physical_device, vk.surface, &nSurfmt, pSurfFmts));
+    VK_CHECK( qvkGetPhysicalDeviceSurfaceFormatsKHR(vk.physical_device, vk.surface, &nSurfmt, pSurfFmts) );
+
+    ri.Printf(PRINT_ALL, " --- Total %d surface formats supported. --- \n", nSurfmt);
+    
+    for( i = 0; i < nSurfmt; ++i)
+    {
+        ri.Printf(PRINT_ALL, " [%d], format: %d: ,color space: %s \n",
+            i, pSurfFmts[i].format, ColorSpaceEnum2str(pSurfFmts[i].colorSpace));
+    }
+
+    ri.Printf(PRINT_ALL, " --- ----------------------------------- --- \n");
 
     // If the format list includes just one entry of VK_FORMAT_UNDEFINED, the surface
     // has no preferred format. Otherwise, at least one supported format will be returned.
@@ -524,8 +774,7 @@ static void vk_selectSurfaceFormat(void)
     }
     else
     {
-        uint32_t i;
-        ri.Printf(PRINT_ALL, " Total %d surface formats supported, we choose: \n", nSurfmt);
+        ri.Printf(PRINT_ALL, " we choose: \n" );
 
         for( i = 0; i < nSurfmt; i++)
         {
@@ -668,20 +917,20 @@ static void vk_selectQueueFamilyForPresentation(void)
     for (i = 0; i < nQueueFamily; ++i)
     {
         // print every queue family's capability
-        ri.Printf(PRINT_ALL, " Queue family [%d]: %d queues, ", 
+        ri.Printf(PRINT_ALL, " Queue family [%d]: %d queues ", 
                 i, pQueueFamilies[i].queueCount );
 
         if( pQueueFamilies[i].queueFlags & VK_QUEUE_GRAPHICS_BIT )
-            ri.Printf(PRINT_ALL, " Graphic, ");
+            ri.Printf(PRINT_ALL, " Graphic ");
         
         if( pQueueFamilies[i].queueFlags & VK_QUEUE_COMPUTE_BIT )
-            ri.Printf(PRINT_ALL, " Compute, ");
+            ri.Printf(PRINT_ALL, " Compute ");
 
         if( pQueueFamilies[i].queueFlags & VK_QUEUE_TRANSFER_BIT )
-            ri.Printf(PRINT_ALL, " Transfer, ");
+            ri.Printf(PRINT_ALL, " Transfer ");
 
         if( pQueueFamilies[i].queueFlags & VK_QUEUE_SPARSE_BINDING_BIT )
-            ri.Printf(PRINT_ALL, " Sparse, ");
+            ri.Printf(PRINT_ALL, " Sparse ");
 
 
         VkBool32 isPresentSupported = VK_FALSE;
@@ -1025,13 +1274,16 @@ void vk_clearProcAddress(void)
 // ===========================================================
     ri.Printf( PRINT_ALL, " clear all proc address \n" );
 
+    // Global Level
 	qvkCreateInstance                           = NULL;
 	qvkEnumerateInstanceExtensionProperties		= NULL;
-
+    qvkEnumerateInstanceLayerProperties         = NULL;
+    
+    // Instance Level;
 	qvkCreateDevice								= NULL;
 	qvkDestroyInstance							= NULL;
 	qvkEnumerateDeviceExtensionProperties		= NULL;
-    qvkEnumerateInstanceLayerProperties         = NULL; //
+
 	qvkEnumeratePhysicalDevices					= NULL;
 	qvkGetDeviceProcAddr						= NULL;
 	qvkGetPhysicalDeviceFeatures				= NULL;
@@ -1039,6 +1291,16 @@ void vk_clearProcAddress(void)
 	qvkGetPhysicalDeviceMemoryProperties		= NULL;
 	qvkGetPhysicalDeviceProperties				= NULL;
 	qvkGetPhysicalDeviceQueueFamilyProperties	= NULL;
+
+
+    qvkGetPhysicalDeviceDisplayPropertiesKHR    = NULL;
+    qvkGetPhysicalDeviceDisplayPlanePropertiesKHR = NULL;
+    qvkGetDisplayPlaneSupportedDisplaysKHR      = NULL;
+    qvkGetDisplayModePropertiesKHR              = NULL;
+    qvkCreateDisplayModeKHR                     = NULL;
+    qvkGetDisplayPlaneCapabilitiesKHR           = NULL;
+    qvkCreateDisplayPlaneSurfaceKHR             = NULL;
+
 
     qvkDestroySurfaceKHR						= NULL;
 	qvkGetPhysicalDeviceSurfaceCapabilitiesKHR	= NULL;

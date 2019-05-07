@@ -105,8 +105,9 @@ void vk_createDescriptorSetLayout(void)
     desc.pBindings = &descriptor_binding;
 
     // To create descriptor set layout objects
-    VK_CHECK(qvkCreateDescriptorSetLayout(vk.device, &desc, NULL, &vk.set_layout));
+    VK_CHECK( qvkCreateDescriptorSetLayout(vk.device, &desc, NULL, &vk.set_layout) );
 }
+
 
 void vk_allocOneDescptrSet(VkDescriptorSet * pSetRet)
 {
@@ -119,5 +120,14 @@ void vk_allocOneDescptrSet(VkDescriptorSet * pSetRet)
 
 
     VK_CHECK( qvkAllocateDescriptorSets(vk.device, &descSetAllocInfo, pSetRet) );
+}
 
+
+void vk_destroy_descriptor_pool(void)
+{
+    qvkDestroyDescriptorSetLayout(vk.device, vk.set_layout, NULL); 
+    // You don't need to explicitly clean up descriptor sets,
+    // because they will be automaticall freed when the descripter pool
+    // is destroyed.
+   	qvkDestroyDescriptorPool(vk.device, vk.descriptor_pool, NULL);  
 }

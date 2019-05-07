@@ -201,7 +201,7 @@ void vk_createPipelineLayout(void)
     push_range.offset = 0;
     push_range.size = 128; // 16 mvp floats + 16
 
-    VkDescriptorSetLayout setLayoutArray[2] = {vk.set_layout, vk.set_layout};
+    const VkDescriptorSetLayout setLayoutArray[2] = {vk.set_layout, vk.set_layout};
 
     VkPipelineLayoutCreateInfo desc;
     desc.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
@@ -238,9 +238,13 @@ void vk_createPipelineLayout(void)
     // shader stages and shader resources. 
     //
     // Each pipeline is created using a pipeline layout.
-    VK_CHECK(qvkCreatePipelineLayout(vk.device, &desc, NULL, &vk.pipeline_layout));
+    VK_CHECK( qvkCreatePipelineLayout(vk.device, &desc, NULL, &vk.pipeline_layout) );
 }
 
+void vk_destroy_pipeline_layout(void)
+{
+    qvkDestroyPipelineLayout(vk.device, vk.pipeline_layout, NULL);
+}
 
 void vk_create_pipeline(
         uint32_t state_bits,

@@ -81,29 +81,11 @@ static void vk_read_pixels(unsigned char* pBuf, uint32_t W, uint32_t H)
 
 	VkBuffer buffer;
     VkDeviceMemory memory;
-    {
-        VkBufferCreateInfo buffer_create_info;
-        memset(&buffer_create_info, 0, sizeof(buffer_create_info));
-        buffer_create_info.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
-        buffer_create_info.size = sizeFB;
-        buffer_create_info.usage = VK_BUFFER_USAGE_TRANSFER_DST_BIT;
-        VK_CHECK( qvkCreateBuffer(vk.device, &buffer_create_info, NULL, &buffer) );
-
-        VkMemoryRequirements memory_requirements;
-        qvkGetBufferMemoryRequirements(vk.device, buffer, &memory_requirements);
-
-        VkMemoryAllocateInfo memory_allocate_info;
-        memset(&memory_allocate_info, 0, sizeof(memory_allocate_info));
-        memory_allocate_info.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
-        memory_allocate_info.allocationSize = memory_requirements.size;
-        //
-        memory_allocate_info.memoryTypeIndex = find_memory_type(memory_requirements.memoryTypeBits,
-                VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
-
-        VK_CHECK( qvkAllocateMemory(vk.device, &memory_allocate_info, NULL, &memory) );
-        VK_CHECK( qvkBindBufferMemory(vk.device, buffer, memory, 0) );
-    }
-
+    
+    ri.Printf(PRINT_ALL, " Create buffer for reading the pixels. \n");
+    
+    vk_createBufferResource( sizeFB, VK_BUFFER_USAGE_TRANSFER_DST_BIT,
+             &buffer, &memory );
 
     //////////////////////////////////////////////////////////
 
@@ -203,6 +185,7 @@ static void vk_read_pixels(unsigned char* pBuf, uint32_t W, uint32_t H)
     unsigned char* data;
     VK_CHECK(qvkMapMemory(vk.device, memory, 0, VK_WHOLE_SIZE, 0, (void**)&data));
     memcpy(pBuf, data, sizeFB);
+
     qvkUnmapMemory(vk.device, memory);
     qvkFreeMemory(vk.device, memory, NULL);
     qvkDestroyBuffer(vk.device, buffer, NULL);

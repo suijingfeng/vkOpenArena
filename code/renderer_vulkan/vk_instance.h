@@ -9,10 +9,10 @@ extern PFN_vkGetInstanceProcAddr						qvkGetInstanceProcAddr;
 
 extern PFN_vkCreateInstance							    qvkCreateInstance;
 extern PFN_vkEnumerateInstanceExtensionProperties		qvkEnumerateInstanceExtensionProperties;
+extern PFN_vkEnumerateInstanceLayerProperties           qvkEnumerateInstanceLayerProperties;//
 
 extern PFN_vkCreateDevice								qvkCreateDevice;
 extern PFN_vkDestroyInstance							qvkDestroyInstance;
-extern PFN_vkEnumerateInstanceLayerProperties           qvkEnumerateInstanceLayerProperties;//
 extern PFN_vkEnumerateDeviceExtensionProperties	    	qvkEnumerateDeviceExtensionProperties;
 extern PFN_vkEnumeratePhysicalDevices					qvkEnumeratePhysicalDevices;
 extern PFN_vkGetDeviceProcAddr							qvkGetDeviceProcAddr;
@@ -26,6 +26,16 @@ extern PFN_vkGetPhysicalDeviceSurfaceCapabilitiesKHR	qvkGetPhysicalDeviceSurface
 extern PFN_vkGetPhysicalDeviceSurfaceFormatsKHR		    qvkGetPhysicalDeviceSurfaceFormatsKHR;
 extern PFN_vkGetPhysicalDeviceSurfacePresentModesKHR	qvkGetPhysicalDeviceSurfacePresentModesKHR;
 extern PFN_vkGetPhysicalDeviceSurfaceSupportKHR		    qvkGetPhysicalDeviceSurfaceSupportKHR;
+
+
+// VK_KHR_display
+extern PFN_vkGetPhysicalDeviceDisplayPropertiesKHR         qvkGetPhysicalDeviceDisplayPropertiesKHR;
+extern PFN_vkGetPhysicalDeviceDisplayPlanePropertiesKHR    qvkGetPhysicalDeviceDisplayPlanePropertiesKHR;
+extern PFN_vkGetDisplayPlaneSupportedDisplaysKHR           qvkGetDisplayPlaneSupportedDisplaysKHR;
+extern PFN_vkGetDisplayModePropertiesKHR                   qvkGetDisplayModePropertiesKHR;
+extern PFN_vkCreateDisplayModeKHR                          qvkCreateDisplayModeKHR;
+extern PFN_vkGetDisplayPlaneCapabilitiesKHR                qvkGetDisplayPlaneCapabilitiesKHR;
+extern PFN_vkCreateDisplayPlaneSurfaceKHR                  qvkCreateDisplayPlaneSurfaceKHR;
 
 #ifndef NDEBUG
 extern PFN_vkCreateDebugReportCallbackEXT				qvkCreateDebugReportCallbackEXT;
@@ -191,6 +201,8 @@ struct Vk_Instance {
 	VkPipelineLayout pipeline_layout;
 
     VkBool32 isBlitSupported;
+    
+    VkBool32 isKhrDisplaySupported;
 
     VkBool32 isInitialized;
 

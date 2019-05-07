@@ -37,10 +37,9 @@ typedef struct image_s {
 	struct image_s*	next;
 } image_t;
 
-
 // skins allow models to be retextured without modifying the model file
 typedef struct {
-	char		name[MAX_QPATH];
+	char	name[MAX_QPATH];
 	struct shader_s* shader;
 } skinSurface_t;
 
@@ -51,7 +50,7 @@ typedef struct skin_s {
 } skin_t;
 
 void R_InitSkins( void );
-skin_t* R_GetSkinByHandle( qhandle_t hSkin );
+struct skin_s * R_GetSkinByHandle( qhandle_t hSkin );
 void R_SkinList_f( void );
 
 #endif

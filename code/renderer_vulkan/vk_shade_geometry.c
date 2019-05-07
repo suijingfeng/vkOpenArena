@@ -203,50 +203,14 @@ void vk_createVertexBuffer(void)
 {
     ri.Printf(PRINT_ALL, " Create vertex buffer: shadingDat.vertex_buffer \n");
 
-    VkBufferCreateInfo desc;
-    desc.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
-    desc.pNext = NULL;
-    desc.flags = 0;
-    desc.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
-    desc.queueFamilyIndexCount = 0;
-    desc.pQueueFamilyIndices = NULL;
-    //VERTEX_BUFFER_SIZE
-    desc.size = XYZ_SIZE + COLOR_SIZE + ST0_SIZE + ST1_SIZE;
-    desc.usage = VK_BUFFER_USAGE_VERTEX_BUFFER_BIT;
-    
-    VK_CHECK(qvkCreateBuffer(vk.device, &desc, NULL, &shadingDat.vertex_buffer));
-
-
-    VkMemoryRequirements vb_memory_requirements;
-    qvkGetBufferMemoryRequirements(vk.device, shadingDat.vertex_buffer, &vb_memory_requirements);
-    
-    uint32_t memory_type_bits = vb_memory_requirements.memoryTypeBits;
-
-    VkMemoryAllocateInfo alloc_info;
-    alloc_info.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
-    alloc_info.pNext = NULL;
-    alloc_info.allocationSize = vb_memory_requirements.size;
-    // VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT bit specifies that memory allocated with
-    // this type can be mapped for host access using vkMapMemory.
-    //
-    // VK_MEMORY_PROPERTY_HOST_COHERENT_BIT bit specifies that the host cache
-    // management commands vkFlushMappedMemoryRanges and vkInvalidateMappedMemoryRanges
-    // are not needed to flush host writes to the device or make device writes visible
-    // to the host, respectively.
-    alloc_info.memoryTypeIndex = find_memory_type(memory_type_bits, 
-            VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
-
-    ri.Printf(PRINT_ALL, " Allocate device memory for Vertex Buffer: %ld bytes. \n",
-            alloc_info.allocationSize);
-
-    VK_CHECK(qvkAllocateMemory(vk.device, &alloc_info, NULL, &shadingDat.vertex_buffer_memory));
-
-    qvkBindBufferMemory(vk.device, shadingDat.vertex_buffer, shadingDat.vertex_buffer_memory, 0);
+    vk_createBufferResource( XYZ_SIZE + COLOR_SIZE + ST0_SIZE + ST1_SIZE, 
+            VK_BUFFER_USAGE_VERTEX_BUFFER_BIT,
+            &shadingDat.vertex_buffer,
+            &shadingDat.vertex_buffer_memory );
 
     void* data;
     VK_CHECK(qvkMapMemory(vk.device, shadingDat.vertex_buffer_memory, 0, VK_WHOLE_SIZE, 0, &data));
     shadingDat.vertex_buffer_ptr = (unsigned char*)data;
-
 }
 
 
@@ -255,44 +219,9 @@ void vk_createIndexBuffer(void)
 {
     ri.Printf(PRINT_ALL, " Create index buffer: shadingDat.index_buffer \n");
 
-    VkBufferCreateInfo desc;
-    desc.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
-    desc.pNext = NULL;
-    desc.flags = 0;
-    desc.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
-    desc.queueFamilyIndexCount = 0;
-    desc.pQueueFamilyIndices = NULL;
-    desc.size = INDEX_BUFFER_SIZE;
-    desc.usage = VK_BUFFER_USAGE_INDEX_BUFFER_BIT;
-
-    VK_CHECK(qvkCreateBuffer(vk.device, &desc, NULL, &shadingDat.index_buffer));
-
-    
-    VkMemoryRequirements ib_memory_requirements;
-    qvkGetBufferMemoryRequirements(vk.device, shadingDat.index_buffer, &ib_memory_requirements);
-
-    uint32_t memory_type_bits = ib_memory_requirements.memoryTypeBits;
-
-
-    VkMemoryAllocateInfo alloc_info;
-    alloc_info.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
-    alloc_info.pNext = NULL;
-    alloc_info.allocationSize = ib_memory_requirements.size;
-    // VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT bit specifies that memory allocated with
-    // this type can be mapped for host access using vkMapMemory.
-    //
-    // VK_MEMORY_PROPERTY_HOST_COHERENT_BIT bit specifies that the host cache
-    // management commands vkFlushMappedMemoryRanges and vkInvalidateMappedMemoryRanges
-    // are not needed to flush host writes to the device or make device writes visible
-    // to the host, respectively.
-    alloc_info.memoryTypeIndex = find_memory_type(memory_type_bits, 
-            VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
-
-    ri.Printf(PRINT_ALL, " Allocate device memory for Index Buffer: %ld bytes. \n",
-            alloc_info.allocationSize);
-
-    VK_CHECK(qvkAllocateMemory(vk.device, &alloc_info, NULL, &shadingDat.index_buffer_memory));
-    qvkBindBufferMemory(vk.device, shadingDat.index_buffer, shadingDat.index_buffer_memory, 0);
+    vk_createBufferResource( INDEX_BUFFER_SIZE, 
+            VK_BUFFER_USAGE_INDEX_BUFFER_BIT,
+            &shadingDat.index_buffer, &shadingDat.index_buffer_memory);
 
     void* data;
     VK_CHECK(qvkMapMemory(vk.device, shadingDat.index_buffer_memory, 0, VK_WHOLE_SIZE, 0, &data));
