@@ -246,6 +246,11 @@ void vk_destroy_pipeline_layout(void)
     qvkDestroyPipelineLayout(vk.device, vk.pipeline_layout, NULL);
 }
 
+struct Specialization_Data {
+    int32_t alpha_test_func;
+};
+
+
 void vk_create_pipeline(
         uint32_t state_bits,
         enum Vk_Shader_Type shader_type,
@@ -257,33 +262,6 @@ void vk_create_pipeline(
         VkBool32 isLine, 
         VkPipeline* pPipeLine)
 {
-
-	struct Specialization_Data {
-		int32_t alpha_test_func;
-	} specialization_data;
-
-
-	if ((state_bits & GLS_ATEST_BITS) == 0)
-		specialization_data.alpha_test_func = 0;
-	else if (state_bits & GLS_ATEST_GT_0)
-		specialization_data.alpha_test_func = 1;
-	else if (state_bits & GLS_ATEST_LT_80)
-		specialization_data.alpha_test_func = 2;
-	else if (state_bits & GLS_ATEST_GE_80)
-		specialization_data.alpha_test_func = 3;
-	else
-		ri.Error(ERR_DROP, "create_pipeline: invalid alpha test state bits\n");
-
-	VkSpecializationMapEntry specialization_entries;
-	specialization_entries.constantID = 0;
-	specialization_entries.offset = offsetof(struct Specialization_Data, alpha_test_func);
-	specialization_entries.size = sizeof(int32_t);
-
-	VkSpecializationInfo specialization_info;
-	specialization_info.mapEntryCount = 1;
-	specialization_info.pMapEntries = &specialization_entries;
-	specialization_info.dataSize = sizeof(struct Specialization_Data);
-	specialization_info.pData = &specialization_data;
 
 
     // Two stages: vs and fs
@@ -303,15 +281,59 @@ void vk_create_pipeline(
     shaderStages[1].pName = "main";
     shaderStages[1].pNext = NULL;
     shaderStages[1].flags = 0;
+    shaderStages[1].pSpecializationInfo = NULL;
 
-    // pSpecializationInfo allows you to specify values for shader constants,
-    // you can use a single shader module where its behavior can be configured
-    // at pipeline creation by specifying different values fot the constants
-    // used in it. This is more effient than configuring the shader using 
-    // variables at render time, because the compiler can do optimizations.
+    
+    struct Specialization_Data specialization_data;
+    VkSpecializationMapEntry specialization_entries;
+    VkSpecializationInfo specialization_info;
 
-	shaderStages[1].pSpecializationInfo =
-        (state_bits & GLS_ATEST_BITS) ? &specialization_info : NULL;
+    if(state_bits & GLS_ATEST_BITS)
+    {
+        switch ( state_bits & GLS_ATEST_BITS )
+        {
+            case 0:
+                specialization_data.alpha_test_func = 0;
+                break;
+            case GLS_ATEST_GT_0:
+                specialization_data.alpha_test_func = 1;
+                break;
+            case GLS_ATEST_LT_80:
+                specialization_data.alpha_test_func = 2;
+                break;
+            case GLS_ATEST_GE_80:
+                specialization_data.alpha_test_func = 3;
+                break;
+            default:
+                assert( 0 );
+                break;
+        }
+
+
+        specialization_entries.constantID = 0;
+        specialization_entries.offset = offsetof(struct Specialization_Data, alpha_test_func);
+        specialization_entries.size = sizeof(int32_t);
+        // This structure contains the information required to specialize a shader
+        // which is the process of building a shader with some of its constants
+        // compiled in. A typical Vulkan implementation will delay final code
+        // generation for pipelines until vkCreatePipelines is called.
+        // This allows the values of specialization constants to be considered
+        // during the final passes of the optimization over the shader.
+        specialization_info.mapEntryCount = 1;
+        specialization_info.pMapEntries = &specialization_entries;
+        specialization_info.dataSize = sizeof(struct Specialization_Data);
+        specialization_info.pData = &specialization_data;
+
+
+        // pSpecializationInfo allows you to specify values for shader constants,
+        // you can use a single shader module where its behavior can be configured
+        // at pipeline creation by specifying different values fot the constants
+        // used in it. This is more effient than configuring the shader using 
+        // variables at render time, because the compiler can do optimizations.
+  
+        shaderStages[1].pSpecializationInfo = &specialization_info;
+    }
+
 
     vk_specifyShaderModule(shader_type, clipping_plane, &shaderStages[0].module, &shaderStages[1].module);
 
@@ -322,51 +344,49 @@ void vk_create_pipeline(
     // from memory throughout the vertices
 
     VkVertexInputBindingDescription bindings[4];
-    {
-        // xyz array
-        bindings[0].binding = 0;
-        // The stride parameter specifies the number of bytes from one entry to the next
-        bindings[0].stride = sizeof(vec4_t);
-        // move to the next data entry after each vertex
-        bindings[0].inputRate = VK_VERTEX_INPUT_RATE_VERTEX;
-        // color array
-        bindings[1].binding = 1;
-        bindings[1].stride = 4; //sizeof(color4ub_t);
-        bindings[1].inputRate = VK_VERTEX_INPUT_RATE_VERTEX;
-        // st0 array
-        bindings[2].binding = 2;
-        bindings[2].stride = sizeof(vec2_t);
-        bindings[2].inputRate = VK_VERTEX_INPUT_RATE_VERTEX;
-        // st1 array
-        bindings[3].binding = 3;
-        bindings[3].stride = sizeof(vec2_t);
-        bindings[3].inputRate = VK_VERTEX_INPUT_RATE_VERTEX;
-    }
+    // xyz array
+    bindings[0].binding = 0;
+    // The stride parameter specifies the number of bytes from one entry to the next
+    bindings[0].stride = sizeof(vec4_t);
+    // move to the next data entry after each vertex
+    bindings[0].inputRate = VK_VERTEX_INPUT_RATE_VERTEX;
+    // color array
+    bindings[1].binding = 1;
+    bindings[1].stride = 4; //sizeof(color4ub_t);
+    bindings[1].inputRate = VK_VERTEX_INPUT_RATE_VERTEX;
+    // st0 array
+    bindings[2].binding = 2;
+    bindings[2].stride = sizeof(vec2_t);
+    bindings[2].inputRate = VK_VERTEX_INPUT_RATE_VERTEX;
+    // st1 array
+    bindings[3].binding = 3;
+    bindings[3].stride = sizeof(vec2_t);
+    bindings[3].inputRate = VK_VERTEX_INPUT_RATE_VERTEX;
+
 
     // Describes how to handle vertex input
-	VkVertexInputAttributeDescription attribs[4];
-    {
-        // xyz
-        attribs[0].location = 0;
-        attribs[0].binding = 0;
-        attribs[0].format = VK_FORMAT_R32G32B32A32_SFLOAT;
-        attribs[0].offset = 0;
-        // color
-        attribs[1].location = 1;
-        attribs[1].binding = 1;
-        attribs[1].format = VK_FORMAT_R8G8B8A8_UNORM;
-        attribs[1].offset = 0;
-        // st0
-        attribs[2].location = 2;
-        attribs[2].binding = 2;
-        attribs[2].format = VK_FORMAT_R32G32_SFLOAT;
-        attribs[2].offset = 0;
-        // st1
-        attribs[3].location = 3;
-        attribs[3].binding = 3;
-        attribs[3].format = VK_FORMAT_R32G32_SFLOAT;
-        attribs[3].offset = 0;
-    }
+    VkVertexInputAttributeDescription attribs[4];
+    // xyz
+    attribs[0].location = 0;
+    attribs[0].binding = 0;
+    attribs[0].format = VK_FORMAT_R32G32B32A32_SFLOAT;
+    attribs[0].offset = 0;
+    // color
+    attribs[1].location = 1;
+    attribs[1].binding = 1;
+    attribs[1].format = VK_FORMAT_R8G8B8A8_UNORM;
+    attribs[1].offset = 0;
+    // st0
+    attribs[2].location = 2;
+    attribs[2].binding = 2;
+    attribs[2].format = VK_FORMAT_R32G32_SFLOAT;
+    attribs[2].offset = 0;
+    // st1
+    attribs[3].location = 3;
+    attribs[3].binding = 3;
+    attribs[3].format = VK_FORMAT_R32G32_SFLOAT;
+    attribs[3].offset = 0;
+
 
 	VkPipelineVertexInputStateCreateInfo vertex_input_state;
 	vertex_input_state.sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;
