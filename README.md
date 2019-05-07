@@ -171,15 +171,53 @@ frame:36217 all:  0 sv:  0 ev:  8 cl:  0 gm:  0 rf:  0 bk:  0
 \timedemo 1
 \demo demo088-test1
 
-# only render_vulkan are tested
-
 # Testing on UBUNTU 16.04 
 vulkan : 3398 frames 14.6 seconds 232.1 fps 2.0/4.3/9.0/1.0 ms
 opengl2: 3398 frames 22.2 seconds 153.2 fps 3.0/6.5/15.0/1.4 ms
 
-# Testing on WIN10 
-vulkan : 3398 frames 16.0 seconds 211.9 fps 2.0/4.7/47.0/2.1 ms
+# Testing on WIN10 Pro 64-bit, Driver version 397.31 
+vulkan : 3398 frames 14.5 seconds 233.6 fps 1.0/4.3/14.0/1.6 ms
+opengl2: 3398 frames 83.4 seconds 40.8 fps 8.0/24.5/331.0/9.6 ms
+opengl1: 3398 frames 22.2 seconds 152.8 fps 2.0/6.5/17.0/1.9 ms
 
+# opengl2 renderer acieve best virsual result but cossume the compute power most
+
+\com_speed 1
+frame:24071 all: 13 sv:  0 ev:  0 cl:  0 gm:  0 rf:  1 bk: 12
+frame:24072 all: 19 sv:  0 ev:  0 cl:  0 gm:  0 rf:  1 bk: 18
+frame:24073 all:  9 sv:  1 ev:  0 cl:  0 gm:  0 rf:  1 bk:  7
+frame:24074 all: 20 sv:  0 ev:  0 cl:  1 gm:  0 rf:  0 bk: 19
+frame:24075 all:  9 sv:  0 ev:  0 cl:  1 gm:  0 rf:  0 bk:  8
+frame:24080 all: 10 sv:  0 ev:  0 cl:  1 gm:  0 rf:  0 bk:  9
+frame:24081 all:  8 sv:  0 ev:  1 cl:  0 gm:  0 rf:  1 bk:  7
+frame:24083 all: 10 sv:  0 ev:  0 cl:  1 gm:  0 rf:  0 bk:  9
+frame:24084 all: 17 sv:  0 ev:  0 cl:  1 gm:  0 rf:  1 bk: 15
+frame:24085 all:  9 sv:  0 ev:  0 cl:  1 gm:  0 rf:  0 bk:  8
+frame:24086 all: 10 sv:  0 ev:  0 cl:  1 gm:  0 rf:  0 bk:  9
+frame:24090 all:  9 sv:  1 ev:  0 cl:  0 gm:  0 rf:  0 bk:  8
+frame:24092 all:  8 sv:  0 ev:  0 cl:  1 gm:  0 rf:  0 bk:  7
+frame:24093 all:  9 sv:  0 ev:  0 cl:  1 gm:  0 rf:  0 bk:  8
+frame:24094 all:  8 sv:  0 ev:  0 cl:  1 gm:  0 rf:  0 bk:  7
+frame:24095 all: 10 sv:  0 ev:  0 cl:  1 gm:  0 rf:  0 bk:  9
+frame:24096 all:  9 sv:  0 ev:  0 cl:  1 gm:  0 rf:  0 bk:  8
+frame:24101 all: 10 sv:  0 ev:  0 cl:  1 gm:  0 rf:  0 bk:  9
+frame:24102 all: 10 sv:  0 ev:  0 cl:  2 gm:  0 rf:  0 bk:  8
+frame:24104 all: 11 sv:  0 ev:  0 cl:  0 gm:  1 rf:  0 bk: 10
+frame:24105 all: 11 sv:  0 ev:  1 cl:  1 gm:  0 rf:  0 bk:  9
+frame:24106 all: 20 sv:  0 ev:  0 cl:  0 gm:  0 rf:  1 bk: 19
+frame:24107 all: 13 sv:  0 ev:  0 cl:  1 gm:  0 rf:  0 bk: 12
+frame:24108 all: 15 sv:  0 ev:  1 cl:  1 gm:  0 rf:  0 bk: 14
+frame:24109 all: 10 sv:  1 ev:  0 cl:  0 gm:  0 rf:  0 bk:  9
+frame:24110 all: 12 sv:  1 ev:  0 cl:  1 gm:  0 rf:  0 bk: 10
+frame:24111 all: 10 sv:  0 ev:  0 cl:  1 gm:  0 rf:  0 bk:  9
+frame:24113 all: 11 sv:  0 ev:  0 cl:  1 gm:  0 rf:  0 bk: 10
+frame:24114 all: 10 sv:  0 ev:  0 cl:  0 gm:  1 rf:  0 bk:  9
+frame:24116 all: 11 sv:  0 ev:  1 cl:  0 gm:  0 rf:  0 bk: 11
+frame:24117 all: 11 sv:  0 ev:  0 cl:  0 gm:  1 rf:  0 bk: 10
+frame:24118 all: 10 sv:  0 ev:  0 cl:  1 gm:  0 rf:  0 bk:  9
+frame:24119 all: 14 sv:  0 ev:  1 cl:  0 gm:  0 rf:  0 bk: 14
+frame:24120 all: 12 sv:  0 ev:  0 cl:  1 gm:  0 rf:  0 bk: 11
+frame:24121 all: 11 sv:  0 ev:  0 cl:  1 gm:  0 rf:  0 bk: 10
 
 
 # ON Ubuntu

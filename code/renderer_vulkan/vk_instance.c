@@ -289,6 +289,7 @@ static void vk_fillRequiredInstanceExtention(
         {
             ppInsExt[enExtCnt] = pInsExt[i].extensionName;
             enExtCnt += 1;
+            vk.isKhrDisplaySupported = VK_TRUE;
             continue;
         }
 
@@ -297,7 +298,6 @@ static void vk_fillRequiredInstanceExtention(
         {
             ppInsExt[enExtCnt] = pInsExt[i].extensionName;
             enExtCnt += 1;
-            vk.isKhrDisplaySupported = VK_TRUE;
             continue;
         }
     }
