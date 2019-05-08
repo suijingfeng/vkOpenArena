@@ -7,6 +7,7 @@
 #include "vk_shade_geometry.h"
 #include "vk_shaders.h"
 #include "vk_descriptor_sets.h"
+#include "vk_swapchain.h"
 #include "glConfig.h"
 #include "ref_import.h" 
 
@@ -23,7 +24,7 @@ void vk_initialize(void)
     vk_getProcAddress(); 
  
 	// Swapchain. vk.physical_device required to be init. 
-	vk_createSwapChain(vk.device, vk.surface, vk.surface_format);
+	vk_createSwapChain(vk.device, vk.surface, vk.surface_format, vk.swapchain_image_views);
 
 	// Sync primitives.
     vk_create_sync_primitives();
@@ -43,8 +44,8 @@ void vk_initialize(void)
 
     // Depth attachment image.
     vk_createDepthAttachment(width, height);
-
-    vk_createFrameBuffers(width, height);
+    vk_createRenderPass(vk.device, &vk.render_pass, vk.surface_format.format, vk.fmt_DepthStencil);
+    vk_createFrameBuffers(width, height, vk.render_pass, vk.swapchain_image_count, vk.framebuffers);
 
 	// Pipeline layout.
 	// You can use uniform values in shaders, which are globals similar to

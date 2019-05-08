@@ -178,9 +178,12 @@ struct Vk_Instance {
 	VkQueue queue;
 
 	VkSwapchainKHR swapchain;
+    VkRenderPass render_pass;
+
 	uint32_t swapchain_image_count ;
 	VkImage swapchain_images_array[MAX_SWAPCHAIN_IMAGES];
 	VkImageView swapchain_image_views[MAX_SWAPCHAIN_IMAGES];
+    VkFramebuffer framebuffers[MAX_SWAPCHAIN_IMAGES];
 	uint32_t idx_swapchain_image;
 
 	VkCommandPool command_pool;
@@ -190,8 +193,7 @@ struct Vk_Instance {
 	VkDeviceMemory depth_image_memory;
 	VkImageView depth_image_view;
 
-	VkRenderPass render_pass;
-	VkFramebuffer framebuffers[MAX_SWAPCHAIN_IMAGES];
+
 
 	VkDescriptorPool descriptor_pool;
 	VkDescriptorSetLayout set_layout;

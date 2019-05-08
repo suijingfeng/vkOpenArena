@@ -95,7 +95,6 @@ static int32_t ComparepPplPar(const struct pipeline_tree_s * const pTree,
     }
     else
         return (pTree->par.state_bits - par2->state_bits);
-
 }
 
 

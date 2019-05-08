@@ -56,7 +56,8 @@ void vk_recreateSwapChain(void)
 
 
 // create swap chain
-void vk_createSwapChain(VkDevice device, VkSurfaceKHR surface, VkSurfaceFormatKHR surface_format)
+void vk_createSwapChain(VkDevice device, VkSurfaceKHR surface, 
+        VkSurfaceFormatKHR surface_format, VkImageView * const pSwapChainViews)
 {
 
     // The presentation is arguably the most impottant setting for the swap chain
@@ -90,20 +91,19 @@ void vk_createSwapChain(VkDevice device, VkSurfaceKHR surface, VkSurfaceFormatKH
     {
         ri.Printf(PRINT_ALL, "\n-------- Determine present mode --------\n");
         
-        uint32_t nPM, i;
-        qvkGetPhysicalDeviceSurfacePresentModesKHR(vk.physical_device, surface, &nPM, NULL);
-
-        VkPresentModeKHR *pPresentModes = (VkPresentModeKHR *) malloc( nPM * sizeof(VkPresentModeKHR) );
-
-        qvkGetPhysicalDeviceSurfacePresentModesKHR(vk.physical_device, surface, &nPM, pPresentModes);
-
-        ri.Printf(PRINT_ALL, "Minimaal mumber ImageCount required: %d, Total %d present mode supported: \n",
-                vk.surface_caps.minImageCount, nPM);
-
+        uint32_t nPM = 0, i;
         VkBool32 mailbox_supported = VK_FALSE;
         VkBool32 immediate_supported = VK_FALSE;
 
-        for ( i = 0; i < nPM; i++)
+        qvkGetPhysicalDeviceSurfacePresentModesKHR(vk.physical_device, surface, &nPM, NULL);
+
+        assert(nPM > 0);
+        
+        VkPresentModeKHR * pPresentModes = (VkPresentModeKHR *) malloc( nPM * sizeof(VkPresentModeKHR) );
+
+        qvkGetPhysicalDeviceSurfacePresentModesKHR(vk.physical_device, surface, &nPM, pPresentModes);
+
+        for ( i = 0; i < nPM; ++i)
         {
             switch(pPresentModes[i])
             {
@@ -122,27 +122,28 @@ void vk_createSwapChain(VkDevice device, VkSurfaceKHR surface, VkSurfaceFormatKH
                     ri.Printf(PRINT_ALL, " VK_PRESENT_MODE_FIFO_RELAXED_KHR \n");
                     break;
                 default:
-                    ri.Printf(PRINT_ALL, " This device do not support presentation %d\n", pPresentModes[i]);
+                    ri.Printf(PRINT_WARNING, " This device do not support presentation. \n");
                     break;
             }
         }
 
         free(pPresentModes);
 
+        ri.Printf(PRINT_ALL, "-------- Total %d present mode supported. -------- \n", nPM);
 
         if (mailbox_supported)
         {
             present_mode = VK_PRESENT_MODE_MAILBOX_KHR;
             image_count = MAX(3u, vk.surface_caps.minImageCount);
             
-            ri.Printf(PRINT_ALL, "\n VK_PRESENT_MODE_MAILBOX_KHR mode, minImageCount: %d. \n", image_count);
+            ri.Printf(PRINT_ALL, " Present with VK_PRESENT_MODE_MAILBOX_KHR mode, minImageCount: %d. \n", image_count);
         }
         else if(immediate_supported)
         {
             present_mode = VK_PRESENT_MODE_IMMEDIATE_KHR;
             image_count = MAX(2u, vk.surface_caps.minImageCount);
 
-            ri.Printf(PRINT_ALL, "\n VK_PRESENT_MODE_IMMEDIATE_KHR mode, minImageCount: %d. \n", image_count);
+            ri.Printf(PRINT_ALL, " Present with VK_PRESENT_MODE_IMMEDIATE_KHR mode, minImageCount: %d. \n", image_count);
         }
         else
         {
@@ -150,6 +151,7 @@ void vk_createSwapChain(VkDevice device, VkSurfaceKHR surface, VkSurfaceFormatKH
             present_mode = VK_PRESENT_MODE_FIFO_KHR;
             image_count = MAX(2u, vk.surface_caps.minImageCount);
         }
+
 
         // The Spec Say:
         // image_count must <= VkSurfaceCapabilitiesKHR.maxImageCount
@@ -221,7 +223,9 @@ void vk_createSwapChain(VkDevice device, VkSurfaceKHR surface, VkSurfaceFormatKH
         desc.imageArrayLayers = 1;
 
         // render images to a separate image first to perform operations like post-processing
-        desc.imageUsage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT;
+        desc.imageUsage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | 
+                          VK_IMAGE_USAGE_TRANSFER_DST_BIT | 
+                          VK_IMAGE_USAGE_TRANSFER_SRC_BIT;
 
         // An image is owned by one queue family at a time and ownership
         // must be explicitly transfered before using it in an another
@@ -252,7 +256,7 @@ void vk_createSwapChain(VkDevice device, VkSurfaceKHR surface, VkSurfaceFormatKH
         // reference to the old one must be specified in this field.
         desc.oldSwapchain = VK_NULL_HANDLE;
 
-        VK_CHECK(qvkCreateSwapchainKHR(device, &desc, NULL, &vk.swapchain));
+        VK_CHECK( qvkCreateSwapchainKHR(device, &desc, NULL, &vk.swapchain) );
     }
     
     //
@@ -269,7 +273,7 @@ void vk_createSwapChain(VkDevice device, VkSurfaceKHR surface, VkSurfaceFormatKH
         VK_CHECK(qvkGetSwapchainImagesKHR(device, vk.swapchain, &vk.swapchain_image_count, vk.swapchain_images_array));
 
         uint32_t i;
-        for (i = 0; i < vk.swapchain_image_count; i++)
+        for (i = 0; i < vk.swapchain_image_count; ++i)
         {
             VkImageViewCreateInfo desc;
             desc.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
@@ -277,7 +281,7 @@ void vk_createSwapChain(VkDevice device, VkSurfaceKHR surface, VkSurfaceFormatKH
             desc.flags = 0;
             desc.image = vk.swapchain_images_array[i];
             desc.viewType = VK_IMAGE_VIEW_TYPE_2D;
-            desc.format = vk.surface_format.format;
+            desc.format = surface_format.format;
             desc.components.r = VK_COMPONENT_SWIZZLE_IDENTITY;
             desc.components.g = VK_COMPONENT_SWIZZLE_IDENTITY;
             desc.components.b = VK_COMPONENT_SWIZZLE_IDENTITY;
@@ -287,7 +291,7 @@ void vk_createSwapChain(VkDevice device, VkSurfaceKHR surface, VkSurfaceFormatKH
             desc.subresourceRange.levelCount = 1;
             desc.subresourceRange.baseArrayLayer = 0;
             desc.subresourceRange.layerCount = 1;
-            VK_CHECK(qvkCreateImageView(device, &desc, NULL, &vk.swapchain_image_views[i]));
+            VK_CHECK( qvkCreateImageView(device, &desc, NULL, &pSwapChainViews[i]) );
         }
     }
 }

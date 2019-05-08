@@ -137,7 +137,243 @@ void vk_destroy_sync_primitives(void)
 
 
 
-//  NOTE: Render Pass Compatibility
+// =====================================================================
+// 
+//            Renderpass.
+// 
+// =====================================================================
+// 
+// A render pass represents a collection of attachments, subpasses,
+// and dependencies between the subpasses, and describes how the 
+// attachments are used over the course of the subpasses. The use
+// of a render pass in a command buffer is a render pass instance.
+//
+// An attachment description describes the properties of an attachment
+// including its format, sample count, and how its contents are treated
+// at the beginning and end of each render pass instance.
+//
+// A subpass represents a phase of rendering that reads and writes
+// a subset of the attachments in a render pass. Rendering commands
+// are recorded into a particular subpass of a render pass instance.
+//
+// A subpass description describes the subset of attachments that 
+// is involved in the execution of a subpass. Each subpass can read
+// from some attachments as input attachments, write to some as
+// color attachments or depth/stencil attachments, and perform
+// multisample resolve operations to resolve attachments. 
+//
+// A subpass description can also include a set of preserve attachments, 
+// which are attachments that are not read or written by the subpass
+// but whose contents must be preserved throughout the subpass.
+//
+// A subpass uses an attachment if the attachment is a color, 
+// depth/stencil, resolve, or input attachment for that subpass
+// (as determined by the pColorAttachments, pDepthStencilAttachment,
+// pResolveAttachments, and pInputAttachments members of 
+// VkSubpassDescription, respectively). A subpass does not use an
+// attachment if that attachment is preserved by the subpass.
+// The first use of an attachment is in the lowest numbered subpass
+// that uses that attachment. Similarly, the last use of an attachment
+// is in the highest numbered subpass that uses that attachment.
+//
+// The subpasses in a render pass all render to the same dimensions, 
+// and fragments for pixel (x,y,layer) in one subpass can only read
+// attachment contents written by previous subpasses at that same
+// (x,y,layer) location.
+//
+// By describing a complete set of subpasses in advance, render passes
+// provide the implementation an opportunity to optimize the storage 
+// and transfer of attachment data between subpasses. In practice, 
+// this means that subpasses with a simple framebuffer-space dependency
+// may be merged into a single tiled rendering pass, keeping the
+// attachment data on-chip for the duration of a render pass instance. 
+// However, it is also quite common for a render pass to only contain
+// a single subpass.
+//
+// Subpass dependencies describe execution and memory dependencies 
+// between subpasses. A subpass dependency chain is a sequence of
+// subpass dependencies in a render pass, where the source subpass
+// of each subpass dependency (after the first) equals the destination
+// subpass of the previous dependency.
+//
+// Execution of subpasses may overlap or execute out of order with
+// regards to other subpasses, unless otherwise enforced by an 
+// execution dependency. Each subpass only respects submission order
+// for commands recorded in the same subpass, and the vkCmdBeginRenderPass
+// and vkCmdEndRenderPass commands that delimit the render pass - 
+// commands within other subpasses are not included. This affects 
+// most other implicit ordering guarantees.
+//
+// A render pass describes the structure of subpasses and attachments
+// independent of any specific image views for the attachments. 
+// The specific image views that will be used for the attachments,
+// and their dimensions, are specified in VkFramebuffer objects.
+// ========================================================================
+
+void vk_createRenderPass(VkDevice device, VkRenderPass * pRenderPassObj,
+        VkFormat colorFormat, VkFormat depthFormat)
+{
+    // In complex graphics applications, the picture is built up over
+    // many passes where each pass is responsible for producing a different
+    // part of the scene, applying full-frame effects such as postprocessing
+    // or composition, rendering usr interface elements, and so on. Such pass
+    // can be represented in Vulkan using a renderpass object. A single pass
+    // encapsulates multiple passes or rendering phases over a single set of
+    // output images. Each pass within the renderpass is known as a subpass.
+    // Renderpass objects can contains many subpasses. Renderpass object 
+    // contains information about the output image.
+    // 
+    // All drawing must be contained inside a renderpass. Further, graphics
+    // pipelines need to know where they're rendering to; therefore, its
+    // necessary to create a renderpass object before creating a graphics
+    // pipeline so that we can tell the pipeline about the images it'll
+    // be processing. 
+    //
+    // Before we can finish creating the pipeline, we need to tell vulkan
+    // about the framebuffer attachment that will be used while rendering.
+    // We need to specify how many color and depth buffers there will be,
+    // how many samples to use for each of them and how their contents 
+    // should be handled throughout the rendering operations.
+    //
+    // Textueres and framebuffers in Vulkan are represented by VkImage
+    // objects with a certain pixel format. however the layout of the
+    // pixels in memory can change based on what you're trying to do
+    // with an image.
+
+    ri.Printf(PRINT_ALL, " Create RenderPass: vk.render_pass \n");
+	VkAttachmentDescription attachmentsArray[2];
+	attachmentsArray[0].flags = 0;
+    // The format of the color attachment should match the format
+    // of the swap chain images. 
+	attachmentsArray[0].format = colorFormat;
+    // indicate the number of samples in the image, for multisampling
+	attachmentsArray[0].samples = VK_SAMPLE_COUNT_1_BIT;
+
+    // The next four fields specify what to do with the attachment
+    // at the beginning and end of the renderpass.
+    //
+    // VK_ATTACHMENT_LOAD_OP_DONT_CARE indicates that you don't care
+    // about the content of the attachment at the beginning of the
+    // renderpass and that Vulkan is free to do whatever it wishes
+    // with it. You can use this if you plan to explicitly clear the
+    // attachment or if you know that you'll replace the content of
+    // the attachment inside the renderpass.
+	attachmentsArray[0].loadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
+    // VK_ATTACHMENT_STORE_OP_STORE indicates that you want Vulkan
+    // to keep the contents of the attachment for later use, which
+    // usually means that it should write them out into memory.
+    // This is the usually the case for images you want display to
+    // user, read from later, or use as an attachment in another
+    // renderpass.
+	attachmentsArray[0].storeOp = VK_ATTACHMENT_STORE_OP_STORE;
+    // If the attachment is a combined depth-stentil attachment,
+    // then the stencilLoadOp and stencilStoreOp fields tell
+    // Vulkan what to do with the stencil part of the attachment,
+    // which can be different from the depth part. The regular 
+    // loadOp and storeOp fields specify what should happen to
+    // the depth part of the attachment.
+	attachmentsArray[0].stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
+	attachmentsArray[0].stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
+	// The layout to expect the image to be in when the renderpass
+    // begins, the renderpass do not automatically move the images
+    // into the initial layout.
+    attachmentsArray[0].initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+	// What layout to leave it in when the renderpass ends. 
+    // renderpass move the image to the final layout when it's done.
+    attachmentsArray[0].finalLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
+
+	attachmentsArray[1].flags = 0;
+	attachmentsArray[1].format = depthFormat;
+	attachmentsArray[1].samples = VK_SAMPLE_COUNT_1_BIT;
+
+    // Attachments can also be cleared at the beginning of a render pass
+    // instance by setting loadOp/stencilLoadOp of VkAttachmentDescription
+    // to VK_ATTACHMENT_LOAD_OP_CLEAR, as described for vkCreateRenderPass.
+    // loadOp and stencilLoadOp, specifying how the contents of the 
+    // attachment are treated before rendering and after rendering.
+	attachmentsArray[1].loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
+    // VK_ATTACHMENT_STORE_OP_DONT_CARE indicates that you don't need the
+    // content after the renderpass has ended.
+	attachmentsArray[1].storeOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
+
+    // Specifies that the contents within the render area will be cleared to
+    // a uniform value, which is specified when a render pass instance is begun    
+	attachmentsArray[1].stencilLoadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
+	attachmentsArray[1].stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
+	attachmentsArray[1].initialLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
+	attachmentsArray[1].finalLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
+
+    
+    // Each attachment reference is a simple structure containing an
+    // index into the array of attachments in attachment and the image
+    // layout that the attachment is expected to be in at this subpass.
+	VkAttachmentReference color_attachment_ref;
+	color_attachment_ref.attachment = 0;
+	color_attachment_ref.layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+
+	VkAttachmentReference depth_attachment_ref;
+	depth_attachment_ref.attachment = 1;
+	depth_attachment_ref.layout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
+
+
+
+	VkSubpassDescription subpassDesc;
+	subpassDesc.flags = 0;
+	subpassDesc.pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
+    // The remaining field describe the attachments used by the subpass.
+    // Each subpass can have a number of input attachments, which are
+    // attachments from which it can read data.
+	subpassDesc.inputAttachmentCount = 0;
+	subpassDesc.pInputAttachments = NULL;
+    // Color attachments, which are attachments to which its outputs are
+    // written, the maximum number of color attachments that a single 
+    // subpass can render to is guaranteed to be at least 4.
+	subpassDesc.colorAttachmentCount = 1;
+	subpassDesc.pColorAttachments = &color_attachment_ref;
+	subpassDesc.pResolveAttachments = NULL;
+    // There is only one depth-stencil attachment, so this parameter is not
+    // an array and has no associated count.
+	subpassDesc.pDepthStencilAttachment = &depth_attachment_ref;
+	// are the attachments to which multisample image data is resolved.
+    // if there are attachments that you want to live across a subpass
+    // but that are not directly referenced by the subpass, you should
+    // reference them in the pPreserveAttachments array. This reference
+    // will prevent Vulkan from making any optimizations that may disdurb
+    // the contents of those attachments.
+    subpassDesc.preserveAttachmentCount = 0;
+	subpassDesc.pPreserveAttachments = NULL;
+
+
+	VkRenderPassCreateInfo desc;
+	
+    desc.sType = VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO;
+	desc.pNext = NULL;
+	desc.flags = 0;
+    // Each of these structures defines a single image that is to be used 
+    // as an input, output, or both winth one or more of the subpasses in
+    // the renderpass. almost all graphics praphics rendering will use at
+    // least one attachment.
+    desc.attachmentCount = 2;
+	desc.pAttachments = attachmentsArray;
+    // Each subpass references a number of attachments
+    desc.subpassCount = 1;
+	desc.pSubpasses = &subpassDesc;
+    // Subpass dependencies
+    // Remember that the subpasses in a render pass automatically take care of
+    // image layout transitions. These transitions are controlled by subpass
+    // dependensies, which specify memory and execution dependencies between
+    // subpasses. Operations right before and right after this subpass also
+    // count as inplicit "subpasses".
+	desc.dependencyCount = 0;
+	desc.pDependencies = NULL;
+
+	VK_CHECK( qvkCreateRenderPass(device, &desc, NULL, pRenderPassObj) );
+}
+
+
+//==================================================================
+//                   Render Pass Compatibility
+//===================================================================
 //  Framebuffers and graphics pipelines are created based on
 //  a specific render pass object. They must only be used with
 //  that render pass object, or one compatible with it.
@@ -160,175 +396,23 @@ void vk_destroy_sync_primitives(void)
 //
 //  A framebuffer is compatible with a render pass if it was created
 //  using the same render pass or a compatible render pass.
-static void vk_createRenderPass(VkDevice device)
+// ===================================================================
+
+
+
+
+void vk_createFrameBuffers(uint32_t w, uint32_t h, VkRenderPass h_rpass,
+        uint32_t fbCount, VkFramebuffer* pFrameBuffers ) 
 {
 
-// Before we can finish creating the pipeline, we need to tell vulkan
-// about the framebuffer attachment that will be used while rendering.
-// We need to specify how many color and depth buffers there will be,
-// how many samples to use for each of them and how their contents 
-// should be handled throughout the rendering operations.
-
-	VkAttachmentDescription attachments[2];
-	attachments[0].flags = 0;
-
-//  The format of the color attachment should match the format of the
-//  swap chain images. 
-	attachments[0].format = vk.surface_format.format;
-//  have something with the multisampling
-	attachments[0].samples = VK_SAMPLE_COUNT_1_BIT;
-	attachments[0].loadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
-	attachments[0].storeOp = VK_ATTACHMENT_STORE_OP_STORE;
-	attachments[0].stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
-	attachments[0].stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
-	attachments[0].initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
-	attachments[0].finalLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
-
-	attachments[1].flags = 0;
-	attachments[1].format = vk.fmt_DepthStencil;
-	attachments[1].samples = VK_SAMPLE_COUNT_1_BIT;
-
-//  Attachments can also be cleared at the beginning of a render pass
-//  instance by setting loadOp/stencilLoadOp of VkAttachmentDescription
-//  to VK_ATTACHMENT_LOAD_OP_CLEAR, as described for vkCreateRenderPass.
-//  loadOp and stencilLoadOp, specifying how the contents of the attachment
-//  are treated before rendering and after rendering.
-	attachments[1].loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
-	attachments[1].storeOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
-
-//  specifies that the contents within the render area will be cleared to
-//  a uniform value, which is specified when a render pass instance is begun    
-	attachments[1].stencilLoadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
-	attachments[1].stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
-	attachments[1].initialLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
-	attachments[1].finalLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
-
-    // Textueres and framebuffers in Vulkan are represented by VkImage
-    // objects with a certain pixel format. however the layout of the
-    // pixels in memory can change based on what you're trying to do
-    // with an image.
-
-    // Images used as color attachment
-	VkAttachmentReference color_attachment_ref;
-	color_attachment_ref.attachment = 0;
-	color_attachment_ref.layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
-
-	VkAttachmentReference depth_attachment_ref;
-	depth_attachment_ref.attachment = 1;
-	depth_attachment_ref.layout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
-
-	VkSubpassDescription subpass;
-	subpass.flags = 0;
-	subpass.pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
-	subpass.inputAttachmentCount = 0;
-	subpass.pInputAttachments = NULL;
-	subpass.colorAttachmentCount = 1;
-	subpass.pColorAttachments = &color_attachment_ref;
-	subpass.pResolveAttachments = NULL;
-	subpass.pDepthStencilAttachment = &depth_attachment_ref;
-	subpass.preserveAttachmentCount = 0;
-	subpass.pPreserveAttachments = NULL;
-
-	VkRenderPassCreateInfo desc;
-	desc.sType = VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO;
-	desc.pNext = NULL;
-	desc.flags = 0;
-	
-    desc.attachmentCount = 2;
-	desc.pAttachments = attachments;
-	
-    desc.subpassCount = 1;
-	desc.pSubpasses = &subpass;
-    
-    // Subpass dependencies
-    // Remember that the subpasses in a render pass automatically take care of
-    // image layout transitions. These transitions are controlled by subpass
-    // dependensies, which specify memory and execution dependencies between
-    // subpasses. Operations right before and right after this subpass also
-    // count as inplicit "subpasses".
-
-	desc.dependencyCount = 0;
-	desc.pDependencies = NULL;
-
-	VK_CHECK(qvkCreateRenderPass(device, &desc, NULL, &vk.render_pass));
-}
+    ri.Printf(PRINT_ALL, " Create vk.framebuffers \n");
 
 
-
-void vk_createFrameBuffers(uint32_t w, uint32_t h) 
-{
-    ri.Printf(PRINT_ALL, " Create RenderPass:  vk.render_pass \n");
-	//
-	// Renderpass.
-	// A render pass represents a collection of attachments, subpasses,
-    // and dependencies between the subpasses, and describes how the 
-    // attachments are used over the course of the subpasses. The use
-    // of a render pass in a command buffer is a render pass instance.
-    //
-    // An attachment description describes the properties of an attachment
-    // including its format, sample count, and how its contents are treated
-    // at the beginning and end of each render pass instance.
-    //
-    // A subpass represents a phase of rendering that reads and writes
-    // a subset of the attachments in a render pass. Rendering commands
-    // are recorded into a particular subpass of a render pass instance.
-    //
-    // A subpass description describes the subset of attachments that 
-    // is involved in the execution of a subpass. Each subpass can read
-    // from some attachments as input attachments, write to some as
-    // color attachments or depth/stencil attachments, and perform
-    // multisample resolve operations to resolve attachments. A subpass
-    // description can also include a set of preserve attachments, 
-    // which are attachments that are not read or written by the subpass
-    // but whose contents must be preserved throughout the subpass.
-    //
-    // A subpass uses an attachment if the attachment is a color, 
-    // depth/stencil, resolve, or input attachment for that subpass
-    // (as determined by the pColorAttachments, pDepthStencilAttachment,
-    // pResolveAttachments, and pInputAttachments members of 
-    // VkSubpassDescription, respectively). A subpass does not use an
-    // attachment if that attachment is preserved by the subpass.
-    // The first use of an attachment is in the lowest numbered subpass
-    // that uses that attachment. Similarly, the last use of an attachment
-    // is in the highest numbered subpass that uses that attachment.
-    //
-    // The subpasses in a render pass all render to the same dimensions, 
-    // and fragments for pixel (x,y,layer) in one subpass can only read
-    // attachment contents written by previous subpasses at that same
-    // (x,y,layer) location.
-    //
-    // By describing a complete set of subpasses in advance, render passes
-    // provide the implementation an opportunity to optimize the storage 
-    // and transfer of attachment data between subpasses. In practice, 
-    // this means that subpasses with a simple framebuffer-space dependency
-    // may be merged into a single tiled rendering pass, keeping the
-    // attachment data on-chip for the duration of a render pass instance. 
-    // However, it is also quite common for a render pass to only contain
-    // a single subpass.
-    //
-    // Subpass dependencies describe execution and memory dependencies 
-    // between subpasses. A subpass dependency chain is a sequence of
-    // subpass dependencies in a render pass, where the source subpass
-    // of each subpass dependency (after the first) equals the destination
-    // subpass of the previous dependency.
-    //
-    // Execution of subpasses may overlap or execute out of order with
-    // regards to other subpasses, unless otherwise enforced by an 
-    // execution dependency. Each subpass only respects submission order
-    // for commands recorded in the same subpass, and the vkCmdBeginRenderPass
-    // and vkCmdEndRenderPass commands that delimit the render pass - 
-    // commands within other subpasses are not included. This affects 
-    // most other implicit ordering guarantees.
-    //
-    // A render pass describes the structure of subpasses and attachments
-    // independent of any specific image views for the attachments. 
-    // The specific image views that will be used for the attachments,
-    // and their dimensions, are specified in VkFramebuffer objects. 
     // Framebuffers are created with respect to a specific render pass
-    // that the framebuffer is compatible with (see Render Pass Compatibility).
-    // Collectively, a render pass and a framebuffer define the complete
-    // render target state for one or more subpasses as well as the 
-    // algorithmic dependencies between the subpasses.
+    // that the framebuffer is compatible with. Collectively, a render
+    // pass and a framebuffer define the complete render target state 
+    // for one or more subpasses as well as the algorithmic dependencies
+    // between the subpasses.
     //
     // The various pipeline stages of the drawing commands for a given
     // subpass may execute concurrently and/or out of order, both within 
@@ -336,8 +420,6 @@ void vk_createFrameBuffers(uint32_t w, uint32_t h)
     // However for a given (x,y,layer,sample) sample location, certain
     // per-sample operations are performed in rasterization order.
     
-	vk_createRenderPass(vk.device);
-
 
     // Framebuffers for each swapchain image.
 	// The attachments specified during render pass creation are bound
@@ -349,38 +431,35 @@ void vk_createFrameBuffers(uint32_t w, uint32_t h)
     // in the swap chain and use the one that corresponds to the retrieved
     // image at draw time.
 
-    ri.Printf(PRINT_ALL, " Create vk.framebuffers \n");
 
     // Render passes operate in conjunction with framebuffers. 
     // Framebuffers represent a collection of specific memory
     // attachments that a render pass instance uses.
 
     uint32_t i;
-    for (i = 0; i < vk.swapchain_image_count; i++)
+    for (i = 0; i < fbCount; ++i)
     {
         // set color and depth attachment
-        VkImageView attachments[2] = {
+        VkImageView attachmentsArray[2] = {
             vk.swapchain_image_views[i], vk.depth_image_view };
         
         VkFramebufferCreateInfo desc;
         desc.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
         desc.pNext = NULL;
         desc.flags = 0;
-
         // renderPass is a render pass that defines what render
-        // passes the framebuffer will be compatible with. See 
-        // Render Pass Compatibility for details.
-        desc.renderPass = vk.render_pass;
+        // passes the framebuffer will be compatible with. 
+        desc.renderPass = h_rpass;
         desc.attachmentCount = 2;
         // pAttachments is an array of VkImageView handles, each 
         // of which will be used as the corresponding attachment
         // in a render pass instance.
-        desc.pAttachments = attachments;
+        desc.pAttachments = attachmentsArray;
         desc.width = w;
         desc.height = h;
         desc.layers = 1;
 
-        VK_CHECK(qvkCreateFramebuffer(vk.device, &desc, NULL, &vk.framebuffers[i]));
+        VK_CHECK( qvkCreateFramebuffer(vk.device, &desc, NULL, &pFrameBuffers[i]) );
 
         // Applications must ensure that all accesses to memory that backs
         // image subresources used as attachments in a given renderpass instance 
@@ -414,7 +493,7 @@ void vk_destroyFrameBuffers(void)
     ri.Printf(PRINT_ALL, " Destroy vk.framebuffers vk.swapchain_image_views vk.swapchain\n");
 
     uint32_t i;
-	for (i = 0; i < vk.swapchain_image_count; i++)
+	for (i = 0; i < vk.swapchain_image_count; ++i)
     {
 		qvkDestroyFramebuffer(vk.device, vk.framebuffers[i], NULL);
 		qvkDestroyImageView(vk.device, vk.swapchain_image_views[i], NULL);
