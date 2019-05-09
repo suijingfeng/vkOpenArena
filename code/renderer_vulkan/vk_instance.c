@@ -734,81 +734,9 @@ const char * ColorSpaceEnum2str(enum VkColorSpaceKHR cs)
     }
 }
 
-
-static void vk_selectSurfaceFormat(void)
+static void vk_assertSurfaceCapabilities(VkSurfaceKHR HSurface)
 {
-    uint32_t nSurfmt;
-    uint32_t i;
-
-    // Get the numbers of VkFormat's that are supported
-    // "vk.surface" is the surface that will be associated with the swapchain.
-    // "vk.surface" must be a valid VkSurfaceKHR handle
-    VK_CHECK( qvkGetPhysicalDeviceSurfaceFormatsKHR(vk.physical_device, vk.surface, &nSurfmt, NULL) );
-    assert(nSurfmt > 0);
-
-    VkSurfaceFormatKHR * pSurfFmts = 
-        (VkSurfaceFormatKHR *) malloc( nSurfmt * sizeof(VkSurfaceFormatKHR) );
-
-    // To query the supported swapchain format-color space pairs for a surface
-    VK_CHECK( qvkGetPhysicalDeviceSurfaceFormatsKHR(vk.physical_device, vk.surface, &nSurfmt, pSurfFmts) );
-
-    ri.Printf(PRINT_ALL, " --- Total %d surface formats supported. --- \n", nSurfmt);
     
-    for( i = 0; i < nSurfmt; ++i)
-    {
-        ri.Printf(PRINT_ALL, " [%d], format: %d: ,color space: %s \n",
-            i, pSurfFmts[i].format, ColorSpaceEnum2str(pSurfFmts[i].colorSpace));
-    }
-
-    ri.Printf(PRINT_ALL, " --- ----------------------------------- --- \n");
-
-    // If the format list includes just one entry of VK_FORMAT_UNDEFINED, the surface
-    // has no preferred format. Otherwise, at least one supported format will be returned.
-    if ( (nSurfmt == 1) && (pSurfFmts[0].format == VK_FORMAT_UNDEFINED) )
-    {
-        // special case that means we can choose any format
-        vk.surface_format.format = VK_FORMAT_B8G8R8A8_UNORM;
-        vk.surface_format.colorSpace = VK_COLORSPACE_SRGB_NONLINEAR_KHR;
-        ri.Printf(PRINT_ALL, "VK_FORMAT_R8G8B8A8_UNORM\n");
-        ri.Printf(PRINT_ALL, "VK_COLORSPACE_SRGB_NONLINEAR_KHR\n");
-    }
-    else
-    {
-        ri.Printf(PRINT_ALL, " we choose: \n" );
-
-        for( i = 0; i < nSurfmt; i++)
-        {
-            if( ( pSurfFmts[i].format == VK_FORMAT_B8G8R8A8_UNORM) &&
-                ( pSurfFmts[i].colorSpace == VK_COLORSPACE_SRGB_NONLINEAR_KHR) )
-            {
-
-                ri.Printf(PRINT_ALL, " format = VK_FORMAT_B8G8R8A8_UNORM \n");
-                ri.Printf(PRINT_ALL, " colorSpace = VK_COLORSPACE_SRGB_NONLINEAR_KHR \n");
-                
-                vk.surface_format = pSurfFmts[i];
-                break;
-            }
-        }
-
-        if (i == nSurfmt)
-            vk.surface_format = pSurfFmts[0];
-    }
-
-    free(pSurfFmts);
-
-
-    // To query the basic capabilities of a surface, needed in order to create a swapchain
-	VK_CHECK(qvkGetPhysicalDeviceSurfaceCapabilitiesKHR(vk.physical_device, vk.surface, &vk.surface_caps));
-
-    // VK_IMAGE_USAGE_TRANSFER_DST_BIT is required by image clear operations.
-	if ((vk.surface_caps.supportedUsageFlags & VK_IMAGE_USAGE_TRANSFER_DST_BIT) == 0)
-		ri.Error(ERR_FATAL, "VK_IMAGE_USAGE_TRANSFER_DST_BIT is not supported by you GPU.\n");
-
-	// VK_IMAGE_USAGE_TRANSFER_SRC_BIT is required in order to take screenshots.
-	if ((vk.surface_caps.supportedUsageFlags & VK_IMAGE_USAGE_TRANSFER_SRC_BIT) == 0)
-		ri.Error(ERR_FATAL, "VK_IMAGE_USAGE_TRANSFER_SRC_BIT is not supported by you GPU.\n");
-
-
     // To query supported format features which are properties of the physical device
 	
     VkFormatProperties props;
@@ -862,6 +790,70 @@ static void vk_selectSurfaceFormat(void)
     }
 
     ri.Printf(PRINT_ALL, " -------- --------------------------- --------\n\n");
+}
+
+
+static void vk_selectSurfaceFormat(VkSurfaceKHR HSurface)
+{
+    uint32_t nSurfmt;
+    uint32_t i;
+
+    // Get the numbers of VkFormat's that are supported
+    // "vk.surface" is the surface that will be associated with the swapchain.
+    // "vk.surface" must be a valid VkSurfaceKHR handle
+    VK_CHECK( qvkGetPhysicalDeviceSurfaceFormatsKHR(vk.physical_device, HSurface, &nSurfmt, NULL) );
+    assert(nSurfmt > 0);
+
+    VkSurfaceFormatKHR * pSurfFmts = 
+        (VkSurfaceFormatKHR *) malloc( nSurfmt * sizeof(VkSurfaceFormatKHR) );
+
+    // To query the supported swapchain format-color space pairs for a surface
+    VK_CHECK( qvkGetPhysicalDeviceSurfaceFormatsKHR(vk.physical_device, HSurface, &nSurfmt, pSurfFmts) );
+
+    ri.Printf(PRINT_ALL, " -------- Total %d surface formats supported. -------- \n", nSurfmt);
+    
+    for( i = 0; i < nSurfmt; ++i)
+    {
+        ri.Printf(PRINT_ALL, " [%d], format: %d: ,color space: %s \n",
+            i, pSurfFmts[i].format, ColorSpaceEnum2str(pSurfFmts[i].colorSpace));
+    }
+
+
+    // If the format list includes just one entry of VK_FORMAT_UNDEFINED, the surface
+    // has no preferred format. Otherwise, at least one supported format will be returned.
+    if ( (nSurfmt == 1) && (pSurfFmts[0].format == VK_FORMAT_UNDEFINED) )
+    {
+        // special case that means we can choose any format
+        vk.surface_format.format = VK_FORMAT_B8G8R8A8_UNORM;
+        vk.surface_format.colorSpace = VK_COLORSPACE_SRGB_NONLINEAR_KHR;
+        ri.Printf(PRINT_ALL, "VK_FORMAT_R8G8B8A8_UNORM\n");
+        ri.Printf(PRINT_ALL, "VK_COLORSPACE_SRGB_NONLINEAR_KHR\n");
+    }
+    else
+    {
+        ri.Printf(PRINT_ALL, " we choose: \n" );
+
+        for( i = 0; i < nSurfmt; i++)
+        {
+            if( ( pSurfFmts[i].format == VK_FORMAT_B8G8R8A8_UNORM) &&
+                ( pSurfFmts[i].colorSpace == VK_COLORSPACE_SRGB_NONLINEAR_KHR) )
+            {
+
+                ri.Printf(PRINT_ALL, " format = VK_FORMAT_B8G8R8A8_UNORM \n");
+                ri.Printf(PRINT_ALL, " colorSpace = VK_COLORSPACE_SRGB_NONLINEAR_KHR \n");
+                
+                vk.surface_format = pSurfFmts[i];
+                break;
+            }
+        }
+
+        if (i == nSurfmt)
+            vk.surface_format = pSurfFmts[0];
+    }
+
+    ri.Printf(PRINT_ALL, " --- ----------------------------------- --- \n");
+
+    free(pSurfFmts);
 }
 
 
@@ -966,7 +958,7 @@ static void vk_selectQueueFamilyForPresentation(void)
         {
             vk.queue_family_index = i;
             
-            ri.Printf(PRINT_ALL, " Queue family for presentation selected: %d\n",
+            ri.Printf(PRINT_ALL, " Queue family index %d selected for presentation.\n",
                     vk.queue_family_index);
 
             break;
@@ -1192,6 +1184,89 @@ static void vk_loadDeviceFunctions(void)
 }
 
 
+static VkPresentModeKHR vk_selectPresentationMode(VkSurfaceKHR HSurface)
+{
+    // The presentation is arguably the most impottant setting for the swap chain
+    // because it represents the actual conditions for showing images to the screen
+    // There four possible modes available in Vulkan:
+
+    // 1) VK_PRESENT_MODE_IMMEDIATE_KHR: Images submitted by your application
+    //    are transferred to the screen right away, which may result in tearing.
+    //
+    // 2) VK_PRESENT_MODE_FIFO_KHR: The swap chain is a queue where the display
+    //    takes an image from the front of the queue when the display is refreshed
+    //    and the program inserts rendered images at the back of the queue. If the
+    //    queue is full then the program has to wait. This is most similar to 
+    //    vertical sync as found in modern games
+    //
+    // 3) VK_PRESENT_MODE_FIFO_RELAXED_KHR: variation of 2)
+    //
+    // 4) VK_PRESENT_MODE_MAILBOX_KHR: another variation of 2), the image already
+    //    queued are simply replaced with the newer ones. This mode can be used
+    //    to avoid tearing significantly less latency issues than standard vertical
+    //    sync that uses double buffering.
+    uint32_t nPM = 0, i;
+    
+    VkBool32 mailbox_supported = VK_FALSE;
+    VkBool32 immediate_supported = VK_FALSE;
+    
+    // Look for the best mode available.
+
+    qvkGetPhysicalDeviceSurfacePresentModesKHR(vk.physical_device, HSurface, &nPM, NULL);
+
+    assert(nPM > 0);
+
+    VkPresentModeKHR * pPresentModes = (VkPresentModeKHR *) malloc( nPM * sizeof(VkPresentModeKHR) );
+
+    qvkGetPhysicalDeviceSurfacePresentModesKHR(vk.physical_device, HSurface, &nPM, pPresentModes);
+
+    ri.Printf(PRINT_ALL, "-------- Total %d present mode supported. -------- \n", nPM);
+    for ( i = 0; i < nPM; ++i)
+    {
+        switch( pPresentModes[i] )
+        {
+            case VK_PRESENT_MODE_IMMEDIATE_KHR:
+                ri.Printf(PRINT_ALL, "[%d] VK_PRESENT_MODE_IMMEDIATE_KHR \n", i);
+                immediate_supported = VK_TRUE;
+                break;
+            case VK_PRESENT_MODE_MAILBOX_KHR:
+                ri.Printf(PRINT_ALL, "[%d] VK_PRESENT_MODE_MAILBOX_KHR \n", i);
+                mailbox_supported = VK_TRUE;
+                break;
+            case VK_PRESENT_MODE_FIFO_KHR:
+                ri.Printf(PRINT_ALL, "[%d] VK_PRESENT_MODE_FIFO_KHR \n", i);
+                break;
+            case VK_PRESENT_MODE_FIFO_RELAXED_KHR:
+                ri.Printf(PRINT_ALL, "[%d] VK_PRESENT_MODE_FIFO_RELAXED_KHR \n", i);
+                break;
+            default:
+                ri.Printf(PRINT_WARNING, "Unknown presentation mode: %d. \n", pPresentModes[i]);
+                break;
+        }
+    }
+
+    free(pPresentModes);
+
+
+    if (mailbox_supported)
+    {
+        ri.Printf(PRINT_ALL, " Presentation with VK_PRESENT_MODE_MAILBOX_KHR mode. \n");
+        return VK_PRESENT_MODE_MAILBOX_KHR;
+    }
+    else if(immediate_supported)
+    {
+        ri.Printf(PRINT_ALL, " Presentation with VK_PRESENT_MODE_IMMEDIATE_KHR mode. \n");
+        return VK_PRESENT_MODE_IMMEDIATE_KHR;
+    }
+
+    // VK_PRESENT_MODE_FIFO_KHR mode is guaranteed to be available according to the spec.
+    // However this is not necessary true ...
+    ri.Printf(PRINT_ALL, "\n Presentation with VK_PRESENT_MODE_FIFO_KHR mode. \n");
+    ri.Printf(PRINT_ALL, "-------- ----------------------------- --------\n");
+
+    return VK_PRESENT_MODE_FIFO_KHR;
+}
+
 
 void vk_getProcAddress(void)
 {
@@ -1209,12 +1284,16 @@ void vk_getProcAddress(void)
 
     // The window surface needs to be created right after the instance creation,
     // because it can actually influence the presentation mode selection.
-	vk_createSurfaceImpl(); 
-   
+	vk_createSurfaceImpl( &vk.surface ); 
+
     // select physical device
     vk_selectPhysicalDevice();
 
-    vk_selectSurfaceFormat(); 
+    vk_selectSurfaceFormat(vk.surface);
+    
+    vk_assertSurfaceCapabilities(vk.surface);
+    
+    vk.present_mode = vk_selectPresentationMode(vk.surface);
 
     vk_selectQueueFamilyForPresentation();
 

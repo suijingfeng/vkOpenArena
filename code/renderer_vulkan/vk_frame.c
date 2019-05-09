@@ -441,7 +441,7 @@ void vk_createFrameBuffers(uint32_t w, uint32_t h, VkRenderPass h_rpass,
     {
         // set color and depth attachment
         VkImageView attachmentsArray[2] = {
-            vk.swapchain_image_views[i], vk.depth_image_view };
+            vk.color_image_views[i], vk.depth_image_view };
         
         VkFramebufferCreateInfo desc;
         desc.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
@@ -490,13 +490,13 @@ void vk_destroyFrameBuffers(void)
 {
     // we should delete the framebuffers before the image views
     // and the render pass that they are based on.
-    ri.Printf(PRINT_ALL, " Destroy vk.framebuffers vk.swapchain_image_views vk.swapchain\n");
+    ri.Printf(PRINT_ALL, " Destroy vk.framebuffers vk.color_image_views vk.swapchain\n");
 
     uint32_t i;
 	for (i = 0; i < vk.swapchain_image_count; ++i)
     {
 		qvkDestroyFramebuffer(vk.device, vk.framebuffers[i], NULL);
-		qvkDestroyImageView(vk.device, vk.swapchain_image_views[i], NULL);
+		qvkDestroyImageView(vk.device, vk.color_image_views[i], NULL);
     }
 
     qvkDestroySwapchainKHR(vk.device, vk.swapchain, NULL);

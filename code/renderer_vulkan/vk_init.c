@@ -24,7 +24,7 @@ void vk_initialize(void)
     vk_getProcAddress(); 
  
 	// Swapchain. vk.physical_device required to be init. 
-	vk_createSwapChain(vk.device, vk.surface, vk.surface_format, vk.swapchain_image_views);
+	vk_createSwapChain(vk.device, vk.surface, vk.surface_format, vk.present_mode, vk.color_image_views);
 
 	// Sync primitives.
     vk_create_sync_primitives();

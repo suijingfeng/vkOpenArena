@@ -331,13 +331,13 @@ void vk_destroyWindowImpl( void )
 }
 
 
-void vk_createSurfaceImpl(void)
+void vk_createSurfaceImpl(VkSurfaceKHR * pSurface)
 {
     ri.Printf(PRINT_ALL, " Create Surface: vk.surface.\n");
 
-    if(!SDL_Vulkan_CreateSurface(window_sdl, vk.instance, &vk.surface))
+    if( !SDL_Vulkan_CreateSurface(window_sdl, vk.instance, pSurface) )
     {
-        vk.surface = VK_NULL_HANDLE;
+        *pSurface = VK_NULL_HANDLE;
         ri.Error(ERR_FATAL, "SDL_Vulkan_CreateSurface(): %s\n", SDL_GetError());
     }
 }

@@ -154,8 +154,9 @@ struct Vk_Instance {
     // function for creating a VkSurfaceKHR object for the respective platform.
 	VkSurfaceKHR surface;
 	VkSurfaceFormatKHR surface_format;
-    VkSurfaceCapabilitiesKHR surface_caps;
+    VkPresentModeKHR present_mode;
 
+//    VkSurfaceCapabilitiesKHR surface_caps;
 // Depth/stencil formats are considered opaque and need not be stored
 // in the exact number of bits pertexel or component ordering indicated
 // by the format enum. However, implementations must not substitute a
@@ -182,7 +183,7 @@ struct Vk_Instance {
 
 	uint32_t swapchain_image_count ;
 	VkImage swapchain_images_array[MAX_SWAPCHAIN_IMAGES];
-	VkImageView swapchain_image_views[MAX_SWAPCHAIN_IMAGES];
+	VkImageView color_image_views[MAX_SWAPCHAIN_IMAGES];
     VkFramebuffer framebuffers[MAX_SWAPCHAIN_IMAGES];
 	uint32_t idx_swapchain_image;
 

@@ -188,9 +188,10 @@ vulkan : 3398 frames 14.5 seconds 233.6 fps 1.0/4.3/14.0/1.6 ms
 opengl2: 3398 frames 83.4 seconds 40.8 fps 8.0/24.5/331.0/9.6 ms
 opengl1: 3398 frames 22.2 seconds 152.8 fps 2.0/6.5/17.0/1.9 ms
 
-# opengl2 renderer acieve best virsual result but cossume the compute power most
+# opengl2 renderer acieve best virsual result but consume the compute power most
 
 \com_speed 1
+# opengl2 backend
 frame:24071 all: 13 sv:  0 ev:  0 cl:  0 gm:  0 rf:  1 bk: 12
 frame:24072 all: 19 sv:  0 ev:  0 cl:  0 gm:  0 rf:  1 bk: 18
 frame:24073 all:  9 sv:  1 ev:  0 cl:  0 gm:  0 rf:  1 bk:  7
@@ -231,6 +232,7 @@ frame:24121 all: 11 sv:  0 ev:  0 cl:  1 gm:  0 rf:  0 bk: 10
 # ON Ubuntu
 
 \com_speed 1
+# vulkan backend
 frame:76190 all:  3 sv:  0 ev:  5 cl:  0 gm:  0 rf:  0 bk:  3
 frame:76191 all:  3 sv:  0 ev:  5 cl:  0 gm:  0 rf:  0 bk:  3
 frame:76192 all:  2 sv:  0 ev:  5 cl:  0 gm:  0 rf:  0 bk:  2
