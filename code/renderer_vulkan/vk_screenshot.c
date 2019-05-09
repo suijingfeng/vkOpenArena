@@ -74,7 +74,8 @@ static void vk_read_pixels(unsigned char* pBuf, uint32_t W, uint32_t H)
 
 	qvkDeviceWaitIdle(vk.device);
 
-	// Create image in host visible memory to serve as a destination for framebuffer pixels.
+	// Create image in host visible memory to serve as a destination
+    // for framebuffer pixels.
   
     const uint32_t sizeFB = W * H * 4;
     

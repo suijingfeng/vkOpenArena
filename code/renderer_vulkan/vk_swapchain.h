@@ -4,9 +4,10 @@
 #include "VKimpl.h"
 
 void vk_recreateSwapChain(void);
+
 void vk_createSwapChain( VkDevice device, VkSurfaceKHR surface, 
         VkSurfaceFormatKHR surface_format, VkPresentModeKHR presentMode,
-        VkImageView * const pSwapChainViews );
-
+        VkSwapchainKHR * const pHSwapChain);
+void vk_destroySwapChain(void);
 
 #endif

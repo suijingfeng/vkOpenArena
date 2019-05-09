@@ -34,7 +34,9 @@ void RB_RenderDrawSurfList(const drawSurf_t* const pDrawSurfs, int numDrawSurfs,
 	// VULKAN
     vk_clearDepthStencilAttachments();
 
-	if ( backEnd.refdef.rd.rdflags & RDF_HYPERSPACE )
+
+  
+    if ( backEnd.refdef.rd.rdflags & RDF_HYPERSPACE )
 	{
 		//RB_Hyperspace();
         // A player has predicted a teleport, but hasn't arrived yet

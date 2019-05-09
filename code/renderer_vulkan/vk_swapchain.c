@@ -57,7 +57,8 @@ void vk_recreateSwapChain(void)
 
 // create swap chain
 void vk_createSwapChain(VkDevice device, VkSurfaceKHR HSurface, 
-        VkSurfaceFormatKHR surface_format, VkPresentModeKHR presentMode, VkImageView * const pSwapChainViews)
+        VkSurfaceFormatKHR surface_format, VkPresentModeKHR presentMode,
+        VkSwapchainKHR * const pHSwapChain)
 {
 
     VkSurfaceCapabilitiesKHR surfCaps;
@@ -88,10 +89,8 @@ void vk_createSwapChain(VkDevice device, VkSurfaceKHR HSurface,
                 MAX(surfCaps.minImageExtent.height, 480u) );
     }
 
-    ri.Printf(PRINT_ALL, " Surface capabilities, image_extent.width: %d, image_extent.height: %d\n",
+    ri.Printf(PRINT_ALL, " image_extent.width: %d, image_extent.height: %d\n",
             image_extent.width, image_extent.height);
-
-
 
 
     // The number of images in the swap chain, essentially the present queue length
@@ -146,7 +145,7 @@ void vk_createSwapChain(VkDevice device, VkSurfaceKHR HSurface,
 
 
 
-    ri.Printf(PRINT_ALL, "\n-------- Create vk.swapchain --------\n");
+    ri.Printf(PRINT_ALL, "\n Create vk.swapchain. \n");
     // Regardless of which platform you're running on, the resulting
     // VkSurfaceKHR handle refers to Vulkan's view of a window, In order
     // to actually present anything to that surface, it's necessary
@@ -218,45 +217,11 @@ void vk_createSwapChain(VkDevice device, VkSurfaceKHR HSurface,
     // reference to the old one must be specified in this field.
     desc.oldSwapchain = VK_NULL_HANDLE;
 
-    VK_CHECK( qvkCreateSwapchainKHR(device, &desc, NULL, &vk.swapchain) );
+    VK_CHECK( qvkCreateSwapchainKHR(device, &desc, NULL, pHSwapChain) );
+}
 
-
-    {
-        // To obtain the actual number of presentable images for swapchain
-        // Because when you create the swapchain, you get to specify only
-        // the minimum number of the images in the swap chain, not the exact
-        // number of images, you need to use vkGetSwapchainImagesKHR to determind
-        // how many images there really are in a swap chain, even if you just
-        // created it.
-
-        VK_CHECK(qvkGetSwapchainImagesKHR(device, vk.swapchain, &vk.swapchain_image_count, NULL));
-        if( vk.swapchain_image_count > MAX_SWAPCHAIN_IMAGES )
-            vk.swapchain_image_count = MAX_SWAPCHAIN_IMAGES;
-        ri.Printf(PRINT_ALL, " Actual Number of Swapchain image: %d\n", vk.swapchain_image_count);
-        
-        // To obtain the array of presentable images associated with a swapchain
-        VK_CHECK(qvkGetSwapchainImagesKHR(device, vk.swapchain, &vk.swapchain_image_count, vk.swapchain_images_array));
-
-        uint32_t i;
-        for (i = 0; i < vk.swapchain_image_count; ++i)
-        {
-            VkImageViewCreateInfo desc;
-            desc.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
-            desc.pNext = NULL;
-            desc.flags = 0;
-            desc.image = vk.swapchain_images_array[i];
-            desc.viewType = VK_IMAGE_VIEW_TYPE_2D;
-            desc.format = surface_format.format;
-            desc.components.r = VK_COMPONENT_SWIZZLE_IDENTITY;
-            desc.components.g = VK_COMPONENT_SWIZZLE_IDENTITY;
-            desc.components.b = VK_COMPONENT_SWIZZLE_IDENTITY;
-            desc.components.a = VK_COMPONENT_SWIZZLE_IDENTITY;
-            desc.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-            desc.subresourceRange.baseMipLevel = 0;
-            desc.subresourceRange.levelCount = 1;
-            desc.subresourceRange.baseArrayLayer = 0;
-            desc.subresourceRange.layerCount = 1;
-            VK_CHECK( qvkCreateImageView(device, &desc, NULL, &pSwapChainViews[i]) );
-        }
-    }
+void vk_destroySwapChain(void)
+{
+    qvkDestroySwapchainKHR(vk.device, vk.swapchain, NULL);
+    ri.Printf(PRINT_ALL, " Destroy vk.swapchain. \n");
 }

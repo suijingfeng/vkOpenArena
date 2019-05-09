@@ -790,15 +790,20 @@ void RE_UploadCinematic (int w, int h, int cols, int rows, const unsigned char *
         ri.Printf(PRINT_ALL, "w=%d, h=%d, cols=%d, rows=%d, client=%d, prtImage->width=%d, prtImage->height=%d\n", 
            w, h, cols, rows, client, prtImage->uploadWidth, prtImage->uploadHeight);
 
-        prtImage->uploadWidth = cols;
-        prtImage->uploadHeight = rows;
-        prtImage->mipLevels = 1;
+
         // VULKAN
 
         qvkDestroyImage(vk.device, prtImage->handle, NULL);
+        prtImage->handle = VK_NULL_HANDLE;
         qvkDestroyImageView(vk.device, prtImage->view, NULL);
+        prtImage->view = VK_NULL_HANDLE;
         qvkFreeDescriptorSets(vk.device, vk.descriptor_pool, 1, &prtImage->descriptor_set);
-        
+        prtImage->descriptor_set = VK_NULL_HANDLE;
+
+        prtImage->uploadWidth = cols;
+        prtImage->uploadHeight = rows;
+        prtImage->mipLevels = 1;
+
         vk_createImageAndBindWithMemory(prtImage);
 
         vk_createImageViewAndDescriptorSet(prtImage);

@@ -2,7 +2,6 @@
 #include "vk_instance.h"
 #include "vk_frame.h"
 #include "vk_cmd.h"
-#include "vk_depth_attachment.h"
 #include "vk_pipelines.h"
 #include "vk_shade_geometry.h"
 #include "vk_shaders.h"
@@ -24,7 +23,13 @@ void vk_initialize(void)
     vk_getProcAddress(); 
  
 	// Swapchain. vk.physical_device required to be init. 
-	vk_createSwapChain(vk.device, vk.surface, vk.surface_format, vk.present_mode, vk.color_image_views);
+	vk_createSwapChain(vk.device, vk.surface, vk.surface_format, vk.present_mode,
+            &vk.swapchain );
+
+    
+    vk_createColorAttachment(vk.device, vk.swapchain, vk.surface_format.format,
+            &vk.swapchain_image_count, vk.color_image_views );
+
 
 	// Sync primitives.
     vk_create_sync_primitives();
@@ -41,10 +46,10 @@ void vk_initialize(void)
     int height;
 
     R_GetWinResolution(&width, &height);
-
+    vk_createDepthAttachment(width, height, vk.fmt_DepthStencil);
     // Depth attachment image.
-    vk_createDepthAttachment(width, height);
-    vk_createRenderPass(vk.device, &vk.render_pass, vk.surface_format.format, vk.fmt_DepthStencil);
+    // vk_createDepthAttachment(width, height, vk.fmt_DepthStencil);
+    vk_createRenderPass(vk.device, vk.surface_format.format, vk.fmt_DepthStencil, &vk.render_pass);
     vk_createFrameBuffers(width, height, vk.render_pass, vk.swapchain_image_count, vk.framebuffers);
 
 	// Pipeline layout.
@@ -97,18 +102,19 @@ void vk_shutdown(void)
 {
     ri.Printf( PRINT_ALL, "vk_shutdown()\n" );
 
-    vk_destroyDepthAttachment();
+    vk_destroySwapChain();
+
 
     vk_destroyFrameBuffers();
 
     vk_destroy_shading_data();
 
     vk_destroy_sync_primitives();
-    
+
     vk_destroyShaderModules();
 
-//  Those pipelines can be used across different maps ?
-//  so we only destroy it when the client quit.
+    // Those pipelines can be used across different maps ?
+    // so we only destroy it when the client quit.
     vk_destroyGlobalStagePipeline();
     vk_destroyDebugPipelines();
 
@@ -117,10 +123,10 @@ void vk_shutdown(void)
     vk_destroy_descriptor_pool();
 
     vk_destroy_commands();
-	
+
     vk_clearProcAddress();
 
     ri.Printf( PRINT_ALL, " clear vk struct: vk \n" );
-	memset(&vk, 0, sizeof(vk));
+    memset(&vk, 0, sizeof(vk));
 }
 

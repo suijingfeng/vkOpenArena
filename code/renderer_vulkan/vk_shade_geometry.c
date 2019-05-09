@@ -541,6 +541,7 @@ void vk_clearDepthStencilAttachments(void)
 
 
         qvkCmdClearAttachments(vk.command_buffer, 1, &attachments, 1, &clear_rect);
+        shadingDat.s_depth_attachment_dirty = VK_FALSE;
     }
 }
 
@@ -549,8 +550,6 @@ void vk_clearDepthStencilAttachments(void)
 
 void vk_clearColorAttachments(const float* color)
 {
-
-    // ri.Printf(PRINT_ALL, "vk_clearColorAttachments\n");
 
     VkClearAttachment attachments[1];
     memset(attachments, 0, sizeof(VkClearAttachment));
@@ -599,6 +598,17 @@ void vk_clearColorAttachments(const float* color)
 	clear_rect[0].rect = get_scissor_rect();
 	clear_rect[0].baseArrayLayer = 0;
 	clear_rect[0].layerCount = 1;
+
+    ri.Printf(PRINT_ALL, "(%d, %d, %d, %d)\n", 
+            clear_rect[0].rect.offset.x, clear_rect[0].rect.offset.y, 
+            clear_rect[0].rect.extent.width, clear_rect[0].rect.extent.height);
+
+
+    // CmdClearAttachments can clear multiple regions of each attachment
+    // used in the current subpass of a render pass instance. This command
+    // must be called only inside a render pass instance, and implicitly
+    // selects the images to clear based on the current framebuffer 
+    // attachments and the command parameters.
 
 	qvkCmdClearAttachments(vk.command_buffer, 1, attachments, 1, clear_rect);
 

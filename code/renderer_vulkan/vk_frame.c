@@ -1,9 +1,11 @@
 #include "tr_cvar.h"
 #include "vk_instance.h"
 #include "vk_shade_geometry.h"
-#include "vk_frame.h"
 #include "vk_swapchain.h"
 #include "R_GetMicroSeconds.h"
+#include "vk_image.h"
+#include "vk_frame.h"
+#include "vk_cmd.h"
 
 //  Synchronization of access to resources is primarily the responsibility
 //  of the application in Vulkan. The order of execution of commands with
@@ -210,8 +212,8 @@ void vk_destroy_sync_primitives(void)
 // and their dimensions, are specified in VkFramebuffer objects.
 // ========================================================================
 
-void vk_createRenderPass(VkDevice device, VkRenderPass * pRenderPassObj,
-        VkFormat colorFormat, VkFormat depthFormat)
+void vk_createRenderPass(VkDevice device, VkFormat colorFormat, 
+        VkFormat depthFormat, VkRenderPass * const pRenderPassObj)
 {
     // In complex graphics applications, the picture is built up over
     // many passes where each pass is responsible for producing a different
@@ -240,7 +242,7 @@ void vk_createRenderPass(VkDevice device, VkRenderPass * pRenderPassObj,
     // pixels in memory can change based on what you're trying to do
     // with an image.
 
-    ri.Printf(PRINT_ALL, " Create RenderPass: vk.render_pass \n");
+    ri.Printf(PRINT_ALL, " Create RenderPass. \n");
 	VkAttachmentDescription attachmentsArray[2];
 	attachmentsArray[0].flags = 0;
     // The format of the color attachment should match the format
@@ -295,7 +297,6 @@ void vk_createRenderPass(VkDevice device, VkRenderPass * pRenderPassObj,
     // VK_ATTACHMENT_STORE_OP_DONT_CARE indicates that you don't need the
     // content after the renderpass has ended.
 	attachmentsArray[1].storeOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
-
     // Specifies that the contents within the render area will be cleared to
     // a uniform value, which is specified when a render pass instance is begun    
 	attachmentsArray[1].stencilLoadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
@@ -399,14 +400,185 @@ void vk_createRenderPass(VkDevice device, VkRenderPass * pRenderPassObj,
 // ===================================================================
 
 
+void vk_createColorAttachment(VkDevice lgDev, const VkSwapchainKHR HSwapChain, 
+        VkFormat surFmt, uint32_t * const pSwapchainLen,
+        VkImageView * const pSwapChainImgViews)
+{
+
+    // To obtain the actual number of presentable images for swapchain
+    // Because when you create the swapchain, you get to specify only
+    // the minimum number of the images in the swap chain, not the exact
+    // number of images, you need to use vkGetSwapchainImagesKHR to determind
+    // how many images there really are in a swap chain, even if you just
+    // created it.
+
+    uint32_t swapchainLen = 0;
+
+    VK_CHECK( qvkGetSwapchainImagesKHR(lgDev, HSwapChain, &swapchainLen, NULL) );
+ 
+    ri.Printf(PRINT_ALL, " Actual Number of Swapchain image: %d\n",
+            swapchainLen );
+
+    // To obtain presentable image handles associated with a swapchain
+    VK_CHECK( qvkGetSwapchainImagesKHR(lgDev, HSwapChain, &swapchainLen, vk.swapchain_images_array) );
+
+    uint32_t i;
+    for (i = 0; i < swapchainLen; ++i)
+    {
+        VkImageViewCreateInfo desc;
+        desc.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
+        desc.pNext = NULL;
+        desc.flags = 0;
+        desc.image = vk.swapchain_images_array[i];
+        desc.viewType = VK_IMAGE_VIEW_TYPE_2D;
+        desc.format = surFmt;
+        desc.components.r = VK_COMPONENT_SWIZZLE_IDENTITY;
+        desc.components.g = VK_COMPONENT_SWIZZLE_IDENTITY;
+        desc.components.b = VK_COMPONENT_SWIZZLE_IDENTITY;
+        desc.components.a = VK_COMPONENT_SWIZZLE_IDENTITY;
+        desc.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+        desc.subresourceRange.baseMipLevel = 0;
+        desc.subresourceRange.levelCount = 1;
+        desc.subresourceRange.baseArrayLayer = 0;
+        desc.subresourceRange.layerCount = 1;
+        VK_CHECK( qvkCreateImageView(lgDev, &desc, NULL, &pSwapChainImgViews[i]) );
+    }
+
+    *pSwapchainLen = swapchainLen;
+}
+
+
+void vk_createDepthAttachment(int Width, int Height, VkFormat depthFmt)
+{
+    // A depth attachment is based on an image, just like the color attachment
+    // The difference is that the swap chain will not automatically create
+    // depth image for us. We need only a single depth image, because only
+    // one draw operation is running at once.
+    ri.Printf(PRINT_ALL, " Create depth image: vk.depth_image, %d x %d. \n", Width, Height);
+
+    VkImageCreateInfo desc;
+    desc.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
+    desc.pNext = NULL;
+    desc.flags = 0;
+    desc.imageType = VK_IMAGE_TYPE_2D;
+    desc.format = depthFmt;
+    desc.extent.width = Width;
+    desc.extent.height = Height;
+    desc.extent.depth = 1;
+    desc.mipLevels = 1;
+    desc.arrayLayers = 1;
+    desc.samples = VK_SAMPLE_COUNT_1_BIT;
+    desc.tiling = VK_IMAGE_TILING_OPTIMAL;
+    desc.usage = VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT;
+    desc.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
+    desc.queueFamilyIndexCount = 0;
+    desc.pQueueFamilyIndices = NULL;
+    desc.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+    VK_CHECK( qvkCreateImage(vk.device, &desc, NULL, &vk.depth_image) );
+
+
+    //
+    //
+    //
+    ri.Printf(PRINT_ALL, " Allocate device local memory for depth image. \n");
+    VkMemoryRequirements memory_requirements;
+    qvkGetImageMemoryRequirements(vk.device, vk.depth_image, &memory_requirements);
+
+    VkMemoryAllocateInfo alloc_info;
+    alloc_info.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
+    alloc_info.pNext = NULL;
+    alloc_info.allocationSize = memory_requirements.size;
+    alloc_info.memoryTypeIndex = find_memory_type(
+        memory_requirements.memoryTypeBits, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
+    // = vk.idx_depthImgMem;
+    VK_CHECK(qvkAllocateMemory(vk.device, &alloc_info, NULL, &vk.depth_image_memory));
+    VK_CHECK(qvkBindImageMemory(vk.device, vk.depth_image, vk.depth_image_memory, 0));
+
+
+    //
+    //
+    //
+    ri.Printf(PRINT_ALL, " Create image view for depth image. \n");
+    VkImageViewCreateInfo imgViewDesc;
+    imgViewDesc.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
+    imgViewDesc.pNext = NULL;
+    imgViewDesc.flags = 0;
+    imgViewDesc.image = vk.depth_image;
+    imgViewDesc.viewType = VK_IMAGE_VIEW_TYPE_2D;
+    imgViewDesc.format = vk.fmt_DepthStencil;
+    imgViewDesc.components.r = VK_COMPONENT_SWIZZLE_IDENTITY;
+    imgViewDesc.components.g = VK_COMPONENT_SWIZZLE_IDENTITY;
+    imgViewDesc.components.b = VK_COMPONENT_SWIZZLE_IDENTITY;
+    imgViewDesc.components.a = VK_COMPONENT_SWIZZLE_IDENTITY;
+    imgViewDesc.subresourceRange.aspectMask = VK_IMAGE_ASPECT_DEPTH_BIT;
+    imgViewDesc.subresourceRange.baseMipLevel = 0;
+    imgViewDesc.subresourceRange.levelCount = 1;
+    imgViewDesc.subresourceRange.baseArrayLayer = 0;
+    imgViewDesc.subresourceRange.layerCount = 1;
+    VK_CHECK( qvkCreateImageView(vk.device, &imgViewDesc, NULL, &vk.depth_image_view) );
+
+
+
+    VkImageAspectFlags image_aspect_flags = VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT;
+
+    VkCommandBufferAllocateInfo cmdAllocInfo;
+    cmdAllocInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
+    cmdAllocInfo.pNext = NULL;
+    cmdAllocInfo.commandPool = vk.command_pool;
+    cmdAllocInfo.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
+    cmdAllocInfo.commandBufferCount = 1;
+
+    VkCommandBuffer pCB;
+    VK_CHECK(qvkAllocateCommandBuffers(vk.device, &cmdAllocInfo, &pCB));
+
+    VkCommandBufferBeginInfo begin_info;
+    begin_info.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
+    begin_info.pNext = NULL;
+    begin_info.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
+    begin_info.pInheritanceInfo = NULL;
+
+    VK_CHECK(qvkBeginCommandBuffer(pCB, &begin_info));
+
+    record_image_layout_transition(pCB, vk.depth_image, 
+            image_aspect_flags, 0, VK_IMAGE_LAYOUT_UNDEFINED,
+            VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT | 
+            VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_READ_BIT, 
+            VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL);
+
+
+    VK_CHECK(qvkEndCommandBuffer(pCB));
+
+    VkSubmitInfo submit_info;
+    submit_info.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
+    submit_info.pNext = NULL;
+    submit_info.waitSemaphoreCount = 0;
+    submit_info.pWaitSemaphores = NULL;
+    submit_info.pWaitDstStageMask = NULL;
+    submit_info.commandBufferCount = 1;
+    submit_info.pCommandBuffers = &pCB;
+    submit_info.signalSemaphoreCount = 0;
+    submit_info.pSignalSemaphores = NULL;
+
+    VK_CHECK(qvkQueueSubmit(vk.queue, 1, &submit_info, VK_NULL_HANDLE));
+    VK_CHECK(qvkQueueWaitIdle(vk.queue));
+    qvkFreeCommandBuffers(vk.device, vk.command_pool, 1, &pCB);
+
+}
 
 
 void vk_createFrameBuffers(uint32_t w, uint32_t h, VkRenderPass h_rpass,
-        uint32_t fbCount, VkFramebuffer* pFrameBuffers ) 
+        uint32_t fbCount, VkFramebuffer* const pFrameBuffers ) 
 {
 
+    // The framebuffer is an object that reprensents the set of images
+    // that graphic pipelines will render into. These affect the last
+    // few stages(depth and stencil tests, blending, multisampling) 
+    // in the pipeline. 
+    //
+    // A framebuffer object is created by using a reference to a 
+    // renderpass and can be used with any renderpass that has a 
+    // similar arrangement of attachment.
     ri.Printf(PRINT_ALL, " Create vk.framebuffers \n");
-
 
     // Framebuffers are created with respect to a specific render pass
     // that the framebuffer is compatible with. Collectively, a render
@@ -419,10 +591,10 @@ void vk_createFrameBuffers(uint32_t w, uint32_t h, VkRenderPass h_rpass,
     // and across drawing commands, whilst still respecting pipeline order.
     // However for a given (x,y,layer,sample) sample location, certain
     // per-sample operations are performed in rasterization order.
-    
+
 
     // Framebuffers for each swapchain image.
-	// The attachments specified during render pass creation are bound
+    // The attachments specified during render pass creation are bound
     // by wrapping them into a VkFramebuffer object. A framebuffer object
     // references all of the VkImageView objects that represent the attachments
     // The image that we have to use as attachment depends on which image
@@ -486,24 +658,6 @@ void vk_createFrameBuffers(uint32_t w, uint32_t h, VkRenderPass h_rpass,
 }
 
 
-void vk_destroyFrameBuffers(void)
-{
-    // we should delete the framebuffers before the image views
-    // and the render pass that they are based on.
-    ri.Printf(PRINT_ALL, " Destroy vk.framebuffers vk.color_image_views vk.swapchain\n");
-
-    uint32_t i;
-	for (i = 0; i < vk.swapchain_image_count; ++i)
-    {
-		qvkDestroyFramebuffer(vk.device, vk.framebuffers[i], NULL);
-		qvkDestroyImageView(vk.device, vk.color_image_views[i], NULL);
-    }
-
-    qvkDestroySwapchainKHR(vk.device, vk.swapchain, NULL);
-
-    qvkDestroyRenderPass(vk.device, vk.render_pass, NULL);
-}
-
 
 void vk_begin_frame(void)
 {
@@ -519,11 +673,11 @@ void vk_begin_frame(void)
     // To acquire an available presentable image to use, and retrieve the index of 
     // that image If timeout is UINT64_MAX, the timeout period is treated as infinite,
     // and vkAcquireNextImageKHR will block until an image is acquired or an error occurs.
-    
+
     // An application must wait until either the semaphore or fence is signaled
     // before accessing the image's data.
-	VK_CHECK(qvkAcquireNextImageKHR(vk.device, vk.swapchain, UINT64_MAX,
-        sema_imageAvailable, VK_NULL_HANDLE, &vk.idx_swapchain_image));
+    VK_CHECK(qvkAcquireNextImageKHR(vk.device, vk.swapchain, UINT64_MAX,
+                sema_imageAvailable, VK_NULL_HANDLE, &vk.idx_swapchain_image));
 
 
     //  User could call method vkWaitForFences to wait for completion. A fence is a 
@@ -538,63 +692,61 @@ void vk_begin_frame(void)
     //  the time vkWaitForFences is called, then vkWaitForFences will block and 
     //  wait up to timeout nanoseconds for the condition to become satisfied.
 
-	VK_CHECK(qvkWaitForFences(vk.device, 1, &fence_renderFinished, VK_FALSE, 1e9));
- 
+    VK_CHECK(qvkWaitForFences(vk.device, 1, &fence_renderFinished, VK_FALSE, 1e9));
+
     //  To set the state of fences to unsignaled from the host
     //  "1" is the number of fences to reset. 
     //  "fence_renderFinished" is the fence handle to reset.
-	VK_CHECK(qvkResetFences(vk.device, 1, &fence_renderFinished));
+    VK_CHECK(qvkResetFences(vk.device, 1, &fence_renderFinished));
 
     //  commandBuffer must not be in the recording or pending state.
-    
+
     // begin_info is an instance of the VkCommandBufferBeginInfo structure,
     // which defines additional information about how the command buffer 
     // begins recording.
-	VkCommandBufferBeginInfo begin_info;
-	begin_info.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
-	begin_info.pNext = NULL;
+    VkCommandBufferBeginInfo begin_info;
+    begin_info.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
+    begin_info.pNext = NULL;
     // VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT specifies that
     // each recording of the command buffer will only be submitted
     // once, and the command buffer will be reset and recorded again
     // between each submission.
-	begin_info.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
-	begin_info.pInheritanceInfo = NULL;
+    begin_info.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
+    begin_info.pInheritanceInfo = NULL;
 
     // To begin recording a command buffer
-	VK_CHECK(qvkBeginCommandBuffer(vk.command_buffer, &begin_info));
+    VK_CHECK(qvkBeginCommandBuffer(vk.command_buffer, &begin_info));
 
-	// Ensure visibility of geometry buffers writes.
+    // Ensure visibility of geometry buffers writes.
 
-
-{
-
+    //
     // vkCmdPipelineBarrier is a synchronization command that inserts 
     // a dependency between commands submitted to the same queue, or 
     // between commands in the same subpass. When vkCmdPipelineBarrier
     // is submitted to a queue, it defines a memory dependency between
     // commands that were submitted before it, and those submitted
     // after it.
-	VkBufferMemoryBarrier barrier;
-	barrier.sType = VK_STRUCTURE_TYPE_BUFFER_MEMORY_BARRIER;
-	barrier.pNext = NULL;
-	barrier.srcAccessMask = VK_ACCESS_HOST_WRITE_BIT;
-	barrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
-	barrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
-	barrier.buffer = vk_getIndexBuffer();
-	barrier.offset = 0;
-	barrier.size = VK_WHOLE_SIZE;
+    VkBufferMemoryBarrier barrier;
+    barrier.sType = VK_STRUCTURE_TYPE_BUFFER_MEMORY_BARRIER;
+    barrier.pNext = NULL;
+    barrier.srcAccessMask = VK_ACCESS_HOST_WRITE_BIT;
+    barrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+    barrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+    barrier.buffer = vk_getIndexBuffer();
+    barrier.offset = 0;
+    barrier.size = VK_WHOLE_SIZE;
 
     // If vkCmdPipelineBarrier was recorded outside a render pass instance, 
     // the first synchronization scope includes all commands that occur earlier
     // in submission order. The second synchronization scope includes all
     // commands that occur later in submission order.  
     //
-    
+
     // VK_ACCESS_VERTEX_ATTRIBUTE_READ_BIT specifies read access 
     // to a vertex buffer as part of a drawing command, bound by
     // vkCmdBindVertexBuffers.
-	barrier.dstAccessMask = VK_ACCESS_VERTEX_ATTRIBUTE_READ_BIT;
-	
+    barrier.dstAccessMask = VK_ACCESS_VERTEX_ATTRIBUTE_READ_BIT;
+
     // To record a pipeline barrier
     qvkCmdPipelineBarrier(vk.command_buffer, VK_PIPELINE_STAGE_HOST_BIT, VK_PIPELINE_STAGE_VERTEX_INPUT_BIT, 0, 0, NULL, 1, &barrier, 0, NULL);
 
@@ -603,28 +755,26 @@ void vk_begin_frame(void)
     barrier.dstAccessMask = VK_ACCESS_INDEX_READ_BIT;
     qvkCmdPipelineBarrier(vk.command_buffer, VK_PIPELINE_STAGE_HOST_BIT, VK_PIPELINE_STAGE_VERTEX_INPUT_BIT, 0, 0, NULL, 1, &barrier, 0, NULL);
 
-}
+    //
+    // Begin render pass.
+    //
+    VkClearValue pClearValues[2];
+    // ignore clear_values[0] which corresponds to color attachment
+    pClearValues[1].depthStencil.depth = 1.0;
+    pClearValues[1].depthStencil.stencil = 0;
 
-
-	// Begin render pass.
-	VkClearValue clear_values[2];
-	/// ignore clear_values[0] which corresponds to color attachment
-	clear_values[1].depthStencil.depth = 1.0;
-	clear_values[1].depthStencil.stencil = 0;
-
-	VkRenderPassBeginInfo renderPass_beginInfo;
-	renderPass_beginInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
-	renderPass_beginInfo.pNext = NULL;
-	renderPass_beginInfo.renderPass = vk.render_pass;
-	renderPass_beginInfo.framebuffer = vk.framebuffers[vk.idx_swapchain_image];
+    VkRenderPassBeginInfo renderPass_beginInfo;
+    renderPass_beginInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
+    renderPass_beginInfo.pNext = NULL;
+    renderPass_beginInfo.renderPass = vk.render_pass;
+    renderPass_beginInfo.framebuffer = vk.framebuffers[vk.idx_swapchain_image];
 
     renderPass_beginInfo.renderArea = get_scissor_rect();
 
     renderPass_beginInfo.clearValueCount = 2;
-	renderPass_beginInfo.pClearValues = clear_values;
+    renderPass_beginInfo.pClearValues = pClearValues;
 
-	qvkCmdBeginRenderPass(vk.command_buffer, &renderPass_beginInfo, VK_SUBPASS_CONTENTS_INLINE);
-
+    qvkCmdBeginRenderPass(vk.command_buffer, &renderPass_beginInfo, VK_SUBPASS_CONTENTS_INLINE);
 }
 
 
@@ -632,7 +782,7 @@ void vk_end_frame(void)
 {
 	qvkCmdEndRenderPass(vk.command_buffer);
 	
-    VK_CHECK(qvkEndCommandBuffer(vk.command_buffer));
+    qvkEndCommandBuffer(vk.command_buffer);
 
 
 	VkPipelineStageFlags wait_dst_stage_mask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
@@ -692,6 +842,7 @@ void vk_end_frame(void)
     
     VK_CHECK(qvkQueueSubmit(vk.queue, 1, &submit_info, fence_renderFinished));
 
+    
     VkPresentInfoKHR present_info;
 	present_info.sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR;
 	present_info.pNext = NULL;
@@ -732,4 +883,33 @@ void vk_end_frame(void)
         vk_recreateSwapChain();
     }
 }
+
+
+
+void vk_destroyDepthAttachment(void)
+{
+    ri.Printf(PRINT_ALL, " Destroy Depth Attachments.\n");
+
+    qvkDestroyImageView(vk.device, vk.depth_image_view, NULL);
+	qvkFreeMemory(vk.device, vk.depth_image_memory, NULL);
+    qvkDestroyImage(vk.device, vk.depth_image, NULL);
+}
+
+void vk_destroyFrameBuffers(void)
+{
+    vk_destroyDepthAttachment();
+    // we should delete the framebuffers before the image views
+    // and the render pass that they are based on.
+    ri.Printf(PRINT_ALL, " Destroy vk.framebuffers vk.color_image_views.\n");
+
+    qvkDestroyRenderPass(vk.device, vk.render_pass, NULL);
+    
+    uint32_t i;
+	for (i = 0; i < vk.swapchain_image_count; ++i)
+    {
+		qvkDestroyFramebuffer(vk.device, vk.framebuffers[i], NULL);
+		qvkDestroyImageView(vk.device, vk.color_image_views[i], NULL);
+    }
+}
+
 

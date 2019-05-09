@@ -10,7 +10,6 @@
 #include "vk_pipelines.h"
 #include "vk_frame.h"
 #include "vk_shaders.h"
-#include "vk_depth_attachment.h"
 #include "ref_import.h" 
 
 
@@ -738,28 +737,27 @@ static void vk_assertSurfaceCapabilities(VkSurfaceKHR HSurface)
 {
     
     // To query supported format features which are properties of the physical device
-	
+	ri.Printf(PRINT_ALL, "\n --------  Query supported format features --------\n");
+    
     VkFormatProperties props;
 
 
     // To determine the set of valid usage bits for a given format,
-    // call vkGetPhysicalDeviceFormatProperties.
-
     // ========================= color ================
     qvkGetPhysicalDeviceFormatProperties(vk.physical_device, vk.surface_format.format, &props);
     
     // Check if the device supports blitting to linear images 
     if ( props.linearTilingFeatures & VK_FORMAT_FEATURE_SAMPLED_IMAGE_BIT )
-        ri.Printf(PRINT_ALL, "--- Linear TilingFeatures supported. ---\n");
+        ri.Printf(PRINT_ALL, " Linear Tiling Features supported. \n");
 
     if ( props.linearTilingFeatures & VK_FORMAT_FEATURE_BLIT_DST_BIT ) 
     {
-        ri.Printf(PRINT_ALL, "--- Blitting from linear tiled images supported. ---\n");
+        ri.Printf(PRINT_ALL, " Blitting from linear tiled images supported.\n");
     }
 
     if ( props.optimalTilingFeatures & VK_FORMAT_FEATURE_BLIT_SRC_BIT )
     {
-        ri.Printf(PRINT_ALL, "--- Blitting from optimal tiled images supported. ---\n");
+        ri.Printf(PRINT_ALL, " Blitting from optimal tiled images supported.\n");
         vk.isBlitSupported = VK_TRUE;
     }
 
@@ -814,7 +812,7 @@ static void vk_selectSurfaceFormat(VkSurfaceKHR HSurface)
     
     for( i = 0; i < nSurfmt; ++i)
     {
-        ri.Printf(PRINT_ALL, " [%d], format: %d: ,color space: %s \n",
+        ri.Printf(PRINT_ALL, " [%d], format %d: ,color space: %s \n",
             i, pSurfFmts[i].format, ColorSpaceEnum2str(pSurfFmts[i].colorSpace));
     }
 
@@ -965,6 +963,7 @@ static void vk_selectQueueFamilyForPresentation(void)
         }
     }
 
+    ri.Printf(PRINT_ALL, " -------- ---------------------------- -------- \n\n");
 
     free(pQueueFamilies);
 
@@ -1226,21 +1225,22 @@ static VkPresentModeKHR vk_selectPresentationMode(VkSurfaceKHR HSurface)
         switch( pPresentModes[i] )
         {
             case VK_PRESENT_MODE_IMMEDIATE_KHR:
-                ri.Printf(PRINT_ALL, "[%d] VK_PRESENT_MODE_IMMEDIATE_KHR \n", i);
+                ri.Printf(PRINT_ALL, " [%d] VK_PRESENT_MODE_IMMEDIATE_KHR \n", i);
                 immediate_supported = VK_TRUE;
                 break;
             case VK_PRESENT_MODE_MAILBOX_KHR:
-                ri.Printf(PRINT_ALL, "[%d] VK_PRESENT_MODE_MAILBOX_KHR \n", i);
+                ri.Printf(PRINT_ALL, " [%d] VK_PRESENT_MODE_MAILBOX_KHR \n", i);
                 mailbox_supported = VK_TRUE;
                 break;
             case VK_PRESENT_MODE_FIFO_KHR:
-                ri.Printf(PRINT_ALL, "[%d] VK_PRESENT_MODE_FIFO_KHR \n", i);
+                ri.Printf(PRINT_ALL, " [%d] VK_PRESENT_MODE_FIFO_KHR \n", i);
                 break;
             case VK_PRESENT_MODE_FIFO_RELAXED_KHR:
-                ri.Printf(PRINT_ALL, "[%d] VK_PRESENT_MODE_FIFO_RELAXED_KHR \n", i);
+                ri.Printf(PRINT_ALL, " [%d] VK_PRESENT_MODE_FIFO_RELAXED_KHR \n", i);
                 break;
             default:
-                ri.Printf(PRINT_WARNING, "Unknown presentation mode: %d. \n", pPresentModes[i]);
+                ri.Printf(PRINT_WARNING, "Unknown presentation mode: %d. \n",
+                        pPresentModes[i]);
                 break;
         }
     }
@@ -1259,8 +1259,8 @@ static VkPresentModeKHR vk_selectPresentationMode(VkSurfaceKHR HSurface)
         return VK_PRESENT_MODE_IMMEDIATE_KHR;
     }
 
-    // VK_PRESENT_MODE_FIFO_KHR mode is guaranteed to be available according to the spec.
-    // However this is not necessary true ...
+    // VK_PRESENT_MODE_FIFO_KHR mode is guaranteed to
+    // be available according to the spec.
     ri.Printf(PRINT_ALL, "\n Presentation with VK_PRESENT_MODE_FIFO_KHR mode. \n");
     ri.Printf(PRINT_ALL, "-------- ----------------------------- --------\n");
 
