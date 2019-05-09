@@ -599,9 +599,9 @@ void vk_clearColorAttachments(const float* color)
 	clear_rect[0].baseArrayLayer = 0;
 	clear_rect[0].layerCount = 1;
 
-    ri.Printf(PRINT_ALL, "(%d, %d, %d, %d)\n", 
-            clear_rect[0].rect.offset.x, clear_rect[0].rect.offset.y, 
-            clear_rect[0].rect.extent.width, clear_rect[0].rect.extent.height);
+    //ri.Printf(PRINT_ALL, "(%d, %d, %d, %d)\n", 
+    //        clear_rect[0].rect.offset.x, clear_rect[0].rect.offset.y, 
+    //        clear_rect[0].rect.extent.width, clear_rect[0].rect.extent.height);
 
 
     // CmdClearAttachments can clear multiple regions of each attachment
