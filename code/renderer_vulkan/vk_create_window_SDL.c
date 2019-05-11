@@ -79,7 +79,7 @@ static void VKimp_DetectAvailableModes(void)
         ////////////////////////////////////
 	}
 
-	for( i = 0; i < numSDLModes; i++ )
+	for( i = 0; i < numSDLModes; ++i )
 	{
 		SDL_DisplayMode mode;
 
@@ -170,7 +170,7 @@ static int VKimp_SetMode(int mode, qboolean fullscreen)
 
     if(fullscreen)
     {
-        // use desktop video resolution
+        // if fullscreen is true, then we use desktop video resolution
         r_mode->integer = mode = -2;
         		
         flags |= SDL_WINDOW_FULLSCREEN;

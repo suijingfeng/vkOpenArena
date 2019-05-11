@@ -57,7 +57,7 @@ static const int s_numVidModes = 29;
 
 void R_DisplayResolutionList_f( void )
 {
-	int i;
+	uint32_t i;
 
 	ri.Printf( PRINT_ALL, "\n" );
 	for ( i = 0; i < s_numVidModes; i++ )
@@ -88,8 +88,8 @@ void R_SetWinMode(int mode, unsigned int width, unsigned int height, unsigned in
     {
 		glConfig.vidWidth = r_customwidth->integer;
 		glConfig.vidHeight = r_customheight->integer;
-		glConfig.windowAspect = r_customaspect->value;
-        glConfig.displayFrequency = 60;
+        glConfig.windowAspect = (float)width / (float)height;
+        glConfig.displayFrequency = hz;
         glConfig.isFullscreen = 0;
 	} 
     else
@@ -97,9 +97,8 @@ void R_SetWinMode(int mode, unsigned int width, unsigned int height, unsigned in
         glConfig.vidWidth = r_vidModes[mode].width;
         glConfig.vidHeight = r_vidModes[mode].height;
         glConfig.windowAspect = (float)r_vidModes[mode].width / ( r_vidModes[mode].height * r_vidModes[mode].pixelAspect );
-        glConfig.displayFrequency = 60;
+        glConfig.displayFrequency = hz;
         glConfig.isFullscreen = 0;
-
     }
     
 	ri.Printf(PRINT_ALL,  "MODE: %d, %d x %d, refresh rate: %dhz\n",

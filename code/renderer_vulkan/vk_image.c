@@ -48,7 +48,7 @@ static struct deviceLocalMemory_t devMemImg;
 void gpuMemUsageInfo_f(void)
 {
     // approm	 for debug info
-    ri.Printf(PRINT_ALL, "Number of image: %d chuck memory(device local) used: %d M \n", 
+    ri.Printf(PRINT_ALL, "Number of image created: %d, GPU memory used for store those image: %d MB \n", 
            tr.numImages, devMemImg.Index * (IMAGE_CHUNK_SIZE>>20) );
 }
 
@@ -744,9 +744,6 @@ image_t* R_FindImageFile(const char *name, VkBool32 mipmap, VkBool32 allowPicmip
 			{
 				if ( image->mipmap != mipmap ) {
 					ri.Printf( PRINT_WARNING, "WARNING: reused image %s with mixed mipmap parm\n", name );
-				}
-				if ( image->allowPicmip != allowPicmip ) {
-					ri.Printf( PRINT_WARNING, "WARNING: reused image %s with mixed allowPicmip parm\n", name );
 				}
 				if ( image->wrapClampMode != glWrapClampMode ) {
 					ri.Printf( PRINT_WARNING, "WARNING: reused image %s with mixed glWrapClampMode parm\n", name );

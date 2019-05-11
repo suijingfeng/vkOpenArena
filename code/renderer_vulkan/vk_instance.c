@@ -223,7 +223,8 @@ static void vk_assertStandValidationLayer(void)
                 break;
             }
         }
-
+        ri.Printf(PRINT_ALL, " ------- ---------------------------- -------- \n");
+        
         free(instance_layers);
         
         if(found == 0) {
@@ -812,7 +813,7 @@ static void vk_selectSurfaceFormat(VkSurfaceKHR HSurface)
     
     for( i = 0; i < nSurfmt; ++i)
     {
-        ri.Printf(PRINT_ALL, " [%d], format %d: ,color space: %s \n",
+        ri.Printf(PRINT_ALL, " [%d] format: %d, color space: %s \n",
             i, pSurfFmts[i].format, ColorSpaceEnum2str(pSurfFmts[i].colorSpace));
     }
 
@@ -1220,7 +1221,7 @@ static VkPresentModeKHR vk_selectPresentationMode(VkSurfaceKHR HSurface)
     qvkGetPhysicalDeviceSurfacePresentModesKHR(vk.physical_device, HSurface, &nPM, pPresentModes);
 
     ri.Printf(PRINT_ALL, "-------- Total %d present mode supported. -------- \n", nPM);
-    for ( i = 0; i < nPM; ++i)
+    for (i = 0; i < nPM; ++i)
     {
         switch( pPresentModes[i] )
         {
