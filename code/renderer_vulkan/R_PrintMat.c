@@ -65,6 +65,7 @@ void FunLogging(const char * name, char * pBuf )
 	log_fp = NULL;
 }
 
+
 void Fun_ppCharLogging(const char * const name, char (*pp)[64], uint32_t size )
 {
 

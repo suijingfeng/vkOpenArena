@@ -1620,6 +1620,7 @@ Q3VKOBJ = \
   $(B)/renderer_vulkan/tr_backend.o \
   $(B)/renderer_vulkan/tr_Cull.o \
   $(B)/renderer_vulkan/tr_common.o \
+  $(B)/renderer_vulkan/vk_validation.o \
   $(B)/renderer_vulkan/vk_instance.o \
   $(B)/renderer_vulkan/vk_init.o \
   $(B)/renderer_vulkan/vk_descriptor_sets.o \

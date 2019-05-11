@@ -12,6 +12,8 @@
 #include "tr_shader.h"
 #include "R_ShaderCommands.h"
 #include "tr_shade.h"
+#include "ref_import.h" 
+
 
 void SetTessFogColor(unsigned char (*pcolor)[4], int fnum, int nvert);
 

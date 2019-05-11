@@ -6,7 +6,7 @@
 #include "vk_image.h"
 #include "vk_frame.h"
 #include "vk_cmd.h"
-
+#include "ref_import.h" 
 //  Synchronization of access to resources is primarily the responsibility
 //  of the application in Vulkan. The order of execution of commands with
 //  respect to the host and other commands on the device has few implicit
@@ -537,7 +537,7 @@ void vk_createDepthAttachment(int Width, int Height, VkFormat depthFmt)
     begin_info.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
     begin_info.pInheritanceInfo = NULL;
 
-    VK_CHECK(qvkBeginCommandBuffer(pCB, &begin_info));
+    VK_CHECK( qvkBeginCommandBuffer(pCB, &begin_info) );
 
     record_image_layout_transition(pCB, vk.depth_image, 
             image_aspect_flags, 0, VK_IMAGE_LAYOUT_UNDEFINED,
@@ -559,9 +559,10 @@ void vk_createDepthAttachment(int Width, int Height, VkFormat depthFmt)
     submit_info.signalSemaphoreCount = 0;
     submit_info.pSignalSemaphores = NULL;
 
-    VK_CHECK(qvkQueueSubmit(vk.queue, 1, &submit_info, VK_NULL_HANDLE));
-    VK_CHECK(qvkQueueWaitIdle(vk.queue));
-    qvkFreeCommandBuffers(vk.device, vk.command_pool, 1, &pCB);
+    VK_CHECK( qvkQueueSubmit(vk.queue, 1, &submit_info, VK_NULL_HANDLE));
+    VK_CHECK( qvkQueueWaitIdle(vk.queue));
+
+    NO_CHECK( qvkFreeCommandBuffers(vk.device, vk.command_pool, 1, &pCB) );
 
 }
 
@@ -748,7 +749,7 @@ void vk_begin_frame(void)
     barrier.dstAccessMask = VK_ACCESS_VERTEX_ATTRIBUTE_READ_BIT;
 
     // To record a pipeline barrier
-    qvkCmdPipelineBarrier(vk.command_buffer, VK_PIPELINE_STAGE_HOST_BIT, VK_PIPELINE_STAGE_VERTEX_INPUT_BIT, 0, 0, NULL, 1, &barrier, 0, NULL);
+    NO_CHECK( qvkCmdPipelineBarrier(vk.command_buffer, VK_PIPELINE_STAGE_HOST_BIT, VK_PIPELINE_STAGE_VERTEX_INPUT_BIT, 0, 0, NULL, 1, &barrier, 0, NULL) );
 
     // VK_ACCESS_INDEX_READ_BIT specifies read access to an index buffer 
     // as part of an indexed drawing command, bound by vkCmdBindIndexBuffer.
@@ -774,15 +775,15 @@ void vk_begin_frame(void)
     renderPass_beginInfo.clearValueCount = 2;
     renderPass_beginInfo.pClearValues = pClearValues;
 
-    qvkCmdBeginRenderPass(vk.command_buffer, &renderPass_beginInfo, VK_SUBPASS_CONTENTS_INLINE);
+    NO_CHECK( qvkCmdBeginRenderPass(vk.command_buffer, &renderPass_beginInfo, VK_SUBPASS_CONTENTS_INLINE) );
 }
 
 
 void vk_end_frame(void)
 {
-	qvkCmdEndRenderPass(vk.command_buffer);
+	NO_CHECK( qvkCmdEndRenderPass(vk.command_buffer) );
 	
-    qvkEndCommandBuffer(vk.command_buffer);
+    NO_CHECK( qvkEndCommandBuffer(vk.command_buffer) );
 
 
 	VkPipelineStageFlags wait_dst_stage_mask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
@@ -840,7 +841,7 @@ void vk_end_frame(void)
        
     //  To submit command buffers to a queue 
     
-    VK_CHECK(qvkQueueSubmit(vk.queue, 1, &submit_info, fence_renderFinished));
+    VK_CHECK( qvkQueueSubmit(vk.queue, 1, &submit_info, fence_renderFinished) );
 
     
     VkPresentInfoKHR present_info;
@@ -877,7 +878,7 @@ void vk_end_frame(void)
     {
         // we first call vkDeviceWaitIdle because we 
         // shouldn't touch resources that still be in use
-        qvkDeviceWaitIdle(vk.device);
+        NO_CHECK( qvkDeviceWaitIdle(vk.device) );
         // recreate the objects that depend on the swap chain and the window size
 
         vk_recreateSwapChain();
@@ -911,5 +912,3 @@ void vk_destroyFrameBuffers(void)
 		qvkDestroyImageView(vk.device, vk.color_image_views[i], NULL);
     }
 }
-
-

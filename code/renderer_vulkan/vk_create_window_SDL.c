@@ -35,7 +35,7 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #include "tr_cvar.h"
 #include "icon_oa.h"
 #include "glConfig.h"
-
+#include "ref_import.h" 
 
 static SDL_Window* window_sdl = NULL;
 
@@ -179,7 +179,6 @@ static int VKimp_SetMode(int mode, qboolean fullscreen)
 
     R_SetWinMode( mode, desktopMode.w, desktopMode.h, desktopMode.refresh_rate );
     
-
 
     if( window_sdl != NULL )
 	{

@@ -10,8 +10,8 @@
 #include "vk_pipelines.h"
 #include "vk_frame.h"
 #include "vk_shaders.h"
+#include "vk_validation.h"
 #include "ref_import.h" 
-
 
 struct Vk_Instance vk;
 
@@ -139,53 +139,6 @@ PFN_vkQueuePresentKHR							qvkQueuePresentKHR;
 
 
 
-#ifndef NDEBUG
-
-VKAPI_ATTR VkBool32 VKAPI_CALL vk_DebugCallback(
-        VkDebugReportFlagsEXT flags, VkDebugReportObjectTypeEXT object_type,
-        uint64_t object, size_t location, int32_t message_code, 
-        const char* layer_prefix, const char* message, void* user_data )
-{
-
-    switch(flags)
-    {
-        case VK_DEBUG_REPORT_INFORMATION_BIT_EXT:
-            ri.Printf(PRINT_ALL, "INFORMATION: %s\n", message);
-            break;
-        case VK_DEBUG_REPORT_WARNING_BIT_EXT:
-            ri.Printf(PRINT_WARNING, "WARNING: %s\n", message);
-            break;
-        case VK_DEBUG_REPORT_PERFORMANCE_WARNING_BIT_EXT:
-            ri.Printf(PRINT_WARNING, "PERFORMANCE: %s\n", message);
-            break;
-        case VK_DEBUG_REPORT_ERROR_BIT_EXT:
-            ri.Printf(PRINT_WARNING, "ERROR: %s\n", message);
-            break;
-        case VK_DEBUG_REPORT_DEBUG_BIT_EXT:
-            ri.Printf(PRINT_WARNING, "DEBUG: %s\n", message);
-            break;
-    }
-	return VK_FALSE;
-}
-
-
-static void vk_createDebugCallback( PFN_vkDebugReportCallbackEXT qvkDebugCB)
-{
-    ri.Printf( PRINT_ALL, " vk_createDebugCallback() \n" ); 
-    
-    VkDebugReportCallbackCreateInfoEXT desc;
-    desc.sType = VK_STRUCTURE_TYPE_DEBUG_REPORT_CALLBACK_CREATE_INFO_EXT;
-    desc.pNext = NULL;
-    desc.flags = VK_DEBUG_REPORT_WARNING_BIT_EXT |
-        VK_DEBUG_REPORT_PERFORMANCE_WARNING_BIT_EXT |
-        VK_DEBUG_REPORT_ERROR_BIT_EXT;
-    desc.pfnCallback = qvkDebugCB;
-    desc.pUserData = NULL;
-
-    VK_CHECK(qvkCreateDebugReportCallbackEXT(vk.instance, &desc, NULL, &vk.h_debugCB));
-}
-
-#endif
 
 
 static void vk_assertStandValidationLayer(void)
@@ -1275,13 +1228,10 @@ void vk_getProcAddress(void)
 
     vk_assertStandValidationLayer();
 
-
     vk_loadInstanceLevelFunctions();
 
-#ifndef NDEBUG
 	// Create debug callback.
-    vk_createDebugCallback(vk_DebugCallback);
-#endif
+    vk_createDebugCallback( 1 );
 
     // The window surface needs to be created right after the instance creation,
     // because it can actually influence the presentation mode selection.
@@ -1337,16 +1287,15 @@ void vk_clearProcAddress(void)
     // make sure that the surface is destroyed before the instance
     qvkDestroySurfaceKHR(vk.instance, vk.surface, NULL);
 
-#ifndef NDEBUG
-    ri.Printf( PRINT_ALL, " Destroy callback function: vk.h_debugCB. \n" );
-
-	qvkDestroyDebugReportCallbackEXT(vk.instance, vk.h_debugCB, NULL);
-#endif
 
     ri.Printf( PRINT_ALL, " Destroy logical device: vk.device. \n" );
     // Device queues are implicitly cleaned up when the device is destroyed
     // so we don't need to do anything in clean up
 	qvkDestroyDevice(vk.device, NULL);
+
+    
+    vk_destroyDebugReportHandle();
+
 
     ri.Printf( PRINT_ALL, " Destroy instance: vk.instance. \n" );
 	qvkDestroyInstance(vk.instance, NULL);
@@ -1467,78 +1416,4 @@ void vk_clearProcAddress(void)
 	qvkDestroySwapchainKHR						= NULL;
 	qvkGetSwapchainImagesKHR					= NULL;
 	qvkQueuePresentKHR							= NULL;
-}
-
-
-const char * cvtResToStr(VkResult result)
-{
-    switch(result)
-    {
-        case VK_SUCCESS:
-            return "VK_SUCCESS";
-        case VK_NOT_READY:
-            return "VK_NOT_READY";
-        case VK_TIMEOUT:
-            return "VK_TIMEOUT";
-        case VK_EVENT_SET:
-            return "VK_EVENT_SET";
-        case VK_EVENT_RESET:
-            return "VK_EVENT_RESET";
-        case VK_INCOMPLETE:
-            return "VK_INCOMPLETE";
-        case VK_ERROR_OUT_OF_HOST_MEMORY:
-            return "VK_ERROR_OUT_OF_HOST_MEMORY";
-        case VK_ERROR_OUT_OF_DEVICE_MEMORY:
-            return "VK_ERROR_OUT_OF_DEVICE_MEMORY";
-        case VK_ERROR_INITIALIZATION_FAILED:
-            return "VK_ERROR_INITIALIZATION_FAILED";
-        case VK_ERROR_DEVICE_LOST:
-            return "VK_ERROR_DEVICE_LOST";
-        case VK_ERROR_MEMORY_MAP_FAILED:
-            return "VK_ERROR_MEMORY_MAP_FAILED";
-        case VK_ERROR_LAYER_NOT_PRESENT:
-            return "VK_ERROR_LAYER_NOT_PRESENT";
-        case VK_ERROR_EXTENSION_NOT_PRESENT:
-            return "VK_ERROR_EXTENSION_NOT_PRESENT";
-        case VK_ERROR_FEATURE_NOT_PRESENT:
-            return "VK_ERROR_FEATURE_NOT_PRESENT";
-        case VK_ERROR_INCOMPATIBLE_DRIVER:
-            return "VK_ERROR_INCOMPATIBLE_DRIVER";
-        case VK_ERROR_TOO_MANY_OBJECTS:
-            return "VK_ERROR_TOO_MANY_OBJECTS";
-        case VK_ERROR_FORMAT_NOT_SUPPORTED:
-            return "VK_ERROR_FORMAT_NOT_SUPPORTED";
-        case VK_ERROR_FRAGMENTED_POOL:
-            return "VK_ERROR_FRAGMENTED_POOL";
-        case VK_ERROR_SURFACE_LOST_KHR:
-            return "VK_ERROR_SURFACE_LOST_KHR";
-        case VK_ERROR_NATIVE_WINDOW_IN_USE_KHR:
-            return "VK_ERROR_NATIVE_WINDOW_IN_USE_KHR";
-        case VK_SUBOPTIMAL_KHR:
-            return "VK_SUBOPTIMAL_KHR";
-        case VK_ERROR_OUT_OF_DATE_KHR:
-            return "VK_ERROR_OUT_OF_DATE_KHR";
-        case VK_ERROR_INCOMPATIBLE_DISPLAY_KHR:
-            return "VK_ERROR_INCOMPATIBLE_DISPLAY_KHR";
-        case VK_ERROR_VALIDATION_FAILED_EXT:
-            return "VK_ERROR_VALIDATION_FAILED_EXT";
-        case VK_ERROR_OUT_OF_POOL_MEMORY_KHR:
-            return "VK_ERROR_OUT_OF_POOL_MEMORY_KHR";
-        case VK_ERROR_INVALID_SHADER_NV:
-            return "VK_ERROR_INVALID_SHADER_NV";
-//
-        case VK_ERROR_INVALID_EXTERNAL_HANDLE:
-            return "VK_ERROR_INVALID_EXTERNAL_HANDLE";
-        case VK_ERROR_NOT_PERMITTED_EXT:
-            return "VK_ERROR_NOT_PERMITTED_EXT";
-//
-        case VK_RESULT_MAX_ENUM:
-            return "VK_RESULT_MAX_ENUM";
-        case VK_RESULT_RANGE_SIZE:
-            return "VK_RESULT_RANGE_SIZE"; 
-        case VK_ERROR_FRAGMENTATION_EXT:
-            return "VK_ERROR_FRAGMENTATION_EXT";
-    }
-
-    return "UNKNOWN_ERROR";
 }

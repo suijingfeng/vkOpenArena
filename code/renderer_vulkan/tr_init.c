@@ -204,7 +204,6 @@ void RE_Shutdown( qboolean destroyWindow )
         // but fot rendergl1, renderergl2 to create the window
         glConfig_Clear();
     }
-
 }
 
 
