@@ -1,9 +1,7 @@
 #include "vk_instance.h"
 #include "vk_pipelines.h"
 #include "tr_shader.h"
-#include "ref_import.h"
-#include "R_SortAlgorithm.h"
-
+#include "ref_import.h" 
 // The graphics pipeline is the sequence of operations that take the vertices
 // and textures of your meshes all the way to the pixels in the render targets
 //
@@ -38,7 +36,11 @@
 // each other, add up or be mixed based opon transparency.
 //
 
-struct ParmsKey {
+#define MAX_VK_PIPELINES        256
+
+
+struct PipelineParameter_t {
+    VkPipeline pipeline; // saved a copy for destroy. 
     uint32_t state_bits; // GLS_XXX flags
 	
     enum CullType_t face_culling;
@@ -49,180 +51,140 @@ struct ParmsKey {
 	VkBool32 clipping_plane;
 	VkBool32 mirror;
 	VkBool32 line_primitives;
-}; 
-
-struct PipelineParameter_t {
-    VkPipeline pipeline; // saved a copy for destroy. 
-    
-    struct ParmsKey key;
-    struct PipelineParameter_t * next;
 };
 
 
+struct pipeline_tree_s {
 
+    struct PipelineParameter_t par;
+    
+	struct pipeline_tree_s * left; //left child
+	struct pipeline_tree_s * right; //right child
+};
+
+static struct pipeline_tree_s * pPlRoot = NULL;
+
+static struct pipeline_tree_s mem_alloced[MAX_VK_PIPELINES];
+
+//static struct VK_PipelineMgr_t s_created_ppl[MAX_VK_PIPELINES];
 static uint32_t s_numPipelines = 0;
 
 
-static int32_t ComparePar(const struct ParmsKey* const par1, 
-        const struct ParmsKey* const par2)
+static int32_t ComparepPplPar(const struct pipeline_tree_s * const pTree, 
+        const struct PipelineParameter_t* const par2)
 {
 
 //    ri.Printf(PRINT_WARNING, "%d, %d \n",
 //            pTree->par.state_bits, par2->state_bits);
-    if( (par1->state_bits == par2->state_bits) &&
-        (par1->face_culling == par2->face_culling) &&
-        (par1->shader_type == par2->shader_type) &&
-        (par1->shadow_phase == par2->shadow_phase) &&
-        (par1->polygon_offset == par2->polygon_offset) &&
-        (par1->clipping_plane == par2->clipping_plane) &&
-        (par1->mirror == par2->mirror) &&
-        (par1->line_primitives == par2->line_primitives) )
+    if(pTree->par.state_bits == par2->state_bits)
     {
-        return 0;
+
+    int32_t i1 = (pTree->par.face_culling << 8) |
+        (pTree->par.shader_type << 6) |
+        (pTree->par.shadow_phase << 4) | 
+        (pTree->par.polygon_offset << 3) |
+        (pTree->par.clipping_plane << 2) |
+        (pTree->par.mirror << 1) | pTree->par.line_primitives ;
+
+    int32_t i2 = (par2->face_culling << 8) |
+        (par2->shader_type << 6) |
+        (par2->shadow_phase << 4) | 
+        (par2->polygon_offset << 3) |
+        (par2->clipping_plane << 2) |
+        (par2->mirror << 1) | par2->line_primitives;
+        return i1 - i2;
+    }
+    else
+        return (pTree->par.state_bits - par2->state_bits);
+}
+
+
+
+struct pipeline_tree_s *
+InsertPipelineToTree(struct pipeline_tree_s * pTree, const struct PipelineParameter_t * const par)
+{
+    if( pTree == NULL)
+	{
+        // ri.Printf(PRINT_WARNING, "make new pipeline:%d\n", s_numPipelines);
+        // pTree = (struct pipeline_tree_s *) malloc( sizeof(struct pipeline_tree_s) );
+
+        pTree = &mem_alloced[s_numPipelines++];
+        pTree->par = *par;
+        pTree->left = pTree->right = NULL;
+
+        // Create and return a one-node tree;
+    }
+    else
+    {
+        int32_t comp = ComparepPplPar(pTree, par);
+
+        if( comp < 0 )
+		    pTree->left = InsertPipelineToTree(pTree->left, par);
+        else if( comp > 0 )
+		    pTree->right = InsertPipelineToTree(pTree->right, par);
+
+        // Else X is in the tree already,
     }
 
-    return -1;
-}
-
-//==================================================================
-
-#define PL_TAB_SIZE         1024
-#define MAX_VK_PIPELINES    256
-
-static struct PipelineParameter_t* plHashTable[PL_TAB_SIZE];
-    
-static uint32_t genHashVal( const struct ParmsKey * const par , uint32_t size)
-{
-	uint32_t hash  = par->line_primitives + (par->mirror << 1) + (par->clipping_plane<<2)
-        + (par->polygon_offset<<3) + (par->shadow_phase << 4) + (par->shader_type << 6) +
-        + (par->face_culling << 8) + (par->state_bits * 119);
-
-    return hash & (size-1);
+    return pTree;
 }
 
 
-VkPipeline FindPipeline(const struct ParmsKey * const par)
+void printPipelineTree(struct pipeline_tree_s * pTree)
 {
-    int32_t hVal = genHashVal(par, PL_TAB_SIZE);
-    
-    struct PipelineParameter_t * pTmp;
-    
-    for( pTmp = plHashTable[hVal]; 
-         pTmp != NULL; 
-         pTmp = pTmp->next )
-    {
-        if( 0 == ComparePar(par, &pTmp->key) )
-            return pTmp->pipeline;
-    }
+	if(pTree != NULL)
+	{
+		printPipelineTree(pTree->left);
 
-    // not find, create new
-    VkPipeline newPipeline;
+        ri.Printf(PRINT_ALL, "state bits:%d, face culling:%d\n", 
+            pTree->par.state_bits, pTree->par.face_culling);
 
-    pTmp = (struct PipelineParameter_t *) 
-        ri.Hunk_Alloc( sizeof(struct PipelineParameter_t ), h_low );
-
-    vk_create_pipeline( 
-        par->state_bits, par->shader_type, par->face_culling, par->shadow_phase,
-        par->clipping_plane, par->mirror, par->polygon_offset, par->line_primitives, 
-        &newPipeline );
-
-
-    pTmp->key = *par;
-    pTmp->pipeline = newPipeline; 
-    pTmp->next = plHashTable[hVal];
-
-    plHashTable[hVal] = pTmp;
-    
-    ++s_numPipelines;
-    
-    return newPipeline;
+		printPipelineTree(pTree->right);
+	}
 }
 
 
-void vk_destroyShaderStagePipeline(void)
+struct pipeline_tree_s *
+FindPipelineFromTree(struct pipeline_tree_s * pTree , const struct PipelineParameter_t * const par)
 {
-    ri.Printf(PRINT_ALL, " Destroy %d shader stage pipeline. \n", s_numPipelines);
+    if(pTree == NULL)
+        return NULL;
+    
+    int32_t comp = ComparepPplPar(pTree, par);
+    
+    if( comp < 0 )
+        return FindPipelineFromTree(pTree->left, par);
+    else if(comp > 0)
+        return FindPipelineFromTree(pTree->right, par);
+    else
+        return pTree;
+}
 
-    uint32_t i;
-    uint32_t count = 0;
-    for( i = 0; i < PL_TAB_SIZE; ++i )
-    {
-	    if(plHashTable[i] != NULL)
-        {
-            struct PipelineParameter_t * pRoot = plHashTable[i];            
-            while( pRoot != NULL )
-            {
-                struct PipelineParameter_t * pBakeup = pRoot->next;
-                qvkDestroyPipeline(vk.device, pRoot->pipeline, NULL);
-                ++count;
-                memset(pRoot, 0, sizeof(struct PipelineParameter_t));
-                
-                pRoot = pBakeup;
-            }
+
+void DestroySearchTree(struct pipeline_tree_s * pTree)
+{
+	if(pTree != NULL)
+	{
+
+        DestroySearchTree(pTree->left);
+        // ri.Printf(PRINT_ALL, "free left child.\n");
+        DestroySearchTree(pTree->right);
+        // ri.Printf(PRINT_ALL, "free right child.\n");
+
+        qvkDestroyPipeline(vk.device, pTree->par.pipeline, NULL);
         
-            plHashTable[i] = NULL;
-        }
-    }
-
-    if(count != s_numPipelines) {
-        ri.Printf(PRINT_WARNING, " Created pipeline(%d) don't match Destroyed(%d). \n", s_numPipelines, count );
-    }
+        // free(pTree);
+        // memset(pTree, 0, sizeof(struct pipeline_tree_s));
+	}
 }
 
-
-void vk_InitShaderStagePipeline(void)
-{
-    memset(plHashTable, 0, PL_TAB_SIZE * sizeof(struct PipelineParameter_t*));
-    s_numPipelines = 0;
-
-}
 
 void R_PipelineList_f(void)
 {
     ri.Printf(PRINT_ALL, " Total pipeline created: %d\n", s_numPipelines);
-
-    uint32_t i = 0;
-
-    int32_t tmpTab[PL_TAB_SIZE] = {0};
-    ri.Printf(PRINT_ALL, "\n\n-----------------------------------------------------\n"); 
-    for(i = 0; i < PL_TAB_SIZE; ++i)
-    {
-        struct PipelineParameter_t * pRoot = plHashTable[i];
-
-        while(pRoot != NULL)
-        {
-            
-            ri.Printf(PRINT_ALL, "state bits:%x, face culling:%d\n", 
-            pRoot->key.state_bits, pRoot->key.face_culling);
-            
-            ++tmpTab[i];
-            
-            pRoot = pRoot->next;
-        }
-    }
-
-    quicksort(tmpTab, 0, PL_TAB_SIZE-1);
-
-    int count = 0;
-    int total = 0;
-
-    for(i = 0; i < PL_TAB_SIZE; ++i)
-    {
-        if(tmpTab[i]) {
-            ++count;
-            total += tmpTab[i];
-        }
-    }
-    
-    ri.Printf(PRINT_ALL, "\n Total %d pipeline created, hash Table used: %d/%d\n",
-            total, count, PL_TAB_SIZE);
-    
-    ri.Printf(PRINT_ALL, "\n Top 10 Collision: %d, %d, %d, %d, %d, %d, %d, %d, %d, %d\n",
-        tmpTab[0], tmpTab[1], tmpTab[2], tmpTab[3], tmpTab[4],
-        tmpTab[5], tmpTab[6], tmpTab[7], tmpTab[8], tmpTab[9]);
-
-    ri.Printf(PRINT_ALL, "-----------------------------------------------------\n\n"); 
+    printPipelineTree(pPlRoot);
 }
+
 
 // uniform values in the shaders need to be specified during pipeline creation
 // transformation matrix to the vertex shader, or to create texture samplers
@@ -230,7 +192,7 @@ void R_PipelineList_f(void)
 
 
 
-void vk_createPipelineLayout(VkPipelineLayout * pPLayout)
+void vk_createPipelineLayout(void)
 {
     ri.Printf(PRINT_ALL, " Create ipeline layout. \n");
  
@@ -276,7 +238,7 @@ void vk_createPipelineLayout(VkPipelineLayout * pPLayout)
     // shader stages and shader resources. 
     //
     // Each pipeline is created using a pipeline layout.
-    VK_CHECK( qvkCreatePipelineLayout(vk.device, &desc, NULL, pPLayout) );
+    VK_CHECK( qvkCreatePipelineLayout(vk.device, &desc, NULL, &vk.pipeline_layout) );
 }
 
 void vk_destroy_pipeline_layout(void)
@@ -284,7 +246,9 @@ void vk_destroy_pipeline_layout(void)
     qvkDestroyPipelineLayout(vk.device, vk.pipeline_layout, NULL);
 }
 
-
+struct Specialization_Data {
+    int32_t alpha_test_func;
+};
 
 
 void vk_create_pipeline(
@@ -318,10 +282,6 @@ void vk_create_pipeline(
     shaderStages[1].pNext = NULL;
     shaderStages[1].flags = 0;
     shaderStages[1].pSpecializationInfo = NULL;
-
-    struct Specialization_Data {
-        int32_t alpha_test_func;
-    };
 
     
     struct Specialization_Data specialization_data;
@@ -786,7 +746,8 @@ void vk_create_shader_stage_pipelines(shaderStage_t *pStage, shader_t* pShader)
     else
         ri.Error(ERR_FATAL, "Vulkan: could not create pipelines for q3 shader '%s'\n", pShader->name);
 
-    struct ParmsKey plPar;
+    struct PipelineParameter_t plPar;
+    struct pipeline_tree_s * plTr = NULL; 
     
 
     plPar.state_bits = pStage->stateBits; 
@@ -797,13 +758,135 @@ void vk_create_shader_stage_pipelines(shaderStage_t *pStage, shader_t* pShader)
     plPar.polygon_offset = pShader->polygonOffset;
 
     plPar.clipping_plane = VK_FALSE;
-    
     plPar.mirror = VK_FALSE; 
-    pStage->vk_pipeline = FindPipeline(&plPar);
+
+/*
+    vk_find_pipeline( pStage->stateBits, def_shader_type, pShader->cullType, SHADOWS_RENDERING_DISABLED,
+            VK_FALSE, VK_FALSE, pShader->polygonOffset, VK_FALSE, &pStage->vk_pipeline);
+*/  
+    plTr = FindPipelineFromTree(pPlRoot, &plPar);
+    
+    if(plTr == NULL)
+    {
+        vk_create_pipeline( 
+         plPar.state_bits, plPar.shader_type, plPar.face_culling, plPar.shadow_phase,
+         plPar.clipping_plane, plPar.mirror, plPar.polygon_offset, plPar.line_primitives, 
+         &plPar.pipeline );
+
+        InsertPipelineToTree(pPlRoot, &plPar);
+
+        pStage->vk_pipeline = plPar.pipeline;
+    }
+    else 
+    {
+        pStage->vk_pipeline = plTr->par.pipeline;
+    }
 
     plPar.clipping_plane = VK_TRUE;
-    pStage->vk_portal_pipeline = FindPipeline(&plPar);
+/*
+    vk_find_pipeline( pStage->stateBits, def_shader_type, pShader->cullType, SHADOWS_RENDERING_DISABLED,
+            VK_TRUE, VK_FALSE, pShader->polygonOffset, VK_FALSE, &pStage->vk_portal_pipeline);
+*/
+    plTr = FindPipelineFromTree(pPlRoot, &plPar);
+    
+    if(plTr == NULL)
+    {
+        vk_create_pipeline( 
+         plPar.state_bits, plPar.shader_type, plPar.face_culling, plPar.shadow_phase,
+         plPar.clipping_plane, plPar.mirror, plPar.polygon_offset, plPar.line_primitives, 
+         &plPar.pipeline );
 
-    plPar.mirror = VK_TRUE;    
-    pStage->vk_mirror_pipeline = FindPipeline(&plPar);
+        InsertPipelineToTree(pPlRoot, &plPar);
+
+        pStage->vk_portal_pipeline = plPar.pipeline;
+    }
+    else 
+    {
+        pStage->vk_portal_pipeline = plTr->par.pipeline;
+    }
+ 
+    plPar.mirror = VK_TRUE;
+/*
+    vk_find_pipeline( pStage->stateBits, def_shader_type, pShader->cullType, SHADOWS_RENDERING_DISABLED,
+            VK_TRUE, VK_TRUE, pShader->polygonOffset, VK_FALSE, &pStage->vk_mirror_pipeline);
+*/
+    plTr = FindPipelineFromTree(pPlRoot, &plPar);
+    
+    if(plTr == NULL)
+    {
+        vk_create_pipeline( 
+         plPar.state_bits, plPar.shader_type, plPar.face_culling, plPar.shadow_phase,
+         plPar.clipping_plane, plPar.mirror, plPar.polygon_offset, plPar.line_primitives, 
+         &plPar.pipeline );
+
+        InsertPipelineToTree(pPlRoot, &plPar);
+
+        pStage->vk_mirror_pipeline = plPar.pipeline;
+    }
+    else 
+    {
+        pStage->vk_mirror_pipeline = plTr->par.pipeline;
+    }
+}
+
+
+void vk_destroyShaderStagePipeline(void)
+{
+    ri.Printf(PRINT_ALL, " Destroy %d shader stage pipeline. \n", s_numPipelines);
+    qvkDeviceWaitIdle(vk.device);
+
+    uint32_t i;
+    for(i = 0; i < s_numPipelines; ++i)
+        if(mem_alloced[i].par.pipeline != VK_NULL_HANDLE) {
+            qvkDestroyPipeline(vk.device, mem_alloced[i].par.pipeline, NULL);
+            mem_alloced[i].par.pipeline = VK_NULL_HANDLE;
+        }
+
+    memset(mem_alloced, 0, s_numPipelines);
+    s_numPipelines = 0;
+
+    if(pPlRoot != NULL)
+    {
+        DestroySearchTree(pPlRoot);
+        pPlRoot = NULL;
+    }
+}
+
+
+void vk_InitShaderStagePipeline(void)
+{
+
+    uint32_t i;
+    for(i = 0; i < s_numPipelines; ++i)
+        if(mem_alloced[i].par.pipeline != VK_NULL_HANDLE) {
+            qvkDestroyPipeline(vk.device, mem_alloced[i].par.pipeline, NULL);
+            mem_alloced[i].par.pipeline = VK_NULL_HANDLE;
+        }
+
+    memset(mem_alloced, 0, s_numPipelines);
+    s_numPipelines = 0;
+
+    if(pPlRoot != NULL)
+    {
+        DestroySearchTree(pPlRoot);
+        pPlRoot = NULL;
+    }
+    
+    struct PipelineParameter_t plPar;
+    
+    plPar.state_bits = 256; 
+    plPar.face_culling = CT_FRONT_SIDED;
+    plPar.shader_type = ST_SINGLE_TEXTURE; 
+    plPar.shadow_phase = SHADOWS_RENDERING_DISABLED;
+    plPar.line_primitives = VK_FALSE;
+    plPar.polygon_offset = VK_FALSE;
+    plPar.clipping_plane = VK_FALSE;
+    plPar.mirror = VK_FALSE;
+
+    vk_create_pipeline( 
+            plPar.state_bits, plPar.shader_type, plPar.face_culling, plPar.shadow_phase,
+            plPar.clipping_plane, plPar.mirror, plPar.polygon_offset, plPar.line_primitives, 
+            &plPar.pipeline );
+
+    pPlRoot = InsertPipelineToTree(NULL, &plPar);
 }
