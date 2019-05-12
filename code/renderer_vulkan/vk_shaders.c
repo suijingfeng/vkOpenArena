@@ -44,7 +44,7 @@ static void create_shader_module(const unsigned char* pBytes, const int count, V
 	desc.codeSize = count;
 	desc.pCode = (const uint32_t*)pBytes;
 			   
-	VK_CHECK(qvkCreateShaderModule(vk.device, &desc, NULL, pVkShaderMod));
+	VK_CHECK( qvkCreateShaderModule(vk.device, &desc, NULL, pVkShaderMod) );
 }
 
 

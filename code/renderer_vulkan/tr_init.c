@@ -182,18 +182,21 @@ void RE_Shutdown( qboolean destroyWindow )
     // (the state we have after vk_initialize call).
 
     // contains vulkan resources/state, reinitialized on a map change.
-    
+        
     R_ClearSortedShaders();
 
-    vk_destroyShaderStagePipeline();
- 
     vk_resetGeometryBuffer();
+
+    NO_CHECK( qvkDeviceWaitIdle(vk.device) );
+
 
 	if ( tr.registered )
     {	
 		vk_destroyImageRes();
         tr.registered = qfalse;
 	}
+
+    vk_destroyShaderStagePipeline();
 
     if (destroyWindow)
     {

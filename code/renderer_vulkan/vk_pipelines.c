@@ -142,7 +142,9 @@ VkPipeline FindPipeline(const struct ParmsKey * const par)
 void vk_destroyShaderStagePipeline(void)
 {
     ri.Printf(PRINT_ALL, " Destroy %d shader stage pipeline. \n", s_numPipelines);
-
+    
+    NO_CHECK( qvkDeviceWaitIdle(vk.device) );
+    
     uint32_t i;
     uint32_t count = 0;
     for( i = 0; i < PL_TAB_SIZE; ++i )
@@ -232,7 +234,7 @@ void R_PipelineList_f(void)
 
 void vk_createPipelineLayout(VkPipelineLayout * pPLayout)
 {
-    ri.Printf(PRINT_ALL, " Create ipeline layout. \n");
+    ri.Printf(PRINT_ALL, " Create pipeline layout. \n");
  
     VkPushConstantRange push_range;
     push_range.stageFlags = VK_SHADER_STAGE_VERTEX_BIT;
@@ -281,6 +283,7 @@ void vk_createPipelineLayout(VkPipelineLayout * pPLayout)
 
 void vk_destroy_pipeline_layout(void)
 {
+    ri.Printf(PRINT_ALL, " Destroy pipeline layout. \n");
     qvkDestroyPipelineLayout(vk.device, vk.pipeline_layout, NULL);
 }
 
@@ -767,7 +770,7 @@ void vk_create_pipeline(
     // TODO: provide the handle of a valid pipeline cache object, 
     // 1 is the length of the pCreateInfos and pPipelines arrays.
     //
-	VK_CHECK(qvkCreateGraphicsPipelines(vk.device, VK_NULL_HANDLE, 1, &create_info, NULL, pPipeLine));
+	VK_CHECK( qvkCreateGraphicsPipelines(vk.device, VK_NULL_HANDLE, 1, &create_info, NULL, pPipeLine) );
 }
 
 

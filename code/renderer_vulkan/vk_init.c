@@ -102,6 +102,8 @@ void vk_shutdown(void)
 {
     ri.Printf( PRINT_ALL, "vk_shutdown()\n" );
 
+    NO_CHECK( qvkDeviceWaitIdle(vk.device) );
+
     vk_destroySwapChain();
 
 
@@ -123,6 +125,18 @@ void vk_shutdown(void)
     vk_destroy_descriptor_pool();
 
     vk_destroy_commands();
+
+
+
+    ri.Printf( PRINT_ALL, " Destroy logical device: vk.device. \n" );
+    // Device queues are implicitly cleaned up when the device is destroyed
+    // so we don't need to do anything in clean up
+	qvkDestroyDevice(vk.device, NULL);
+
+    
+    vk_destroy_instance();
+
+// ===========================================================
 
     vk_clearProcAddress();
 

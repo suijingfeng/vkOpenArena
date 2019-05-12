@@ -1062,6 +1062,7 @@ static void vk_destroySingleImage( image_t* pImg )
 
 void vk_destroyImageRes(void)
 {
+    ri.Printf(PRINT_ALL, " vk_destroyImageRes. \n");
 	vk_free_sampler();
 
     uint32_t i = 0;

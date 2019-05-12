@@ -337,6 +337,9 @@ void vk_destroyGlobalStagePipeline(void)
 
     int i, j, k;
 
+    NO_CHECK( qvkDeviceWaitIdle(vk.device) );
+
+
     qvkDestroyPipeline(vk.device, g_globalPipelines.skybox_pipeline, NULL);
     ri.Printf(PRINT_ALL, " Skybox pipeline destroyed. \n");
 
@@ -371,8 +374,6 @@ void vk_destroyGlobalStagePipeline(void)
     }
 
     ri.Printf(PRINT_ALL, " Dlights pipeline destroyed. \n");
-
-
 
     
 

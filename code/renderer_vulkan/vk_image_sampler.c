@@ -46,8 +46,9 @@ static int s_NumSamplers = 0;
 
 void vk_free_sampler(void)
 {
-    int i = 0;
-    for (i = 0; i < s_NumSamplers; i++)
+    ri.Printf(PRINT_ALL, " free %d image sampler. \n", s_NumSamplers);
+    uint32_t i = 0;
+    for (i = 0; i < s_NumSamplers; ++i)
     {
         if(s_SamplerDefs[i].ImgSampler != VK_NULL_HANDLE)
         {
@@ -184,7 +185,7 @@ VkSampler vk_find_sampler( VkBool32 isMipmap, VkBool32 isRepeatTexture )
 	s_NumSamplers++;
 	if (s_NumSamplers >= MAX_VK_SAMPLERS)
     {
-		ri.Error(ERR_DROP, "MAX_VK_SAMPLERS hit\n");
+		ri.Error(ERR_FATAL, "MAX_VK_SAMPLERS hit\n");
 	}
 
 	return sampler;

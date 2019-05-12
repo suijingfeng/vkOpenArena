@@ -57,6 +57,8 @@ void vk_destroyDebugPipelines(void)
 {
     ri.Printf(PRINT_ALL, " Destroy debug stage pipeline. \n");
 
+    NO_CHECK( qvkDeviceWaitIdle(vk.device) );
+
 	qvkDestroyPipeline(vk.device, g_debugPipelines.tris, NULL);
 	qvkDestroyPipeline(vk.device, g_debugPipelines.tris_mirror, NULL);
 	qvkDestroyPipeline(vk.device, g_debugPipelines.normals, NULL);

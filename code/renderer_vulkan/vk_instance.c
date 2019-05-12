@@ -1283,24 +1283,6 @@ void vk_getProcAddress(void)
 void vk_clearProcAddress(void)
 {
 
-    ri.Printf( PRINT_ALL, " Destroy surface: vk.surface. \n" );
-    // make sure that the surface is destroyed before the instance
-    qvkDestroySurfaceKHR(vk.instance, vk.surface, NULL);
-
-
-    ri.Printf( PRINT_ALL, " Destroy logical device: vk.device. \n" );
-    // Device queues are implicitly cleaned up when the device is destroyed
-    // so we don't need to do anything in clean up
-	qvkDestroyDevice(vk.device, NULL);
-
-    
-    vk_destroyDebugReportHandle();
-
-
-    ri.Printf( PRINT_ALL, " Destroy instance: vk.instance. \n" );
-	qvkDestroyInstance(vk.instance, NULL);
-
-// ===========================================================
     ri.Printf( PRINT_ALL, " clear all proc address \n" );
 
     // Global Level
@@ -1416,4 +1398,20 @@ void vk_clearProcAddress(void)
 	qvkDestroySwapchainKHR						= NULL;
 	qvkGetSwapchainImagesKHR					= NULL;
 	qvkQueuePresentKHR							= NULL;
+}
+
+void vk_destroy_instance(void)
+{
+
+    ri.Printf( PRINT_ALL, " Destroy surface: vk.surface. \n" );
+    // make sure that the surface is destroyed before the instance
+    qvkDestroySurfaceKHR(vk.instance, vk.surface, NULL);
+
+    
+    vk_destroyDebugReportHandle();
+
+
+    ri.Printf( PRINT_ALL, " Destroy instance: vk.instance. \n" );
+	qvkDestroyInstance(vk.instance, NULL);
+
 }

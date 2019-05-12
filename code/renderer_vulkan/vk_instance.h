@@ -124,6 +124,7 @@ void vk_getProcAddress(void);
 void vk_clearProcAddress(void);
 
 extern void debug_vkapi_call(VkResult result, const char * const proc_str);
+void vk_destroy_instance(void);
 
 #ifndef NDEDBG
 
