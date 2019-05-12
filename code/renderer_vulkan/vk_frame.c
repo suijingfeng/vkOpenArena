@@ -101,8 +101,8 @@ void vk_create_sync_primitives(void)
     // &desc is a pointer to an instance of the VkSemaphoreCreateInfo structure
     // which contains information about how the semaphore is to be created.
     // When created, the semaphore is in the unsignaled state.
-    VK_CHECK(qvkCreateSemaphore(vk.device, &desc, NULL, &sema_imageAvailable));
-    VK_CHECK(qvkCreateSemaphore(vk.device, &desc, NULL, &sema_renderFinished));
+    VK_CHECK( qvkCreateSemaphore(vk.device, &desc, NULL, &sema_imageAvailable));
+    VK_CHECK( qvkCreateSemaphore(vk.device, &desc, NULL, &sema_renderFinished));
 
 
     VkFenceCreateInfo fence_desc;
@@ -130,11 +130,11 @@ void vk_destroy_sync_primitives(void)
 {
     ri.Printf(PRINT_ALL, " Destroy sema_imageAvailable sema_renderFinished fence_renderFinished\n");
 
-    qvkDestroySemaphore(vk.device, sema_imageAvailable, NULL);
-	qvkDestroySemaphore(vk.device, sema_renderFinished, NULL);
+    NO_CHECK( qvkDestroySemaphore(vk.device, sema_imageAvailable, NULL) );
+	NO_CHECK( qvkDestroySemaphore(vk.device, sema_renderFinished, NULL) );
 
     // To destroy a fence, 
-	qvkDestroyFence(vk.device, fence_renderFinished, NULL);
+	NO_CHECK( qvkDestroyFence(vk.device, fence_renderFinished, NULL) );
 }
 
 
@@ -448,6 +448,19 @@ void vk_createColorAttachment(VkDevice lgDev, const VkSwapchainKHR HSwapChain,
 }
 
 
+void vk_destroyColorAttachment(void)
+{
+    ri.Printf(PRINT_ALL, " Destroy vk.color_image_views.\n");
+    
+    uint32_t i;
+	for (i = 0; i < vk.swapchain_image_count; ++i)
+    {
+		NO_CHECK( qvkDestroyImageView(vk.device, vk.color_image_views[i], NULL) );
+        // NO_CHECK( qvkDestroyImage(vk.device, vk.swapchain_images_array[i], NULL) );
+    }
+}
+
+
 void vk_createDepthAttachment(int Width, int Height, VkFormat depthFmt)
 {
     // A depth attachment is based on an image, just like the color attachment
@@ -482,7 +495,7 @@ void vk_createDepthAttachment(int Width, int Height, VkFormat depthFmt)
     //
     ri.Printf(PRINT_ALL, " Allocate device local memory for depth image. \n");
     VkMemoryRequirements memory_requirements;
-    qvkGetImageMemoryRequirements(vk.device, vk.depth_image, &memory_requirements);
+    NO_CHECK( qvkGetImageMemoryRequirements(vk.device, vk.depth_image, &memory_requirements) );
 
     VkMemoryAllocateInfo alloc_info;
     alloc_info.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
@@ -491,8 +504,8 @@ void vk_createDepthAttachment(int Width, int Height, VkFormat depthFmt)
     alloc_info.memoryTypeIndex = find_memory_type(
         memory_requirements.memoryTypeBits, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
     // = vk.idx_depthImgMem;
-    VK_CHECK(qvkAllocateMemory(vk.device, &alloc_info, NULL, &vk.depth_image_memory));
-    VK_CHECK(qvkBindImageMemory(vk.device, vk.depth_image, vk.depth_image_memory, 0));
+    VK_CHECK( qvkAllocateMemory(vk.device, &alloc_info, NULL, &vk.depth_image_memory) );
+    VK_CHECK( qvkBindImageMemory(vk.device, vk.depth_image, vk.depth_image_memory, 0) );
 
 
     //
@@ -529,7 +542,7 @@ void vk_createDepthAttachment(int Width, int Height, VkFormat depthFmt)
     cmdAllocInfo.commandBufferCount = 1;
 
     VkCommandBuffer pCB;
-    VK_CHECK(qvkAllocateCommandBuffers(vk.device, &cmdAllocInfo, &pCB));
+    VK_CHECK( qvkAllocateCommandBuffers(vk.device, &cmdAllocInfo, &pCB) );
 
     VkCommandBufferBeginInfo begin_info;
     begin_info.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
@@ -565,6 +578,24 @@ void vk_createDepthAttachment(int Width, int Height, VkFormat depthFmt)
     NO_CHECK( qvkFreeCommandBuffers(vk.device, vk.command_pool, 1, &pCB) );
 
 }
+
+void vk_destroyDepthAttachment(void)
+{
+    ri.Printf(PRINT_ALL, " Destroy vk.depth_image_view vk.depth_image_memory vk.depth_image.\n");
+
+    NO_CHECK( qvkDestroyImageView(vk.device, vk.depth_image_view, NULL) );
+	NO_CHECK( qvkFreeMemory(vk.device, vk.depth_image_memory, NULL) );
+    NO_CHECK( qvkDestroyImage(vk.device, vk.depth_image, NULL) );
+}
+
+
+void vk_destroyRenderPass(void)
+{
+    ri.Printf(PRINT_ALL, " Destroy vk.render_pass.\n");
+
+    NO_CHECK( qvkDestroyRenderPass(vk.device, vk.render_pass, NULL) );
+}
+
 
 
 void vk_createFrameBuffers(uint32_t w, uint32_t h, VkRenderPass h_rpass,
@@ -659,6 +690,24 @@ void vk_createFrameBuffers(uint32_t w, uint32_t h, VkRenderPass h_rpass,
 }
 
 
+void vk_destroyFrameBuffers(void)
+{
+    // we should delete the framebuffers before the image views
+    // and the render pass that they are based on.
+    ri.Printf(PRINT_ALL, " Destroy vk.framebuffers.\n");
+ 
+    uint32_t i;
+	for (i = 0; i < vk.swapchain_image_count; ++i)
+    {
+		NO_CHECK( qvkDestroyFramebuffer(vk.device, vk.framebuffers[i], NULL) );
+    }
+}
+
+
+
+
+// =====================================
+
 
 void vk_begin_frame(void)
 {
@@ -677,8 +726,8 @@ void vk_begin_frame(void)
 
     // An application must wait until either the semaphore or fence is signaled
     // before accessing the image's data.
-    VK_CHECK(qvkAcquireNextImageKHR(vk.device, vk.swapchain, UINT64_MAX,
-                sema_imageAvailable, VK_NULL_HANDLE, &vk.idx_swapchain_image));
+    VK_CHECK( qvkAcquireNextImageKHR(vk.device, vk.swapchain, UINT64_MAX,
+                sema_imageAvailable, VK_NULL_HANDLE, &vk.idx_swapchain_image) );
 
 
     //  User could call method vkWaitForFences to wait for completion. A fence is a 
@@ -693,12 +742,12 @@ void vk_begin_frame(void)
     //  the time vkWaitForFences is called, then vkWaitForFences will block and 
     //  wait up to timeout nanoseconds for the condition to become satisfied.
 
-    VK_CHECK(qvkWaitForFences(vk.device, 1, &fence_renderFinished, VK_FALSE, 1e9));
+    VK_CHECK( qvkWaitForFences(vk.device, 1, &fence_renderFinished, VK_FALSE, 1e9) );
 
     //  To set the state of fences to unsignaled from the host
     //  "1" is the number of fences to reset. 
     //  "fence_renderFinished" is the fence handle to reset.
-    VK_CHECK(qvkResetFences(vk.device, 1, &fence_renderFinished));
+    VK_CHECK( qvkResetFences(vk.device, 1, &fence_renderFinished) );
 
     //  commandBuffer must not be in the recording or pending state.
 
@@ -718,7 +767,7 @@ void vk_begin_frame(void)
     // To begin recording a command buffer
     VK_CHECK(qvkBeginCommandBuffer(vk.command_buffer, &begin_info));
 
-    // Ensure visibility of geometry buffers writes.
+    // Ensur/e visibility of geometry buffers writes.
 
     //
     // vkCmdPipelineBarrier is a synchronization command that inserts 
@@ -754,7 +803,8 @@ void vk_begin_frame(void)
     // VK_ACCESS_INDEX_READ_BIT specifies read access to an index buffer 
     // as part of an indexed drawing command, bound by vkCmdBindIndexBuffer.
     barrier.dstAccessMask = VK_ACCESS_INDEX_READ_BIT;
-    qvkCmdPipelineBarrier(vk.command_buffer, VK_PIPELINE_STAGE_HOST_BIT, VK_PIPELINE_STAGE_VERTEX_INPUT_BIT, 0, 0, NULL, 1, &barrier, 0, NULL);
+    
+    NO_CHECK( qvkCmdPipelineBarrier(vk.command_buffer, VK_PIPELINE_STAGE_HOST_BIT, VK_PIPELINE_STAGE_VERTEX_INPUT_BIT, 0, 0, NULL, 1, &barrier, 0, NULL) );
 
     //
     // Begin render pass.
@@ -882,33 +932,5 @@ void vk_end_frame(void)
         // recreate the objects that depend on the swap chain and the window size
 
         vk_recreateSwapChain();
-    }
-}
-
-
-
-void vk_destroyDepthAttachment(void)
-{
-    ri.Printf(PRINT_ALL, " Destroy Depth Attachments.\n");
-
-    qvkDestroyImageView(vk.device, vk.depth_image_view, NULL);
-	qvkFreeMemory(vk.device, vk.depth_image_memory, NULL);
-    qvkDestroyImage(vk.device, vk.depth_image, NULL);
-}
-
-void vk_destroyFrameBuffers(void)
-{
-    vk_destroyDepthAttachment();
-    // we should delete the framebuffers before the image views
-    // and the render pass that they are based on.
-    ri.Printf(PRINT_ALL, " Destroy vk.framebuffers vk.color_image_views.\n");
-
-    qvkDestroyRenderPass(vk.device, vk.render_pass, NULL);
-    
-    uint32_t i;
-	for (i = 0; i < vk.swapchain_image_count; ++i)
-    {
-		qvkDestroyFramebuffer(vk.device, vk.framebuffers[i], NULL);
-		qvkDestroyImageView(vk.device, vk.color_image_views[i], NULL);
     }
 }

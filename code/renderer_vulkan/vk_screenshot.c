@@ -157,9 +157,9 @@ static void vk_read_pixels(unsigned char* pBuf, uint32_t W, uint32_t H)
     begin_info.pInheritanceInfo = NULL;
     VK_CHECK(qvkBeginCommandBuffer(cmdBuf, &begin_info));
 
-    qvkCmdPipelineBarrier(cmdBuf, VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT, 0, 0, NULL, 0, NULL, 1, &image_barrier); 
-    qvkCmdCopyImageToBuffer(cmdBuf, vk.swapchain_images_array[vk.idx_swapchain_image], VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, buffer, 1, &image_copy);
-    VK_CHECK(qvkEndCommandBuffer(cmdBuf));
+    NO_CHECK( qvkCmdPipelineBarrier(cmdBuf, VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT, 0, 0, NULL, 0, NULL, 1, &image_barrier) ); 
+    NO_CHECK( qvkCmdCopyImageToBuffer(cmdBuf, vk.swapchain_images_array[vk.idx_swapchain_image], VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, buffer, 1, &image_copy) );
+    VK_CHECK( qvkEndCommandBuffer(cmdBuf) );
 
     VkSubmitInfo submit_info;
     submit_info.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;

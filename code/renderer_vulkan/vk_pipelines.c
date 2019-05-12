@@ -93,9 +93,13 @@ static struct PipelineParameter_t* plHashTable[PL_TAB_SIZE];
     
 static uint32_t genHashVal( const struct ParmsKey * const par , uint32_t size)
 {
-	uint32_t hash  = par->line_primitives + (par->mirror << 1) + (par->clipping_plane<<2)
-        + (par->polygon_offset<<3) + (par->shadow_phase << 4) + (par->shader_type << 6) +
-        + (par->face_culling << 8) + (par->state_bits * 119);
+//	uint32_t hash  = par->line_primitives + (par->mirror << 1) + (par->clipping_plane << 2)
+//        + (par->polygon_offset << 3) + (par->shadow_phase << 4) + (par->shader_type << 6) +
+//        + (par->face_culling << 8) + (par->state_bits);
+
+	uint64_t hash  = par->line_primitives * 119 + par->mirror * 240 + par->clipping_plane * 121
+        + par->polygon_offset * 122 + par->shadow_phase * 123 + par->shader_type * 4 * 124 +
+        + par->face_culling * 8 * 125 + par->state_bits;
 
     return hash & (size-1);
 }
@@ -141,7 +145,7 @@ VkPipeline FindPipeline(const struct ParmsKey * const par)
 
 void vk_destroyShaderStagePipeline(void)
 {
-    ri.Printf(PRINT_ALL, " Destroy %d shader stage pipeline. \n", s_numPipelines);
+    ri.Printf(PRINT_ALL, " Destroy %d shader stage pipelines. \n", s_numPipelines);
     
     NO_CHECK( qvkDeviceWaitIdle(vk.device) );
     
@@ -176,8 +180,8 @@ void vk_InitShaderStagePipeline(void)
 {
     memset(plHashTable, 0, PL_TAB_SIZE * sizeof(struct PipelineParameter_t*));
     s_numPipelines = 0;
-
 }
+
 
 void R_PipelineList_f(void)
 {
@@ -281,13 +285,12 @@ void vk_createPipelineLayout(VkPipelineLayout * pPLayout)
     VK_CHECK( qvkCreatePipelineLayout(vk.device, &desc, NULL, pPLayout) );
 }
 
+
 void vk_destroy_pipeline_layout(void)
 {
-    ri.Printf(PRINT_ALL, " Destroy pipeline layout. \n");
+    ri.Printf(PRINT_ALL, " Destroy vk.pipeline_layout. \n");
     qvkDestroyPipelineLayout(vk.device, vk.pipeline_layout, NULL);
 }
-
-
 
 
 void vk_create_pipeline(
@@ -301,8 +304,6 @@ void vk_create_pipeline(
         VkBool32 isLine, 
         VkPipeline* pPipeLine)
 {
-
-
     // Two stages: vs and fs
     VkPipelineShaderStageCreateInfo shaderStages[2];
 

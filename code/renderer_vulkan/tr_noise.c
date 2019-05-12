@@ -21,6 +21,7 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 */
 #include <stdlib.h>
 #include <math.h>
+#include <stdint.h>
 #include "tr_noise.h"
 
 #define NOISE_SIZE 256
@@ -46,11 +47,11 @@ static float GetNoiseValue( int x, int y, int z, int t )
 
 void R_NoiseInit( void )
 {
-	int i;
+	uint32_t i;
 
 	srand( 1001 );
 
-	for ( i = 0; i < NOISE_SIZE; i++ )
+	for ( i = 0; i < NOISE_SIZE; ++i )
 	{
 		s_noise_table[i] = ( float ) ( ( ( rand() / ( float ) RAND_MAX ) * 2.0 - 1.0 ) );
 		s_noise_perm[i] = ( unsigned char ) ( rand() / ( float ) RAND_MAX * 255 );

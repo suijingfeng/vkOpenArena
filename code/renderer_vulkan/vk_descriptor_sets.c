@@ -4,7 +4,7 @@
 #include "vk_descriptor_sets.h"
 
 
-void vk_createDescriptorPool(uint32_t numDes)
+void vk_createDescriptorPool(uint32_t numDes, VkDescriptorPool* const pPool)
 {
     // Like command buffers, descriptor sets are allocated from a pool. 
     // So we must first create the Descriptor pool.
@@ -47,11 +47,11 @@ void vk_createDescriptorPool(uint32_t numDes)
     // have similar data structures on any given implementation, pooling
     // the allocations used to store descriptors allows drivers to make 
     // efficient use of memory.
-    VK_CHECK(qvkCreateDescriptorPool(vk.device, &desc, NULL, &vk.descriptor_pool));
+    VK_CHECK( qvkCreateDescriptorPool(vk.device, &desc, NULL, pPool) );
 }
 
 
-void vk_createDescriptorSetLayout(void)
+void vk_createDescriptorSetLayout(VkDescriptorSetLayout * const pSetLayout)
 {
     // Each set has a layout, which describes the order and types of 
     // resources in the set. Two sets with the same layout are considered
@@ -105,11 +105,11 @@ void vk_createDescriptorSetLayout(void)
     desc.pBindings = &descriptor_binding;
 
     // To create descriptor set layout objects
-    VK_CHECK( qvkCreateDescriptorSetLayout(vk.device, &desc, NULL, &vk.set_layout) );
+    VK_CHECK( qvkCreateDescriptorSetLayout(vk.device, &desc, NULL, pSetLayout) );
 }
 
 
-void vk_allocOneDescptrSet(VkDescriptorSet * pSetRet)
+void vk_allocOneDescptrSet(VkDescriptorSet * const pSetRet)
 {
     VkDescriptorSetAllocateInfo descSetAllocInfo;
     descSetAllocInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
@@ -118,16 +118,17 @@ void vk_allocOneDescptrSet(VkDescriptorSet * pSetRet)
     descSetAllocInfo.descriptorSetCount = 1;
     descSetAllocInfo.pSetLayouts = &vk.set_layout;
 
-
     VK_CHECK( qvkAllocateDescriptorSets(vk.device, &descSetAllocInfo, pSetRet) );
 }
 
 
 void vk_destroy_descriptor_pool(void)
 {
-    qvkDestroyDescriptorSetLayout(vk.device, vk.set_layout, NULL); 
+    ri.Printf(PRINT_ALL, " Destroy vk.set_layout, vk.descriptor_pool. \n");
+
+    NO_CHECK( qvkDestroyDescriptorSetLayout(vk.device, vk.set_layout, NULL) ); 
     // You don't need to explicitly clean up descriptor sets,
     // because they will be automaticall freed when the descripter pool
     // is destroyed.
-   	qvkDestroyDescriptorPool(vk.device, vk.descriptor_pool, NULL);  
+   	NO_CHECK( qvkDestroyDescriptorPool(vk.device, vk.descriptor_pool, NULL) );  
 }

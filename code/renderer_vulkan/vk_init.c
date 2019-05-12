@@ -48,7 +48,6 @@ void vk_initialize(void)
     R_GetWinResolution(&width, &height);
     vk_createDepthAttachment(width, height, vk.fmt_DepthStencil);
     // Depth attachment image.
-    // vk_createDepthAttachment(width, height, vk.fmt_DepthStencil);
     vk_createRenderPass(vk.device, vk.surface_format.format, vk.fmt_DepthStencil, &vk.render_pass);
     vk_createFrameBuffers(width, height, vk.render_pass, vk.swapchain_image_count, vk.framebuffers);
 
@@ -61,13 +60,13 @@ void vk_initialize(void)
     // creation by creating a VkPipelineLayout object.
     
     // MAX_DRAWIMAGES = 2048
-    vk_createDescriptorPool(2048);
+    vk_createDescriptorPool(2048, &vk.descriptor_pool);
     // The set of sets that are accessible to a pipeline are grouped into 
     // pipeline layout. Pipelines are created with respect to this pipeline
     // layout. Those descriptor sets can be bound into command buffers 
     // along with compatible pipelines to allow those pipeline to access
     // the resources in them.
-    vk_createDescriptorSetLayout();
+    vk_createDescriptorSetLayout(&vk.set_layout);
     // These descriptor sets layouts are aggregated into a single pipeline layout.
     vk_createPipelineLayout(&vk.pipeline_layout);
 
@@ -104,9 +103,11 @@ void vk_shutdown(void)
 
     NO_CHECK( qvkDeviceWaitIdle(vk.device) );
 
+    vk_destroyRenderPass();
+    vk_destroyDepthAttachment();
+    vk_destroyColorAttachment();
     vk_destroySwapChain();
-
-
+    
     vk_destroyFrameBuffers();
 
     vk_destroy_shading_data();

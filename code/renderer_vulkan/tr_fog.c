@@ -1,6 +1,7 @@
 #include "tr_fog.h"
 #include <stdlib.h>
 #include <math.h>
+#include <stdint.h>
 
 #define	FOG_TABLE_SIZE		256
 
@@ -11,9 +12,9 @@ void R_InitFogTable( void )
 {
 	float exp = 0.5;
 
-    unsigned int i;
+    uint32_t i;
 
-	for ( i = 0 ; i < FOG_TABLE_SIZE ; i++ )
+	for ( i = 0 ; i < FOG_TABLE_SIZE ; ++i )
     {
 		FogTable[i] = pow ( (float)i/(FOG_TABLE_SIZE-1), exp );
 	}
