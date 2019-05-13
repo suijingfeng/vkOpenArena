@@ -4,7 +4,7 @@
 #include "tr_cvar.h"
 #include "vk_image.h"
 #include "vk_pipelines.h"
-#include "../renderercommon/matrix_multiplication.h"
+#include "matrix_multiplication.h"
 #include "tr_backend.h"
 #include "glConfig.h"
 #include "R_PortalPlane.h"

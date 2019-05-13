@@ -1,6 +1,6 @@
 #include "R_ShaderCommands.h"
 
-#include "../renderercommon/matrix_multiplication.h"
+#include "matrix_multiplication.h"
 #include "ref_import.h"
 
 #include "R_PortalPlane.h"

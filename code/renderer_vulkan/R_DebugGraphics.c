@@ -6,7 +6,7 @@
 #include "tr_cvar.h"
 #include "tr_backend.h"
 #include "ref_import.h"
-#include "../renderercommon/matrix_multiplication.h"
+#include "matrix_multiplication.h"
 #include "R_ShaderCommands.h"
 #include "tr_cmds.h"
 

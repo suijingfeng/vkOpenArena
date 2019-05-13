@@ -35,7 +35,7 @@ use the shader system.
 */
 
 #include "tr_local.h"
-#include "../renderercommon/matrix_multiplication.h"
+#include "matrix_multiplication.h"
 
 
 void RB_CheckOverflow( int verts, int indexes )

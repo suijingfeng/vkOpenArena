@@ -1,7 +1,7 @@
 #include "trRefDef.h"
 #include "viewParms.h"
 #include "R_RotateForViewer.h"
-#include "../renderercommon/matrix_multiplication.h"
+#include "matrix_multiplication.h"
 
 
 static void R_WorldVectorToLocal (const vec3_t world, const float R[3][3], vec3_t local)
