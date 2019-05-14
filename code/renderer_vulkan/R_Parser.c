@@ -16,7 +16,7 @@ static char	r_parsename[512];
 static int	r_lines;
 static int	r_tokenline;
 
-void R_BeginParseSession(const char* name)
+void R_BeginParseSession(const char* const name)
 {
 	r_lines = 1;
 	r_tokenline = 0;
@@ -132,7 +132,7 @@ string will be returned if the next token is a newline.
 char* R_ParseExt(char** data_p, qboolean allowLineBreaks)
 {
     unsigned int len = 0;
-	const char *data = *data_p;
+	char *data = *data_p;
 
     unsigned char c;
     static char r_token[256] = {0}; 
@@ -250,7 +250,7 @@ char* R_ParseExt(char** data_p, qboolean allowLineBreaks)
 	return r_token;
 }
 
-qboolean SkipBracedSection(const char **program, int depth)
+qboolean SkipBracedSection(char ** program, int depth)
 {
 	do
     {
