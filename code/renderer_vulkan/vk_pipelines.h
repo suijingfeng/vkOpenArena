@@ -56,7 +56,7 @@ void vk_create_pipeline(
         VkBool32 mirror,
         VkBool32 polygon_offset,
         VkBool32 isLine, 
-        VkPipeline* pPipeLine);
+        VkPipeline* const pPipeLine);
 
 void vk_createStandardPipelines(void);
 void vk_createDebugPipelines(void);

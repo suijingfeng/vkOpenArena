@@ -198,8 +198,11 @@ void R_PipelineList_f(void)
         while(pRoot != NULL)
         {
             
-            ri.Printf(PRINT_ALL, "state bits:%x, face culling:%d\n", 
-            pRoot->key.state_bits, pRoot->key.face_culling);
+            ri.Printf(PRINT_ALL, "isLine:%d, face culling:%d, shader type:%d, shadow phase:%d  ", 
+            pRoot->key.line_primitives, pRoot->key.face_culling, pRoot->key.shader_type, pRoot->key.shadow_phase);
+            
+            ri.Printf(PRINT_ALL, "polygon offset:%d, clipping plane:%d, isMirror:%d, state_bits:%x\n", 
+            pRoot->key.polygon_offset, pRoot->key.clipping_plane, pRoot->key.mirror, pRoot->key.state_bits);
             
             ++tmpTab[i];
             
@@ -302,7 +305,7 @@ void vk_create_pipeline(
         VkBool32 mirror,
         VkBool32 polygon_offset,
         VkBool32 isLine, 
-        VkPipeline* pPipeLine)
+        VkPipeline* const pPipeLine)
 {
     // Two stages: vs and fs
     VkPipelineShaderStageCreateInfo shaderStages[2];

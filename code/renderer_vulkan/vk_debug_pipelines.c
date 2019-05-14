@@ -48,7 +48,7 @@ void vk_createDebugPipelines(void)
     vk_create_pipeline( GLS_DEPTHTEST_DISABLE | GLS_SRCBLEND_SRC_ALPHA | GLS_DSTBLEND_ONE_MINUS_SRC_ALPHA, 
             ST_SINGLE_TEXTURE, CT_FRONT_SIDED, SHADOWS_RENDERING_DISABLED, 
             VK_FALSE, VK_FALSE, VK_FALSE, VK_FALSE,
-            &g_debugPipelines.tris );
+            &g_debugPipelines.images );
 
 }
 
