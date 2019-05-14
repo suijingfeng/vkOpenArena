@@ -2,9 +2,6 @@
 #include "tr_globals.h"
 #include "vk_shade_geometry.h"
 #include "vk_pipelines.h"
-//#include "tr_backend.h"
-#include "R_ShaderCommands.h"
-
 
 
 /*
@@ -12,7 +9,7 @@
 Draws triangle outlines for debugging
 ================
 */
-void RB_DrawTris (shaderCommands_t * pInput, int isMirror)
+void RB_DrawTris (shaderCommands_t * const pInput, int isMirror)
 {
 	updateCurDescriptor( tr.whiteImage->descriptor_set, 0);
 

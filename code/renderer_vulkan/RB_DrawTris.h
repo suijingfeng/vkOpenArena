@@ -3,6 +3,6 @@
 
 #include "R_ShaderCommands.h"
 
-void RB_DrawTris (struct shaderCommands_s *input, int isMirror);
+void RB_DrawTris (struct shaderCommands_s * const input, int isMirror);
 
 #endif

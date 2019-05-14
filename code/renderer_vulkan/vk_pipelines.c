@@ -43,12 +43,12 @@ struct ParmsKey {
 	
     enum CullType_t face_culling;
     enum Vk_Shader_Type shader_type;
-	enum Vk_Shadow_Phase shadow_phase;
+//	enum Vk_Shadow_Phase shadow_phase;
 
     VkBool32 polygon_offset;
 	VkBool32 clipping_plane;
 	VkBool32 mirror;
-	VkBool32 line_primitives;
+//	VkBool32 line_primitives;
 }; 
 
 struct PipelineParameter_t {
@@ -72,11 +72,12 @@ static int32_t ComparePar(const struct ParmsKey* const par1,
     if( (par1->state_bits == par2->state_bits) &&
         (par1->face_culling == par2->face_culling) &&
         (par1->shader_type == par2->shader_type) &&
-        (par1->shadow_phase == par2->shadow_phase) &&
         (par1->polygon_offset == par2->polygon_offset) &&
         (par1->clipping_plane == par2->clipping_plane) &&
-        (par1->mirror == par2->mirror) &&
-        (par1->line_primitives == par2->line_primitives) )
+        (par1->mirror == par2->mirror) )
+//
+//      (par1->shadow_phase == par2->shadow_phase) &&
+//      (par1->line_primitives == par2->line_primitives) )
     {
         return 0;
     }
@@ -86,26 +87,34 @@ static int32_t ComparePar(const struct ParmsKey* const par1,
 
 //==================================================================
 
-#define PL_TAB_SIZE         1024
+#define PL_TAB_SIZE         512
 #define MAX_VK_PIPELINES    256
 
 static struct PipelineParameter_t* plHashTable[PL_TAB_SIZE];
     
 static uint32_t genHashVal( const struct ParmsKey * const par , uint32_t size)
 {
-//	uint32_t hash  = par->line_primitives + (par->mirror << 1) + (par->clipping_plane << 2)
-//        + (par->polygon_offset << 3) + (par->shadow_phase << 4) + (par->shader_type << 6) +
-//        + (par->face_culling << 8) + (par->state_bits);
+//	uint32_t hash = par->mirror + (par->clipping_plane << 1)
+//        + (par->polygon_offset << 2) + (par->shader_type << 4) +
+//        + (par->face_culling << 6) + (par->state_bits << 8) ;
 
-	uint64_t hash  = par->line_primitives * 119 + par->mirror * 240 + par->clipping_plane * 121
-        + par->polygon_offset * 122 + par->shadow_phase * 123 + par->shader_type * 4 * 124 +
-        + par->face_culling * 8 * 125 + par->state_bits;
-
+//	uint64_t hash  =  par->mirror * 119 + par->clipping_plane * 121
+//        + par->polygon_offset * 122 + par->shader_type * 4 * 124 +
+//        + par->face_culling * 8 * 125 + par->state_bits;
+    
+    uint32_t hash = (par->state_bits & (size-1)) + 
+        ((par->state_bits & 0x00030000) >> 11) + 
+        ((par->state_bits & 0x00001000) >> 8) + 
+        ((par->state_bits & 0x70000000) >> 22) + 
+        par->mirror * 119 + par->clipping_plane * 121
+        + par->polygon_offset * 122 + par->shader_type * 123 +
+        + par->face_culling * 124 ;
+    
     return hash & (size-1);
 }
 
 
-VkPipeline FindPipeline(const struct ParmsKey * const par)
+static VkPipeline FindPipeline(const struct ParmsKey * const par)
 {
     int32_t hVal = genHashVal(par, PL_TAB_SIZE);
     
@@ -125,9 +134,13 @@ VkPipeline FindPipeline(const struct ParmsKey * const par)
     pTmp = (struct PipelineParameter_t *) 
         ri.Hunk_Alloc( sizeof(struct PipelineParameter_t ), h_low );
 
+//    plPar.shadow_phase = SHADOWS_RENDERING_DISABLED;
+//    plPar.line_primitives = VK_FALSE;
+
+
     vk_create_pipeline( 
-        par->state_bits, par->shader_type, par->face_culling, par->shadow_phase,
-        par->clipping_plane, par->mirror, par->polygon_offset, par->line_primitives, 
+        par->state_bits, par->shader_type, par->face_culling, SHADOWS_RENDERING_DISABLED,
+        par->clipping_plane, par->mirror, par->polygon_offset, VK_FALSE, 
         &newPipeline );
 
 
@@ -198,8 +211,8 @@ void R_PipelineList_f(void)
         while(pRoot != NULL)
         {
             
-            ri.Printf(PRINT_ALL, "isLine:%d, face culling:%d, shader type:%d, shadow phase:%d  ", 
-            pRoot->key.line_primitives, pRoot->key.face_culling, pRoot->key.shader_type, pRoot->key.shadow_phase);
+            ri.Printf(PRINT_ALL, "face culling:%d, shader type:%d, ", 
+            pRoot->key.face_culling, pRoot->key.shader_type);
             
             ri.Printf(PRINT_ALL, "polygon offset:%d, clipping plane:%d, isMirror:%d, state_bits:%x\n", 
             pRoot->key.polygon_offset, pRoot->key.clipping_plane, pRoot->key.mirror, pRoot->key.state_bits);
@@ -799,8 +812,8 @@ void vk_create_shader_stage_pipelines(shaderStage_t *pStage, shader_t* pShader)
     plPar.state_bits = pStage->stateBits; 
     plPar.face_culling = pShader->cullType;
     plPar.shader_type = def_shader_type; 
-    plPar.shadow_phase = SHADOWS_RENDERING_DISABLED;
-    plPar.line_primitives = VK_FALSE;
+//    plPar.shadow_phase = SHADOWS_RENDERING_DISABLED;
+//    plPar.line_primitives = VK_FALSE;
     plPar.polygon_offset = pShader->polygonOffset;
 
     plPar.clipping_plane = VK_FALSE;
