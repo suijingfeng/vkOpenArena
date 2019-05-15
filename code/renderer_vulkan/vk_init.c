@@ -7,7 +7,6 @@
 #include "vk_shaders.h"
 #include "vk_descriptor_sets.h"
 #include "vk_swapchain.h"
-#include "glConfig.h"
 #include "ref_import.h" 
 
 
@@ -42,14 +41,11 @@ void vk_initialize(void)
     vk_create_command_buffer(vk.command_pool, &vk.command_buffer);
 
 
-    int width;
-    int height;
-
-    R_GetWinResolution(&width, &height);
-    vk_createDepthAttachment(width, height, vk.fmt_DepthStencil);
+    vk_createDepthAttachment(vk.renderArea.extent.width, vk.renderArea.extent.height, vk.fmt_DepthStencil);
     // Depth attachment image.
     vk_createRenderPass(vk.device, vk.surface_format.format, vk.fmt_DepthStencil, &vk.render_pass);
-    vk_createFrameBuffers(width, height, vk.render_pass, vk.swapchain_image_count, vk.framebuffers);
+    vk_createFrameBuffers(vk.renderArea.extent.width, vk.renderArea.extent.height,
+            vk.render_pass, vk.swapchain_image_count, vk.framebuffers );
 
 	// Pipeline layout.
 	// You can use uniform values in shaders, which are globals similar to

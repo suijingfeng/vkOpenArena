@@ -23,16 +23,18 @@ void RB_RenderDrawSurfList(const drawSurf_t* const pDrawSurfs, int numDrawSurfs,
     // so prepare to actually render the visible surfaces for this view
 	// clear the z buffer, set the modelview, etc
 	// RB_BeginDrawingView ();
+    //
+	backEnd.projection2D = qtrue;
+    // ensures that depth writes are enabled for the depth clear
+	// VULKAN
+    vk_clearDepthStencilAttachments();
 
 	// we will need to change the projection matrix before drawing
 	// 2D images again
 	backEnd.projection2D = qfalse;
 
 
-	// ensures that depth writes are enabled for the depth clear
-    
-	// VULKAN
-    vk_clearDepthStencilAttachments();
+
 
 
   

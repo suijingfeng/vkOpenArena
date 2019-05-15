@@ -476,8 +476,9 @@ void vk_create_pipeline(
 	viewport_state.flags = 0;
 	viewport_state.viewportCount = 1;
 	viewport_state.pViewports = NULL; // dynamic viewport state
-	viewport_state.scissorCount = 1;
-	viewport_state.pScissors = NULL; // dynamic scissor state
+
+    viewport_state.scissorCount = 1;
+	viewport_state.pScissors = &vk.renderArea; // dynamic scissor state
 
 	//
 	// Rasterization.
@@ -697,8 +698,8 @@ void vk_create_pipeline(
 	dynamic_state.sType = VK_STRUCTURE_TYPE_PIPELINE_DYNAMIC_STATE_CREATE_INFO;
 	dynamic_state.pNext = NULL;
 	dynamic_state.flags = 0;
-	dynamic_state.dynamicStateCount = 3;
-	const VkDynamicState dynamic_state_array[3] = { VK_DYNAMIC_STATE_VIEWPORT, VK_DYNAMIC_STATE_SCISSOR, VK_DYNAMIC_STATE_DEPTH_BIAS };
+	dynamic_state.dynamicStateCount = 2;
+	const VkDynamicState dynamic_state_array[2] = { VK_DYNAMIC_STATE_VIEWPORT, VK_DYNAMIC_STATE_DEPTH_BIAS };
 	dynamic_state.pDynamicStates = dynamic_state_array;
 
 

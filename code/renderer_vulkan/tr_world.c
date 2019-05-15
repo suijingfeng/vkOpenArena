@@ -684,7 +684,7 @@ void SetTessFogColor(unsigned char (*pcolor)[4], int fnum, int nVerts)
     fog_t* fog = tr.world->fogs + fnum;
 
     uint32_t i; 
-    for (i = 0; i < nVerts; i++)
+    for (i = 0; i < nVerts; ++i)
     {
         pcolor[i][0] = fog->colorRGBA[0];
         pcolor[i][1] = fog->colorRGBA[1];

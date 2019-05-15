@@ -7,7 +7,7 @@
 #include "R_ImageProcess.h"
 #include "R_ImageJPG.h"
 #include "ref_import.h"
-#include "glConfig.h"
+
 #include "tr_cmds.h"
 /* 
 ============================================================================== 
@@ -414,11 +414,8 @@ void R_ScreenShot_f (void)
 	static	int	lastNumber = -1;
 	qboolean	silent;
 
-    int W;
-    int H;
-
-    R_GetWinResolution(&W, &H);
-
+    int W = vk.renderArea.extent.width;
+    int H = vk.renderArea.extent.height;
 
 	if ( !strcmp( ri.Cmd_Argv(1), "levelshot" ) )
     {
@@ -493,10 +490,8 @@ void R_ScreenShotJPEG_f(void)
 	static	int	lastNumber = -1;
 	qboolean	silent;
 
-    int W;
-    int H;
-
-    R_GetWinResolution(&W, &H);
+    int W = vk.renderArea.extent.width;
+    int H = vk.renderArea.extent.height;
 
 	if ( !strcmp( ri.Cmd_Argv(1), "levelshot" ) ) {
 		R_LevelShot(W, H);

@@ -138,6 +138,7 @@ void R_Init( void )
 
 	R_InitFreeType();
 
+    R_Set2dProjectMatrix(vk.renderArea.extent.width, vk.renderArea.extent.height);
     ri.Printf( PRINT_ALL, "----- R_Init finished -----\n" );
 }
 

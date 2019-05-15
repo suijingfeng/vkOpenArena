@@ -395,10 +395,9 @@ void R_IssueRenderCommands( qboolean runPerformanceCounters )
             {
                 // data = RB_DrawBuffer( data ); 
                 // const drawBufferCommand_t * const cmd = (const drawBufferCommand_t *)data;
-                vk_resetGeometryBuffer();
-                
                 // VULKAN
                 vk_begin_frame();
+                vk_resetGeometryBuffer();
 
                 data += sizeof(drawBufferCommand_t);
 
@@ -413,7 +412,7 @@ void R_IssueRenderCommands( qboolean runPerformanceCounters )
 
                 // texture swapping test
                 if ( r_showImages->integer ) {
-                    RB_ShowImages(tr.images, tr.numImages);
+                    RB_ShowImages(tr.images, tr.numImages, vk.renderArea.extent.width, vk.renderArea.extent.height);
                 }
 
                 // VULKAN

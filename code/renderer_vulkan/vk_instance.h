@@ -208,7 +208,7 @@ struct Vk_Instance {
 	VkDeviceMemory depth_image_memory;
 	VkImageView depth_image_view;
 
-
+    VkRect2D renderArea;
 
 	VkDescriptorPool descriptor_pool;
 	VkDescriptorSetLayout set_layout;

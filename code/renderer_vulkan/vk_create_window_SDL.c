@@ -185,16 +185,11 @@ static int VKimp_SetMode(int mode, qboolean fullscreen)
 		// SDL_GetWindowPosition( window_sdl, &x, &y );
 		SDL_DestroyWindow( window_sdl );
 		window_sdl = NULL;
-        ri.Printf(PRINT_ALL, "Existing window being destroyed\n");
+        ri.Printf(PRINT_ALL, " Destroy existing window. \n");
 	}
 
-    int width = 640;
-    int height = 480;
-
-    R_GetWinResolution(&width, &height);
-
 	window_sdl = SDL_CreateWindow( CLIENT_WINDOW_TITLE, SDL_WINDOWPOS_CENTERED,
-            SDL_WINDOWPOS_CENTERED, width, height, flags );
+            SDL_WINDOWPOS_CENTERED, vk.renderArea.extent.width, vk.renderArea.extent.height, flags );
 
 
 	if( window_sdl )

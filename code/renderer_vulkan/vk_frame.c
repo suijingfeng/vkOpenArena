@@ -708,7 +708,6 @@ void vk_destroyFrameBuffers(void)
 
 // =====================================
 
-
 void vk_begin_frame(void)
 {
     // t_frame_start = R_GetTimeMicroSeconds() ;
@@ -820,7 +819,8 @@ void vk_begin_frame(void)
     renderPass_beginInfo.renderPass = vk.render_pass;
     renderPass_beginInfo.framebuffer = vk.framebuffers[vk.idx_swapchain_image];
 
-    renderPass_beginInfo.renderArea = get_scissor_rect();
+    renderPass_beginInfo.renderArea = vk.renderArea;
+
 
     renderPass_beginInfo.clearValueCount = 2;
     renderPass_beginInfo.pClearValues = pClearValues;

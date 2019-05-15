@@ -4,8 +4,6 @@
 #include "../renderercommon/tr_types.h"  // glconfig_t
 
 void R_SetWinMode(int mode, unsigned int w, unsigned int h, unsigned int hz);
-void R_GetWinResolution(int* w, int* h);
-void R_GetWinResolutionF(float* w, float* h);
 
 void R_DisplayResolutionList_f(void);
 void R_InitDisplayResolution( void );
