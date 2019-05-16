@@ -65,6 +65,10 @@ VkBuffer vk_getIndexBuffer(void)
     return shadingDat.index_buffer;
 }
 
+VkBuffer vk_getVertexBuffer(void)
+{
+    return shadingDat.vertex_buffer;
+}
 
 static float s_modelview_matrix[16] QALIGN(16);
 

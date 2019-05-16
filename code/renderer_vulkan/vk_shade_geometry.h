@@ -26,6 +26,8 @@ void vk_createVertexBuffer(void);
 void vk_createIndexBuffer(void);
 
 VkBuffer vk_getIndexBuffer(void);
+VkBuffer vk_getVertexBuffer(void);
+
 void vk_destroy_shading_data(void);
 
 void updateCurDescriptor( VkDescriptorSet curDesSet, uint32_t tmu);

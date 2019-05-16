@@ -84,31 +84,13 @@ VkFence fence_renderFinished;
 
 // static uint64_t t_frame_start = 0;
 
-
-
-void vk_create_sync_primitives(void)
+static void vk_createRenderFinishedFence(VkFence* const pFence)
 {
-    VkSemaphoreCreateInfo desc;
-    desc.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO;
-    desc.pNext = NULL;
-    desc.flags = 0;
-
-    // We need one semaphone to signal that an image has been acquired and
-    // is ready for rendering; and another one to signal that rendering has
-    // finished and presentation can happen.
-
-    // vk.device is the logical device that creates the semaphore.
-    // &desc is a pointer to an instance of the VkSemaphoreCreateInfo structure
-    // which contains information about how the semaphore is to be created.
-    // When created, the semaphore is in the unsignaled state.
-    VK_CHECK( qvkCreateSemaphore(vk.device, &desc, NULL, &sema_imageAvailable));
-    VK_CHECK( qvkCreateSemaphore(vk.device, &desc, NULL, &sema_renderFinished));
-
-
+    ri.Printf(PRINT_ALL, " Create render finished fence. \n");
+    
     VkFenceCreateInfo fence_desc;
     fence_desc.sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO;
     fence_desc.pNext = NULL;
-    
     // VK_FENCE_CREATE_SIGNALED_BIT specifies that the fence object
     // is created in the signaled state. Otherwise, it is created 
     // in the unsignaled state.
@@ -122,7 +104,46 @@ void vk_create_sync_primitives(void)
     // "fence_renderFinished" is a handle in which the resulting
     // fence object is returned.
 
-    VK_CHECK(qvkCreateFence(vk.device, &fence_desc, NULL, &fence_renderFinished));
+    VK_CHECK( qvkCreateFence(vk.device, &fence_desc, NULL, pFence) );
+}
+
+static void vk_createSyncSemaphores(VkSemaphore * pImgAvailable, VkSemaphore * pRenderFinished)
+{
+    ri.Printf(PRINT_ALL, " Create Semaphores: sema_imageAvailable, sema_renderFinished. \n");
+
+    // We need one semaphone to signal that an image has been acquired
+    // and is ready for rendering; and another one to signal that 
+    // rendering has finished and presentation can happen.
+
+    // Semaphores represent flags that can be automically set or
+    // reset by the hardware, the views of which are coherent across
+    // queues. when you are setting the semaphone, the device will
+    // wait for it to be unset, set it, and then retunrn control
+    // to the caller. Likewise, when resetting the semaphone, the 
+    // device waits for the semaphore to be set, resets it, and the
+    // return to the caller. This all happenas atomically. 
+    //
+    // Semaphones cannot be explicitly signaled or waited on by the
+    // device. Rather, they are signaled and waited on by queue 
+    // operations such as vkQueueSubmit().
+    //
+    VkSemaphoreCreateInfo desc;
+    desc.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO;
+    desc.pNext = NULL;
+    desc.flags = 0;
+
+    // vk.device is the logical device that creates the semaphore.
+    // &desc is a pointer to an instance of the VkSemaphoreCreateInfo structure
+    // which contains information about how the semaphore is to be created.
+    // When created, the semaphore is in the unsignaled state.
+    VK_CHECK( qvkCreateSemaphore(vk.device, &desc, NULL, pImgAvailable) );
+    VK_CHECK( qvkCreateSemaphore(vk.device, &desc, NULL, pRenderFinished) );
+}
+
+void vk_create_sync_primitives(void)
+{
+    vk_createSyncSemaphores(&sema_imageAvailable, &sema_renderFinished);
+    vk_createRenderFinishedFence(&fence_renderFinished);
 }
 
 
@@ -703,53 +724,61 @@ void vk_destroyFrameBuffers(void)
     }
 }
 
+// Applications have control over which layout each image subresource uses,
+// and can transition an image subresource from one layout to another. 
+// Transitions can happen with an image memory barrier
 
-
-
-// =====================================
-
-void vk_begin_frame(void)
+static void vk_insertLoadingVertexBarrier(VkCommandBuffer HCmdBuffer)
 {
-    // t_frame_start = R_GetTimeMicroSeconds() ;
+    // Ensur/e visibility of geometry buffers writes.
+    VkBufferMemoryBarrier barrier1;
+    VkBufferMemoryBarrier barrier2;
 
-    // An application can acquire use of a presentable image with vkAcquireNextImageKHR. 
-    // After acquiring a presentable image and before modifying it, the application must
-    // use a synchronization primitive to ensure that the presentation engine has 
-    // finished reading from the image. The application can then transition the image's
-    // layout, queue rendering commands to it, etc. Finally, the application presents 
-    // the image with vkQueuePresentKHR, which releases the acquisition of the image.
-
-    // To acquire an available presentable image to use, and retrieve the index of 
-    // that image If timeout is UINT64_MAX, the timeout period is treated as infinite,
-    // and vkAcquireNextImageKHR will block until an image is acquired or an error occurs.
-
-    // An application must wait until either the semaphore or fence is signaled
-    // before accessing the image's data.
-    VK_CHECK( qvkAcquireNextImageKHR(vk.device, vk.swapchain, UINT64_MAX,
-                sema_imageAvailable, VK_NULL_HANDLE, &vk.idx_swapchain_image) );
+    barrier1.sType = VK_STRUCTURE_TYPE_BUFFER_MEMORY_BARRIER;
+    barrier1.pNext = NULL;
+    barrier1.srcAccessMask = VK_ACCESS_HOST_WRITE_BIT;
+    // VK_ACCESS_VERTEX_ATTRIBUTE_READ_BIT specifies read access 
+    // to a vertex buffer as part of a drawing command, bound by
+    // vkCmdBindVertexBuffers.
+    barrier1.dstAccessMask = VK_ACCESS_VERTEX_ATTRIBUTE_READ_BIT;
+    barrier1.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+    barrier1.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+    barrier1.offset = 0;
+    barrier1.size = VK_WHOLE_SIZE;
+    barrier1.buffer = vk_getVertexBuffer();
 
 
-    //  User could call method vkWaitForFences to wait for completion. A fence is a 
-    //  very heavyweight synchronization primitive as it requires the GPU to flush
-    //  all caches at least, and potentially some additional synchronization. Due to
-    //  those costs, fences should be used sparingly. In particular, try to group
-    //  per-frame resources and track them together. To wait for one or more fences
-    //  to enter the signaled state on the host, call qvkWaitForFences.
+    barrier2.sType = VK_STRUCTURE_TYPE_BUFFER_MEMORY_BARRIER;
+    barrier2.pNext = NULL;
+    barrier2.srcAccessMask = VK_ACCESS_HOST_WRITE_BIT;
+        // VK_ACCESS_INDEX_READ_BIT specifies read access to an index buffer 
+    // as part of an indexed drawing command, bound by vkCmdBindIndexBuffer.
+    barrier2.dstAccessMask = VK_ACCESS_INDEX_READ_BIT;
+    barrier2.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+    barrier2.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+    barrier2.offset = 0;
+    barrier2.size = VK_WHOLE_SIZE;
+    barrier2.buffer = vk_getIndexBuffer();
 
-    //  If the condition is satisfied when vkWaitForFences is called, then 
-    //  vkWaitForFences returns immediately. If the condition is not satisfied at 
-    //  the time vkWaitForFences is called, then vkWaitForFences will block and 
-    //  wait up to timeout nanoseconds for the condition to become satisfied.
 
-    VK_CHECK( qvkWaitForFences(vk.device, 1, &fence_renderFinished, VK_FALSE, 1e9) );
+    // To record a pipeline barrier
+    // vkCmdPipelineBarrier is a synchronization command that inserts 
+    // a dependency between commands submitted to the same queue, or 
+    // between commands in the same subpass. When vkCmdPipelineBarrier
+    // is submitted to a queue, it defines a memory dependency between
+    // commands that were submitted before it, and those submitted
+    // after it.
 
-    //  To set the state of fences to unsignaled from the host
-    //  "1" is the number of fences to reset. 
-    //  "fence_renderFinished" is the fence handle to reset.
-    VK_CHECK( qvkResetFences(vk.device, 1, &fence_renderFinished) );
+    NO_CHECK( qvkCmdPipelineBarrier(HCmdBuffer, VK_PIPELINE_STAGE_HOST_BIT,
+        VK_PIPELINE_STAGE_VERTEX_INPUT_BIT, 0, 0, NULL, 1, &barrier1, 0, NULL) );
 
-    //  commandBuffer must not be in the recording or pending state.
+    NO_CHECK( qvkCmdPipelineBarrier(HCmdBuffer, VK_PIPELINE_STAGE_HOST_BIT,
+        VK_PIPELINE_STAGE_VERTEX_INPUT_BIT, 0, 0, NULL, 1, &barrier2, 0, NULL) );
+}
 
+
+static void vk_beginCmdBuffer(VkCommandBuffer HCmdBuffer)
+{
     // begin_info is an instance of the VkCommandBufferBeginInfo structure,
     // which defines additional information about how the command buffer 
     // begins recording.
@@ -764,47 +793,55 @@ void vk_begin_frame(void)
     begin_info.pInheritanceInfo = NULL;
 
     // To begin recording a command buffer
-    VK_CHECK(qvkBeginCommandBuffer(vk.command_buffer, &begin_info));
+    VK_CHECK( qvkBeginCommandBuffer(HCmdBuffer, &begin_info) );
+}
 
-    // Ensur/e visibility of geometry buffers writes.
+// =====================================
 
-    //
-    // vkCmdPipelineBarrier is a synchronization command that inserts 
-    // a dependency between commands submitted to the same queue, or 
-    // between commands in the same subpass. When vkCmdPipelineBarrier
-    // is submitted to a queue, it defines a memory dependency between
-    // commands that were submitted before it, and those submitted
-    // after it.
-    VkBufferMemoryBarrier barrier;
-    barrier.sType = VK_STRUCTURE_TYPE_BUFFER_MEMORY_BARRIER;
-    barrier.pNext = NULL;
-    barrier.srcAccessMask = VK_ACCESS_HOST_WRITE_BIT;
-    barrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
-    barrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
-    barrier.buffer = vk_getIndexBuffer();
-    barrier.offset = 0;
-    barrier.size = VK_WHOLE_SIZE;
+void vk_begin_frame(void)
+{
+    // t_frame_start = R_GetTimeMicroSeconds() ;
 
-    // If vkCmdPipelineBarrier was recorded outside a render pass instance, 
-    // the first synchronization scope includes all commands that occur earlier
-    // in submission order. The second synchronization scope includes all
-    // commands that occur later in submission order.  
-    //
+    //  User could call method vkWaitForFences to wait for completion. 
+    //  A fence is a very heavyweight synchronization primitive as it 
+    //  requires the GPU to flush all caches at least, and potentially
+    //  some additional synchronization. Due to those costs, fences 
+    //  should be used sparingly. In particular, try to group per-frame
+    //  resources and track them together. To wait for one or more fences
+    //  to enter the signaled state on the host, call qvkWaitForFences.
 
-    // VK_ACCESS_VERTEX_ATTRIBUTE_READ_BIT specifies read access 
-    // to a vertex buffer as part of a drawing command, bound by
-    // vkCmdBindVertexBuffers.
-    barrier.dstAccessMask = VK_ACCESS_VERTEX_ATTRIBUTE_READ_BIT;
+    //  If the condition is satisfied when vkWaitForFences is called,
+    //  then vkWaitForFences returns immediately. If the condition is 
+    //  not satisfied at the time vkWaitForFences is called, then 
+    //  vkWaitForFences will block and  wait up to timeout nanoseconds
+    //  for the condition to become satisfied.
 
-    // To record a pipeline barrier
-    NO_CHECK( qvkCmdPipelineBarrier(vk.command_buffer, VK_PIPELINE_STAGE_HOST_BIT, VK_PIPELINE_STAGE_VERTEX_INPUT_BIT, 0, 0, NULL, 1, &barrier, 0, NULL) );
+    VK_CHECK( qvkWaitForFences(vk.device, 1, &fence_renderFinished, VK_FALSE, 1e9) );
 
-    // VK_ACCESS_INDEX_READ_BIT specifies read access to an index buffer 
-    // as part of an indexed drawing command, bound by vkCmdBindIndexBuffer.
-    barrier.dstAccessMask = VK_ACCESS_INDEX_READ_BIT;
-    
-    NO_CHECK( qvkCmdPipelineBarrier(vk.command_buffer, VK_PIPELINE_STAGE_HOST_BIT, VK_PIPELINE_STAGE_VERTEX_INPUT_BIT, 0, 0, NULL, 1, &barrier, 0, NULL) );
+    //  To set the state of fences to unsignaled from the host
+    //  "1" is the number of fences to reset. 
+    //  "fence_renderFinished" is the fence handle to reset.
+    VK_CHECK( qvkResetFences(vk.device, 1, &fence_renderFinished) );
 
+
+
+    vk_beginCmdBuffer(vk.command_buffer);
+    //  commandBuffer must not be in the recording or pending state.
+    vk_insertLoadingVertexBarrier(vk.command_buffer);
+
+    // An application can acquire use of a presentable image with 
+    // vkAcquireNextImageKHR. After acquiring a presentable image
+    // and before modifying it, the application must use a synch-
+    // ronization primitive to ensure that the presentation engine
+    // has finished reading from the image. vkAcquireNextImageKHR
+    // will block until an image is acquired or an error occurs.
+
+    // An application must wait until either the semaphore or fence
+    // is signaled before accessing the image's data.
+    VK_CHECK( qvkAcquireNextImageKHR(vk.device, vk.swapchain, UINT64_MAX,
+                sema_imageAvailable, VK_NULL_HANDLE, &vk.idx_swapchain_image) );
+
+    // If timeout is UINT64_MAX, the timeout period is treated as infinite
     //
     // Begin render pass.
     //
@@ -818,10 +855,7 @@ void vk_begin_frame(void)
     renderPass_beginInfo.pNext = NULL;
     renderPass_beginInfo.renderPass = vk.render_pass;
     renderPass_beginInfo.framebuffer = vk.framebuffers[vk.idx_swapchain_image];
-
     renderPass_beginInfo.renderArea = vk.renderArea;
-
-
     renderPass_beginInfo.clearValueCount = 2;
     renderPass_beginInfo.pClearValues = pClearValues;
 
