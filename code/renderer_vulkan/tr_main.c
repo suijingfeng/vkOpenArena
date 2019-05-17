@@ -472,7 +472,7 @@ void RE_RenderScene( const refdef_t *fd )
     //   |
     //   |
     //   y
-    viewParms_t		parms;
+    viewParms_t	parms;
 	memset( &parms, 0, sizeof( parms ) );
 
 

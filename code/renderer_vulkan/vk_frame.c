@@ -322,8 +322,7 @@ void vk_createRenderPass(VkDevice device, VkFormat colorFormat,
     // a uniform value, which is specified when a render pass instance is begun    
 	attachmentsArray[1].stencilLoadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
 	attachmentsArray[1].stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
-	//attachmentsArray[1].initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
-    attachmentsArray[1].initialLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
+	attachmentsArray[1].initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
 	attachmentsArray[1].finalLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
 
     
