@@ -105,8 +105,6 @@ Scans the combined text description of all the shader files for the given
 shader name. If found, it will return a valid shader, return NULL if not found.
 =====================
 */
-
-
 char* FindShaderInShaderText(const char * const pStr)
 {
     uint32_t hash = GenHashValue(pStr, MAX_SHADERTEXT_HASH);
@@ -148,16 +146,16 @@ static void allocateMemoryForHashTable(uint32_t size, struct ShaderTextHashArray
 
 // Doing things this way cause pText got parsed twice,
 // can we parse only once?
-static void FillHashTableWithShaderNames(char * const pText, struct ShaderTextHashArray_s ** const pTable)
+static void FillHashTableWithShaderNames(char * pText, struct ShaderTextHashArray_s ** const pTable)
 {
-    char * p = pText;
+    //char * p = pText;
 
     while ( 1 )
     {
-        char* oldp = p;
+        // char* oldp = p;
 
         // look for shader names
-        char* token = R_ParseExt( &p, qtrue );
+        char* token = R_ParseExt( & pText, qtrue );
 
         if ( token[0] == 0 ) {
             break;
@@ -168,13 +166,13 @@ static void FillHashTableWithShaderNames(char * const pText, struct ShaderTextHa
 
         strcpy(pRoot->strName, token);
         uint32_t hash = GenHashValue(pRoot->strName, MAX_SHADERTEXT_HASH);
-        pRoot->pNameLoc = p;
+        pRoot->pNameLoc = pText;
         pRoot->next = pTable[hash];
 
         pTable[hash] = pRoot;
 
         // "{ ... }" are skiped.
-        SkipBracedSection(&p, 0);
+        SkipBracedSection(&pText, 0);
     }
 }
 

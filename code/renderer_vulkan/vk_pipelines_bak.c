@@ -69,7 +69,6 @@ static struct pipeline_tree_s mem_alloced[MAX_VK_PIPELINES];
 //static struct VK_PipelineMgr_t s_created_ppl[MAX_VK_PIPELINES];
 static uint32_t s_numPipelines = 0;
 
-
 static int32_t ComparepPplPar(const struct pipeline_tree_s * const pTree, 
         const struct PipelineParameter_t* const par2)
 {
@@ -192,7 +191,7 @@ void R_PipelineList_f(void)
 
 
 
-void vk_createPipelineLayout(void)
+void vk_createPipelineLayout(VkPipelineLayout * const pPipelineLayout)
 {
     ri.Printf(PRINT_ALL, " Create ipeline layout. \n");
  
@@ -238,7 +237,7 @@ void vk_createPipelineLayout(void)
     // shader stages and shader resources. 
     //
     // Each pipeline is created using a pipeline layout.
-    VK_CHECK( qvkCreatePipelineLayout(vk.device, &desc, NULL, &vk.pipeline_layout) );
+    VK_CHECK( qvkCreatePipelineLayout(vk.device, &desc, NULL, pPipelineLayout) );
 }
 
 void vk_destroy_pipeline_layout(void)

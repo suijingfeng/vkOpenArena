@@ -33,10 +33,8 @@ static uint32_t GenHashValue( const char *fname, const uint32_t size )
         hash += letter * (i+79);
         ++i;
     }
-
 //  this line doesn't improve the result 
 //  hash = (hash ^ (hash >> 10) ^ (hash >> 20));
-
     return (hash & (size-1));
 }
 

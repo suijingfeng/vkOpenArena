@@ -23,7 +23,7 @@ the bits are allocated as follows:
 0-1   : dlightmap index
 */
 #define	QSORT_FOGNUM_SHIFT      2
-#define	QSORT_ENTITYNUM_SHIFT   7
+#define	QSORT_REFENTITYNUM_SHIFT 7
 #define	QSORT_SHADERNUM_SHIFT   17
 
 void R_SortDrawSurfs( drawSurf_t *drawSurfs, int numDrawSurfs );

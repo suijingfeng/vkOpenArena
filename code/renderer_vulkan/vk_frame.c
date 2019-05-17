@@ -322,8 +322,8 @@ void vk_createRenderPass(VkDevice device, VkFormat colorFormat,
     // a uniform value, which is specified when a render pass instance is begun    
 	attachmentsArray[1].stencilLoadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
 	attachmentsArray[1].stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
-	attachmentsArray[1].initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
-    //    VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
+	//attachmentsArray[1].initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+    attachmentsArray[1].initialLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
 	attachmentsArray[1].finalLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
 
     
@@ -568,8 +568,8 @@ void vk_createDepthAttachment(int Width, int Height, VkFormat depthFmt)
     imgViewDesc.subresourceRange.layerCount = 1;
     VK_CHECK( qvkCreateImageView(vk.device, &imgViewDesc, NULL, &vk.depth_image_view) );
 
-
 /*
+
     VkImageAspectFlags image_aspect_flags = VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT;
 
     VkCommandBufferAllocateInfo cmdAllocInfo;

@@ -364,7 +364,7 @@ static void R_RecursiveWorldNode( mnode_t *node, int planeBits, int dlightBits )
 {
 
 	do {
-		int			newDlights[2];
+		int	newDlights[2];
 
 		// if the node wasn't marked as potentially visible, exit
 		if (node->visframe != tr.visCount) {
@@ -658,7 +658,7 @@ void R_AddWorldSurfaces (viewParms_t * const pViewParams)
 	}
 
 	tr.currentEntityNum = REFENTITYNUM_WORLD;
-	tr.shiftedEntityNum = tr.currentEntityNum << QSORT_ENTITYNUM_SHIFT;
+	tr.shiftedEntityNum = tr.currentEntityNum << QSORT_REFENTITYNUM_SHIFT;
 
 	// determine which leaves are in the PVS / areamask
 	R_MarkLeaves ();

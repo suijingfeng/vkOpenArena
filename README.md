@@ -183,6 +183,9 @@ frame:36217 all:  0 sv:  0 ev:  8 cl:  0 gm:  0 rf:  0 bk:  0
 vulkan : 3398 frames 14.6 seconds 232.1 fps 2.0/4.3/9.0/1.0 ms
 opengl2: 3398 frames 22.2 seconds 153.2 fps 3.0/6.5/15.0/1.4 ms
 
+# same hardware, tested on 2019.05.17, the FPS drops, i just have no idea :(
+vulkan : 3398 frames 16.9 seconds 201.4 fps 2.0/5.0/10.0/1.0 ms
+
 # Testing on WIN10 Pro 64-bit, Driver version 397.31 
 vulkan : 3398 frames 14.5 seconds 233.6 fps 1.0/4.3/14.0/1.6 ms
 opengl2: 3398 frames 83.4 seconds 40.8 fps 8.0/24.5/331.0/9.6 ms
