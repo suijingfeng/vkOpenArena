@@ -322,7 +322,8 @@ void vk_createRenderPass(VkDevice device, VkFormat colorFormat,
     // a uniform value, which is specified when a render pass instance is begun    
 	attachmentsArray[1].stencilLoadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
 	attachmentsArray[1].stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
-	attachmentsArray[1].initialLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
+	attachmentsArray[1].initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+    //    VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
 	attachmentsArray[1].finalLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
 
     
@@ -365,7 +366,17 @@ void vk_createRenderPass(VkDevice device, VkFormat colorFormat,
     subpassDesc.preserveAttachmentCount = 0;
 	subpassDesc.pPreserveAttachments = NULL;
 
-
+/*
+	VkSubpassDependency subpass_dependencies[1];
+	subpass_dependencies[0].srcSubpass = 0;
+	subpass_dependencies[0].dstSubpass = 1;
+	subpass_dependencies[0].srcStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
+	subpass_dependencies[0].dstStageMask = VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT;
+	subpass_dependencies[0].srcAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
+	subpass_dependencies[0].dstAccessMask = VK_ACCESS_INPUT_ATTACHMENT_READ_BIT;
+	subpass_dependencies[0].dependencyFlags = VK_DEPENDENCY_BY_REGION_BIT;
+*/
+    
 	VkRenderPassCreateInfo desc;
 	
     desc.sType = VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO;
@@ -385,11 +396,18 @@ void vk_createRenderPass(VkDevice device, VkFormat colorFormat,
     // image layout transitions. These transitions are controlled by subpass
     // dependensies, which specify memory and execution dependencies between
     // subpasses. Operations right before and right after this subpass also
-    // count as inplicit "subpasses".
+    // count as implicit "subpasses".
 	desc.dependencyCount = 0;
 	desc.pDependencies = NULL;
 
 	VK_CHECK( qvkCreateRenderPass(device, &desc, NULL, pRenderPassObj) );
+
+    // You can use barriers to explicitly move images from layout to layout
+    // but where possible, its best to try to move images from layout to
+    // layout inside renderpass. This gives Vulkan the best opportunity
+    // to choose the right layout for each part fo the renderpass and even
+    // perform any operations required to move images between layouts in
+    // parallel with other rendering.
 }
 
 
@@ -513,7 +531,6 @@ void vk_createDepthAttachment(int Width, int Height, VkFormat depthFmt)
 
     //
     //
-    //
     ri.Printf(PRINT_ALL, " Allocate device local memory for depth image. \n");
     VkMemoryRequirements memory_requirements;
     NO_CHECK( qvkGetImageMemoryRequirements(vk.device, vk.depth_image, &memory_requirements) );
@@ -552,7 +569,7 @@ void vk_createDepthAttachment(int Width, int Height, VkFormat depthFmt)
     VK_CHECK( qvkCreateImageView(vk.device, &imgViewDesc, NULL, &vk.depth_image_view) );
 
 
-
+/*
     VkImageAspectFlags image_aspect_flags = VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT;
 
     VkCommandBufferAllocateInfo cmdAllocInfo;
@@ -573,14 +590,14 @@ void vk_createDepthAttachment(int Width, int Height, VkFormat depthFmt)
 
     VK_CHECK( qvkBeginCommandBuffer(pCB, &begin_info) );
 
-    record_image_layout_transition(pCB, vk.depth_image, 
+    image_layout_transition(pCB, vk.depth_image, 
             image_aspect_flags, 0, VK_IMAGE_LAYOUT_UNDEFINED,
             VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT | 
             VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_READ_BIT, 
             VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL);
 
 
-    VK_CHECK(qvkEndCommandBuffer(pCB));
+    VK_CHECK( qvkEndCommandBuffer(pCB) );
 
     VkSubmitInfo submit_info;
     submit_info.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
@@ -594,11 +611,12 @@ void vk_createDepthAttachment(int Width, int Height, VkFormat depthFmt)
     submit_info.pSignalSemaphores = NULL;
 
     VK_CHECK( qvkQueueSubmit(vk.queue, 1, &submit_info, VK_NULL_HANDLE));
-    VK_CHECK( qvkQueueWaitIdle(vk.queue));
+    VK_CHECK( qvkQueueWaitIdle(vk.queue) );
 
     NO_CHECK( qvkFreeCommandBuffers(vk.device, vk.command_pool, 1, &pCB) );
-
+*/
 }
+
 
 void vk_destroyDepthAttachment(void)
 {
@@ -922,9 +940,13 @@ void vk_end_frame(void)
     //  If a command buffer was recorded with the 
     //  VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT flag,
     //  it instead moves back to the invalid state.
-       
+
+
     //  To submit command buffers to a queue 
-    
+    // Generally, commands executed inside command buffers submitted
+    // to a queue produce the images that are to be presented. so 
+    // those images should be shown to the  only user only when
+    // the rendering operations that created them have complated.
     VK_CHECK( qvkQueueSubmit(vk.queue, 1, &submit_info, fence_renderFinished) );
 
     

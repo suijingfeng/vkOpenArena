@@ -29,6 +29,7 @@ struct StagingBuffer_t
     VkDeviceMemory mappableMem;
 };
 
+
 struct ImageChunk_t {
     VkDeviceMemory block;
     uint32_t Used;
@@ -42,8 +43,10 @@ struct deviceLocalMemory_t {
 	uint32_t Index; // number of chunks used
 };
 
+
 static struct StagingBuffer_t StagBuf;
 static struct deviceLocalMemory_t devMemImg;
+
 
 void gpuMemUsageInfo_f(void)
 {
@@ -106,7 +109,7 @@ void vk_createBufferResource(uint32_t Size, VkBufferUsageFlags Usage, VkBuffer* 
     //  } VkMemoryRequirements;
 
     VkMemoryRequirements memory_requirements;
-    qvkGetBufferMemoryRequirements(vk.device, *pBuf, &memory_requirements);
+    NO_CHECK( qvkGetBufferMemoryRequirements(vk.device, *pBuf, &memory_requirements) );
 
     VkMemoryAllocateInfo alloc_info;
     alloc_info.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
@@ -140,17 +143,54 @@ static void vk_destroy_staging_buffer(void)
 
     if (StagBuf.buff != VK_NULL_HANDLE)
     {
-        qvkDestroyBuffer(vk.device, StagBuf.buff, NULL);
+        NO_CHECK( qvkDestroyBuffer(vk.device, StagBuf.buff, NULL) );
         StagBuf.buff = VK_NULL_HANDLE;
     }
     
     if (StagBuf.mappableMem != VK_NULL_HANDLE)
     {
-        qvkFreeMemory(vk.device, StagBuf.mappableMem, NULL);
+        NO_CHECK( qvkFreeMemory(vk.device, StagBuf.mappableMem, NULL) );
 		StagBuf.mappableMem = VK_NULL_HANDLE;
     }
 
     memset(&StagBuf, 0, sizeof(StagBuf));
+}
+
+
+static void record_image_layout_transition( 
+        VkCommandBuffer cmdBuf,
+        VkImage image,
+        VkImageAspectFlags image_aspect_flags,
+        VkAccessFlags src_access_flags,
+        VkImageLayout old_layout,
+        VkAccessFlags dst_access_flags,
+        VkImageLayout new_layout )
+{
+
+	VkImageMemoryBarrier barrier = {0};
+	barrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
+	barrier.pNext = NULL;
+	barrier.srcAccessMask = src_access_flags;
+	barrier.dstAccessMask = dst_access_flags;
+	barrier.oldLayout = old_layout;
+	barrier.newLayout = new_layout;
+	barrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+	barrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+	barrier.image = image;
+	barrier.subresourceRange.aspectMask = image_aspect_flags;
+	barrier.subresourceRange.baseMipLevel = 0;
+	barrier.subresourceRange.levelCount = VK_REMAINING_MIP_LEVELS;
+	barrier.subresourceRange.baseArrayLayer = 0;
+	barrier.subresourceRange.layerCount = VK_REMAINING_ARRAY_LAYERS;
+
+// vkCmdPipelineBarrier is a synchronization command that inserts a dependency between
+// commands submitted to the same queue, or between commands in the same subpass.
+// When vkCmdPipelineBarrier is submitted to a queue, it defines a memory dependency
+// between commands that were submitted before it, and those submitted after it.
+    
+    // cmdBuf is the command buffer into which the command is recorded.
+	NO_CHECK( qvkCmdPipelineBarrier(cmdBuf, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT,
+        VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, 0,	0, NULL, 0, NULL, 1, &barrier) );
 }
 
 
@@ -168,78 +208,83 @@ static void vk_stagBufferToDeviceLocalMem(VkImage image, VkBufferImageCopy* pReg
     // with vkCmdBlitImage. Multisampled images can be resolved to a 
     // non-multisampled image with vkCmdResolveImage.
     //
-    VkCommandBuffer cmd_buf;
-    {
-        VkCommandBufferAllocateInfo alloc_info;
-        alloc_info.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
-        alloc_info.pNext = NULL;
-        alloc_info.commandPool = vk.command_pool;
-        alloc_info.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
-        alloc_info.commandBufferCount = 1;
-        VK_CHECK(qvkAllocateCommandBuffers(vk.device, &alloc_info, &cmd_buf));
+    VkCommandBuffer HCmdBuf;
 
-        VkCommandBufferBeginInfo begin_info;
-        begin_info.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
-        begin_info.pNext = NULL;
-        begin_info.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
-        begin_info.pInheritanceInfo = NULL;
-        VK_CHECK(qvkBeginCommandBuffer(cmd_buf, &begin_info));
-    }
+    VkCommandBufferAllocateInfo alloc_info;
+    alloc_info.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
+    alloc_info.pNext = NULL;
+    alloc_info.commandPool = vk.command_pool;
+    alloc_info.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
+    alloc_info.commandBufferCount = 1;
+    VK_CHECK(qvkAllocateCommandBuffers(vk.device, &alloc_info, &HCmdBuf));
+
+    VkCommandBufferBeginInfo begin_info;
+    begin_info.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
+    begin_info.pNext = NULL;
+    begin_info.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
+    begin_info.pInheritanceInfo = NULL;
+    VK_CHECK(qvkBeginCommandBuffer(HCmdBuf, &begin_info));
 
 
-	VkBufferMemoryBarrier barrier;
-	barrier.sType = VK_STRUCTURE_TYPE_BUFFER_MEMORY_BARRIER;
-	barrier.pNext = NULL;
-	barrier.srcAccessMask = VK_ACCESS_HOST_WRITE_BIT;
-	barrier.dstAccessMask = VK_ACCESS_TRANSFER_READ_BIT;
-	barrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
-	barrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
-	barrier.buffer = StagBuf.buff;
-	barrier.offset = 0;
-	barrier.size = VK_WHOLE_SIZE;
-    
-	qvkCmdPipelineBarrier(cmd_buf, VK_PIPELINE_STAGE_HOST_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT, 0, 0, NULL, 1, &barrier, 0, NULL);
+    VkBufferMemoryBarrier barrier;
+    barrier.sType = VK_STRUCTURE_TYPE_BUFFER_MEMORY_BARRIER;
+    barrier.pNext = NULL;
+    barrier.srcAccessMask = VK_ACCESS_HOST_WRITE_BIT;
+    barrier.dstAccessMask = VK_ACCESS_TRANSFER_READ_BIT;
+    barrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+    barrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+    barrier.buffer = StagBuf.buff;
+    barrier.offset = 0;
+    barrier.size = VK_WHOLE_SIZE;
 
-    record_image_layout_transition(cmd_buf, image, VK_IMAGE_ASPECT_COLOR_BIT,
-            0, VK_IMAGE_LAYOUT_UNDEFINED, VK_ACCESS_TRANSFER_WRITE_BIT,
+    NO_CHECK( qvkCmdPipelineBarrier( HCmdBuf, VK_PIPELINE_STAGE_HOST_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT, 0, 0, NULL, 1, &barrier, 0, NULL) );
+
+    record_image_layout_transition( HCmdBuf, image, 
+            VK_IMAGE_ASPECT_COLOR_BIT,
+            0,
+            VK_IMAGE_LAYOUT_UNDEFINED, 
+            VK_ACCESS_TRANSFER_WRITE_BIT,
             VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
 
-    
+
     // To copy data from a buffer object to an image object
-    
-    // cmd_buf is the command buffer into which the command will be recorded.
+
+    // HCmdBuf is the command buffer into which the command will be recorded.
     // StagBuf.buff is the source buffer.
     // image is the destination image.
     // dstImageLayout is the layout of the destination image subresources.
     // curLevel is the number of regions to copy.
     // pRegions is a pointer to an array of VkBufferImageCopy structures
     // specifying the regions to copy.
-    qvkCmdCopyBufferToImage(cmd_buf, StagBuf.buff, image,
-            VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, num_region, pRegion);
+    NO_CHECK( qvkCmdCopyBufferToImage( HCmdBuf, StagBuf.buff, image,
+                VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, num_region, pRegion) );
 
-    record_image_layout_transition(cmd_buf, image,
-            VK_IMAGE_ASPECT_COLOR_BIT, VK_ACCESS_TRANSFER_WRITE_BIT,
-            VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, VK_ACCESS_SHADER_READ_BIT,
+    record_image_layout_transition(HCmdBuf, image,
+            VK_IMAGE_ASPECT_COLOR_BIT, 
+            VK_ACCESS_TRANSFER_WRITE_BIT,
+            VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 
+            VK_ACCESS_SHADER_READ_BIT,
             VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
 
-    
-    VK_CHECK(qvkEndCommandBuffer(cmd_buf));
 
-	VkSubmitInfo submit_info;
-	submit_info.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
-	submit_info.pNext = NULL;
-	submit_info.waitSemaphoreCount = 0;
-	submit_info.pWaitSemaphores = NULL;
-	submit_info.pWaitDstStageMask = NULL;
-	submit_info.commandBufferCount = 1;
-	submit_info.pCommandBuffers = &cmd_buf;
-	submit_info.signalSemaphoreCount = 0;
-	submit_info.pSignalSemaphores = NULL;
+    VK_CHECK( qvkEndCommandBuffer( HCmdBuf ) );
 
-	VK_CHECK(qvkQueueSubmit(vk.queue, 1, &submit_info, VK_NULL_HANDLE));	
-    VK_CHECK(qvkQueueWaitIdle(vk.queue));
-    
-	qvkFreeCommandBuffers(vk.device, vk.command_pool, 1, &cmd_buf);
+    VkSubmitInfo submit_info;
+    submit_info.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
+    submit_info.pNext = NULL;
+    submit_info.waitSemaphoreCount = 0;
+    submit_info.pWaitSemaphores = NULL;
+    submit_info.pWaitDstStageMask = NULL;
+    submit_info.commandBufferCount = 1;
+    submit_info.pCommandBuffers = &HCmdBuf;
+    submit_info.signalSemaphoreCount = 0;
+    submit_info.pSignalSemaphores = NULL;
+
+    VK_CHECK( qvkQueueSubmit(vk.queue, 1, &submit_info, VK_NULL_HANDLE) );	
+
+    VK_CHECK( qvkQueueWaitIdle(vk.queue) );
+
+    NO_CHECK( qvkFreeCommandBuffers(vk.device, vk.command_pool, 1, &HCmdBuf) );
 }
 
 
@@ -341,13 +386,13 @@ static void vk_createImageAndBindWithMemory(image_t* pImg)
     desc.pQueueFamilyIndices = NULL;
     desc.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
 
-    VK_CHECK(qvkCreateImage(vk.device, &desc, NULL, &pImg->handle));
+    VK_CHECK( qvkCreateImage(vk.device, &desc, NULL, &pImg->handle) );
 
     // =======================================================
     // Binding it with device local memory
     // =======================================================
     VkMemoryRequirements memory_requirements;
-    qvkGetImageMemoryRequirements(vk.device, pImg->handle, &memory_requirements);
+    NO_CHECK( qvkGetImageMemoryRequirements(vk.device, pImg->handle, &memory_requirements) );
     
     // ensure that memory region has proper alignment
     uint32_t mask = (memory_requirements.alignment - 1);
@@ -361,8 +406,8 @@ static void vk_createImageAndBindWithMemory(image_t* pImg)
         VkDeviceSize end = offset_aligned + memory_requirements.size;
 		if (end <= IMAGE_CHUNK_SIZE)
         {
-            VK_CHECK(qvkBindImageMemory(vk.device, pImg->handle, 
-                        devMemImg.Chunks[i].block, offset_aligned));
+            VK_CHECK( qvkBindImageMemory(vk.device, pImg->handle, 
+                        devMemImg.Chunks[i].block, offset_aligned) );
 
 			devMemImg.Chunks[i].Used = end;
 			return;
@@ -379,8 +424,8 @@ static void vk_createImageAndBindWithMemory(image_t* pImg)
     alloc_info.memoryTypeIndex = find_memory_type(memory_requirements.memoryTypeBits, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
 
     VkDeviceMemory memory;
-    VK_CHECK(qvkAllocateMemory(vk.device, &alloc_info, NULL, &memory));
-    VK_CHECK(qvkBindImageMemory(vk.device, pImg->handle, memory, 0));
+    VK_CHECK( qvkAllocateMemory(vk.device, &alloc_info, NULL, &memory) );
+    VK_CHECK( qvkBindImageMemory(vk.device, pImg->handle, memory, 0) );
 
     devMemImg.Chunks[devMemImg.Index].block = memory;
     devMemImg.Chunks[devMemImg.Index].Used = memory_requirements.size;
@@ -442,7 +487,7 @@ static void vk_createImageViewAndDescriptorSet(image_t* pImage)
     //
     // This implicit parameter can be overriden by chaining a VkImageViewUsageCreateInfo structure
     // through the pNext member to VkImageViewCreateInfo.
-    VK_CHECK(qvkCreateImageView(vk.device, &desc, NULL, &pImage->view));
+    VK_CHECK( qvkCreateImageView(vk.device, &desc, NULL, &pImage->view) );
 
     ///////////////////////////////////////////////////////
     // create associated descriptor set
@@ -478,7 +523,7 @@ static void vk_createImageViewAndDescriptorSet(image_t* pImage)
     descriptor_write.pTexelBufferView = NULL;
 
 
-    qvkUpdateDescriptorSets(vk.device, 1, &descriptor_write, 0, NULL);
+    NO_CHECK( qvkUpdateDescriptorSets(vk.device, 1, &descriptor_write, 0, NULL) );
 
     // The above steps essentially copy the VkDescriptorBufferInfo
     // to the descriptor, which is likely in the device memory.
@@ -612,7 +657,6 @@ image_t* R_CreateImage( const char *name, unsigned char* pic, const uint32_t wid
     regions[0].imageExtent.height = pImage->uploadHeight;
     regions[0].imageExtent.depth = 1;
 
-
     if(isMipMap)
     {
         uint32_t curMipMapLevel = 1; 
@@ -697,9 +741,9 @@ image_t* R_CreateImage( const char *name, unsigned char* pic, const uint32_t wid
 
 
     void* data;
-    VK_CHECK(qvkMapMemory(vk.device, StagBuf.mappableMem, 0, VK_WHOLE_SIZE, 0, &data));
+    VK_CHECK( qvkMapMemory(vk.device, StagBuf.mappableMem, 0, VK_WHOLE_SIZE, 0, &data) );
     memcpy(data, pUploadBuffer, buffer_size);
-    qvkUnmapMemory(vk.device, StagBuf.mappableMem);
+    NO_CHECK( qvkUnmapMemory(vk.device, StagBuf.mappableMem) );
 
     free(pUploadBuffer);
 
@@ -790,11 +834,11 @@ void RE_UploadCinematic (int w, int h, int cols, int rows, const unsigned char *
 
         // VULKAN
 
-        qvkDestroyImage(vk.device, prtImage->handle, NULL);
+        NO_CHECK( qvkDestroyImage(vk.device, prtImage->handle, NULL) );
         prtImage->handle = VK_NULL_HANDLE;
-        qvkDestroyImageView(vk.device, prtImage->view, NULL);
+        NO_CHECK( qvkDestroyImageView(vk.device, prtImage->view, NULL) );
         prtImage->view = VK_NULL_HANDLE;
-        qvkFreeDescriptorSets(vk.device, vk.descriptor_pool, 1, &prtImage->descriptor_set);
+        NO_CHECK( qvkFreeDescriptorSets(vk.device, vk.descriptor_pool, 1, &prtImage->descriptor_set) );
         prtImage->descriptor_set = VK_NULL_HANDLE;
 
         prtImage->uploadWidth = cols;
@@ -824,9 +868,9 @@ void RE_UploadCinematic (int w, int h, int cols, int rows, const unsigned char *
         const uint32_t buffer_size = cols * rows * 4;
 
         void* pDat;
-        VK_CHECK(qvkMapMemory(vk.device, StagBuf.mappableMem, 0, VK_WHOLE_SIZE, 0, &pDat));
+        VK_CHECK( qvkMapMemory(vk.device, StagBuf.mappableMem, 0, VK_WHOLE_SIZE, 0, &pDat) );
         memcpy(pDat, data, buffer_size);
-        qvkUnmapMemory(vk.device, StagBuf.mappableMem);
+        NO_CHECK( qvkUnmapMemory(vk.device, StagBuf.mappableMem) );
 
         vk_stagBufferToDeviceLocalMem(tr.scratchImage[client]->handle, &region, 1);
     }
@@ -855,9 +899,9 @@ void RE_UploadCinematic (int w, int h, int cols, int rows, const unsigned char *
         const uint32_t buffer_size = cols * rows * 4;
 
         void* pDat;
-        VK_CHECK(qvkMapMemory(vk.device, StagBuf.mappableMem, 0, VK_WHOLE_SIZE, 0, &pDat));
+        VK_CHECK( qvkMapMemory(vk.device, StagBuf.mappableMem, 0, VK_WHOLE_SIZE, 0, &pDat));
         memcpy(pDat, data, buffer_size);
-        qvkUnmapMemory(vk.device, StagBuf.mappableMem);
+        NO_CHECK( qvkUnmapMemory(vk.device, StagBuf.mappableMem) );
 
         vk_stagBufferToDeviceLocalMem(tr.scratchImage[client]->handle, &region, 1);
     }
@@ -1043,18 +1087,17 @@ void R_InitImages( void )
 static void vk_destroySingleImage( image_t* pImg )
 {
    	// ri.Printf(PRINT_ALL, " Destroy Image: %s \n", pImg->imgName); 
- 
     if(pImg->descriptor_set != VK_NULL_HANDLE)
     {   
         //To free allocated descriptor sets
-        qvkFreeDescriptorSets(vk.device, vk.descriptor_pool, 1, &pImg->descriptor_set);
+        NO_CHECK( qvkFreeDescriptorSets(vk.device, vk.descriptor_pool, 1, &pImg->descriptor_set) );
         pImg->descriptor_set = VK_NULL_HANDLE;
     }
 
     if (pImg->handle != VK_NULL_HANDLE)
     {
-        qvkDestroyImageView(vk.device, pImg->view, NULL);
-        qvkDestroyImage(vk.device, pImg->handle, NULL);
+        NO_CHECK( qvkDestroyImageView(vk.device, pImg->view, NULL) );
+        NO_CHECK( qvkDestroyImage(vk.device, pImg->handle, NULL) );
         pImg->handle = VK_NULL_HANDLE;
     }
 }
@@ -1067,28 +1110,28 @@ void vk_destroyImageRes(void)
 
     uint32_t i = 0;
 
-	for (i = 0; i < tr.numImages; i++)
+	for (i = 0; i < tr.numImages; ++i)
 	{
         vk_destroySingleImage(tr.images[i]);
 	}
 
-    for (i = 0; i < devMemImg.Index; i++)
+    for (i = 0; i < devMemImg.Index; ++i)
     {
-        qvkFreeMemory(vk.device, devMemImg.Chunks[i].block, NULL);
+        NO_CHECK( qvkFreeMemory(vk.device, devMemImg.Chunks[i].block, NULL) );
         devMemImg.Chunks[i].Used = 0;
     }
 
-    devMemImg.Index = 0;
-
+    memset(&devMemImg, 0, sizeof(devMemImg));
 
     vk_destroy_staging_buffer();
     // Destroying a pool object implicitly frees all objects allocated from that pool. 
     // Specifically, destroying VkCommandPool frees all VkCommandBuffer objects that 
     // were allocated from it, and destroying VkDescriptorPool frees all 
     // VkDescriptorSet objects that were allocated from it.
-    VK_CHECK(qvkResetDescriptorPool(vk.device, vk.descriptor_pool, 0));
+    VK_CHECK( qvkResetDescriptorPool(vk.device, vk.descriptor_pool, 0) );
 
     memset( tr.images, 0, sizeof( tr.images ) );
+    
     tr.numImages = 0;
 
     memset(hashTable, 0, sizeof(hashTable));

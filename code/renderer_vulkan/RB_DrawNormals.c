@@ -27,7 +27,7 @@ void RB_DrawNormals (shaderCommands_t* pTess, int numVertexes )
             count = SHADER_MAX_VERTEXES/2 - 1;
 
         int k;
-        for (k = 0; k < count; k++)
+        for (k = 0; k < count; ++k)
         {
             VectorCopy(xyz[i + k], pTess->xyz[2*k]);
             VectorMA(xyz[i + k], 2, pTess->normal[i + k], pTess->xyz[2*k + 1]);
