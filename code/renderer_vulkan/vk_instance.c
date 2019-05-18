@@ -384,7 +384,7 @@ static void vk_createInstance(void)
     appInfo.pNext = NULL;
 	appInfo.pApplicationName = "OpenArena";
 	appInfo.applicationVersion = VK_MAKE_VERSION(1, 0, 0);
-	appInfo.pEngineName = "VulKan Arena";
+	appInfo.pEngineName = "VulkanArena";
 	appInfo.engineVersion = VK_MAKE_VERSION(1, 0, 0);
     // apiVersion must be the highest version of Vulkan that the
     // application is designed to use, encoded as described in the
@@ -644,6 +644,7 @@ static void vk_selectPhysicalDevice(void)
     ri.Printf(PRINT_ALL, " Total %d graphics card, the first one is choosed. \n", gpu_count);
 
     ri.Printf(PRINT_ALL, " Get physical device memory properties: vk.devMemProperties \n");
+    
     qvkGetPhysicalDeviceMemoryProperties(vk.physical_device, &vk.devMemProperties);
 }
 
@@ -980,7 +981,6 @@ void vk_checkSwapChainExtention(const char * const pName)
 
     ri.Printf(PRINT_ALL, "-------- --------------------------------------- ------\n\n");
 
-
     free(pDeviceExt);
 }
 
@@ -1041,7 +1041,7 @@ static void vk_createLogicalDevice(void)
     // queue families are available. You can create multiple logical
     // devices from the same physical device if you have varying requirements.
     ri.Printf( PRINT_ALL, " Create logical device: vk.device \n" );
-    VK_CHECK(qvkCreateDevice(vk.physical_device, &device_desc, NULL, &vk.device));
+    VK_CHECK( qvkCreateDevice(vk.physical_device, &device_desc, NULL, &vk.device) );
 
 }
 
@@ -1254,8 +1254,12 @@ void vk_getProcAddress(void)
     // thus must be called AFTER vk_createLogicalDevice.
     vk_loadDeviceFunctions();
 
+    
     // a call to retrieve queue handle
-	qvkGetDeviceQueue(vk.device, vk.queue_family_index, 0, &vk.queue);
+    // The queues are constructed when the device is created, For this
+    // reason, we don't create queues, but obtain them from the device.
+    //
+	NO_CHECK( qvkGetDeviceQueue(vk.device, vk.queue_family_index, 0, &vk.queue) );
     //
     //     Queue Family Index
     //

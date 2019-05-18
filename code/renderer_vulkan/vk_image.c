@@ -207,7 +207,7 @@ static void vk_stagBufferToDeviceLocalMem(VkImage image, VkBufferImageCopy* pReg
     // Image data can be blitted (with or without scaling and filtering) 
     // with vkCmdBlitImage. Multisampled images can be resolved to a 
     // non-multisampled image with vkCmdResolveImage.
-    //
+    /*
     VkCommandBuffer HCmdBuf;
 
     VkCommandBufferAllocateInfo alloc_info;
@@ -216,16 +216,18 @@ static void vk_stagBufferToDeviceLocalMem(VkImage image, VkBufferImageCopy* pReg
     alloc_info.commandPool = vk.command_pool;
     alloc_info.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
     alloc_info.commandBufferCount = 1;
-    VK_CHECK(qvkAllocateCommandBuffers(vk.device, &alloc_info, &HCmdBuf));
+    VK_CHECK( qvkAllocateCommandBuffers(vk.device, &alloc_info, &HCmdBuf) );
 
     VkCommandBufferBeginInfo begin_info;
     begin_info.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
     begin_info.pNext = NULL;
     begin_info.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
     begin_info.pInheritanceInfo = NULL;
-    VK_CHECK(qvkBeginCommandBuffer(HCmdBuf, &begin_info));
+    VK_CHECK( qvkBeginCommandBuffer(HCmdBuf, &begin_info) );
+*/
 
-
+    vk_beginRecordCmds( vk.tmpRecordBuffer );
+/*
     VkBufferMemoryBarrier barrier;
     barrier.sType = VK_STRUCTURE_TYPE_BUFFER_MEMORY_BARRIER;
     barrier.pNext = NULL;
@@ -237,9 +239,9 @@ static void vk_stagBufferToDeviceLocalMem(VkImage image, VkBufferImageCopy* pReg
     barrier.offset = 0;
     barrier.size = VK_WHOLE_SIZE;
 
-    NO_CHECK( qvkCmdPipelineBarrier( HCmdBuf, VK_PIPELINE_STAGE_HOST_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT, 0, 0, NULL, 1, &barrier, 0, NULL) );
-
-    record_image_layout_transition( HCmdBuf, image, 
+    NO_CHECK( qvkCmdPipelineBarrier( vk.tmpRecordBuffer, VK_PIPELINE_STAGE_HOST_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT, 0, 0, NULL, 1, &barrier, 0, NULL) );
+*/
+    record_image_layout_transition( vk.tmpRecordBuffer, image, 
             VK_IMAGE_ASPECT_COLOR_BIT,
             0,
             VK_IMAGE_LAYOUT_UNDEFINED, 
@@ -256,10 +258,10 @@ static void vk_stagBufferToDeviceLocalMem(VkImage image, VkBufferImageCopy* pReg
     // curLevel is the number of regions to copy.
     // pRegions is a pointer to an array of VkBufferImageCopy structures
     // specifying the regions to copy.
-    NO_CHECK( qvkCmdCopyBufferToImage( HCmdBuf, StagBuf.buff, image,
+    NO_CHECK( qvkCmdCopyBufferToImage( vk.tmpRecordBuffer, StagBuf.buff, image,
                 VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, num_region, pRegion) );
 
-    record_image_layout_transition(HCmdBuf, image,
+    record_image_layout_transition(vk.tmpRecordBuffer, image,
             VK_IMAGE_ASPECT_COLOR_BIT, 
             VK_ACCESS_TRANSFER_WRITE_BIT,
             VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 
@@ -267,24 +269,7 @@ static void vk_stagBufferToDeviceLocalMem(VkImage image, VkBufferImageCopy* pReg
             VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
 
 
-    VK_CHECK( qvkEndCommandBuffer( HCmdBuf ) );
-
-    VkSubmitInfo submit_info;
-    submit_info.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
-    submit_info.pNext = NULL;
-    submit_info.waitSemaphoreCount = 0;
-    submit_info.pWaitSemaphores = NULL;
-    submit_info.pWaitDstStageMask = NULL;
-    submit_info.commandBufferCount = 1;
-    submit_info.pCommandBuffers = &HCmdBuf;
-    submit_info.signalSemaphoreCount = 0;
-    submit_info.pSignalSemaphores = NULL;
-
-    VK_CHECK( qvkQueueSubmit(vk.queue, 1, &submit_info, VK_NULL_HANDLE) );	
-
-    VK_CHECK( qvkQueueWaitIdle(vk.queue) );
-
-    NO_CHECK( qvkFreeCommandBuffers(vk.device, vk.command_pool, 1, &HCmdBuf) );
+    vk_commitRecordedCmds(vk.tmpRecordBuffer);
 }
 
 

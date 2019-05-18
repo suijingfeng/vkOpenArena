@@ -204,6 +204,8 @@ struct Vk_Instance {
 	VkCommandPool command_pool;
 	VkCommandBuffer command_buffer;
 
+    VkCommandBuffer tmpRecordBuffer;
+
 	VkImage depth_image;
 	VkDeviceMemory depth_image_memory;
 	VkImageView depth_image_view;

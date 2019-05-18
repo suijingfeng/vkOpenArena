@@ -61,7 +61,7 @@
 //
 //
 
-void vk_create_command_pool(VkCommandPool* pPool)
+void vk_create_command_pool(VkCommandPool* const pPool)
 {
     // Command pools are opaque objects that command buffer memory is allocated from,
     // and which allow the implementation to amortize the cost of resource creation
@@ -87,14 +87,16 @@ void vk_create_command_pool(VkCommandPool* pPool)
     // reset when calling vkBeginCommandBuffer. If this flag is not set on
     // a pool, then vkResetCommandBuffer must not be called for any command
     // buffer allocated from that pool.
-    desc.flags = VK_COMMAND_POOL_CREATE_TRANSIENT_BIT | VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;
+    // 
+    // VK_COMMAND_POOL_CREATE_TRANSIENT_BIT | 
+    desc.flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;
     desc.queueFamilyIndex = vk.queue_family_index;
 
     VK_CHECK(qvkCreateCommandPool(vk.device, &desc, NULL, pPool));
 }
 
 
-void vk_create_command_buffer(VkCommandPool pool, VkCommandBuffer* pBuf)
+void vk_create_command_buffer(VkCommandPool pool, VkCommandBuffer* const pBuf)
 {
     // Command buffers are objects used to record commands which can be
     // subsequently submitted to a device queue for execution. There are
@@ -132,8 +134,6 @@ void vk_create_command_buffer(VkCommandPool pool, VkCommandBuffer* pBuf)
     // This is true within a command buffer, and across command buffers submitted to a given
     // queue. See the synchronization chapter for information on implicit and explicit
     // synchronization between commands.
-    ri.Printf(PRINT_ALL, " Create command buffer: vk.command_buffer \n");
-
     VkCommandBufferAllocateInfo alloc_info;
     alloc_info.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
     alloc_info.pNext = NULL;
@@ -142,16 +142,53 @@ void vk_create_command_buffer(VkCommandPool pool, VkCommandBuffer* pBuf)
     // but cannnot be called from other command buffers.
     alloc_info.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
     alloc_info.commandBufferCount = 1;
-    VK_CHECK(qvkAllocateCommandBuffers(vk.device, &alloc_info, pBuf));
+    VK_CHECK( qvkAllocateCommandBuffers(vk.device, &alloc_info, pBuf) );
 }
 
-void vk_destroy_commands(void)
+
+void vk_beginRecordCmds(VkCommandBuffer HCmdBuf)
+{
+    //qvkResetCommandBuffer(HCmdBuf, );
+    VK_CHECK( qvkQueueWaitIdle(vk.queue) );
+
+    VkCommandBufferBeginInfo begin_info;
+    begin_info.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
+    begin_info.pNext = NULL;
+    begin_info.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
+    begin_info.pInheritanceInfo = NULL;
+    VK_CHECK( qvkBeginCommandBuffer(HCmdBuf, &begin_info) );
+}
+
+
+void vk_commitRecordedCmds(VkCommandBuffer HCmdBuf)
+{
+    VK_CHECK( qvkEndCommandBuffer( HCmdBuf ) );
+
+    VkSubmitInfo submit_info;
+    submit_info.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
+    submit_info.pNext = NULL;
+    submit_info.waitSemaphoreCount = 0;
+    submit_info.pWaitSemaphores = NULL;
+    submit_info.pWaitDstStageMask = NULL;
+    submit_info.commandBufferCount = 1;
+    submit_info.pCommandBuffers = &HCmdBuf;
+    submit_info.signalSemaphoreCount = 0;
+    submit_info.pSignalSemaphores = NULL;
+
+    VK_CHECK( qvkQueueSubmit(vk.queue, 1, &submit_info, VK_NULL_HANDLE) );	
+}
+
+
+void vk_freeCmdBufs(VkCommandBuffer* const pCmdBuf)
 {
     // Command buffers will be automatically freed when their
     // command pool is destroyed, so it don't need an explicit 
     // cleanup.
-    ri.Printf( PRINT_ALL, " Free command buffers: vk.command_buffer. \n" );     
-    qvkFreeCommandBuffers(vk.device, vk.command_pool, 1, &vk.command_buffer); 
+    NO_CHECK( qvkFreeCommandBuffers(vk.device, vk.command_pool, 1, pCmdBuf) ); 
+}
+
+void vk_destroy_command_pool(void)
+{
     ri.Printf( PRINT_ALL, " Destroy command pool: vk.command_pool. \n" );
-    qvkDestroyCommandPool(vk.device, vk.command_pool, NULL);
+    NO_CHECK( qvkDestroyCommandPool(vk.device, vk.command_pool, NULL) );
 }

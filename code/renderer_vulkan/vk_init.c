@@ -38,8 +38,11 @@ void vk_initialize(void)
     // command buffers are allocated from them.
     vk_create_command_pool(&vk.command_pool);
     
+    ri.Printf(PRINT_ALL, " Create command buffer: vk.command_buffer. \n");
     vk_create_command_buffer(vk.command_pool, &vk.command_buffer);
-
+    
+    ri.Printf(PRINT_ALL, " Create command buffer: vk.tmpRecordBuffer. \n");
+    vk_create_command_buffer(vk.command_pool, &vk.tmpRecordBuffer);
 
     vk_createDepthAttachment(vk.renderArea.extent.width, vk.renderArea.extent.height, vk.fmt_DepthStencil);
     // Depth attachment image.
@@ -121,9 +124,12 @@ void vk_shutdown(void)
 
     vk_destroy_descriptor_pool();
 
-    vk_destroy_commands();
+    ri.Printf( PRINT_ALL, " Free command buffers: vk.command_buffer. \n" );  
+    vk_freeCmdBufs(&vk.command_buffer);
+    ri.Printf( PRINT_ALL, " Free command buffers: vk.tmpRecordBuffer. \n" );  
+    vk_freeCmdBufs(&vk.tmpRecordBuffer);
 
-
+    vk_destroy_command_pool();
 
     ri.Printf( PRINT_ALL, " Destroy logical device: vk.device. \n" );
     // Device queues are implicitly cleaned up when the device is destroyed
