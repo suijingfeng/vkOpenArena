@@ -27,6 +27,7 @@ struct StagingBuffer_t
     VkBuffer buff;
     // Host visible memory used to copy image data to device local memory.
     VkDeviceMemory mappableMem;
+    //uint32_t Used;
 };
 
 
@@ -343,15 +344,8 @@ void printImageHashTable_f(void)
 }
 
 
-
-/*
-================
-This is the only way any image_t are created
-================
-*/
-static void vk_createImageAndBindWithMemory(image_t* pImg)
+static void vk_create2DImageHandle(VkImageUsageFlags imgUsage, image_t* const pImg)
 {
-
     VkImageCreateInfo desc;
     desc.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
     desc.pNext = NULL;
@@ -365,67 +359,69 @@ static void vk_createImageAndBindWithMemory(image_t* pImg)
     desc.arrayLayers = 1;
     desc.samples = VK_SAMPLE_COUNT_1_BIT;
     desc.tiling = VK_IMAGE_TILING_OPTIMAL;
-    desc.usage = VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT;
+    desc.usage = imgUsage;
     desc.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
     desc.queueFamilyIndexCount = 0;
     desc.pQueueFamilyIndices = NULL;
     desc.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
 
     VK_CHECK( qvkCreateImage(vk.device, &desc, NULL, &pImg->handle) );
+}
 
-    // =======================================================
-    // Binding it with device local memory
-    // =======================================================
-    VkMemoryRequirements memory_requirements;
-    NO_CHECK( qvkGetImageMemoryRequirements(vk.device, pImg->handle, &memory_requirements) );
-    
-    // ensure that memory region has proper alignment
-    uint32_t mask = (memory_requirements.alignment - 1);
-
-
-    uint32_t i = 0;
-	for (i = 0; i < devMemImg.Index; ++i)
-    {
-		// ensure that memory region has proper alignment
-		VkDeviceSize offset_aligned = (devMemImg.Chunks[i].Used + mask) & (~mask);
-        VkDeviceSize end = offset_aligned + memory_requirements.size;
-		if (end <= IMAGE_CHUNK_SIZE)
-        {
-            VK_CHECK( qvkBindImageMemory(vk.device, pImg->handle, 
-                        devMemImg.Chunks[i].block, offset_aligned) );
-
-			devMemImg.Chunks[i].Used = end;
-			return;
-		}
-	}
-
-	// Couldn't find suitable in existing chunk.
+static void vk_allocDeviceLocalMemory(uint32_t memType, uint32_t const idx,
+        struct ImageChunk_t* const pChunk)
+{
     // Allocate a new chunk
     
     VkMemoryAllocateInfo alloc_info;
     alloc_info.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
     alloc_info.pNext = NULL;
     alloc_info.allocationSize = IMAGE_CHUNK_SIZE;
-    alloc_info.memoryTypeIndex = find_memory_type(memory_requirements.memoryTypeBits, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
-
-    VkDeviceMemory memory;
-    VK_CHECK( qvkAllocateMemory(vk.device, &alloc_info, NULL, &memory) );
-    VK_CHECK( qvkBindImageMemory(vk.device, pImg->handle, memory, 0) );
-
-    devMemImg.Chunks[devMemImg.Index].block = memory;
-    devMemImg.Chunks[devMemImg.Index].Used = memory_requirements.size;
-    ++devMemImg.Index;
+    alloc_info.memoryTypeIndex = find_memory_type( 
+        memType, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT );
 
 
-    ri.Printf(PRINT_ALL, " --- Device memory allocation --- \n");
-
-    ri.Printf(PRINT_ALL, "alignment: %ld, Type Index: %d. \n",
-            memory_requirements.alignment, alloc_info.memoryTypeIndex);
+    VK_CHECK( qvkAllocateMemory(vk.device, &alloc_info, NULL, &pChunk[idx].block) );
     
-    ri.Printf(PRINT_ALL, "Image chuck memory consumed: %d M \n",
-            devMemImg.Index * (IMAGE_CHUNK_SIZE >> 20) );
+    ri.Printf(PRINT_ALL, "Allocate Device local memory, Size: %d MB, Type Index: %d. \n",
+            (IMAGE_CHUNK_SIZE >> 20), alloc_info.memoryTypeIndex);
+}
 
-    ri.Printf(PRINT_ALL, " --- ------------------------ --- \n");
+
+static void vk_bindImageHandleWithDeviceMemory(VkImage hImg, uint32_t * const pIdx_uplimit,
+        struct ImageChunk_t* const pChunk)
+{
+
+    VkMemoryRequirements memory_requirements;
+    NO_CHECK( qvkGetImageMemoryRequirements(vk.device, hImg, &memory_requirements) );
+    
+    if(*pIdx_uplimit == 0)
+    {
+        // allocate memory ...
+        vk_allocDeviceLocalMemory(memory_requirements.memoryTypeBits, 0, pChunk);
+        ++*pIdx_uplimit;
+    }
+
+    uint32_t i = *pIdx_uplimit - 1;
+    // ensure that memory region has proper alignment
+    uint32_t mask = (memory_requirements.alignment - 1);
+    uint32_t offset_aligned = (pChunk[i].Used + mask) & (~mask);
+    uint32_t end = offset_aligned + memory_requirements.size;
+    
+    if(end <= IMAGE_CHUNK_SIZE)
+    {
+        VK_CHECK( qvkBindImageMemory(vk.device, hImg, pChunk[i].block, offset_aligned) );
+        pChunk[i].Used = end;
+    }
+    else
+    {
+        // space not enough, allocate a new chunk ...
+        vk_allocDeviceLocalMemory(memory_requirements.memoryTypeBits, *pIdx_uplimit, pChunk);
+        VK_CHECK( qvkBindImageMemory(vk.device, hImg, pChunk[*pIdx_uplimit].block, 0) );
+        pChunk[*pIdx_uplimit].Used = memory_requirements.size;
+        ++*pIdx_uplimit;
+    }
+
 }
 
 
@@ -721,7 +717,10 @@ image_t* R_CreateImage( const char *name, unsigned char* pic, const uint32_t wid
     }
 
     
-    vk_createImageAndBindWithMemory(pImage);
+    vk_create2DImageHandle( VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT, pImage);
+    
+    vk_bindImageHandleWithDeviceMemory(pImage->handle, &devMemImg.Index, devMemImg.Chunks);
+    
     vk_createImageViewAndDescriptorSet(pImage);
 
 
@@ -830,8 +829,9 @@ void RE_UploadCinematic (int w, int h, int cols, int rows, const unsigned char *
         prtImage->uploadHeight = rows;
         prtImage->mipLevels = 1;
 
-        vk_createImageAndBindWithMemory(prtImage);
-
+        // vk_createImageAndBindWithMemory(prtImage);
+        vk_create2DImageHandle( VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT, prtImage);
+        vk_bindImageHandleWithDeviceMemory(prtImage->handle, &devMemImg.Index, devMemImg.Chunks);
         vk_createImageViewAndDescriptorSet(prtImage);
 
 
