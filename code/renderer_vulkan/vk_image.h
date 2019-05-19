@@ -32,6 +32,8 @@ void R_InitImages( void );
 
 void gpuMemUsageInfo_f(void);
 
+image_t * R_GetScratchImageHandle(int idx);
+
 
 // TODO ; impl this
 // void R_ImageList_f( void );
