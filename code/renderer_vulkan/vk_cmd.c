@@ -149,8 +149,6 @@ void vk_create_command_buffer(VkCommandPool pool, VkCommandBuffer* const pBuf)
 void vk_beginRecordCmds(VkCommandBuffer HCmdBuf)
 {
     //qvkResetCommandBuffer(HCmdBuf, );
-    VK_CHECK( qvkQueueWaitIdle(vk.queue) );
-
     VkCommandBufferBeginInfo begin_info;
     begin_info.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
     begin_info.pNext = NULL;
@@ -175,7 +173,8 @@ void vk_commitRecordedCmds(VkCommandBuffer HCmdBuf)
     submit_info.signalSemaphoreCount = 0;
     submit_info.pSignalSemaphores = NULL;
 
-    VK_CHECK( qvkQueueSubmit(vk.queue, 1, &submit_info, VK_NULL_HANDLE) );	
+    VK_CHECK( qvkQueueSubmit(vk.queue, 1, &submit_info, VK_NULL_HANDLE) );
+    VK_CHECK( qvkQueueWaitIdle(vk.queue) );
 }
 
 
