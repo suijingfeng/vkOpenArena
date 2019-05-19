@@ -1,6 +1,6 @@
 #include "vk_instance.h"
 #include "vk_shaders.h"
-
+#include "ref_import.h" 
 // Vulkan has to be specified in a bytecode format which is called SPIR-V
 // and is designed to be work with both Vulkan and OpenCL.
 //
@@ -44,7 +44,7 @@ static void create_shader_module(const unsigned char* pBytes, const int count, V
 	desc.codeSize = count;
 	desc.pCode = (const uint32_t*)pBytes;
 			   
-	VK_CHECK(qvkCreateShaderModule(vk.device, &desc, NULL, pVkShaderMod));
+	VK_CHECK( qvkCreateShaderModule(vk.device, &desc, NULL, pVkShaderMod) );
 }
 
 

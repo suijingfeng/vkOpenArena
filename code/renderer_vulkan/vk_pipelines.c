@@ -1,6 +1,9 @@
 #include "vk_instance.h"
 #include "vk_pipelines.h"
 #include "tr_shader.h"
+#include "ref_import.h"
+#include "R_SortAlgorithm.h"
+
 // The graphics pipeline is the sequence of operations that take the vertices
 // and textures of your meshes all the way to the pixels in the render targets
 //
@@ -35,153 +38,201 @@
 // each other, add up or be mixed based opon transparency.
 //
 
-#define MAX_VK_PIPELINES        256
-
-
-struct PipelineParameter_t {
-    VkPipeline pipeline; // saved a copy for destroy. 
+struct ParmsKey {
     uint32_t state_bits; // GLS_XXX flags
 	
     enum CullType_t face_culling;
     enum Vk_Shader_Type shader_type;
-	enum Vk_Shadow_Phase shadow_phase;
 
     VkBool32 polygon_offset;
 	VkBool32 clipping_plane;
 	VkBool32 mirror;
-	VkBool32 line_primitives;
-};
+}; 
 
-
-struct pipeline_tree_s {
-
-    struct PipelineParameter_t par;
+struct PipelineParameter_t {
+    VkPipeline pipeline; // saved a copy for destroy. 
     
-	struct pipeline_tree_s * left; //left child
-	struct pipeline_tree_s * right; //right child
+    struct ParmsKey key;
+    struct PipelineParameter_t * next;
 };
 
-static struct pipeline_tree_s * pPlRoot = NULL;
 
-static struct pipeline_tree_s mem_alloced[MAX_VK_PIPELINES];
 
-//static struct VK_PipelineMgr_t s_created_ppl[MAX_VK_PIPELINES];
 static uint32_t s_numPipelines = 0;
 
 
-static int32_t ComparepPplPar(const struct pipeline_tree_s * const pTree, 
-        const struct PipelineParameter_t* const par2)
+static int32_t ComparePar(const struct ParmsKey* const par1, 
+        const struct ParmsKey* const par2)
 {
-
-//    ri.Printf(PRINT_WARNING, "%d, %d \n",
-//            pTree->par.state_bits, par2->state_bits);
-    if(pTree->par.state_bits == par2->state_bits)
+    if( (par1->state_bits == par2->state_bits) &&
+        (par1->face_culling == par2->face_culling) &&
+        (par1->shader_type == par2->shader_type) &&
+        (par1->polygon_offset == par2->polygon_offset) &&
+        (par1->clipping_plane == par2->clipping_plane) &&
+        (par1->mirror == par2->mirror) )
     {
-
-    int32_t i1 = (pTree->par.face_culling << 8) |
-        (pTree->par.shader_type << 6) |
-        (pTree->par.shadow_phase << 4) | 
-        (pTree->par.polygon_offset << 3) |
-        (pTree->par.clipping_plane << 2) |
-        (pTree->par.mirror << 1) | pTree->par.line_primitives ;
-
-    int32_t i2 = (par2->face_culling << 8) |
-        (par2->shader_type << 6) |
-        (par2->shadow_phase << 4) | 
-        (par2->polygon_offset << 3) |
-        (par2->clipping_plane << 2) |
-        (par2->mirror << 1) | par2->line_primitives;
-        return i1 - i2;
+        return 0;
     }
-    else
-        return (pTree->par.state_bits - par2->state_bits);
+
+    return -1;
+}
+
+//==================================================================
+
+#define PL_TAB_SIZE         512
+#define MAX_VK_PIPELINES    256
+
+static struct PipelineParameter_t* plHashTable[PL_TAB_SIZE];
+    
+static uint32_t genHashVal( const struct ParmsKey * const par , uint32_t size)
+{
+//	uint32_t hash = par->mirror + (par->clipping_plane << 1)
+//        + (par->polygon_offset << 2) + (par->shader_type << 4) +
+//        + (par->face_culling << 6) + (par->state_bits << 8) ;
+
+//	uint64_t hash  =  par->mirror * 119 + par->clipping_plane * 121
+//        + par->polygon_offset * 122 + par->shader_type * 4 * 124 +
+//        + par->face_culling * 8 * 125 + par->state_bits;
+    
+    uint32_t hash = (par->state_bits & (size-1)) + 
+        ((par->state_bits & 0x00030000) >> 11) + 
+        ((par->state_bits & 0x00001000) >> 8) + 
+        ((par->state_bits & 0x70000000) >> 22) + 
+        par->mirror * 119 + par->clipping_plane * 121
+        + par->polygon_offset * 122 + par->shader_type * 123 +
+        + par->face_culling * 124 ;
+    
+    return hash & (size-1);
 }
 
 
-
-struct pipeline_tree_s *
-InsertPipelineToTree(struct pipeline_tree_s * pTree, const struct PipelineParameter_t * const par)
+static VkPipeline FindPipeline(const struct ParmsKey * const par)
 {
-    if( pTree == NULL)
-	{
-        // ri.Printf(PRINT_WARNING, "make new pipeline:%d\n", s_numPipelines);
-        // pTree = (struct pipeline_tree_s *) malloc( sizeof(struct pipeline_tree_s) );
+    int32_t hVal = genHashVal(par, PL_TAB_SIZE);
 
-        pTree = &mem_alloced[s_numPipelines++];
-        pTree->par = *par;
-        pTree->left = pTree->right = NULL;
+    struct PipelineParameter_t * pTmp;
 
-        // Create and return a one-node tree;
-    }
-    else
+    for( pTmp = plHashTable[hVal]; pTmp != NULL; pTmp = pTmp->next )
     {
-        int32_t comp = ComparepPplPar(pTree, par);
-
-        if( comp < 0 )
-		    pTree->left = InsertPipelineToTree(pTree->left, par);
-        else if( comp > 0 )
-		    pTree->right = InsertPipelineToTree(pTree->right, par);
-
-        // Else X is in the tree already,
+        if( 0 == ComparePar(par, &pTmp->key) )
+            return pTmp->pipeline;
     }
 
-    return pTree;
+    // not find, create new
+    VkPipeline newPipeline;
+
+    pTmp = (struct PipelineParameter_t *) 
+        ri.Hunk_Alloc( sizeof(struct PipelineParameter_t ), h_low );
+
+    //    plPar.shadow_phase = SHADOWS_RENDERING_DISABLED;
+    //    plPar.line_primitives = VK_FALSE;
+
+    vk_create_pipeline( 
+            par->state_bits, par->shader_type, par->face_culling, SHADOWS_RENDERING_DISABLED,
+            par->clipping_plane, par->mirror, par->polygon_offset, VK_FALSE, 
+            &newPipeline );
+
+
+    pTmp->key = *par;
+    pTmp->pipeline = newPipeline; 
+    pTmp->next = plHashTable[hVal];
+
+    plHashTable[hVal] = pTmp;
+
+    ++s_numPipelines;
+
+    return newPipeline;
 }
 
 
-void printPipelineTree(struct pipeline_tree_s * pTree)
+void vk_destroyShaderStagePipeline(void)
 {
-	if(pTree != NULL)
-	{
-		printPipelineTree(pTree->left);
+    ri.Printf(PRINT_ALL, " Destroy %d shader stage pipelines. \n", s_numPipelines);
 
-        ri.Printf(PRINT_ALL, "state bits:%d, face culling:%d\n", 
-            pTree->par.state_bits, pTree->par.face_culling);
+    NO_CHECK( qvkDeviceWaitIdle(vk.device) );
 
-		printPipelineTree(pTree->right);
-	}
+    uint32_t i;
+    uint32_t count = 0;
+    for( i = 0; i < PL_TAB_SIZE; ++i )
+    {
+        if(plHashTable[i] != NULL)
+        {
+            struct PipelineParameter_t * pRoot = plHashTable[i];            
+            while( pRoot != NULL )
+            {
+                struct PipelineParameter_t * pBakeup = pRoot->next;
+                qvkDestroyPipeline(vk.device, pRoot->pipeline, NULL);
+                ++count;
+                memset(pRoot, 0, sizeof(struct PipelineParameter_t));
+
+                pRoot = pBakeup;
+            }
+
+            plHashTable[i] = NULL;
+        }
+    }
+
+    if(count != s_numPipelines) {
+        ri.Printf(PRINT_WARNING, " Created pipeline(%d) don't match Destroyed(%d). \n", s_numPipelines, count );
+    }
 }
 
 
-struct pipeline_tree_s *
-FindPipelineFromTree(struct pipeline_tree_s * pTree , const struct PipelineParameter_t * const par)
+void vk_InitShaderStagePipeline(void)
 {
-    if(pTree == NULL)
-        return NULL;
-    
-    int32_t comp = ComparepPplPar(pTree, par);
-    
-    if( comp < 0 )
-        return FindPipelineFromTree(pTree->left, par);
-    else if(comp > 0)
-        return FindPipelineFromTree(pTree->right, par);
-    else
-        return pTree;
-}
-
-
-void DestroySearchTree(struct pipeline_tree_s * pTree)
-{
-	if(pTree != NULL)
-	{
-
-        DestroySearchTree(pTree->left);
-        // ri.Printf(PRINT_ALL, "free left child.\n");
-        DestroySearchTree(pTree->right);
-        // ri.Printf(PRINT_ALL, "free right child.\n");
-
-        qvkDestroyPipeline(vk.device, pTree->par.pipeline, NULL);
-        
-        // free(pTree);
-        // memset(pTree, 0, sizeof(struct pipeline_tree_s));
-	}
+    memset(plHashTable, 0, PL_TAB_SIZE * sizeof(struct PipelineParameter_t*));
+    s_numPipelines = 0;
 }
 
 
 void R_PipelineList_f(void)
 {
     ri.Printf(PRINT_ALL, " Total pipeline created: %d\n", s_numPipelines);
-    printPipelineTree(pPlRoot);
+
+    uint32_t i = 0;
+
+    int32_t tmpTab[PL_TAB_SIZE] = {0};
+    ri.Printf(PRINT_ALL, "\n\n-----------------------------------------------------\n"); 
+    for(i = 0; i < PL_TAB_SIZE; ++i)
+    {
+        struct PipelineParameter_t * pRoot = plHashTable[i];
+
+        while(pRoot != NULL)
+        {
+
+            ri.Printf(PRINT_ALL, "face culling:%d, shader type:%d, ", 
+                    pRoot->key.face_culling, pRoot->key.shader_type);
+
+            ri.Printf(PRINT_ALL, "polygon offset:%d, clipping plane:%d, isMirror:%d, state_bits:%x\n", 
+                    pRoot->key.polygon_offset, pRoot->key.clipping_plane, pRoot->key.mirror, pRoot->key.state_bits);
+
+            ++tmpTab[i];
+
+            pRoot = pRoot->next;
+        }
+    }
+
+    quicksort(tmpTab, 0, PL_TAB_SIZE-1);
+
+    int count = 0;
+    int total = 0;
+
+    for(i = 0; i < PL_TAB_SIZE; ++i)
+    {
+        if(tmpTab[i]) {
+            ++count;
+            total += tmpTab[i];
+        }
+    }
+
+    ri.Printf(PRINT_ALL, "\n Total %d pipeline created, hash Table used: %d/%d\n",
+            total, count, PL_TAB_SIZE);
+
+    ri.Printf(PRINT_ALL, "\n Top 10 Collision: %d, %d, %d, %d, %d, %d, %d, %d, %d, %d\n",
+            tmpTab[0], tmpTab[1], tmpTab[2], tmpTab[3], tmpTab[4],
+            tmpTab[5], tmpTab[6], tmpTab[7], tmpTab[8], tmpTab[9]);
+
+    ri.Printf(PRINT_ALL, "-----------------------------------------------------\n\n"); 
 }
 
 
@@ -189,12 +240,10 @@ void R_PipelineList_f(void)
 // transformation matrix to the vertex shader, or to create texture samplers
 // in the fragment shader.
 
-
-
-void vk_createPipelineLayout(void)
+void vk_createPipelineLayout(VkPipelineLayout * pPLayout)
 {
-    ri.Printf(PRINT_ALL, " Create ipeline layout. \n");
- 
+    ri.Printf(PRINT_ALL, " Create pipeline layout. \n");
+
     VkPushConstantRange push_range;
     push_range.stageFlags = VK_SHADER_STAGE_VERTEX_BIT;
     push_range.offset = 0;
@@ -237,17 +286,15 @@ void vk_createPipelineLayout(void)
     // shader stages and shader resources. 
     //
     // Each pipeline is created using a pipeline layout.
-    VK_CHECK( qvkCreatePipelineLayout(vk.device, &desc, NULL, &vk.pipeline_layout) );
+    VK_CHECK( qvkCreatePipelineLayout(vk.device, &desc, NULL, pPLayout) );
 }
+
 
 void vk_destroy_pipeline_layout(void)
 {
-    qvkDestroyPipelineLayout(vk.device, vk.pipeline_layout, NULL);
+    ri.Printf(PRINT_ALL, " Destroy vk.pipeline_layout. \n");
+    NO_CHECK( qvkDestroyPipelineLayout(vk.device, vk.pipeline_layout, NULL) );
 }
-
-struct Specialization_Data {
-    int32_t alpha_test_func;
-};
 
 
 void vk_create_pipeline(
@@ -259,10 +306,8 @@ void vk_create_pipeline(
         VkBool32 mirror,
         VkBool32 polygon_offset,
         VkBool32 isLine, 
-        VkPipeline* pPipeLine)
+        VkPipeline* const pPipeLine)
 {
-
-
     // Two stages: vs and fs
     VkPipelineShaderStageCreateInfo shaderStages[2];
 
@@ -272,7 +317,7 @@ void vk_create_pipeline(
     shaderStages[0].pName = "main";
     shaderStages[0].pNext = NULL;
     shaderStages[0].flags = 0;
-	shaderStages[0].pSpecializationInfo = NULL;
+    shaderStages[0].pSpecializationInfo = NULL;
 
     shaderStages[1].sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
     shaderStages[1].stage = VK_SHADER_STAGE_FRAGMENT_BIT;
@@ -282,7 +327,11 @@ void vk_create_pipeline(
     shaderStages[1].flags = 0;
     shaderStages[1].pSpecializationInfo = NULL;
 
-    
+    struct Specialization_Data {
+        int32_t alpha_test_func;
+    };
+
+
     struct Specialization_Data specialization_data;
     VkSpecializationMapEntry specialization_entries;
     VkSpecializationInfo specialization_info;
@@ -329,14 +378,14 @@ void vk_create_pipeline(
         // at pipeline creation by specifying different values fot the constants
         // used in it. This is more effient than configuring the shader using 
         // variables at render time, because the compiler can do optimizations.
-  
+
         shaderStages[1].pSpecializationInfo = &specialization_info;
     }
 
 
     vk_specifyShaderModule(shader_type, clipping_plane, &shaderStages[0].module, &shaderStages[1].module);
 
-	// ============== Vertex Input Description =================
+    // ============== Vertex Input Description =================
     // Applications specify vertex input attribute and vertex input binding
     // descriptions as part of graphics pipeline creation	
     // A vertex binding describes at which rate to load data
@@ -387,50 +436,52 @@ void vk_create_pipeline(
     attribs[3].offset = 0;
 
 
-	VkPipelineVertexInputStateCreateInfo vertex_input_state;
-	vertex_input_state.sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;
-	vertex_input_state.pNext = NULL;
-	vertex_input_state.flags = 0;
-	vertex_input_state.vertexBindingDescriptionCount = (shader_type == ST_SINGLE_TEXTURE) ? 3 : 4;
-	vertex_input_state.pVertexBindingDescriptions = bindings;
-	vertex_input_state.vertexAttributeDescriptionCount = (shader_type == ST_SINGLE_TEXTURE) ? 3 : 4;
-	vertex_input_state.pVertexAttributeDescriptions = attribs;
+    VkPipelineVertexInputStateCreateInfo vertex_input_state;
+    vertex_input_state.sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;
+    vertex_input_state.pNext = NULL;
+    vertex_input_state.flags = 0;
+    vertex_input_state.vertexBindingDescriptionCount = (shader_type == ST_SINGLE_TEXTURE) ? 3 : 4;
+    vertex_input_state.pVertexBindingDescriptions = bindings;
+    vertex_input_state.vertexAttributeDescriptionCount = (shader_type == ST_SINGLE_TEXTURE) ? 3 : 4;
+    vertex_input_state.pVertexAttributeDescriptions = attribs;
 
-	//
-	// Primitive assembly.
-	//
-	VkPipelineInputAssemblyStateCreateInfo input_assembly_state;
-	input_assembly_state.sType = VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO;
-	input_assembly_state.pNext = NULL;
-	input_assembly_state.flags = 0;
-	input_assembly_state.topology = isLine ? VK_PRIMITIVE_TOPOLOGY_LINE_LIST : VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
-	input_assembly_state.primitiveRestartEnable = VK_FALSE;
+    //
+    // Primitive assembly.
+    //
+    VkPipelineInputAssemblyStateCreateInfo input_assembly_state;
+    input_assembly_state.sType = VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO;
+    input_assembly_state.pNext = NULL;
+    input_assembly_state.flags = 0;
+    input_assembly_state.topology = isLine ? VK_PRIMITIVE_TOPOLOGY_LINE_LIST : VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
+    input_assembly_state.primitiveRestartEnable = VK_FALSE;
 
-	//
-	// Viewport.
-	//
-	VkPipelineViewportStateCreateInfo viewport_state;
-	viewport_state.sType = VK_STRUCTURE_TYPE_PIPELINE_VIEWPORT_STATE_CREATE_INFO;
-	viewport_state.pNext = NULL;
-	viewport_state.flags = 0;
-	viewport_state.viewportCount = 1;
-	viewport_state.pViewports = NULL; // dynamic viewport state
-	viewport_state.scissorCount = 1;
-	viewport_state.pScissors = NULL; // dynamic scissor state
+    //
+    // Viewport.
+    //
+    VkPipelineViewportStateCreateInfo viewport_state;
+    viewport_state.sType = VK_STRUCTURE_TYPE_PIPELINE_VIEWPORT_STATE_CREATE_INFO;
+    viewport_state.pNext = NULL;
+    viewport_state.flags = 0;
+    viewport_state.viewportCount = 1;
+    viewport_state.pViewports = NULL; // dynamic viewport state
 
-	//
-	// Rasterization.
-	// The rasterizer takes the geometry that is shaped by the vertices
+    viewport_state.scissorCount = 1;
+    viewport_state.pScissors = &vk.renderArea; // dynamic scissor state
+
+    //
+    // Rasterization.
+    // 
+    // The rasterizer takes the geometry that is shaped by the vertices
     // from the vertex shader and turns it into fragments to be colored
     // by the fragment shader. It also performs depth testing, face culling
     // and the scissor test.
-	VkPipelineRasterizationStateCreateInfo rasterization_state;
-	rasterization_state.sType = VK_STRUCTURE_TYPE_PIPELINE_RASTERIZATION_STATE_CREATE_INFO;
-	rasterization_state.pNext = NULL;
-	rasterization_state.flags = 0;
-	rasterization_state.depthClampEnable = VK_FALSE;
-	rasterization_state.rasterizerDiscardEnable = VK_FALSE;
-	rasterization_state.polygonMode = (state_bits & GLS_POLYMODE_LINE) ? VK_POLYGON_MODE_LINE : VK_POLYGON_MODE_FILL;
+    VkPipelineRasterizationStateCreateInfo rasterization_state;
+    rasterization_state.sType = VK_STRUCTURE_TYPE_PIPELINE_RASTERIZATION_STATE_CREATE_INFO;
+    rasterization_state.pNext = NULL;
+    rasterization_state.flags = 0;
+    rasterization_state.depthClampEnable = VK_FALSE;
+    rasterization_state.rasterizerDiscardEnable = VK_FALSE;
+    rasterization_state.polygonMode = (state_bits & GLS_POLYMODE_LINE) ? VK_POLYGON_MODE_LINE : VK_POLYGON_MODE_FILL;
 
     switch ( face_culling )
     {
@@ -447,80 +498,81 @@ void vk_create_pipeline(
             break;
     }
 
-    
+
     // how fragments are generated for geometry.
-	rasterization_state.frontFace = VK_FRONT_FACE_CLOCKWISE; // Q3 defaults to clockwise vertex order
+    // 
+    // Q3 defaults to clockwise vertex order
+    rasterization_state.frontFace = VK_FRONT_FACE_CLOCKWISE; 
+    rasterization_state.depthBiasEnable = polygon_offset ? VK_TRUE : VK_FALSE;
+    rasterization_state.depthBiasConstantFactor = 0.0f; // dynamic depth bias state
+    rasterization_state.depthBiasClamp = 0.0f; // dynamic depth bias state
+    rasterization_state.depthBiasSlopeFactor = 0.0f; // dynamic depth bias state
+    rasterization_state.lineWidth = 1.0f;
 
-	rasterization_state.depthBiasEnable = polygon_offset ? VK_TRUE : VK_FALSE;
-	rasterization_state.depthBiasConstantFactor = 0.0f; // dynamic depth bias state
-	rasterization_state.depthBiasClamp = 0.0f; // dynamic depth bias state
-	rasterization_state.depthBiasSlopeFactor = 0.0f; // dynamic depth bias state
-	rasterization_state.lineWidth = 1.0f;
-
-	VkPipelineMultisampleStateCreateInfo multisample_state;
-	multisample_state.sType = VK_STRUCTURE_TYPE_PIPELINE_MULTISAMPLE_STATE_CREATE_INFO;
-	multisample_state.pNext = NULL;
-	multisample_state.flags = 0;
-	multisample_state.rasterizationSamples = VK_SAMPLE_COUNT_1_BIT;
-	multisample_state.sampleShadingEnable = VK_FALSE;
-	multisample_state.minSampleShading = 1.0f;
-	multisample_state.pSampleMask = NULL;
-	multisample_state.alphaToCoverageEnable = VK_FALSE;
-	multisample_state.alphaToOneEnable = VK_FALSE;
+    VkPipelineMultisampleStateCreateInfo multisample_state;
+    multisample_state.sType = VK_STRUCTURE_TYPE_PIPELINE_MULTISAMPLE_STATE_CREATE_INFO;
+    multisample_state.pNext = NULL;
+    multisample_state.flags = 0;
+    multisample_state.rasterizationSamples = VK_SAMPLE_COUNT_1_BIT;
+    multisample_state.sampleShadingEnable = VK_FALSE;
+    multisample_state.minSampleShading = 1.0f;
+    multisample_state.pSampleMask = NULL;
+    multisample_state.alphaToCoverageEnable = VK_FALSE;
+    multisample_state.alphaToOneEnable = VK_FALSE;
 
     // If you are using a depth and/or stencil buffer, then you also need to configure
     // the depth and stencil tests.
-	VkPipelineDepthStencilStateCreateInfo depth_stencil_state;
-	depth_stencil_state.sType = VK_STRUCTURE_TYPE_PIPELINE_DEPTH_STENCIL_STATE_CREATE_INFO;
-	depth_stencil_state.pNext = NULL;
-	depth_stencil_state.flags = 0;
-	depth_stencil_state.depthTestEnable = (state_bits & GLS_DEPTHTEST_DISABLE) ? VK_FALSE : VK_TRUE;
-	depth_stencil_state.depthWriteEnable = (state_bits & GLS_DEPTHMASK_TRUE) ? VK_TRUE : VK_FALSE;
-	depth_stencil_state.depthCompareOp = (state_bits & GLS_DEPTHFUNC_EQUAL) ? VK_COMPARE_OP_EQUAL : VK_COMPARE_OP_LESS_OR_EQUAL;
-	depth_stencil_state.depthBoundsTestEnable = VK_FALSE;
-	
+    VkPipelineDepthStencilStateCreateInfo depth_stencil_state;
+    depth_stencil_state.sType = VK_STRUCTURE_TYPE_PIPELINE_DEPTH_STENCIL_STATE_CREATE_INFO;
+    depth_stencil_state.pNext = NULL;
+    depth_stencil_state.flags = 0;
+    depth_stencil_state.depthTestEnable = (state_bits & GLS_DEPTHTEST_DISABLE) ? VK_FALSE : VK_TRUE;
+    depth_stencil_state.depthWriteEnable = (state_bits & GLS_DEPTHMASK_TRUE) ? VK_TRUE : VK_FALSE;
+    depth_stencil_state.depthCompareOp = (state_bits & GLS_DEPTHFUNC_EQUAL) ? VK_COMPARE_OP_EQUAL : VK_COMPARE_OP_LESS_OR_EQUAL;
+    depth_stencil_state.depthBoundsTestEnable = VK_FALSE;
+
     switch (shadow_phase) 
     {
         case SHADOWS_RENDERING_DISABLED:
-        {
-            depth_stencil_state.stencilTestEnable = VK_FALSE;
-	    	memset(&depth_stencil_state.front, 0, sizeof(depth_stencil_state.front));
-		    memset(&depth_stencil_state.back, 0, sizeof(depth_stencil_state.back));
-        }break;
+            {
+                depth_stencil_state.stencilTestEnable = VK_FALSE;
+                memset(&depth_stencil_state.front, 0, sizeof(depth_stencil_state.front));
+                memset(&depth_stencil_state.back, 0, sizeof(depth_stencil_state.back));
+            }break;
         case SHADOWS_RENDERING_EDGES:
-        {
-            depth_stencil_state.stencilTestEnable = VK_TRUE;
+            {
+                depth_stencil_state.stencilTestEnable = VK_TRUE;
 
-        	depth_stencil_state.front.failOp = VK_STENCIL_OP_KEEP;
-            depth_stencil_state.front.passOp = ( face_culling == CT_FRONT_SIDED ? 
-              VK_STENCIL_OP_INCREMENT_AND_CLAMP : VK_STENCIL_OP_DECREMENT_AND_CLAMP );
-            depth_stencil_state.front.depthFailOp = VK_STENCIL_OP_KEEP;
-            depth_stencil_state.front.compareOp = VK_COMPARE_OP_ALWAYS;
-            depth_stencil_state.front.compareMask = 255;
-            depth_stencil_state.front.writeMask = 255;
-            depth_stencil_state.front.reference = 0;
+                depth_stencil_state.front.failOp = VK_STENCIL_OP_KEEP;
+                depth_stencil_state.front.passOp = ( face_culling == CT_FRONT_SIDED ? 
+                        VK_STENCIL_OP_INCREMENT_AND_CLAMP : VK_STENCIL_OP_DECREMENT_AND_CLAMP );
+                depth_stencil_state.front.depthFailOp = VK_STENCIL_OP_KEEP;
+                depth_stencil_state.front.compareOp = VK_COMPARE_OP_ALWAYS;
+                depth_stencil_state.front.compareMask = 255;
+                depth_stencil_state.front.writeMask = 255;
+                depth_stencil_state.front.reference = 0;
 
-            depth_stencil_state.back = depth_stencil_state.front;
-        }break;
-        
+                depth_stencil_state.back = depth_stencil_state.front;
+            }break;
+
         case SHADOWS_RENDERING_FULLSCREEN_QUAD:
-        {
-            depth_stencil_state.stencilTestEnable = VK_TRUE;
+            {
+                depth_stencil_state.stencilTestEnable = VK_TRUE;
 
-            depth_stencil_state.front.failOp = VK_STENCIL_OP_KEEP;
-            depth_stencil_state.front.passOp = VK_STENCIL_OP_KEEP;
-            depth_stencil_state.front.depthFailOp = VK_STENCIL_OP_KEEP;
-            depth_stencil_state.front.compareOp = VK_COMPARE_OP_NOT_EQUAL;
-            depth_stencil_state.front.compareMask = 255;
-            depth_stencil_state.front.writeMask = 255;
-            depth_stencil_state.front.reference = 0;
+                depth_stencil_state.front.failOp = VK_STENCIL_OP_KEEP;
+                depth_stencil_state.front.passOp = VK_STENCIL_OP_KEEP;
+                depth_stencil_state.front.depthFailOp = VK_STENCIL_OP_KEEP;
+                depth_stencil_state.front.compareOp = VK_COMPARE_OP_NOT_EQUAL;
+                depth_stencil_state.front.compareMask = 255;
+                depth_stencil_state.front.writeMask = 255;
+                depth_stencil_state.front.reference = 0;
 
-            depth_stencil_state.back = depth_stencil_state.front;
-        }break;
+                depth_stencil_state.back = depth_stencil_state.front;
+            }break;
     }
 
-	depth_stencil_state.minDepthBounds = 0.0;
-	depth_stencil_state.maxDepthBounds = 0.0;
+    depth_stencil_state.minDepthBounds = 0.0;
+    depth_stencil_state.maxDepthBounds = 0.0;
 
 
     //After a fragment shader has returned a color, it needs to be combined
@@ -531,100 +583,100 @@ void vk_create_pipeline(
     // 2) combine the old and the new value using a bitwise operation.
 
     // contains the configuraturation per attached framebuffer
-    
-	VkPipelineColorBlendAttachmentState attachment_blend_state = {};
-	attachment_blend_state.blendEnable = (state_bits & (GLS_SRCBLEND_BITS | GLS_DSTBLEND_BITS)) ? VK_TRUE : VK_FALSE;
 
-	if (shadow_phase == SHADOWS_RENDERING_EDGES)
-		attachment_blend_state.colorWriteMask = 0;
-	else
-		attachment_blend_state.colorWriteMask = VK_COLOR_COMPONENT_R_BIT | VK_COLOR_COMPONENT_G_BIT | VK_COLOR_COMPONENT_B_BIT | VK_COLOR_COMPONENT_A_BIT;
-	
-	if (attachment_blend_state.blendEnable)
+    VkPipelineColorBlendAttachmentState attachment_blend_state = {};
+    attachment_blend_state.blendEnable = (state_bits & (GLS_SRCBLEND_BITS | GLS_DSTBLEND_BITS)) ? VK_TRUE : VK_FALSE;
+
+    if (shadow_phase == SHADOWS_RENDERING_EDGES)
+        attachment_blend_state.colorWriteMask = 0;
+    else
+        attachment_blend_state.colorWriteMask = VK_COLOR_COMPONENT_R_BIT | VK_COLOR_COMPONENT_G_BIT | VK_COLOR_COMPONENT_B_BIT | VK_COLOR_COMPONENT_A_BIT;
+
+    if (attachment_blend_state.blendEnable)
     {
-		switch (state_bits & GLS_SRCBLEND_BITS)
+        switch (state_bits & GLS_SRCBLEND_BITS)
         {
-			case GLS_SRCBLEND_ZERO:
-				attachment_blend_state.srcColorBlendFactor = VK_BLEND_FACTOR_ZERO;
-				break;
-			case GLS_SRCBLEND_ONE:
-				attachment_blend_state.srcColorBlendFactor = VK_BLEND_FACTOR_ONE;
-				break;
-			case GLS_SRCBLEND_DST_COLOR:
-				attachment_blend_state.srcColorBlendFactor = VK_BLEND_FACTOR_DST_COLOR;
-				break;
-			case GLS_SRCBLEND_ONE_MINUS_DST_COLOR:
-				attachment_blend_state.srcColorBlendFactor = VK_BLEND_FACTOR_ONE_MINUS_DST_COLOR;
-				break;
-			case GLS_SRCBLEND_SRC_ALPHA:
-				attachment_blend_state.srcColorBlendFactor = VK_BLEND_FACTOR_SRC_ALPHA;
-				break;
-			case GLS_SRCBLEND_ONE_MINUS_SRC_ALPHA:
-				attachment_blend_state.srcColorBlendFactor = VK_BLEND_FACTOR_ONE_MINUS_SRC_ALPHA;
-				break;
-			case GLS_SRCBLEND_DST_ALPHA:
-				attachment_blend_state.srcColorBlendFactor = VK_BLEND_FACTOR_DST_ALPHA;
-				break;
-			case GLS_SRCBLEND_ONE_MINUS_DST_ALPHA:
-				attachment_blend_state.srcColorBlendFactor = VK_BLEND_FACTOR_ONE_MINUS_DST_ALPHA;
-				break;
-			case GLS_SRCBLEND_ALPHA_SATURATE:
-				attachment_blend_state.srcColorBlendFactor = VK_BLEND_FACTOR_SRC_ALPHA_SATURATE;
-				break;
-			default:
-				ri.Error( ERR_DROP, "create_pipeline: invalid src blend state bits\n" );
-				break;
-		}
-		switch (state_bits & GLS_DSTBLEND_BITS)
+            case GLS_SRCBLEND_ZERO:
+                attachment_blend_state.srcColorBlendFactor = VK_BLEND_FACTOR_ZERO;
+                break;
+            case GLS_SRCBLEND_ONE:
+                attachment_blend_state.srcColorBlendFactor = VK_BLEND_FACTOR_ONE;
+                break;
+            case GLS_SRCBLEND_DST_COLOR:
+                attachment_blend_state.srcColorBlendFactor = VK_BLEND_FACTOR_DST_COLOR;
+                break;
+            case GLS_SRCBLEND_ONE_MINUS_DST_COLOR:
+                attachment_blend_state.srcColorBlendFactor = VK_BLEND_FACTOR_ONE_MINUS_DST_COLOR;
+                break;
+            case GLS_SRCBLEND_SRC_ALPHA:
+                attachment_blend_state.srcColorBlendFactor = VK_BLEND_FACTOR_SRC_ALPHA;
+                break;
+            case GLS_SRCBLEND_ONE_MINUS_SRC_ALPHA:
+                attachment_blend_state.srcColorBlendFactor = VK_BLEND_FACTOR_ONE_MINUS_SRC_ALPHA;
+                break;
+            case GLS_SRCBLEND_DST_ALPHA:
+                attachment_blend_state.srcColorBlendFactor = VK_BLEND_FACTOR_DST_ALPHA;
+                break;
+            case GLS_SRCBLEND_ONE_MINUS_DST_ALPHA:
+                attachment_blend_state.srcColorBlendFactor = VK_BLEND_FACTOR_ONE_MINUS_DST_ALPHA;
+                break;
+            case GLS_SRCBLEND_ALPHA_SATURATE:
+                attachment_blend_state.srcColorBlendFactor = VK_BLEND_FACTOR_SRC_ALPHA_SATURATE;
+                break;
+            default:
+                ri.Error( ERR_DROP, "create_pipeline: invalid src blend state bits\n" );
+                break;
+        }
+        switch (state_bits & GLS_DSTBLEND_BITS)
         {
-			case GLS_DSTBLEND_ZERO:
-				attachment_blend_state.dstColorBlendFactor = VK_BLEND_FACTOR_ZERO;
-				break;
-			case GLS_DSTBLEND_ONE:
-				attachment_blend_state.dstColorBlendFactor = VK_BLEND_FACTOR_ONE;
-				break;
-			case GLS_DSTBLEND_SRC_COLOR:
-				attachment_blend_state.dstColorBlendFactor = VK_BLEND_FACTOR_SRC_COLOR;
-				break;
-			case GLS_DSTBLEND_ONE_MINUS_SRC_COLOR:
-				attachment_blend_state.dstColorBlendFactor = VK_BLEND_FACTOR_ONE_MINUS_SRC_COLOR;
-				break;
-			case GLS_DSTBLEND_SRC_ALPHA:
-				attachment_blend_state.dstColorBlendFactor = VK_BLEND_FACTOR_SRC_ALPHA;
-				break;
-			case GLS_DSTBLEND_ONE_MINUS_SRC_ALPHA:
-				attachment_blend_state.dstColorBlendFactor = VK_BLEND_FACTOR_ONE_MINUS_SRC_ALPHA;
-				break;
-			case GLS_DSTBLEND_DST_ALPHA:
-				attachment_blend_state.dstColorBlendFactor = VK_BLEND_FACTOR_DST_ALPHA;
-				break;
-			case GLS_DSTBLEND_ONE_MINUS_DST_ALPHA:
-				attachment_blend_state.dstColorBlendFactor = VK_BLEND_FACTOR_ONE_MINUS_DST_ALPHA;
-				break;
-			default:
-				ri.Error( ERR_DROP, "create_pipeline: invalid dst blend state bits\n" );
-				break;
-		}
+            case GLS_DSTBLEND_ZERO:
+                attachment_blend_state.dstColorBlendFactor = VK_BLEND_FACTOR_ZERO;
+                break;
+            case GLS_DSTBLEND_ONE:
+                attachment_blend_state.dstColorBlendFactor = VK_BLEND_FACTOR_ONE;
+                break;
+            case GLS_DSTBLEND_SRC_COLOR:
+                attachment_blend_state.dstColorBlendFactor = VK_BLEND_FACTOR_SRC_COLOR;
+                break;
+            case GLS_DSTBLEND_ONE_MINUS_SRC_COLOR:
+                attachment_blend_state.dstColorBlendFactor = VK_BLEND_FACTOR_ONE_MINUS_SRC_COLOR;
+                break;
+            case GLS_DSTBLEND_SRC_ALPHA:
+                attachment_blend_state.dstColorBlendFactor = VK_BLEND_FACTOR_SRC_ALPHA;
+                break;
+            case GLS_DSTBLEND_ONE_MINUS_SRC_ALPHA:
+                attachment_blend_state.dstColorBlendFactor = VK_BLEND_FACTOR_ONE_MINUS_SRC_ALPHA;
+                break;
+            case GLS_DSTBLEND_DST_ALPHA:
+                attachment_blend_state.dstColorBlendFactor = VK_BLEND_FACTOR_DST_ALPHA;
+                break;
+            case GLS_DSTBLEND_ONE_MINUS_DST_ALPHA:
+                attachment_blend_state.dstColorBlendFactor = VK_BLEND_FACTOR_ONE_MINUS_DST_ALPHA;
+                break;
+            default:
+                ri.Error( ERR_DROP, "create_pipeline: invalid dst blend state bits\n" );
+                break;
+        }
 
-		attachment_blend_state.srcAlphaBlendFactor = attachment_blend_state.srcColorBlendFactor;
-		attachment_blend_state.dstAlphaBlendFactor = attachment_blend_state.dstColorBlendFactor;
-		attachment_blend_state.colorBlendOp = VK_BLEND_OP_ADD;
-		attachment_blend_state.alphaBlendOp = VK_BLEND_OP_ADD;
-	}
+        attachment_blend_state.srcAlphaBlendFactor = attachment_blend_state.srcColorBlendFactor;
+        attachment_blend_state.dstAlphaBlendFactor = attachment_blend_state.dstColorBlendFactor;
+        attachment_blend_state.colorBlendOp = VK_BLEND_OP_ADD;
+        attachment_blend_state.alphaBlendOp = VK_BLEND_OP_ADD;
+    }
 
     // Contains the global color blending settings
-	VkPipelineColorBlendStateCreateInfo blend_state;
-	blend_state.sType = VK_STRUCTURE_TYPE_PIPELINE_COLOR_BLEND_STATE_CREATE_INFO;
-	blend_state.pNext = NULL;
-	blend_state.flags = 0;
-	blend_state.logicOpEnable = VK_FALSE;
-	blend_state.logicOp = VK_LOGIC_OP_COPY;
-	blend_state.attachmentCount = 1;
-	blend_state.pAttachments = &attachment_blend_state;
-	blend_state.blendConstants[0] = 0.0f;
-	blend_state.blendConstants[1] = 0.0f;
-	blend_state.blendConstants[2] = 0.0f;
-	blend_state.blendConstants[3] = 0.0f;
+    VkPipelineColorBlendStateCreateInfo blend_state;
+    blend_state.sType = VK_STRUCTURE_TYPE_PIPELINE_COLOR_BLEND_STATE_CREATE_INFO;
+    blend_state.pNext = NULL;
+    blend_state.flags = 0;
+    blend_state.logicOpEnable = VK_FALSE;
+    blend_state.logicOp = VK_LOGIC_OP_COPY;
+    blend_state.attachmentCount = 1;
+    blend_state.pAttachments = &attachment_blend_state;
+    blend_state.blendConstants[0] = 0.0f;
+    blend_state.blendConstants[1] = 0.0f;
+    blend_state.blendConstants[2] = 0.0f;
+    blend_state.blendConstants[3] = 0.0f;
 
 
     // A limited amount of the state that we've specified in the previous
@@ -632,79 +684,79 @@ void vk_create_pipeline(
     // Examples are the size of the viewport, line width and blend constants
     // If we want to do that, we have to fill in a VkPipelineDynamicStateCreateInfo
     // structure like this.
-	VkPipelineDynamicStateCreateInfo dynamic_state;
-	dynamic_state.sType = VK_STRUCTURE_TYPE_PIPELINE_DYNAMIC_STATE_CREATE_INFO;
-	dynamic_state.pNext = NULL;
-	dynamic_state.flags = 0;
-	dynamic_state.dynamicStateCount = 3;
-	const VkDynamicState dynamic_state_array[3] = { VK_DYNAMIC_STATE_VIEWPORT, VK_DYNAMIC_STATE_SCISSOR, VK_DYNAMIC_STATE_DEPTH_BIAS };
-	dynamic_state.pDynamicStates = dynamic_state_array;
+    VkPipelineDynamicStateCreateInfo dynamic_state;
+    dynamic_state.sType = VK_STRUCTURE_TYPE_PIPELINE_DYNAMIC_STATE_CREATE_INFO;
+    dynamic_state.pNext = NULL;
+    dynamic_state.flags = 0;
+    dynamic_state.dynamicStateCount = 2;
+    const VkDynamicState dynamic_state_array[2] = { VK_DYNAMIC_STATE_VIEWPORT, VK_DYNAMIC_STATE_DEPTH_BIAS };
+    dynamic_state.pDynamicStates = dynamic_state_array;
 
 
-	VkGraphicsPipelineCreateInfo create_info;
-	create_info.sType = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO;
+    VkGraphicsPipelineCreateInfo create_info;
+    create_info.sType = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO;
     // pNext is NULL or a pointer to an extension-specific structure.
-	create_info.pNext = NULL;
+    create_info.pNext = NULL;
     // flags is a bitmask of VkPipelineCreateFlagBits
     // specifying how the pipeline will be generated.
-	create_info.flags = 0;
+    create_info.flags = 0;
     // stageCount is the number of entries in the pStages array.
-	create_info.stageCount = 2;
+    create_info.stageCount = 2;
     // pStages is an array of size stageCount structures of type
     // VkPipelineShaderStageCreateInfo describing the set of the 
     // shader stages to be included in the graphics pipeline.
-	create_info.pStages = shaderStages;
+    create_info.pStages = shaderStages;
     // pVertexInputState is a pointer to an instance of the
     // VkPipelineVertexInputStateCreateInfo structure.
-	create_info.pVertexInputState = &vertex_input_state;
+    create_info.pVertexInputState = &vertex_input_state;
     // pInputAssemblyState is a pointer to an instance of the 
     // VkPipelineInputAssemblyStateCreateInfo structure which
     // determines input assembly behavior, as described in Drawing Commands.
-	create_info.pInputAssemblyState = &input_assembly_state;
+    create_info.pInputAssemblyState = &input_assembly_state;
     // pTessellationState is a pointer to an instance of the 
     // VkPipelineTessellationStateCreateInfo structure, and is ignored 
     // if the pipeline does not include a tessellation control shader 
     // stage and tessellation evaluation shader stage
-	create_info.pTessellationState = NULL;
+    create_info.pTessellationState = NULL;
     // pViewportState is a pointer to an instance of the
     // VkPipelineViewportStateCreateInfo structure, and 
     // is ignored if the pipeline has rasterization disabled.
-	create_info.pViewportState = &viewport_state;
+    create_info.pViewportState = &viewport_state;
     // pRasterizationState is a pointer to an instance of the
     // VkPipelineRasterizationStateCreateInfo structure.
-	create_info.pRasterizationState = &rasterization_state;
+    create_info.pRasterizationState = &rasterization_state;
     // pMultisampleState is a pointer to an instance of the 
     // VkPipelineMultisampleStateCreateInfo, and is ignored
     // if the pipeline has rasterization disabled.
-	create_info.pMultisampleState = &multisample_state;
+    create_info.pMultisampleState = &multisample_state;
 
     // pDepthStencilState is a pointer to an instance of the
     // VkPipelineDepthStencilStateCreateInfe structure, and is ignored
     // if the pipeline has rasterization disabled or 
     // if the subpass of the render pass the pipeline is created
     // against does not use a depth/stencil attachment.
-	create_info.pDepthStencilState = &depth_stencil_state;
+    create_info.pDepthStencilState = &depth_stencil_state;
 
     // pColorBlendState is a pointer to an instance of the 
     // VkPipelineColorBlendStateCreateInfo structure, and is ignored 
     // if the pipeline has rasterization disabled or if the subpass of
     // the render pass the pipeline is created against does not use 
     // any color attachments.
-	create_info.pColorBlendState = &blend_state;
+    create_info.pColorBlendState = &blend_state;
 
     // pDynamicState is a pointer to VkPipelineDynamicStateCreateInfo and
     // is used to indicate which properties of the pipeline state object 
     // are dynamic and can be changed independently of the pipeline state.
     // This can be NULL, which means no state in the pipeline is considered dynamic.
-	create_info.pDynamicState = &dynamic_state;
+    create_info.pDynamicState = &dynamic_state;
     // layout is the description of binding locations used 
     // by both the pipeline and descriptor sets used with the pipeline.
-	create_info.layout = vk.pipeline_layout;
+    create_info.layout = vk.pipeline_layout;
     // renderPass is a handle to a render pass object describing the environment
     // in which the pipeline will be used; the pipeline must only be used with
     // an instance of any render pass compatible with the one provided. 
     // See Render Pass Compatibility for more information.
-	create_info.renderPass = vk.render_pass;
+    create_info.renderPass = vk.render_pass;
 
     // A pipeline derivative is a child pipeline created from a parent pipeline,
     // where the child and parent are expected to have much commonality. 
@@ -714,10 +766,10 @@ void vk_create_pipeline(
     // parent.
     // subpass is the index of the subpass in the render pass 
     // where this pipeline will be used.
-	create_info.subpass = 0;
+    create_info.subpass = 0;
     // basePipelineHandle is a pipeline to derive from.
-	create_info.basePipelineHandle = VK_NULL_HANDLE;
-	create_info.basePipelineIndex = -1;
+    create_info.basePipelineHandle = VK_NULL_HANDLE;
+    create_info.basePipelineIndex = -1;
 
     // Graphics pipelines consist of multiple shader stages, 
     // multiple fixed-function pipeline stages, and a pipeline layout.
@@ -726,7 +778,7 @@ void vk_create_pipeline(
     // TODO: provide the handle of a valid pipeline cache object, 
     // 1 is the length of the pCreateInfos and pPipelines arrays.
     //
-	VK_CHECK(qvkCreateGraphicsPipelines(vk.device, VK_NULL_HANDLE, 1, &create_info, NULL, pPipeLine));
+    VK_CHECK( qvkCreateGraphicsPipelines(vk.device, VK_NULL_HANDLE, 1, &create_info, NULL, pPipeLine) );
 }
 
 
@@ -745,147 +797,21 @@ void vk_create_shader_stage_pipelines(shaderStage_t *pStage, shader_t* pShader)
     else
         ri.Error(ERR_FATAL, "Vulkan: could not create pipelines for q3 shader '%s'\n", pShader->name);
 
-    struct PipelineParameter_t plPar;
-    struct pipeline_tree_s * plTr = NULL; 
+    struct ParmsKey plPar;
     
 
     plPar.state_bits = pStage->stateBits; 
     plPar.face_culling = pShader->cullType;
     plPar.shader_type = def_shader_type; 
-    plPar.shadow_phase = SHADOWS_RENDERING_DISABLED;
-    plPar.line_primitives = VK_FALSE;
     plPar.polygon_offset = pShader->polygonOffset;
-
-    plPar.clipping_plane = VK_FALSE;
-    plPar.mirror = VK_FALSE; 
-
-/*
-    vk_find_pipeline( pStage->stateBits, def_shader_type, pShader->cullType, SHADOWS_RENDERING_DISABLED,
-            VK_FALSE, VK_FALSE, pShader->polygonOffset, VK_FALSE, &pStage->vk_pipeline);
-*/  
-    plTr = FindPipelineFromTree(pPlRoot, &plPar);
     
-    if(plTr == NULL)
-    {
-        vk_create_pipeline( 
-         plPar.state_bits, plPar.shader_type, plPar.face_culling, plPar.shadow_phase,
-         plPar.clipping_plane, plPar.mirror, plPar.polygon_offset, plPar.line_primitives, 
-         &plPar.pipeline );
-
-        InsertPipelineToTree(pPlRoot, &plPar);
-
-        pStage->vk_pipeline = plPar.pipeline;
-    }
-    else 
-    {
-        pStage->vk_pipeline = plTr->par.pipeline;
-    }
-
-    plPar.clipping_plane = VK_TRUE;
-/*
-    vk_find_pipeline( pStage->stateBits, def_shader_type, pShader->cullType, SHADOWS_RENDERING_DISABLED,
-            VK_TRUE, VK_FALSE, pShader->polygonOffset, VK_FALSE, &pStage->vk_portal_pipeline);
-*/
-    plTr = FindPipelineFromTree(pPlRoot, &plPar);
-    
-    if(plTr == NULL)
-    {
-        vk_create_pipeline( 
-         plPar.state_bits, plPar.shader_type, plPar.face_culling, plPar.shadow_phase,
-         plPar.clipping_plane, plPar.mirror, plPar.polygon_offset, plPar.line_primitives, 
-         &plPar.pipeline );
-
-        InsertPipelineToTree(pPlRoot, &plPar);
-
-        pStage->vk_portal_pipeline = plPar.pipeline;
-    }
-    else 
-    {
-        pStage->vk_portal_pipeline = plTr->par.pipeline;
-    }
- 
-    plPar.mirror = VK_TRUE;
-/*
-    vk_find_pipeline( pStage->stateBits, def_shader_type, pShader->cullType, SHADOWS_RENDERING_DISABLED,
-            VK_TRUE, VK_TRUE, pShader->polygonOffset, VK_FALSE, &pStage->vk_mirror_pipeline);
-*/
-    plTr = FindPipelineFromTree(pPlRoot, &plPar);
-    
-    if(plTr == NULL)
-    {
-        vk_create_pipeline( 
-         plPar.state_bits, plPar.shader_type, plPar.face_culling, plPar.shadow_phase,
-         plPar.clipping_plane, plPar.mirror, plPar.polygon_offset, plPar.line_primitives, 
-         &plPar.pipeline );
-
-        InsertPipelineToTree(pPlRoot, &plPar);
-
-        pStage->vk_mirror_pipeline = plPar.pipeline;
-    }
-    else 
-    {
-        pStage->vk_mirror_pipeline = plTr->par.pipeline;
-    }
-}
-
-
-void vk_destroyShaderStagePipeline(void)
-{
-    ri.Printf(PRINT_ALL, " Destroy %d shader stage pipeline. \n", s_numPipelines);
-    qvkDeviceWaitIdle(vk.device);
-
-    uint32_t i;
-    for(i = 0; i < s_numPipelines; ++i)
-        if(mem_alloced[i].par.pipeline != VK_NULL_HANDLE) {
-            qvkDestroyPipeline(vk.device, mem_alloced[i].par.pipeline, NULL);
-            mem_alloced[i].par.pipeline = VK_NULL_HANDLE;
-        }
-
-    memset(mem_alloced, 0, s_numPipelines);
-    s_numPipelines = 0;
-
-    if(pPlRoot != NULL)
-    {
-        DestroySearchTree(pPlRoot);
-        pPlRoot = NULL;
-    }
-}
-
-
-void vk_InitShaderStagePipeline(void)
-{
-
-    uint32_t i;
-    for(i = 0; i < s_numPipelines; ++i)
-        if(mem_alloced[i].par.pipeline != VK_NULL_HANDLE) {
-            qvkDestroyPipeline(vk.device, mem_alloced[i].par.pipeline, NULL);
-            mem_alloced[i].par.pipeline = VK_NULL_HANDLE;
-        }
-
-    memset(mem_alloced, 0, s_numPipelines);
-    s_numPipelines = 0;
-
-    if(pPlRoot != NULL)
-    {
-        DestroySearchTree(pPlRoot);
-        pPlRoot = NULL;
-    }
-    
-    struct PipelineParameter_t plPar;
-    
-    plPar.state_bits = 256; 
-    plPar.face_culling = CT_FRONT_SIDED;
-    plPar.shader_type = ST_SINGLE_TEXTURE; 
-    plPar.shadow_phase = SHADOWS_RENDERING_DISABLED;
-    plPar.line_primitives = VK_FALSE;
-    plPar.polygon_offset = VK_FALSE;
     plPar.clipping_plane = VK_FALSE;
     plPar.mirror = VK_FALSE;
+    pStage->vk_pipeline = FindPipeline(&plPar);
 
-    vk_create_pipeline( 
-            plPar.state_bits, plPar.shader_type, plPar.face_culling, plPar.shadow_phase,
-            plPar.clipping_plane, plPar.mirror, plPar.polygon_offset, plPar.line_primitives, 
-            &plPar.pipeline );
+    plPar.clipping_plane = VK_TRUE;
+    pStage->vk_portal_pipeline = FindPipeline(&plPar);
 
-    pPlRoot = InsertPipelineToTree(NULL, &plPar);
+    plPar.mirror = VK_TRUE;    
+    pStage->vk_mirror_pipeline = FindPipeline(&plPar);
 }

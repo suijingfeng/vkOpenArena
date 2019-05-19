@@ -48,7 +48,7 @@ void vk_createDebugPipelines(void)
     vk_create_pipeline( GLS_DEPTHTEST_DISABLE | GLS_SRCBLEND_SRC_ALPHA | GLS_DSTBLEND_ONE_MINUS_SRC_ALPHA, 
             ST_SINGLE_TEXTURE, CT_FRONT_SIDED, SHADOWS_RENDERING_DISABLED, 
             VK_FALSE, VK_FALSE, VK_FALSE, VK_FALSE,
-            &g_debugPipelines.tris );
+            &g_debugPipelines.images );
 
 }
 
@@ -56,6 +56,8 @@ void vk_createDebugPipelines(void)
 void vk_destroyDebugPipelines(void)
 {
     ri.Printf(PRINT_ALL, " Destroy debug stage pipeline. \n");
+
+    NO_CHECK( qvkDeviceWaitIdle(vk.device) );
 
 	qvkDestroyPipeline(vk.device, g_debugPipelines.tris, NULL);
 	qvkDestroyPipeline(vk.device, g_debugPipelines.tris_mirror, NULL);

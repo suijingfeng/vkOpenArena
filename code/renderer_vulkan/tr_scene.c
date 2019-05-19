@@ -23,7 +23,7 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #include "tr_globals.h"
 #include "tr_cvar.h"
 #include "ref_import.h"
-#include "../renderercommon/matrix_multiplication.h"
+#include "matrix_multiplication.h"
 #include "tr_light.h"
 #include "tr_surface.h"
 #include "tr_world.h"
@@ -172,32 +172,7 @@ DISCRETE POLYS
 ===========================================================================
 */
 
-/*
-=====================
-R_AddPolygonSurfaces
 
-Adds all the scene's polys into this view's drawsurf list
-=====================
-*/
-void R_AddPolygonSurfaces( void )
-{
-
-	tr.currentEntityNum = REFENTITYNUM_WORLD;
-	tr.shiftedEntityNum = tr.currentEntityNum << QSORT_ENTITYNUM_SHIFT;
-
-
-    srfPoly_t* poly = tr.refdef.polys;
-
-
-    int	i;
-
-	for(i = 0; i < tr.refdef.numPolys; ++i)
-    {
-		shader_t* sh = R_GetShaderByHandle( poly->hShader );
-		R_AddDrawSurf( (surfaceType_t*) ( void * )poly, sh, poly->fogIndex, qfalse );
-        poly++;
-	}
-}
 
 /*
 =====================

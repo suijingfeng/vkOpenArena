@@ -19,13 +19,13 @@ void R_DecomposeSort( unsigned sort, int *entityNum, shader_t **shader,
 {
 	*fogNum = ( sort >> QSORT_FOGNUM_SHIFT ) & 31;
 	*shader = L_SortedShaders[ ( sort >> QSORT_SHADERNUM_SHIFT ) & (MAX_SHADERS-1) ];
-	*entityNum = ( sort >> QSORT_ENTITYNUM_SHIFT ) & (MAX_MOD_KNOWN - 1);
+	*entityNum = ( sort >> QSORT_REFENTITYNUM_SHIFT ) & (MAX_MOD_KNOWN - 1);
 	*dlightMap = sort & 0x03;
 }
 
 static unsigned int R_ComposeSort(int sortedIndex, int entityNum, int fogNum, int dlightMap )
 {
-    return ((sortedIndex << QSORT_SHADERNUM_SHIFT) | (entityNum << QSORT_ENTITYNUM_SHIFT) | 
+    return ((sortedIndex << QSORT_SHADERNUM_SHIFT) | (entityNum << QSORT_REFENTITYNUM_SHIFT) | 
                             ( fogNum << QSORT_FOGNUM_SHIFT ) | dlightMap);
 }
 

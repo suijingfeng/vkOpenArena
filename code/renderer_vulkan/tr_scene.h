@@ -5,7 +5,7 @@ void R_SceneSetRefDef(void);
 
 void R_InitScene(void);
 void R_InitNextFrame(void);
-void R_AddPolygonSurfaces( void );
+//void R_AddPolygonSurfaces( void );
 void R_TheNextScene(void);
 
 #endif

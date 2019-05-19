@@ -846,7 +846,7 @@ define DO_REF_STR
 $(echo_cmd) "REF_STR $<"
 $(Q)rm -f $@
 $(Q)echo "const char *fallbackShader_$(notdir $(basename $<)) =" >> $@
-$(Q)cat $< | sed -e 's/^/\"/;s/$$/\\n\"/' | tr -d '\r' >> $@
+$(Q)cat $< | sed -e 's/^/\"/' -e 's/$$/\\n\"/' | tr -d '\r' >> $@
 $(Q)echo ";" >> $@
 endef
 
@@ -1620,6 +1620,7 @@ Q3VKOBJ = \
   $(B)/renderer_vulkan/tr_backend.o \
   $(B)/renderer_vulkan/tr_Cull.o \
   $(B)/renderer_vulkan/tr_common.o \
+  $(B)/renderer_vulkan/vk_validation.o \
   $(B)/renderer_vulkan/vk_instance.o \
   $(B)/renderer_vulkan/vk_init.o \
   $(B)/renderer_vulkan/vk_descriptor_sets.o \
@@ -2593,13 +2594,11 @@ $(B)/renderer_mydev/%.o: $(SDLDIR)/%.c
 $(B)/renderer_mydev/%.o: $(JPDIR)/%.c
 	$(DO_REF_CC)
 
-$(B)/renderer_mydev/%.o: $(RCOMMONDIR)/%.c
-	$(DO_REF_CC)
-
 $(B)/renderer_mydev/%.o: $(RMYDEVDIR)/%.c
 	$(DO_REF_CC)
 
-
+$(B)/renderer_mydev/%.o: $(RCOMMONDIR)/%.c
+	$(DO_REF_CC)
 ############### VULKAN ######################
 
 $(B)/renderer_vulkan/%.o: $(CMDIR)/%.c
@@ -2609,9 +2608,6 @@ $(B)/renderer_vulkan/%.o: $(SDLDIR)/%.c
 	$(DO_REF_CC)
 
 $(B)/renderer_vulkan/%.o: $(JPDIR)/%.c
-	$(DO_REF_CC)
-
-$(B)/renderer_vulkan/%.o: $(RCOMMONDIR)/%.c
 	$(DO_REF_CC)
 
 $(B)/renderer_vulkan/%.o: $(RVULKANDIR)/%.c
@@ -2798,7 +2794,7 @@ OBJ = $(Q3OBJ)  $(Q3ROBJ) $(Q3R2OBJ) $(Q3ROAOBJ) $(Q3MYDEVOBJ) $(Q3VKOBJ) $(Q3DO
   $(MPGOBJ) $(Q3GOBJ) $(Q3CGOBJ) $(MPCGOBJ) $(Q3UIOBJ) $(MPUIOBJ) \
   $(MPGVMOBJ) $(Q3GVMOBJ) $(Q3CGVMOBJ) $(MPCGVMOBJ) $(Q3UIVMOBJ) $(MPUIVMOBJ)
 TOOLSOBJ = $(LBURGOBJ) $(Q3CPPOBJ) $(Q3RCCOBJ) $(Q3LCCOBJ) $(Q3ASMOBJ)
-STRINGOBJ = $(Q3R2STRINGOBJ)
+#STRINGOBJ = $(Q3R2STRINGOBJ)
 
 
 copyfiles: release
@@ -2866,7 +2862,7 @@ clean2:
 	@echo "CLEAN $(B)"
 	@rm -f $(OBJ)
 	@rm -f $(OBJ_D_FILES)
-	@rm -f $(STRINGOBJ)
+	@rm -f $(Q3R2STRINGOBJ)
 	@rm -f $(TARGETS)
 	@rm -f $(Q3VKOBJ)
 

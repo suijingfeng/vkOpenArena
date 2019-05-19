@@ -139,7 +139,7 @@ void R_Register( void )
 	r_drawentities = ri.Cvar_Get ("r_drawentities", "1", CVAR_CHEAT );
 	r_nocull = ri.Cvar_Get ("r_nocull", "0", CVAR_CHEAT);
 	r_novis = ri.Cvar_Get ("r_novis", "0", CVAR_CHEAT);
-	r_showcluster = ri.Cvar_Get ("r_showcluster", "0", CVAR_CHEAT);
+	r_showcluster = ri.Cvar_Get ("r_showcluster", "0", CVAR_TEMP);
 	r_speeds = ri.Cvar_Get ("r_speeds", "0", CVAR_TEMP);
 	r_verbose = ri.Cvar_Get( "r_verbose", "0", CVAR_CHEAT );
 	r_debugSurface = ri.Cvar_Get ("r_debugSurface", "0", CVAR_TEMP);

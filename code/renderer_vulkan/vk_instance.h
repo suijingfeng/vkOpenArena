@@ -3,7 +3,6 @@
 
 
 #include "VKimpl.h"
-#include "ref_import.h" 
 
 extern PFN_vkGetInstanceProcAddr						qvkGetInstanceProcAddr;
 
@@ -124,18 +123,33 @@ extern PFN_vkQueuePresentKHR							qvkQueuePresentKHR;
 void vk_getProcAddress(void);
 void vk_clearProcAddress(void);
 
-const char * cvtResToStr(VkResult result);
+extern void debug_vkapi_call(VkResult result, const char * const proc_str);
+void vk_destroy_instance(void);
 
 #ifndef NDEDBG
-#define VK_CHECK(function_call) { \
+
+#define VK_CHECK(function_call) \
+{ \
 	VkResult result = function_call; \
-	if (result != VK_SUCCESS) \
-		ri.Printf(PRINT_ALL, \
-        "Vulkan: error %s returned by %s \n", cvtResToStr(result), #function_call); \
+    debug_vkapi_call( result, #function_call); \
 }
+
+#define NO_CHECK(function_call)  \
+{ \
+    function_call; \
+    debug_vkapi_call( 0, #function_call); \
+}
+
 #else
+
 #define VK_CHECK(function_call)	\
 	function_call;
+
+#define NO_CHECK(function_call)  \
+{ \
+    function_call; \
+}
+
 #endif
 
 
@@ -190,11 +204,13 @@ struct Vk_Instance {
 	VkCommandPool command_pool;
 	VkCommandBuffer command_buffer;
 
+    VkCommandBuffer tmpRecordBuffer;
+
 	VkImage depth_image;
 	VkDeviceMemory depth_image_memory;
 	VkImageView depth_image_view;
 
-
+    VkRect2D renderArea;
 
 	VkDescriptorPool descriptor_pool;
 	VkDescriptorSetLayout set_layout;
@@ -208,10 +224,6 @@ struct Vk_Instance {
     VkBool32 isKhrDisplaySupported;
 
     VkBool32 isInitialized;
-
-#ifndef NDEBUG
-    VkDebugReportCallbackEXT h_debugCB;
-#endif
 };
 
 

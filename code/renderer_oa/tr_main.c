@@ -22,7 +22,7 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 // tr_main.c -- main control flow for each frame
 
 #include "tr_local.h"
-#include "../renderercommon/matrix_multiplication.h"
+#include "matrix_multiplication.h"
 ///////// externs ///////////
 extern int max_polys;
 extern int max_polyverts;

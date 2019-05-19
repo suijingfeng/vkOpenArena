@@ -45,6 +45,7 @@ static uint32_t generateHashValue( const char *fname, const uint32_t size )
 void R_ClearShaderHashTable()
 {
 	memset(hashTable, 0, sizeof(hashTable));
+    s_pShaderText = NULL;
 }
 
 /*

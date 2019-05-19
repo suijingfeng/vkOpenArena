@@ -4,7 +4,7 @@
 #include "tr_cvar.h"
 #include "vk_image.h"
 #include "vk_pipelines.h"
-#include "../renderercommon/matrix_multiplication.h"
+#include "matrix_multiplication.h"
 #include "tr_backend.h"
 #include "glConfig.h"
 #include "R_PortalPlane.h"
@@ -12,6 +12,8 @@
 #include "tr_shader.h"
 #include "R_ShaderCommands.h"
 #include "tr_shade.h"
+#include "ref_import.h" 
+
 
 void SetTessFogColor(unsigned char (*pcolor)[4], int fnum, int nvert);
 
@@ -63,9 +65,39 @@ VkBuffer vk_getIndexBuffer(void)
     return shadingDat.index_buffer;
 }
 
+VkBuffer vk_getVertexBuffer(void)
+{
+    return shadingDat.vertex_buffer;
+}
 
 static float s_modelview_matrix[16] QALIGN(16);
 
+
+static float s_ProjectMat2d[16] QALIGN(16);
+
+
+void R_Set2dProjectMatrix(float width, float height)
+{
+    s_ProjectMat2d[0] = 2.0f / width; 
+    s_ProjectMat2d[1] = 0.0f; 
+    s_ProjectMat2d[2] = 0.0f;
+    s_ProjectMat2d[3] = 0.0f;
+
+    s_ProjectMat2d[4] = 0.0f; 
+    s_ProjectMat2d[5] = 2.0f / height; 
+    s_ProjectMat2d[6] = 0.0f;
+    s_ProjectMat2d[7] = 0.0f;
+
+    s_ProjectMat2d[8] = 0.0f; 
+    s_ProjectMat2d[9] = 0.0f; 
+    s_ProjectMat2d[10] = 1.0f; 
+    s_ProjectMat2d[11] = 0.0f;
+
+    s_ProjectMat2d[12] = -1.0f; 
+    s_ProjectMat2d[13] = -1.0f; 
+    s_ProjectMat2d[14] = 0.0f;
+    s_ProjectMat2d[15] = 1.0f;
+}
 
 
 void set_modelview_matrix(const float mv[16])
@@ -77,118 +109,6 @@ void set_modelview_matrix(const float mv[16])
 const float * getptr_modelview_matrix()
 {
     return s_modelview_matrix;
-}
-
-
-
-static void vk_setViewportScissor(VkBool32 is2D, enum Vk_Depth_Range dR,
-        VkViewport* const vp, VkRect2D* const pRect)
-{
-    int width, height;
-    R_GetWinResolution(&width, &height);
-
-	if (is2D)
-	{
-
-        pRect->offset.x = vp->x = 0;
-        pRect->offset.y = vp->y = 0;
-        
-        pRect->extent.width = vp->width = width;
-		pRect->extent.height = vp->height = height;
-	}
-	else
-	{
-		int X = backEnd.viewParms.viewportX;
-		int Y = backEnd.viewParms.viewportY;
-		int W = backEnd.viewParms.viewportWidth;
-		int H = backEnd.viewParms.viewportHeight;
-
-        //pRect->offset.x = backEnd.viewParms.viewportX;
-        //pRect->offset.y = backEnd.viewParms.viewportY;
-        //pRect->extent.width = backEnd.viewParms.viewportWidth;
-		//pRect->extent.height = backEnd.viewParms.viewportHeight;
-
-        if ( X < 0)
-		    X = 0;
-        if (Y < 0)
-		    Y = 0;
-        if (X + W > width)
-		    W = width - X;
-	    if (Y + H > height)
-		    H = height - Y;
-
-        pRect->offset.x = vp->x = X;
-		pRect->offset.y = vp->y = Y;
-		pRect->extent.width = vp->width = W;
-		pRect->extent.height = vp->height = H;
-	}
-
-    switch(dR)
-    {
-        case DEPTH_RANGE_NORMAL:
-        {
-        	vp->minDepth = 0.0f;
-		    vp->maxDepth = 1.0f;
-        }break;
-
-        case DEPTH_RANGE_ZERO:
-        {
-		    vp->minDepth = 0.0f;
-		    vp->maxDepth = 0.0f;
-	    }break;
-        
-        case DEPTH_RANGE_ONE:
-        {
-		    vp->minDepth = 1.0f;
-		    vp->maxDepth = 1.0f;
-	    }break;
-
-        case DEPTH_RANGE_WEAPON:
-        {
-            vp->minDepth = 0.0f;
-		    vp->maxDepth = 0.3f;
-        }break;
-    }
-}
-
-
-VkRect2D get_scissor_rect(void)
-{
-
-	VkRect2D r;
-	
-    int width, height;
-    R_GetWinResolution(&width, &height);
-    
-    if (backEnd.projection2D)
-	{
-		r.offset.x = 0.0f;
-		r.offset.y = 0.0f;
-		r.extent.width = width;
-		r.extent.height = height;
-	}
-	else
-	{
-		r.offset.x = backEnd.viewParms.viewportX;
-        r.offset.y = backEnd.viewParms.viewportY;
-        r.extent.width = backEnd.viewParms.viewportWidth;
-		r.extent.height = backEnd.viewParms.viewportHeight;
-
-        // for draw model in setu manus       
-        if (r.offset.x < 0)
-		    r.offset.x = 0;
-        if (r.offset.y < 0)
-		    r.offset.y = 0;
-        if (r.offset.x + r.extent.width > width)
-		    r.extent.width = width - r.offset.x;
-	    if (r.offset.y + r.extent.height > height)
-		    r.extent.height = height - r.offset.y;
-
-        // ri.Printf(PRINT_ALL, "(%d, %d, %d, %d)\n",
-        // ri.Printf(PRINT_ALL, "(%d, %d, %d, %d)\n", r.offset.x, r.offset.y, r.extent.width, r.extent.height);
-    }
-
-	return r;
 }
 
 
@@ -304,14 +224,80 @@ void vk_shade_geometry(VkPipeline pipeline, VkBool32 multitexture, enum Vk_Depth
 	qvkCmdBindPipeline(vk.command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline);
 
 	// configure pipeline's dynamic state
-
     VkViewport viewport;
-    VkRect2D scissor; // = get_scissor_rect();
 
-    vk_setViewportScissor(backEnd.projection2D, depRg, &viewport, &scissor);
+//    VkRect2D scissor = vk.renderArea; 
+    //, VkRect2D* const pRect , &scissor
+    //vk_setViewportScissor(backEnd.projection2D, depRg, &viewport);
 
-    qvkCmdSetScissor(vk.command_buffer, 0, 1, &scissor);
+	if (backEnd.projection2D)
+	{
+        viewport.x = 0;
+        viewport.y = 0;
+        viewport.width = vk.renderArea.extent.width;
+		viewport.height = vk.renderArea.extent.height;
+	}
+	else
+	{
+		int X = backEnd.viewParms.viewportX;
+		int Y = backEnd.viewParms.viewportY;
+		int W = backEnd.viewParms.viewportWidth;
+		int H = backEnd.viewParms.viewportHeight;
+
+        //pRect->offset.x = backEnd.viewParms.viewportX;
+        //pRect->offset.y = backEnd.viewParms.viewportY;
+        //pRect->extent.width = backEnd.viewParms.viewportWidth;
+		//pRect->extent.height = backEnd.viewParms.viewportHeight;
+
+        if ( X < 0)
+		    X = 0;
+        if (Y < 0)
+		    Y = 0;
+        if (X + W > vk.renderArea.extent.width)
+		    W = vk.renderArea.extent.width - X;
+	    if (Y + H > vk.renderArea.extent.height)
+		    H = vk.renderArea.extent.height - Y;
+
+        //pRect->offset.x = 
+        viewport.x = X;
+		//pRect->offset.y = 
+        viewport.y = Y;
+		//pRect->extent.width =
+        viewport.width = W;
+		//pRect->extent.height = 
+        viewport.height = H;
+	}
+
+    switch(depRg)
+    {
+        case DEPTH_RANGE_NORMAL:
+        {
+        	viewport.minDepth = 0.0f;
+		    viewport.maxDepth = 1.0f;
+        }break;
+
+        case DEPTH_RANGE_ZERO:
+        {
+		    viewport.minDepth = 0.0f;
+		    viewport.maxDepth = 0.0f;
+	    }break;
+        
+        case DEPTH_RANGE_ONE:
+        {
+		    viewport.minDepth = 1.0f;
+		    viewport.maxDepth = 1.0f;
+	    }break;
+
+        case DEPTH_RANGE_WEAPON:
+        {
+            viewport.minDepth = 0.0f;
+		    viewport.maxDepth = 0.3f;
+        }break;
+    }
+
     qvkCmdSetViewport(vk.command_buffer, 0, 1, &viewport);
+
+//    qvkCmdSetScissor(vk.command_buffer, 0, 1, &scissor);
 
 
 	if (tess.shader->polygonOffset) {
@@ -374,51 +360,30 @@ void updateMVP(VkBool32 isPortal, VkBool32 is2D, const float mvMat4x4[16])
         // which are updated via Vulkan commands rather than via writes to memory or copy commands.
         // Push constants represent a high speed path to modify constant data in pipelines
         // that is expected to outperform memory-backed resource updates.
-	    qvkCmdPushConstants(vk.command_buffer, vk.pipeline_layout, VK_SHADER_STAGE_VERTEX_BIT, 0, 128, push_constants);
+	    NO_CHECK( qvkCmdPushConstants(vk.command_buffer, vk.pipeline_layout, VK_SHADER_STAGE_VERTEX_BIT, 0, 128, push_constants) );
 	}
     else
     {
-      	// push constants are another way of passing dynamic values to shaders
-		// Specify push constants.
-		float mvp[16] QALIGN(16); // mvp transform + eye transform + clipping plane in eye space
-        
+        // push constants are another way of passing dynamic values to shaders
+
         if (is2D)
         {            
-            float width, height;
-            R_GetWinResolutionF(&width, &height);
-
-            mvp[0] = 2.0f / width; 
-            mvp[1] = 0.0f; 
-            mvp[2] = 0.0f;
-            mvp[3] = 0.0f;
-
-            mvp[4] = 0.0f; 
-            mvp[5] = 2.0f / height; 
-            mvp[6] = 0.0f;
-            mvp[7] = 0.0f;
-
-            mvp[8] = 0.0f; 
-            mvp[9] = 0.0f; 
-            mvp[10] = 1.0f; 
-            mvp[11] = 0.0f;
-            
-            mvp[12] = -1.0f; 
-            mvp[13] = -1.0f; 
-            mvp[14] = 0.0f;
-            mvp[15] = 1.0f;
+            NO_CHECK( qvkCmdPushConstants(vk.command_buffer, vk.pipeline_layout, VK_SHADER_STAGE_VERTEX_BIT, 0, 64, s_ProjectMat2d) );
         }
         else
         {
+		    // Specify push constants.
+		    float mvp[16] QALIGN(16); // mvp transform + eye transform + clipping plane in eye space
+
             // update q3's proj matrix (opengl) to vulkan conventions:
             // z - [0, 1] instead of [-1, 1] and invert y direction
             MatrixMultiply4x4_SSE(mvMat4x4, backEnd.viewParms.projectionMatrix, mvp);
+            // As described above in section Pipeline Layouts, the pipeline layout defines shader push constants
+            // which are updated via Vulkan commands rather than via writes to memory or copy commands.
+            // Push constants represent a high speed path to modify constant data in pipelines
+            // that is expected to outperform memory-backed resource updates.
+		    NO_CHECK( qvkCmdPushConstants(vk.command_buffer, vk.pipeline_layout, VK_SHADER_STAGE_VERTEX_BIT, 0, 64, mvp) );
         }
-
-        // As described above in section Pipeline Layouts, the pipeline layout defines shader push constants
-        // which are updated via Vulkan commands rather than via writes to memory or copy commands.
-        // Push constants represent a high speed path to modify constant data in pipelines
-        // that is expected to outperform memory-backed resource updates.
-		qvkCmdPushConstants(vk.command_buffer, vk.pipeline_layout, VK_SHADER_STAGE_VERTEX_BIT, 0, 64, mvp);
     }
 }
 
@@ -459,12 +424,12 @@ void vk_UploadXYZI(float (*pXYZ)[4], uint32_t nVertex, uint32_t* pIdx, uint32_t 
 	{
         const VkDeviceSize xyz_offset = XYZ_OFFSET + shadingDat.xyz_elements * sizeof(vec4_t);
 		
-        unsigned char* vDst = shadingDat.vertex_buffer_ptr + xyz_offset;
+        unsigned char* const vDst = shadingDat.vertex_buffer_ptr + xyz_offset;
 
         // 4 float in the array, with each 4 bytes.
 		memcpy(vDst, pXYZ, nVertex * 16);
 
-		qvkCmdBindVertexBuffers(vk.command_buffer, 0, 1, &shadingDat.vertex_buffer, &xyz_offset);
+		NO_CHECK( qvkCmdBindVertexBuffers(vk.command_buffer, 0, 1, &shadingDat.vertex_buffer, &xyz_offset) );
 		
         shadingDat.xyz_elements += tess.numVertexes;
 
@@ -479,7 +444,7 @@ void vk_UploadXYZI(float (*pXYZ)[4], uint32_t nVertex, uint32_t* pIdx, uint32_t 
 		unsigned char* iDst = shadingDat.index_buffer_ptr + shadingDat.index_buffer_offset;
 		memcpy(iDst, pIdx, indexes_size);
 
-		qvkCmdBindIndexBuffer(vk.command_buffer, shadingDat.index_buffer, shadingDat.index_buffer_offset, VK_INDEX_TYPE_UINT32);
+		NO_CHECK( qvkCmdBindIndexBuffer(vk.command_buffer, shadingDat.index_buffer, shadingDat.index_buffer_offset, VK_INDEX_TYPE_UINT32) );
 		
         shadingDat.index_buffer_offset += indexes_size;
 
@@ -505,14 +470,14 @@ void vk_destroy_shading_data(void)
     ri.Printf(PRINT_ALL, " Destroy vertex/index buffer: shadingDat.vertex_buffer shadingDat.index_buffer. \n");
     ri.Printf(PRINT_ALL, " Free device memory: vertex_buffer_memory index_buffer_memory. \n");
 
-    qvkUnmapMemory(vk.device, shadingDat.vertex_buffer_memory);
-	qvkFreeMemory(vk.device, shadingDat.vertex_buffer_memory, NULL);
+    NO_CHECK( qvkUnmapMemory(vk.device, shadingDat.vertex_buffer_memory) );
+	NO_CHECK( qvkFreeMemory(vk.device, shadingDat.vertex_buffer_memory, NULL) );
 
-    qvkUnmapMemory(vk.device, shadingDat.index_buffer_memory);
-	qvkFreeMemory(vk.device, shadingDat.index_buffer_memory, NULL);
+    NO_CHECK( qvkUnmapMemory(vk.device, shadingDat.index_buffer_memory) );
+	NO_CHECK( qvkFreeMemory(vk.device, shadingDat.index_buffer_memory, NULL) );
 
-    qvkDestroyBuffer(vk.device, shadingDat.vertex_buffer, NULL);
-	qvkDestroyBuffer(vk.device, shadingDat.index_buffer, NULL);
+    NO_CHECK( qvkDestroyBuffer(vk.device, shadingDat.vertex_buffer, NULL) );
+	NO_CHECK( qvkDestroyBuffer(vk.device, shadingDat.index_buffer, NULL) );
 
     memset(&shadingDat, 0, sizeof(shadingDat));
 }
@@ -535,12 +500,17 @@ void vk_clearDepthStencilAttachments(void)
         }
 
         VkClearRect clear_rect;
-        clear_rect.rect = get_scissor_rect();
+        clear_rect.rect = vk.renderArea;
         clear_rect.baseArrayLayer = 0;
         clear_rect.layerCount = 1;
 
+        //ri.Printf(PRINT_ALL, "(%d, %d, %d, %d)\n", 
+        //        clear_rect.rect.offset.x, clear_rect.rect.offset.y, 
+        //        clear_rect.rect.extent.width, clear_rect.rect.extent.height);
 
-        qvkCmdClearAttachments(vk.command_buffer, 1, &attachments, 1, &clear_rect);
+
+        NO_CHECK( qvkCmdClearAttachments(vk.command_buffer, 1, &attachments, 1, &clear_rect) );
+        
         shadingDat.s_depth_attachment_dirty = VK_FALSE;
     }
 }
@@ -595,7 +565,7 @@ void vk_clearColorAttachments(const float* color)
 */
 
     VkClearRect clear_rect[1];
-	clear_rect[0].rect = get_scissor_rect();
+	clear_rect[0].rect = vk.renderArea;
 	clear_rect[0].baseArrayLayer = 0;
 	clear_rect[0].layerCount = 1;
 
@@ -610,8 +580,7 @@ void vk_clearColorAttachments(const float* color)
     // selects the images to clear based on the current framebuffer 
     // attachments and the command parameters.
 
-	qvkCmdClearAttachments(vk.command_buffer, 1, attachments, 1, clear_rect);
-
+	NO_CHECK( qvkCmdClearAttachments(vk.command_buffer, 1, attachments, 1, clear_rect) );
 }
 
 

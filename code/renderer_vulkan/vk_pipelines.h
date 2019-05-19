@@ -56,7 +56,7 @@ void vk_create_pipeline(
         VkBool32 mirror,
         VkBool32 polygon_offset,
         VkBool32 isLine, 
-        VkPipeline* pPipeLine);
+        VkPipeline* const pPipeLine);
 
 void vk_createStandardPipelines(void);
 void vk_createDebugPipelines(void);
@@ -66,7 +66,7 @@ void vk_create_shader_stage_pipelines(shaderStage_t *pStage, shader_t* pShader);
 void vk_destroyShaderStagePipeline(void);
 
 
-void vk_createPipelineLayout(void);
+void vk_createPipelineLayout(VkPipelineLayout * pPLayout);
 void vk_destroy_pipeline_layout(void);
 
 

@@ -2107,6 +2107,7 @@ static void CreateInternalShaders( void )
     tr.cinematicShader = FinishShader();
 }
 
+
 static void CreateExternalShaders( void )
 {
     ri.Printf( PRINT_ALL, "CreateExternalShaders\n" );
@@ -2117,8 +2118,11 @@ static void CreateExternalShaders( void )
 
 void R_InitShaders( void )
 {
-	
+
     ri.Printf( PRINT_ALL, " Initializing Shaders \n" );
+
+	memset( &stages, 0, sizeof( stages ) );
+    memset( &shader, 0, sizeof(shader) );
     
     R_ClearShaderHashTable();
 

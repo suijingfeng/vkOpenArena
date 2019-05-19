@@ -23,7 +23,7 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #include "tr_local.h"
 
 #include "tr_dsa.h"
-#include "../renderercommon/matrix_multiplication.h"
+#include "matrix_multiplication.h"
 extern glconfig_t glConfig;
 extern const char *fallbackShader_bokeh_vp;
 extern const char *fallbackShader_bokeh_fp;

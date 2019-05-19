@@ -25,7 +25,7 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #include "tr_cvar.h"
 #include "tr_shader.h"
 
-#include "../renderercommon/matrix_multiplication.h"
+#include "matrix_multiplication.h"
 #include "ref_import.h"
 
 #include "R_PrintMat.h"
@@ -44,6 +44,23 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 Setup that culling frustum planes for the current view
 =================
 */
+static void SetPlaneSignbits (cplane_t *out)
+{
+	int	bits = 0;
+    int j;
+
+	// for fast box on planeside test
+	for (j=0; j<3; ++j)
+    {
+		if (out->normal[j] < 0)
+        {
+			bits |= 1<<j;
+		}
+	}
+	out->signbits = bits;
+}
+
+
 static void R_SetupFrustum (viewParms_t * const pViewParams)
 {
 	
@@ -89,7 +106,7 @@ static void R_SetupFrustum (viewParms_t * const pViewParams)
 
 
     uint32_t i = 0;
-	for (i=0; i < 4; i++)
+	for (i=0; i < 4; ++i)
     {
 		// pViewParams->frustum[i].type = PLANE_NON_AXIAL;
 		// pViewParams->frustum[i].dist = DotProduct (pViewParams->or.origin, pViewParams->frustum[i].normal);
@@ -105,9 +122,10 @@ R_SpriteFogNum
 See if a sprite is inside a fog volume
 =================
 */
-int R_SpriteFogNum( trRefEntity_t *ent ) {
-	int				i, j;
-	fog_t			*fog;
+int R_SpriteFogNum( trRefEntity_t *ent )
+{
+	int	i, j;
+	fog_t* fog;
 
 	if ( tr.refdef.rd.rdflags & RDF_NOWORLDMODEL ) {
 		return 0;
@@ -130,7 +148,6 @@ int R_SpriteFogNum( trRefEntity_t *ent ) {
 
 	return 0;
 }
-
 
 
 
@@ -162,7 +179,7 @@ static void R_AddEntitySurfaces (viewParms_t * const pViewParam)
 
 	for ( tr.currentEntityNum = 0; 
 	      tr.currentEntityNum < tr.refdef.num_entities; 
-		  tr.currentEntityNum++ )
+		  ++tr.currentEntityNum )
     {
 		shader_t* shader;
 
@@ -171,7 +188,7 @@ static void R_AddEntitySurfaces (viewParms_t * const pViewParam)
 		ent->needDlights = qfalse;
 
 		// preshift the value we are going to OR into the drawsurf sort
-		tr.shiftedEntityNum = tr.currentEntityNum << QSORT_ENTITYNUM_SHIFT;
+		tr.shiftedEntityNum = tr.currentEntityNum << QSORT_REFENTITYNUM_SHIFT;
 
 		//
 		// the weapon model must be handled special --
@@ -273,7 +290,7 @@ static void R_SetupProjection( viewParms_t * const pViewParams, VkBool32 noWorld
         uint32_t i;
 
         // set far clipping planes dynamically
-        for ( i = 0; i < 8; i++ )
+        for ( i = 0; i < 8; ++i )
         {
             float v[3];
      
@@ -323,6 +340,27 @@ static void R_SetupProjection( viewParms_t * const pViewParams, VkBool32 noWorld
 	pViewParams->projectionMatrix[15] = 0;
 }
 
+#include "srfPoly_type.h"
+
+/*
+=====================
+Adds all the scene's polys into this view's drawsurf list
+=====================
+*/
+static void R_AddPolygonSurfaces(const srfPoly_t* pPoly, uint32_t numPolys )
+{
+	tr.currentEntityNum = REFENTITYNUM_WORLD;
+	tr.shiftedEntityNum = tr.currentEntityNum << QSORT_REFENTITYNUM_SHIFT;
+
+    uint32_t i;
+
+	for(i = 0; i < numPolys; ++i)
+    {
+		shader_t* sh = R_GetShaderByHandle( pPoly->hShader );
+		R_AddDrawSurf( (surfaceType_t*) pPoly, sh, pPoly->fogIndex, qfalse );
+        ++pPoly;
+	}
+}
 
 /*
 ================
@@ -334,15 +372,13 @@ or a mirror / remote location
 */
 void R_RenderView (viewParms_t *parms)
 {
-	int	firstDrawSurf;
+	int	firstDrawSurf = tr.refdef.numDrawSurfs;
 
-	tr.viewCount++;
+	++tr.viewCount;
 
 	tr.viewParms = *parms;
 
-	firstDrawSurf = tr.refdef.numDrawSurfs;
-
-	tr.viewCount++;
+	// tr.viewCount++;
 
 	// set viewParms.world
 	R_RotateForViewer (&tr.viewParms, &tr.or);
@@ -351,7 +387,7 @@ void R_RenderView (viewParms_t *parms)
 
 	R_AddWorldSurfaces (&tr.viewParms);
 
-	R_AddPolygonSurfaces();
+	R_AddPolygonSurfaces(tr.refdef.polys, tr.refdef.numPolys);
 
 	// set the projection matrix with the minimum zfar
 	// now that we have the world bounded
@@ -436,7 +472,7 @@ void RE_RenderScene( const refdef_t *fd )
     //   |
     //   |
     //   y
-    viewParms_t		parms;
+    viewParms_t	parms;
 	memset( &parms, 0, sizeof( parms ) );
 
 

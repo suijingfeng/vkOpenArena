@@ -1,7 +1,9 @@
 #include "VKimpl.h"
 #include "vk_instance.h"
 #include "vk_utils.h"
+#include "vk_image.h"
 
+#include "ref_import.h" 
 
 void printDeviceExtensionsSupported_f(void)
 {
@@ -100,5 +102,22 @@ void printVulkanInfo_f( void )
 
     printInstanceExtensionsSupported_f();
     printDeviceExtensionsSupported_f();
+    gpuMemUsageInfo_f();
+    
+    ri.Printf(PRINT_ALL, " Pretentation mode: ");
+    switch( vk.present_mode )
+    {
+        case VK_PRESENT_MODE_IMMEDIATE_KHR:
+            ri.Printf(PRINT_ALL, " VK_PRESENT_MODE_IMMEDIATE_KHR. \n"); break;
+        case VK_PRESENT_MODE_MAILBOX_KHR:
+            ri.Printf(PRINT_ALL, " VK_PRESENT_MODE_MAILBOX_KHR. \n"); break;
+        case VK_PRESENT_MODE_FIFO_KHR:
+            ri.Printf(PRINT_ALL, " VK_PRESENT_MODE_FIFO_KHR. \n"); break;
+        case VK_PRESENT_MODE_FIFO_RELAXED_KHR:
+            ri.Printf(PRINT_ALL, " VK_PRESENT_MODE_FIFO_RELAXED_KHR. \n"); break;
+        default:
+            ri.Printf(PRINT_WARNING, " %d. \n", vk.present_mode); break;
+    }
+    
 }
 

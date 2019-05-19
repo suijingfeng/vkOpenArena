@@ -17,7 +17,7 @@ Also called by RE_EndRegistration
 
 
 
-void RB_ShowImages(image_t ** const pImg, unsigned int N)
+void RB_ShowImages(image_t ** const pImg, unsigned int N, int width, int height)
 {
 
     backEnd.projection2D = qtrue;
@@ -25,10 +25,6 @@ void RB_ShowImages(image_t ** const pImg, unsigned int N)
 	const float black[4] = {0, 0, 0, 1};
 	vk_clearColorAttachments(black);
    
-    int width;
-    int height;
-
-    R_GetWinResolution(&width, &height);
 
     const float w = width / 20;
 	const float h = height / 15;

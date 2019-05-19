@@ -2,7 +2,7 @@
 
 #include "VKimpl.h"
 #include "vk_instance.h"
-
+#include "ref_import.h" 
 
 // I want keep it locally, as it belong to OpenGL, not VulKan
 // have to use this keep backward Compatibility
@@ -57,7 +57,7 @@ static const int s_numVidModes = 29;
 
 void R_DisplayResolutionList_f( void )
 {
-	int i;
+	uint32_t i;
 
 	ri.Printf( PRINT_ALL, "\n" );
 	for ( i = 0; i < s_numVidModes; i++ )
@@ -70,11 +70,6 @@ void R_DisplayResolutionList_f( void )
 
 void R_SetWinMode(int mode, unsigned int width, unsigned int height, unsigned int hz)
 {
-	
-    if ( mode < -2 || mode >= s_numVidModes) {
-         mode = 3;
-	}
-
 	if (mode == -2)
 	{
         // use desktop video resolution
@@ -83,40 +78,62 @@ void R_SetWinMode(int mode, unsigned int width, unsigned int height, unsigned in
         glConfig.windowAspect = (float)width / (float)height;
         glConfig.displayFrequency = hz;
         glConfig.isFullscreen = 1;
+
+        vk.renderArea.offset.x = 0;
+        vk.renderArea.offset.y = 0;
+        vk.renderArea.extent.width = width;
+        vk.renderArea.extent.height = height;
     }
 	else if ( mode == -1 )
     {
 		glConfig.vidWidth = r_customwidth->integer;
 		glConfig.vidHeight = r_customheight->integer;
-		glConfig.windowAspect = r_customaspect->value;
-        glConfig.displayFrequency = 60;
-        glConfig.isFullscreen = 0;
-	} 
-    else
+        glConfig.windowAspect = (float)width / (float)height;
+        glConfig.displayFrequency = hz;
+        glConfig.isFullscreen = r_fullscreen->integer;
+
+        vk.renderArea.offset.x = 0;
+        vk.renderArea.offset.y = 0;
+        vk.renderArea.extent.width = r_customwidth->integer;
+        vk.renderArea.extent.height = r_customheight->integer;
+	}
+    else if ( (mode < s_numVidModes) && (mode > 3))
     {
         glConfig.vidWidth = r_vidModes[mode].width;
         glConfig.vidHeight = r_vidModes[mode].height;
         glConfig.windowAspect = (float)r_vidModes[mode].width / ( r_vidModes[mode].height * r_vidModes[mode].pixelAspect );
-        glConfig.displayFrequency = 60;
-        glConfig.isFullscreen = 0;
-
+        glConfig.displayFrequency = hz;
+        glConfig.isFullscreen = r_fullscreen->integer = 0;
+        
+        vk.renderArea.offset.x = 0;
+        vk.renderArea.offset.y = 0;
+        vk.renderArea.extent.width = glConfig.vidWidth;
+        vk.renderArea.extent.height = glConfig.vidHeight;
     }
     
+
+    if ( mode < -2 || mode >= s_numVidModes || glConfig.vidWidth <=0 || glConfig.vidHeight<=0)
+    {
+        r_mode->integer = 3;
+        r_fullscreen->integer = 0;
+
+        glConfig.vidWidth = 640;
+        glConfig.vidHeight = 480;
+        glConfig.displayFrequency = 60;
+        glConfig.windowAspect = 1.333333;
+
+        vk.renderArea.offset.x = 0;
+        vk.renderArea.offset.y = 0;
+        vk.renderArea.extent.width = 640;
+        vk.renderArea.extent.height = 480;
+	}
+
+
 	ri.Printf(PRINT_ALL,  "MODE: %d, %d x %d, refresh rate: %dhz\n",
         mode, glConfig.vidWidth, glConfig.vidHeight, glConfig.displayFrequency);
 }
 
-void R_GetWinResolution(int* w, int* h)
-{
-    *w = glConfig.vidWidth;
-    *h = glConfig.vidHeight;
-}
 
-void R_GetWinResolutionF(float* w, float* h)
-{
-    *w = glConfig.vidWidth;
-    *h = glConfig.vidHeight;
-}
 
 void R_InitDisplayResolution( void )
 {

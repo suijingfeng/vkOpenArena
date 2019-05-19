@@ -22,7 +22,7 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 // tr_models.c -- model loading and caching
 
 #include "tr_local.h"
-#include "../renderercommon/matrix_multiplication.h"
+#include "matrix_multiplication.h"
 
 #define	LL(x) x=LittleLong(x)
 

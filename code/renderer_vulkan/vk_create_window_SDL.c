@@ -35,7 +35,7 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #include "tr_cvar.h"
 #include "icon_oa.h"
 #include "glConfig.h"
-
+#include "ref_import.h" 
 
 static SDL_Window* window_sdl = NULL;
 
@@ -79,7 +79,7 @@ static void VKimp_DetectAvailableModes(void)
         ////////////////////////////////////
 	}
 
-	for( i = 0; i < numSDLModes; i++ )
+	for( i = 0; i < numSDLModes; ++i )
 	{
 		SDL_DisplayMode mode;
 
@@ -170,7 +170,7 @@ static int VKimp_SetMode(int mode, qboolean fullscreen)
 
     if(fullscreen)
     {
-        // use desktop video resolution
+        // if fullscreen is true, then we use desktop video resolution
         r_mode->integer = mode = -2;
         		
         flags |= SDL_WINDOW_FULLSCREEN;
@@ -180,22 +180,16 @@ static int VKimp_SetMode(int mode, qboolean fullscreen)
     R_SetWinMode( mode, desktopMode.w, desktopMode.h, desktopMode.refresh_rate );
     
 
-
     if( window_sdl != NULL )
 	{
 		// SDL_GetWindowPosition( window_sdl, &x, &y );
 		SDL_DestroyWindow( window_sdl );
 		window_sdl = NULL;
-        ri.Printf(PRINT_ALL, "Existing window being destroyed\n");
+        ri.Printf(PRINT_ALL, " Destroy existing window. \n");
 	}
 
-    int width = 640;
-    int height = 480;
-
-    R_GetWinResolution(&width, &height);
-
 	window_sdl = SDL_CreateWindow( CLIENT_WINDOW_TITLE, SDL_WINDOWPOS_CENTERED,
-            SDL_WINDOWPOS_CENTERED, width, height, flags );
+            SDL_WINDOWPOS_CENTERED, vk.renderArea.extent.width, vk.renderArea.extent.height, flags );
 
 
 	if( window_sdl )

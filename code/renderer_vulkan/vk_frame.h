@@ -9,17 +9,23 @@ void vk_createFrameBuffers(uint32_t w, uint32_t h, VkRenderPass h_rpass,
         uint32_t fbCount, VkFramebuffer * const pFrameBuffers );
 void vk_destroyFrameBuffers(void);
 
+
 void vk_createColorAttachment(VkDevice lgDev, const VkSwapchainKHR HSwapChain, 
         VkFormat surFmt, uint32_t * const pSwapchainLen,
         VkImageView * const pSwapChainImgViews);
+void vk_destroyColorAttachment(void);
+
 
 void vk_createRenderPass(VkDevice device, VkFormat colorFormat, 
         VkFormat depthFormat, VkRenderPass * const pRenderPassObj);
+void vk_destroyRenderPass(void);
+
 
 void vk_create_sync_primitives(void);
 void vk_destroy_sync_primitives(void);
 
+
 void vk_createDepthAttachment(int Width, int Height, VkFormat depthFmt);
-//void vk_destroyDepthAttachment(void);
+void vk_destroyDepthAttachment(void);
 
 #endif

@@ -138,6 +138,7 @@ void R_Init( void )
 
 	R_InitFreeType();
 
+    R_Set2dProjectMatrix(vk.renderArea.extent.width, vk.renderArea.extent.height);
     ri.Printf( PRINT_ALL, "----- R_Init finished -----\n" );
 }
 
@@ -182,18 +183,21 @@ void RE_Shutdown( qboolean destroyWindow )
     // (the state we have after vk_initialize call).
 
     // contains vulkan resources/state, reinitialized on a map change.
-    
+        
     R_ClearSortedShaders();
 
-    vk_destroyShaderStagePipeline();
- 
     vk_resetGeometryBuffer();
+
+    NO_CHECK( qvkDeviceWaitIdle(vk.device) );
+
 
 	if ( tr.registered )
     {	
 		vk_destroyImageRes();
         tr.registered = qfalse;
 	}
+
+    vk_destroyShaderStagePipeline();
 
     if (destroyWindow)
     {
@@ -204,7 +208,6 @@ void RE_Shutdown( qboolean destroyWindow )
         // but fot rendergl1, renderergl2 to create the window
         glConfig_Clear();
     }
-
 }
 
 

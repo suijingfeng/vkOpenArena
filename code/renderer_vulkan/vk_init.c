@@ -7,7 +7,6 @@
 #include "vk_shaders.h"
 #include "vk_descriptor_sets.h"
 #include "vk_swapchain.h"
-#include "glConfig.h"
 #include "ref_import.h" 
 
 
@@ -39,18 +38,17 @@ void vk_initialize(void)
     // command buffers are allocated from them.
     vk_create_command_pool(&vk.command_pool);
     
+    ri.Printf(PRINT_ALL, " Create command buffer: vk.command_buffer. \n");
     vk_create_command_buffer(vk.command_pool, &vk.command_buffer);
+    
+    ri.Printf(PRINT_ALL, " Create command buffer: vk.tmpRecordBuffer. \n");
+    vk_create_command_buffer(vk.command_pool, &vk.tmpRecordBuffer);
 
-
-    int width;
-    int height;
-
-    R_GetWinResolution(&width, &height);
-    vk_createDepthAttachment(width, height, vk.fmt_DepthStencil);
+    vk_createDepthAttachment(vk.renderArea.extent.width, vk.renderArea.extent.height, vk.fmt_DepthStencil);
     // Depth attachment image.
-    // vk_createDepthAttachment(width, height, vk.fmt_DepthStencil);
     vk_createRenderPass(vk.device, vk.surface_format.format, vk.fmt_DepthStencil, &vk.render_pass);
-    vk_createFrameBuffers(width, height, vk.render_pass, vk.swapchain_image_count, vk.framebuffers);
+    vk_createFrameBuffers(vk.renderArea.extent.width, vk.renderArea.extent.height,
+            vk.render_pass, vk.swapchain_image_count, vk.framebuffers );
 
 	// Pipeline layout.
 	// You can use uniform values in shaders, which are globals similar to
@@ -61,15 +59,15 @@ void vk_initialize(void)
     // creation by creating a VkPipelineLayout object.
     
     // MAX_DRAWIMAGES = 2048
-    vk_createDescriptorPool(2048);
+    vk_createDescriptorPool(2048, &vk.descriptor_pool);
     // The set of sets that are accessible to a pipeline are grouped into 
     // pipeline layout. Pipelines are created with respect to this pipeline
     // layout. Those descriptor sets can be bound into command buffers 
     // along with compatible pipelines to allow those pipeline to access
     // the resources in them.
-    vk_createDescriptorSetLayout();
+    vk_createDescriptorSetLayout(&vk.set_layout);
     // These descriptor sets layouts are aggregated into a single pipeline layout.
-    vk_createPipelineLayout();
+    vk_createPipelineLayout(&vk.pipeline_layout);
 
 	//
 	vk_createVertexBuffer();
@@ -102,9 +100,13 @@ void vk_shutdown(void)
 {
     ri.Printf( PRINT_ALL, "vk_shutdown()\n" );
 
+    NO_CHECK( qvkDeviceWaitIdle(vk.device) );
+
+    vk_destroyRenderPass();
+    vk_destroyDepthAttachment();
+    vk_destroyColorAttachment();
     vk_destroySwapChain();
-
-
+    
     vk_destroyFrameBuffers();
 
     vk_destroy_shading_data();
@@ -122,7 +124,22 @@ void vk_shutdown(void)
 
     vk_destroy_descriptor_pool();
 
-    vk_destroy_commands();
+    ri.Printf( PRINT_ALL, " Free command buffers: vk.command_buffer. \n" );  
+    vk_freeCmdBufs(&vk.command_buffer);
+    ri.Printf( PRINT_ALL, " Free command buffers: vk.tmpRecordBuffer. \n" );  
+    vk_freeCmdBufs(&vk.tmpRecordBuffer);
+
+    vk_destroy_command_pool();
+
+    ri.Printf( PRINT_ALL, " Destroy logical device: vk.device. \n" );
+    // Device queues are implicitly cleaned up when the device is destroyed
+    // so we don't need to do anything in clean up
+	qvkDestroyDevice(vk.device, NULL);
+
+    
+    vk_destroy_instance();
+
+// ===========================================================
 
     vk_clearProcAddress();
 
