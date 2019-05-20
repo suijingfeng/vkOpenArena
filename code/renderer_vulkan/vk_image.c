@@ -923,11 +923,11 @@ void RE_StretchRaw (int x, int y, int w, int h, int cols, int rows, const unsign
 	}
 	
     // make sure rows and cols are powers of 2
-	for ( i = 0 ; ( 1 << i ) < cols ; ++i )
+	for ( i = 1 ; ( 1 << i ) < cols ; ++i )
     {
         ;
 	}
-	for ( j = 0 ; ( 1 << j ) < rows ; ++j )
+	for ( j = 1 ; ( 1 << j ) < rows ; ++j )
     {
         ;
 	}
@@ -939,6 +939,8 @@ void RE_StretchRaw (int x, int y, int w, int h, int cols, int rows, const unsign
     RE_UploadCinematic(w, h, cols, rows, data, client, dirty);
 
     tr_cinematicShader->stages[0]->bundle[0].image[0] = tr_scratchImage[client];
+    
+    
     RE_StretchPic(x, y, w, h,  0.5f / cols, 0.5f / rows,  1.0f - 0.5f / cols, 1.0f - 0.5 / rows, tr_cinematicShader->index);
 }
 

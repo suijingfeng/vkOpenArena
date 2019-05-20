@@ -1629,48 +1629,56 @@ void SCR_DrawCinematic(int handle)
 
     if ( (handle >= 0) && (handle < MAX_VIDEO_HANDLES) )
     {
-
-        float	x, y, w, h;
-        byte	*buf;
-
         if ( (cinTable[handle].status == FMV_EOF) || (cinTable[handle].buf == NULL) )
         {
+            Com_Printf("DrawCinematic: complete! \n");
             return;
         }
-        
-        x = cinTable[handle].xpos;
-        y = cinTable[handle].ypos;
-        w = cinTable[handle].width;
-        h = cinTable[handle].height;
-        buf = cinTable[handle].buf;
+
+        float x = cinTable[handle].xpos;
+        float y = cinTable[handle].ypos;
+        float w = cinTable[handle].width;
+        float h = cinTable[handle].height;
+        unsigned char* buf = cinTable[handle].buf;
 
         // SCR_AdjustFrom640( &x, &y, &w, &h );
         // why this is need ???
-        float	xscale = cls.glconfig.vidWidth / 640.0f;
-        float	yscale = cls.glconfig.vidHeight / 480.0f;
+        float xscale = cls.glconfig.vidWidth / 640.0f;
+        float yscale = cls.glconfig.vidHeight / 480.0f;
 
         x *= xscale;
         y *= yscale;
         w *= xscale;
         h *= yscale;
 
-        if (cinTable[handle].dirty && (cinTable[handle].CIN_WIDTH != cinTable[handle].drawX || cinTable[handle].CIN_HEIGHT != cinTable[handle].drawY)) {
+        if( cinTable[handle].dirty)
+        {
+            Com_Printf("DrawCinematic: cinTable[%d].dirty = 1, drawX: %ld, drawY: %ld, width: %d, height:%d, x: %f, y:%f, w:%f, h:%f. \n",
+                    handle, cinTable[handle].drawX, cinTable[handle].drawY, cinTable[handle].width, cinTable[handle].height, x, y, w, h);
 
-            Com_Printf("DrawCinematic, Resample: %dx%d -> 256x256\n", cinTable[handle].CIN_WIDTH, cinTable[handle].CIN_HEIGHT);
+            if( (cinTable[handle].CIN_WIDTH != cinTable[handle].drawX || 
+                 cinTable[handle].CIN_HEIGHT != cinTable[handle].drawY) )
+            {
+                Com_Printf("Resample: %dx%d -> 256x256\n", cinTable[handle].CIN_WIDTH, cinTable[handle].CIN_HEIGHT);
 
-            int *buf2 = Hunk_AllocateTempMemory( 256*256*4 );
+                int *buf2 = Hunk_AllocateTempMemory( 256*256*4 );
 
-            CIN_ResampleCinematic(handle, buf2);
+                CIN_ResampleCinematic(handle, buf2);
 
-            re.DrawStretchRaw( x, y, w, h, 256, 256, (byte *)buf2, handle, qtrue);
-            cinTable[handle].dirty = qfalse;
-            Hunk_FreeTempMemory(buf2);
-            return;
+                re.DrawStretchRaw( x, y, w, h, 256, 256, (byte *)buf2, handle, qtrue);
+                cinTable[handle].dirty = qfalse;
+                Hunk_FreeTempMemory(buf2);
+                return;
+            }
         }
 
         re.DrawStretchRaw( x, y, w, h, cinTable[handle].drawX, cinTable[handle].drawY, buf, handle, cinTable[handle].dirty);
         cinTable[handle].dirty = qfalse;
 	}
+    else
+    {
+        Com_Printf("DrawCinematic: handle out of range! \n");
+    }
 }
 
 
@@ -1684,6 +1692,7 @@ void SCR_StopCinematic(void)
 		CL_handle = -1;
 	}
 }
+
 
 void CIN_UploadCinematic(int handle)
 {
@@ -1705,7 +1714,9 @@ void CIN_UploadCinematic(int handle)
 		}
 
 		// Resample the video if needed
-		if (cinTable[handle].dirty && (cinTable[handle].CIN_WIDTH != cinTable[handle].drawX || cinTable[handle].CIN_HEIGHT != cinTable[handle].drawY))
+		if (cinTable[handle].dirty && 
+                ( cinTable[handle].CIN_WIDTH != cinTable[handle].drawX ||
+                  cinTable[handle].CIN_HEIGHT != cinTable[handle].drawY))
         {
 			int * buf2 = Hunk_AllocateTempMemory( 256*256*4 );
 
@@ -1730,6 +1741,7 @@ void CIN_UploadCinematic(int handle)
 		if (cl_inGameVideo->integer == 0 && cinTable[handle].playonwalls == 1) {
 			cinTable[handle].playonwalls--;
 		}
+
 		else if (cl_inGameVideo->integer != 0 && cinTable[handle].playonwalls != 1) {
 			cinTable[handle].playonwalls = 1;
 		}
