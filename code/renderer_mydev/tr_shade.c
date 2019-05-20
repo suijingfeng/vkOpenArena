@@ -684,7 +684,9 @@ static void ComputeTexCoords( shaderStage_t *pStage ) {
 				RB_CalcStretchTexCoords( &pStage->bundle[b].texMods[tm].wave, 
 						               ( float * ) tess.svars.texcoords[b] );
 				break;
-
+			case TMOD_ATLAS:
+				RB_CalcAtlasTexCoords(  &pStage->bundle[b].texMods[tm].atlas, ( float * ) tess.svars.texcoords[b] );
+				break;
 			case TMOD_TRANSFORM:
 				RB_CalcTransformTexCoords( &pStage->bundle[b].texMods[tm],
 						                 ( float * ) tess.svars.texcoords[b] );

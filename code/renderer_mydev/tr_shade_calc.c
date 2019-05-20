@@ -15,7 +15,7 @@ MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 GNU General Public License for more details.
 
 You should have received a copy of the GNU General Public License
-along with Foobar; if not, write to the Free Software
+along with Quake III Arena source code; if not, write to the Free Software
 Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 ===========================================================================
 */
@@ -30,22 +30,22 @@ static float *TableForFunc( genFunc_t func )
 {
 	switch ( func )
 	{
-	case GF_SIN:
-		return tr.sinTable;
-	case GF_TRIANGLE:
-		return tr.triangleTable;
-	case GF_SQUARE:
-		return tr.squareTable;
-	case GF_SAWTOOTH:
-		return tr.sawToothTable;
-	case GF_INVERSE_SAWTOOTH:
-		return tr.inverseSawToothTable;
-	case GF_NONE:
-	default:
-		break;
+        case GF_SIN:
+            return tr.sinTable;
+        case GF_TRIANGLE:
+            return tr.triangleTable;
+        case GF_SQUARE:
+            return tr.squareTable;
+        case GF_SAWTOOTH:
+            return tr.sawToothTable;
+        case GF_INVERSE_SAWTOOTH:
+            return tr.inverseSawToothTable;
+        case GF_NONE:
+        default:
+            break;
 	}
 
-	ri.Error( ERR_DROP, "TableForFunc called with invalid function '%d' in shader '%s'\n", func, tess.shader->name );
+	ri.Error( ERR_DROP, "TableForFunc called with invalid function '%d' in shader '%s'", func, tess.shader->name );
 	return NULL;
 }
 
@@ -1012,7 +1012,79 @@ void RB_CalcRotateTexCoords( float degsPerSecond, float *st )
 }
 
 
+// TODO: refactor. There is a loop in there for now
 
+void RB_CalcAtlasTexCoords( const atlas_t *at, float *st )
+{
+	texModInfo_t tmi;
+	int w = (int)at->width;	
+	int h = (int)at->height;
+
+	int framex = 0;
+    int framey = 0;
+
+	// modes:
+	// 0 - static / animated
+	// 1 - entity alpha (i.e. cgame rocket smoke)
+
+	if (at->mode == 1)	// follow alpha modulation
+	{
+		int frametotal = w * h;
+		float alha = ((0.25+backEnd.currentEntity->e.shaderRGBA[3]) / (tr.identityLight * 256.0f));
+		int framethere = frametotal - ((frametotal * alha));
+		int f;
+        framex = 0;
+        for(f=0; f<framethere; f++)
+        {
+            framex +=1;
+
+            if (framex >= w)
+            {
+                framey +=1;	// next row!
+                framex = 0; // reset column
+            }
+        }
+	}
+	else	// static/animated
+	{
+		// Process frame sequence for animation
+		
+		{
+			int framethere = (tess.shaderTime * at->fps) + at->frame;			
+
+            int f;
+            framex = 0;
+            for(f=0; f<framethere; f++)
+            {
+                framex +=1;
+
+                if (framex >= w){
+                    framey +=1;	// next row!
+                    framex = 0; // reset column
+                }
+                if (framey >= h){
+                    framey = 0; // reset row
+                    framex = 0; // reset column
+                }
+            }
+		}
+	}
+
+	
+	// now use that information to alter our coordinates
+
+	tmi.matrix[0][0] = 1.0f / w;
+	tmi.matrix[1][0] = 0;
+	//tmi.matrix[2][0] = 0;
+	tmi.translate[0] = ((1.0f / w) * framex);
+
+	tmi.matrix[0][1] = 0;
+	tmi.matrix[1][1] = 1.0f / h;
+	//tmi.matrix[2][1] = 0;
+	tmi.translate[1] = ((1.0f / h) * framey);
+
+	RB_CalcTransformTexCoords( &tmi, st );
+}
 /*
 ** RB_CalcSpecularAlpha
 **

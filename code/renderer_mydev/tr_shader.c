@@ -33,29 +33,30 @@ static	shaderStage_t	stages[MAX_SHADER_STAGES];
 static	shader_t		shader;
 static	texModInfo_t	texMods[MAX_SHADER_STAGES][TR_MAX_TEXMODS];
 
-#define FILE_HASH_SIZE		1024
-static	shader_t*		hashTable[FILE_HASH_SIZE];
+#define FILE_HASH_SIZE	1024
+static	shader_t* hashTable[FILE_HASH_SIZE];
 
 #define MAX_SHADERTEXT_HASH		2048
 static char **shaderTextHashTable[MAX_SHADERTEXT_HASH];
 
-/*
-================
-return a hash value for the filename
-================
-*/
-static long generateHashValue( const char *fname, const int size ) {
-	int		i;
-	long	hash;
-	char	letter;
 
-	hash = 0;
-	i = 0;
-	while (fname[i] != '\0') {
-		letter = tolower(fname[i]);
-		if (letter =='.') break;				// don't include extension
-		if (letter =='\\') letter = '/';		// damn path names
-		if (letter == PATH_SEP) letter = '/';		// damn path names
+
+static long int generateHashValue( const char *fname, const int size )
+{
+	int	i = 0;
+	long hash = 0;
+
+	while (fname[i] != '\0')
+	{
+		char letter = tolower(fname[i]);
+		if (letter =='.')
+			break;				// don't include extension
+
+		if (letter =='\\')
+			letter = '/';		// damn path names
+        else if (letter == PATH_SEP)
+            letter = '/';		// damn path names
+
 		hash+=(long)(letter)*(i+119);
 		i++;
 	}
@@ -63,8 +64,6 @@ static long generateHashValue( const char *fname, const int size ) {
 	hash &= (size-1);
 	return hash;
 }
-
-
 
 
 void R_RemapShader(const char *shaderName, const char *newShaderName, const char *timeOffset) {
@@ -308,9 +307,7 @@ ParseWaveForm
 */
 static void ParseWaveForm( char **text, waveForm_t *wave )
 {
-	char *token;
-
-	token = R_ParseExt( text, qfalse );
+	char *token = R_ParseExt( text, qfalse );
 	if ( token[0] == 0 )
 	{
 		ri.Printf( PRINT_WARNING, "WARNING: missing waveform parm in shader '%s'\n", shader.name );
@@ -360,23 +357,17 @@ ParseTexMod
 */
 static void ParseTexMod( char *_text, shaderStage_t *stage )
 {
-	const char *token;
 	char **text = &_text;
-	texModInfo_t *tmi;
-
 	if ( stage->bundle[0].numTexMods == TR_MAX_TEXMODS ) {
-		ri.Error( ERR_DROP, "ERROR: too many tcMod stages in shader '%s'\n", shader.name );
+		ri.Error( ERR_DROP, "ERROR: too many tcMod stages in shader '%s'", shader.name );
 		return;
 	}
 
-	tmi = &stage->bundle[0].texMods[stage->bundle[0].numTexMods];
+	texModInfo_t *tmi = &stage->bundle[0].texMods[stage->bundle[0].numTexMods];
 	stage->bundle[0].numTexMods++;
 
-	token = R_ParseExt( text, qfalse );
+	const char *token = R_ParseExt( text, qfalse );
 
-	//
-	// turb
-	//
 	if ( !Q_stricmp( token, "turb" ) )
 	{
 		token = R_ParseExt( text, qfalse );
@@ -410,9 +401,6 @@ static void ParseTexMod( char *_text, shaderStage_t *stage )
 
 		tmi->type = TMOD_TURBULENT;
 	}
-	//
-	// scale
-	//
 	else if ( !Q_stricmp( token, "scale" ) )
 	{
 		token = R_ParseExt( text, qfalse );
@@ -432,9 +420,6 @@ static void ParseTexMod( char *_text, shaderStage_t *stage )
 		tmi->scale[1] = atof( token );
 		tmi->type = TMOD_SCALE;
 	}
-	//
-	// scroll
-	//
 	else if ( !Q_stricmp( token, "scroll" ) )
 	{
 		token = R_ParseExt( text, qfalse );
@@ -453,9 +438,6 @@ static void ParseTexMod( char *_text, shaderStage_t *stage )
 		tmi->scroll[1] = atof( token );
 		tmi->type = TMOD_SCROLL;
 	}
-	//
-	// stretch
-	//
 	else if ( !Q_stricmp( token, "stretch" ) )
 	{
 		token = R_ParseExt( text, qfalse );
@@ -500,11 +482,59 @@ static void ParseTexMod( char *_text, shaderStage_t *stage )
 		
 		tmi->type = TMOD_STRETCH;
 	}
-	//
-	// transform
-	//
-	else if ( !Q_stricmp( token, "transform" ) )
+	else if ( !Q_stricmp( token, "atlas" ) )
+	{   // leilei - atlas
+		token = R_ParseExt( text, qfalse );
+		if ( token[0] == 0 )
+		{
+			ri.Printf( PRINT_WARNING, "WARNING: missing atlas parms in shader '%s'\n", shader.name );
+			return;
+		}
+		tmi->atlas.mode = atof( token );
+
+		token = R_ParseExt( text, qfalse );
+		if ( token[0] == 0 )
+		{
+			ri.Printf( PRINT_WARNING, "WARNING: missing atlas parms in shader '%s'\n", shader.name );
+			return;
+		}
+		tmi->atlas.frame = atof( token );
+
+		token = R_ParseExt( text, qfalse );
+		if ( token[0] == 0 )
+		{
+			ri.Printf( PRINT_WARNING, "WARNING: missing atlas parms in shader '%s'\n", shader.name );
+			return;
+		}
+		tmi->atlas.fps = atof( token );
+
+		token = R_ParseExt( text, qfalse );
+		if ( token[0] == 0 )
+		{
+			ri.Printf( PRINT_WARNING, "WARNING: missing atlas parms in shader '%s'\n", shader.name );
+			return;
+		}
+		tmi->atlas.width = atof( token );
+			ri.Printf( PRINT_WARNING, "shader '%s' has width %f\n", shader.name, tmi->atlas.width );
+
+		token = R_ParseExt( text, qfalse );
+		if ( token[0] == 0 )
+		{
+			ri.Printf( PRINT_WARNING, "WARNING: missing atlas parms in shader '%s'\n", shader.name );
+			return;
+		}
+		tmi->atlas.height = atof( token );
+		
+		tmi->type = TMOD_ATLAS;
+	}
+	else if ( !Q_stricmp( token, "lightscale" ) )
 	{
+		token = R_ParseExt( text, qfalse );
+	
+		tmi->type = TMOD_LIGHTSCALE;
+	}
+	else if ( !Q_stricmp( token, "transform" ) )
+	{   // transform
 		token = R_ParseExt( text, qfalse );
 		if ( token[0] == 0 )
 		{
@@ -1838,7 +1868,7 @@ static void FixRenderCommandList( int newShader ) {
 SortNewShader
 
 Positions the most recently created shader in the tr.sortedShaders[]
-array so that the shader->sort key is sorted reletive to the other
+array so that the shader->sort key is sorted relative to the other
 shaders.
 
 Sets shader->sortedIndex
@@ -1877,7 +1907,7 @@ GeneratePermanentShader
 static shader_t *GeneratePermanentShader( void ) {
 	shader_t	*newShader;
 	int			i, b;
-	int			size, hash;
+	int			size;
 
 	if ( tr.numShaders == MAX_SHADERS ) {
 		ri.Printf( PRINT_WARNING, "WARNING: GeneratePermanentShader - MAX_SHADERS hit\n");
@@ -1918,7 +1948,7 @@ static shader_t *GeneratePermanentShader( void ) {
 
 	SortNewShader();
 
-	hash = generateHashValue(newShader->name, FILE_HASH_SIZE);
+	int hash = generateHashValue(newShader->name, FILE_HASH_SIZE);
 	newShader->next = hashTable[hash];
 	hashTable[hash] = newShader;
 

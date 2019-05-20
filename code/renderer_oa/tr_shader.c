@@ -70,6 +70,7 @@ static long int generateHashValue( const char *fname, const int size )
 }
 
 
+
 /* 
 ====================
 RE_RegisterShader
@@ -2779,7 +2780,6 @@ static qboolean ParseShader( char **text )
 		{
 			break;
 		}
-
 		// stage definition
 		else if ( token[0] == '{' )
 		{
@@ -2794,7 +2794,6 @@ static qboolean ParseShader( char **text )
 			}
 			stages[s].active = qtrue;
 			s++;
-
 			continue;
 		}
 		// skip stuff that only the QuakeEdRadient needs
@@ -2965,8 +2964,6 @@ static qboolean ParseShader( char **text )
 	}
 
 	shader.explicitlyDefined = qtrue;
-	//surfaceflagsy = shader.surfaceFlags;
-
 
 	return qtrue;
 }
@@ -2978,7 +2975,6 @@ SHADER OPTIMIZATION AND FOGGING
 
 ========================================================================================
 */
-
 
 typedef struct {
 	int		blendA;
@@ -3012,10 +3008,7 @@ static collapse_t	collapse[] = {
 
 	{ GLS_DSTBLEND_ONE | GLS_SRCBLEND_ONE, GLS_DSTBLEND_ONE | GLS_SRCBLEND_ONE,
 		GL_ADD, GLS_DSTBLEND_ONE | GLS_SRCBLEND_ONE },
-#if 0
-	{ 0, GLS_DSTBLEND_ONE_MINUS_SRC_ALPHA | GLS_SRCBLEND_SRC_ALPHA,
-		GL_DECAL, 0 },
-#endif
+
 	{ -1 }
 };
 
@@ -3040,7 +3033,6 @@ static qboolean CollapseMultitexture( void ) {
 	if ( !stages[0].active || !stages[1].active ) {
 		return qfalse;
 	}
-
 
 	abits = stages[0].stateBits;
 	bbits = stages[1].stateBits;
@@ -3258,7 +3250,7 @@ static shader_t *GeneratePermanentShader( void ) {
 		return tr.defaultShader;
 	}
 
-	newShader = ri.Hunk_Alloc( sizeof( shader_t ), h_low );
+	newShader = (shader_t*) ri.Hunk_Alloc( sizeof( shader_t ), h_low );
 
 	*newShader = shader;
 
@@ -3280,19 +3272,19 @@ static shader_t *GeneratePermanentShader( void ) {
 		if ( !stages[i].active ) {
 			break;
 		}
-		newShader->stages[i] = ri.Hunk_Alloc( sizeof( stages[i] ), h_low );
+		newShader->stages[i] = (shaderStage_t*) ri.Hunk_Alloc( sizeof( stages[i] ), h_low );
 		*newShader->stages[i] = stages[i];
 
 		for ( b = 0 ; b < NUM_TEXTURE_BUNDLES ; b++ ) {
 			size = newShader->stages[i]->bundle[b].numTexMods * sizeof( texModInfo_t );
-			newShader->stages[i]->bundle[b].texMods = ri.Hunk_Alloc( size, h_low );
+			newShader->stages[i]->bundle[b].texMods = (texModInfo_t*) ri.Hunk_Alloc( size, h_low );
 			memcpy( newShader->stages[i]->bundle[b].texMods, stages[i].bundle[b].texMods, size );
 		}
 	}
 
 	SortNewShader();
 
-	long int hash = generateHashValue(newShader->name, FILE_HASH_SIZE);
+	int hash = generateHashValue(newShader->name, FILE_HASH_SIZE);
 	newShader->next = hashTable[hash];
 	hashTable[hash] = newShader;
 
