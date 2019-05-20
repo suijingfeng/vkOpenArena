@@ -585,11 +585,8 @@ static void ParseTexMod( char *_text, shaderStage_t *stage )
 
 		tmi->type = TMOD_TRANSFORM;
 	}
-	//
-	// rotate
-	//
 	else if ( !Q_stricmp( token, "rotate" ) )
-	{
+	{   // rotate
 		token = R_ParseExt( text, qfalse );
 		if ( token[0] == 0 )
 		{
@@ -599,11 +596,8 @@ static void ParseTexMod( char *_text, shaderStage_t *stage )
 		tmi->rotateSpeed = atof( token );
 		tmi->type = TMOD_ROTATE;
 	}
-	//
-	// entityTranslate
-	//
 	else if ( !Q_stricmp( token, "entityTranslate" ) )
-	{
+	{   // entityTranslate
 		tmi->type = TMOD_ENTITY_TRANSLATE;
 	}
 	else
@@ -886,13 +880,47 @@ static qboolean ParseStage( shaderStage_t *stage, char **text )
 			{
 				stage->rgbGen = CGEN_EXACT_VERTEX;
 			}
+			else if ( !Q_stricmp( token, "vertexLighting" ) )	// leilei - vertex WITH a lighting pass after
+			{
+				stage->rgbGen = CGEN_VERTEX_LIT;
+				if ( stage->alphaGen == 0 ) {
+					stage->alphaGen = AGEN_VERTEX;
+				}
+			}
+			else if ( !Q_stricmp( token, "vertexLighting2" ) )	// leilei - second vertex color
+			{
+				stage->rgbGen = CGEN_VERTEX_LIT;
+				if ( stage->alphaGen == 0 ) {
+					stage->alphaGen = AGEN_VERTEX;
+				}
+			}
 			else if ( !Q_stricmp( token, "lightingDiffuse" ) )
 			{
 				stage->rgbGen = CGEN_LIGHTING_DIFFUSE;
 			}
+			else if ( !Q_stricmp( token, "lightingUniform" ) )
+			{
+				stage->rgbGen = CGEN_LIGHTING_UNIFORM;
+			}
+			else if ( !Q_stricmp( token, "lightingDynamic" ) )
+			{
+				stage->rgbGen = CGEN_LIGHTING_DYNAMIC;
+			}
+			else if ( !Q_stricmp( token, "flatAmbient" ) )
+			{
+				stage->rgbGen = CGEN_LIGHTING_FLAT_AMBIENT;
+			}
+			else if ( !Q_stricmp( token, "flatDirect" ) )
+			{
+				stage->rgbGen = CGEN_LIGHTING_FLAT_DIRECT;
+			}
 			else if ( !Q_stricmp( token, "oneMinusVertex" ) )
 			{
 				stage->rgbGen = CGEN_ONE_MINUS_VERTEX;
+			}
+			else if ( !Q_stricmp( token, "lightingSpecularDiffuse" ) )	// leilei - deprecated
+			{
+				stage->rgbGen = CGEN_LIGHTING_DIFFUSE;
 			}
 			else
 			{
