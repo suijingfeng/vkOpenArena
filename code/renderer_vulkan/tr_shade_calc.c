@@ -542,14 +542,16 @@ RB_DeformTessGeometry
 
 =====================
 */
-void RB_DeformTessGeometry( void ) {
-	int		i;
-	deformStage_t	*ds;
+void RB_DeformTessGeometry( shaderCommands_t * const pTess )
+{
+	int	i;
 
-	for ( i = 0 ; i < tess.shader->numDeforms ; i++ ) {
-		ds = &tess.shader->deforms[ i ];
+	for ( i = 0 ; i < pTess->shader->numDeforms ; ++i )
+    {
+		deformStage_t* ds = &pTess->shader->deforms[ i ];
 
-		switch ( ds->deformation ) {
+		switch ( ds->deformation )
+        {
         case DEFORM_NONE:
             break;
 		case DEFORM_NORMALS:

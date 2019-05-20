@@ -727,7 +727,7 @@ void RB_StageIteratorSky( void )
 	// by the generic shader routine
 	R_BuildCloudData( &tess );
 
-	RB_StageIteratorGeneric();
+	RB_StageIteratorGeneric( &tess );
 
 	// draw the inner skybox
 }

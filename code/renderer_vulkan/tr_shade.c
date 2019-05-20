@@ -112,11 +112,12 @@ void RB_EndSurface( void )
 	//
 	// call off to shader specific tess end function
 	//
-	if (tess.shader->isSky)
+	if (tess.shader->isSky) {
 		RB_StageIteratorSky();
-	else
-		RB_StageIteratorGeneric();
-
+    }
+	else {
+		RB_StageIteratorGeneric(&tess);
+    }
 	//
 	// draw debugging stuff
 	//

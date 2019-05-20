@@ -693,7 +693,6 @@ image_t* R_CreateImage( const char *name, unsigned char* pic, const uint32_t wid
 
     
     vk_create2DImageHandle( VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT, pImage);
-    
     vk_bindImageHandleWithDeviceMemory(pImage->handle, &devMemImg.Index, devMemImg.Chunks);
     vk_createViewForImageHandle(pImage->handle, VK_FORMAT_R8G8B8A8_UNORM, &pImage->view);
     vk_createDescriptorSet(pImage);
@@ -720,6 +719,31 @@ image_t* R_CreateImage( const char *name, unsigned char* pic, const uint32_t wid
     }
 
     return pImage;
+}
+
+
+static void vk_destroySingleImage( image_t* pImg )
+{
+   	// ri.Printf(PRINT_ALL, " Destroy Image: %s \n", pImg->imgName); 
+    if(pImg->descriptor_set != VK_NULL_HANDLE)
+    {   
+        //To free allocated descriptor sets
+        NO_CHECK( qvkFreeDescriptorSets(vk.device, vk.descriptor_pool, 1, &pImg->descriptor_set) );
+        pImg->descriptor_set = VK_NULL_HANDLE;
+    }
+
+    if (pImg->view != VK_NULL_HANDLE)
+    {
+        NO_CHECK( qvkDestroyImageView(vk.device, pImg->view, NULL) );
+        pImg->view = VK_NULL_HANDLE; 
+    }
+
+    
+    if (pImg->handle != VK_NULL_HANDLE)
+    {
+        NO_CHECK( qvkDestroyImage(vk.device, pImg->handle, NULL) );
+        pImg->handle = VK_NULL_HANDLE;
+    }
 }
 
 
@@ -794,23 +818,8 @@ void RE_UploadCinematic (int w, int h, int cols, int rows, const unsigned char *
 
 
         // VULKAN
-        if(prtImage->handle != VK_NULL_HANDLE)
-        {
-            NO_CHECK( qvkDestroyImage(vk.device, prtImage->handle, NULL) );
-            prtImage->handle = VK_NULL_HANDLE;
-        }
 
-        if(prtImage->view != VK_NULL_HANDLE)
-        {
-            NO_CHECK( qvkDestroyImageView(vk.device, prtImage->view, NULL) );
-            prtImage->view = VK_NULL_HANDLE;
-        }
-
-        if(prtImage->descriptor_set != VK_NULL_HANDLE)
-        {
-            NO_CHECK( qvkFreeDescriptorSets(vk.device, vk.descriptor_pool, 1, &prtImage->descriptor_set) );
-            prtImage->descriptor_set = VK_NULL_HANDLE;
-        }
+        vk_destroySingleImage(prtImage);
 
         prtImage->uploadWidth = cols;
         prtImage->uploadHeight = rows;
@@ -896,6 +905,17 @@ void RE_StretchRaw (int x, int y, int w, int h, int cols, int rows, const unsign
 		return;
 	}
 	
+    // SCR_AdjustFrom640( &x, &y, &w, &h );
+/*
+    float xscale = vk.renderArea.extent.width / 640.0f;
+    float yscale = vk.renderArea.extent.height / 480.0f;
+
+    x *= xscale;
+    y *= yscale;
+    w *= xscale;
+    h *= yscale;
+*/
+
     // make sure rows and cols are powers of 2
 	for ( i = 1 ; ( 1 << i ) < cols ; ++i )
     {
@@ -937,7 +957,7 @@ void R_SetCinematicShader( shader_t * pShader)
 
 static void R_CreateDefaultImage( void )
 {
-	#define	DEFAULT_SIZE	16
+	#define	DEFAULT_SIZE 16
 
 	unsigned char data[DEFAULT_SIZE][DEFAULT_SIZE][4];
 
@@ -945,7 +965,7 @@ static void R_CreateDefaultImage( void )
 	memset( data, 32, sizeof( data ) );
 
 	uint32_t x;
-	for ( x = 0; x < DEFAULT_SIZE; x++ )
+	for ( x = 0; x < DEFAULT_SIZE; ++x )
 	{
 		data[0][x][0] =
 			data[0][x][1] =
@@ -968,21 +988,25 @@ static void R_CreateDefaultImage( void )
 			data[x][DEFAULT_SIZE-1][3] = 255;
 	}
 	tr.defaultImage = R_CreateImage("*default", (unsigned char *)data, DEFAULT_SIZE, DEFAULT_SIZE, qtrue, qfalse, GL_REPEAT);
+    #undef DEFAULT_SIZE
 }
 
 
 
 static void R_CreateWhiteImage(void)
 {
+    #define	DEFAULT_SIZE 16
 	// we use a solid white image instead of disabling texturing
 	unsigned char data[DEFAULT_SIZE][DEFAULT_SIZE][4];
 	memset( data, 255, sizeof( data ) );
 	tr.whiteImage = R_CreateImage("*white", (unsigned char *)data, 8, 8, qfalse, qfalse, GL_REPEAT);
+    #undef DEFAULT_SIZE
 }
 
 
 static void R_CreateIdentityLightImage(void)
 {
+    #define	DEFAULT_SIZE 16
     uint32_t x,y;
 	unsigned char data[DEFAULT_SIZE][DEFAULT_SIZE][4];
 
@@ -997,6 +1021,7 @@ static void R_CreateIdentityLightImage(void)
 		}
 	}
 	tr.identityLightImage = R_CreateImage("*identityLight", (unsigned char *)data, 8, 8, qfalse, qfalse, GL_REPEAT);
+    #undef DEFAULT_SIZE
 }
 
 
@@ -1028,6 +1053,8 @@ static void R_CreateDlightImage( void )
 		}
 	}
 	tr.dlightImage = R_CreateImage("*dlight", (unsigned char *)data, DLIGHT_SIZE, DLIGHT_SIZE, qfalse, qfalse, GL_CLAMP);
+    #undef DEFAULT_SIZE
+
 }
 
 
@@ -1266,7 +1293,8 @@ image_t* R_CreateImageForCinematic( const char *name, unsigned char* pic, const 
     vk_create2DImageHandle( VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT, pImage);
     
     vk_bindImageHandleWithDeviceMemory(pImage->handle, &devMemImg.Index, devMemImg.Chunks);
-    
+
+    vk_createViewForImageHandle(pImage->handle, VK_FORMAT_R8G8B8A8_UNORM, &pImage->view);
     vk_createDescriptorSet(pImage);
 
 
@@ -1278,33 +1306,25 @@ image_t* R_CreateImageForCinematic( const char *name, unsigned char* pic, const 
     free(pUploadBuffer);
 
 
-/*
-    const int hash = generateHashValue(name);
-    pImage->next = hashTable[hash];
-    hashTable[hash] = pImage;
-
-    tr.images[tr.numImages] = pImage;
-    if ( ++tr.numImages >= MAX_DRAWIMAGES )
-    {
-        ri.Error( ERR_DROP, "CreateImage: MAX_DRAWIMAGES hit\n");
-    }
-*/
     return pImage;
 }
 
 
 static void R_CreateScratchImage(void)
 {
+    #define DEFAULT_SIZE 16
+
     uint32_t x;
     
     unsigned char data[DEFAULT_SIZE][DEFAULT_SIZE][4];
 
-    for(x=0;x<16;x++)
+    for(x=0; x<16; ++x)
     {
         // scratchimage is usually used for cinematic drawing
         tr_scratchImage[x] = R_CreateImageForCinematic("*scratch", (unsigned char *)data, 
                 DEFAULT_SIZE, DEFAULT_SIZE, qfalse, qtrue, GL_CLAMP);
     }
+    #undef DEFAULT_SIZE
 }
 
 
@@ -1348,23 +1368,7 @@ void R_InitImages( void )
 }
 
 
-static void vk_destroySingleImage( image_t* pImg )
-{
-   	// ri.Printf(PRINT_ALL, " Destroy Image: %s \n", pImg->imgName); 
-    if(pImg->descriptor_set != VK_NULL_HANDLE)
-    {   
-        //To free allocated descriptor sets
-        NO_CHECK( qvkFreeDescriptorSets(vk.device, vk.descriptor_pool, 1, &pImg->descriptor_set) );
-        pImg->descriptor_set = VK_NULL_HANDLE;
-    }
 
-    if (pImg->handle != VK_NULL_HANDLE)
-    {
-        NO_CHECK( qvkDestroyImageView(vk.device, pImg->view, NULL) );
-        NO_CHECK( qvkDestroyImage(vk.device, pImg->handle, NULL) );
-        pImg->handle = VK_NULL_HANDLE;
-    }
-}
 
 
 void vk_destroyImageRes(void)

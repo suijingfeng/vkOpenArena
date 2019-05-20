@@ -560,7 +560,7 @@ void vk_createDepthAttachment(int Width, int Height, VkFormat depthFmt)
     imgViewDesc.components.g = VK_COMPONENT_SWIZZLE_IDENTITY;
     imgViewDesc.components.b = VK_COMPONENT_SWIZZLE_IDENTITY;
     imgViewDesc.components.a = VK_COMPONENT_SWIZZLE_IDENTITY;
-    imgViewDesc.subresourceRange.aspectMask = VK_IMAGE_ASPECT_DEPTH_BIT;
+    imgViewDesc.subresourceRange.aspectMask = VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT;
     imgViewDesc.subresourceRange.baseMipLevel = 0;
     imgViewDesc.subresourceRange.levelCount = 1;
     imgViewDesc.subresourceRange.baseArrayLayer = 0;

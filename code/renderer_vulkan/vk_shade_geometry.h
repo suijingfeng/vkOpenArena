@@ -2,6 +2,7 @@
 #define VK_SHADE_GEOMETRY
 
 #include "vk_instance.h"
+#include "R_ShaderCommands.h"
 
 enum Vk_Depth_Range {
 	DEPTH_RANGE_NORMAL, // [0..1]
@@ -37,5 +38,5 @@ void vk_clearColorAttachments(const float* color);
 void vk_clearDepthStencilAttachments(void);
 
 
-void RB_StageIteratorGeneric( void );
+void RB_StageIteratorGeneric( shaderCommands_t * const pTess );
 #endif

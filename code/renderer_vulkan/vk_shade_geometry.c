@@ -770,7 +770,7 @@ static void ComputeColors( shaderStage_t *pStage )
 	}
 }
 
-static void ComputeTexCoords( shaderStage_t *pStage )
+static void ComputeTexCoords( shaderStage_t * pStage )
 {
 	uint32_t i;
 	uint32_t b;
@@ -1019,18 +1019,48 @@ static void RB_FogPass( void ) {
     vk_shade_geometry(pipeline, VK_FALSE, DEPTH_RANGE_NORMAL, VK_TRUE);
 }
 
+///////////////////////////////////////////////////////////////////////////////////
 
-void RB_StageIteratorGeneric( void )
+static void R_BindAnimatedImage( textureBundle_t *bundle, int tmu)
+{
+
+	if ( bundle->isVideoMap ) {
+		ri.CIN_RunCinematic(bundle->videoMapHandle);
+		ri.CIN_UploadCinematic(bundle->videoMapHandle);
+		return;
+	}
+
+	if ( bundle->numImageAnimations <= 1 ) {
+		updateCurDescriptor( bundle->image[0]->descriptor_set, tmu );
+		return;
+	}
+
+	// it is necessary to do this messy calc to make sure animations line up
+	// exactly with waveforms of the same frequency
+	int index = (int)( tess.shaderTime * bundle->imageAnimationSpeed * FUNCTABLE_SIZE );
+	index >>= FUNCTABLE_SIZE2;
+
+	if ( index < 0 ) {
+		index = 0;	// may happen with shader time offsets
+	}
+	index %= bundle->numImageAnimations;
+
+	updateCurDescriptor( bundle->image[ index ]->descriptor_set, tmu );
+}
+
+/////////////////////////////////////////////////////////////////////////////////
+
+void RB_StageIteratorGeneric(shaderCommands_t * const pTess)
 {
 //	shaderCommands_t *input = &tess;
 
-	RB_DeformTessGeometry();
+	RB_DeformTessGeometry(pTess);
 
 	// call shader function
 	//
 	// VULKAN
    
-    vk_UploadXYZI(tess.xyz, tess.numVertexes, tess.indexes, tess.numIndexes);
+    vk_UploadXYZI(pTess->xyz, pTess->numVertexes, pTess->indexes, pTess->numIndexes);
 
     updateMVP(backEnd.viewParms.isPortal, backEnd.projection2D, 
             getptr_modelview_matrix() );
@@ -1038,52 +1068,22 @@ void RB_StageIteratorGeneric( void )
 
     uint32_t stage = 0;
 
-	for ( stage = 0; (stage < MAX_SHADER_STAGES) && (NULL != tess.xstages[stage]); ++stage )
+	for ( stage = 0; stage < MAX_SHADER_STAGES; ++stage )
 	{
+		if ( NULL == pTess->xstages[stage])
+		{
+			break;
+		}
 
-		ComputeColors( tess.xstages[stage] );
-		ComputeTexCoords( tess.xstages[stage] );
+		ComputeColors( pTess->xstages[stage] );
+		ComputeTexCoords( pTess->xstages[stage] );
 
-        // base
-        // set state
-		//R_BindAnimatedImage( &tess.xstages[stage]->bundle[0] );
-        VkBool32 multitexture = (tess.xstages[stage]->bundle[1].image[0] != NULL);
-
-    {        
-	    if ( tess.xstages[stage]->bundle[0].isVideoMap )
-        {
-		    ri.CIN_RunCinematic(tess.xstages[stage]->bundle[0].videoMapHandle);
-		    ri.CIN_UploadCinematic(tess.xstages[stage]->bundle[0].videoMapHandle);
-		    goto ENDANIMA;
-	    }
-
-        int numAnimaImg = tess.xstages[stage]->bundle[0].numImageAnimations;
-
-        if ( numAnimaImg <= 1 )
-        {
-		    updateCurDescriptor( tess.xstages[stage]->bundle[0].image[0]->descriptor_set, 0);
-            //GL_Bind(tess.xstages[stage]->bundle[0].image[0]);
-            goto ENDANIMA;
-	    }
-
-        // it is necessary to do this messy calc to make sure animations line up
-        // exactly with waveforms of the same frequency
-	    int index = (int)( tess.shaderTime * tess.xstages[stage]->bundle[0].imageAnimationSpeed * FUNCTABLE_SIZE ) >> FUNCTABLE_SIZE2;
-        
-        if ( index < 0 ) {
-		    index = 0;	// may happen with shader time offsets
-	    }
-
-	    index %= numAnimaImg;
-
-	    updateCurDescriptor( tess.xstages[stage]->bundle[0].image[ index ]->descriptor_set, 0);
-        //GL_Bind(tess.xstages[stage]->bundle[0].image[ index ]);
-    }
-    
-ENDANIMA:
+        // base, set state
+		R_BindAnimatedImage( &pTess->xstages[stage]->bundle[0], 0 );
 		//
 		// do multitexture
 		//
+        qboolean multitexture = (pTess->xstages[stage]->bundle[1].image[0] != NULL);
 
 		if ( multitexture )
 		{
@@ -1096,41 +1096,15 @@ ENDANIMA:
             // bug with multitexture and clip planes
 
 
-            if ( tess.xstages[stage]->bundle[1].isVideoMap )
-            {
-                ri.CIN_RunCinematic(tess.xstages[stage]->bundle[1].videoMapHandle);
-                ri.CIN_UploadCinematic(tess.xstages[stage]->bundle[1].videoMapHandle);
-                goto END_ANIMA2;
-            }
+            // lightmap/secondary pass
 
-            if ( tess.xstages[stage]->bundle[1].numImageAnimations <= 1 ) {
-                updateCurDescriptor( tess.xstages[stage]->bundle[1].image[0]->descriptor_set, 1);
-                goto END_ANIMA2;
-            }
-
-            // it is necessary to do this messy calc to make sure animations line up
-            // exactly with waveforms of the same frequency
-            int index2 = (int)( tess.shaderTime * tess.xstages[stage]->bundle[1].imageAnimationSpeed * FUNCTABLE_SIZE ) >> FUNCTABLE_SIZE2;
-
-            if ( index2 < 0 ) {
-                index2 = 0;	// may happen with shader time offsets
-            }
-	        
-            index2 %= tess.xstages[stage]->bundle[1].numImageAnimations;
-
-            updateCurDescriptor( tess.xstages[stage]->bundle[1].image[ index2 ]->descriptor_set , 1);
-
-END_ANIMA2:
-
-            if (r_lightmap->integer)
-                updateCurDescriptor(tr.whiteImage->descriptor_set, 0); 
-            
-            // replace diffuse texture with a white one thus effectively render only lightmap
+            R_BindAnimatedImage( &pTess->xstages[stage]->bundle[1], 1 );
+            // disable texturing on TEXTURE1, then select TEXTURE0
 		}
 
        
         enum Vk_Depth_Range depth_range = DEPTH_RANGE_NORMAL;
-        if (tess.shader->isSky)
+        if (pTess->shader->isSky)
         {
             depth_range = DEPTH_RANGE_ONE;
             if (r_showsky->integer)
@@ -1144,20 +1118,20 @@ END_ANIMA2:
         
         if (backEnd.viewParms.isMirror)
         {
-            vk_shade_geometry(tess.xstages[stage]->vk_mirror_pipeline, multitexture, depth_range, VK_TRUE);
+            vk_shade_geometry(pTess->xstages[stage]->vk_mirror_pipeline, multitexture, depth_range, VK_TRUE);
         }
         else if (backEnd.viewParms.isPortal)
         {
-            vk_shade_geometry(tess.xstages[stage]->vk_portal_pipeline, multitexture, depth_range, VK_TRUE);
+            vk_shade_geometry(pTess->xstages[stage]->vk_portal_pipeline, multitexture, depth_range, VK_TRUE);
         }
         else
         {
-            vk_shade_geometry(tess.xstages[stage]->vk_pipeline, multitexture, depth_range, VK_TRUE);
+            vk_shade_geometry(pTess->xstages[stage]->vk_pipeline, multitexture, depth_range, VK_TRUE);
         }
 
                 
 		// allow skipping out to show just lightmaps during development
-		if ( r_lightmap->integer && ( tess.xstages[stage]->bundle[0].isLightmap || tess.xstages[stage]->bundle[1].isLightmap ) )
+		if ( r_lightmap->integer && ( pTess->xstages[stage]->bundle[0].isLightmap || pTess->xstages[stage]->bundle[1].isLightmap ) )
 		{
 			break;
 		}
@@ -1166,15 +1140,15 @@ END_ANIMA2:
 	// 
 	// now do any dynamic lighting needed
 	//
-	if ( tess.dlightBits && tess.shader->sort <= SS_OPAQUE
-		&& !(tess.shader->surfaceFlags & (SURF_NODLIGHT | SURF_SKY) ) ) {
+	if ( pTess->dlightBits && pTess->shader->sort <= SS_OPAQUE
+		&& !(pTess->shader->surfaceFlags & (SURF_NODLIGHT | SURF_SKY) ) ) {
 		ProjectDlightTexture();
 	}
 
 	//
 	// now do fog
 	//
-	if ( tess.fogNum && tess.shader->fogPass ) {
+	if ( pTess->fogNum && pTess->shader->fogPass ) {
 		RB_FogPass();
 	}
 }

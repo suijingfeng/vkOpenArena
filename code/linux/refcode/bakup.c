@@ -1586,3 +1586,96 @@ static void vk_stagBufferToDeviceLocalMem(VkImage image, VkBufferImageCopy* pReg
 
     vk_commitRecordedCmds(vk.tmpRecordBuffer);
 }
+
+/*
+	for(stage = 0; (stage < MAX_SHADER_STAGES) && (NULL != pTess->xstages[stage]); ++stage )
+	{
+
+		ComputeColors( pTess->xstages[stage] );
+		ComputeTexCoords( pTess->xstages[stage] );
+
+        // base
+        // set state
+		//R_BindAnimatedImage( &tess.xstages[stage]->bundle[0] );
+        VkBool32 multitexture = (tess.xstages[stage]->bundle[1].image[0] != NULL);
+
+    {        
+	    if ( tess.xstages[stage]->bundle[0].isVideoMap )
+        {
+		    ri.CIN_RunCinematic(tess.xstages[stage]->bundle[0].videoMapHandle);
+		    ri.CIN_UploadCinematic(tess.xstages[stage]->bundle[0].videoMapHandle);
+		    goto ENDANIMA;
+	    }
+
+        int numAnimaImg = tess.xstages[stage]->bundle[0].numImageAnimations;
+
+        if ( numAnimaImg <= 1 )
+        {
+		    updateCurDescriptor( tess.xstages[stage]->bundle[0].image[0]->descriptor_set, 0);
+            //GL_Bind(tess.xstages[stage]->bundle[0].image[0]);
+            goto ENDANIMA;
+	    }
+
+        // it is necessary to do this messy calc to make sure animations line up
+        // exactly with waveforms of the same frequency
+	    int index = (int)( tess.shaderTime * tess.xstages[stage]->bundle[0].imageAnimationSpeed * FUNCTABLE_SIZE ) >> FUNCTABLE_SIZE2;
+        
+        if ( index < 0 ) {
+		    index = 0;	// may happen with shader time offsets
+	    }
+
+	    index %= numAnimaImg;
+
+	    updateCurDescriptor( tess.xstages[stage]->bundle[0].image[ index ]->descriptor_set, 0);
+        //GL_Bind(tess.xstages[stage]->bundle[0].image[ index ]);
+    }
+    
+ENDANIMA:
+		//
+		// do multitexture
+		//
+
+		if ( multitexture )
+		{
+            // DrawMultitextured( input, stage );
+            // output = t0 * t1 or t0 + t1
+
+            // t0 = most upstream according to spec
+            // t1 = most downstream according to spec
+            // this is an ugly hack to work around a GeForce driver
+            // bug with multitexture and clip planes
+
+
+            if ( tess.xstages[stage]->bundle[1].isVideoMap )
+            {
+                ri.CIN_RunCinematic(tess.xstages[stage]->bundle[1].videoMapHandle);
+                ri.CIN_UploadCinematic(tess.xstages[stage]->bundle[1].videoMapHandle);
+                goto END_ANIMA2;
+            }
+
+            if ( tess.xstages[stage]->bundle[1].numImageAnimations <= 1 ) {
+                updateCurDescriptor( tess.xstages[stage]->bundle[1].image[0]->descriptor_set, 1);
+                goto END_ANIMA2;
+            }
+
+            // it is necessary to do this messy calc to make sure animations line up
+            // exactly with waveforms of the same frequency
+            int index2 = (int)( tess.shaderTime * tess.xstages[stage]->bundle[1].imageAnimationSpeed * FUNCTABLE_SIZE ) >> FUNCTABLE_SIZE2;
+
+            if ( index2 < 0 ) {
+                index2 = 0;	// may happen with shader time offsets
+            }
+	        
+            index2 %= tess.xstages[stage]->bundle[1].numImageAnimations;
+
+            updateCurDescriptor( tess.xstages[stage]->bundle[1].image[ index2 ]->descriptor_set , 1);
+
+END_ANIMA2:
+
+            if (r_lightmap->integer)
+                updateCurDescriptor(tr.whiteImage->descriptor_set, 0); 
+            
+            // replace diffuse texture with a white one thus effectively render only lightmap
+		}
+*/
+

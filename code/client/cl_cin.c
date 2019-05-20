@@ -919,8 +919,10 @@ static void recurseQuad( long startX, long startY, long quadSize, long xOff, lon
 	bigx = cinTable[currentHandle].xsize;
 	bigy = cinTable[currentHandle].ysize;
 
-	if (bigx > cinTable[currentHandle].CIN_WIDTH) bigx = cinTable[currentHandle].CIN_WIDTH;
-	if (bigy > cinTable[currentHandle].CIN_HEIGHT) bigy = cinTable[currentHandle].CIN_HEIGHT;
+	if (bigx > cinTable[currentHandle].CIN_WIDTH)
+        bigx = cinTable[currentHandle].CIN_WIDTH;
+	if (bigy > cinTable[currentHandle].CIN_HEIGHT)
+        bigy = cinTable[currentHandle].CIN_HEIGHT;
 
 	if ( (startX >= lowx) && (startX+quadSize) <= (bigx) && (startY+quadSize) <= (bigy) && (startY >= lowy) && quadSize <= MAXSIZE) {
 		useY = startY;
@@ -1653,9 +1655,6 @@ void SCR_DrawCinematic(int handle)
 
         if( cinTable[handle].dirty)
         {
-            Com_Printf("DrawCinematic: cinTable[%d].dirty = 1, drawX: %ld, drawY: %ld, width: %d, height:%d, x: %f, y:%f, w:%f, h:%f. \n",
-                    handle, cinTable[handle].drawX, cinTable[handle].drawY, cinTable[handle].width, cinTable[handle].height, x, y, w, h);
-
             if( (cinTable[handle].CIN_WIDTH != cinTable[handle].drawX || 
                  cinTable[handle].CIN_HEIGHT != cinTable[handle].drawY) )
             {
@@ -1672,6 +1671,9 @@ void SCR_DrawCinematic(int handle)
             }
         }
 
+        Com_Printf("DrawCinematic: cinTable[%d].dirty = 1, drawX: %ld, drawY: %ld, width: %d, height:%d, x: %f, y:%f, w:%f, h:%f. \n",
+                handle, cinTable[handle].drawX, cinTable[handle].drawY, cinTable[handle].width, cinTable[handle].height, x, y, w, h);
+        
         re.DrawStretchRaw( x, y, w, h, cinTable[handle].drawX, cinTable[handle].drawY, buf, handle, cinTable[handle].dirty);
         cinTable[handle].dirty = qfalse;
 	}
