@@ -212,6 +212,10 @@ typedef enum {
 	CGEN_ONE_MINUS_VERTEX,
 	CGEN_WAVEFORM,			// programmatically generated
 	CGEN_LIGHTING_DIFFUSE,
+	CGEN_LIGHTING_UNIFORM,
+	CGEN_LIGHTING_DYNAMIC,
+	CGEN_LIGHTING_FLAT_AMBIENT,		// leilei - cel hack
+	CGEN_LIGHTING_FLAT_DIRECT,
 	CGEN_FOG,				// standard fog
 	CGEN_CONST,				// fixed color
 	CGEN_VERTEX_LIT,			// leilei - tess.vertexColors * tr.identityLight * ambientlight*directlight
@@ -223,6 +227,9 @@ typedef enum {
 	TCGEN_LIGHTMAP,
 	TCGEN_TEXTURE,
 	TCGEN_ENVIRONMENT_MAPPED,
+	TCGEN_ENVIRONMENT_CELSHADE_MAPPED,
+	TCGEN_ENVIRONMENT_CELSHADE_LEILEI,	// leilei - cel hack
+	TCGEN_ENVIRONMENT_MAPPED_WATER,	// leilei - fake water reflection
 	TCGEN_FOG,
 	TCGEN_VECTOR			// S and T from world coordinates
 } texCoordGen_t;
