@@ -15,11 +15,18 @@ MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 GNU General Public License for more details.
 
 You should have received a copy of the GNU General Public License
-along with Foobar; if not, write to the Free Software
+along with Quake III Arena source code; if not, write to the Free Software
 Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 ===========================================================================
 */
 // tr_shade.c
+/* 
+ * tr_shade.c
+ *
+ * THIS ENTIRE FILE IS BACK END
+ *
+ * This file deals with applying shaders to surface data in the tess struct.
+ */
 
 #include "tr_local.h"
 
@@ -91,7 +98,8 @@ DrawTris
 Draws triangle outlines for debugging
 ================
 */
-static void DrawTris (shaderCommands_t *input) {
+static void DrawTris (shaderCommands_t *input)
+{
 	GL_Bind( tr.whiteImage );
 	qglColor3f (1,1,1);
 
@@ -105,18 +113,14 @@ static void DrawTris (shaderCommands_t *input) {
 
 	if (qglLockArraysEXT) {
 		qglLockArraysEXT(0, input->numVertexes);
-		GLimp_LogComment( "glLockArraysEXT\n" );
 	}
 
 	R_DrawElements( input->numIndexes, input->indexes );
 
 	if (qglUnlockArraysEXT) {
 		qglUnlockArraysEXT();
-		GLimp_LogComment( "glUnlockArraysEXT\n" );
 	}
 	qglDepthRange( 0, 1 );
-
-
 }
 
 
