@@ -1030,7 +1030,7 @@ intptr_t CL_UISystemCalls(intptr_t *args)
           return CIN_RunCinematic(args[1]);
 
         case UI_CIN_DRAWCINEMATIC:
-          CIN_DrawCinematic(args[1]);
+          SCR_DrawCinematic(args[1]);
           return 0;
 
         case UI_CIN_SETEXTENTS:

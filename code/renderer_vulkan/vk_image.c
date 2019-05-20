@@ -728,11 +728,12 @@ image_t* R_CreateImage( const char *name, unsigned char* pic, const uint32_t wid
     void* data;
     VK_CHECK( qvkMapMemory(vk.device, StagBuf.mappableMem, 0, VK_WHOLE_SIZE, 0, &data) );
     memcpy(data, pUploadBuffer, buffer_size);
+    vk_stagBufferToDeviceLocalMem(pImage->handle, regions, pImage->mipLevels);
     NO_CHECK( qvkUnmapMemory(vk.device, StagBuf.mappableMem) );
 
     free(pUploadBuffer);
 
-    vk_stagBufferToDeviceLocalMem(pImage->handle, regions, pImage->mipLevels);
+
 
     const int hash = generateHashValue(name);
     pImage->next = hashTable[hash];
@@ -867,9 +868,10 @@ void RE_UploadCinematic (int w, int h, int cols, int rows, const unsigned char *
         void* pDat;
         VK_CHECK( qvkMapMemory(vk.device, StagBuf.mappableMem, 0, VK_WHOLE_SIZE, 0, &pDat) );
         memcpy(pDat, data, buffer_size);
+        vk_stagBufferToDeviceLocalMem(tr_scratchImage[client]->handle, &region, 1);
+        
         NO_CHECK( qvkUnmapMemory(vk.device, StagBuf.mappableMem) );
 
-        vk_stagBufferToDeviceLocalMem(tr_scratchImage[client]->handle, &region, 1);
     }
     else if (dirty)
     {
@@ -898,9 +900,9 @@ void RE_UploadCinematic (int w, int h, int cols, int rows, const unsigned char *
         void* pDat;
         VK_CHECK( qvkMapMemory(vk.device, StagBuf.mappableMem, 0, VK_WHOLE_SIZE, 0, &pDat));
         memcpy(pDat, data, buffer_size);
+        vk_stagBufferToDeviceLocalMem(tr_scratchImage[client]->handle, &region, 1);
         NO_CHECK( qvkUnmapMemory(vk.device, StagBuf.mappableMem) );
 
-        vk_stagBufferToDeviceLocalMem(tr_scratchImage[client]->handle, &region, 1);
     }
 }
 
@@ -1296,10 +1298,10 @@ image_t* R_CreateImageForCinematic( const char *name, unsigned char* pic, const 
     VK_CHECK( qvkMapMemory(vk.device, StagBuf.mappableMem, 0, VK_WHOLE_SIZE, 0, &data) );
     memcpy(data, pUploadBuffer, buffer_size);
     NO_CHECK( qvkUnmapMemory(vk.device, StagBuf.mappableMem) );
-
+    vk_stagBufferToDeviceLocalMem(pImage->handle, regions, pImage->mipLevels);
     free(pUploadBuffer);
 
-    vk_stagBufferToDeviceLocalMem(pImage->handle, regions, pImage->mipLevels);
+
 /*
     const int hash = generateHashValue(name);
     pImage->next = hashTable[hash];

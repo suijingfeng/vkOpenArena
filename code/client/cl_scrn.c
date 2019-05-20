@@ -474,8 +474,12 @@ static void SCR_DrawScreenField(void)
 
 	// wide aspect ratio screens need to have the sides cleared
 	// unless they are displaying game renderings
-	if ( uiFullscreen || clc.state < CA_LOADING ) {
-		if ( cls.glconfig.vidWidth * 480 > cls.glconfig.vidHeight * 640 ) {
+	if ( uiFullscreen || clc.state < CA_LOADING )
+    {
+        // if ( cls.glconfig.vidWidth * 480 > cls.glconfig.vidHeight * 640 )
+
+		if ( cls.glconfig.vidWidth * 3 > cls.glconfig.vidHeight * 4 )
+        {
 			re.SetColor( g_color_table[0] );
 			re.DrawStretchPic( 0, 0, cls.glconfig.vidWidth, cls.glconfig.vidHeight, 0, 0, 0, 0, cls.whiteShader );
 			re.SetColor( NULL );
@@ -484,13 +488,14 @@ static void SCR_DrawScreenField(void)
 
 	// if the menu is going to cover the entire screen, we
 	// don't need to render anything under it
-	if ( uivm && !uiFullscreen ) {
+	if ( uivm && !uiFullscreen )
+    {
 		switch( clc.state ) {
 		default:
 			Com_Error( ERR_FATAL, "SCR_DrawScreenField: bad clc.state" );
 			break;
 		case CA_CINEMATIC:
-			SCR_DrawCinematic();
+			SCR_DrawCinematic(-1);
 			break;
 		case CA_DISCONNECTED:
 			// force menu up
