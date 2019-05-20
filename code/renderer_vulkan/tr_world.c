@@ -679,18 +679,9 @@ void R_GetWorldBaseName(char* checkname)
     sprintf( checkname, "levelshots/%s.tga", tr.world->baseName );
 }
 
-void SetTessFogColor(unsigned char (*pcolor)[4], int fnum, int nVerts)
+
+void R_GetFogArray(fog_t **ppFogs, uint32_t* pNum)
 {
-    fog_t* fog = tr.world->fogs + fnum;
-
-    uint32_t i; 
-    for (i = 0; i < nVerts; ++i)
-    {
-        pcolor[i][0] = fog->colorRGBA[0];
-        pcolor[i][1] = fog->colorRGBA[1];
-        pcolor[i][2] = fog->colorRGBA[2];
-        pcolor[i][3] = fog->colorRGBA[3];
-    }
+    *ppFogs = tr.world->fogs;
+    *pNum = tr.world->numfogs;
 }
-
-

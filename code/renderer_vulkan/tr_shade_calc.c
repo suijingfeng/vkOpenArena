@@ -840,7 +840,8 @@ projected textures, but I don't trust the drivers and it
 doesn't fit our shader data.
 ========================
 */
-void RB_CalcFogTexCoords( float *st ) {
+void RB_CalcFogTexCoords( float *st )
+{
 	int			i;
 	float		*v;
 	float		s, t;

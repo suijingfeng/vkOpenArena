@@ -92,6 +92,6 @@ WORLD MAP
 void R_AddBrushModelSurfaces( trRefEntity_t *e );
 void R_AddWorldSurfaces(viewParms_t * const pViewParams);
 void R_GetWorldBaseName(char* checkname);
-void SetTessFogColor(unsigned char (*pcolor)[4], int fnum, int nvert);
+void R_GetFogArray(fog_t **ppFogs, uint32_t* pNum);
 
 #endif
