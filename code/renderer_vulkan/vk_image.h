@@ -15,6 +15,7 @@
 
 uint32_t find_memory_type(uint32_t memory_type_bits, VkMemoryPropertyFlags properties);
 
+void vk_createViewForImageHandle(VkImage Handle, VkFormat Fmt, VkImageView* const pView);
 
 void vk_destroyImageRes(void);
 

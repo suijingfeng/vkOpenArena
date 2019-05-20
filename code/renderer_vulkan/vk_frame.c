@@ -454,8 +454,8 @@ void vk_createColorAttachment(VkDevice lgDev, const VkSwapchainKHR HSwapChain,
 
     VK_CHECK( qvkGetSwapchainImagesKHR(lgDev, HSwapChain, &swapchainLen, NULL) );
  
-    ri.Printf(PRINT_ALL, " Actual Number of Swapchain image: %d\n",
-            swapchainLen );
+    ri.Printf(PRINT_ALL, " Actual Number of Swapchain image: %d, format: %d \n",
+            swapchainLen, surFmt );
 
     // To obtain presentable image handles associated with a swapchain
     VK_CHECK( qvkGetSwapchainImagesKHR(lgDev, HSwapChain, &swapchainLen, vk.swapchain_images_array) );

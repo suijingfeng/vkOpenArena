@@ -1509,4 +1509,80 @@ _PROC_END_:
 
 
 
+static void vk_stagBufferToDeviceLocalMem(VkImage image, VkBufferImageCopy* pRegion, uint32_t num_region)
+{
+    // An application can copy buffer and image data using several methods
+    // depending on the type of data transfer. Data can be copied between
+    // buffer objects with vkCmdCopyBuffer and a portion of an image can 
+    // be copied to another image with vkCmdCopyImage. 
+    //
+    // Image data can also be copied to and from buffer memory using
+    // vkCmdCopyImageToBuffer and vkCmdCopyBufferToImage.
+    //
+    // Image data can be blitted (with or without scaling and filtering) 
+    // with vkCmdBlitImage. Multisampled images can be resolved to a 
+    // non-multisampled image with vkCmdResolveImage.
+    /*
+    VkCommandBuffer HCmdBuf;
 
+    VkCommandBufferAllocateInfo alloc_info;
+    alloc_info.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
+    alloc_info.pNext = NULL;
+    alloc_info.commandPool = vk.command_pool;
+    alloc_info.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
+    alloc_info.commandBufferCount = 1;
+    VK_CHECK( qvkAllocateCommandBuffers(vk.device, &alloc_info, &HCmdBuf) );
+
+    VkCommandBufferBeginInfo begin_info;
+    begin_info.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
+    begin_info.pNext = NULL;
+    begin_info.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
+    begin_info.pInheritanceInfo = NULL;
+    VK_CHECK( qvkBeginCommandBuffer(HCmdBuf, &begin_info) );
+*/
+
+    vk_beginRecordCmds( vk.tmpRecordBuffer );
+/*
+    VkBufferMemoryBarrier barrier;
+    barrier.sType = VK_STRUCTURE_TYPE_BUFFER_MEMORY_BARRIER;
+    barrier.pNext = NULL;
+    barrier.srcAccessMask = VK_ACCESS_HOST_WRITE_BIT;
+    barrier.dstAccessMask = VK_ACCESS_TRANSFER_READ_BIT;
+    barrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+    barrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+    barrier.buffer = StagBuf.buff;
+    barrier.offset = 0;
+    barrier.size = VK_WHOLE_SIZE;
+
+    NO_CHECK( qvkCmdPipelineBarrier( vk.tmpRecordBuffer, VK_PIPELINE_STAGE_HOST_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT, 0, 0, NULL, 1, &barrier, 0, NULL) );
+*/
+    record_image_layout_transition( vk.tmpRecordBuffer, image, 
+            VK_IMAGE_ASPECT_COLOR_BIT,
+            0,
+            VK_IMAGE_LAYOUT_UNDEFINED, 
+            VK_ACCESS_TRANSFER_WRITE_BIT,
+            VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
+
+
+    // To copy data from a buffer object to an image object
+
+    // HCmdBuf is the command buffer into which the command will be recorded.
+    // StagBuf.buff is the source buffer.
+    // image is the destination image.
+    // dstImageLayout is the layout of the destination image subresources.
+    // curLevel is the number of regions to copy.
+    // pRegions is a pointer to an array of VkBufferImageCopy structures
+    // specifying the regions to copy.
+    NO_CHECK( qvkCmdCopyBufferToImage( vk.tmpRecordBuffer, StagBuf.buff, image,
+                VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, num_region, pRegion) );
+
+    record_image_layout_transition(vk.tmpRecordBuffer, image,
+            VK_IMAGE_ASPECT_COLOR_BIT, 
+            VK_ACCESS_TRANSFER_WRITE_BIT,
+            VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 
+            VK_ACCESS_SHADER_READ_BIT,
+            VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
+
+
+    vk_commitRecordedCmds(vk.tmpRecordBuffer);
+}

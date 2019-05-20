@@ -15,6 +15,18 @@
 #define IMAGE_CHUNK_SIZE        (64 * 1024 * 1024)
 
 
+// An application can copy buffer and image data using several methods
+// depending on the type of data transfer. Data can be copied between
+// buffer objects with vkCmdCopyBuffer and a portion of an image can 
+// be copied to another image with vkCmdCopyImage. 
+//
+// Image data can also be copied to and from buffer memory using
+// vkCmdCopyImageToBuffer and vkCmdCopyBufferToImage.
+//
+// Image data can be blitted (with or without scaling and filtering) 
+// with vkCmdBlitImage. Multisampled images can be resolved to a 
+// non-multisampled image with vkCmdResolveImage.
+
 struct StagingBuffer_t
 {
     // Vulkan supports two primary resource types: buffers and images. 
@@ -185,10 +197,12 @@ static void record_image_layout_transition(
 	barrier.subresourceRange.baseArrayLayer = 0;
 	barrier.subresourceRange.layerCount = VK_REMAINING_ARRAY_LAYERS;
 
-// vkCmdPipelineBarrier is a synchronization command that inserts a dependency between
-// commands submitted to the same queue, or between commands in the same subpass.
-// When vkCmdPipelineBarrier is submitted to a queue, it defines a memory dependency
-// between commands that were submitted before it, and those submitted after it.
+    // vkCmdPipelineBarrier is a synchronization command that inserts
+    // a dependency between commands submitted to the same queue, or 
+    // between commands in the same subpass. When vkCmdPipelineBarrier
+    // is submitted to a queue, it defines a memory dependency between
+    // commands that were submitted before it, and those submitted 
+    // after it.
     
     // cmdBuf is the command buffer into which the command is recorded.
 	NO_CHECK( qvkCmdPipelineBarrier(cmdBuf, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT,
@@ -198,51 +212,11 @@ static void record_image_layout_transition(
 
 static void vk_stagBufferToDeviceLocalMem(VkImage image, VkBufferImageCopy* pRegion, uint32_t num_region)
 {
-    // An application can copy buffer and image data using several methods
-    // depending on the type of data transfer. Data can be copied between
-    // buffer objects with vkCmdCopyBuffer and a portion of an image can 
-    // be copied to another image with vkCmdCopyImage. 
-    //
-    // Image data can also be copied to and from buffer memory using
-    // vkCmdCopyImageToBuffer and vkCmdCopyBufferToImage.
-    //
-    // Image data can be blitted (with or without scaling and filtering) 
-    // with vkCmdBlitImage. Multisampled images can be resolved to a 
-    // non-multisampled image with vkCmdResolveImage.
-    /*
-    VkCommandBuffer HCmdBuf;
-
-    VkCommandBufferAllocateInfo alloc_info;
-    alloc_info.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
-    alloc_info.pNext = NULL;
-    alloc_info.commandPool = vk.command_pool;
-    alloc_info.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
-    alloc_info.commandBufferCount = 1;
-    VK_CHECK( qvkAllocateCommandBuffers(vk.device, &alloc_info, &HCmdBuf) );
-
-    VkCommandBufferBeginInfo begin_info;
-    begin_info.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
-    begin_info.pNext = NULL;
-    begin_info.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
-    begin_info.pInheritanceInfo = NULL;
-    VK_CHECK( qvkBeginCommandBuffer(HCmdBuf, &begin_info) );
-*/
 
     vk_beginRecordCmds( vk.tmpRecordBuffer );
-/*
-    VkBufferMemoryBarrier barrier;
-    barrier.sType = VK_STRUCTURE_TYPE_BUFFER_MEMORY_BARRIER;
-    barrier.pNext = NULL;
-    barrier.srcAccessMask = VK_ACCESS_HOST_WRITE_BIT;
-    barrier.dstAccessMask = VK_ACCESS_TRANSFER_READ_BIT;
-    barrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
-    barrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
-    barrier.buffer = StagBuf.buff;
-    barrier.offset = 0;
-    barrier.size = VK_WHOLE_SIZE;
 
-    NO_CHECK( qvkCmdPipelineBarrier( vk.tmpRecordBuffer, VK_PIPELINE_STAGE_HOST_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT, 0, 0, NULL, 1, &barrier, 0, NULL) );
-*/
+    // VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL : The image is the
+    // destination of copy operations. 
     record_image_layout_transition( vk.tmpRecordBuffer, image, 
             VK_IMAGE_ASPECT_COLOR_BIT,
             0,
@@ -252,8 +226,6 @@ static void vk_stagBufferToDeviceLocalMem(VkImage image, VkBufferImageCopy* pReg
 
 
     // To copy data from a buffer object to an image object
-
-    // HCmdBuf is the command buffer into which the command will be recorded.
     // StagBuf.buff is the source buffer.
     // image is the destination image.
     // dstImageLayout is the layout of the destination image subresources.
@@ -270,7 +242,6 @@ static void vk_stagBufferToDeviceLocalMem(VkImage image, VkBufferImageCopy* pReg
             VK_ACCESS_SHADER_READ_BIT,
             VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
 
-
     vk_commitRecordedCmds(vk.tmpRecordBuffer);
 }
 
@@ -280,20 +251,20 @@ static image_t*	hashTable[FILE_HASH_SIZE];
 
 static int generateHashValue( const char *fname )
 {
-	uint32_t i = 0;
-	int	hash = 0;
+    uint32_t i = 0;
+    int	hash = 0;
 
-	while (fname[i] != '\0')
+    while (fname[i] != '\0')
     {
-		// char letter = tolower(fname[i]);
+        // char letter = tolower(fname[i]);
         char letter = fname[i];
-		if (letter =='.')
+        if (letter =='.')
             break;		// don't include extension
-		if (letter =='\\')
+        if (letter =='\\')
             letter = '/';	// damn path names
-		hash+=(int)(letter)*(i+119);
-		++i;
-	}
+        hash+=(int)(letter)*(i+119);
+        ++i;
+    }
 
     return hash & (FILE_HASH_SIZE-1);
 }
@@ -364,16 +335,17 @@ static void vk_create2DImageHandle(VkImageUsageFlags imgUsage, image_t* const pI
     desc.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
     desc.queueFamilyIndexCount = 0;
     desc.pQueueFamilyIndices = NULL;
+    // However, images must initially be created in either 
+    // VK_IMAGE_LAYOUT_UNDEFINED or VK_IMAGE_LAYOUT_PREINITIALIZED
     desc.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
 
     VK_CHECK( qvkCreateImage(vk.device, &desc, NULL, &pImg->handle) );
 }
 
+
 static void vk_allocDeviceLocalMemory(uint32_t memType, uint32_t const idx,
         struct ImageChunk_t* const pChunk)
 {
-    // Allocate a new chunk
-    
     VkMemoryAllocateInfo alloc_info;
     alloc_info.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
     alloc_info.pNext = NULL;
@@ -381,7 +353,7 @@ static void vk_allocDeviceLocalMemory(uint32_t memType, uint32_t const idx,
     alloc_info.memoryTypeIndex = find_memory_type( 
         memType, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT );
 
-
+    // Allocate a new chunk
     VK_CHECK( qvkAllocateMemory(vk.device, &alloc_info, NULL, &pChunk[idx].block) );
     
     ri.Printf(PRINT_ALL, "Allocate Device local memory, Size: %d MB, Type Index: %d. \n",
@@ -422,27 +394,34 @@ static void vk_bindImageHandleWithDeviceMemory(VkImage hImg, uint32_t * const pI
         pChunk[*pIdx_uplimit].Used = memory_requirements.size;
         ++*pIdx_uplimit;
     }
-
 }
 
-
-
-static void vk_createImageViewAndDescriptorSet(image_t* pImage)
+void vk_createViewForImageHandle(VkImage Handle, VkFormat Fmt, VkImageView* const pView)
 {
-
-    // VkImageView imageView;
+    // In many cases, the image resource cannot be used directly, 
+    // as more information about it is needed than is included in
+    // the resource itself. For example, you cannot use an image
+    // resource directly as an attacnment to a framebuffer or
+    // bind an image in to a descriptor set in order to sample it
+    // in a shader. To satisfy these additional requirements,
+    // you must create an image view, which is essentically a 
+    // collecton of properties and a reference to a parent image
+    // resource.
 
     VkImageViewCreateInfo desc;
     desc.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
     desc.pNext = NULL;
     desc.flags = 0;
-    desc.image = pImage->handle;
+    desc.image = Handle;
     desc.viewType = VK_IMAGE_VIEW_TYPE_2D;
     // format is a VkFormat describing the format and type used 
     // to interpret data elements in the image.
-    desc.format = VK_FORMAT_R8G8B8A8_UNORM;
+    desc.format = Fmt;
 
-    // the components field allows you to swizzle the color channels around
+    // the components field allows you to swizzle the color channels
+    // around. VK_COMPONENT_SWIZZLE_IDENTITY indicates that the data
+    // in the child image should be read from the corresponding 
+    // channel in the parent image.
     desc.components.r = VK_COMPONENT_SWIZZLE_IDENTITY;
     desc.components.g = VK_COMPONENT_SWIZZLE_IDENTITY;
     desc.components.b = VK_COMPONENT_SWIZZLE_IDENTITY;
@@ -457,33 +436,31 @@ static void vk_createImageViewAndDescriptorSet(image_t* pImage)
     desc.subresourceRange.levelCount = VK_REMAINING_MIP_LEVELS;
     desc.subresourceRange.baseArrayLayer = 0;
     desc.subresourceRange.layerCount = 1;
-    // Image objects are not directly accessed by pipeline shaders for reading or writing image data.
-    // Instead, image views representing contiguous ranges of the image subresources and containing
-    // additional metadata are used for that purpose. Views must be created on images of compatible
-    // types, and must represent a valid subset of image subresources.
+    // Some of the image creation parameters are inherited by the view.
+    // In particular, image view creation inherits the implicit parameter
+    // usage specifying the allowed usages of the image view that, 
+    // by default, takes the value of the corresponding usage parameter
+    // specified in VkImageCreateInfo at image creation time.
     //
-    // Some of the image creation parameters are inherited by the view. In particular, image view
-    // creation inherits the implicit parameter usage specifying the allowed usages of the image 
-    // view that, by default, takes the value of the corresponding usage parameter specified in
-    // VkImageCreateInfo at image creation time.
+    // This implicit parameter can be overriden by chaining a 
+    // VkImageViewUsageCreateInfo structure through the pNext member to
+    // VkImageViewCreateInfo.
     //
-    // This implicit parameter can be overriden by chaining a VkImageViewUsageCreateInfo structure
-    // through the pNext member to VkImageViewCreateInfo.
-    VK_CHECK( qvkCreateImageView(vk.device, &desc, NULL, &pImage->view) );
+    // The resulting view of the parent image must have the same dimensions
+    // as the parent. The format of the parent and child images must be
+    // compatible, which usually means that they have the same number of
+    // bits per pixel.
+    VK_CHECK( qvkCreateImageView(vk.device, &desc, NULL, pView) );
+}
 
-    ///////////////////////////////////////////////////////
-    // create associated descriptor set
-    ///////////////////////////////////////////////////////
+
+static void vk_createImageViewAndDescriptorSet(image_t * const pImage)
+{
     // Allocate a descriptor set from the pool. 
     // Note that we have to provide the descriptor set layout that 
     // This layout describes how the descriptor set is to be allocated.
 
-
     vk_allocOneDescptrSet(&pImage->descriptor_set);
-
-
-    /////  save it for destroy and update current descriptor
-    // pImage->descriptor_set = desSet;
 
     //ri.Printf(PRINT_ALL, " Allocate Descriptor Sets \n");
     VkWriteDescriptorSet descriptor_write;
@@ -509,12 +486,6 @@ static void vk_createImageViewAndDescriptorSet(image_t* pImage)
 
     // The above steps essentially copy the VkDescriptorBufferInfo
     // to the descriptor, which is likely in the device memory.
-    //
-    // This buffer info includes the handle to the uniform buffer
-    // as well as the offset and size of the data that is accessed
-    // in the uniform buffer. In this case, the uniform buffer 
-    // contains only the MVP transform, so the offset is 0 and 
-    // the size is the size of the MVP.
 }
 
 
@@ -721,7 +692,7 @@ image_t* R_CreateImage( const char *name, unsigned char* pic, const uint32_t wid
     vk_create2DImageHandle( VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT, pImage);
     
     vk_bindImageHandleWithDeviceMemory(pImage->handle, &devMemImg.Index, devMemImg.Chunks);
-    
+    vk_createViewForImageHandle(pImage->handle, VK_FORMAT_R8G8B8A8_UNORM, &pImage->view);
     vk_createImageViewAndDescriptorSet(pImage);
 
 
@@ -845,6 +816,7 @@ void RE_UploadCinematic (int w, int h, int cols, int rows, const unsigned char *
         // vk_createImageAndBindWithMemory(prtImage);
         vk_create2DImageHandle( VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT, prtImage);
         vk_bindImageHandleWithDeviceMemory(prtImage->handle, &devMemImg.Index, devMemImg.Chunks);
+        vk_createViewForImageHandle(prtImage->handle, VK_FORMAT_R8G8B8A8_UNORM, &prtImage->view);
         vk_createImageViewAndDescriptorSet(prtImage);
 
 
@@ -1343,6 +1315,9 @@ void R_InitImages( void )
     tr_cinematicShader = NULL;
 
     ri.Printf(PRINT_ALL, " Create staging buffer (8 MB) \n");
+
+    // StagBuf.buff must have been created with VK_BUFFER_USAGE_TRANSFER_SRC_BIT
+    // usage flag for vkCmdCopyBufferToImage.
     vk_createBufferResource( 8 * 1024 * 1024, VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
              &StagBuf.buff, &StagBuf.mappableMem );
 
