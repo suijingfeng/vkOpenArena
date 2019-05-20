@@ -454,7 +454,7 @@ void vk_createViewForImageHandle(VkImage Handle, VkFormat Fmt, VkImageView* cons
 }
 
 
-static void vk_createImageViewAndDescriptorSet(image_t * const pImage)
+static void vk_createDescriptorSet(image_t * const pImage)
 {
     // Allocate a descriptor set from the pool. 
     // Note that we have to provide the descriptor set layout that 
@@ -468,6 +468,9 @@ static void vk_createImageViewAndDescriptorSet(image_t * const pImage)
     VkDescriptorImageInfo image_info;
     image_info.sampler = vk_find_sampler(pImage->mipmap, pImage->wrapClampMode == GL_REPEAT);
     image_info.imageView = pImage->view;
+    // the image will be bound for reading by shaders.
+    // this layout is typically used when an image is going to
+    // be used as a texture.
     image_info.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
 
     descriptor_write.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
@@ -693,7 +696,7 @@ image_t* R_CreateImage( const char *name, unsigned char* pic, const uint32_t wid
     
     vk_bindImageHandleWithDeviceMemory(pImage->handle, &devMemImg.Index, devMemImg.Chunks);
     vk_createViewForImageHandle(pImage->handle, VK_FORMAT_R8G8B8A8_UNORM, &pImage->view);
-    vk_createImageViewAndDescriptorSet(pImage);
+    vk_createDescriptorSet(pImage);
 
 
     void* data;
@@ -817,7 +820,7 @@ void RE_UploadCinematic (int w, int h, int cols, int rows, const unsigned char *
         vk_create2DImageHandle( VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT, prtImage);
         vk_bindImageHandleWithDeviceMemory(prtImage->handle, &devMemImg.Index, devMemImg.Chunks);
         vk_createViewForImageHandle(prtImage->handle, VK_FORMAT_R8G8B8A8_UNORM, &prtImage->view);
-        vk_createImageViewAndDescriptorSet(prtImage);
+        vk_createDescriptorSet(prtImage);
 
 
         VkBufferImageCopy region;
@@ -874,7 +877,6 @@ void RE_UploadCinematic (int w, int h, int cols, int rows, const unsigned char *
         memcpy(pDat, data, buffer_size);
         vk_stagBufferToDeviceLocalMem(tr_scratchImage[client]->handle, &region, 1);
         NO_CHECK( qvkUnmapMemory(vk.device, StagBuf.mappableMem) );
-
     }
 }
 
@@ -1265,7 +1267,7 @@ image_t* R_CreateImageForCinematic( const char *name, unsigned char* pic, const 
     
     vk_bindImageHandleWithDeviceMemory(pImage->handle, &devMemImg.Index, devMemImg.Chunks);
     
-    vk_createImageViewAndDescriptorSet(pImage);
+    vk_createDescriptorSet(pImage);
 
 
     void* data;
