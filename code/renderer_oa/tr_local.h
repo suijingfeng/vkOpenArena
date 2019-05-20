@@ -310,9 +310,6 @@ typedef struct
 	int				videoMapHandle;
 	qboolean		isLightmap;
 	qboolean		isVideoMap;
-
-	char            *texname;
-	int             alphahack;
 } textureBundle_t;
 
 #define NUM_TEXTURE_BUNDLES 8 // leilei - was 8, increased for motion blur
@@ -335,10 +332,6 @@ typedef struct {
 	acff_t			adjustColorsForFog;
 
 	qboolean		isDetail;
-	int             mipBias;
-
-	int             isBlend;		// leilei - for leifx
-
 } shaderStage_t;
 
 
@@ -408,11 +401,6 @@ typedef struct shader_s
 	qboolean	needsST2;
 	qboolean	needsColor;
 
-	//	leilei - automatic detail texturing
-	int		hasDetail;	// shader has a detail stage
-	int		hasDepthWrite;	// shader has a depthwrite stage (detailing around holes)
-	int		hasMaterial;	// shader represents this material
-
 	int			numDeforms;
 	deformStage_t	deforms[MAX_SHADER_DEFORMS];
 
@@ -424,8 +412,8 @@ typedef struct shader_s
     float clampTime;                      // time this shader is clamped to
     float timeOffset;                     // current time offset for this shader
 
-    struct shader_s *remappedShader;      // current shader this one is remapped too
-    struct shader_s *next;
+    struct shader_s * remappedShader;      // current shader this one is remapped too
+    struct shader_s * next;
 } shader_t;
 
 
@@ -564,7 +552,6 @@ typedef struct drawSurf_s {
 	unsigned			sort;			// bit combination for fast compares
 	surfaceType_t		*surface;		// any of surface*_t
 } drawSurf_t;
-
 
 #define	MAX_FACE_POINTS		64
 #define	MAX_GRID_SIZE		65			// max dimensions of a grid mesh in memory
@@ -1196,10 +1183,6 @@ typedef struct shaderCommands_s
 	int			numPasses;
 	void		(*currentStageIteratorFunc)( void );
 	shaderStage_t** xstages;
-
-	// lfx stuf
-	float		lfxTime;
-	float		lfxTimeNext;
 } shaderCommands_t;
 
 

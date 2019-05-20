@@ -1243,11 +1243,11 @@ void RB_StageIteratorGeneric( void )
 	RB_IterateStagesGeneric( input );
 
 	// now do any dynamic lighting needed
-	if( tess.dlightBits && tess.shader->sort <= SS_OPAQUE && !(tess.shader->surfaceFlags & (SURF_NODLIGHT | SURF_SKY) ) )
+	if( tess.dlightBits && tess.shader->sort <= SS_OPAQUE &&
+		!(tess.shader->surfaceFlags & (SURF_NODLIGHT | SURF_SKY) ) )
     {
 		ProjectDlightTexture();
 	}
-
 
 	// now do fog
 	if ( tess.fogNum && tess.shader->fogPass )
@@ -1255,13 +1255,11 @@ void RB_StageIteratorGeneric( void )
 		RB_FogPass();
 	}
 
-    
 	// unlock arrays
 	if (qglUnlockArraysEXT) 
 	{
 		qglUnlockArraysEXT();
 	}
-
 
 	// reset polygon offset
 	if ( shader->polygonOffset )

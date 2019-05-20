@@ -46,7 +46,7 @@ cvar_t	*r_skipBackEnd;
 cvar_t	*r_inGameVideo;
 cvar_t	*r_fastsky;
 cvar_t	*r_dynamiclight;
-
+cvar_t	*r_dlightBacks;
 cvar_t	*r_lodbias;
 cvar_t	*r_lodscale;
 
@@ -891,6 +891,7 @@ void R_Register( void )
 	r_fastsky = ri.Cvar_Get( "r_fastsky", "0", CVAR_ARCHIVE );
 	r_inGameVideo = ri.Cvar_Get( "r_inGameVideo", "1", CVAR_ARCHIVE );
 	r_dynamiclight = ri.Cvar_Get( "r_dynamiclight", "1", CVAR_ARCHIVE );
+	r_dlightBacks = ri.Cvar_Get( "r_dlightBacks", "1", CVAR_ARCHIVE );
 	r_textureMode = ri.Cvar_Get( "r_textureMode", "GL_LINEAR_MIPMAP_NEAREST", CVAR_ARCHIVE );
 	r_gamma = ri.Cvar_Get( "r_gamma", "1", CVAR_ARCHIVE );
 	r_facePlaneCull = ri.Cvar_Get ("r_facePlaneCull", "1", CVAR_ARCHIVE );

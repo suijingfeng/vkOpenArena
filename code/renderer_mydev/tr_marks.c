@@ -15,17 +15,15 @@ MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 GNU General Public License for more details.
 
 You should have received a copy of the GNU General Public License
-along with Foobar; if not, write to the Free Software
+along with Quake III Arena source code; if not, write to the Free Software
 Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 ===========================================================================
 */
 // tr_marks.c -- polygon projection on the world polygons
 
 #include "tr_local.h"
-//#include "assert.h"
 
 #define MAX_VERTS_ON_POLY		64
-
 #define MARKER_OFFSET			0	// 1
 
 /*
@@ -50,8 +48,10 @@ static void R_ChopPolyBehindPlane( int numInPoints, vec3_t inPoints[MAX_VERTS_ON
 	float		d;
 
 	// don't clip if it might overflow
-	if ( numInPoints >= MAX_VERTS_ON_POLY - 2 ) {
+	if ( numInPoints >= MAX_VERTS_ON_POLY - 2 )
+	{
 		*numOutPoints = 0;
+		ri.Printf(PRINT_WARNING, "numInPoints overflow");
 		return;
 	}
 

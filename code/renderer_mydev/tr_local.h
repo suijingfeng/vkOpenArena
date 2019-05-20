@@ -82,7 +82,9 @@ typedef struct dlight_s {
 
 // a trRefEntity_t has all the information passed in by
 // the client game, as well as some locally derived info
-typedef struct {
+// by the client game as well as some locally derived info
+typedef struct
+{
 	refEntity_t	e;
 
 	float		axisLength;		// compensate for non-normalized axis
@@ -320,8 +322,9 @@ typedef struct {
 
 #define	MAX_IMAGE_ANIMATIONS	8
 
-typedef struct {
-	image_t			*image[MAX_IMAGE_ANIMATIONS];
+typedef struct
+{
+	image_t*        image[MAX_IMAGE_ANIMATIONS];
 	int				numImageAnimations;
 	float			imageAnimationSpeed;
 
@@ -349,14 +352,13 @@ typedef struct {
 	waveForm_t		alphaWave;
 	alphaGen_t		alphaGen;
 
-	byte			constantColor[4];			// for CGEN_CONST and AGEN_CONST
+	unsigned char	constantColor[4];			// for CGEN_CONST and AGEN_CONST
 
-	unsigned		stateBits;					// GLS_xxxx mask
+	unsigned int	stateBits;					// GLS_xxxx mask
 
 	acff_t			adjustColorsForFog;
 
 	qboolean		isDetail;
-
 } shaderStage_t;
 
 struct shaderCommands_s;
@@ -385,7 +387,9 @@ typedef struct {
 } fogParms_t;
 
 
-typedef struct shader_s {
+
+typedef struct shader_s
+{
 	char		name[MAX_QPATH];		// game path, including extension
 	int			lightmapIndex;			// for a shader to match, both name and lightmapIndex must match
 
@@ -395,10 +399,9 @@ typedef struct shader_s {
 	float		sort;					// lower numbered shaders draw before higher numbered
 
 	qboolean	defaultShader;			// we want to return index 0 if the shader failed to
-										// load for some reason, but R_FindShader should
-										// still keep a name allocated for it, so if
-										// something calls RE_RegisterShader again with
-										// the same name, we don't try looking for it again
+                                        // but R_FindShader should still keep a name allocated for it, 
+                                        // so if something calls RE_RegisterShader again with the same name, 
+                                        // we don't try looking for it again
 
 	qboolean	explicitlyDefined;		// found in a .shader file
 
@@ -433,12 +436,11 @@ typedef struct shader_s {
 	int			numUnfoggedPasses;
 	shaderStage_t	*stages[MAX_SHADER_STAGES];		
 
-    float clampTime;                                  // time this shader is clamped to
-    float timeOffset;                                 // current time offset for this shader
+    float clampTime;                      // time this shader is clamped to
+    float timeOffset;                     // current time offset for this shader
 
-    struct shader_s *remappedShader;                  // current shader this one is remapped too
-
-	struct	shader_s	*next;
+    struct shader_s * remappedShader;      // current shader this one is remapped too
+    struct shader_s * next;
 } shader_t;
 
 // trRefdef_t holds everything that comes in refdef_t,
@@ -472,7 +474,6 @@ typedef struct {
 
 	int			numDrawSurfs;
 	struct drawSurf_s	*drawSurfs;
-
 
 } trRefdef_t;
 
@@ -542,7 +543,6 @@ typedef enum {
 	SF_MD4,
 	SF_FLARE,
 	SF_ENTITY,				// beams, rails, lightning, etc that can be determined by entity
-
 	SF_NUM_SURFACE_TYPES,
 	SF_MAX = 0x7fffffff			// ensures that sizeof( surfaceType_t ) == sizeof( int )
 } surfaceType_t;
@@ -1069,6 +1069,7 @@ extern cvar_t	*r_lodscale;
 extern cvar_t	*r_inGameVideo;				// controls whether in game video should be draw
 extern cvar_t	*r_fastsky;				// controls whether sky should be cleared or drawn
 extern cvar_t	*r_dynamiclight;		// dynamic lights enabled/disabled
+extern cvar_t	*r_dlightBacks;			// dlight non-facing surfaces for continuity
 
 extern	cvar_t	*r_norefresh;			// bypasses the ref rendering
 extern	cvar_t	*r_drawentities;		// disable/enable entity rendering
@@ -1294,7 +1295,7 @@ typedef struct shaderCommands_s
 	color4ub_t	constantColor255[SHADER_MAX_VERTEXES];
 
 	shader_t	*shader;
-  float   shaderTime;
+	float		shaderTime;
 	int			fogNum;
 
 	int			dlightBits;	// or together of all vertexDlightBits
@@ -1429,9 +1430,12 @@ void RB_SurfaceAnim( md4Surface_t *surfType );
 =============================================================
 =============================================================
 */
+void	RB_CalcCelTexCoords( float *dstTexCoords );		// leilei - cel hack
+void	RB_CalcEnvironmentTexCoordsJO( float *dstTexCoords );	// leilei
+void	RB_CalcEnvironmentTexCoordsR( float *dstTexCoords );	// leilei
 void	R_TransformModelToClip( const vec3_t src, const float *modelMatrix, const float *projectionMatrix,
 							vec4_t eye, vec4_t dst );
-
+void	RB_CalcEnvironmentCelShadeTexCoords( float *dstTexCoords );
 void	RB_DeformTessGeometry( void );
 
 void	RB_CalcEnvironmentTexCoords( float *dstTexCoords );
