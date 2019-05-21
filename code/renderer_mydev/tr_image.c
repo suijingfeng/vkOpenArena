@@ -15,7 +15,7 @@ MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 GNU General Public License for more details.
 
 You should have received a copy of the GNU General Public License
-along with Foobar; if not, write to the Free Software
+along with Quake III Arena source code; if not, write to the Free Software
 Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 ===========================================================================
 */
@@ -95,17 +95,19 @@ textureMode_t modes[] = {
 return a hash value for the filename
 ================
 */
-static long generateHashValue( const char *fname ) {
-	int		i;
-	long	hash;
+static long generateHashValue( const char *fname )
+{
+	int		i = 0;
+	long	hash = 0;
 	char	letter;
 
-	hash = 0;
-	i = 0;
-	while (fname[i] != '\0') {
+	while (fname[i] != '\0')
+    {
 		letter = tolower(fname[i]);
-		if (letter =='.') break;				// don't include extension
-		if (letter =='\\') letter = '/';		// damn path names
+		if (letter =='.')
+            break;				// don't include extension
+		if (letter =='\\')
+            letter = '/';		// damn path names
 		hash+=(long)(letter)*(i+119);
 		i++;
 	}
@@ -424,10 +426,11 @@ R_MipMap
 Operates in place, quartering the size of the texture
 ================
 */
-static void R_MipMap (byte *in, int width, int height) {
-	int		i, j;
-	byte	*out;
-	int		row;
+static void R_MipMap(unsigned char *in, int width, int height)
+{
+	int	i, j;
+	unsigned char *out;
+	int	row;
 
 	if ( !r_simpleMipMaps->integer ) {
 		R_MipMap2( (unsigned *)in, width, height );
@@ -443,9 +446,11 @@ static void R_MipMap (byte *in, int width, int height) {
 	width >>= 1;
 	height >>= 1;
 
-	if ( width == 0 || height == 0 ) {
+	if ( width == 0 || height == 0 )
+    {
 		width += height;	// get largest
-		for (i=0 ; i<width ; i++, out+=4, in+=8 ) {
+		for (i=0 ; i<width ; i++, out+=4, in+=8 )
+        {
 			out[0] = ( in[0] + in[4] )>>1;
 			out[1] = ( in[1] + in[5] )>>1;
 			out[2] = ( in[2] + in[6] )>>1;
@@ -454,8 +459,10 @@ static void R_MipMap (byte *in, int width, int height) {
 		return;
 	}
 
-	for (i=0 ; i<height ; i++, in+=row) {
-		for (j=0 ; j<width ; j++, out+=4, in+=8) {
+	for (i=0 ; i<height ; i++, in+=row)
+    {
+		for (j=0 ; j<width ; j++, out+=4, in+=8)
+        {
 			out[0] = (in[0] + in[4] + in[row+0] + in[row+4])>>2;
 			out[1] = (in[1] + in[5] + in[row+1] + in[row+5])>>2;
 			out[2] = (in[2] + in[6] + in[row+2] + in[row+6])>>2;

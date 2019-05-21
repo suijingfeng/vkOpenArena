@@ -28,7 +28,6 @@ extern backEndData_t* backEndData;	// the second one may not be allocated
 
 
 glconfig_t  glConfig;
-
 glstate_t	glState;
 
 
@@ -37,8 +36,6 @@ cvar_t	*r_railCoreWidth;
 cvar_t	*r_railSegmentLength;
 
 cvar_t	*r_verbose;
-cvar_t	*r_ignore;
-
 
 cvar_t	*r_znear;
 
@@ -85,6 +82,7 @@ cvar_t	*r_iconmip;
 cvar_t	*r_iconBits;
 cvar_t	*r_showtris;
 cvar_t	*r_showsky;
+cvar_t	*r_shownormals;
 cvar_t	*r_finish;
 cvar_t	*r_clear;
 cvar_t	*r_offsetFactor;
@@ -1109,7 +1107,6 @@ static void R_Register( void )
 	r_measureOverdraw = ri.Cvar_Get( "r_measureOverdraw", "0", CVAR_CHEAT );
 	r_lodscale = ri.Cvar_Get( "r_lodscale", "5", CVAR_CHEAT );
 	r_drawentities = ri.Cvar_Get ("r_drawentities", "1", CVAR_CHEAT );
-	r_ignore = ri.Cvar_Get( "r_ignore", "1", CVAR_CHEAT );
 	r_nocull = ri.Cvar_Get ("r_nocull", "0", CVAR_CHEAT);
 	r_novis = ri.Cvar_Get ("r_novis", "0", CVAR_CHEAT);
 	r_showcluster = ri.Cvar_Get ("r_showcluster", "0", CVAR_CHEAT);
@@ -1117,8 +1114,9 @@ static void R_Register( void )
 	r_verbose = ri.Cvar_Get( "r_verbose", "0", CVAR_CHEAT );
 	r_debugSurface = ri.Cvar_Get ("r_debugSurface", "0", CVAR_CHEAT);
 	r_nobind = ri.Cvar_Get ("r_nobind", "0", CVAR_CHEAT);
-	r_showtris = ri.Cvar_Get ("r_showtris", "0", CVAR_CHEAT);
-	r_showsky = ri.Cvar_Get ("r_showsky", "0", CVAR_CHEAT);
+	r_showtris = ri.Cvar_Get ("r_showtris", "0", CVAR_TEMP);
+	r_showsky = ri.Cvar_Get ("r_showsky", "0", CVAR_TEMP);
+	r_shownormals = ri.Cvar_Get ("r_shownormals", "0", CVAR_CHEAT);
 	r_clear = ri.Cvar_Get ("r_clear", "0", CVAR_TEMP);
 	r_offsetFactor = ri.Cvar_Get( "r_offsetfactor", "-1", CVAR_CHEAT );
 	r_offsetUnits = ri.Cvar_Get( "r_offsetunits", "-2", CVAR_CHEAT );

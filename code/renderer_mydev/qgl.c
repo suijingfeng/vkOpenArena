@@ -89,7 +89,7 @@ void ( APIENTRY * qglVertex3f )(GLfloat x, GLfloat y, GLfloat z);
 void ( APIENTRY * qglVertex3fv )(const GLfloat *v);
 void ( APIENTRY * qglVertexPointer )(GLint size, GLenum type, GLsizei stride, const GLvoid *pointer);
 void ( APIENTRY * qglViewport )(GLint x, GLint y, GLsizei width, GLsizei height);
-
+void ( APIENTRY * qglTranslatef )(GLfloat x, GLfloat y, GLfloat z);
 
 void (APIENTRY * qglActiveTextureARB) (GLenum texture);
 void (APIENTRY * qglClientActiveTextureARB) (GLenum texture);
@@ -158,6 +158,7 @@ static void noglVertex3f(GLfloat x, GLfloat y, GLfloat z) {}
 static void noglVertex3fv(const GLfloat *v) {}
 static void noglVertexPointer(GLint size, GLenum type, GLsizei stride, const GLvoid *pointer) {}
 static void noglViewport(GLint x, GLint y, GLsizei width, GLsizei height) {}
+static void noglTranslatef(GLfloat x, GLfloat y, GLfloat z) {}
 
 
 
@@ -223,6 +224,7 @@ void qglShutdown( qboolean unloadDLL )
 	qglVertex3fv                 = NULL;
 	qglVertexPointer             = NULL;
 	qglViewport                  = NULL;
+    qglTranslatef                = NULL;
 }
 
 
@@ -319,6 +321,7 @@ qboolean qglInit( void )
 	qglVertex3fv            = GLimp_GetProcAddress("glVertex3fv");
 	qglVertexPointer        = GLimp_GetProcAddress("glVertexPointer");
 	qglViewport             = GLimp_GetProcAddress("glViewport");
+    qglTranslatef           = GLimp_GetProcAddress("glTranslatef");
 
 
 	qglActiveTextureARB = NULL;
@@ -500,7 +503,8 @@ void qglDumb(void)
     qglVertex3fv            = QGL_DUMB(glVertex3fv);
     qglVertexPointer        = QGL_DUMB(glVertexPointer);
     qglViewport             = QGL_DUMB(glViewport);
-
+    qglTranslatef           = QGL_DUMB(glTranslatef);
+   
     qglLockArraysEXT        = QGL_DUMB(glLockArraysEXT);
     qglUnlockArraysEXT      = QGL_DUMB(glUnlockArraysEXT);
     qglMultiTexCoord2fARB   = QGL_DUMB(glMultiTexCoord2fARB);

@@ -258,32 +258,6 @@ RB_CalcBulgeVertexes
 
 ========================
 */
-void OldRB_CalcBulgeVertexes( deformStage_t *ds ) {
-	int i;
-	const float *st = ( const float * ) tess.texCoords[0];
-	float		*xyz = ( float * ) tess.xyz;
-	float		*normal = ( float * ) tess.normal;
-	float		now;
-
-	now = backEnd.refdef.time * ds->bulgeSpeed * 0.001f;
-
-	for ( i = 0; i < tess.numVertexes; i++, xyz += 4, st += 4, normal += 4 ) {
-		int		off;
-		float scale;
-
-		off = (float)( FUNCTABLE_SIZE / (M_PI*2) ) * ( st[0] * ds->bulgeWidth + now );
-
-		scale = tr.sinTable[ off & FUNCTABLE_MASK ] * ds->bulgeHeight;
-			
-		xyz[0] += normal[0] * scale;
-		xyz[1] += normal[1] * scale;
-		xyz[2] += normal[2] * scale;
-	}
-}
-
-
-// leilei - adapted a bit from the jk2 source, for performance
-
 void RB_CalcBulgeVertexes( deformStage_t *ds ) {
 	int i;
 	float		*xyz = ( float * ) tess.xyz;
@@ -790,8 +764,6 @@ void RB_CalcWaveColor( const waveForm_t* wf, unsigned char (*dstColors)[4] )
     }
 }
 
-
-
 /*
 ** RB_CalcWaveAlpha
 */
@@ -966,28 +938,6 @@ void RB_CalcFogTexCoords( float *st ) {
 	}
 }
 
-
-
-
-/*
-** RB_CalcEnvironmentTexCoordsHW
-
-	Hardware-native cubemapping (or sphere mapping if the former is unsupported)
-
-	adapted from this tremulous patch by Odin 
-
-	NOTE: THIS BREAKS OTHER TCMODS IN A STAGE
-
-void RB_CalcEnvironmentTexCoordsHW() 
-{
-	qglTexGeni(GL_S, GL_TEXTURE_GEN_MODE, GL_REFLECTION_MAP);
-	qglTexGeni(GL_T, GL_TEXTURE_GEN_MODE, GL_REFLECTION_MAP);
-	qglTexGeni(GL_R, GL_TEXTURE_GEN_MODE, GL_REFLECTION_MAP);
-	qglEnable(GL_TEXTURE_GEN_S);
-	qglEnable(GL_TEXTURE_GEN_T);
-	qglEnable(GL_TEXTURE_GEN_R);
-}
-*/
 
 /*
 ** RB_CalcEnvironmentTexCoordsJO
@@ -1336,7 +1286,6 @@ void RB_CalcAtlasTexCoords( const atlas_t *at, float *st )
 	RB_CalcTransformTexCoords( &tmi, st );
 }
 
-
 // leilei - reveal normals to GLSL for light processing. HACK HACK HACK HACK HACK HACK
 void RB_CalcNormal( unsigned char *colors )
 {
@@ -1377,9 +1326,6 @@ void RB_CalcNormal( unsigned char *colors )
 		colors[i*4+3] = 255;
 	}
 }
-
-
-
 
 // leilei celsperiment
 

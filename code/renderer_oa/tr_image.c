@@ -347,8 +347,9 @@ static void R_MipMap(unsigned char *in, int width, int height)
 		return;
 	}
 
-	if ( width == 1 && height == 1 )
+	if ( width == 1 && height == 1 ) {
 		return;
+	}
 
 	row = width * 4;
 	out = in;

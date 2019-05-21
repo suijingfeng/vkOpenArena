@@ -63,14 +63,14 @@ typedef struct
 	const unsigned char		*externalVisData;	// from RE_SetWorldVisData, shared with CM_Load
 
 	image_t					*defaultImage;
-	image_t					*scratchImage[32];
+
 	image_t					*fogImage;
 	image_t					*dlightImage;	// inverse-quare highlight for projective adding
 	image_t					*whiteImage;			// full of 0xff
 	image_t					*identityLightImage;	// full of tr.identityLightByte
 
 	shader_t				*defaultShader;
-    shader_t                *cinematicShader;
+
 	shader_t				*shadowShader;
 	shader_t				*projectionShadowShader;
 

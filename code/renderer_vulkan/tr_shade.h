@@ -8,7 +8,7 @@ void RB_EndSurface( void );
 
 
 
-void	RB_DeformTessGeometry( void );
+void	RB_DeformTessGeometry( shaderCommands_t * const pTess );
 void	RB_CalcEnvironmentTexCoords( float *dstTexCoords );
 void	RB_CalcFogTexCoords( float *dstTexCoords );
 void	RB_CalcScrollTexCoords( const float scroll[2], float *dstTexCoords );

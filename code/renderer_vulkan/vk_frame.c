@@ -454,8 +454,8 @@ void vk_createColorAttachment(VkDevice lgDev, const VkSwapchainKHR HSwapChain,
 
     VK_CHECK( qvkGetSwapchainImagesKHR(lgDev, HSwapChain, &swapchainLen, NULL) );
  
-    ri.Printf(PRINT_ALL, " Actual Number of Swapchain image: %d\n",
-            swapchainLen );
+    ri.Printf(PRINT_ALL, " Actual Number of Swapchain image: %d, format: %d \n",
+            swapchainLen, surFmt );
 
     // To obtain presentable image handles associated with a swapchain
     VK_CHECK( qvkGetSwapchainImagesKHR(lgDev, HSwapChain, &swapchainLen, vk.swapchain_images_array) );
@@ -560,7 +560,7 @@ void vk_createDepthAttachment(int Width, int Height, VkFormat depthFmt)
     imgViewDesc.components.g = VK_COMPONENT_SWIZZLE_IDENTITY;
     imgViewDesc.components.b = VK_COMPONENT_SWIZZLE_IDENTITY;
     imgViewDesc.components.a = VK_COMPONENT_SWIZZLE_IDENTITY;
-    imgViewDesc.subresourceRange.aspectMask = VK_IMAGE_ASPECT_DEPTH_BIT;
+    imgViewDesc.subresourceRange.aspectMask = VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT;
     imgViewDesc.subresourceRange.baseMipLevel = 0;
     imgViewDesc.subresourceRange.levelCount = 1;
     imgViewDesc.subresourceRange.baseArrayLayer = 0;

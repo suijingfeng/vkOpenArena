@@ -290,7 +290,6 @@ void RB_StretchPic( const stretchPicCommand_t * const cmd )
 
 	tess.numVertexes += 4;
 	tess.numIndexes += 6;
-
 }
 
 

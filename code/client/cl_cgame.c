@@ -649,7 +649,7 @@ intptr_t CL_CgameSystemCalls( intptr_t *args ) {
 	  return CIN_RunCinematic(args[1]);
 
 	case CG_CIN_DRAWCINEMATIC:
-	  CIN_DrawCinematic(args[1]);
+	  SCR_DrawCinematic(args[1]);
 	  return 0;
 
 	case CG_CIN_SETEXTENTS:

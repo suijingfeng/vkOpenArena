@@ -1509,4 +1509,173 @@ _PROC_END_:
 
 
 
+static void vk_stagBufferToDeviceLocalMem(VkImage image, VkBufferImageCopy* pRegion, uint32_t num_region)
+{
+    // An application can copy buffer and image data using several methods
+    // depending on the type of data transfer. Data can be copied between
+    // buffer objects with vkCmdCopyBuffer and a portion of an image can 
+    // be copied to another image with vkCmdCopyImage. 
+    //
+    // Image data can also be copied to and from buffer memory using
+    // vkCmdCopyImageToBuffer and vkCmdCopyBufferToImage.
+    //
+    // Image data can be blitted (with or without scaling and filtering) 
+    // with vkCmdBlitImage. Multisampled images can be resolved to a 
+    // non-multisampled image with vkCmdResolveImage.
+    /*
+    VkCommandBuffer HCmdBuf;
+
+    VkCommandBufferAllocateInfo alloc_info;
+    alloc_info.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
+    alloc_info.pNext = NULL;
+    alloc_info.commandPool = vk.command_pool;
+    alloc_info.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
+    alloc_info.commandBufferCount = 1;
+    VK_CHECK( qvkAllocateCommandBuffers(vk.device, &alloc_info, &HCmdBuf) );
+
+    VkCommandBufferBeginInfo begin_info;
+    begin_info.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
+    begin_info.pNext = NULL;
+    begin_info.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
+    begin_info.pInheritanceInfo = NULL;
+    VK_CHECK( qvkBeginCommandBuffer(HCmdBuf, &begin_info) );
+*/
+
+    vk_beginRecordCmds( vk.tmpRecordBuffer );
+/*
+    VkBufferMemoryBarrier barrier;
+    barrier.sType = VK_STRUCTURE_TYPE_BUFFER_MEMORY_BARRIER;
+    barrier.pNext = NULL;
+    barrier.srcAccessMask = VK_ACCESS_HOST_WRITE_BIT;
+    barrier.dstAccessMask = VK_ACCESS_TRANSFER_READ_BIT;
+    barrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+    barrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+    barrier.buffer = StagBuf.buff;
+    barrier.offset = 0;
+    barrier.size = VK_WHOLE_SIZE;
+
+    NO_CHECK( qvkCmdPipelineBarrier( vk.tmpRecordBuffer, VK_PIPELINE_STAGE_HOST_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT, 0, 0, NULL, 1, &barrier, 0, NULL) );
+*/
+    record_image_layout_transition( vk.tmpRecordBuffer, image, 
+            VK_IMAGE_ASPECT_COLOR_BIT,
+            0,
+            VK_IMAGE_LAYOUT_UNDEFINED, 
+            VK_ACCESS_TRANSFER_WRITE_BIT,
+            VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
+
+
+    // To copy data from a buffer object to an image object
+
+    // HCmdBuf is the command buffer into which the command will be recorded.
+    // StagBuf.buff is the source buffer.
+    // image is the destination image.
+    // dstImageLayout is the layout of the destination image subresources.
+    // curLevel is the number of regions to copy.
+    // pRegions is a pointer to an array of VkBufferImageCopy structures
+    // specifying the regions to copy.
+    NO_CHECK( qvkCmdCopyBufferToImage( vk.tmpRecordBuffer, StagBuf.buff, image,
+                VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, num_region, pRegion) );
+
+    record_image_layout_transition(vk.tmpRecordBuffer, image,
+            VK_IMAGE_ASPECT_COLOR_BIT, 
+            VK_ACCESS_TRANSFER_WRITE_BIT,
+            VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 
+            VK_ACCESS_SHADER_READ_BIT,
+            VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
+
+
+    vk_commitRecordedCmds(vk.tmpRecordBuffer);
+}
+
+/*
+	for(stage = 0; (stage < MAX_SHADER_STAGES) && (NULL != pTess->xstages[stage]); ++stage )
+	{
+
+		ComputeColors( pTess->xstages[stage] );
+		ComputeTexCoords( pTess->xstages[stage] );
+
+        // base
+        // set state
+		//R_BindAnimatedImage( &tess.xstages[stage]->bundle[0] );
+        VkBool32 multitexture = (tess.xstages[stage]->bundle[1].image[0] != NULL);
+
+    {        
+	    if ( tess.xstages[stage]->bundle[0].isVideoMap )
+        {
+		    ri.CIN_RunCinematic(tess.xstages[stage]->bundle[0].videoMapHandle);
+		    ri.CIN_UploadCinematic(tess.xstages[stage]->bundle[0].videoMapHandle);
+		    goto ENDANIMA;
+	    }
+
+        int numAnimaImg = tess.xstages[stage]->bundle[0].numImageAnimations;
+
+        if ( numAnimaImg <= 1 )
+        {
+		    updateCurDescriptor( tess.xstages[stage]->bundle[0].image[0]->descriptor_set, 0);
+            //GL_Bind(tess.xstages[stage]->bundle[0].image[0]);
+            goto ENDANIMA;
+	    }
+
+        // it is necessary to do this messy calc to make sure animations line up
+        // exactly with waveforms of the same frequency
+	    int index = (int)( tess.shaderTime * tess.xstages[stage]->bundle[0].imageAnimationSpeed * FUNCTABLE_SIZE ) >> FUNCTABLE_SIZE2;
+        
+        if ( index < 0 ) {
+		    index = 0;	// may happen with shader time offsets
+	    }
+
+	    index %= numAnimaImg;
+
+	    updateCurDescriptor( tess.xstages[stage]->bundle[0].image[ index ]->descriptor_set, 0);
+        //GL_Bind(tess.xstages[stage]->bundle[0].image[ index ]);
+    }
+    
+ENDANIMA:
+		//
+		// do multitexture
+		//
+
+		if ( multitexture )
+		{
+            // DrawMultitextured( input, stage );
+            // output = t0 * t1 or t0 + t1
+
+            // t0 = most upstream according to spec
+            // t1 = most downstream according to spec
+            // this is an ugly hack to work around a GeForce driver
+            // bug with multitexture and clip planes
+
+
+            if ( tess.xstages[stage]->bundle[1].isVideoMap )
+            {
+                ri.CIN_RunCinematic(tess.xstages[stage]->bundle[1].videoMapHandle);
+                ri.CIN_UploadCinematic(tess.xstages[stage]->bundle[1].videoMapHandle);
+                goto END_ANIMA2;
+            }
+
+            if ( tess.xstages[stage]->bundle[1].numImageAnimations <= 1 ) {
+                updateCurDescriptor( tess.xstages[stage]->bundle[1].image[0]->descriptor_set, 1);
+                goto END_ANIMA2;
+            }
+
+            // it is necessary to do this messy calc to make sure animations line up
+            // exactly with waveforms of the same frequency
+            int index2 = (int)( tess.shaderTime * tess.xstages[stage]->bundle[1].imageAnimationSpeed * FUNCTABLE_SIZE ) >> FUNCTABLE_SIZE2;
+
+            if ( index2 < 0 ) {
+                index2 = 0;	// may happen with shader time offsets
+            }
+	        
+            index2 %= tess.xstages[stage]->bundle[1].numImageAnimations;
+
+            updateCurDescriptor( tess.xstages[stage]->bundle[1].image[ index2 ]->descriptor_set , 1);
+
+END_ANIMA2:
+
+            if (r_lightmap->integer)
+                updateCurDescriptor(tr.whiteImage->descriptor_set, 0); 
+            
+            // replace diffuse texture with a white one thus effectively render only lightmap
+		}
+*/
 

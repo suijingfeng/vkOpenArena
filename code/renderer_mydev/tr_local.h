@@ -15,7 +15,7 @@ MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 GNU General Public License for more details.
 
 You should have received a copy of the GNU General Public License
-along with Foobar; if not, write to the Free Software
+along with Quake III Arena source code; if not, write to the Free Software
 Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 ===========================================================================
 */
@@ -82,7 +82,9 @@ typedef struct dlight_s {
 
 // a trRefEntity_t has all the information passed in by
 // the client game, as well as some locally derived info
-typedef struct {
+// by the client game as well as some locally derived info
+typedef struct
+{
 	refEntity_t	e;
 
 	float		axisLength;		// compensate for non-normalized axis
@@ -212,8 +214,13 @@ typedef enum {
 	CGEN_ONE_MINUS_VERTEX,
 	CGEN_WAVEFORM,			// programmatically generated
 	CGEN_LIGHTING_DIFFUSE,
+	CGEN_LIGHTING_UNIFORM,
+	CGEN_LIGHTING_DYNAMIC,
+	CGEN_LIGHTING_FLAT_AMBIENT,		// leilei - cel hack
+	CGEN_LIGHTING_FLAT_DIRECT,
 	CGEN_FOG,				// standard fog
-	CGEN_CONST				// fixed color
+	CGEN_CONST,				// fixed color
+	CGEN_VERTEX_LIT,			// leilei - tess.vertexColors * tr.identityLight * ambientlight*directlight
 } colorGen_t;
 
 typedef enum {
@@ -222,6 +229,9 @@ typedef enum {
 	TCGEN_LIGHTMAP,
 	TCGEN_TEXTURE,
 	TCGEN_ENVIRONMENT_MAPPED,
+	TCGEN_ENVIRONMENT_CELSHADE_MAPPED,
+	TCGEN_ENVIRONMENT_CELSHADE_LEILEI,	// leilei - cel hack
+	TCGEN_ENVIRONMENT_MAPPED_WATER,	// leilei - fake water reflection
 	TCGEN_FOG,
 	TCGEN_VECTOR			// S and T from world coordinates
 } texCoordGen_t;
@@ -242,6 +252,19 @@ typedef struct {
 	float frequency;
 } waveForm_t;
 
+
+
+
+// leilei - texture atlases
+typedef struct {
+	float width;			// columns
+	float height;			// rows
+	float fps;			// frames per second
+	int frame;			// offset frame
+	float mode;			// 0 - static/anim  1 - entityalpha
+} atlas_t;
+
+
 #define TR_MAX_TEXMODS 4
 
 typedef enum {
@@ -251,6 +274,8 @@ typedef enum {
 	TMOD_SCROLL,
 	TMOD_SCALE,
 	TMOD_STRETCH,
+	TMOD_LIGHTSCALE,	// leilei - cel hack
+	TMOD_ATLAS,			// leilei - atlases
 	TMOD_ROTATE,
 	TMOD_ENTITY_TRANSLATE
 } texMod_t;
@@ -262,7 +287,6 @@ typedef struct {
 	vec3_t		moveVector;
 	waveForm_t	deformationWave;
 	float		deformationSpread;
-
 	float		bulgeWidth;
 	float		bulgeHeight;
 	float		bulgeSpeed;
@@ -286,6 +310,8 @@ typedef struct {
 	// used for TMOD_SCROLL
 	float			scroll[2];			// s' = s + scroll[0] * time
 										// t' = t + scroll[1] * time
+	// leilei - used for TMOD_ATLAS
+	atlas_t			atlas;
 
 	// + = clockwise
 	// - = counterclockwise
@@ -296,8 +322,9 @@ typedef struct {
 
 #define	MAX_IMAGE_ANIMATIONS	8
 
-typedef struct {
-	image_t			*image[MAX_IMAGE_ANIMATIONS];
+typedef struct
+{
+	image_t*        image[MAX_IMAGE_ANIMATIONS];
 	int				numImageAnimations;
 	float			imageAnimationSpeed;
 
@@ -325,14 +352,13 @@ typedef struct {
 	waveForm_t		alphaWave;
 	alphaGen_t		alphaGen;
 
-	byte			constantColor[4];			// for CGEN_CONST and AGEN_CONST
+	unsigned char	constantColor[4];			// for CGEN_CONST and AGEN_CONST
 
-	unsigned		stateBits;					// GLS_xxxx mask
+	unsigned int	stateBits;					// GLS_xxxx mask
 
 	acff_t			adjustColorsForFog;
 
 	qboolean		isDetail;
-
 } shaderStage_t;
 
 struct shaderCommands_s;
@@ -361,7 +387,9 @@ typedef struct {
 } fogParms_t;
 
 
-typedef struct shader_s {
+
+typedef struct shader_s
+{
 	char		name[MAX_QPATH];		// game path, including extension
 	int			lightmapIndex;			// for a shader to match, both name and lightmapIndex must match
 
@@ -371,10 +399,9 @@ typedef struct shader_s {
 	float		sort;					// lower numbered shaders draw before higher numbered
 
 	qboolean	defaultShader;			// we want to return index 0 if the shader failed to
-										// load for some reason, but R_FindShader should
-										// still keep a name allocated for it, so if
-										// something calls RE_RegisterShader again with
-										// the same name, we don't try looking for it again
+                                        // but R_FindShader should still keep a name allocated for it, 
+                                        // so if something calls RE_RegisterShader again with the same name, 
+                                        // we don't try looking for it again
 
 	qboolean	explicitlyDefined;		// found in a .shader file
 
@@ -409,12 +436,11 @@ typedef struct shader_s {
 	int			numUnfoggedPasses;
 	shaderStage_t	*stages[MAX_SHADER_STAGES];		
 
-    float clampTime;                                  // time this shader is clamped to
-    float timeOffset;                                 // current time offset for this shader
+    float clampTime;                      // time this shader is clamped to
+    float timeOffset;                     // current time offset for this shader
 
-    struct shader_s *remappedShader;                  // current shader this one is remapped too
-
-	struct	shader_s	*next;
+    struct shader_s * remappedShader;      // current shader this one is remapped too
+    struct shader_s * next;
 } shader_t;
 
 // trRefdef_t holds everything that comes in refdef_t,
@@ -448,7 +474,6 @@ typedef struct {
 
 	int			numDrawSurfs;
 	struct drawSurf_s	*drawSurfs;
-
 
 } trRefdef_t;
 
@@ -518,7 +543,6 @@ typedef enum {
 	SF_MD4,
 	SF_FLARE,
 	SF_ENTITY,				// beams, rails, lightning, etc that can be determined by entity
-
 	SF_NUM_SURFACE_TYPES,
 	SF_MAX = 0x7fffffff			// ensures that sizeof( surfaceType_t ) == sizeof( int )
 } surfaceType_t;
@@ -925,9 +949,10 @@ typedef struct {
 	backEndCounters_t	pc;
 	qboolean	isHyperspace;
 	trRefEntity_t	*currentEntity;
+	qboolean	skyRenderedThisView;	// flag for drawing sun
 
 	qboolean	projection2D;	// if qtrue, drawstretchpic doesn't need to change modes
-	byte		color2D[4];
+	unsigned char color2D[4];
 	trRefEntity_t	entity2D;	// currentEntity will point at this when doing 2D rendering
 } backEndState_t;
 
@@ -947,10 +972,12 @@ typedef struct {
 	int						viewCount;		// incremented every view (twice a scene if portaled)
 											// and every R_MarkFragments call
 
+	int						frameSceneNum;	// zeroed at RE_BeginFrame
+
 	qboolean				worldMapLoaded;
 	world_t					*world;
 
-	const byte				*externalVisData;	// from RE_SetWorldVisData, shared with CM_Load
+	const unsigned char		*externalVisData;	// from RE_SetWorldVisData, shared with CM_Load
 
 	image_t					*defaultImage;
 	image_t					*scratchImage[32];
@@ -964,10 +991,13 @@ typedef struct {
 	shader_t				*shadowShader;
 	shader_t				*projectionShadowShader;
 
+	shader_t				*flareShader;
+	shader_t				*sunShader;
+
 	int						numLightmaps;
 	image_t					*lightmaps[MAX_LIGHTMAPS];
 
-	trRefEntity_t			*currentEntity;
+	trRefEntity_t*          currentEntity;
 	trRefEntity_t			worldEntity;		// point currentEntity at this when rendering world
 	int						currentEntityNum;
 	int						shiftedEntityNum;	// currentEntityNum << QSORT_ENTITYNUM_SHIFT
@@ -994,7 +1024,6 @@ typedef struct {
 	//
 	// put large tables at the end, so most elements will be
 	// within the +/32K indexed range on risc processors
-	//
 	model_t					*models[MAX_MOD_KNOWN];
 	int						numModels;
 
@@ -1045,6 +1074,7 @@ extern cvar_t	*r_lodscale;
 extern cvar_t	*r_inGameVideo;				// controls whether in game video should be draw
 extern cvar_t	*r_fastsky;				// controls whether sky should be cleared or drawn
 extern cvar_t	*r_dynamiclight;		// dynamic lights enabled/disabled
+extern cvar_t	*r_dlightBacks;			// dlight non-facing surfaces for continuity
 
 extern	cvar_t	*r_norefresh;			// bypasses the ref rendering
 extern	cvar_t	*r_drawentities;		// disable/enable entity rendering
@@ -1270,7 +1300,7 @@ typedef struct shaderCommands_s
 	color4ub_t	constantColor255[SHADER_MAX_VERTEXES];
 
 	shader_t	*shader;
-  float   shaderTime;
+	float		shaderTime;
 	int			fogNum;
 
 	int			dlightBits;	// or together of all vertexDlightBits
@@ -1290,8 +1320,8 @@ void RB_EndSurface(void);
 void RB_CheckOverflow( int verts, int indexes );
 #define RB_CHECKOVERFLOW(v,i) if (tess.numVertexes + (v) >= SHADER_MAX_VERTEXES || tess.numIndexes + (i) >= SHADER_MAX_INDEXES ) {RB_CheckOverflow(v,i);}
 
-void RB_StageIteratorGeneric( void );
-void RB_StageIteratorSky( void );
+void RB_StageIteratorGeneric( shaderCommands_t * const pTess );
+void RB_StageIteratorSky( shaderCommands_t * const pTess);
 
 void RB_AddQuadStamp( vec3_t origin, vec3_t left, vec3_t up, byte *color );
 void RB_AddQuadStampExt( vec3_t origin, vec3_t left, vec3_t up, byte *color, float s1, float t1, float s2, float t2 );
@@ -1405,9 +1435,12 @@ void RB_SurfaceAnim( md4Surface_t *surfType );
 =============================================================
 =============================================================
 */
+void	RB_CalcCelTexCoords( float *dstTexCoords );		// leilei - cel hack
+void	RB_CalcEnvironmentTexCoordsJO( float *dstTexCoords );	// leilei
+void	RB_CalcEnvironmentTexCoordsR( float *dstTexCoords );	// leilei
 void	R_TransformModelToClip( const vec3_t src, const float *modelMatrix, const float *projectionMatrix,
 							vec4_t eye, vec4_t dst );
-
+void	RB_CalcEnvironmentCelShadeTexCoords( float *dstTexCoords );
 void	RB_DeformTessGeometry( void );
 
 void	RB_CalcEnvironmentTexCoords( float *dstTexCoords );
@@ -1422,13 +1455,14 @@ void	RB_CalcModulateAlphasByFog( unsigned char *dstColors );
 void	RB_CalcModulateRGBAsByFog( unsigned char *dstColors );
 void	RB_CalcWaveAlpha( const waveForm_t *wf, unsigned char *dstColors );
 void	RB_CalcWaveColor( const waveForm_t *wf, unsigned char *dstColors );
+void	RB_CalcAtlasTexCoords( const atlas_t *at, float *st );
 void	RB_CalcAlphaFromEntity( unsigned char *dstColors );
 void	RB_CalcAlphaFromOneMinusEntity( unsigned char *dstColors );
 void	RB_CalcStretchTexCoords( const waveForm_t *wf, float *texCoords );
 void	RB_CalcColorFromEntity( unsigned char *dstColors );
 void	RB_CalcColorFromOneMinusEntity( unsigned char *dstColors );
 void	RB_CalcSpecularAlpha( unsigned char *alphas );
-void	RB_CalcDiffuseColor( unsigned char (*colors)[4] );
+
 
 void myGlMultMatrix( const float *a, const float *b, float *out );
 
@@ -1511,6 +1545,20 @@ typedef struct {
 	qboolean jpeg;
 } screenshotCommand_t;
 
+typedef struct {
+	int				commandId;
+	int				width;
+	int				height;
+	unsigned char*  captureBuffer;
+	unsigned char*  encodeBuffer;
+	qboolean        motionJpeg;
+} videoFrameCommand_t;
+
+typedef struct
+{
+	int commandId;
+} clearDepthCommand_t;
+
 typedef enum {
 	RC_END_OF_LIST,
 	RC_SET_COLOR,
@@ -1518,7 +1566,10 @@ typedef enum {
 	RC_DRAW_SURFS,
 	RC_DRAW_BUFFER,
 	RC_SWAP_BUFFERS,
-	RC_SCREENSHOT
+	RC_SCREENSHOT,
+	RC_VIDEOFRAME,
+	RC_COLORMASK,
+	RC_CLEARDEPTH
 } renderCommand_t;
 
 

@@ -15,6 +15,7 @@
 
 uint32_t find_memory_type(uint32_t memory_type_bits, VkMemoryPropertyFlags properties);
 
+void vk_createViewForImageHandle(VkImage Handle, VkFormat Fmt, VkImageView* const pView);
 
 void vk_destroyImageRes(void);
 
@@ -31,6 +32,8 @@ void R_LoadImage(const char *name, unsigned char **pic, uint32_t* width, uint32_
 void R_InitImages( void );
 
 void gpuMemUsageInfo_f(void);
+
+image_t * R_GetScratchImageHandle(int idx);
 
 
 // TODO ; impl this

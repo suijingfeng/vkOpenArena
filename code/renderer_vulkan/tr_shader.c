@@ -632,9 +632,10 @@ static qboolean ParseStage( shaderStage_t *stage, char **text )
 				return qfalse;
 			}
 			stage->bundle[0].videoMapHandle = ri.CIN_PlayCinematic( token, 0, 0, 256, 256, (CIN_loop | CIN_silent | CIN_shader));
-			if (stage->bundle[0].videoMapHandle != -1) {
+			if (stage->bundle[0].videoMapHandle != -1)
+            {
 				stage->bundle[0].isVideoMap = qtrue;
-				stage->bundle[0].image[0] = tr.scratchImage[stage->bundle[0].videoMapHandle];
+				stage->bundle[0].image[0] = R_GetScratchImageHandle(stage->bundle[0].videoMapHandle);
 			}
 		}
 		//
@@ -2067,9 +2068,27 @@ shader_t *R_GetShaderByHandle( qhandle_t hShader )
 CreateInternalShaders
 ====================
 */
+extern void R_SetCinematicShader( shader_t * pShader);
+
+static void CreateCinematicShader( void )
+{
+    memset( &shader, 0, sizeof( shader ) );
+    memset( &stages, 0, sizeof( stages ) );
+
+    strncpy( shader.name, "<cinematic>", sizeof( shader.name ) );
+    shader.lightmapIndex = LIGHTMAP_NONE;
+
+    stages[0].bundle[0].image[0] = tr.defaultImage; // will be updated by specific cinematic images
+    stages[0].active = qtrue;
+    stages[0].rgbGen = CGEN_IDENTITY_LIGHTING;
+    stages[0].stateBits = GLS_DEPTHTEST_DISABLE;
+
+    R_SetCinematicShader(FinishShader());
+}
+
 static void CreateInternalShaders( void )
 {
-    ri.Printf( PRINT_ALL, "CreateInternalShaders\n" );
+    ri.Printf( PRINT_ALL, "Create default Shader. \n" );
 
 	tr.numShaders = 0;
 
@@ -2086,6 +2105,8 @@ static void CreateInternalShaders( void )
 
 	tr.defaultShader = FinishShader();
 
+    ri.Printf( PRINT_ALL, "Create stencil shadow Shader. \n" );
+
 	// shadow shader is just a marker
 	strncpy( shader.name, "<stencil shadow>", sizeof( shader.name ) );
 	shader.sort = SS_STENCIL_SHADOW;
@@ -2093,19 +2114,10 @@ static void CreateInternalShaders( void )
 	tr.shadowShader = FinishShader();
 
     // cinematic shader
-    memset( &shader, 0, sizeof( shader ) );
-    memset( &stages, 0, sizeof( stages ) );
-
-    strncpy( shader.name, "<cinematic>", sizeof( shader.name ) );
-    shader.lightmapIndex = LIGHTMAP_NONE;
-
-    stages[0].bundle[0].image[0] = tr.defaultImage; // will be updated by specific cinematic images
-    stages[0].active = qtrue;
-    stages[0].rgbGen = CGEN_IDENTITY_LIGHTING;
-    stages[0].stateBits = GLS_DEPTHTEST_DISABLE;
-
-    tr.cinematicShader = FinishShader();
+    CreateCinematicShader();
 }
+
+
 
 
 static void CreateExternalShaders( void )
