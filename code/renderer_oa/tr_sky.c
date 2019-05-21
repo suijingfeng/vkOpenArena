@@ -21,6 +21,7 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 */
 // tr_sky.c
 #include "tr_local.h"
+#include "matrix_multiplication.h"
 
 #define SKY_SUBDIVISIONS		8
 #define HALF_SKY_SUBDIVISIONS	(SKY_SUBDIVISIONS/2)
@@ -30,8 +31,6 @@ extern	shaderCommands_t	tess;
 
 
 static float s_cloudTexCoords[6][SKY_SUBDIVISIONS+1][SKY_SUBDIVISIONS+1][2];
-static float s_cloudTexP[6][SKY_SUBDIVISIONS+1][SKY_SUBDIVISIONS+1];
-
 
 /*
 ===================================================================================
@@ -297,14 +296,22 @@ static void MakeSkyVec( float s, float t, int axis, float outSt[2], vec3_t outXY
 	s = (s+1)*0.5;
 	t = (t+1)*0.5;
 	if (s < sky_min)
+	{
 		s = sky_min;
+	}
 	else if (s > sky_max)
+	{
 		s = sky_max;
+	}
 
 	if (t < sky_min)
+	{
 		t = sky_min;
+	}
 	else if (t > sky_max)
+	{
 		t = sky_max;
+	}
 
 	t = 1.0 - t;
 
@@ -463,40 +470,12 @@ static void FillCloudySkySide( const int mins[2], const int maxs[2], qboolean ad
 static void FillCloudBox( const shader_t *shader, int stage )
 {
 	int i;
-
-	for ( i =0; i < 6; i++ )
+	for ( i=0; i < 5; i++ )
 	{
 		int sky_mins_subd[2], sky_maxs_subd[2];
 		int s, t;
-		float MIN_T;
 
-		if( 1 ) // FIXME? shader->sky.fullClouds )
-		{
-			MIN_T = -HALF_SKY_SUBDIVISIONS;
-
-			// still don't want to draw the bottom, even if fullClouds
-			if ( i == 5 )
-				continue;
-		}
-		else
-		{
-			switch( i )
-			{
-                case 0:
-                case 1:
-                case 2:
-                case 3:
-                    MIN_T = -1;
-                    break;
-                case 5:
-                    // don't draw clouds beneath you
-                    continue;
-                case 4:		// top
-                default:
-                    MIN_T = -HALF_SKY_SUBDIVISIONS;
-                    break;
-			}
-		}
+		float MIN_T = -HALF_SKY_SUBDIVISIONS;
 
 		sky_mins[0][i] = floor( sky_mins[0][i] * HALF_SKY_SUBDIVISIONS ) / HALF_SKY_SUBDIVISIONS;
 		sky_mins[1][i] = floor( sky_mins[1][i] * HALF_SKY_SUBDIVISIONS ) / HALF_SKY_SUBDIVISIONS;
@@ -557,7 +536,7 @@ static void RB_ClipSkyPolygons( shaderCommands_t *input )
 	vec3_t	p[5];	// need one extra point for clipping
 	int	i, j;
 
-	//ClearSkyBox();
+
 	for (i=0 ; i<6 ; i++)
     {
 		sky_mins[0][i] = sky_mins[1][i] = 9999;
@@ -581,25 +560,23 @@ static void RB_ClipSkyPolygons( shaderCommands_t *input )
 void R_BuildCloudData( shaderCommands_t *input )
 {
 	int	i;
-	shader_t* shader = input->shader;
-
-	assert( shader->isSky );
+	assert( input->shader->isSky );
 
 	sky_min = 1.0 / 256.0f;		// FIXME: not correct?
 	sky_max = 255.0 / 256.0f;
 
 	// set up for drawing
-	tess.numIndexes = 0;
-	tess.numVertexes = 0;
+	input->numIndexes = 0;
+	input->numVertexes = 0;
 
-	if ( shader->sky.cloudHeight )
+	if ( input->shader->sky.cloudHeight )
 	{
 		for ( i = 0; i < MAX_SHADER_STAGES; i++ )
 		{
 			if ( !tess.xstages[i] ) {
 				break;
 			}
-			FillCloudBox( shader, i );
+			FillCloudBox( input->shader, i );
 		}
 	}
 }
@@ -611,7 +588,7 @@ void R_BuildCloudData( shaderCommands_t *input )
 void R_InitSkyTexCoords( float heightCloud )
 {
 	const float radiusWorld = 4096;
-
+//	static float s_cloudTexP[6][SKY_SUBDIVISIONS+1][SKY_SUBDIVISIONS+1];
 	// init zfar so MakeSkyVec works even though a world hasn't been bounded
 	backEnd.viewParms.zFar = 1024;
 	
@@ -630,7 +607,7 @@ void R_InitSkyTexCoords( float heightCloud )
 				float p = ( sqrt(SQR(skyVec[2]) * SQR(radiusWorld + heightCloud) + (SQR(skyVec[0])+SQR(skyVec[1])) * (2 * radiusWorld * heightCloud + SQR( heightCloud ) ) ) 
                         - skyVec[2] * radiusWorld ) / DotProduct(skyVec, skyVec) ;
 
-				s_cloudTexP[i][t][s] = p;
+//				s_cloudTexP[i][t][s] = p;
 
 				// compute intersection point based on p
 				VectorScale( skyVec, p, v );
@@ -661,8 +638,6 @@ void RB_DrawSun( void )
 		return;
 	}
 
-	if ( backEnd.doneSun)	// leilei - only do sun once
-		return;
 
 	qglLoadMatrixf( backEnd.viewParms.world.modelMatrix );
 	qglTranslatef (backEnd.viewParms.or.origin[0], backEnd.viewParms.or.origin[1], backEnd.viewParms.or.origin[2]);
@@ -761,7 +736,6 @@ void RB_DrawSun( void )
 	// back to normal depth range
 	qglDepthRange( 0.0, 1.0 );
 
-	backEnd.doneSun = qtrue;
 }
 
 
@@ -783,17 +757,16 @@ void RB_StageIteratorSky( void )
 	}
 
 	// go through all the polygons and project them onto the sky box 
-    // to see which blocks on each side need to be drawn
+	// the sky box to see which blocks on each side need
+	// to be drawn
 	RB_ClipSkyPolygons( &tess );
 
 	// r_showsky will let all the sky blocks be drawn in front of everything
-    // to allow developers to see how much sky is getting sucked in
-	if ( r_showsky->integer )
-    {
-        qglDepthRange( 0.0, 0.0 );
-	}
-    else
-    {
+	// front of everything to allow developers to see how
+	// much sky is getting sucked in
+	if ( r_showsky->integer ) {
+		qglDepthRange( 0.0, 0.0 );
+	} else {
 		qglDepthRange( 1.0, 1.0 );
 	}
 
@@ -801,13 +774,23 @@ void RB_StageIteratorSky( void )
 	if ( tess.shader->sky.outerbox[0] && tess.shader->sky.outerbox[0] != tr.defaultImage )
     {
 		qglColor3f( tr.identityLight, tr.identityLight, tr.identityLight );
-		
 		qglPushMatrix ();
+
 		GL_State( 0 );
 		qglTranslatef (backEnd.viewParms.or.origin[0], backEnd.viewParms.or.origin[1], backEnd.viewParms.or.origin[2]);
+/*
+        float skybox_translate[16] = {
+            1, 0, 0, 0,
+            0, 1, 0, 0,
+            0, 0, 1, 0,
+            backEnd.viewParms.or.origin[0], backEnd.viewParms.or.origin[1], backEnd.viewParms.or.origin[2], 1
+        };
+		float modelview_transform[16];
+        myGlMultMatrix(skybox_translate, backEnd.viewParms.world.modelMatrix, modelview_transform);
+        qglLoadMatrixf(modelview_transform);
+*/
 
 		DrawSkyBox( tess.shader );
-
 		qglPopMatrix();
 	}
 

@@ -30,16 +30,12 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
 #include "tr_local.h"
 
-
+extern shaderCommands_t tess;
+static qboolean	setArraysOnce;
 extern void (APIENTRYP qglLockArraysEXT) (GLint first, GLsizei count);
 extern void (APIENTRYP qglUnlockArraysEXT) (void);
 extern void (APIENTRYP qglMultiTexCoord2fARB) (GLenum target, GLfloat s, GLfloat t);
 
-
-
-
-extern shaderCommands_t tess;
-static qboolean	setArraysOnce;
 /*
 ================
 R_ArrayElementDiscrete
@@ -234,7 +230,7 @@ static void R_BindAnimatedImage( textureBundle_t *bundle )
 
 	// it is necessary to do this messy calc to make sure animations line up
 	// exactly with waveforms of the same frequency
-	long int index = (tess.shaderTime * bundle->imageAnimationSpeed) * FUNCTABLE_SIZE;
+	int index = (tess.shaderTime * bundle->imageAnimationSpeed) * FUNCTABLE_SIZE;
 	index >>= FUNCTABLE_SIZE2;
 
 	if ( index < 0 )
@@ -278,7 +274,7 @@ static void DrawTris (shaderCommands_t *input)
 	qglDepthRange( 0, 1 );
 }
 
-#if R_SHOWNORMALS
+
 /*
 ================
 DrawNormals
@@ -307,7 +303,7 @@ static void DrawNormals (shaderCommands_t *input)
 
 	qglDepthRange( 0, 1 );
 }
-#endif
+
 
 /*
 ===================
@@ -1155,7 +1151,8 @@ static void RB_IterateStagesGeneric( shaderCommands_t *input )
 RB_BeginSurface
 
 We must set some things up before beginning any tesselation,
-because a surface may be forced to perform a RB_End due to overflow.
+because a surface may be forced to perform a RB_End due
+to overflow.
 ==============
 */
 void RB_BeginSurface( shader_t *shader, int fogNum )
@@ -1187,15 +1184,14 @@ void RB_StageIteratorGeneric( void )
 {
 
 	shaderCommands_t* input = &tess;
-	shader_t* shader = input->shader;
 
 	RB_DeformTessGeometry();
 
 	// set face culling appropriately
-	GL_Cull( shader->cullType );
+	GL_Cull( input->shader->cullType );
 
 	// set polygon offset if necessary
-	if ( shader->polygonOffset )
+	if ( input->shader->polygonOffset )
 	{
 		qglEnable( GL_POLYGON_OFFSET_FILL );
 		qglPolygonOffset( r_offsetFactor->value, r_offsetUnits->value );
@@ -1205,8 +1201,8 @@ void RB_StageIteratorGeneric( void )
     // enable color and texture arrays before we compile, 
     // otherwise we need to avoid compiling those arrays 
     // since they will change during multipass rendering
-	
-    if ( tess.numPasses > 1 || shader->multitextureEnv )
+
+	if ( tess.numPasses > 1 || input->shader->multitextureEnv )
 	{
 		setArraysOnce = qfalse;
 		qglDisableClientState (GL_COLOR_ARRAY);
@@ -1223,7 +1219,7 @@ void RB_StageIteratorGeneric( void )
 		qglTexCoordPointer( 2, GL_FLOAT, 0, tess.texcoords[0] );
 	}
 
-    
+
 	// lock XYZ
 	qglVertexPointer (3, GL_FLOAT, 16, input->xyz);	// padded for SIMD
 	if (qglLockArraysEXT)
@@ -1262,7 +1258,7 @@ void RB_StageIteratorGeneric( void )
 	}
 
 	// reset polygon offset
-	if ( shader->polygonOffset )
+	if ( input->shader->polygonOffset )
 	{
 		qglDisable( GL_POLYGON_OFFSET_FILL );
 	}
@@ -1323,7 +1319,6 @@ void RB_StageIteratorVertexLitTexture( void )
 		qglUnlockArraysEXT();
 	}
 }
-
 
 
 void RB_StageIteratorLightmappedMultitexture( void )
@@ -1416,24 +1411,26 @@ void RB_StageIteratorLightmappedMultitexture( void )
 
 void RB_EndSurface( void )
 {
-	if ((tess.numIndexes == 0) || (tess.numVertexes == 0)) {
+	shaderCommands_t *input = &tess;
+
+	if ((input->numIndexes == 0) || (input->numVertexes == 0)) {
 		return;
 	}
 
-	if (tess.indexes[SHADER_MAX_INDEXES-1] != 0) {
+	if (input->indexes[SHADER_MAX_INDEXES-1] != 0) {
 		ri.Error (ERR_DROP, "RB_EndSurface() - SHADER_MAX_INDEXES hit");
 	}	
-	if (tess.xyz[SHADER_MAX_VERTEXES-1][0] != 0) {
+	if (input->xyz[SHADER_MAX_VERTEXES-1][0] != 0) {
 		ri.Error (ERR_DROP, "RB_EndSurface() - SHADER_MAX_VERTEXES hit");
 	}
 
-	if ( tess.shader == tr.shadowShader ) {
+	if ( input->shader == tr.shadowShader ) {
 		RB_ShadowTessEnd();
 		return;
 	}
 
 	// for debugging of sort order issues, stop rendering after a given sort value
-	if ( r_debugSort->integer && r_debugSort->integer < tess.shader->sort ) {
+	if ( r_debugSort->integer && r_debugSort->integer < input->shader->sort ) {
 		return;
 	}
 
@@ -1457,9 +1454,9 @@ void RB_EndSurface( void )
 		DrawTris (&tess);
 	}
 
-#if R_SHOWNORMALS
+	if ( r_shownormals->integer ) {
 		DrawNormals (&tess);
-#endif
+	}
 	// clear shader so we can tell we don't have any unclosed surfaces
 	tess.numIndexes = 0;
 	tess.numVertexes = 0;

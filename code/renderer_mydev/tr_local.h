@@ -949,9 +949,10 @@ typedef struct {
 	backEndCounters_t	pc;
 	qboolean	isHyperspace;
 	trRefEntity_t	*currentEntity;
+	qboolean	skyRenderedThisView;	// flag for drawing sun
 
 	qboolean	projection2D;	// if qtrue, drawstretchpic doesn't need to change modes
-	byte		color2D[4];
+	unsigned char color2D[4];
 	trRefEntity_t	entity2D;	// currentEntity will point at this when doing 2D rendering
 } backEndState_t;
 
@@ -971,10 +972,12 @@ typedef struct {
 	int						viewCount;		// incremented every view (twice a scene if portaled)
 											// and every R_MarkFragments call
 
+	int						frameSceneNum;	// zeroed at RE_BeginFrame
+
 	qboolean				worldMapLoaded;
 	world_t					*world;
 
-	const byte				*externalVisData;	// from RE_SetWorldVisData, shared with CM_Load
+	const unsigned char		*externalVisData;	// from RE_SetWorldVisData, shared with CM_Load
 
 	image_t					*defaultImage;
 	image_t					*scratchImage[32];
@@ -988,10 +991,13 @@ typedef struct {
 	shader_t				*shadowShader;
 	shader_t				*projectionShadowShader;
 
+	shader_t				*flareShader;
+	shader_t				*sunShader;
+
 	int						numLightmaps;
 	image_t					*lightmaps[MAX_LIGHTMAPS];
 
-	trRefEntity_t			*currentEntity;
+	trRefEntity_t*          currentEntity;
 	trRefEntity_t			worldEntity;		// point currentEntity at this when rendering world
 	int						currentEntityNum;
 	int						shiftedEntityNum;	// currentEntityNum << QSORT_ENTITYNUM_SHIFT
@@ -1018,7 +1024,6 @@ typedef struct {
 	//
 	// put large tables at the end, so most elements will be
 	// within the +/32K indexed range on risc processors
-	//
 	model_t					*models[MAX_MOD_KNOWN];
 	int						numModels;
 
@@ -1457,7 +1462,7 @@ void	RB_CalcStretchTexCoords( const waveForm_t *wf, float *texCoords );
 void	RB_CalcColorFromEntity( unsigned char *dstColors );
 void	RB_CalcColorFromOneMinusEntity( unsigned char *dstColors );
 void	RB_CalcSpecularAlpha( unsigned char *alphas );
-void	RB_CalcDiffuseColor( unsigned char (*colors)[4] );
+
 
 void myGlMultMatrix( const float *a, const float *b, float *out );
 
@@ -1540,6 +1545,20 @@ typedef struct {
 	qboolean jpeg;
 } screenshotCommand_t;
 
+typedef struct {
+	int				commandId;
+	int				width;
+	int				height;
+	unsigned char*  captureBuffer;
+	unsigned char*  encodeBuffer;
+	qboolean        motionJpeg;
+} videoFrameCommand_t;
+
+typedef struct
+{
+	int commandId;
+} clearDepthCommand_t;
+
 typedef enum {
 	RC_END_OF_LIST,
 	RC_SET_COLOR,
@@ -1547,7 +1566,10 @@ typedef enum {
 	RC_DRAW_SURFS,
 	RC_DRAW_BUFFER,
 	RC_SWAP_BUFFERS,
-	RC_SCREENSHOT
+	RC_SCREENSHOT,
+	RC_VIDEOFRAME,
+	RC_COLORMASK,
+	RC_CLEARDEPTH
 } renderCommand_t;
 
 

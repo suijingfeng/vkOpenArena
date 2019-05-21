@@ -922,7 +922,6 @@ typedef struct {
 
 	qboolean	projection2D;	// if qtrue, drawstretchpic doesn't need to change modes
 	unsigned char color2D[4];
-	qboolean	doneSun;
 	trRefEntity_t	entity2D;	// currentEntity will point at this when doing 2D rendering
 } backEndState_t;
 
@@ -931,7 +930,8 @@ typedef struct {
 **
 ** Most renderer globals are defined here.
 ** backend functions should never modify any of these fields,
-** but may read fields that aren't dynamically modified by the frontend.
+** but may read fields that aren't dynamically modified
+** by the frontend.
 */
 typedef struct {
 	qboolean				registered;		// cleared at shutdown, set at beginRegistration
@@ -953,8 +953,6 @@ typedef struct {
 	image_t					*scratchImage[32];
 	image_t					*fogImage;
 	image_t					*dlightImage;	// inverse-quare highlight for projective adding
-	image_t					*waterImage;
-	image_t					*flareImage;
 	image_t					*whiteImage;			// full of 0xff
 	image_t					*identityLightImage;	// full of tr.identityLightByte
 
@@ -998,8 +996,6 @@ typedef struct {
 	model_t					*models[MAX_MOD_KNOWN];
 	int						numModels;
 
-	int						numAnimations;
-
 	int						numImages;
 	image_t					*images[MAX_DRAWIMAGES];
 
@@ -1019,7 +1015,6 @@ typedef struct {
 	float					sawToothTable[FUNCTABLE_SIZE];
 	float					inverseSawToothTable[FUNCTABLE_SIZE];
 	float					fogTable[FOG_TABLE_SIZE];
-
 } trGlobals_t;
 
 extern backEndState_t	backEnd;
@@ -1087,6 +1082,7 @@ extern	cvar_t	*r_uiFullScreen;				// ui is running fullscreen
 
 extern	cvar_t	*r_showtris;					// enables wireframe rendering of the world
 extern	cvar_t	*r_showsky;						// forces sky in front of all surfaces
+extern	cvar_t	*r_shownormals;					// draws wireframe normals
 extern	cvar_t	*r_clear;						// force screen clear every frame
 
 extern	cvar_t	*r_shadows;						// controls shadows: 0 = none, 1 = blur, 2 = stencil, 3 = black planar projection
@@ -1135,6 +1131,92 @@ extern	cvar_t	*r_texdump;	// leilei - texture dumping
 
 
 
+
+
+/////////////////////////////// tr_shader.c /////////////////////////////
+
+#define GLS_SRCBLEND_ZERO					0x00000001
+#define GLS_SRCBLEND_ONE					0x00000002
+#define GLS_SRCBLEND_DST_COLOR				0x00000003
+#define GLS_SRCBLEND_ONE_MINUS_DST_COLOR	0x00000004
+#define GLS_SRCBLEND_SRC_ALPHA				0x00000005
+#define GLS_SRCBLEND_ONE_MINUS_SRC_ALPHA	0x00000006
+#define GLS_SRCBLEND_DST_ALPHA				0x00000007
+#define GLS_SRCBLEND_ONE_MINUS_DST_ALPHA	0x00000008
+#define GLS_SRCBLEND_ALPHA_SATURATE			0x00000009
+#define	GLS_SRCBLEND_BITS					0x0000000f
+
+#define GLS_DSTBLEND_ZERO					0x00000010
+#define GLS_DSTBLEND_ONE					0x00000020
+#define GLS_DSTBLEND_SRC_COLOR				0x00000030
+#define GLS_DSTBLEND_ONE_MINUS_SRC_COLOR	0x00000040
+#define GLS_DSTBLEND_SRC_ALPHA				0x00000050
+#define GLS_DSTBLEND_ONE_MINUS_SRC_ALPHA	0x00000060
+#define GLS_DSTBLEND_DST_ALPHA				0x00000070
+#define GLS_DSTBLEND_ONE_MINUS_DST_ALPHA	0x00000080
+#define	GLS_DSTBLEND_BITS					0x000000f0
+
+#define GLS_DEPTHMASK_TRUE					0x00000100
+
+#define GLS_POLYMODE_LINE					0x00001000
+
+#define GLS_DEPTHTEST_DISABLE				0x00010000
+#define GLS_DEPTHFUNC_EQUAL					0x00020000
+
+#define GLS_ATEST_GT_0						0x10000000
+#define GLS_ATEST_LT_80						0x20000000
+#define GLS_ATEST_GE_80						0x40000000
+#define	GLS_ATEST_BITS						0x70000000
+
+#define GLS_DEFAULT			                GLS_DEPTHMASK_TRUE
+
+shader_t	*R_FindShader( const char *name, int lightmapIndex, qboolean mipRawImage );
+shader_t	*R_GetShaderByHandle( qhandle_t hShader );
+shader_t    *R_FindShaderByName( const char *name );
+void		R_InitShaders( void );
+void		R_ShaderList_f( void );
+void        R_RemapShader(const char *oldShader, const char *newShader, const char *timeOffset);
+
+
+
+
+////////////////////////////////  tr_marks.c ////////////////////////////////////////
+//      MARKERS, POLYGON PROJECTION ON WORLD POLYGONS
+int R_MarkFragments( int numPoints, const vec3_t *points, const vec3_t projection,  int maxPoints, vec3_t pointBuffer, int maxFragments, markFragment_t *fragmentBuffer );
+
+
+
+/////////////////////////  tr_shade_calc  //////////////////////////////////////////
+void	RB_DeformTessGeometry( void );
+
+//void	RB_CalcEnvironmentTexCoords( float *dstTexCoords );
+void	RB_CalcCelTexCoords( float *dstTexCoords );		// leilei - cel hack
+void	RB_CalcEnvironmentTexCoordsJO( float *dstTexCoords );	// leilei
+void	RB_CalcEnvironmentTexCoordsR( float *dstTexCoords );	// leilei
+void    RB_CalcEyes( float *st, qboolean theothereye); // leilei - eyes
+void	RB_CalcEnvironmentCelShadeTexCoords( float *dstTexCoords );
+void	RB_CalcEnvironmentTexCoordsHW(void);
+void	RB_CalcFogTexCoords( float *dstTexCoords );
+void	RB_CalcScrollTexCoords( const float scroll[2], float *dstTexCoords );
+void	RB_CalcRotateTexCoords( float rotSpeed, float *dstTexCoords );
+void	RB_CalcScaleTexCoords( const float scale[2], float *dstTexCoords );
+void	RB_CalcTurbulentTexCoords( const waveForm_t *wf, float *dstTexCoords );
+void	RB_CalcTransformTexCoords( const texModInfo_t *tmi, float *dstTexCoords );
+void	RB_CalcModulateColorsByFog( unsigned char *dstColors );
+void	RB_CalcModulateAlphasByFog( unsigned char *dstColors );
+void	RB_CalcModulateRGBAsByFog( unsigned char *dstColors );
+void	RB_CalcWaveAlpha( const waveForm_t *wf, unsigned char *dstColors );
+void	RB_CalcWaveColor( const waveForm_t *wf, unsigned char (*dstColors)[4] );
+void	RB_CalcAlphaFromEntity( unsigned char *dstColors );
+void	RB_CalcAlphaFromOneMinusEntity( unsigned char *dstColors );
+void	RB_CalcStretchTexCoords( const waveForm_t *wf, float *texCoords );
+void	RB_CalcLightscaleTexCoords( float *texCoords );
+void	RB_CalcAtlasTexCoords( const atlas_t *at, float *st );
+void	RB_CalcColorFromEntity( unsigned char (*dstColors)[4] );
+void	RB_CalcColorFromOneMinusEntity( unsigned char (*dstColors)[4] );
+void	RB_CalcFlatAmbient( unsigned char *colors ); // leilei - cel hack
+void	RB_CalcFlatDirect( unsigned char *colors ); // leilei - cel hack
+void	RB_CalcNormal( unsigned char *colors ); // leilei - normal hack
 
 
 
@@ -1397,9 +1479,6 @@ void RE_TakeVideoFrame( int width, int height, unsigned char *captureBuffer, uns
 // void* R_GetCommandBuffer( int bytes );
 //void    RB_ExecuteRenderCommands( const void *data );
 
-
-
-
 /////////////////////////// tr_image.c //////////////////////////////////
 void    GL_TextureMode( const char *string );
 int		R_SumOfUsedImages( void );
@@ -1527,89 +1606,6 @@ void RB_ShadowFinish( void );
 void RB_ProjectionShadowDeform( void );
 
 
-/////////////////////////////// tr_shader.c /////////////////////////////
 
-#define GLS_SRCBLEND_ZERO					0x00000001
-#define GLS_SRCBLEND_ONE					0x00000002
-#define GLS_SRCBLEND_DST_COLOR				0x00000003
-#define GLS_SRCBLEND_ONE_MINUS_DST_COLOR	0x00000004
-#define GLS_SRCBLEND_SRC_ALPHA				0x00000005
-#define GLS_SRCBLEND_ONE_MINUS_SRC_ALPHA	0x00000006
-#define GLS_SRCBLEND_DST_ALPHA				0x00000007
-#define GLS_SRCBLEND_ONE_MINUS_DST_ALPHA	0x00000008
-#define GLS_SRCBLEND_ALPHA_SATURATE			0x00000009
-#define	GLS_SRCBLEND_BITS					0x0000000f
-
-#define GLS_DSTBLEND_ZERO					0x00000010
-#define GLS_DSTBLEND_ONE					0x00000020
-#define GLS_DSTBLEND_SRC_COLOR				0x00000030
-#define GLS_DSTBLEND_ONE_MINUS_SRC_COLOR	0x00000040
-#define GLS_DSTBLEND_SRC_ALPHA				0x00000050
-#define GLS_DSTBLEND_ONE_MINUS_SRC_ALPHA	0x00000060
-#define GLS_DSTBLEND_DST_ALPHA				0x00000070
-#define GLS_DSTBLEND_ONE_MINUS_DST_ALPHA	0x00000080
-#define	GLS_DSTBLEND_BITS					0x000000f0
-
-#define GLS_DEPTHMASK_TRUE					0x00000100
-
-#define GLS_POLYMODE_LINE					0x00001000
-
-#define GLS_DEPTHTEST_DISABLE				0x00010000
-#define GLS_DEPTHFUNC_EQUAL					0x00020000
-
-#define GLS_ATEST_GT_0						0x10000000
-#define GLS_ATEST_LT_80						0x20000000
-#define GLS_ATEST_GE_80						0x40000000
-#define	GLS_ATEST_BITS						0x70000000
-
-#define GLS_DEFAULT			                GLS_DEPTHMASK_TRUE
-
-shader_t	*R_FindShader( const char *name, int lightmapIndex, qboolean mipRawImage );
-shader_t	*R_GetShaderByHandle( qhandle_t hShader );
-shader_t    *R_FindShaderByName( const char *name );
-void		R_InitShaders( void );
-void		R_ShaderList_f( void );
-void        R_RemapShader(const char *oldShader, const char *newShader, const char *timeOffset);
-
-
-
-
-////////////////////////////////  tr_marks.c ////////////////////////////////////////
-//      MARKERS, POLYGON PROJECTION ON WORLD POLYGONS
-int R_MarkFragments( int numPoints, const vec3_t *points, const vec3_t projection,  int maxPoints, vec3_t pointBuffer, int maxFragments, markFragment_t *fragmentBuffer );
-
-
-
-/////////////////////////  tr_shade_calc  //////////////////////////////////////////
-void	RB_DeformTessGeometry( void );
-
-//void	RB_CalcEnvironmentTexCoords( float *dstTexCoords );
-void	RB_CalcCelTexCoords( float *dstTexCoords );		// leilei - cel hack
-void	RB_CalcEnvironmentTexCoordsJO( float *dstTexCoords );	// leilei
-void	RB_CalcEnvironmentTexCoordsR( float *dstTexCoords );	// leilei
-void    RB_CalcEyes( float *st, qboolean theothereye); // leilei - eyes
-void	RB_CalcEnvironmentCelShadeTexCoords( float *dstTexCoords );
-void	RB_CalcEnvironmentTexCoordsHW(void);
-void	RB_CalcFogTexCoords( float *dstTexCoords );
-void	RB_CalcScrollTexCoords( const float scroll[2], float *dstTexCoords );
-void	RB_CalcRotateTexCoords( float rotSpeed, float *dstTexCoords );
-void	RB_CalcScaleTexCoords( const float scale[2], float *dstTexCoords );
-void	RB_CalcTurbulentTexCoords( const waveForm_t *wf, float *dstTexCoords );
-void	RB_CalcTransformTexCoords( const texModInfo_t *tmi, float *dstTexCoords );
-void	RB_CalcModulateColorsByFog( unsigned char *dstColors );
-void	RB_CalcModulateAlphasByFog( unsigned char *dstColors );
-void	RB_CalcModulateRGBAsByFog( unsigned char *dstColors );
-void	RB_CalcWaveAlpha( const waveForm_t *wf, unsigned char *dstColors );
-void	RB_CalcWaveColor( const waveForm_t *wf, unsigned char (*dstColors)[4] );
-void	RB_CalcAlphaFromEntity( unsigned char *dstColors );
-void	RB_CalcAlphaFromOneMinusEntity( unsigned char *dstColors );
-void	RB_CalcStretchTexCoords( const waveForm_t *wf, float *texCoords );
-void	RB_CalcLightscaleTexCoords( float *texCoords );
-void	RB_CalcAtlasTexCoords( const atlas_t *at, float *st );
-void	RB_CalcColorFromEntity( unsigned char (*dstColors)[4] );
-void	RB_CalcColorFromOneMinusEntity( unsigned char (*dstColors)[4] );
-void	RB_CalcFlatAmbient( unsigned char *colors ); // leilei - cel hack
-void	RB_CalcFlatDirect( unsigned char *colors ); // leilei - cel hack
-void	RB_CalcNormal( unsigned char *colors ); // leilei - normal hack
 
 #endif //TR_LOCAL_H

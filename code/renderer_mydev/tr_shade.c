@@ -30,8 +30,9 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
 #include "tr_local.h"
 
+shaderCommands_t tess;
+static qboolean	setArraysOnce;
 /*
-
   THIS ENTIRE FILE IS BACK END
 
   This file deals with applying shaders to surface data in the tess struct.
@@ -40,11 +41,16 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 /*
 ==================
 R_DrawElements
+
+Optionally performs our own glDrawElements that looks for strip conditions
+instead of using the single glDrawElements call that may be inefficient without compiled vertex arrays.
 ==================
 */
 static void R_DrawElements( int numIndexes, const glIndex_t *indexes ) {
     qglDrawElements(GL_TRIANGLES, numIndexes, GL_INDEX_TYPE, indexes);
 }
+
+
 
 /*
 =============================================================
@@ -54,15 +60,7 @@ SURFACE SHADERS
 =============================================================
 */
 
-shaderCommands_t	tess;
-static qboolean	setArraysOnce;
 
-/*
-=================
-R_BindAnimatedImage
-
-=================
-*/
 static void R_BindAnimatedImage( textureBundle_t *bundle )
 {
 	int		index;
@@ -83,7 +81,8 @@ static void R_BindAnimatedImage( textureBundle_t *bundle )
 	index = (int)( tess.shaderTime * bundle->imageAnimationSpeed * FUNCTABLE_SIZE );
 	index >>= FUNCTABLE_SIZE2;
 
-	if ( index < 0 ) {
+	if ( index < 0 )
+    {
 		index = 0;	// may happen with shader time offsets
 	}
 	index %= bundle->numImageAnimations;
@@ -131,7 +130,8 @@ DrawNormals
 Draws vertex normals for debugging
 ================
 */
-static void DrawNormals (shaderCommands_t *input) {
+static void DrawNormals (shaderCommands_t *input)
+{
 	int		i;
 	vec3_t	temp;
 
@@ -141,45 +141,17 @@ static void DrawNormals (shaderCommands_t *input) {
 	GL_State( GLS_POLYMODE_LINE | GLS_DEPTHMASK_TRUE );
 
 	qglBegin (GL_LINES);
-	for (i = 0 ; i < input->numVertexes ; i++) {
+	for (i = 0 ; i < input->numVertexes ; i++)
+    {
 		qglVertex3fv (input->xyz[i]);
 		VectorMA (input->xyz[i], 2, input->normal[i], temp);
 		qglVertex3fv (temp);
 	}
-	qglEnd ();
+	qglEnd();
 
 	qglDepthRange( 0, 1 );
-
 }
 
-/*
-==============
-RB_BeginSurface
-
-We must set some things up before beginning any tesselation,
-because a surface may be forced to perform a RB_End due
-to overflow.
-==============
-*/
-void RB_BeginSurface( shader_t *shader, int fogNum ) {
-
-	shader_t *state = (shader->remappedShader) ? shader->remappedShader : shader;
-
-	tess.numIndexes = 0;
-	tess.numVertexes = 0;
-	tess.shader = state;
-	tess.fogNum = fogNum;
-	tess.dlightBits = 0;		// will be OR'd in by surface functions
-	tess.xstages = state->stages;
-	tess.numPasses = state->numUnfoggedPasses;
-
-	tess.shaderTime = backEnd.refdef.floatTime - tess.shader->timeOffset;
-	if (tess.shader->clampTime && tess.shaderTime >= tess.shader->clampTime) {
-		tess.shaderTime = tess.shader->clampTime;
-	}
-
-
-}
 
 /*
 ===================
@@ -402,128 +374,64 @@ static void RB_FogPass( void ) {
 	}
 
 	R_DrawElements( tess.numIndexes, tess.indexes );
-
 }
 
+
 /*
+** RB_CalcDiffuseColor
+**
 ** The basic vertex lighting calc
 */
-void RB_CalcDiffuseColor( unsigned char (*colors)[4] )
+static void RB_CalcDiffuseColor(unsigned char (*colors)[4])
 {
-	int				i;
-	float			*v, *normal;
-	float			incoming;
-	trRefEntity_t	*ent;
-//	unsigned char	ambientLightRGBA[4];
-	vec3_t			ambientLight;
-	vec3_t			lightDir;
-	vec3_t			directedLight;
-	int				numVertexes;
-#if idppc_altivec
-	vector unsigned char vSel = (vector unsigned char)(0x00, 0x00, 0x00, 0xff,
-							   0x00, 0x00, 0x00, 0xff,
-							   0x00, 0x00, 0x00, 0xff,
-							   0x00, 0x00, 0x00, 0xff);
-	vector float ambientLightVec;
-	vector float directedLightVec;
-	vector float lightDirVec;
-	vector float normalVec0, normalVec1;
-	vector float incomingVec0, incomingVec1, incomingVec2;
-	vector float zero, jVec;
-	vector signed int jVecInt;
-	vector signed short jVecShort;
-	vector unsigned char jVecChar, normalPerm;
-#endif
-	ent = backEnd.currentEntity;
-//	ambientLightRGBA[0] = ent->ambientLightRGBA[0];
-//  ambientLightRGBA[1] = ent->ambientLightRGBA[1];
-//	ambientLightRGBA[2] = ent->ambientLightRGBA[2];
-//	ambientLightRGBA[3] = ent->ambientLightRGBA[3];
 
-#if idppc_altivec
-	// A lot of this could be simplified if we made sure
-	// entities light info was 16-byte aligned.
-	jVecChar = vec_lvsl(0, ent->ambientLight);
-	ambientLightVec = vec_ld(0, (vector float *)ent->ambientLight);
-	jVec = vec_ld(11, (vector float *)ent->ambientLight);
-	ambientLightVec = vec_perm(ambientLightVec,jVec,jVecChar);
+    //trRefEntity_t* ent = backEnd.currentEntity;
+    vec3_t abtLit;
+    abtLit[0] = backEnd.currentEntity->ambientLight[0];
+    abtLit[1] = backEnd.currentEntity->ambientLight[1];
+    abtLit[2] = backEnd.currentEntity->ambientLight[2];
 
-	jVecChar = vec_lvsl(0, ent->directedLight);
-	directedLightVec = vec_ld(0,(vector float *)ent->directedLight);
-	jVec = vec_ld(11,(vector float *)ent->directedLight);
-	directedLightVec = vec_perm(directedLightVec,jVec,jVecChar);	 
+    vec3_t drtLit;
+    drtLit[0] = backEnd.currentEntity->directedLight[0];
+    drtLit[1] = backEnd.currentEntity->directedLight[1];
+    drtLit[2] = backEnd.currentEntity->directedLight[2];
 
-	jVecChar = vec_lvsl(0, ent->lightDir);
-	lightDirVec = vec_ld(0,(vector float *)ent->lightDir);
-	jVec = vec_ld(11,(vector float *)ent->lightDir);
-	lightDirVec = vec_perm(lightDirVec,jVec,jVecChar);	 
+    vec3_t litDir;
+    litDir[0] = backEnd.currentEntity->lightDir[0];
+    litDir[1] = backEnd.currentEntity->lightDir[1];
+    litDir[2] = backEnd.currentEntity->lightDir[2];
 
-	zero = (vector float)vec_splat_s8(0);
-	VectorCopy( ent->lightDir, lightDir );
-#else
-	VectorCopy( ent->ambientLight, ambientLight );
-	VectorCopy( ent->directedLight, directedLight );
-	VectorCopy( ent->lightDir, lightDir );
-#endif
+    unsigned char ambLitRGBA[4];  
+    
+    ambLitRGBA[0] = backEnd.currentEntity->ambientLightRGBA[0];
+    ambLitRGBA[1] = backEnd.currentEntity->ambientLightRGBA[1];
+    ambLitRGBA[2] = backEnd.currentEntity->ambientLightRGBA[2];
+    ambLitRGBA[3] = backEnd.currentEntity->ambientLightRGBA[3];
 
-	v = tess.xyz[0];
-	normal = tess.normal[0];
-
-#if idppc_altivec
-	normalPerm = vec_lvsl(0,normal);
-#endif
-	numVertexes = tess.numVertexes;
-	for (i = 0 ; i < numVertexes ; i++, v += 4, normal += 4) {
-#if idppc_altivec
-		normalVec0 = vec_ld(0,(vector float *)normal);
-		normalVec1 = vec_ld(11,(vector float *)normal);
-		normalVec0 = vec_perm(normalVec0,normalVec1,normalPerm);
-		incomingVec0 = vec_madd(normalVec0, lightDirVec, zero);
-		incomingVec1 = vec_sld(incomingVec0,incomingVec0,4);
-		incomingVec2 = vec_add(incomingVec0,incomingVec1);
-		incomingVec1 = vec_sld(incomingVec1,incomingVec1,4);
-		incomingVec2 = vec_add(incomingVec2,incomingVec1);
-		incomingVec0 = vec_splat(incomingVec2,0);
-		incomingVec0 = vec_max(incomingVec0,zero);
-		normalPerm = vec_lvsl(12,normal);
-		jVec = vec_madd(incomingVec0, directedLightVec, ambientLightVec);
-		jVecInt = vec_cts(jVec,0);	// RGBx
-		jVecShort = vec_pack(jVecInt,jVecInt);		// RGBxRGBx
-		jVecChar = vec_packsu(jVecShort,jVecShort);	// RGBxRGBxRGBxRGBx
-		jVecChar = vec_sel(jVecChar,vSel,vSel);		// RGBARGBARGBARGBA replace alpha with 255
-		vec_ste((vector unsigned int)jVecChar,0,(unsigned int *)&colors[i*4]);	// store color
-#else
-		incoming = DotProduct (normal, lightDir);
-		if ( incoming <= 0 )
+    int numVertexes = tess.numVertexes;
+	int	i;
+	for (i = 0; i < numVertexes; i++)
+    {
+		float incoming = DotProduct(tess.normal[i], litDir);
+		
+        if( incoming <= 0 )
         {
-			colors[i][0] = ent->ambientLightRGBA[0];
-            colors[i][1] = ent->ambientLightRGBA[1];
-			colors[i][2] = ent->ambientLightRGBA[2];
-			colors[i][3] = ent->ambientLightRGBA[3];
-
-			continue;
+			colors[i][0] = ambLitRGBA[0];
+            colors[i][1] = ambLitRGBA[1];
+			colors[i][2] = ambLitRGBA[2];
+			colors[i][3] = ambLitRGBA[3];
 		}
+        else
+        {
+            int r = abtLit[0] + incoming * drtLit[0];
+            int g = abtLit[1] + incoming * drtLit[1];
+            int b = abtLit[2] + incoming * drtLit[2];
 
-		int R = (int)( ambientLight[0] + incoming * directedLight[0] );
-		if ( R > 255 ) {
-			R = 255;
-		}
-		colors[i][0] = R;
-
-		int G = (int)( ambientLight[1] + incoming * directedLight[1] );
-		if ( G > 255 ) {
-			G = 255;
-		}
-		colors[i][1] = G;
-
-		int B = (int)( ambientLight[2] + incoming * directedLight[2] );
-		if ( B > 255 ) {
-			B = 255;
-		}
-		colors[i][2] = B;
-
-		colors[i][3] = 255;
-#endif
+            colors[i][0] = (r <= 255 ? r : 255);
+            colors[i][1] = (g <= 255 ? g : 255);
+            colors[i][2] = (b <= 255 ? b : 255);
+            colors[i][3] = 255;
+        }
 	}
 }
 
@@ -906,15 +814,13 @@ static void ComputeTexCoords( shaderStage_t *pStage ) {
 	}
 }
 
-/*
-** RB_IterateStagesGeneric
-*/
+
+
 static void RB_IterateStagesGeneric( shaderCommands_t *input )
 {
+	int stage;
 
-
-
-	for ( int stage = 0; stage < MAX_SHADER_STAGES; stage++ )
+	for ( stage = 0; stage < MAX_SHADER_STAGES; stage++ )
 	{
 		shaderStage_t *pStage = tess.xstages[stage];
 
@@ -969,28 +875,49 @@ static void RB_IterateStagesGeneric( shaderCommands_t *input )
 }
 
 
+//////////////////////////////////////////////////////////////////////////////////////
+
+/*
+==============
+RB_BeginSurface
+
+We must set some things up before beginning any tesselation,
+because a surface may be forced to perform a RB_End due
+to overflow.
+==============
+*/
+void RB_BeginSurface( shader_t *shader, int fogNum )
+{
+	shader_t *state = (shader->remappedShader) ? shader->remappedShader : shader;
+
+	tess.numIndexes = 0;
+	tess.numVertexes = 0;
+	tess.shader = state;
+	tess.fogNum = fogNum;
+	tess.dlightBits = 0;		// will be OR'd in by surface functions
+	tess.xstages = state->stages;
+	tess.numPasses = state->numUnfoggedPasses;
+
+	tess.shaderTime = backEnd.refdef.floatTime - tess.shader->timeOffset;
+	if (tess.shader->clampTime && tess.shaderTime >= tess.shader->clampTime)
+    {
+		tess.shaderTime = tess.shader->clampTime;
+	}
+}
+
+
+
 /*
 ** RB_StageIteratorGeneric
 */
 void RB_StageIteratorGeneric( void )
 {
-	shaderCommands_t *input = &tess;
+
+	shaderCommands_t* input = &tess;
 
 	RB_DeformTessGeometry();
 
-	//
-	// log this call
-	//
-	if ( r_logFile->integer ) 
-	{
-		// don't just call LogComment, or we will get
-		// a call to va() every frame!
-		GLimp_LogComment( va("--- RB_StageIteratorGeneric( %s ) ---\n", tess.shader->name) );
-	}
-
-	//
 	// set face culling appropriately
-	//
 	GL_Cull( input->shader->cullType );
 
 	// set polygon offset if necessary
@@ -1000,12 +927,11 @@ void RB_StageIteratorGeneric( void )
 		qglPolygonOffset( r_offsetFactor->value, r_offsetUnits->value );
 	}
 
-	//
-	// if there is only a single pass then we can enable color
-	// and texture arrays before we compile, otherwise we need
-	// to avoid compiling those arrays since they will change
-	// during multipass rendering
-	//
+	// if there is only a single pass then we can 
+    // enable color and texture arrays before we compile, 
+    // otherwise we need to avoid compiling those arrays 
+    // since they will change during multipass rendering
+
 	if ( tess.numPasses > 1 || input->shader->multitextureEnv )
 	{
 		setArraysOnce = qfalse;
@@ -1059,7 +985,6 @@ void RB_StageIteratorGeneric( void )
 	if (qglUnlockArraysEXT) 
 	{
 		qglUnlockArraysEXT();
-		GLimp_LogComment( "glUnlockArraysEXT\n" );
 	}
 
 	// reset polygon offset
@@ -1070,16 +995,159 @@ void RB_StageIteratorGeneric( void )
 }
 
 
-void RB_EndSurface( void )
+/*
+** RB_StageIteratorVertexLitTexture
+*/
+void RB_StageIteratorVertexLitTexture( void )
 {
+	shaderCommands_t *input = &tess;
+	shader_t		*shader = input->shader;
+
+	// compute colors
+	RB_CalcDiffuseColor( tess.svars.colors );
+
+
+	// set face culling appropriately
+	GL_Cull( shader->cullType );
+
+
+	// set arrays and lock
+	qglEnableClientState( GL_COLOR_ARRAY);
+	qglEnableClientState( GL_TEXTURE_COORD_ARRAY);
+
+	qglColorPointer( 4, GL_UNSIGNED_BYTE, 0, tess.svars.colors );
+	qglTexCoordPointer( 2, GL_FLOAT, 16, tess.texCoords[0][0] );
+	qglVertexPointer (3, GL_FLOAT, 16, input->xyz);
+
+	if ( qglLockArraysEXT )
+	{
+		qglLockArraysEXT(0, input->numVertexes);
+	}
+
+
+	// call special shade routine
+	R_BindAnimatedImage( &tess.xstages[0]->bundle[0] );
+	GL_State( tess.xstages[0]->stateBits );
+	R_DrawElements( input->numIndexes, input->indexes );
+
+
+	// now do any dynamic lighting needed
+	if ( tess.dlightBits && tess.shader->sort <= SS_OPAQUE )
+    {
+		ProjectDlightTexture();
+	}
+
+	// now do fog
+	if ( tess.fogNum && tess.shader->fogPass )
+    {
+		RB_FogPass();
+	}
+
+	// unlock arrays
+	if (qglUnlockArraysEXT) 
+	{
+		qglUnlockArraysEXT();
+	}
+}
+
+
+void RB_StageIteratorLightmappedMultitexture( void )
+{
+	shaderCommands_t* input = &tess;
+	shader_t* shader = input->shader;
+
+
+	// set face culling appropriately
+	GL_Cull( shader->cullType );
+
+	// set color, pointers, and lock
+	GL_State( GLS_DEFAULT );
+	qglVertexPointer( 3, GL_FLOAT, 16, input->xyz );
 
     
+#ifdef REPLACE_MODE
+	qglDisableClientState( GL_COLOR_ARRAY );
+	qglColor3f( 1, 1, 1 );
+	qglShadeModel( GL_FLAT );
+#else
+	qglEnableClientState( GL_COLOR_ARRAY );
+	qglColorPointer( 4, GL_UNSIGNED_BYTE, 0, tess.constantColor255 );
+#endif
+
+
+	// select base stage
+	GL_SelectTexture( 0 );
+
+	qglEnableClientState( GL_TEXTURE_COORD_ARRAY );
+	R_BindAnimatedImage( &tess.xstages[0]->bundle[0] );
+	qglTexCoordPointer( 2, GL_FLOAT, 16, tess.texCoords[0][0] );
+
+
+	// configure second stage
+	GL_SelectTexture( 1 );
+	qglEnable( GL_TEXTURE_2D );
+	if ( r_lightmap->integer )
+    {
+		GL_TexEnv( GL_REPLACE );
+	}
+    else
+    {
+		GL_TexEnv( GL_MODULATE );
+	}
+	R_BindAnimatedImage( &tess.xstages[0]->bundle[1] );
+	qglEnableClientState( GL_TEXTURE_COORD_ARRAY );
+	qglTexCoordPointer( 2, GL_FLOAT, 16, tess.texCoords[0][1] );
+
+	// lock arrays
+	if ( qglLockArraysEXT )
+    {
+		qglLockArraysEXT(0, input->numVertexes);
+	}
+
+	R_DrawElements( input->numIndexes, input->indexes );
+
+
+	// disable texturing on TEXTURE1, then select TEXTURE0
+	qglDisable( GL_TEXTURE_2D );
+	qglDisableClientState( GL_TEXTURE_COORD_ARRAY );
+
+	GL_SelectTexture( 0 );
+#ifdef REPLACE_MODE
+	GL_TexEnv( GL_MODULATE );
+	qglShadeModel( GL_SMOOTH );
+#endif
+
+
+	// now do any dynamic lighting needed
+	if ( tess.dlightBits && tess.shader->sort <= SS_OPAQUE ) {
+		ProjectDlightTexture();
+	}
+
+
+	// now do fog
+	if ( tess.fogNum && tess.shader->fogPass )
+    {
+		RB_FogPass();
+	}
+
+
+	// unlock arrays
+	if ( qglUnlockArraysEXT )
+    {
+		qglUnlockArraysEXT();
+	}
+}
+
+
+void RB_EndSurface( void )
+{
 	shaderCommands_t *input = &tess;
 
-	if (input->numIndexes == 0) {
+	if ((input->numIndexes == 0) || (input->numVertexes == 0)) {
 		return;
 	}
-	if (tess.shader->isSky && r_fastsky->integer) {
+
+	if (input->shader->isSky && r_fastsky->integer) {
 		return;
 	}
 
@@ -1090,13 +1158,13 @@ void RB_EndSurface( void )
 		ri.Error (ERR_DROP, "RB_EndSurface() - SHADER_MAX_VERTEXES hit");
 	}
 
-	if ( tess.shader == tr.shadowShader ) {
+	if ( input->shader == tr.shadowShader ) {
 		RB_ShadowTessEnd();
 		return;
 	}
 
 	// for debugging of sort order issues, stop rendering after a given sort value
-	if ( r_debugSort->integer && r_debugSort->integer < tess.shader->sort ) {
+	if ( r_debugSort->integer && r_debugSort->integer < input->shader->sort ) {
 		return;
 	}
 
@@ -1129,4 +1197,3 @@ void RB_EndSurface( void )
 	tess.numIndexes = 0;
 	tess.numVertexes = 0;
 }
-

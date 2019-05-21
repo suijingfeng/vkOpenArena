@@ -28,8 +28,6 @@ extern void (APIENTRYP qglActiveTextureARB) (GLenum texture);
 
 
 extern	backEndData_t *backEndData;	// the second one may not be allocated
-
-
 static char* s_shaderText;
 
 // the shader is parsed into these global variables, then copied into dynamically allocated memory if it is valid.
@@ -3404,8 +3402,10 @@ static shader_t *FinishShader( void )
 	shader.numUnfoggedPasses = stage;
 
 	// fogonly shaders don't have any normal passes
-	if (stage == 0 && !shader.isSky)
+	if ( stage == 0 && !shader.isSky)
+    {
 		shader.sort = SS_FOG;
+    }
 
 	// determine which stage iterator function is appropriate
 	// ComputeStageIteratorFunc();
@@ -3522,21 +3522,27 @@ shader_t *R_FindShaderByName( const char *name )
 ===============
 R_FindShader
 
-Will always return a valid shader, but it might be the default shader if the real one can't be found.
+Will always return a valid shader, but it might be the
+default shader if the real one can't be found.
 
-In the interest of not requiring an explicit shader text entry to be defined for every single image used in the game, 
-three default shader behaviors can be auto-created for any image:
+In the interest of not requiring an explicit shader text entry to
+be defined for every single image used in the game, three default
+shader behaviors can be auto-created for any image:
 
-If lightmapIndex == LIGHTMAP_NONE, then the image will have dynamic diffuse lighting applied to it, 
-as apropriate for most entity skin surfaces.
+If lightmapIndex == LIGHTMAP_NONE, then the image will have
+dynamic diffuse lighting applied to it, as apropriate for most
+entity skin surfaces.
 
-If lightmapIndex == LIGHTMAP_2D, then the image will be used for 2D rendering unless an explicit shader is found
+If lightmapIndex == LIGHTMAP_2D, then the image will be used
+for 2D rendering unless an explicit shader is found
 
-If lightmapIndex == LIGHTMAP_BY_VERTEX, then the image will use the vertex rgba modulate values, 
-as apropriate for misc_model pre-lit surfaces.
+If lightmapIndex == LIGHTMAP_BY_VERTEX, then the image will use
+the vertex rgba modulate values, as apropriate for misc_model
+pre-lit surfaces.
 
-Other lightmapIndex values will have a lightmap stage created and src*dest blending applied with the texture, 
-as apropriate for most world construction surfaces.
+Other lightmapIndex values will have a lightmap stage created
+and src*dest blending applied with the texture, as apropriate for
+most world construction surfaces.
 
 
 Leilei TODO - and if it has a lightmapindex and no detail texture please
@@ -3548,6 +3554,22 @@ the other textures with details so there's one big grainy world
 ===============
 */
 
+static void InitShader( const char *name, int lightmapIndex )
+{
+	int i;
+
+	// clear the global shader
+	memset( &shader, 0, sizeof( shader ) );
+	memset( &stages, 0, sizeof( stages ) );
+
+	Q_strncpyz( shader.name, name, sizeof( shader.name ) );
+	shader.lightmapIndex = lightmapIndex;
+
+	for ( i = 0 ; i < MAX_SHADER_STAGES ; i++ )
+	{
+		stages[i].bundle[0].texMods = texMods[i];
+	}
+}
 
 shader_t *R_FindShaderReal( const char *name, int lightmapIndex, qboolean mipRawImage )
 {
@@ -3587,21 +3609,15 @@ shader_t *R_FindShaderReal( const char *name, int lightmapIndex, qboolean mipRaw
         // so we have to check all default shaders otherwise for every call to
         // R_FindShader with that same strippedName a new default shader is created.
         
-		if ( (sh->lightmapIndex == lightmapIndex || sh->defaultShader) && !Q_stricmp(sh->name, strippedName)) 
+		if ( (sh->lightmapIndex == lightmapIndex || sh->defaultShader) && 
+			!Q_stricmp(sh->name, strippedName))
         {
 			// match found
 			return sh;
 		}
 	}
 
-	// clear the global shader
-	memset( &shader, 0, sizeof( shader ) );
-	memset( &stages, 0, sizeof( stages ) );
-	Q_strncpyz(shader.name, strippedName, sizeof(shader.name));
-	shader.lightmapIndex = lightmapIndex;
-	for ( i = 0 ; i < MAX_SHADER_STAGES ; i++ ) {
-		stages[i].bundle[0].texMods = texMods[i];
-	}
+	InitShader( strippedName, lightmapIndex );
 
 	// FIXME: set these "need" values apropriately
 	shader.needsNormal = qtrue;
@@ -3710,10 +3726,7 @@ shader_t *R_FindShaderReal( const char *name, int lightmapIndex, qboolean mipRaw
 // leilei - rather stupid way to do a cel wrapper to work for all textures
 shader_t *R_FindShader( const char *name, int lightmapIndex, qboolean mipRawImage )
 {
-	// load real shader first?
-	shader_t* sh = R_FindShaderReal(name, lightmapIndex, mipRawImage);
-
-    return sh;
+    return R_FindShaderReal(name, lightmapIndex, mipRawImage);
 }
 
 
@@ -3722,7 +3735,7 @@ qhandle_t RE_RegisterShaderFromImage(const char *name, int lightmapIndex, image_
 	int	i;
 	shader_t	*sh;
 
-	long int hash = generateHashValue(name, FILE_HASH_SIZE);
+	int hash = generateHashValue(name, FILE_HASH_SIZE);
 
 	// probably not necessary since this function
 	// only gets called from tr_font.c with lightmapIndex == LIGHTMAP_2D
@@ -3739,7 +3752,8 @@ qhandle_t RE_RegisterShaderFromImage(const char *name, int lightmapIndex, image_
 		// then a default shader is created with lightmapIndex == LIGHTMAP_NONE, so we
 		// have to check all default shaders otherwise for every call to R_FindShader
 		// with that same strippedName a new default shader is created.
-		if ( (sh->lightmapIndex == lightmapIndex || sh->defaultShader) && !Q_stricmp(sh->name, name))
+		if ( (sh->lightmapIndex == lightmapIndex || sh->defaultShader) &&
+		 !Q_stricmp(sh->name, name))
         {
 			// index by name	
 			// match found
@@ -3890,6 +3904,7 @@ qhandle_t RE_RegisterShaderNoMip( const char *name )
 	return sh->index;
 }
 
+
 /*
 ====================
 R_GetShaderByHandle
@@ -4031,8 +4046,7 @@ static void ScanAndLoadShaderFiles( void )
         long summand = ri.FS_ReadFile(filename, &buffers[i]);
 		if ( !buffers[i] )
 			ri.Error( ERR_DROP, "Couldn't load %s", filename );
-
-        
+		
 		// Do a simple check on the shader structure in that file to make sure one bad shader file cannot fuck up all other shaders.
 		char* p = buffers[i];
 		R_BeginParseSession(filename);
@@ -4050,10 +4064,12 @@ static void ScanAndLoadShaderFiles( void )
             
 			if( (token[0] != '{') || (token[1] != '\0') )
 			{
-				ri.Printf(PRINT_WARNING, "WARNING: Ignoring shader file %s. Shader \"%s\" on line %d missing opening brace", filename, shaderName, shaderLine);
+				ri.Printf(PRINT_WARNING, "WARNING: Ignoring shader file %s. Shader \"%s\" on line %d missing opening brace",
+							filename, shaderName, shaderLine);
 				if (token[0])
+				{
 					ri.Printf(PRINT_WARNING, " (found \"%s\" on line %d)", token, R_GetCurrentParseLine());
-
+				}
 				ri.Printf(PRINT_WARNING, ".\n");
 				ri.FS_FreeFile(buffers[i]);
 				buffers[i] = NULL;
@@ -4062,13 +4078,15 @@ static void ScanAndLoadShaderFiles( void )
 
 			if(!SkipBracedSection(&p, 1))
 			{
-				ri.Printf(PRINT_WARNING, "WARNING: Ignoring shader file %s. Shader \"%s\" on line %d missing closing brace.\n",	filename, shaderName, shaderLine);
+				ri.Printf(PRINT_WARNING, "WARNING: Ignoring shader file %s. Shader \"%s\" on line %d missing closing brace.\n",
+							filename, shaderName, shaderLine);
 				ri.FS_FreeFile(buffers[i]);
 				buffers[i] = NULL;
 				break;
 			}
 		}
 			
+		
 		if (buffers[i])
 			sum += summand;		
 	}
