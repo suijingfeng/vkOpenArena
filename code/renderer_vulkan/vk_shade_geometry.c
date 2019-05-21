@@ -1140,8 +1140,12 @@ void RB_StageIteratorGeneric(shaderCommands_t * const pTess)
         {
             depth_range = DEPTH_RANGE_WEAPON;
         }
- 
-        
+
+
+        if ( r_lightmap->integer && multitexture) {
+            updateCurDescriptor( tr.whiteImage->descriptor_set, 0 );
+        }
+
         if (backEnd.viewParms.isMirror)
         {
             vk_shade_geometry(pTess->xstages[stage]->vk_mirror_pipeline, multitexture, depth_range, VK_TRUE);
