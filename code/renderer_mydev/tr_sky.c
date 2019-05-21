@@ -745,7 +745,7 @@ All of the visible sky triangles are in tess
 Other things could be stuck in here, like birds in the sky, etc
 ================
 */
-void RB_StageIteratorSky( void )
+void RB_StageIteratorSky( shaderCommands_t * const pTess )
 {
 	if ( r_fastsky->integer )
     {
@@ -755,7 +755,7 @@ void RB_StageIteratorSky( void )
 	// go through all the polygons and project them onto
 	// the sky box to see which blocks on each side need
 	// to be drawn
-	RB_ClipSkyPolygons( &tess );
+	RB_ClipSkyPolygons( pTess );
 
 	// r_showsky will let all the sky blocks be drawn in
 	// front of everything to allow developers to see how
@@ -786,15 +786,15 @@ void RB_StageIteratorSky( void )
         qglLoadMatrixf(modelview_transform);
 */
 
-		DrawSkyBox( tess.shader );
+		DrawSkyBox( pTess->shader );
 		qglPopMatrix();
 	}
 
 	// generate the vertexes for all the clouds, which will be drawn
 	// by the generic shader routine
-	R_BuildCloudData( &tess );
+	R_BuildCloudData( pTess );
 
-	RB_StageIteratorGeneric();
+	RB_StageIteratorGeneric(pTess);
 
 	// draw the inner skybox
 
