@@ -692,7 +692,7 @@ static void RB_CalcSpecularAlphaNew(unsigned char (*alphas)[4])
 
 static void ComputeColors( shaderStage_t *pStage )
 {
-	int		i, nVerts;
+	int		i;
 	//
 	// rgbGen
 	//
@@ -714,9 +714,9 @@ static void ComputeColors( shaderStage_t *pStage )
 		case CGEN_CONST:
         {
             
-            nVerts = tess.numVertexes;
+            uint32_t nVerts = tess.numVertexes;
 
-			for ( i = 0; i < nVerts; i++ )
+			for ( i = 0; i < nVerts; ++i )
             {
 				*(int *)tess.svars.colors[i] = *(int *)pStage->constantColor;
 			}

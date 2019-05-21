@@ -15,7 +15,7 @@ MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 GNU General Public License for more details.
 
 You should have received a copy of the GNU General Public License
-along with Foobar; if not, write to the Free Software
+along with Quake III Arena source code; if not, write to the Free Software
 Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 ===========================================================================
 */
@@ -174,7 +174,7 @@ static	void R_LoadLightmaps( lump_t *l ) {
 				float g = buf_p[j*3+1];
 				float b = buf_p[j*3+2];
 				float intensity;
-				float out[3] = {0};
+				float out[3] = {0.0, 0.0, 0.0};
 
 				intensity = 0.33f * r + 0.685f * g + 0.063f * b;
 
@@ -202,7 +202,7 @@ static	void R_LoadLightmaps( lump_t *l ) {
 			}
 		}
 		tr.lightmaps[i] = R_CreateImage( va("*lightmap%d",i), image, 
-			LIGHTMAP_SIZE, LIGHTMAP_SIZE, qfalse, qfalse, GL_CLAMP );
+			LIGHTMAP_SIZE, LIGHTMAP_SIZE, qfalse, qfalse, GL_CLAMP);
 	}
 
 	if ( r_lightmap->integer == 2 )	{

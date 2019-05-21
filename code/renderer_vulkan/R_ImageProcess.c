@@ -25,7 +25,7 @@ void R_SetColorMappings( void )
 	
     // setup the overbright lighting
 	tr.overbrightBits = r_overBrightBits->integer;
-	if ( 1 ) {
+	if ( 0 ) {
 		tr.overbrightBits = 0;		// need hardware gamma for overbright
 	}
 	// allow 2 overbright bits in 24 bit, but only 1 in 16 bit
