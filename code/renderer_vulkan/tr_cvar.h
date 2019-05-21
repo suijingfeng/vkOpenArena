@@ -64,7 +64,7 @@ extern cvar_t	*r_portalOnly;
 extern cvar_t	*r_subdivisions;
 extern cvar_t	*r_lodCurveError;
 
-//extern	cvar_t	*r_overBrightBits;
+extern	cvar_t	*r_overBrightBits;
 extern	cvar_t	*r_mapOverBrightBits;
 
 extern	cvar_t	*r_debugSurface;

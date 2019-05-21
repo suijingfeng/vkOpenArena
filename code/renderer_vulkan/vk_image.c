@@ -1345,8 +1345,13 @@ void R_InitImages( void )
 
 	// setup the overbright lighting
 
-	tr.identityLight = 1.0f;
-	tr.identityLightByte = 255 * tr.identityLight;
+	//tr.identityLight = 1.0f ;
+	//tr.identityLightByte = 255 * tr.identityLight;
+
+    //tr.overbrightBits = 2;
+	//tr.identityLight = 1.0f / ( 1 << 2 );
+	//tr.identityLightByte = 255 * 2;
+
 
     // build brightness translation tables
     R_SetColorMappings();

@@ -2,9 +2,9 @@
 #include "ref_import.h"
 #include "vk_image.h"
 #include "R_ImageProcess.h"
+#include "tr_globals.h"
 
 
-static unsigned char s_intensitytable[256];
 static unsigned char s_gammatable[256];
 
 /*
@@ -21,85 +21,75 @@ void R_GammaCorrect(unsigned char* buffer, const unsigned int Size)
 
 void R_SetColorMappings( void )
 {
-	int		i, j;
-	int		inf;
-	int		shift = 0;
+	int	i, inf,	shift;
+	
+    // setup the overbright lighting
+	tr.overbrightBits = r_overBrightBits->integer;
 
-    for (i = 0; i < 255; i++)
+	// allow 2 overbright bits in 24 bit, but only 1 in 16 bit
+    if( tr.overbrightBits > 3 )
     {
-        s_intensitytable[i] = s_gammatable[i] = i;
+        tr.overbrightBits = 3;
     }
+    else if( tr.overbrightBits < 0 )
+    {
+		tr.overbrightBits = 0;
+	}
+
+	tr.identityLight = 1.0f / ( 1 << tr.overbrightBits );
+	tr.identityLightByte = 255 * tr.identityLight;
+
+
+	if( r_gamma->value < 0.4f )
+    {
+		ri.Cvar_Set( "r_gamma", "0.4" );
+	}
+    else if ( r_gamma->value > 3.0f )
+    {
+		ri.Cvar_Set( "r_gamma", "3.0" );
+	}
 
 	float g = r_gamma->value;
 
-	for ( i = 0; i < 256; i++ ) {
-		if ( g == 1 ) {
+	shift = tr.overbrightBits;		// hardware gamma to work (if available) since we can't do alternate gamma via blends
+
+
+	for ( i = 0; i < 256; i++ )
+    {
+		if ( g == 1 )
+        {
 			inf = i;
-		} else {
+		}
+        else
+        {
 			inf = 255 * pow ( i/255.0f, 1.0f / g ) + 0.5f;
 		}
 		inf <<= shift;
-		if (inf < 0) {
+		if (inf < 0)
+        {
 			inf = 0;
 		}
-        else if (inf > 255) {
+        else if (inf > 255) 
+        {    
 			inf = 255;
 		}
 		s_gammatable[i] = inf;
 	}
-
-
-	if ( r_intensity->value <= 1 ) {
-		ri.Cvar_Set( "r_intensity", "1" );
-	}
-
-	for (i=0 ; i<256 ; i++)
-    {
-		j = i * r_intensity->value;
-		if (j > 255) {
-			j = 255;
-		}
-		s_intensitytable[i] = j;
-	}
-
 }
 
 
-/*
-================
-Scale up the pixel values in a texture to increase the lighting range
-================
-*/
+
 void R_LightScaleTexture (unsigned char* dst, unsigned char* in, unsigned int nBytes)
 {
     unsigned int i;
 
-    if ( 0 )
+    if ( 1 )
     {
         for (i=0; i<nBytes; i+=4)
         {
-            unsigned int n1 = i + 1;
-            unsigned int n2 = i + 2;
-            unsigned int n3 = i + 3;
-
             dst[i] = s_gammatable[in[i]];
-            dst[n1] = s_gammatable[in[n1]];
-            dst[n2] = s_gammatable[in[n2]];
-            dst[n3] = in[n3];
-        }
-    }
-    else
-    {
-        for (i=0; i<nBytes; i+=4)
-        {
-            unsigned int n1 = i + 1;
-            unsigned int n2 = i + 2;
-            unsigned int n3 = i + 3;
-
-            dst[i] = s_gammatable[s_intensitytable[in[i]]];
-            dst[n1] = s_gammatable[s_intensitytable[in[n1]]];
-            dst[n2] = s_gammatable[s_intensitytable[in[n2]]];
-            dst[n3] = in[n3];
+            dst[i+1] = s_gammatable[in[i+1]];
+            dst[i+2] = s_gammatable[in[i+2]];
         }
     }
 }

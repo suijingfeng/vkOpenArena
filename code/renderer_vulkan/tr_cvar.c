@@ -53,7 +53,7 @@ cvar_t	*r_subdivisions;
 cvar_t	*r_lodCurveError;
 
 // r_overbrightBits->integer, but set to 0 if no hw gamma
-// cvar_t	*r_overBrightBits;
+cvar_t	*r_overBrightBits;
 cvar_t	*r_mapOverBrightBits;
 
 cvar_t	*r_debugSurface;
@@ -86,7 +86,7 @@ void R_Register( void )
 	r_simpleMipMaps = ri.Cvar_Get( "r_simpleMipMaps", "1", CVAR_ARCHIVE | CVAR_LATCH );
 	r_colorMipLevels = ri.Cvar_Get ("r_colorMipLevels", "0", CVAR_LATCH );
 
-	// r_overBrightBits = ri.Cvar_Get ("r_overBrightBits", "0", CVAR_ARCHIVE | CVAR_LATCH );
+	r_overBrightBits = ri.Cvar_Get ("r_overBrightBits", "0", CVAR_ARCHIVE | CVAR_LATCH );
 	r_vertexLight = ri.Cvar_Get( "r_vertexLight", "0", CVAR_ARCHIVE | CVAR_LATCH );
 	r_uiFullScreen = ri.Cvar_Get( "r_uifullscreen", "0", 0);
 	r_subdivisions = ri.Cvar_Get ("r_subdivisions", "4", CVAR_ARCHIVE | CVAR_LATCH);

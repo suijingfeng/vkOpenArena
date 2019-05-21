@@ -112,13 +112,12 @@ static	void R_ColorShiftLightingBytes( byte in[4], byte out[4] ) {
 	int	r, g, b;
 
 	// shift the color data based on overbright range
-	int shift = 2;
-        //r_mapOverBrightBits->integer;
+	int shift = r_mapOverBrightBits->integer;
 
 	// shift the data based on overbright range
-	r = in[0] * shift;
-	g = in[1] * shift;
-	b = in[2] * shift;
+	r = in[0] << shift;
+	g = in[1] << shift;
+	b = in[2] << shift;
 	
 	// normalize by color instead of saturating to white
 	if ( ( r | g | b ) > 255 ) {
