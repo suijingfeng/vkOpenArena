@@ -1267,6 +1267,7 @@ typedef struct shaderCommands_s
 	shaderStage_t** xstages;
 } shaderCommands_t;
 
+extern	shaderCommands_t	tess;
 
 
 

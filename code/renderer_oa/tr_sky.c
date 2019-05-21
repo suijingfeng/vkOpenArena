@@ -26,10 +26,6 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #define SKY_SUBDIVISIONS		8
 #define HALF_SKY_SUBDIVISIONS	(SKY_SUBDIVISIONS/2)
 
-
-extern	shaderCommands_t	tess;
-
-
 static float s_cloudTexCoords[6][SKY_SUBDIVISIONS+1][SKY_SUBDIVISIONS+1][2];
 
 /*
@@ -418,10 +414,10 @@ static void DrawSkyBox( shader_t *shader )
 
 }
 
-static void FillCloudySkySide( const int mins[2], const int maxs[2], qboolean addIndexes )
+static void FillCloudySkySide( shaderCommands_t * const pTess, const int mins[2], const int maxs[2], qboolean addIndexes )
 {
 	int s, t;
-	int vertexStart = tess.numVertexes;
+	int vertexStart = pTess->numVertexes;
     int	tHeight = maxs[1] - mins[1] + 1;
 	int sWidth = maxs[0] - mins[0] + 1;
 
@@ -429,13 +425,13 @@ static void FillCloudySkySide( const int mins[2], const int maxs[2], qboolean ad
 	{
 		for ( s = mins[0]+HALF_SKY_SUBDIVISIONS; s <= maxs[0]+HALF_SKY_SUBDIVISIONS; s++ )
 		{
-			VectorAdd( s_skyPoints[t][s], backEnd.viewParms.or.origin, tess.xyz[tess.numVertexes] );
-			tess.texCoords[tess.numVertexes][0][0] = s_skyTexCoords[t][s][0];
-			tess.texCoords[tess.numVertexes][0][1] = s_skyTexCoords[t][s][1];
+			VectorAdd( s_skyPoints[t][s], backEnd.viewParms.or.origin, pTess->xyz[pTess->numVertexes] );
+			pTess->texCoords[pTess->numVertexes][0][0] = s_skyTexCoords[t][s][0];
+			pTess->texCoords[pTess->numVertexes][0][1] = s_skyTexCoords[t][s][1];
 
-			tess.numVertexes++;
+			++pTess->numVertexes;
 
-			if ( tess.numVertexes >= SHADER_MAX_VERTEXES )
+			if ( pTess->numVertexes >= SHADER_MAX_VERTEXES )
 			{
 				ri.Error( ERR_DROP, "SHADER_MAX_VERTEXES hit in FillCloudySkySide()" );
 			}
@@ -449,25 +445,25 @@ static void FillCloudySkySide( const int mins[2], const int maxs[2], qboolean ad
 		{	
 			for ( s = 0; s < sWidth-1; s++ )
 			{
-				tess.indexes[tess.numIndexes] = vertexStart + s + t * ( sWidth );
-				tess.numIndexes++;
-				tess.indexes[tess.numIndexes] = vertexStart + s + ( t + 1 ) * ( sWidth );
-				tess.numIndexes++;
-				tess.indexes[tess.numIndexes] = vertexStart + s + 1 + t * ( sWidth );
-				tess.numIndexes++;
+				pTess->indexes[pTess->numIndexes] = vertexStart + s + t * ( sWidth );
+				pTess->numIndexes++;
+				pTess->indexes[pTess->numIndexes] = vertexStart + s + ( t + 1 ) * ( sWidth );
+				pTess->numIndexes++;
+				pTess->indexes[pTess->numIndexes] = vertexStart + s + 1 + t * ( sWidth );
+				pTess->numIndexes++;
 
-				tess.indexes[tess.numIndexes] = vertexStart + s + ( t + 1 ) * ( sWidth );
-				tess.numIndexes++;
-				tess.indexes[tess.numIndexes] = vertexStart + s + 1 + ( t + 1 ) * ( sWidth );
-				tess.numIndexes++;
-				tess.indexes[tess.numIndexes] = vertexStart + s + 1 + t * ( sWidth );
-				tess.numIndexes++;
+				pTess->indexes[pTess->numIndexes] = vertexStart + s + ( t + 1 ) * ( sWidth );
+				pTess->numIndexes++;
+				pTess->indexes[pTess->numIndexes] = vertexStart + s + 1 + ( t + 1 ) * ( sWidth );
+				pTess->numIndexes++;
+				pTess->indexes[pTess->numIndexes] = vertexStart + s + 1 + t * ( sWidth );
+				pTess->numIndexes++;
 			}
 		}
 	}
 }
 
-static void FillCloudBox( const shader_t *shader, int stage )
+static void FillCloudBox( shaderCommands_t * const pTess, int stage )
 {
 	int i;
 	for ( i=0; i < 5; i++ )
@@ -527,7 +523,7 @@ static void FillCloudBox( const shader_t *shader, int stage )
 		}
 
 		// only add indexes for first stage
-		FillCloudySkySide( sky_mins_subd, sky_maxs_subd, ( stage == 0 ) );
+		FillCloudySkySide( pTess, sky_mins_subd, sky_maxs_subd, ( stage == 0 ) );
 	}
 }
 
@@ -557,7 +553,7 @@ static void RB_ClipSkyPolygons( shaderCommands_t *input )
 
 //////////////////////////////////////////////////////////////////
 
-void R_BuildCloudData( shaderCommands_t *input )
+void R_BuildCloudData( shaderCommands_t * const input )
 {
 	int	i;
 	assert( input->shader->isSky );
@@ -573,10 +569,10 @@ void R_BuildCloudData( shaderCommands_t *input )
 	{
 		for ( i = 0; i < MAX_SHADER_STAGES; i++ )
 		{
-			if ( !tess.xstages[i] ) {
+			if ( !input->xstages[i] ) {
 				break;
 			}
-			FillCloudBox( input->shader, i );
+			FillCloudBox( input, i );
 		}
 	}
 }

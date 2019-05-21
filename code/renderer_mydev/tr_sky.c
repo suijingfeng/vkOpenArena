@@ -414,54 +414,56 @@ static void DrawSkyBox( shader_t *shader )
 
 }
 
-static void FillCloudySkySide( const int mins[2], const int maxs[2] )
+static void FillCloudySkySide( shaderCommands_t * const pTess, const int mins[2], const int maxs[2], qboolean addIndexes )
 {
 	int s, t;
-	int vertexStart = tess.numVertexes;
-	int tHeight, sWidth;
-
-	tHeight = maxs[1] - mins[1] + 1;
-	sWidth = maxs[0] - mins[0] + 1;
+	int vertexStart = pTess->numVertexes;
+    int	tHeight = maxs[1] - mins[1] + 1;
+	int sWidth = maxs[0] - mins[0] + 1;
 
 	for ( t = mins[1]+HALF_SKY_SUBDIVISIONS; t <= maxs[1]+HALF_SKY_SUBDIVISIONS; t++ )
 	{
 		for ( s = mins[0]+HALF_SKY_SUBDIVISIONS; s <= maxs[0]+HALF_SKY_SUBDIVISIONS; s++ )
 		{
-			VectorAdd( s_skyPoints[t][s], backEnd.viewParms.or.origin, tess.xyz[tess.numVertexes] );
-			tess.texCoords[tess.numVertexes][0][0] = s_skyTexCoords[t][s][0];
-			tess.texCoords[tess.numVertexes][0][1] = s_skyTexCoords[t][s][1];
+			VectorAdd( s_skyPoints[t][s], backEnd.viewParms.or.origin, pTess->xyz[pTess->numVertexes] );
+			pTess->texCoords[pTess->numVertexes][0][0] = s_skyTexCoords[t][s][0];
+			pTess->texCoords[pTess->numVertexes][0][1] = s_skyTexCoords[t][s][1];
 
-			tess.numVertexes++;
+			++pTess->numVertexes;
 
-			if ( tess.numVertexes >= SHADER_MAX_VERTEXES )
+			if ( pTess->numVertexes >= SHADER_MAX_VERTEXES )
 			{
-				ri.Error( ERR_DROP, "SHADER_MAX_VERTEXES hit in FillCloudySkySide()\n" );
+				ri.Error( ERR_DROP, "SHADER_MAX_VERTEXES hit in FillCloudySkySide()" );
 			}
 		}
 	}
 
-	for ( t = 0; t < tHeight-1; t++ )
-	{	
-		for ( s = 0; s < sWidth-1; s++ )
-		{
-			tess.indexes[tess.numIndexes] = vertexStart + s + t * ( sWidth );
-			tess.numIndexes++;
-			tess.indexes[tess.numIndexes] = vertexStart + s + ( t + 1 ) * ( sWidth );
-			tess.numIndexes++;
-			tess.indexes[tess.numIndexes] = vertexStart + s + 1 + t * ( sWidth );
-			tess.numIndexes++;
+	// only add indexes for one pass, otherwise it would draw multiple times for each pass
+	if ( addIndexes )
+    {
+		for ( t = 0; t < tHeight-1; t++ )
+		{	
+			for ( s = 0; s < sWidth-1; s++ )
+			{
+				pTess->indexes[pTess->numIndexes] = vertexStart + s + t * ( sWidth );
+				pTess->numIndexes++;
+				pTess->indexes[pTess->numIndexes] = vertexStart + s + ( t + 1 ) * ( sWidth );
+				pTess->numIndexes++;
+				pTess->indexes[pTess->numIndexes] = vertexStart + s + 1 + t * ( sWidth );
+				pTess->numIndexes++;
 
-			tess.indexes[tess.numIndexes] = vertexStart + s + ( t + 1 ) * ( sWidth );
-			tess.numIndexes++;
-			tess.indexes[tess.numIndexes] = vertexStart + s + 1 + ( t + 1 ) * ( sWidth );
-			tess.numIndexes++;
-			tess.indexes[tess.numIndexes] = vertexStart + s + 1 + t * ( sWidth );
-			tess.numIndexes++;
+				pTess->indexes[pTess->numIndexes] = vertexStart + s + ( t + 1 ) * ( sWidth );
+				pTess->numIndexes++;
+				pTess->indexes[pTess->numIndexes] = vertexStart + s + 1 + ( t + 1 ) * ( sWidth );
+				pTess->numIndexes++;
+				pTess->indexes[pTess->numIndexes] = vertexStart + s + 1 + t * ( sWidth );
+				pTess->numIndexes++;
+			}
 		}
 	}
 }
 
-static void FillCloudBox( const shader_t *shader, int stage )
+static void FillCloudBox( shaderCommands_t * const pTess, int stage )
 {
 	int i;
 	for ( i=0; i < 5; i++ )
@@ -521,7 +523,7 @@ static void FillCloudBox( const shader_t *shader, int stage )
 		}
 
 		// only add indexes for first stage
-		FillCloudySkySide( sky_mins_subd, sky_maxs_subd);
+		FillCloudySkySide( pTess, sky_mins_subd, sky_maxs_subd, ( stage == 0 ) );
 	}
 }
 
@@ -551,9 +553,11 @@ static void RB_ClipSkyPolygons( shaderCommands_t *input )
 
 //////////////////////////////////////////////////////////////////
 
-void R_BuildCloudData( shaderCommands_t *input )
+void R_BuildCloudData( shaderCommands_t * const input )
 {
-	int	i = 0;
+	int	i;
+	assert( input->shader->isSky );
+
 	sky_min = 1.0 / 256.0f;		// FIXME: not correct?
 	sky_max = 255.0 / 256.0f;
 
@@ -561,9 +565,15 @@ void R_BuildCloudData( shaderCommands_t *input )
 	input->numIndexes = 0;
 	input->numVertexes = 0;
 
-	if ( input->shader->sky.cloudHeight && input->xstages[0] )
+	if ( input->shader->sky.cloudHeight )
 	{
-        FillCloudBox( input->shader, i );
+		for ( i = 0; i < MAX_SHADER_STAGES; i++ )
+		{
+			if ( !input->xstages[i] ) {
+				break;
+			}
+			FillCloudBox( input, i );
+		}
 	}
 }
 
@@ -791,6 +801,9 @@ void RB_StageIteratorSky( void )
 
 	// back to normal depth range
 	qglDepthRange( 0.0, 1.0 );
+
+	// note that sky was drawn so we will draw a sun later
+	backEnd.skyRenderedThisView = qtrue;
 }
 
 void R_InitCloudAndSky(void)
