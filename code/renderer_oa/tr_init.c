@@ -30,6 +30,8 @@ extern backEndData_t* backEndData;	// the second one may not be allocated
 glconfig_t  glConfig;
 glstate_t	glState;
 
+static unsigned char *RB_ReadPixels(int x, int y, int width, int height, 
+	size_t *offset, int *padlen);
 
 cvar_t	*r_railWidth;
 cvar_t	*r_railCoreWidth;
@@ -546,48 +548,12 @@ static void InitOpenGL(void)
 
 	// set default state
 	GL_SetDefaultState();
-    
+
     // print info
 	//GfxInfo_f();
 }
 
 
-/*
-==================
-RB_ReadPixels: Reads an image but takes care of alignment issues for reading RGB images.
-
-Reads a minimum offset for where the RGB data starts in the image from integer stored at pointer offset. 
-When the function has returned the actual offset was written back to address offset. 
-This address will always have an alignment of packAlign to ensure efficient copying.
-
-Stores the length of padding after a line of pixels to address padlen
-
-Return value must be freed with ri.Hunk_FreeTempMemory()
-==================
-*/
-
-static unsigned char *RB_ReadPixels(int x, int y, int width, int height, size_t *offset, int *padlen)
-{
-	byte *buffer, *bufstart;
-	int padwidth, linelen;
-	GLint packAlign;
-
-	qglGetIntegerv(GL_PACK_ALIGNMENT, &packAlign);
-
-	linelen = width * 3;
-	padwidth = PAD(linelen, packAlign);
-
-	// Allocate a few more bytes so that we can choose an alignment we like
-	buffer = ri.Hunk_AllocateTempMemory(padwidth * height + *offset + packAlign - 1);
-
-	bufstart = PADP((intptr_t) buffer + *offset, packAlign);
-	qglReadPixels(x, y, width, height, GL_RGB, GL_UNSIGNED_BYTE, bufstart);
-
-	*offset = bufstart - buffer;
-	*padlen = padwidth - linelen;
-
-	return buffer;
-}
 
 
 
@@ -608,6 +574,7 @@ FIXME: the statics don't get a reinit between fs_game changes
 
 ==============================================================================
 */
+
 static void RB_TakeScreenshot(int x, int y, int width, int height, char *fileName)
 {
 	byte *allbuf, *buffer;
@@ -653,11 +620,6 @@ static void RB_TakeScreenshot(int x, int y, int width, int height, char *fileNam
 
 	memcount = linelen * height;
 
-	// gamma correct
-	if ( glConfig.deviceSupportsGamma ) {
-		R_GammaCorrect(allbuf + offset, memcount);
-	}
-
 	ri.FS_WriteFile(fileName, buffer, memcount + 18);
 
 	ri.Hunk_FreeTempMemory(allbuf);
@@ -668,6 +630,43 @@ static void RB_TakeScreenshot(int x, int y, int width, int height, char *fileNam
 RB_TakeScreenshotJPEG
 ==================
 */
+/*
+==================
+RB_ReadPixels: Reads an image but takes care of alignment issues for reading RGB images.
+
+Reads a minimum offset for where the RGB data starts in the image from integer stored at pointer offset. 
+When the function has returned the actual offset was written back to address offset. 
+This address will always have an alignment of packAlign to ensure efficient copying.
+
+Stores the length of padding after a line of pixels to address padlen
+
+Return value must be freed with ri.Hunk_FreeTempMemory()
+==================
+*/
+
+static unsigned char *RB_ReadPixels(int x, int y, int width, int height, size_t *offset, int *padlen)
+{
+	byte *buffer, *bufstart;
+	int padwidth, linelen;
+	GLint packAlign;
+
+	qglGetIntegerv(GL_PACK_ALIGNMENT, &packAlign);
+
+	linelen = width * 3;
+	padwidth = PAD(linelen, packAlign);
+
+	// Allocate a few more bytes so that we can choose an alignment we like
+	buffer = ri.Hunk_AllocateTempMemory(padwidth * height + *offset + packAlign - 1);
+
+	bufstart = PADP((intptr_t) buffer + *offset, packAlign);
+	qglReadPixels(x, y, width, height, GL_RGB, GL_UNSIGNED_BYTE, bufstart);
+
+	*offset = bufstart - buffer;
+	*padlen = padwidth - linelen;
+
+	return buffer;
+}
+
 
 static void RB_TakeScreenshotJPEG(int x, int y, int width, int height, char *fileName)
 {
@@ -864,85 +863,6 @@ static void R_ScreenShotJPEG_f (void)
 		ri.Printf (PRINT_ALL, "Wrote %s\n", checkname);
 	}
 }
-
-//============================================================================
-
-/*
-==================
-RB_TakeVideoFrameCmd
-==================
-*/
-const void *RB_TakeVideoFrameCmd( const void *data )
-{
-	const videoFrameCommand_t	*cmd;
-	byte				*cBuf;
-	size_t				memcount, linelen;
-	int				padwidth, avipadwidth, padlen, avipadlen;
-	GLint packAlign;
-
-	cmd = (const videoFrameCommand_t *)data;
-
-	qglGetIntegerv(GL_PACK_ALIGNMENT, &packAlign);
-
-	linelen = cmd->width * 3;
-
-	// Alignment stuff for glReadPixels
-	padwidth = PAD(linelen, packAlign);
-	padlen = padwidth - linelen;
-	// AVI line padding
-	avipadwidth = PAD(linelen, 4);
-	avipadlen = avipadwidth - linelen;
-
-	cBuf = PADP(cmd->captureBuffer, packAlign);
-
-	qglReadPixels(0, 0, cmd->width, cmd->height, GL_RGB,
-	              GL_UNSIGNED_BYTE, cBuf);
-
-	memcount = padwidth * cmd->height;
-
-	// gamma correct
-	if(glConfig.deviceSupportsGamma)
-		R_GammaCorrect(cBuf, memcount);
-
-	if(cmd->motionJpeg) {
-		memcount = RE_SaveJPGToBuffer(cmd->encodeBuffer, linelen * cmd->height,
-		                              r_aviMotionJpegQuality->integer,
-		                              cmd->width, cmd->height, cBuf, padlen);
-		ri.CL_WriteAVIVideoFrame(cmd->encodeBuffer, memcount);
-	}
-	else {
-		byte *lineend, *memend;
-		byte *srcptr, *destptr;
-
-		srcptr = cBuf;
-		destptr = cmd->encodeBuffer;
-		memend = srcptr + memcount;
-
-		// swap R and B and remove line paddings
-		while(srcptr < memend) {
-			lineend = srcptr + linelen;
-			while(srcptr < lineend) {
-				*destptr++ = srcptr[2];
-				*destptr++ = srcptr[1];
-				*destptr++ = srcptr[0];
-				srcptr += 3;
-			}
-
-			memset(destptr, '\0', avipadlen);
-			destptr += avipadlen;
-
-			srcptr += padlen;
-		}
-
-		ri.CL_WriteAVIVideoFrame(cmd->encodeBuffer, avipadwidth * cmd->height);
-	}
-
-	return (const void *)(cmd + 1);
-}
-
-//============================================================================
-
-
 
 
 
@@ -1158,9 +1078,6 @@ static void R_Register( void )
 
     // notued cvar, keep here for consistency
 	r_uiFullScreen = ri.Cvar_Get( "r_uifullscreen", "0", 0); // not used
-
-
-
 	// make sure all the commands added here are also
 	// removed in R_Shutdown
 	ri.Cmd_AddCommand( "imagelist", R_ImageList_f );
@@ -1444,42 +1361,6 @@ static void R_DeleteTextures( void )
 }
 
 
-void RE_Shutdown( qboolean destroyWindow )
-{
-	ri.Printf( PRINT_ALL, "RE_Shutdown( %i )\n", destroyWindow );
-
-	ri.Cmd_RemoveCommand("modellist");
-	ri.Cmd_RemoveCommand("screenshotJPEG");
-	ri.Cmd_RemoveCommand("screenshot");
-	ri.Cmd_RemoveCommand("imagelist");
-	ri.Cmd_RemoveCommand("shaderlist");
-	ri.Cmd_RemoveCommand("skinlist");
-	ri.Cmd_RemoveCommand("gfxinfo");
-	ri.Cmd_RemoveCommand("minimize");
-
-	if ( tr.registered )
-    {
-		R_IssuePendingRenderCommands();
-		R_DeleteTextures();
-	}
-
-	R_DoneFreeType();
-
-	// shut down platform specific OpenGL stuff
-	if( destroyWindow )
-    {
-		GLimp_Shutdown();
-
-		memset(&glConfig, 0, sizeof( glConfig ));
-		memset(&glState, 0, sizeof( glState ));
-
-        GLimp_ClearProcAddresses();
-	}
-
-	tr.registered = qfalse;
-}
-
-
 
 
 
@@ -1548,7 +1429,6 @@ void R_Init(void)
 
 	R_InitImages();
     R_InitShaders();
-	
     R_InitSkins();
 	R_ModelInit();
 	R_InitFlares();
@@ -1565,6 +1445,42 @@ void R_Init(void)
 	ri.Printf( PRINT_ALL, "------- R_Init() finished -------\n\n");
 }
 
+
+void RE_Shutdown( qboolean destroyWindow )
+{
+	ri.Printf( PRINT_ALL, "RE_Shutdown( %i )\n", destroyWindow );
+
+	ri.Cmd_RemoveCommand("modellist");
+	ri.Cmd_RemoveCommand("screenshotJPEG");
+	ri.Cmd_RemoveCommand("screenshot");
+	ri.Cmd_RemoveCommand("imagelist");
+	ri.Cmd_RemoveCommand("shaderlist");
+	ri.Cmd_RemoveCommand("skinlist");
+	ri.Cmd_RemoveCommand("gfxinfo");
+	ri.Cmd_RemoveCommand("modelist" );
+	ri.Cmd_RemoveCommand("minimize");
+
+	if ( tr.registered )
+    {
+		R_IssuePendingRenderCommands();
+		R_DeleteTextures();
+	}
+
+	R_DoneFreeType();
+
+	// shut down platform specific OpenGL stuff
+	if( destroyWindow )
+    {
+		GLimp_Shutdown();
+
+		memset(&glConfig, 0, sizeof( glConfig ));
+		memset(&glState, 0, sizeof( glState ));
+
+        GLimp_ClearProcAddresses();
+	}
+
+	tr.registered = qfalse;
+}
 
 
 void RE_BeginRegistration(glconfig_t *glconfigOut)
@@ -1674,5 +1590,3 @@ void QDECL Com_Error( int level, const char *error, ... )
 }
 
 #endif
-
-

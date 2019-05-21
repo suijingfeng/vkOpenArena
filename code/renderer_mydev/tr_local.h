@@ -1603,7 +1603,7 @@ extern	volatile renderCommandList_t	*renderCommandList;
 void *R_GetCommandBuffer( int bytes );
 void RB_ExecuteRenderCommands( const void *data );
 
-void R_SyncRenderThread( void );
+void R_IssuePendingRenderCommands( void );
 
 void R_AddDrawSurfCmd( drawSurf_t *drawSurfs, int numDrawSurfs );
 
@@ -1612,7 +1612,9 @@ void RE_StretchPic ( float x, float y, float w, float h,
 					  float s1, float t1, float s2, float t2, qhandle_t hShader );
 void RE_EndFrame( int *frontEndMsec, int *backEndMsec );
 void SaveJPG(char * filename, int quality, int image_width, int image_height, unsigned char *image_buffer);
-
+void RE_TakeVideoFrame( int width, int height,
+		byte *captureBuffer, byte *encodeBuffer, qboolean motionJpeg );
+void R_TakeScreenshot( int x, int y, int width, int height, char *name, qboolean jpeg );
 // font stuff
 void R_InitFreeType(void);
 void R_DoneFreeType(void);

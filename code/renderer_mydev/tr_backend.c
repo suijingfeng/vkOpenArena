@@ -657,7 +657,7 @@ void RE_StretchRaw (int x, int y, int w, int h, int cols, int rows, const byte *
 	if ( !tr.registered ) {
 		return;
 	}
-	R_SyncRenderThread();
+	R_IssuePendingRenderCommands();
 
 	start = end = 0;
 	if ( r_speeds->integer ) {

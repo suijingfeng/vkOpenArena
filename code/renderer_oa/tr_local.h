@@ -1402,7 +1402,6 @@ void R_DecomposeSort( unsigned sort, int *entityNum, shader_t **shader, int *fog
 //void R_LocalPointToWorld (vec3_t local, vec3_t world);
 //void R_TransformModelToClip( const vec3_t src, const float *modelMatrix, const float *projectionMatrix, vec4_t eye, vec4_t dst);
 //void R_TransformClipToWindow( const vec4_t clip, const viewParms_t *view, vec4_t normalized, vec4_t window );
-void R_TakeScreenshot( int x, int y, int width, int height, char *name, qboolean jpeg );
 //
 void R_RotateForEntity( const trRefEntity_t *ent, const viewParms_t *viewParms, orientationr_t *or );
 void R_InitNextFrame( void );
@@ -1479,7 +1478,7 @@ void RE_EndFrame( int *frontEndMsec, int *backEndMsec );
 void RE_TakeVideoFrame( int width, int height, unsigned char *captureBuffer, unsigned char *encodeBuffer, qboolean motionJpeg );
 // void* R_GetCommandBuffer( int bytes );
 //void    RB_ExecuteRenderCommands( const void *data );
-
+void R_TakeScreenshot( int x, int y, int width, int height, char *name, qboolean jpeg );
 /////////////////////////// tr_image.c //////////////////////////////////
 void    GL_TextureMode( const char *string );
 int		R_SumOfUsedImages( void );

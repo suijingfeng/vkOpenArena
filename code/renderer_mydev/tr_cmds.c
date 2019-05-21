@@ -15,7 +15,7 @@ MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 GNU General Public License for more details.
 
 You should have received a copy of the GNU General Public License
-along with Foobar; if not, write to the Free Software
+along with Quake III Arena source code; if not, write to the Free Software
 Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 ===========================================================================
 */
@@ -24,11 +24,7 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 volatile renderCommandList_t	*renderCommandList;
 
 
-/*
-=====================
-R_PerformanceCounters
-=====================
-*/
+
 void R_PerformanceCounters( void ) {
 	if ( !r_speeds->integer ) {
 		// clear the counters even if we aren't printing
@@ -68,19 +64,9 @@ void R_PerformanceCounters( void ) {
 }
 
 
-
-/*
-====================
-R_IssueRenderCommands
-====================
-*/
-int	c_blockedOnRender;
-int	c_blockedOnMain;
-
-void R_IssueRenderCommands( qboolean runPerformanceCounters ) {
-	renderCommandList_t	*cmdList;
-
-	cmdList = &backEndData[0]->commands;
+void R_IssueRenderCommands( qboolean runPerformanceCounters )
+{
+	renderCommandList_t	*cmdList = &backEndData[0]->commands;
 	assert(cmdList); // bk001205
 	// add an end-of-list command
 	*(int *)(cmdList->cmds + cmdList->used) = RC_END_OF_LIST;
@@ -91,7 +77,7 @@ void R_IssueRenderCommands( qboolean runPerformanceCounters ) {
 
 	// at this point, the back end thread is idle, so it is ok
 	// to look at it's performance counters
-	if ( runPerformanceCounters ) {
+	if( runPerformanceCounters ) {
 		R_PerformanceCounters();
 	}
 
@@ -105,33 +91,18 @@ void R_IssueRenderCommands( qboolean runPerformanceCounters ) {
 
 /*
 ====================
-R_IssuePendingRenderCommands
-
 Issue any pending commands and wait for them to complete.
 ====================
 */
-void R_IssuePendingRenderCommands( void ) {
-	if ( !tr.registered ) {
+void R_IssuePendingRenderCommands( void )
+{
+	if ( !tr.registered )
+	{
 		return;
 	}
 	R_IssueRenderCommands( qfalse );
 }
-/*
-====================
-R_SyncRenderThread
 
-Issue any pending commands and wait for them to complete.
-After exiting, the render thread will have completed its work
-and will remain idle and the main thread is free to issue
-OpenGL calls until R_IssueRenderCommands is called.
-====================
-*/
-void R_SyncRenderThread( void ) {
-	if ( !tr.registered ) {
-		return;
-	}
-	R_IssueRenderCommands( qfalse );
-}
 
 /*
 ============
@@ -161,10 +132,9 @@ void *R_GetCommandBuffer( int bytes )
 
 
 
-void	R_AddDrawSurfCmd( drawSurf_t *drawSurfs, int numDrawSurfs ) {
-	drawSurfsCommand_t	*cmd;
-
-	cmd = (drawSurfsCommand_t*) R_GetCommandBuffer(sizeof(*cmd));
+void R_AddDrawSurfCmd(drawSurf_t *drawSurfs, int numDrawSurfs )
+{
+	drawSurfsCommand_t *cmd = R_GetCommandBuffer( sizeof( *cmd ) );
 	if ( !cmd ) {
 		return;
 	}
@@ -175,9 +145,6 @@ void	R_AddDrawSurfCmd( drawSurf_t *drawSurfs, int numDrawSurfs ) {
 
 	cmd->refdef = tr.refdef;
 	cmd->viewParms = tr.viewParms;
-
-
-
 }
 
 
@@ -188,18 +155,19 @@ RE_SetColor
 Passing NULL will set the color to white
 =============
 */
-void	RE_SetColor( const float *rgba ) {
-	setColorCommand_t	*cmd;
-
-  if ( !tr.registered ) {
-    return;
-  }
-  cmd = (setColorCommand_t*) R_GetCommandBuffer(sizeof(*cmd));
-	if ( !cmd ) {
+void RE_SetColor( const float *rgba )
+{
+	setColorCommand_t *cmd = R_GetCommandBuffer( sizeof(*cmd) );
+    if( !cmd ) {
 		return;
 	}
+    if( !tr.registered )
+    {
+        return;
+    }
 	cmd->commandId = RC_SET_COLOR;
-	if ( !rgba ) {
+	if ( !rgba )
+    {
 		static float colorWhite[4] = { 1, 1, 1, 1 };
 
 		rgba = colorWhite;
@@ -212,47 +180,32 @@ void	RE_SetColor( const float *rgba ) {
 }
 
 
-/*
-=============
-RE_StretchPic
-=============
-*/
-void RE_StretchPic ( float x, float y, float w, float h, 
-					  float s1, float t1, float s2, float t2, qhandle_t hShader ) {
-	stretchPicCommand_t	*cmd;
+void RE_StretchPic( float x, float y, float w, float h, float s1, float t1, float s2, float t2, qhandle_t hShader )
+{    
+    if (tr.registered)
+	{
 
-  if (!tr.registered) {
-    return;
-  }
-  cmd = (stretchPicCommand_t*) R_GetCommandBuffer(sizeof(*cmd));
-	if ( !cmd ) {
-		return;
+		stretchPicCommand_t* cmd = R_GetCommandBuffer( sizeof( *cmd ) );
+		if ( cmd != NULL )
+		{
+			cmd->commandId = RC_STRETCH_PIC;
+			cmd->shader = R_GetShaderByHandle( hShader );
+			cmd->x = x;
+			cmd->y = y;
+			cmd->w = w;
+			cmd->h = h;
+			cmd->s1 = s1;
+			cmd->t1 = t1;
+			cmd->s2 = s2;
+			cmd->t2 = t2;
+		}
 	}
-	cmd->commandId = RC_STRETCH_PIC;
-	cmd->shader = R_GetShaderByHandle( hShader );
-	cmd->x = x;
-	cmd->y = y;
-	cmd->w = w;
-	cmd->h = h;
-	cmd->s1 = s1;
-	cmd->t1 = t1;
-	cmd->s2 = s2;
-	cmd->t2 = t2;
 }
 
 
-/*
-====================
-RE_BeginFrame
 
-If running in stereo, RE_BeginFrame will be called twice
-for each RE_EndFrame
-====================
-*/
-void RE_BeginFrame( void )
+void RE_BeginFrame(void)
 {
-	drawBufferCommand_t	*cmd;
-
 	if ( !tr.registered ) {
 		return;
 	}
@@ -262,8 +215,9 @@ void RE_BeginFrame( void )
 	//
 	// texturemode stuff
 	//
-	if ( r_textureMode->modified ) {
-		R_SyncRenderThread();
+	if ( r_textureMode->modified )
+    {
+		R_IssueRenderCommands( qfalse );
 		GL_TextureMode( r_textureMode->string );
 		r_textureMode->modified = qfalse;
 	}
@@ -271,10 +225,11 @@ void RE_BeginFrame( void )
 	//
 	// gamma stuff
 	//
-	if ( r_gamma->modified ) {
+	if(r_gamma->modified)
+    {
 		r_gamma->modified = qfalse;
 
-		R_SyncRenderThread();
+		R_IssueRenderCommands( qfalse );
 		R_SetColorMappings();
 	}
 
@@ -282,25 +237,25 @@ void RE_BeginFrame( void )
     if ( !r_ignoreGLErrors->integer ) {
         int	err;
 
-		R_SyncRenderThread();
+		R_IssueRenderCommands( qfalse );
         if ( ( err = qglGetError() ) != GL_NO_ERROR ) {
             ri.Error( ERR_FATAL, "RE_BeginFrame() - glGetError() failed (0x%x)!\n", err );
         }
     }
 
-	//
 	// draw buffer stuff
-	//
-	cmd = (drawBufferCommand_t*) R_GetCommandBuffer(sizeof(*cmd));
+	drawBufferCommand_t	* cmd = (drawBufferCommand_t*) R_GetCommandBuffer(sizeof(*cmd));
 	if ( !cmd ) {
 		return;
 	}
 	cmd->commandId = RC_DRAW_BUFFER;
 
-
-    if ( !Q_stricmp( r_drawBuffer->string, "GL_FRONT" ) ) {
+    if ( !Q_stricmp( r_drawBuffer->string, "GL_FRONT" ) )
+    {
         cmd->buffer = (int)GL_FRONT;
-    } else {
+    }
+	else
+	{
         cmd->buffer = (int)GL_BACK;
     }
 
@@ -341,4 +296,118 @@ void RE_EndFrame( int *frontEndMsec, int *backEndMsec ) {
 	}
 	backEnd.pc.msec = 0;
 }
+
+
+void RE_TakeVideoFrame( int width, int height, unsigned char *captureBuffer, unsigned char *encodeBuffer, qboolean motionJpeg )
+{
+	videoFrameCommand_t	*cmd = R_GetCommandBuffer( sizeof( *cmd ) );
+	if( !cmd )
+		return;
+
+	if( !tr.registered )
+		return;
+
+
+	cmd->commandId = RC_VIDEOFRAME;
+
+	cmd->width = width;
+	cmd->height = height;
+	cmd->captureBuffer = captureBuffer;
+	cmd->encodeBuffer = encodeBuffer;
+	cmd->motionJpeg = motionJpeg;
+}
+
+void R_TakeScreenshot( int x, int y, int width, int height, char *name, qboolean jpeg )
+{
+	static char	fileName[MAX_OSPATH]; // bad things if two screenshots per frame?
+	screenshotCommand_t	*cmd = R_GetCommandBuffer( sizeof( *cmd ) );
+	if ( !cmd ) {
+		return;
+	}
+	cmd->commandId = RC_SCREENSHOT;
+
+	cmd->x = x;
+	cmd->y = y;
+	cmd->width = width;
+	cmd->height = height;
+	Q_strncpyz( fileName, name, sizeof(fileName) );
+	cmd->fileName = fileName;
+	cmd->jpeg = jpeg;
+}
+
+//============================================================================
+
+/*
+==================
+RB_TakeVideoFrameCmd
+==================
+*/
+const void *RB_TakeVideoFrameCmd( const void *data )
+{
+	const videoFrameCommand_t	*cmd;
+/*
+	byte				*cBuf;
+	size_t				memcount, linelen;
+	int				padwidth, avipadwidth, padlen, avipadlen;
+	GLint packAlign;
+
+	cmd = (const videoFrameCommand_t *)data;
+
+	qglGetIntegerv(GL_PACK_ALIGNMENT, &packAlign);
+
+	linelen = cmd->width * 3;
+
+	// Alignment stuff for glReadPixels
+	padwidth = PAD(linelen, packAlign);
+	padlen = padwidth - linelen;
+	// AVI line padding
+	avipadwidth = PAD(linelen, 4);
+	avipadlen = avipadwidth - linelen;
+
+	cBuf = PADP(cmd->captureBuffer, packAlign);
+
+	qglReadPixels(0, 0, cmd->width, cmd->height, GL_RGB,
+	              GL_UNSIGNED_BYTE, cBuf);
+
+	memcount = padwidth * cmd->height;
+
+	// gamma correct
+	if(glConfig.deviceSupportsGamma)
+		R_GammaCorrect(cBuf, memcount);
+
+	if(cmd->motionJpeg) {
+		memcount = RE_SaveJPGToBuffer(cmd->encodeBuffer, linelen * cmd->height,
+		                        90, cmd->width, cmd->height, cBuf, padlen);
+		ri.CL_WriteAVIVideoFrame(cmd->encodeBuffer, memcount);
+	}
+	else {
+		byte *lineend, *memend;
+		byte *srcptr, *destptr;
+
+		srcptr = cBuf;
+		destptr = cmd->encodeBuffer;
+		memend = srcptr + memcount;
+
+		// swap R and B and remove line paddings
+		while(srcptr < memend) {
+			lineend = srcptr + linelen;
+			while(srcptr < lineend) {
+				*destptr++ = srcptr[2];
+				*destptr++ = srcptr[1];
+				*destptr++ = srcptr[0];
+				srcptr += 3;
+			}
+
+			memset(destptr, '\0', avipadlen);
+			destptr += avipadlen;
+
+			srcptr += padlen;
+		}
+
+		ri.CL_WriteAVIVideoFrame(cmd->encodeBuffer, avipadwidth * cmd->height);
+	}
+*/
+	return (const void *)(cmd + 1);
+}
+
 

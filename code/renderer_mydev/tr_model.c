@@ -123,7 +123,7 @@ qhandle_t RE_RegisterModel( const char *name ) {
 
 
 	// make sure the render thread is stopped
-	R_SyncRenderThread();
+	R_IssuePendingRenderCommands();
 
 	mod->numLods = 0;
 

@@ -28,8 +28,8 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 glconfig_t  glConfig;
 glstate_t	glState;
 
-
-
+static unsigned char *RB_ReadPixels(int x, int y, int width, int height, 
+	size_t *offset, int *padlen);
 static void GfxInfo_f( void );
 
 cvar_t	*r_railWidth;
@@ -233,7 +233,7 @@ static void R_ModeList_f( void )
 /*
 ** This function is responsible for initializing a valid OpenGL/Vulkan subsystem.
 */
-static void InitRenderAPI( void )
+static void InitOpenGL(void)
 {
 	//
 	// initialize OS specific portions of the renderer
@@ -249,19 +249,17 @@ static void InitRenderAPI( void )
 	    glConfig.hardwareType = GLHW_GENERIC;
 
 
-            // OpenGL
+        // OpenGL
 	    GLimp_Init(&glConfig, qfalse);
-			
-            // get our config strings
+        // get our config strings
 		qglInit();
-            
         qglGetIntegerv( GL_MAX_TEXTURE_SIZE, &glConfig.maxTextureSize );
-            
-            // stubbed or broken drivers may have reported 0...
-        if( glConfig.maxTextureSize < 0 ){
+
+        // stubbed or broken drivers may have reported 0...
+        if( glConfig.maxTextureSize < 0 )
+        {
             glConfig.maxTextureSize = 0;
         }
-	
 	}
 
 	// init command buffers and SMP
@@ -269,7 +267,6 @@ static void InitRenderAPI( void )
 
 	// print info
 	GfxInfo_f();
-
 	// set default state
 	GL_SetDefaultState();
 }
@@ -336,19 +333,21 @@ we use statics to store a count and start writing the first screenshot/screensho
 (with FS_FileExists / FS_FOpenFileWrite calls)
 FIXME: the statics don't get a reinit between fs_game changes
 
-============================================================================== 
-*/ 
+==============================================================================
+*/
 
-/* 
-================== 
-RB_TakeScreenshot
-================== 
-*/  
-void RB_TakeScreenshot( int x, int y, int width, int height, char *fileName ) {
-	byte		*buffer;
-	int			i, c, temp;
-		
-	buffer = (byte*) ri.Hunk_AllocateTempMemory(glConfig.vidWidth*glConfig.vidHeight*3+18);
+static void RB_TakeScreenshot(int x, int y, int width, int height, char *fileName)
+{
+	byte *allbuf, *buffer;
+	byte *srcptr, *destptr;
+	byte *endline, *endmem;
+	byte temp;
+
+	int linelen, padlen;
+	size_t offset = 18, memcount;
+
+	allbuf = RB_ReadPixels(x, y, width, height, &offset, &padlen);
+	buffer = allbuf + offset - 18;
 
 	memset (buffer, 0, 18);
 	buffer[2] = 2;		// uncompressed type
@@ -358,45 +357,54 @@ void RB_TakeScreenshot( int x, int y, int width, int height, char *fileName ) {
 	buffer[15] = height >> 8;
 	buffer[16] = 24;	// pixel size
 
+	// swap rgb to bgr and remove padding from line endings
+	linelen = width * 3;
 
-    byte* buffer2 = (byte*) ri.Hunk_AllocateTempMemory(glConfig.vidWidth*glConfig.vidHeight*4);
+	srcptr = destptr = allbuf + offset;
+	endmem = srcptr + (linelen + padlen) * height;
 
+	while(srcptr < endmem) {
+		endline = srcptr + linelen;
 
-    byte* buffer_ptr = buffer + 18;
-    byte* buffer2_ptr = buffer2;
-    for (int i = 0; i < glConfig.vidWidth * glConfig.vidHeight; i++) {
-        buffer_ptr[0] = buffer2_ptr[0];
-        buffer_ptr[1] = buffer2_ptr[1];
-        buffer_ptr[2] = buffer2_ptr[2];
-        buffer_ptr += 3;
-        buffer2_ptr += 4;
-    }
-    ri.Hunk_FreeTempMemory(buffer2);
+		while(srcptr < endline) {
+			temp = srcptr[0];
+			*destptr++ = srcptr[2];
+			*destptr++ = srcptr[1];
+			*destptr++ = temp;
 
+			srcptr += 3;
+		}
 
-	// swap rgb to bgr
-	c = 18 + width * height * 3;
-	for (i=18 ; i<c ; i+=3) {
-		temp = buffer[i];
-		buffer[i] = buffer[i+2];
-		buffer[i+2] = temp;
+		// Skip the pad
+		srcptr += padlen;
 	}
 
-	// gamma correct
-	if ( ( tr.overbrightBits > 0 ) && glConfig.deviceSupportsGamma ) {
-		R_GammaCorrect( buffer + 18, glConfig.vidWidth * glConfig.vidHeight * 3 );
-	}
+	memcount = linelen * height;
 
-	ri.FS_WriteFile( fileName, buffer, c );
+	ri.FS_WriteFile(fileName, buffer, memcount + 18);
 
-	ri.Hunk_FreeTempMemory( buffer );
+	ri.Hunk_FreeTempMemory(allbuf);
 }
 
-/* 
-================== 
+/*
+==================
 RB_TakeScreenshotJPEG
-================== 
+==================
 */
+/*
+==================
+RB_ReadPixels: Reads an image but takes care of alignment issues for reading RGB images.
+
+Reads a minimum offset for where the RGB data starts in the image from integer stored at pointer offset. 
+When the function has returned the actual offset was written back to address offset. 
+This address will always have an alignment of packAlign to ensure efficient copying.
+
+Stores the length of padding after a line of pixels to address padlen
+
+Return value must be freed with ri.Hunk_FreeTempMemory()
+==================
+*/
+
 static unsigned char *RB_ReadPixels(int x, int y, int width, int height, size_t *offset, int *padlen)
 {
 	byte *buffer, *bufstart;
@@ -456,36 +464,9 @@ const void *RB_TakeScreenshotCmd( const void *data ) {
 	return (const void *)(cmd + 1);	
 }
 
-/*
-==================
-R_TakeScreenshot
-==================
-*/
-void R_TakeScreenshot( int x, int y, int width, int height, char *name, qboolean jpeg ) {
-	static char	fileName[MAX_OSPATH]; // bad things if two screenshots per frame?
-	screenshotCommand_t	*cmd;
 
-	cmd = (screenshotCommand_t*) R_GetCommandBuffer(sizeof(*cmd));
-	if ( !cmd ) {
-		return;
-	}
-	cmd->commandId = RC_SCREENSHOT;
-
-	cmd->x = x;
-	cmd->y = y;
-	cmd->width = width;
-	cmd->height = height;
-	Q_strncpyz( fileName, name, sizeof(fileName) );
-	cmd->fileName = fileName;
-	cmd->jpeg = jpeg;
-}
-
-/* 
-================== 
-R_ScreenshotFilename
-================== 
-*/  
-void R_ScreenshotFilename( int lastNumber, char *fileName ) {
+void R_ScreenshotFilename( int lastNumber, char *fileName )
+{
 	int		a,b,c,d;
 
 	if ( lastNumber < 0 || lastNumber > 9999 ) {
@@ -968,7 +949,7 @@ Touch all images to make sure they are resident
 =============
 */
 void RE_EndRegistration( void ) {
-	R_SyncRenderThread();
+	R_IssuePendingRenderCommands();
 	if (!ri.Sys_LowPhysicalMemory()) {
 		RB_ShowImages();
 	}
@@ -1053,17 +1034,13 @@ void R_Init( void ) {
 	backEndData[0] = (backEndData_t *) ptr;
 	backEndData[0]->polys = (srfPoly_t *) ((char *) ptr + sizeof( *backEndData[0] ));
 	backEndData[0]->polyVerts = (polyVert_t *) ((char *) ptr + sizeof( *backEndData[0] ) + sizeof(srfPoly_t) * max_polys);
-
 	R_ToggleSmpFrame();
 
-	InitRenderAPI();
+	InitOpenGL();
 
 	R_InitImages();
-
 	R_InitShaders();
-
 	R_InitSkins();
-
 	R_ModelInit();
 
 	R_InitFreeType();
@@ -1074,15 +1051,13 @@ void R_Init( void ) {
 
 	ri.Printf( PRINT_ALL, "----- finished R_Init -----\n" );
 
-
-
     ri.Cmd_AddCommand( "modelist", R_ModeList_f );
-
+	ri.Printf( PRINT_ALL, "------- R_Init() finished -------\n\n");
 }
 
 
-void RE_Shutdown( qboolean destroyWindow ) {	
-
+void RE_Shutdown( qboolean destroyWindow )
+{
 	ri.Printf( PRINT_ALL, "RE_Shutdown( %i )\n", destroyWindow );
 
 	ri.Cmd_RemoveCommand("modellist");
@@ -1094,24 +1069,24 @@ void RE_Shutdown( qboolean destroyWindow ) {
 	ri.Cmd_RemoveCommand("gfxinfo");
 	ri.Cmd_RemoveCommand("modelist" );
 
-	
-    
-    if ( tr.registered ) {
-		R_SyncRenderThread();
+	if ( tr.registered )
+    {
+		R_IssuePendingRenderCommands();
 		R_DeleteTextures();
 	}
 
 	R_DoneFreeType();
 
 	// shut down platform specific OpenGL stuff
-
     if (destroyWindow)
     {
         GLimp_Shutdown();
-        memset( &glConfig, 0, sizeof( glConfig ) );
-        memset( &glState, 0, sizeof( glState ) );
-    }
 
+        memset(&glConfig, 0, sizeof( glConfig ));
+        memset(&glState, 0, sizeof( glState ));
+
+
+    }
 
 
 	tr.registered = qfalse;
@@ -1124,7 +1099,7 @@ void RE_BeginRegistration(glconfig_t *glconfigOut)
 
 	*glconfigOut = glConfig;
 
-	R_SyncRenderThread();
+	R_IssuePendingRenderCommands();
 
 	tr.viewCluster = -1; // force markleafs to regenerate
 
@@ -1193,8 +1168,7 @@ refexport_t* GetRefAPI(int apiVersion, refimport_t *rimp)
 	re.RemapShader = R_RemapShader;
 	re.GetEntityToken = R_GetEntityToken;
 	re.inPVS = R_inPVS;
-
-	//re.TakeVideoFrame = RE_TakeVideoFrame;
+	re.TakeVideoFrame = RE_TakeVideoFrame;
 
 	return &re;
 }
@@ -1226,5 +1200,3 @@ void QDECL Com_Error( int level, const char *error, ... )
 }
 
 #endif
-
-

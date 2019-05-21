@@ -147,7 +147,6 @@ render_gl1:    3398 frames 5.4 seconds 629.7 fps 1.0/1.6/4.0/0.6 ms
 render_mydev:  3398 frames 5.0 seconds 686.2 fps 1.0/1.5/3.0/0.5 ms
 render_oa:     3398 frames 5.3 seconds 646.9 fps 1.0/1.5/4.0/0.5 ms
 
-
 # render_vulkan on Ubuntu18.04
 
 \com_speed 1
