@@ -101,31 +101,26 @@ Passing NULL will set the color to white
 */
 void RE_SetColor( const float *rgba )
 {
-    if ( !tr.registered ) {
-        return;
-    }
-    
-    setColorCommand_t* cmd = (setColorCommand_t*) R_GetCommandBuffer( sizeof(setColorCommand_t) );
-	if ( !cmd ) {
+	setColorCommand_t *cmd = R_GetCommandBuffer( sizeof(*cmd) );
+    if( !cmd ) {
 		return;
 	}
+    if( !tr.registered )
+    {
+        return;
+    }
 	cmd->commandId = RC_SET_COLOR;
-	
-    if(rgba)
+	if ( !rgba )
     {
-        cmd->color[0] = rgba[0];
-        cmd->color[1] = rgba[1];
-        cmd->color[2] = rgba[2];
-        cmd->color[3] = rgba[3];
-    }
-    else
-    {
-        // color white
-        cmd->color[0] = 1.0f;
-        cmd->color[1] = 1.0f;
-        cmd->color[2] = 1.0f;
-        cmd->color[3] = 1.0f;
-    }
+		static float colorWhite[4] = { 1, 1, 1, 1 };
+
+		rgba = colorWhite;
+	}
+
+	cmd->color[0] = rgba[0];
+	cmd->color[1] = rgba[1];
+	cmd->color[2] = rgba[2];
+	cmd->color[3] = rgba[3];
 }
 
 

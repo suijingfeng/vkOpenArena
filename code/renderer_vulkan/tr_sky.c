@@ -15,7 +15,7 @@ MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 GNU General Public License for more details.
 
 You should have received a copy of the GNU General Public License
-along with Foobar; if not, write to the Free Software
+along with Quake III Arena source code; if not, write to the Free Software
 Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 ===========================================================================
 */
@@ -59,8 +59,8 @@ static vec3_t sky_clip[6] =
 	{-1,0,1} 
 };
 
-static float	sky_mins[2][6], sky_maxs[2][6];
-static float	sky_min, sky_max;
+static float sky_mins[2][6], sky_maxs[2][6];
+static float sky_min, sky_max;
 
 /*
 ================
@@ -75,7 +75,7 @@ static void AddSkyPolygon (int nump, vec3_t vecs)
 	int		axis;
 	float	*vp;
 	// s = [0]/[2], t = [1]/[2]
-	static int	vec_to_st[6][3] =
+	static const int vec_to_st[6][3] =
 	{
 		{-2,3,1},
 		{2,3,-1},
@@ -91,7 +91,7 @@ static void AddSkyPolygon (int nump, vec3_t vecs)
 	};
 
 	// decide which face it maps to
-	VectorCopy (vec3_origin, v);
+	VectorCopy (ORIGIN, v);
 	for (i=0, vp=vecs ; i<nump ; i++, vp+=3)
 	{
 		VectorAdd (vp, v, v);
@@ -153,18 +153,14 @@ static void AddSkyPolygon (int nump, vec3_t vecs)
 	}
 }
 
-#define	ON_EPSILON		0.1f			// point on plane side epsilon
-#define	MAX_CLIP_VERTS	64
-/*
-================
-ClipSkyPolygon
-================
-*/
+
+
 static void ClipSkyPolygon (int nump, vec3_t vecs, int stage) 
 {
-	float	*norm;
+    #define	MAX_CLIP_VERTS	64
+    #define	ON_EPSILON		0.1f
+    // point on plane side epsilon
 	float	*v;
-	qboolean	front, back;
 	float	d, e;
 	float	dists[MAX_CLIP_VERTS];
 	int		sides[MAX_CLIP_VERTS];
@@ -180,8 +176,9 @@ static void ClipSkyPolygon (int nump, vec3_t vecs, int stage)
 		return;
 	}
 
-	front = back = qfalse;
-	norm = sky_clip[stage];
+	qboolean front = qfalse;
+    qboolean back = qfalse;
+	const float* norm = sky_clip[stage];
 	for (i=0, v = vecs ; i<nump ; i++, v+=3)
 	{
 		d = DotProduct (v, norm);
@@ -301,7 +298,7 @@ CLOUD VERTEX GENERATION
 static void MakeSkyVec( float s, float t, int axis, float outSt[2], vec3_t outXYZ )
 {
 	// 1 = s, 2 = t, 3 = 2048
-	static int	st_to_vec[6][3] =
+	const static int st_to_vec[6][3] =
 	{
 		{3,-1,2},
 		{-3,1,2},
@@ -313,18 +310,17 @@ static void MakeSkyVec( float s, float t, int axis, float outSt[2], vec3_t outXY
 		{2,-1,-3}		// look straight down
 	};
 
-	vec3_t		b;
-	int			j, k;
-	float	boxSize;
+	float boxSize = backEnd.viewParms.zFar / 1.75;		// div sqrt(3)
 
-	boxSize = backEnd.viewParms.zFar / 1.75;		// div sqrt(3)
+    vec3_t b;
 	b[0] = s*boxSize;
 	b[1] = t*boxSize;
 	b[2] = boxSize;
 
-	for (j=0 ; j<3 ; j++)
+	int	j;
+	for (j=0; j<3; ++j)
 	{
-		k = st_to_vec[axis][j];
+		int k = st_to_vec[axis][j];
 		if (k < 0)
 		{
 			outXYZ[j] = -b[-k - 1];
@@ -366,7 +362,8 @@ static void MakeSkyVec( float s, float t, int axis, float outSt[2], vec3_t outXY
 	}
 }
 
-static int	sky_texorder[6] = {0,2,1,3,4,5};
+
+static const int sky_texorder[6] = {0,2,1,3,4,5};
 static vec3_t	s_skyPoints[SKY_SUBDIVISIONS+1][SKY_SUBDIVISIONS+1];
 static float	s_skyTexCoords[SKY_SUBDIVISIONS+1][SKY_SUBDIVISIONS+1][2];
 
@@ -690,18 +687,20 @@ All of the visible sky triangles are in tess
 Other things could be stuck in here, like birds in the sky, etc
 ================
 */
-void RB_StageIteratorSky( void )
+void RB_StageIteratorSky( shaderCommands_t * const pTess )
 {
 
 	// go through all the polygons and project them onto
 	// the sky box to see which blocks on each side need
 	// to be drawn
-	RB_ClipSkyPolygons( &tess );
+	RB_ClipSkyPolygons( pTess );
 
 	// r_showsky will let all the sky blocks be drawn in
 	// front of everything to allow developers to see how
 	// much sky is getting sucked in draw the outer skybox
-	if ( tess.shader->sky.outerbox[0] && (tess.shader->sky.outerbox[0] != tr.defaultImage) )
+
+	// draw the outer skybox
+	if ( pTess->shader->sky.outerbox[0] && pTess->shader->sky.outerbox[0] != tr.defaultImage )
     {
 
         float modelMatrix_original[16] QALIGN(16);
@@ -717,7 +716,7 @@ void RB_StageIteratorSky( void )
         };
         MatrixMultiply4x4_SSE(skybox_translate, modelMatrix_original, modelview_transform);
 	
-		DrawSkyBox( tess.shader, modelview_transform);
+		DrawSkyBox( pTess->shader, modelview_transform);
 
         //memcpy(getptr_modelview_matrix(), modelMatrix_original, sizeof(float[16]));
         //set_modelview_matrix();
@@ -725,9 +724,9 @@ void RB_StageIteratorSky( void )
 
 	// generate the vertexes for all the clouds, which will be drawn
 	// by the generic shader routine
-	R_BuildCloudData( &tess );
+	R_BuildCloudData( pTess );
 
-	RB_StageIteratorGeneric( &tess );
+	RB_StageIteratorGeneric( pTess );
 
 	// draw the inner skybox
 }

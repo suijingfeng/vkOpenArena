@@ -1335,7 +1335,7 @@ static void ParseSkyParms( char **text ) {
 		for (i=0 ; i<6 ; i++) {
 			snprintf( pathname, sizeof(pathname), "%s_%s.tga"
 				, token, suf[i] );
-			shader.sky.innerbox[i] = R_FindImageFile( ( char * ) pathname, qtrue, qtrue, GL_REPEAT );
+			shader.sky.innerbox[i] = R_FindImageFile( ( char * ) pathname, qtrue, qtrue, GL_CLAMP );
 			if ( !shader.sky.innerbox[i] ) {
 				shader.sky.innerbox[i] = tr.defaultImage;
 			}
@@ -1444,14 +1444,16 @@ ParseSurfaceParm
 surfaceparm <name>
 ===============
 */
-static void ParseSurfaceParm( char **text ) {
+static void ParseSurfaceParm( char **text )
+{
 	char	*token;
 	int		numInfoParms = ARRAY_LEN( infoParms );
 	int		i;
 
 	token = R_ParseExt( text, qfalse );
 	for ( i = 0 ; i < numInfoParms ; i++ ) {
-		if ( !Q_stricmp( token, infoParms[i].name ) ) {
+		if ( !Q_stricmp( token, infoParms[i].name ) )
+		{
 			shader.surfaceFlags |= infoParms[i].surfaceFlags;
 			shader.contentFlags |= infoParms[i].contents;
 #if 0
@@ -1541,11 +1543,11 @@ static qboolean ParseShader( char **text )
 
 			token = R_ParseExt( text, qfalse );
 			a = atof( token );
-			a = a / 180 * M_PI;
+			a *= (M_PI/180.0f);
 
 			token = R_ParseExt( text, qfalse );
 			b = atof( token );
-			b = b / 180 * M_PI;
+			b *= (M_PI/180.0f);
 
 			tr.sunDirection[0] = cos( a ) * cos( b );
 			tr.sunDirection[1] = sin( a ) * cos( b );
@@ -1559,12 +1561,13 @@ static qboolean ParseShader( char **text )
 			SkipRestOfLine( text );
 			continue;
 		}
-		else if ( !Q_stricmp( token, "clampTime" ) ) {
-			token = R_ParseExt( text, qfalse );
-      if (token[0]) {
-        shader.clampTime = atof(token);
-      }
-    }
+		else if ( !Q_stricmp( token, "clampTime" ) )
+        {
+            token = R_ParseExt( text, qfalse );
+            if (token[0]) {
+                shader.clampTime = atof(token);
+            }
+        }
 		// skip stuff that only the q3map needs
 		else if ( !Q_stricmpn( token, "q3map", 5 ) ) {
 			SkipRestOfLine( text );
@@ -1744,7 +1747,6 @@ FIXME: I think modulated add + modulated add collapses incorrectly
 static qboolean CollapseMultitexture( void ) {
 	int abits, bbits;
 	int i;
-	textureBundle_t tmpBundle;
 
 	// make sure both stages are active
 	if ( !stages[0].active || !stages[1].active ) {
@@ -1776,7 +1778,7 @@ static qboolean CollapseMultitexture( void ) {
 		return qfalse;
 	}
 
-
+	// GL_ADD is a separate extension
 
 
 	// make sure waveforms have identical parameters
@@ -1813,7 +1815,7 @@ static qboolean CollapseMultitexture( void ) {
 	// make sure that lightmaps are in bundle 1 for 3dfx
 	if ( stages[0].bundle[0].isLightmap )
 	{
-		tmpBundle = stages[0].bundle[0];
+		textureBundle_t tmpBundle = stages[0].bundle[0];
 		stages[0].bundle[0] = stages[1].bundle[0];
 		stages[0].bundle[1] = tmpBundle;
 	}

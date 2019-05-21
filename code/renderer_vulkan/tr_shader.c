@@ -238,9 +238,7 @@ ParseWaveForm
 */
 static void ParseWaveForm( char **text, waveForm_t *wave )
 {
-	char *token;
-
-	token = R_ParseExt( text, qfalse );
+	char *token = R_ParseExt( text, qfalse );
 	if ( token[0] == 0 )
 	{
 		ri.Printf( PRINT_WARNING, "WARNING: missing waveform parm in shader '%s'\n", shader.name );
@@ -428,11 +426,59 @@ static void ParseTexMod( char *_text, shaderStage_t *stage )
 		
 		tmi->type = TMOD_STRETCH;
 	}
-	//
-	// transform
-	//
-	else if ( !Q_stricmp( token, "transform" ) )
+	else if ( !Q_stricmp( token, "atlas" ) )
+	{   // leilei - atlas
+		token = R_ParseExt( text, qfalse );
+		if ( token[0] == 0 )
+		{
+			ri.Printf( PRINT_WARNING, "WARNING: missing atlas parms in shader '%s'\n", shader.name );
+			return;
+		}
+		tmi->atlas.mode = atof( token );
+
+		token = R_ParseExt( text, qfalse );
+		if ( token[0] == 0 )
+		{
+			ri.Printf( PRINT_WARNING, "WARNING: missing atlas parms in shader '%s'\n", shader.name );
+			return;
+		}
+		tmi->atlas.frame = atof( token );
+
+		token = R_ParseExt( text, qfalse );
+		if ( token[0] == 0 )
+		{
+			ri.Printf( PRINT_WARNING, "WARNING: missing atlas parms in shader '%s'\n", shader.name );
+			return;
+		}
+		tmi->atlas.fps = atof( token );
+
+		token = R_ParseExt( text, qfalse );
+		if ( token[0] == 0 )
+		{
+			ri.Printf( PRINT_WARNING, "WARNING: missing atlas parms in shader '%s'\n", shader.name );
+			return;
+		}
+		tmi->atlas.width = atof( token );
+			ri.Printf( PRINT_WARNING, "shader '%s' has width %f\n", shader.name, tmi->atlas.width );
+
+		token = R_ParseExt( text, qfalse );
+		if ( token[0] == 0 )
+		{
+			ri.Printf( PRINT_WARNING, "WARNING: missing atlas parms in shader '%s'\n", shader.name );
+			return;
+		}
+		tmi->atlas.height = atof( token );
+		
+		tmi->type = TMOD_ATLAS;
+	}
+	else if ( !Q_stricmp( token, "lightscale" ) )
 	{
+		token = R_ParseExt( text, qfalse );
+	//
+		tmi->type = TMOD_LIGHTSCALE;
+	}
+	else if ( !Q_stricmp( token, "transform" ) )
+	{   // transform
 		token = R_ParseExt( text, qfalse );
 		if ( token[0] == 0 )
 		{
@@ -720,6 +766,7 @@ static qboolean ParseStage( shaderStage_t *stage, char **text )
 				}
 				blendDstBits = NameToDstBlendMode( token );
 			}
+			
 
 			// clear depth mask for blended surfaces
 			if ( !depthMaskExplicit )
@@ -782,13 +829,47 @@ static qboolean ParseStage( shaderStage_t *stage, char **text )
 			{
 				stage->rgbGen = CGEN_EXACT_VERTEX;
 			}
+			else if ( !Q_stricmp( token, "vertexLighting" ) )	// leilei - vertex WITH a lighting pass after
+			{
+				stage->rgbGen = CGEN_VERTEX_LIT;
+				if ( stage->alphaGen == 0 ) {
+					stage->alphaGen = AGEN_VERTEX;
+				}
+			}
+			else if ( !Q_stricmp( token, "vertexLighting2" ) )	// leilei - second vertex color
+			{
+				stage->rgbGen = CGEN_VERTEX_LIT;
+				if ( stage->alphaGen == 0 ) {
+					stage->alphaGen = AGEN_VERTEX;
+				}
+			}
 			else if ( !Q_stricmp( token, "lightingDiffuse" ) )
 			{
 				stage->rgbGen = CGEN_LIGHTING_DIFFUSE;
 			}
+			else if ( !Q_stricmp( token, "lightingUniform" ) )
+			{
+				stage->rgbGen = CGEN_LIGHTING_UNIFORM;
+			}
+			else if ( !Q_stricmp( token, "lightingDynamic" ) )
+			{
+				stage->rgbGen = CGEN_LIGHTING_DYNAMIC;
+			}
+			else if ( !Q_stricmp( token, "flatAmbient" ) )
+			{
+				stage->rgbGen = CGEN_LIGHTING_FLAT_AMBIENT;
+			}
+			else if ( !Q_stricmp( token, "flatDirect" ) )
+			{
+				stage->rgbGen = CGEN_LIGHTING_FLAT_DIRECT;
+			}
 			else if ( !Q_stricmp( token, "oneMinusVertex" ) )
 			{
 				stage->rgbGen = CGEN_ONE_MINUS_VERTEX;
+			}
+			else if ( !Q_stricmp( token, "lightingSpecularDiffuse" ) )	// leilei - deprecated
+			{
+				stage->rgbGen = CGEN_LIGHTING_DIFFUSE;
 			}
 			else
 			{
@@ -879,6 +960,18 @@ static qboolean ParseStage( shaderStage_t *stage, char **text )
 			{
 				stage->bundle[0].tcGen = TCGEN_ENVIRONMENT_MAPPED;
 			}
+			else if ( !Q_stricmp( token, "cel" ) )
+			{
+				stage->bundle[0].tcGen = TCGEN_ENVIRONMENT_CELSHADE_MAPPED;
+			}
+			else if ( !Q_stricmp( token, "celshading" ) )		// leilei - my technique is different
+			{
+				stage->bundle[0].tcGen = TCGEN_ENVIRONMENT_CELSHADE_LEILEI;
+			}
+			else if ( !Q_stricmp( token, "environmentWater" ) )
+			{
+				stage->bundle[0].tcGen = TCGEN_ENVIRONMENT_MAPPED_WATER;	// leilei - water's envmaps
+			}
 			else if ( !Q_stricmp( token, "lightmap" ) )
 			{
 				stage->bundle[0].tcGen = TCGEN_LIGHTMAP;
@@ -949,7 +1042,6 @@ static qboolean ParseStage( shaderStage_t *stage, char **text )
 		}
 	}
 
-
 	//
 	// implicitly assume that a GL_ONE GL_ZERO blend mask disables blending
 	//
@@ -961,9 +1053,13 @@ static qboolean ParseStage( shaderStage_t *stage, char **text )
 	}
 
 	// decide which agens we can skip
-	if ( stage->alphaGen == AGEN_IDENTITY ){
-		if ( stage->rgbGen == CGEN_IDENTITY || stage->rgbGen == CGEN_LIGHTING_DIFFUSE )
-		{
+	if ( stage->alphaGen == AGEN_IDENTITY )
+    {
+		if ( stage->rgbGen == CGEN_IDENTITY ||
+             stage->rgbGen == CGEN_LIGHTING_DIFFUSE ||
+             stage->rgbGen == CGEN_LIGHTING_UNIFORM ||
+             stage->rgbGen == CGEN_LIGHTING_DYNAMIC)
+        {
 			stage->alphaGen = AGEN_SKIP;
 		}
 	}
@@ -1153,7 +1249,8 @@ static void ParseSkyParms( char **text ) {
 		ri.Printf( PRINT_WARNING, "WARNING: 'skyParms' missing parameter in shader '%s'\n", shader.name );
 		return;
 	}
-	if ( strcmp( token, "-" ) ) {
+	if ( strcmp( token, "-" ) )
+    {
 		for (i=0 ; i<6 ; i++) {
 			snprintf( pathname, sizeof(pathname), "%s_%s.tga", token, suf[i] );
 			shader.sky.outerbox[i] = R_FindImageFile( pathname, qtrue, qtrue, GL_CLAMP );
@@ -1184,7 +1281,8 @@ static void ParseSkyParms( char **text ) {
 	}
 	if ( strcmp( token, "-" ) ) {
 		for (i=0 ; i<6 ; i++) {
-			snprintf( pathname, sizeof(pathname), "%s_%s.tga", token, suf[i] );
+			snprintf( pathname, sizeof(pathname), "%s_%s.tga"
+				, token, suf[i] );
 			shader.sky.innerbox[i] = R_FindImageFile( ( char * ) pathname, qtrue, qtrue, GL_CLAMP );
 			if ( !shader.sky.innerbox[i] ) {
 				shader.sky.innerbox[i] = tr.defaultImage;
@@ -1296,16 +1394,16 @@ surfaceparm <name>
 */
 static void ParseSurfaceParm( char **text )
 {
-	int	numInfoParms = sizeof(infoParms) / sizeof(infoParms[0]);
-	int	i;
+	char	*token;
+	int		numInfoParms = ARRAY_LEN( infoParms );
+	int		i;
 
-	char* token = R_ParseExt( text, qfalse );
-	for ( i = 0 ; i < numInfoParms ; i++ )
-    {
+	token = R_ParseExt( text, qfalse );
+	for ( i = 0 ; i < numInfoParms ; i++ ) {
 		if ( !Q_stricmp( token, infoParms[i].name ) )
-        {
-			shader.surfaceFlags |= (int)infoParms[i].surfaceFlags;
-			shader.contentFlags |= (int)infoParms[i].contents;
+		{
+			shader.surfaceFlags |= infoParms[i].surfaceFlags;
+			shader.contentFlags |= infoParms[i].contents;
 #if 0
 			if ( infoParms[i].clearSolid ) {
 				si->contents &= ~CONTENTS_SOLID;
@@ -1677,9 +1775,6 @@ static qboolean CollapseMultitexture( void ) {
 
 	return qtrue;
 }
-
-
-
 
 /*
 =================

@@ -54,7 +54,8 @@ SURFACE SHADERS
 RB_BeginSurface
 
 We must set some things up before beginning any tesselation,
-because a surface may be forced to perform a RB_End due to overflow.
+because a surface may be forced to perform a RB_End due
+to overflow.
 ==============
 */
 void RB_BeginSurface( shader_t *shader, int fogNum )
@@ -70,8 +71,8 @@ void RB_BeginSurface( shader_t *shader, int fogNum )
 	tess.numPasses = state->numUnfoggedPasses;
 
 	tess.shaderTime = backEnd.refdef.floatTime - tess.shader->timeOffset;
-    
-	if (tess.shader->clampTime && tess.shaderTime >= tess.shader->clampTime) {
+	if (tess.shader->clampTime && tess.shaderTime >= tess.shader->clampTime)
+    {
 		tess.shaderTime = tess.shader->clampTime;
 	}
 }
@@ -80,24 +81,27 @@ void RB_BeginSurface( shader_t *shader, int fogNum )
 
 void RB_EndSurface( void )
 {
-	if (tess.numIndexes == 0) {
+	shaderCommands_t * const input = &tess;
+
+	if ((input->numIndexes == 0) || (input->numVertexes == 0)) {
 		return;
 	}
-    
-	if (tess.indexes[SHADER_MAX_INDEXES-1] != 0) {
+
+
+	if (input->indexes[SHADER_MAX_INDEXES-1] != 0) {
 		ri.Error (ERR_DROP, "RB_EndSurface() - SHADER_MAX_INDEXES hit");
 	}	
-	if (tess.xyz[SHADER_MAX_VERTEXES-1][0] != 0) {
+	if (input->xyz[SHADER_MAX_VERTEXES-1][0] != 0) {
 		ri.Error (ERR_DROP, "RB_EndSurface() - SHADER_MAX_VERTEXES hit");
 	}
 
-	if ( tess.shader == tr.shadowShader ) {
+	if ( input->shader == tr.shadowShader ) {
 		RB_ShadowTessEnd();
 		return;
 	}
 
 	// for debugging of sort order issues, stop rendering after a given sort value
-	if ( r_debugSort->integer && r_debugSort->integer < tess.shader->sort ) {
+	if ( r_debugSort->integer && r_debugSort->integer < input->shader->sort ) {
 		return;
 	}
 
@@ -105,19 +109,18 @@ void RB_EndSurface( void )
 	// update performance counters
 	//
 	backEnd.pc.c_shaders++;
-	backEnd.pc.c_vertexes += tess.numVertexes;
-	backEnd.pc.c_indexes += tess.numIndexes;
-	backEnd.pc.c_totalIndexes += tess.numIndexes * tess.numPasses;
+	backEnd.pc.c_vertexes += input->numVertexes;
+	backEnd.pc.c_indexes += input->numIndexes;
+	backEnd.pc.c_totalIndexes += input->numIndexes * input->numPasses;
 
 	//
 	// call off to shader specific tess end function
 	//
-	if (tess.shader->isSky) {
-		RB_StageIteratorSky();
-    }
-	else {
-		RB_StageIteratorGeneric(&tess);
-    }
+	if (input->shader->isSky)
+		RB_StageIteratorSky(input);
+	else
+		RB_StageIteratorGeneric(input);
+
 	//
 	// draw debugging stuff
 	//
@@ -130,7 +133,7 @@ void RB_EndSurface( void )
 		RB_DrawNormals (&tess, tess.numVertexes);
 	}
 	// clear shader so we can tell we don't have any unclosed surfaces
-	tess.numIndexes = 0;
-    tess.numVertexes = 0;
+	input->numIndexes = 0;
+	input->numVertexes = 0;
 }
 

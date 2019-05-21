@@ -1,6 +1,6 @@
 #ifndef TR_SKY_H_
 #define TR_SKY_H_
-
+#include "R_ShaderCommands.h"
 #include "tr_image.h"
 
 
@@ -10,7 +10,6 @@ typedef struct {
     struct image_s *   innerbox[6];
 } skyParms_t;
 
-void RB_StageIteratorSky( void );
 
 void R_InitSkyTexCoords( float cloudLayerHeight );
 

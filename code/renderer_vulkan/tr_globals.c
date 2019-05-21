@@ -1,7 +1,7 @@
+#include "ref_import.h"
 #include "tr_globals.h"
 #include "tr_world.h"
 #include "tr_model.h"
-#include "ref_import.h"
 
 trGlobals_t		tr;
 

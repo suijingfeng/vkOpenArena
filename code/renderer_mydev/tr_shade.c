@@ -536,7 +536,8 @@ static void ComputeColors( shaderStage_t *pStage )
 			memcpy( tess.svars.colors, tess.vertexColors, tess.numVertexes * sizeof( tess.vertexColors[0] ) );
 			break;
 		case CGEN_CONST:
-			for ( i = 0; i < tess.numVertexes; i++ ) {
+			for ( i = 0; i < tess.numVertexes; ++i )
+            {
 				*(int *)tess.svars.colors[i] = *(int *)pStage->constantColor;
 			}
 			break;
@@ -626,6 +627,7 @@ static void ComputeColors( shaderStage_t *pStage )
 		RB_CalcWaveAlpha( &pStage->alphaWave, ( unsigned char * ) tess.svars.colors );
 		break;
 	case AGEN_LIGHTING_SPECULAR:
+		// RB_CalcSpecularAlpha( ( unsigned char * ) tess.svars.colors );
 		RB_CalcSpecularAlphaNew(tess.svars.colors);
 		break;
 	case AGEN_ENTITY:
@@ -653,11 +655,10 @@ static void ComputeColors( shaderStage_t *pStage )
 
 			for ( i = 0; i < tess.numVertexes; i++ )
 			{
-				float len;
 				vec3_t v;
 
 				VectorSubtract( tess.xyz[i], backEnd.viewParms.or.origin, v );
-				len = VectorLength( v );
+				float len = VectorLength( v );
 
 				len /= tess.shader->portalRange;
 
@@ -702,16 +703,13 @@ static void ComputeColors( shaderStage_t *pStage )
 	}
 }
 
-/*
-===============
-ComputeTexCoords
-===============
-*/
-static void ComputeTexCoords( shaderStage_t *pStage ) {
-	int		i;
-	int		b;
+static void ComputeTexCoords( shaderStage_t * pStage )
+{
+	uint32_t i;
+	uint32_t b;
 
-	for ( b = 0; b < NUM_TEXTURE_BUNDLES; b++ ) {
+	for ( b = 0; b < NUM_TEXTURE_BUNDLES; ++b )
+    {
 		int tm;
 
 		//
@@ -762,7 +760,8 @@ static void ComputeTexCoords( shaderStage_t *pStage ) {
 		//
 		// alter texture coordinates
 		//
-		for ( tm = 0; tm < pStage->bundle[b].numTexMods ; tm++ ) {
+		for ( tm = 0; tm < pStage->bundle[b].numTexMods ; tm++ )
+        {
 			switch ( pStage->bundle[b].texMods[tm].type )
 			{
 			case TMOD_NONE:

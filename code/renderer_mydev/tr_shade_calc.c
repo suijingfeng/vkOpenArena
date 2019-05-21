@@ -411,10 +411,10 @@ static void AutospriteDeform( void ) {
 	vec3_t	leftDir, upDir;
 
 	if ( tess.numVertexes & 3 ) {
-		ri.Printf( PRINT_WARNING, "Autosprite shader %s had odd vertex count\n", tess.shader->name );
+		ri.Printf( PRINT_WARNING, "Autosprite shader %s had odd vertex count.\n", tess.shader->name );
 	}
 	if ( tess.numIndexes != ( tess.numVertexes >> 2 ) * 6 ) {
-		ri.Printf( PRINT_WARNING, "Autosprite shader %s had odd index count\n", tess.shader->name );
+		ri.Printf( PRINT_WARNING, "Autosprite shader %s had odd index count. \n", tess.shader->name );
 	}
 
 	oldVerts = tess.numVertexes;
@@ -717,9 +717,7 @@ void RB_CalcAlphaFromOneMinusEntity( unsigned char *dstColors )
 	}
 }
 
-/*
-** RB_CalcWaveColor
-*/
+
 void RB_CalcWaveColor( const waveForm_t *wf, unsigned char *dstColors )
 {
 	int i;
@@ -848,7 +846,8 @@ projected textures, but I don't trust the drivers and it
 doesn't fit our shader data.
 ========================
 */
-void RB_CalcFogTexCoords( float *st ) {
+void RB_CalcFogTexCoords( float *st )
+{
 	int			i;
 	float		*v;
 	float		s, t;
@@ -1397,4 +1396,3 @@ void RB_CalcFlatDirect( unsigned char *colors )
 		colors[i*4+3] = 255;
 	}
 }
-

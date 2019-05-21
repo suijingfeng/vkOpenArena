@@ -586,7 +586,109 @@ void vk_clearColorAttachments(const float* color)
 }
 
 
+/*
+** RB_CalcDiffuseColor
+**
+** The basic vertex lighting calc
+*/
+static void RB_CalcDiffuseColor(unsigned char (*colors)[4])
+{
 
+    //trRefEntity_t* ent = backEnd.currentEntity;
+    vec3_t abtLit;
+    abtLit[0] = backEnd.currentEntity->ambientLight[0];
+    abtLit[1] = backEnd.currentEntity->ambientLight[1];
+    abtLit[2] = backEnd.currentEntity->ambientLight[2];
+
+    vec3_t drtLit;
+    drtLit[0] = backEnd.currentEntity->directedLight[0];
+    drtLit[1] = backEnd.currentEntity->directedLight[1];
+    drtLit[2] = backEnd.currentEntity->directedLight[2];
+
+    vec3_t litDir;
+    litDir[0] = backEnd.currentEntity->lightDir[0];
+    litDir[1] = backEnd.currentEntity->lightDir[1];
+    litDir[2] = backEnd.currentEntity->lightDir[2];
+
+    unsigned char ambLitRGBA[4];  
+    
+    ambLitRGBA[0] = backEnd.currentEntity->ambientLightRGBA[0];
+    ambLitRGBA[1] = backEnd.currentEntity->ambientLightRGBA[1];
+    ambLitRGBA[2] = backEnd.currentEntity->ambientLightRGBA[2];
+    ambLitRGBA[3] = backEnd.currentEntity->ambientLightRGBA[3];
+
+    int numVertexes = tess.numVertexes;
+	int	i;
+	for (i = 0; i < numVertexes; i++)
+    {
+		float incoming = DotProduct(tess.normal[i], litDir);
+		
+        if( incoming <= 0 )
+        {
+			colors[i][0] = ambLitRGBA[0];
+            colors[i][1] = ambLitRGBA[1];
+			colors[i][2] = ambLitRGBA[2];
+			colors[i][3] = ambLitRGBA[3];
+		}
+        else
+        {
+            int r = abtLit[0] + incoming * drtLit[0];
+            int g = abtLit[1] + incoming * drtLit[1];
+            int b = abtLit[2] + incoming * drtLit[2];
+
+            colors[i][0] = (r <= 255 ? r : 255);
+            colors[i][1] = (g <= 255 ? g : 255);
+            colors[i][2] = (b <= 255 ? b : 255);
+            colors[i][3] = 255;
+        }
+	}
+}
+
+
+// This fixed version comes from ZEQ2Lite
+//Calculates specular coefficient and places it in the alpha channel
+static void RB_CalcSpecularAlphaNew(unsigned char (*alphas)[4])
+{
+	int numVertexes = tess.numVertexes;
+	
+    int	i;
+    for (i = 0 ; i < numVertexes; i++)
+    {
+        vec3_t lightDir, viewer, reflected;
+		if ( backEnd.currentEntity == &tr.worldEntity )
+        {
+            // old compatibility with maps that use it on some models
+            vec3_t lightOrigin = {-960, 1980, 96};		// FIXME: track dynamically
+			VectorSubtract( lightOrigin, tess.xyz[i], lightDir );
+        }
+        else
+        {
+			VectorCopy( backEnd.currentEntity->lightDir, lightDir );
+        }
+		// calculate the specular color
+		float d = 2*DotProduct(tess.normal[i], lightDir);
+
+		// we don't optimize for the d < 0 case since this tends to
+		// cause visual artifacts such as faceted "snapping"
+		reflected[0] = tess.normal[i][0]*d - lightDir[0];
+		reflected[1] = tess.normal[i][1]*d - lightDir[1];
+		reflected[2] = tess.normal[i][2]*d - lightDir[2];
+
+		VectorSubtract(backEnd.or.viewOrigin, tess.xyz[i], viewer);
+		
+        float l = DotProduct(reflected, viewer)/sqrtf(DotProduct(viewer, viewer));
+
+		if(l < 0)
+			alphas[i][3] = 0;
+        else if(l >= 1)
+			alphas[i][3] = 255;
+        else
+        {
+			l = l*l;
+            alphas[i][3] = l*l*255;
+		}
+	}
+}
 
 static void ComputeColors( shaderStage_t *pStage )
 {
@@ -610,14 +712,15 @@ static void ComputeColors( shaderStage_t *pStage )
 			memcpy( tess.svars.colors, tess.vertexColors, tess.numVertexes * sizeof( tess.vertexColors[0] ) );
 			break;
 		case CGEN_CONST:
+        {
             
             nVerts = tess.numVertexes;
 
 			for ( i = 0; i < nVerts; i++ )
             {
-				memcpy(tess.svars.colors[i], pStage->constantColor, 4);
+				*(int *)tess.svars.colors[i] = *(int *)pStage->constantColor;
 			}
-			break;
+        } break;
 		case CGEN_VERTEX:
 			if ( tr.identityLight == 1 )
 			{
@@ -697,7 +800,8 @@ static void ComputeColors( shaderStage_t *pStage )
 		RB_CalcWaveAlpha( &pStage->alphaWave, ( unsigned char * ) tess.svars.colors );
 		break;
 	case AGEN_LIGHTING_SPECULAR:
-		RB_CalcSpecularAlpha( ( unsigned char * ) tess.svars.colors );
+		// RB_CalcSpecularAlpha( ( unsigned char * ) tess.svars.colors );
+		RB_CalcSpecularAlphaNew(tess.svars.colors);
 		break;
 	case AGEN_ENTITY:
 		RB_CalcAlphaFromEntity( ( unsigned char * ) tess.svars.colors );
@@ -813,6 +917,15 @@ static void ComputeTexCoords( shaderStage_t * pStage )
             case TCGEN_ENVIRONMENT_MAPPED:
                 RB_CalcEnvironmentTexCoords( ( float * ) tess.svars.texcoords[b] );
                 break;
+           case TCGEN_ENVIRONMENT_MAPPED_WATER:
+                RB_CalcEnvironmentTexCoordsJO( ( float * ) tess.svars.texcoords[b] ); 			
+                break;
+            case TCGEN_ENVIRONMENT_CELSHADE_MAPPED:
+                RB_CalcEnvironmentCelShadeTexCoords( ( float * ) tess.svars.texcoords[b] );
+                break;
+            case TCGEN_ENVIRONMENT_CELSHADE_LEILEI:
+                RB_CalcCelTexCoords( ( float * ) tess.svars.texcoords[b] );
+                break;
             case TCGEN_BAD:
                 return;
 		}
@@ -847,7 +960,9 @@ static void ComputeTexCoords( shaderStage_t * pStage )
 			case TMOD_STRETCH:
 				RB_CalcStretchTexCoords( &pStage->bundle[b].texMods[tm].wave, ( float * ) tess.svars.texcoords[b] );
 				break;
-
+			case TMOD_ATLAS:
+				RB_CalcAtlasTexCoords(  &pStage->bundle[b].texMods[tm].atlas, ( float * ) tess.svars.texcoords[b] );
+				break;
 			case TMOD_TRANSFORM:
 				RB_CalcTransformTexCoords( &pStage->bundle[b].texMods[tm], ( float * ) tess.svars.texcoords[b] );
 				break;

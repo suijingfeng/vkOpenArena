@@ -1,8 +1,11 @@
 #ifndef R_SHADER_COMMAND_H_
 #define R_SHADER_COMMAND_H_
 
-#include "R_ShaderCommonDef.h"
+#include "R_ShaderStage.h"
 #include "tr_shader.h"
+#include "R_ShaderCommonDef.h"
+
+
 /*
 ====================================================================
 
@@ -30,7 +33,7 @@ typedef struct shaderCommands_s
 
 	uint8_t     constantColor255[SHADER_MAX_VERTEXES][4];
 
-	shader_t	*shader;
+	struct shader_s * shader;
     float   shaderTime;
 	int			fogNum;
 
@@ -47,5 +50,6 @@ typedef struct shaderCommands_s
 extern shaderCommands_t	tess;
 
 void R_ClearShaderCommand(void);
+void RB_StageIteratorSky( shaderCommands_t * const pTess );
 
 #endif

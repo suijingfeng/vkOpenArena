@@ -8,6 +8,7 @@ void RB_EndSurface( void );
 
 
 
+
 void	RB_DeformTessGeometry( shaderCommands_t * const pTess );
 void	RB_CalcEnvironmentTexCoords( float *dstTexCoords );
 void	RB_CalcFogTexCoords( float *dstTexCoords );
@@ -27,7 +28,10 @@ void	RB_CalcStretchTexCoords( const waveForm_t *wf, float *texCoords );
 void	RB_CalcColorFromEntity( unsigned char (*dstColors)[4] );
 void	RB_CalcColorFromOneMinusEntity( unsigned char (*dstColors)[4] );
 void	RB_CalcSpecularAlpha( unsigned char *alphas );
-void	RB_CalcDiffuseColor( unsigned char (*colors)[4] );
+//void	RB_CalcDiffuseColor( unsigned char (*colors)[4] );
 
-
+void	RB_CalcAtlasTexCoords( const atlas_t *at, float *st );
+void    RB_CalcEnvironmentTexCoordsJO( float *st );
+void    RB_CalcEnvironmentCelShadeTexCoords( float *st );
+void    RB_CalcCelTexCoords( float *st );
 #endif

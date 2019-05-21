@@ -275,7 +275,7 @@ static void MakeSkyVec( float s, float t, int axis, float outSt[2], vec3_t outXY
 	b[2] = boxSize;
 
 	int	j;
-	for (j=0; j<3; j++)
+	for (j=0; j<3; ++j)
 	{
 		int k = st_to_vec[axis][j];
 		if (k < 0)
@@ -767,7 +767,7 @@ void RB_StageIteratorSky( shaderCommands_t * const pTess )
 	}
 
 	// draw the outer skybox
-	if ( tess.shader->sky.outerbox[0] && tess.shader->sky.outerbox[0] != tr.defaultImage )
+	if ( pTess->shader->sky.outerbox[0] && pTess->shader->sky.outerbox[0] != tr.defaultImage )
     {
 		qglColor3f( tr.identityLight, tr.identityLight, tr.identityLight );
 		qglPushMatrix ();

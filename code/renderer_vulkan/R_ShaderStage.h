@@ -1,6 +1,7 @@
 #ifndef R_SHADER_STAGE_H_
 #define R_SHADER_STAGE_H_
-
+#include "VKimpl.h"
+#include "tr_wave.h"
 #include "R_ShaderCommonDef.h"
 
 #define	MAX_IMAGE_ANIMATIONS    8
@@ -14,8 +15,11 @@ typedef enum {
 	TCGEN_LIGHTMAP,
 	TCGEN_TEXTURE,
 	TCGEN_ENVIRONMENT_MAPPED,
+    TCGEN_ENVIRONMENT_CELSHADE_MAPPED,
+	TCGEN_ENVIRONMENT_CELSHADE_LEILEI,	// leilei - cel hack
+	TCGEN_ENVIRONMENT_MAPPED_WATER,	// leilei - fake water reflection
 	TCGEN_FOG,
-	TCGEN_VECTOR			// S and T from world coordinates
+    TCGEN_VECTOR			// S and T from world coordinates
 } texCoordGen_t;
 
 typedef enum {
@@ -25,6 +29,8 @@ typedef enum {
 	TMOD_SCROLL,
 	TMOD_SCALE,
 	TMOD_STRETCH,
+    TMOD_LIGHTSCALE,	// leilei - cel hack
+	TMOD_ATLAS,			// leilei - atlases
 	TMOD_ROTATE,
 	TMOD_ENTITY_TRANSLATE
 } texMod_t;
@@ -40,8 +46,13 @@ typedef enum {
 	CGEN_ONE_MINUS_VERTEX,
 	CGEN_WAVEFORM,			// programmatically generated
 	CGEN_LIGHTING_DIFFUSE,
+	CGEN_LIGHTING_UNIFORM,
+	CGEN_LIGHTING_DYNAMIC,
+	CGEN_LIGHTING_FLAT_AMBIENT,		// leilei - cel hack
+	CGEN_LIGHTING_FLAT_DIRECT,
 	CGEN_FOG,				// standard fog
-	CGEN_CONST				// fixed color
+	CGEN_CONST,				// fixed color
+	CGEN_VERTEX_LIT,			// leilei - tess.vertexColors * tr.identityLight * ambientlight*directlight
 } colorGen_t;
 
 
@@ -66,6 +77,14 @@ typedef enum {
 	ACFF_MODULATE_ALPHA
 } acff_t;
 
+    // leilei - texture atlases
+typedef struct {
+	float width;			// columns
+	float height;			// rows
+	float fps;			// frames per second
+	int frame;			// offset frame
+	float mode;			// 0 - static/anim  1 - entityalpha
+} atlas_t;
 
 typedef struct {
 	texMod_t		type;
@@ -84,7 +103,8 @@ typedef struct {
 	// used for TMOD_SCROLL
 	float			scroll[2];			// s' = s + scroll[0] * time
 										// t' = t + scroll[1] * time
-
+	// leilei - used for TMOD_ATLAS
+	atlas_t			atlas;
 	// + = clockwise
 	// - = counterclockwise
 	float			rotateSpeed;
