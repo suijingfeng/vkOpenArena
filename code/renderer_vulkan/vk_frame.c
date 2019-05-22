@@ -361,7 +361,10 @@ void vk_createRenderPass(VkDevice device, VkFormat colorFormat,
 	subpassDesc.pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
     // The remaining field describe the attachments used by the subpass.
     // Each subpass can have a number of input attachments, which are
-    // attachments from which it can read data.
+    // attachments from which you can read in your fragment shaders.
+    // The primary difference between an input attachment and a normal
+    // texture bound into a descriptor set is that when you read from
+    // an input attachment, you read from current fragment.
 	subpassDesc.inputAttachmentCount = 0;
 	subpassDesc.pInputAttachments = NULL;
     // Color attachments, which are attachments to which its outputs are
