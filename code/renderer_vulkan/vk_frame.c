@@ -107,13 +107,28 @@ static void vk_createRenderFinishedFence(VkFence* const pFence)
     VK_CHECK( qvkCreateFence(vk.device, &fence_desc, NULL, pFence) );
 }
 
-static void vk_createSyncSemaphores(VkSemaphore * pImgAvailable, VkSemaphore * pRenderFinished)
+
+/* 
+ * Semaphores represent flags that can be atomically set or reset
+ * by the hardware, the views of which are coherent across queues
+ * when you are setting the semaphone, the device will wait for it
+ * to be unset, set it, and then return control to the caller.
+ * Likewise, when reseting the semaphone, the device will waits for
+ * the semaphone to be set, resets it, and then return control to
+ * the caller.
+ * Semaphones cannot be be explicitly signaled and waited on by
+ * the device. Rather, they are signaled and waited on by the
+ * queue operations such as vkQueueSubmit(). You use these objects
+ * to synchronization access to resources across queues and form
+ * an integral part of submission of work to the device.
+ * We need one semaphone to signal that an image has been acquired
+   and is ready for rendering; and another one to signal that 
+   rendering has finished and presentation can happen.
+*/
+static void vk_createSyncSemaphores(VkSemaphore * const pImgAvailable,
+        VkSemaphore * const pRenderFinished)
 {
     ri.Printf(PRINT_ALL, " Create Semaphores: sema_imageAvailable, sema_renderFinished. \n");
-
-    // We need one semaphone to signal that an image has been acquired
-    // and is ready for rendering; and another one to signal that 
-    // rendering has finished and presentation can happen.
 
     // Semaphores represent flags that can be automically set or
     // reset by the hardware, the views of which are coherent across
@@ -893,8 +908,6 @@ void vk_end_frame(void)
 	VkSubmitInfo submit_info;
 	submit_info.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
 	submit_info.pNext = NULL;
-	submit_info.waitSemaphoreCount = 1;
-	submit_info.pWaitSemaphores = &sema_imageAvailable;
 	submit_info.pWaitDstStageMask = &wait_dst_stage_mask;
 	submit_info.commandBufferCount = 1;
 	submit_info.pCommandBuffers = &vk.command_buffer;
@@ -902,7 +915,15 @@ void vk_end_frame(void)
     // specify which semaphones to signal once the command buffers
     // have finished execution
 	submit_info.pSignalSemaphores = &sema_renderFinished;
-
+	
+    // Before executing the commands in pCommandBuffers, the queue
+    // will wait for all of the semaphores in pWaitSemaphores. In
+    // doing so, it will take ownership of the semaphores. It will
+    // then execute the commands contained in each of the command
+    // buffers, and when it is done, it will signal each of the
+    // the semaphores contained in pSignalSemaphores.
+    submit_info.waitSemaphoreCount = 1;
+	submit_info.pWaitSemaphores = &sema_imageAvailable;
 
     //  queue is the queue that the command buffers will be submitted to.
     //  1 is the number of elements in the pSubmits array.

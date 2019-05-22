@@ -88,7 +88,8 @@ uint32_t find_memory_type(uint32_t memory_type_bits, VkMemoryPropertyFlags prope
 }
 
 
-void vk_createBufferResource(uint32_t Size, VkBufferUsageFlags Usage, VkBuffer* pBuf, VkDeviceMemory* pDevMem)
+void vk_createBufferResource(uint32_t Size, VkBufferUsageFlags Usage, 
+        VkBuffer * const pBuf, VkDeviceMemory * const pDevMem )
 {
     memset(&StagBuf, 0, sizeof(StagBuf));
 
@@ -151,24 +152,22 @@ void vk_createBufferResource(uint32_t Size, VkBufferUsageFlags Usage, VkBuffer* 
 }
 
 
-static void vk_destroy_staging_buffer(void)
+void vk_destroyBufferResource(VkBuffer hBuf, VkDeviceMemory hDevMem)
 {
-    ri.Printf(PRINT_ALL, " Destroy staging buffer. \n");
-
-    if (StagBuf.buff != VK_NULL_HANDLE)
+    if (hDevMem != VK_NULL_HANDLE)
     {
-        NO_CHECK( qvkDestroyBuffer(vk.device, StagBuf.buff, NULL) );
-        StagBuf.buff = VK_NULL_HANDLE;
-    }
-    
-    if (StagBuf.mappableMem != VK_NULL_HANDLE)
-    {
-        NO_CHECK( qvkFreeMemory(vk.device, StagBuf.mappableMem, NULL) );
-		StagBuf.mappableMem = VK_NULL_HANDLE;
+        NO_CHECK( qvkFreeMemory(vk.device, hDevMem, NULL) );
+		hDevMem = VK_NULL_HANDLE;
     }
 
-    memset(&StagBuf, 0, sizeof(StagBuf));
+    if (hBuf != VK_NULL_HANDLE)
+    {
+        NO_CHECK( qvkDestroyBuffer(vk.device, hBuf, NULL) );
+        hBuf = VK_NULL_HANDLE;
+    }
 }
+
+
 
 
 static void record_image_layout_transition( 
@@ -1403,7 +1402,11 @@ void vk_destroyImageRes(void)
 
     memset(&devMemImg, 0, sizeof(devMemImg));
 
-    vk_destroy_staging_buffer();
+    ri.Printf(PRINT_ALL, " Destroy staging buffer res: StagBuf.buff, StagBuf.mappableMem.\n");
+    vk_destroyBufferResource(StagBuf.buff, StagBuf.mappableMem);
+    memset(&StagBuf, 0, sizeof(StagBuf));
+
+    
     // Destroying a pool object implicitly frees all objects allocated from that pool. 
     // Specifically, destroying VkCommandPool frees all VkCommandBuffer objects that 
     // were allocated from it, and destroying VkDescriptorPool frees all 

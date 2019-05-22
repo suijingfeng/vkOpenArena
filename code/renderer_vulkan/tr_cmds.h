@@ -65,6 +65,24 @@ typedef enum {
     RC_VIDEOFRAME
 } renderCommand_t;
 
+typedef struct {
+	int commandId;
+	int x;
+	int y;
+	int width;
+	int height;
+	char *fileName;
+	qboolean jpeg;
+} screenshotCommand_t;
+
+typedef struct {
+	int				commandId;
+	int				width;
+	int				height;
+	unsigned char*  captureBuffer;
+	unsigned char*  encodeBuffer;
+	VkBool32        motionJpeg;
+} videoFrameCommand_t;
 /*
 =============================================================
 
@@ -80,5 +98,6 @@ void RB_ExecuteRenderCommands( const void *data );
 void R_IssueRenderCommands( qboolean runPerformanceCounters );
 
 void R_AddDrawSurfCmd( struct drawSurf_s *drawSurfs, int numDrawSurfs );
+// void R_TakeScreenshotCmd( int x, int y, int width, int height, char *name, qboolean jpeg );
 
 #endif

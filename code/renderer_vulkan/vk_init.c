@@ -7,6 +7,7 @@
 #include "vk_shaders.h"
 #include "vk_descriptor_sets.h"
 #include "vk_swapchain.h"
+#include "vk_screenshot.h"
 #include "ref_import.h" 
 
 
@@ -72,6 +73,8 @@ void vk_initialize(void)
 	//
 	vk_createVertexBuffer();
     vk_createIndexBuffer();
+    vk_createScreenShotBuffer(vk.renderArea.extent.width * vk.renderArea.extent.height * 8);
+
 	//
 	// Shader modules.
 	//
@@ -110,6 +113,8 @@ void vk_shutdown(void)
     vk_destroyFrameBuffers();
 
     vk_destroy_shading_data();
+
+    vk_destroyScreenShotBuffer();
 
     vk_destroy_sync_primitives();
 

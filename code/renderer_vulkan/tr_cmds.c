@@ -147,6 +147,51 @@ void RE_StretchPic ( float x, float y, float w, float h,
 }
 
 
+void R_TakeScreenshotCmd( int x, int y, int width, int height, char *name, qboolean jpeg )
+{
+	static char	fileName[MAX_OSPATH] = {0}; // bad things if two screenshots per frame?
+	
+    screenshotCommand_t	*cmd = (screenshotCommand_t*) R_GetCommandBuffer(sizeof(*cmd));
+	if ( !cmd ) {
+		return;
+	}
+	cmd->commandId = RC_SCREENSHOT;
+
+	cmd->x = x;
+	cmd->y = y;
+	cmd->width = width;
+	cmd->height = height;
+	
+    //Q_strncpyz( fileName, name, sizeof(fileName) );
+
+    strncpy(fileName, name, sizeof(fileName));
+
+	cmd->fileName = fileName;
+	cmd->jpeg = jpeg;
+}
+
+
+void RE_TakeVideoFrame( int width, int height, 
+        unsigned char *captureBuffer, unsigned char *encodeBuffer, qboolean motionJpeg )
+{
+	if( !tr.registered ) {
+		return;
+	}
+
+	videoFrameCommand_t	* cmd = R_GetCommandBuffer( sizeof( *cmd ) );
+	if( !cmd ) {
+		return;
+	}
+
+	cmd->commandId = RC_VIDEOFRAME;
+
+	cmd->width = width;
+	cmd->height = height;
+	cmd->captureBuffer = captureBuffer;
+	cmd->encodeBuffer = encodeBuffer;
+	cmd->motionJpeg = motionJpeg;
+}
+
 void RE_BeginFrame( void )
 {
 
@@ -429,7 +474,7 @@ void R_IssueRenderCommands( qboolean runPerformanceCounters )
             {
                 const videoFrameCommand_t * const cmd = data;
 
-                RB_TakeVideoFrameCmd( cmd );
+                RB_TakeVideoFrame( cmd->width, cmd->height, cmd->encodeBuffer, cmd->motionJpeg );
 
                 data += sizeof(videoFrameCommand_t);
             } break;

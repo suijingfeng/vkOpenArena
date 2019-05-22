@@ -473,9 +473,9 @@ void vk_destroy_shading_data(void)
     ri.Printf(PRINT_ALL, " Free device memory: vertex_buffer_memory index_buffer_memory. \n");
 
     NO_CHECK( qvkUnmapMemory(vk.device, shadingDat.vertex_buffer_memory) );
-	NO_CHECK( qvkFreeMemory(vk.device, shadingDat.vertex_buffer_memory, NULL) );
-
     NO_CHECK( qvkUnmapMemory(vk.device, shadingDat.index_buffer_memory) );
+	
+    NO_CHECK( qvkFreeMemory(vk.device, shadingDat.vertex_buffer_memory, NULL) );
 	NO_CHECK( qvkFreeMemory(vk.device, shadingDat.index_buffer_memory, NULL) );
 
     NO_CHECK( qvkDestroyBuffer(vk.device, shadingDat.vertex_buffer, NULL) );
