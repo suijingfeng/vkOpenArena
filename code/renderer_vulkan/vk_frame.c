@@ -59,21 +59,6 @@ VkSemaphore sema_renderFinished;
 VkFence fence_renderFinished;
 
 /*
-   Use of a presentable image must occur only after the image is
-   returned by vkAcquireNextImageKHR, and before it is presented by
-   vkQueuePresentKHR. This includes transitioning the image layout
-   and rendering commands.
-
-
-   The presentation engine is an abstraction for the platform¡¯s compositor
-   or display engine. The presentation engine controls the order in which
-   presentable images are acquired for use by the application.
-
-   This allows the platform to handle situations which require out-of-order
-   return of images after presentation. At the same time, it allows the 
-   application to generate command buffers referencing all of the images in
-   the swapchain at initialization time, rather than in its main loop.
-
    Host access to fence must be externally synchronized.
 
    When a fence is submitted to a queue as part of a queue submission command, 
@@ -279,10 +264,15 @@ void vk_createRenderPass(VkDevice device, VkFormat colorFormat,
     // with an image.
 
     ri.Printf(PRINT_ALL, " Create RenderPass. \n");
+
+    // Each VkAttachmentDescription structures define the attachments
+    // associated with the renderpass. Each of these structures defines
+    // a single image that is to be used as an input, output, or both
+    // within one of more of the subpass in the renderpass.
 	VkAttachmentDescription attachmentsArray[2];
 	attachmentsArray[0].flags = 0;
     // The format of the color attachment should match the format
-    // of the swap chain images. 
+    // of the images used as attachment. 
 	attachmentsArray[0].format = colorFormat;
     // indicate the number of samples in the image, for multisampling
 	attachmentsArray[0].samples = VK_SAMPLE_COUNT_1_BIT;
@@ -337,6 +327,14 @@ void vk_createRenderPass(VkDevice device, VkFormat colorFormat,
     // a uniform value, which is specified when a render pass instance is begun    
 	attachmentsArray[1].stencilLoadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
 	attachmentsArray[1].stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
+
+    
+    // You can use barriers to explicitly move images from layout to layout
+    // but where possible, its best to try to move images from layout to
+    // layout inside renderpass. This gives Vulkan the best opportunity
+    // to choose the right layout for each part fo the renderpass and even
+    // perform any operations required to move images between layouts in
+    // parallel with other rendering.
 	attachmentsArray[1].initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
 	attachmentsArray[1].finalLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
 
@@ -344,6 +342,7 @@ void vk_createRenderPass(VkDevice device, VkFormat colorFormat,
     // Each attachment reference is a simple structure containing an
     // index into the array of attachments in attachment and the image
     // layout that the attachment is expected to be in at this subpass.
+
 	VkAttachmentReference color_attachment_ref;
 	color_attachment_ref.attachment = 0;
 	color_attachment_ref.layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
@@ -353,7 +352,10 @@ void vk_createRenderPass(VkDevice device, VkFormat colorFormat,
 	depth_attachment_ref.layout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
 
 
-
+    // Each subpass references a number of attachments from the array
+    // passed in pAttachments as inputs or outputs. Those descriptions
+    // are specified in an array of VkSubpassDescription structures,
+    // one for each subpass in the renderpass.
 	VkSubpassDescription subpassDesc;
 	subpassDesc.flags = 0;
 	subpassDesc.pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
@@ -415,13 +417,14 @@ void vk_createRenderPass(VkDevice device, VkFormat colorFormat,
 	desc.pDependencies = NULL;
 
 	VK_CHECK( qvkCreateRenderPass(device, &desc, NULL, pRenderPassObj) );
+}
 
-    // You can use barriers to explicitly move images from layout to layout
-    // but where possible, its best to try to move images from layout to
-    // layout inside renderpass. This gives Vulkan the best opportunity
-    // to choose the right layout for each part fo the renderpass and even
-    // perform any operations required to move images between layouts in
-    // parallel with other rendering.
+
+void vk_destroyRenderPass(VkRenderPass hRenderPassObj)
+{
+    ri.Printf(PRINT_ALL, " Destroy vk.render_pass.\n");
+
+    NO_CHECK( qvkDestroyRenderPass(vk.device, hRenderPassObj, NULL) );
 }
 
 
@@ -642,14 +645,6 @@ void vk_destroyDepthAttachment(void)
 }
 
 
-void vk_destroyRenderPass(void)
-{
-    ri.Printf(PRINT_ALL, " Destroy vk.render_pass.\n");
-
-    NO_CHECK( qvkDestroyRenderPass(vk.device, vk.render_pass, NULL) );
-}
-
-
 
 void vk_createFrameBuffers(uint32_t w, uint32_t h, VkRenderPass h_rpass,
         uint32_t fbCount, VkFramebuffer* const pFrameBuffers ) 
@@ -682,11 +677,7 @@ void vk_createFrameBuffers(uint32_t w, uint32_t h, VkRenderPass h_rpass,
     // The attachments specified during render pass creation are bound
     // by wrapping them into a VkFramebuffer object. A framebuffer object
     // references all of the VkImageView objects that represent the attachments
-    // The image that we have to use as attachment depends on which image
-    // the the swap chain returns when we retrieve one for presentation
-    // this means that we have to create a framebuffer for all of the images
-    // in the swap chain and use the one that corresponds to the retrieved
-    // image at draw time.
+    
 
 
     // Render passes operate in conjunction with framebuffers. 
@@ -697,6 +688,12 @@ void vk_createFrameBuffers(uint32_t w, uint32_t h, VkRenderPass h_rpass,
     for (i = 0; i < fbCount; ++i)
     {
         // set color and depth attachment
+        // The image that we have to use as attachment depends on which image
+        // the the swap chain returns when we retrieve one for presentation
+        // this means that we have to create a framebuffer for all of the images
+        // in the swap chain and use the one that corresponds to the retrieved
+        // image at draw time.
+
         VkImageView attachmentsArray[2] = {
             vk.color_image_views[i], vk.depth_image_view };
         
@@ -743,18 +740,19 @@ void vk_createFrameBuffers(uint32_t w, uint32_t h, VkRenderPass h_rpass,
 }
 
 
-void vk_destroyFrameBuffers(void)
+void vk_destroyFrameBuffers(VkFramebuffer* const pFrameBuffers )
 {
-    // we should delete the framebuffers before the image views
-    // and the render pass that they are based on.
     ri.Printf(PRINT_ALL, " Destroy vk.framebuffers.\n");
- 
+//  Destroying a framebuffer object does not affect any of the images attached
+//  to the framebuffer. Images can be attached to multiple framebuffers
+//  at the same time and can be used with multiple ways at the same time
     uint32_t i;
 	for (i = 0; i < vk.swapchain_image_count; ++i)
     {
-		NO_CHECK( qvkDestroyFramebuffer(vk.device, vk.framebuffers[i], NULL) );
+		NO_CHECK( qvkDestroyFramebuffer(vk.device, pFrameBuffers[i], NULL) );
     }
 }
+
 
 // Applications have control over which layout each image subresource uses,
 // and can transition an image subresource from one layout to another. 
@@ -808,7 +806,7 @@ static void vk_insertLoadingVertexBarrier(VkCommandBuffer HCmdBuffer)
         VK_PIPELINE_STAGE_VERTEX_INPUT_BIT, 0, 0, NULL, 1, &barrier2, 0, NULL) );
 }
 
-
+/*
 static void vk_beginCmdBuffer(VkCommandBuffer HCmdBuffer)
 {
     // begin_info is an instance of the VkCommandBufferBeginInfo structure,
@@ -827,6 +825,7 @@ static void vk_beginCmdBuffer(VkCommandBuffer HCmdBuffer)
     // To begin recording a command buffer
     VK_CHECK( qvkBeginCommandBuffer(HCmdBuffer, &begin_info) );
 }
+*/
 
 // =====================================
 
@@ -842,11 +841,14 @@ void vk_begin_frame(void)
     //  resources and track them together. To wait for one or more fences
     //  to enter the signaled state on the host, call qvkWaitForFences.
 
-    //  If the condition is satisfied when vkWaitForFences is called,
-    //  then vkWaitForFences returns immediately. If the condition is 
-    //  not satisfied at the time vkWaitForFences is called, then 
-    //  vkWaitForFences will block and  wait up to timeout nanoseconds
-    //  for the condition to become satisfied.
+
+    //  fence_renderFinished is an optional handle to a fence to be 
+    //  signaled once all submitted command buffers have completed 
+    //  execution. If the condition is satisfied when vkWaitForFences
+    //  is called, then vkWaitForFences returns immediately. If the
+    //  condition is not satisfied at the time vkWaitForFences is 
+    //  called, then vkWaitForFences will block and wait up to timeout
+    //  nanoseconds for the condition to become satisfied.
 
     VK_CHECK( qvkWaitForFences(vk.device, 1, &fence_renderFinished, VK_FALSE, 1e9) );
 
@@ -857,7 +859,7 @@ void vk_begin_frame(void)
 
 
 
-    vk_beginCmdBuffer(vk.command_buffer);
+    vk_beginRecordCmds(vk.command_buffer);
     //  commandBuffer must not be in the recording or pending state.
     vk_insertLoadingVertexBarrier(vk.command_buffer);
 
@@ -867,13 +869,27 @@ void vk_begin_frame(void)
     // ronization primitive to ensure that the presentation engine
     // has finished reading from the image. vkAcquireNextImageKHR
     // will block until an image is acquired or an error occurs.
+    //
+    // Use of a presentable image must occur only after the image is
+    // returned by vkAcquireNextImageKHR, and before it is presented
+    // by vkQueuePresentKHR. This includes transitioning the image
+    // layout and rendering commands.
+    
+    // The presentation engine is an abstraction for the platform's
+    // compositor or display engine. The presentation engine controls
+    // the order in which presentable images are acquired for use by
+    // the application. This allows the platform to handle situations
+    // which require out-of-order return of images after presentation.
+    // At the same time, it allows the application to generate command
+    // buffers referencing all of the images in the swapchain at 
+    // initialization time, rather than in its main loop.
 
     // An application must wait until either the semaphore or fence
     // is signaled before accessing the image's data.
+    // If timeout is UINT64_MAX, the timeout period is treated as infinite
     VK_CHECK( qvkAcquireNextImageKHR(vk.device, vk.swapchain, UINT64_MAX,
                 sema_imageAvailable, VK_NULL_HANDLE, &vk.idx_swapchain_image) );
 
-    // If timeout is UINT64_MAX, the timeout period is treated as infinite
     //
     // Begin render pass.
     //
@@ -929,18 +945,9 @@ void vk_end_frame(void)
     //  1 is the number of elements in the pSubmits array.
     //  pSubmits is a pointer to an array of VkSubmitInfo structures,
     //  each specifying a command buffer submission batch.
-    //
-    //  fence_renderFinished is an optional handle to a fence to be signaled 
-    //  once all submitted command buffers have completed execution. 
-    //  If fence is not VK_NULL_HANDLE, it defines a fence signal operation.
-    //
-    //  Submission can be a high overhead operation, and applications should 
-    //  attempt to batch work together into as few calls to vkQueueSubmit as possible.
-    //
+
     //  vkQueueSubmit is a queue submission command, with each batch defined
     //  by an element of pSubmits as an instance of the VkSubmitInfo structure.
-    //  Batches begin execution in the order they appear in pSubmits, but may
-    //  complete out of order.
     //
     //  Fence and semaphore operations submitted with vkQueueSubmit 
     //  have additional ordering constraints compared to other 
@@ -962,11 +969,14 @@ void vk_end_frame(void)
     //  it instead moves back to the invalid state.
 
 
-    //  To submit command buffers to a queue 
     // Generally, commands executed inside command buffers submitted
-    // to a queue produce the images that are to be presented. so 
-    // those images should be shown to the  only user only when
-    // the rendering operations that created them have complated.
+    // to a queue produce the images that are to be presented. 
+    // So those images should be shown to the user only when the 
+    // rendering operations that created them have complated.
+    // Submission can be a high overhead operation, and applications 
+    // should attempt to batch work together into as few calls to 
+    // vkQueueSubmit as possible.
+
     VK_CHECK( qvkQueueSubmit(vk.queue, 1, &submit_info, fence_renderFinished) );
 
     
@@ -978,16 +988,13 @@ void vk_end_frame(void)
 
     // specify the swap chains to present images to
 	present_info.swapchainCount = 1;
+    // Each element of pSwapchains member of pPresentInfo must be a 
+    // swapchain that is created for a surface for which presentation
+    // is supported from queue.
 	present_info.pSwapchains = &vk.swapchain;
     // specify the index of the image for each swap chain
 	present_info.pImageIndices = &vk.idx_swapchain_image;
 	present_info.pResults = NULL;
-
-    // Each element of pSwapchains member of pPresentInfo must be a 
-    // swapchain that is created for a surface for which presentation
-    // is supported from queue as determined using a call to 
-    // vkGetPhysicalDeviceSurfaceSupportKHR
-
     
     // After queueing all rendering commands and transitioning the
     // image to the correct layout, to queue an image for presentation.
@@ -997,7 +1004,6 @@ void vk_end_frame(void)
     if(result == VK_SUCCESS)
     {
         // ri.Printf(PRINT_ALL, "frame time: %ld us \n", R_GetTimeMicroSeconds() - t_frame_start);
-
         return;
     }
     else if( (result == VK_ERROR_OUT_OF_DATE_KHR) || (result == VK_ERROR_SURFACE_LOST_KHR))

@@ -104,13 +104,16 @@ void vk_shutdown(void)
     ri.Printf( PRINT_ALL, "vk_shutdown()\n" );
 
     NO_CHECK( qvkDeviceWaitIdle(vk.device) );
+    
+    // we should delete the framebuffers before the image views
+    // and the render pass that they are based on.
+    vk_destroyFrameBuffers( vk.framebuffers );
 
-    vk_destroyRenderPass();
+    vk_destroyRenderPass( vk.render_pass );
     vk_destroyDepthAttachment();
     vk_destroyColorAttachment();
     vk_destroySwapChain();
     
-    vk_destroyFrameBuffers();
 
     vk_destroy_shading_data();
 
