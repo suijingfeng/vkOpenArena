@@ -2,7 +2,7 @@
 #define INPUT_H_
 
 // input system
-void IN_Init(void* con, unsigned int win);
+void IN_Init(void* pWin);
 void IN_Frame(void);
 void IN_Shutdown(void);
 void IN_Restart(void);

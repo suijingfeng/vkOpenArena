@@ -545,7 +545,6 @@ image_t* R_CreateImage( const char *name, unsigned char* pic, const uint32_t wid
 
 
     // convert to exact power of 2 sizes
-    // GetScaledDimension(width, height, &pImage->uploadWidth, &pImage->uploadHeight, allowPicmip);
   
     const unsigned int max_texture_size = 2048;
     
@@ -807,7 +806,7 @@ shader_t* tr_cinematicShader;
 void RE_UploadCinematic (int w, int h, int cols, int rows, const unsigned char *data, int client, VkBool32 dirty)
 {
 
-    image_t* prtImage = tr_scratchImage[client];
+    image_t* const prtImage = tr_scratchImage[client];
     
     // if the scratchImage isn't in the format we want, specify it as a new texture
     if ( (cols != prtImage->uploadWidth) || (rows != prtImage->uploadHeight) )
@@ -1090,60 +1089,23 @@ static void R_CreateFogImage( void )
 
 
 
-image_t* R_CreateImageForCinematic( const char *name, unsigned char* pic, const uint32_t width, const uint32_t height,
-						VkBool32 isMipMap, VkBool32 allowPicmip, int glWrapClampMode)
+image_t* R_CreateImageForCinematic( const char *name, unsigned char* pic, const uint32_t width, const uint32_t height)
 {
-    if (strlen(name) >= MAX_QPATH ) {
-        ri.Error (ERR_DROP, "CreateImage: \"%s\" is too long\n", name);
-    }
-
 
     // ri.Printf( PRINT_ALL, " Create Image: %s\n", name);
     
-    // Create image_t object.
-
     image_t* pImage = (image_t*) ri.Hunk_Alloc( sizeof( image_t ), h_low );
 
     strncpy (pImage->imgName, name, sizeof(pImage->imgName));
     pImage->index = tr.numImages;
-    pImage->mipmap = isMipMap;
-    pImage->mipLevels = 1;
-    pImage->allowPicmip = allowPicmip;
-    pImage->wrapClampMode = glWrapClampMode;
+    pImage->mipmap = 0; 
+    pImage->mipLevels = 1; 
+    pImage->allowPicmip = 1; //
+    pImage->wrapClampMode = GL_CLAMP; //
     pImage->width = width;
     pImage->height = height;
-    pImage->isLightmap = (strncmp(name, "*lightmap", 9) == 0);
-    // Create corresponding GPU resource, lightmaps are always allocated on TMU 1 .
-    // A texture mapping unit (TMU) is a component in modern graphics processing units (GPUs). 
-    // Historically it was a separate physical processor. A TMU is able to rotate, resize, 
-    // and distort a bitmap image (performing texture sampling), to be placed onto an arbitrary
-    // plane of a given 3D model as a texture. This process is called texture mapping. 
-    // In modern graphics cards it is implemented as a discrete stage in a graphics pipeline, 
-    // whereas when first introduced it was implemented as a separate processor, 
-    // e.g. as seen on the Voodoo2 graphics card. 
-    //
-    // The TMU came about due to the compute demands of sampling and transforming a flat
-    // image (as the texture map) to the correct angle and perspective it would need to
-    // be in 3D space. The compute operation is a large matrix multiply, 
-    // which CPUs of the time (early Pentiums) could not cope with at acceptable performance.
-    //
-    // Today (2013), TMUs are part of the shader pipeline and decoupled from the
-    // Render Output Pipelines (ROPs). For example, in AMD's Cypress GPU, 
-    // each shader pipeline (of which there are 20) has four TMUs, giving the GPU 80 TMUs.
-    // This is done by chip designers to closely couple shaders and the texture engines
-    // they will be working with. 
-    //
-    // 3D scenes are generally composed of two things: 3D geometry, and the textures 
-    // that cover that geometry. Texture units in a video card take a texture and 'map' it
-    // to a piece of geometry. That is, they wrap the texture around the geometry and 
-    // produce textured pixels which can then be written to the screen. 
-    //
-    // Textures can be an actual image, a lightmap, or even normal maps for advanced 
-    // surface lighting effects. 
+    pImage->isLightmap = 0; //
 
-
-    // convert to exact power of 2 sizes
-    // GetScaledDimension(width, height, &pImage->uploadWidth, &pImage->uploadHeight, allowPicmip);
   
     const unsigned int max_texture_size = 2048;
     
@@ -1154,18 +1116,11 @@ image_t* R_CreateImageForCinematic( const char *name, unsigned char* pic, const 
     
     for (scaled_height = max_texture_size; scaled_height > height; scaled_height>>=1)
         ;
-
-
-    if ( allowPicmip )
-    {
-        scaled_width >>= r_picmip->integer;
-        scaled_height >>= r_picmip->integer;
-    }
-
+    
     pImage->uploadWidth = scaled_width;
     pImage->uploadHeight = scaled_height;
     
-    uint32_t buffer_size = 4 * pImage->uploadWidth * pImage->uploadHeight;
+    uint32_t buffer_size = 4 * scaled_width * scaled_height;
     unsigned char * const pUploadBuffer = (unsigned char*) malloc ( 2 * buffer_size);
 
     if ((scaled_width != width) || (scaled_height != height) )
@@ -1194,7 +1149,7 @@ image_t* R_CreateImageForCinematic( const char *name, unsigned char* pic, const 
     // The set of all bytes bound to each destination region must not overlap
     // the set of all bytes bound to another destination region.
 
-    VkBufferImageCopy regions[12];
+    VkBufferImageCopy regions[1];
 
     regions[0].bufferOffset = 0;
     regions[0].bufferRowLength = 0;
@@ -1210,84 +1165,6 @@ image_t* R_CreateImageForCinematic( const char *name, unsigned char* pic, const 
     regions[0].imageExtent.height = pImage->uploadHeight;
     regions[0].imageExtent.depth = 1;
 
-    if(isMipMap)
-    {
-        uint32_t curMipMapLevel = 1; 
-        uint32_t base_width = pImage->uploadWidth;
-        uint32_t base_height = pImage->uploadHeight;
-
-        unsigned char* in_ptr = pUploadBuffer;
-        unsigned char* dst_ptr = in_ptr + buffer_size;
-
-        R_LightScaleTexture(pUploadBuffer, pUploadBuffer, buffer_size);
-
-        // Use the normal mip-mapping to go down from [scaled_width, scaled_height] to [1,1] dimensions.
-
-        while (1)
-        {
-
-            if ( r_simpleMipMaps->integer )
-            {
-                R_MipMap(in_ptr, base_width, base_height, dst_ptr);
-            }
-            else
-            {
-                R_MipMap2(in_ptr, base_width, base_height, dst_ptr);
-            }
-
-
-            if ((base_width == 1) && (base_height == 1))
-                break;
-
-            base_width >>= 1;
-            if (base_width == 0) 
-                base_width = 1;
-
-            base_height >>= 1;
-            if (base_height == 0)
-                base_height = 1;
-
-            regions[curMipMapLevel].bufferOffset = buffer_size;
-            regions[curMipMapLevel].bufferRowLength = 0;
-            regions[curMipMapLevel].bufferImageHeight = 0;
-            regions[curMipMapLevel].imageSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-            regions[curMipMapLevel].imageSubresource.mipLevel = curMipMapLevel;
-            regions[curMipMapLevel].imageSubresource.baseArrayLayer = 0;
-            regions[curMipMapLevel].imageSubresource.layerCount = 1;
-            regions[curMipMapLevel].imageOffset.x = 0;
-            regions[curMipMapLevel].imageOffset.y = 0;
-            regions[curMipMapLevel].imageOffset.z = 0;
-
-            regions[curMipMapLevel].imageExtent.width = base_width;
-            regions[curMipMapLevel].imageExtent.height = base_height;
-            regions[curMipMapLevel].imageExtent.depth = 1;
-            
-
-            uint32_t curLevelSize = base_width * base_height * 4;
-
-            buffer_size += curLevelSize;
-            
-            // Regions must not extend outside the bounds of the buffer or image level,
-            // except that regions of compressed images can extend as far as the
-            // dimension of the image level rounded up to a complete compressed texel block.
-
-            assert(buffer_size <= IMAGE_CHUNK_SIZE);
-
-            if ( r_colorMipLevels->integer ) {
-                R_BlendOverTexture( in_ptr, base_width * base_height, curMipMapLevel );
-            }
-
-
-            ++curMipMapLevel;
-
-            in_ptr = dst_ptr;
-            dst_ptr += curLevelSize; 
-        }
-        pImage->mipLevels = curMipMapLevel; 
-        // ri.Printf( PRINT_WARNING, "curMipMapLevel: %d, base_width: %d, base_height: %d, buffer_size: %d, name: %s\n",
-        //    curMipMapLevel, scaled_width, scaled_height, buffer_size, name);
-    }
-
     
     vk_create2DImageHandle( VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT, pImage);
     
@@ -1302,6 +1179,7 @@ image_t* R_CreateImageForCinematic( const char *name, unsigned char* pic, const 
     memcpy(data, pUploadBuffer, buffer_size);
     NO_CHECK( qvkUnmapMemory(vk.device, StagBuf.mappableMem) );
     vk_stagBufferToDeviceLocalMem(pImage->handle, regions, pImage->mipLevels);
+    
     free(pUploadBuffer);
 
 
@@ -1321,7 +1199,7 @@ static void R_CreateScratchImage(void)
     {
         // scratchimage is usually used for cinematic drawing
         tr_scratchImage[x] = R_CreateImageForCinematic("*scratch", (unsigned char *)data, 
-                DEFAULT_SIZE, DEFAULT_SIZE, qfalse, qtrue, GL_CLAMP);
+                DEFAULT_SIZE, DEFAULT_SIZE);
     }
     #undef DEFAULT_SIZE
 }

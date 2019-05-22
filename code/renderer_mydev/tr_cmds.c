@@ -344,7 +344,7 @@ RB_TakeVideoFrameCmd
 */
 const void *RB_TakeVideoFrameCmd( const void *data )
 {
-	const videoFrameCommand_t	*cmd;
+	const videoFrameCommand_t	*cmd = (const videoFrameCommand_t *)data;
 /*
 	byte				*cBuf;
 	size_t				memcount, linelen;

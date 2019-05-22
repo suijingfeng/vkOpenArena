@@ -235,7 +235,10 @@ Texture *TextureCache::find(const char *name, int flags)
 	Image image = LoadImage(name, imageFlags);
 
 	if (!image.data)
+    {
+        interface::PrintWarningf("WARNING: image %s can not be loaded.\n", name);
 		return nullptr;
+    }
 
 	return create(name, image, flags, bgfx::TextureFormat::RGBA8);
 }

@@ -167,7 +167,8 @@ triangleFromEdge[ v1 ][ v2 ]
   }
 =================
 */
-void RB_ShadowTessEnd( void ) {
+void RB_ShadowTessEnd( void )
+{
 	int		i;
 	int		numTris;
 	vec3_t	lightDir;

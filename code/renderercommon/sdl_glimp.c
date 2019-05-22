@@ -600,7 +600,7 @@ success:
 
     
 	// This depends on SDL_INIT_VIDEO, hence having it here
-	ri.IN_Init(SDL_window, 0);
+	ri.IN_Init(SDL_window);
 }
 
 
@@ -629,7 +629,7 @@ void GLimp_EndFrame( void )
 			//if( !sdlToggled )
 			//	ri.Cbuf_ExecuteText(EXEC_APPEND, "vid_restart\n");
 
-			ri.IN_Init(SDL_window, 0);
+			ri.IN_Init(SDL_window);
 		}
 
 		r_fullscreen->modified = qfalse;

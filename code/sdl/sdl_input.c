@@ -554,11 +554,11 @@ void IN_Frame(void)
 }
 
 
-void IN_Init(void* win, unsigned int notuse)
+void IN_Init(void* pWin)
 {
     Com_Printf("...IN_Init...\n");
 
-    SDL_window = (SDL_Window *) win;
+    SDL_window = (SDL_Window *) pWin;
 
 	int appState;
 
@@ -586,7 +586,7 @@ void IN_Init(void* win, unsigned int notuse)
 
 void IN_Restart( void )
 {
-   IN_Init(SDL_window, 0); 
+   IN_Init(SDL_window); 
 }
 
 

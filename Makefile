@@ -1596,7 +1596,6 @@ Q3VKOBJ = \
   $(B)/renderer_vulkan/tr_noise.o \
   $(B)/renderer_vulkan/tr_scene.o \
   $(B)/renderer_vulkan/tr_shade.o \
-  $(B)/renderer_vulkan/tr_shade_calc.o \
   \
   $(B)/renderer_vulkan/tr_shader.o \
   $(B)/renderer_vulkan/R_Parser.o \

@@ -289,7 +289,7 @@ success:
     SDL_FreeSurface( icon );
 
 	// This depends on SDL_INIT_VIDEO, hence having it here
-	ri.IN_Init(window_sdl, 0);
+	ri.IN_Init(window_sdl);
 }
 
 // I can do this ourself

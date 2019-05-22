@@ -153,14 +153,19 @@ typedef struct {
 
 	void	(*CL_WriteAVIVideoFrame)( const unsigned char *buffer, int size );
 
-	// system stuff
-	void	(*Sys_SetEnv)( const char *name, const char *value );
-	qboolean (*Sys_LowPhysicalMemory)( void );
-
 // input event handling
-	void (* IN_Init)( void* , unsigned int);
+	void (* IN_Init)( void* );
 	void (* IN_Shutdown)( void );
 	void (* IN_Restart)( void );
+	// math
+	long(*ftol)(float f);
+
+	// system stuff
+	void(*Sys_SetEnv)(const char *name, const char *value);
+	void(*Sys_GLimpSafeInit)(void);
+	void(*Sys_GLimpInit)(void);
+	qboolean(*Sys_LowPhysicalMemory)(void);
+
 
 } refimport_t;
 
