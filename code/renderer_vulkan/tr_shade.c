@@ -334,7 +334,8 @@ DeformText
 Change a polygon into a bunch of text polygons
 =============
 */
-void DeformText( const char *text ) {
+void DeformText( const char *text )
+{
 	int		i;
 	vec3_t	origin, width, height;
 	int		len;
@@ -381,7 +382,8 @@ void DeformText( const char *text ) {
 	color[0] = color[1] = color[2] = color[3] = 255;
 
 	// draw each character
-	for ( i = 0 ; i < len ; i++ ) {
+	for ( i = 0 ; i < len ; i++ )
+    {
 		ch = text[i];
 		ch &= 255;
 
@@ -480,7 +482,7 @@ static void AutospriteDeform( void ) {
       VectorScale(up, axisLength, up);
     }
 
-		RB_AddQuadStamp( mid, left, up, tess.vertexColors[i] );
+		RB_AddQuadStampExt( mid, left, up, tess.vertexColors[i], 0.0f, 0.0f, 1.0f, 1.0f );
 	}
 }
 
@@ -1421,7 +1423,7 @@ void RB_CalcSpecularAlpha( unsigned char *alphas ) {
 /*
 ** The basic vertex lighting calc
 */
-/*
+
 void RB_CalcDiffuseColor( unsigned char (*colors)[4] )
 {
 	int				i;
@@ -1541,7 +1543,7 @@ void RB_CalcDiffuseColor( unsigned char (*colors)[4] )
 	}
 }
 
-*/
+
 void RB_CalcFlatDirect( unsigned char *colors )
 {
 	int				i;
@@ -1612,7 +1614,7 @@ SURFACE SHADERS
 ** RB_CalcDiffuseColor
 **
 ** The basic vertex lighting calc
-*/
+
 static void RB_CalcDiffuseColor(unsigned char (*colors)[4])
 {
 
@@ -1665,6 +1667,7 @@ static void RB_CalcDiffuseColor(unsigned char (*colors)[4])
         }
 	}
 }
+*/
 
 // This fixed version comes from ZEQ2Lite
 //Calculates specular coefficient and places it in the alpha channel
@@ -1852,7 +1855,7 @@ void RB_ComputeColors( shaderStage_t * const pStage )
 	case AGEN_WAVEFORM:
 		RB_CalcWaveAlpha( &pStage->alphaWave, ( unsigned char * ) tess.svars.colors );
 		break;
-	case AGEN_LIGHTING_SPECULAR:
+	 case AGEN_LIGHTING_SPECULAR:
 		// RB_CalcSpecularAlpha( ( unsigned char * ) tess.svars.colors );
 		RB_CalcSpecularAlphaNew(tess.svars.colors);
 		break;

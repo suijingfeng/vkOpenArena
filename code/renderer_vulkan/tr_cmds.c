@@ -264,13 +264,13 @@ void RB_StretchPic( const stretchPicCommand_t * const cmd )
 	if ( cmd->shader != tess.shader )
     {
 		if ( tess.numIndexes ) {
-			RB_EndSurface();
+			RB_EndSurface(&tess);
 		}
 		backEnd.currentEntity = &backEnd.entity2D;
-		RB_BeginSurface(cmd->shader, 0 );
+		RB_BeginSurface(cmd->shader, 0, &tess );
 	}
 
-	RB_CHECKOVERFLOW( 4, 6 );
+	RB_CheckOverflow( 4, 6 );
 
 
 	const unsigned int n0 = tess.numVertexes;
@@ -421,7 +421,7 @@ void R_IssueRenderCommands( qboolean runPerformanceCounters )
                 // RB_DrawSurfs( cmd );
                 // finish any 2D drawing if needed
                 if ( tess.numIndexes ) {
-                    RB_EndSurface();
+                    RB_EndSurface(&tess);
                 }
 
 
@@ -447,7 +447,7 @@ void R_IssueRenderCommands( qboolean runPerformanceCounters )
             {
                 // data = RB_SwapBuffers( data );
                 // finish any 2D drawing if needed
-                RB_EndSurface();
+                RB_EndSurface(&tess);
 
                 // texture swapping test
                 if ( r_showImages->integer ) {

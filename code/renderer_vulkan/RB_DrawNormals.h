@@ -3,6 +3,6 @@
 
 struct shaderCommands_s;
 
-void RB_DrawNormals (struct shaderCommands_s* input , int numVertexes );
+void RB_DrawNormals (struct shaderCommands_s* const input);
 
 #endif

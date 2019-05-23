@@ -3,8 +3,6 @@
 
 #include "tr_shader.h"
 
-void RB_BeginSurface( shader_t *shader, int fogNum );
-void RB_EndSurface( void );
 void RB_ComputeColors( shaderStage_t * const pStage );
 void RB_ComputeTexCoords( shaderStage_t * pStage );
 void RB_SetTessFogColor(unsigned char (*pcolor)[4], 

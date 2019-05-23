@@ -16,8 +16,6 @@
 #include "tr_surface.h"
 
 
-
-
 extern void R_RenderView (viewParms_t *parms);
 
 
@@ -102,13 +100,13 @@ static void R_MirrorVector (vec3_t in, orientation_t *surface, orientation_t *ca
 
 
 
-static qboolean IsMirror( const drawSurf_t *drawSurf, int entityNum )
+static qboolean IsMirror( const drawSurf_t * const drawSurf, int entityNum )
 {
 	int			i;
 	cplane_t	originalPlane, plane;
 
 	// create plane axis for the portal we are seeing
-	R_PlaneForSurface( drawSurf->surface, &originalPlane );
+	R_PlaneForSurface( drawSurf->surType, &originalPlane );
 
 	// rotate the plane if necessary
 	if ( entityNum != REFENTITYNUM_WORLD ) 
@@ -178,7 +176,7 @@ static qboolean R_GetPortalOrientations( drawSurf_t *drawSurf, int entityNum,
 	vec3_t		transformed;
 
 	// create plane axis for the portal we are seeing
-	R_PlaneForSurface( drawSurf->surface, &originalPlane );
+	R_PlaneForSurface( drawSurf->surType, &originalPlane );
 
 	// rotate the plane if necessary
 	if ( entityNum != REFENTITYNUM_WORLD ) {
@@ -309,9 +307,10 @@ static qboolean SurfIsOffscreen( const drawSurf_t *drawSurf, vec4_t clipDest[128
 	R_RotateForViewer(&tr.viewParms, &tr.or);
 
 	R_DecomposeSort( drawSurf->sort, &entityNum, &shader, &fogNum, &dlighted );
-	RB_BeginSurface( shader, fogNum );
 	
-    rb_surfaceTable[ *drawSurf->surface ]( drawSurf->surface );
+    RB_BeginSurface( shader, fogNum, &tess );
+	
+    rb_surfaceTable[ *drawSurf->surType ]( drawSurf->surType );
 
 	assert( tess.numVertexes < 128 );
 

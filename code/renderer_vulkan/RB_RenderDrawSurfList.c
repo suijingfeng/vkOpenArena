@@ -33,10 +33,6 @@ void RB_RenderDrawSurfList(const drawSurf_t* const pDrawSurfs, int numDrawSurfs,
 	// 2D images again
 	backEnd.projection2D = qfalse;
 
-
-
-
-
   
     if ( backEnd.refdef.rd.rdflags & RDF_HYPERSPACE )
 	{
@@ -80,7 +76,7 @@ void RB_RenderDrawSurfList(const drawSurf_t* const pDrawSurfs, int numDrawSurfs,
         if ( pSurf->sort == oldSort )
         {
 			// fast path, same as previous sort
-			rb_surfaceTable[ *pSurf->surface ]( pSurf->surface );
+			rb_surfaceTable[ *pSurf->surType ]( pSurf->surType );
 			continue;
 		}
 
@@ -102,9 +98,9 @@ void RB_RenderDrawSurfList(const drawSurf_t* const pDrawSurfs, int numDrawSurfs,
              (entityNum != oldEntityNum && !shader->entityMergable) )
         {
 			if (oldShader != NULL) {
-				RB_EndSurface();
+				RB_EndSurface(&tess);
 			}
-			RB_BeginSurface( shader, fogNum );
+			RB_BeginSurface( shader, fogNum, &tess );
 			oldShader = shader;
 			oldFogNum = fogNum;
 			oldDlighted = dlighted;
@@ -154,15 +150,16 @@ void RB_RenderDrawSurfList(const drawSurf_t* const pDrawSurfs, int numDrawSurfs,
         }
 
 		// add the triangles for this surface
-		rb_surfaceTable[ *pSurf->surface ]( pSurf->surface );
+		rb_surfaceTable[ *pSurf->surType ]( pSurf->surType );
 
 	}
 
 	backEnd.refdef.floatTime = originalTime;
 
 	// draw the contents of the last shader batch
-	if (oldShader != NULL) {
-		RB_EndSurface();
+	if (oldShader != NULL)
+    {
+		RB_EndSurface(&tess);
 	}
 
 	// go back to the world modelview matrix

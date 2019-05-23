@@ -2,7 +2,6 @@
 #include "vk_shade_geometry.h"
 #include "tr_globals.h"
 #include "vk_pipelines.h"
-#include "R_ShaderCommands.h"
 
 
 /*
@@ -10,15 +9,17 @@
 Draws vertex normals for debugging
 ================
 */
-void RB_DrawNormals (shaderCommands_t* pTess, int numVertexes )
+void RB_DrawNormals (shaderCommands_t* const pTess)
 {
-	// VULKAN
-    // int numVertexes = tess.numVertexes;
+    uint32_t numVertexes = pTess->numVertexes;
+    
     vec4_t xyz[SHADER_MAX_VERTEXES];
     memcpy(xyz, pTess->xyz, numVertexes * sizeof(vec4_t));
    
     memset(pTess->svars.colors, tr.identityLightByte, SHADER_MAX_VERTEXES * 4);
 
+    // updateCurDescriptor( tr.whiteImage->descriptor_set, 0);
+    
     int i = 0;
     while (i < numVertexes)
     {

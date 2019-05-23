@@ -5,12 +5,11 @@
 #include "tr_light.h"
 #include "tr_shader.h"
 #include "tr_shade.h"
-#include "tr_shadows.h"
+
 #include "vk_shade_geometry.h"
 #include "vk_image.h"
 #include "vk_pipelines.h"
-#include "RB_DrawTris.h"
-#include "RB_DrawNormals.h"
+
 #include "ref_import.h" 
 #include "matrix_multiplication.h"
 #include "R_PortalPlane.h"
@@ -180,13 +179,13 @@ void updateCurDescriptor( VkDescriptorSet curDesSet, uint32_t tmu)
 
 void vk_shade_geometry(VkPipeline pipeline, VkBool32 multitexture, enum Vk_Depth_Range depRg, VkBool32 indexed)
 {
-	// configure vertex data stream
-	VkBuffer bufs[3] = { shadingDat.vertex_buffer, shadingDat.vertex_buffer, shadingDat.vertex_buffer };
-	VkDeviceSize offs[3] = {
-		COLOR_OFFSET + shadingDat.color_st_elements * 4, // sizeof(color4ub_t)
-		ST0_OFFSET   + shadingDat.color_st_elements * sizeof(vec2_t),
-		ST1_OFFSET   + shadingDat.color_st_elements * sizeof(vec2_t)
-	};
+    // configure vertex data stream
+    VkBuffer bufs[3] = { shadingDat.vertex_buffer, shadingDat.vertex_buffer, shadingDat.vertex_buffer };
+    VkDeviceSize offs[3] = {
+        COLOR_OFFSET + shadingDat.color_st_elements * 4, // sizeof(color4ub_t)
+        ST0_OFFSET   + shadingDat.color_st_elements * sizeof(vec2_t),
+        ST1_OFFSET   + shadingDat.color_st_elements * sizeof(vec2_t)
+    };
 
     // color, sizeof(color4ub_t)
     if ((shadingDat.color_st_elements + tess.numVertexes) * 4 > COLOR_SIZE)
@@ -200,120 +199,119 @@ void vk_shade_geometry(VkPipeline pipeline, VkBool32 multitexture, enum Vk_Depth
     unsigned char* dst_st0 = shadingDat.vertex_buffer_ptr + offs[1];
     memcpy(dst_st0, tess.svars.texcoords[0], tess.numVertexes * sizeof(vec2_t));
 
-	// st1
-	if (multitexture)
+    // st1
+    if (multitexture)
     {
-		unsigned char* dst = shadingDat.vertex_buffer_ptr + offs[2];
-		memcpy(dst, tess.svars.texcoords[1], tess.numVertexes * sizeof(vec2_t));
-	}
+        unsigned char* dst = shadingDat.vertex_buffer_ptr + offs[2];
+        memcpy(dst, tess.svars.texcoords[1], tess.numVertexes * sizeof(vec2_t));
+    }
 
-	NO_CHECK( qvkCmdBindVertexBuffers(vk.command_buffer, 1, multitexture ? 3 : 2, bufs, offs) );
-	shadingDat.color_st_elements += tess.numVertexes;
+    NO_CHECK( qvkCmdBindVertexBuffers(vk.command_buffer, 1, multitexture ? 3 : 2, bufs, offs) );
+    shadingDat.color_st_elements += tess.numVertexes;
 
-	// bind descriptor sets
+    // bind descriptor sets
 
-//    vkCmdBindDescriptorSets causes the sets numbered [firstSet.. firstSet+descriptorSetCount-1] to use
-//    the bindings stored in pDescriptorSets[0..descriptorSetCount-1] for subsequent rendering commands 
-//    (either compute or graphics, according to the pipelineBindPoint).
-//    Any bindings that were previously applied via these sets are no longer valid.
+    //    vkCmdBindDescriptorSets causes the sets numbered [firstSet.. firstSet+descriptorSetCount-1] to use
+    //    the bindings stored in pDescriptorSets[0..descriptorSetCount-1] for subsequent rendering commands 
+    //    (either compute or graphics, according to the pipelineBindPoint).
+    //    Any bindings that were previously applied via these sets are no longer valid.
 
-	NO_CHECK( qvkCmdBindDescriptorSets(vk.command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, 
-        vk.pipeline_layout, 0, (multitexture ? 2 : 1), shadingDat.curDescriptorSets, 0, NULL) );
+    NO_CHECK( qvkCmdBindDescriptorSets(vk.command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, 
+                vk.pipeline_layout, 0, (multitexture ? 2 : 1), shadingDat.curDescriptorSets, 0, NULL) );
 
     // bind pipeline
-	NO_CHECK( qvkCmdBindPipeline(vk.command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline) );
+    NO_CHECK( qvkCmdBindPipeline(vk.command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline) );
 
-	// configure pipeline's dynamic state
+    // configure pipeline's dynamic state
     VkViewport viewport;
 
-//    VkRect2D scissor = vk.renderArea; 
+    //    VkRect2D scissor = vk.renderArea; 
     //, VkRect2D* const pRect , &scissor
     //vk_setViewportScissor(backEnd.projection2D, depRg, &viewport);
 
-	if (backEnd.projection2D)
-	{
+    if (backEnd.projection2D)
+    {
         viewport.x = 0;
         viewport.y = 0;
         viewport.width = vk.renderArea.extent.width;
-		viewport.height = vk.renderArea.extent.height;
-	}
-	else
-	{
-		int X = backEnd.viewParms.viewportX;
-		int Y = backEnd.viewParms.viewportY;
-		int W = backEnd.viewParms.viewportWidth;
-		int H = backEnd.viewParms.viewportHeight;
+        viewport.height = vk.renderArea.extent.height;
+    }
+    else
+    {
+        int X = backEnd.viewParms.viewportX;
+        int Y = backEnd.viewParms.viewportY;
+        int W = backEnd.viewParms.viewportWidth;
+        int H = backEnd.viewParms.viewportHeight;
 
         //pRect->offset.x = backEnd.viewParms.viewportX;
         //pRect->offset.y = backEnd.viewParms.viewportY;
         //pRect->extent.width = backEnd.viewParms.viewportWidth;
-		//pRect->extent.height = backEnd.viewParms.viewportHeight;
+        //pRect->extent.height = backEnd.viewParms.viewportHeight;
 
         if ( X < 0)
-		    X = 0;
+            X = 0;
         if (Y < 0)
-		    Y = 0;
+            Y = 0;
         if (X + W > vk.renderArea.extent.width)
-		    W = vk.renderArea.extent.width - X;
-	    if (Y + H > vk.renderArea.extent.height)
-		    H = vk.renderArea.extent.height - Y;
+            W = vk.renderArea.extent.width - X;
+        if (Y + H > vk.renderArea.extent.height)
+            H = vk.renderArea.extent.height - Y;
 
         //pRect->offset.x = 
         viewport.x = X;
-		//pRect->offset.y = 
+        //pRect->offset.y = 
         viewport.y = Y;
-		//pRect->extent.width =
+        //pRect->extent.width =
         viewport.width = W;
-		//pRect->extent.height = 
+        //pRect->extent.height = 
         viewport.height = H;
-	}
+    }
 
     switch(depRg)
     {
         case DEPTH_RANGE_NORMAL:
-        {
-        	viewport.minDepth = 0.0f;
-		    viewport.maxDepth = 1.0f;
-        }break;
+            {
+                viewport.minDepth = 0.0f;
+                viewport.maxDepth = 1.0f;
+            }break;
 
         case DEPTH_RANGE_ZERO:
-        {
-		    viewport.minDepth = 0.0f;
-		    viewport.maxDepth = 0.0f;
-	    }break;
-        
+            {
+                viewport.minDepth = 0.0f;
+                viewport.maxDepth = 0.0f;
+            }break;
+
         case DEPTH_RANGE_ONE:
-        {
-		    viewport.minDepth = 1.0f;
-		    viewport.maxDepth = 1.0f;
-	    }break;
+            {
+                viewport.minDepth = 1.0f;
+                viewport.maxDepth = 1.0f;
+            }break;
 
         case DEPTH_RANGE_WEAPON:
-        {
-            viewport.minDepth = 0.0f;
-		    viewport.maxDepth = 0.3f;
-        }break;
+            {
+                viewport.minDepth = 0.0f;
+                viewport.maxDepth = 0.3f;
+            }break;
     }
 
     NO_CHECK( qvkCmdSetViewport(vk.command_buffer, 0, 1, &viewport) );
 
-//    qvkCmdSetScissor(vk.command_buffer, 0, 1, &scissor);
+    //    qvkCmdSetScissor(vk.command_buffer, 0, 1, &scissor);
 
+    if (tess.shader->polygonOffset) {
+        NO_CHECK( qvkCmdSetDepthBias(vk.command_buffer, r_offsetUnits->value, 0.0f, r_offsetFactor->value) );
+    }
 
-	if (tess.shader->polygonOffset) {
-		NO_CHECK( qvkCmdSetDepthBias(vk.command_buffer, r_offsetUnits->value, 0.0f, r_offsetFactor->value) );
-	}
-
-	// issue draw call
-	if (indexed)
+    // issue draw call
+    if (indexed)
     {
-		NO_CHECK( qvkCmdDrawIndexed(vk.command_buffer, tess.numIndexes, 1, 0, 0, 0) );
+        NO_CHECK( qvkCmdDrawIndexed(vk.command_buffer, tess.numIndexes, 1, 0, 0, 0) );
     }
     else
     {
-		NO_CHECK( qvkCmdDraw(vk.command_buffer, tess.numVertexes, 1, 0, 0) );
+        NO_CHECK( qvkCmdDraw(vk.command_buffer, tess.numVertexes, 1, 0, 0) );
     }
-    
+
     shadingDat.s_depth_attachment_dirty = VK_TRUE;
 }
 
@@ -321,73 +319,39 @@ void vk_shade_geometry(VkPipeline pipeline, VkBool32 multitexture, enum Vk_Depth
 
 void updateMVP(VkBool32 isPortal, VkBool32 is2D, const float mvMat4x4[16])
 {
-	if (isPortal)
+    // push constants are another way of passing dynamic values to shaders
+    if (is2D)
+    {            
+        NO_CHECK( qvkCmdPushConstants(vk.command_buffer, vk.pipeline_layout, VK_SHADER_STAGE_VERTEX_BIT, 0, 64, s_ProjectMat2d) );
+    }
+    else
     {
-        // mvp transform + eye transform + clipping plane in eye space
-        float push_constants[32] QALIGN(16);
-    
+        // 3D, mvp transform + eye transform + clipping plane in eye space
+        float push_constants[32] QALIGN(16); 
+        // update q3's proj matrix (opengl) to vulkan conventions:
+        // z - [0, 1] instead of [-1, 1] and invert y direction
         // Eye space transform.
+        uint32_t push_size = 64;
         MatrixMultiply4x4_SSE(mvMat4x4, backEnd.viewParms.projectionMatrix, push_constants);
+        // As described above in section Pipeline Layouts, the pipeline layout defines shader push constants
+        // which are updated via Vulkan commands rather than via writes to memory or copy commands.
+        // Push constants represent a high speed path to modify constant data in pipelines
+        // that is expected to outperform memory-backed resource updates.
 
-        // NOTE: backEnd.or.modelMatrix incorporates s_flipMatrix,
-        // so it should be taken into account when computing clipping plane too.
-
-		push_constants[16] = backEnd.or.modelMatrix[0];
-		push_constants[17] = backEnd.or.modelMatrix[4];
-		push_constants[18] = backEnd.or.modelMatrix[8];
-		push_constants[19] = backEnd.or.modelMatrix[12];
-
-		push_constants[20] = backEnd.or.modelMatrix[1];
-		push_constants[21] = backEnd.or.modelMatrix[5];
-		push_constants[22] = backEnd.or.modelMatrix[9];
-		push_constants[23] = backEnd.or.modelMatrix[13];
-
-		push_constants[24] = backEnd.or.modelMatrix[2];
-		push_constants[25] = backEnd.or.modelMatrix[6];
-		push_constants[26] = backEnd.or.modelMatrix[10];
-		push_constants[27] = backEnd.or.modelMatrix[14];
-	
-        // Clipping plane in eye coordinates.
-		struct rplane_s eye_plane;
-
-        R_TransformPlane(backEnd.viewParms.or.axis, backEnd.viewParms.or.origin, &eye_plane);
-        
-        // Apply s_flipMatrix to be in the same coordinate system as push_constants.
-        
-        push_constants[28] = -eye_plane.normal[1];
-		push_constants[29] =  eye_plane.normal[2];
-		push_constants[30] = -eye_plane.normal[0];
-		push_constants[31] =  eye_plane.dist;
-
+        if (isPortal)
+        {
+            push_size += 64;
+            // NOTE: backEnd.or.modelMatrix incorporates s_flipMatrix,
+            // so it should be taken into account when computing clipping plane too.
+            
+            R_SetPushConstForPortal(&push_constants[16]);
+        }
 
         // As described above in section Pipeline Layouts, the pipeline layout defines shader push constants
         // which are updated via Vulkan commands rather than via writes to memory or copy commands.
         // Push constants represent a high speed path to modify constant data in pipelines
         // that is expected to outperform memory-backed resource updates.
-	    NO_CHECK( qvkCmdPushConstants(vk.command_buffer, vk.pipeline_layout, VK_SHADER_STAGE_VERTEX_BIT, 0, 128, push_constants) );
-	}
-    else
-    {
-        // push constants are another way of passing dynamic values to shaders
-
-        if (is2D)
-        {            
-            NO_CHECK( qvkCmdPushConstants(vk.command_buffer, vk.pipeline_layout, VK_SHADER_STAGE_VERTEX_BIT, 0, 64, s_ProjectMat2d) );
-        }
-        else
-        {
-		    // Specify push constants.
-		    float mvp[16] QALIGN(16); // mvp transform + eye transform + clipping plane in eye space
-
-            // update q3's proj matrix (opengl) to vulkan conventions:
-            // z - [0, 1] instead of [-1, 1] and invert y direction
-            MatrixMultiply4x4_SSE(mvMat4x4, backEnd.viewParms.projectionMatrix, mvp);
-            // As described above in section Pipeline Layouts, the pipeline layout defines shader push constants
-            // which are updated via Vulkan commands rather than via writes to memory or copy commands.
-            // Push constants represent a high speed path to modify constant data in pipelines
-            // that is expected to outperform memory-backed resource updates.
-		    NO_CHECK( qvkCmdPushConstants(vk.command_buffer, vk.pipeline_layout, VK_SHADER_STAGE_VERTEX_BIT, 0, 64, mvp) );
-        }
+        NO_CHECK( qvkCmdPushConstants(vk.command_buffer, vk.pipeline_layout, VK_SHADER_STAGE_VERTEX_BIT, 0, push_size, push_constants) );
     }
 }
 
@@ -746,7 +710,7 @@ static void RB_FogPass( shaderCommands_t * const pTess )
 
 ///////////////////////////////////////////////////////////////////////////////////
 
-static void R_BindAnimatedImage( textureBundle_t *bundle, int tmu)
+static void R_BindAnimatedImage( textureBundle_t *bundle, int tmu, float time)
 {
 
 	if ( bundle->isVideoMap ) {
@@ -762,7 +726,7 @@ static void R_BindAnimatedImage( textureBundle_t *bundle, int tmu)
 
 	// it is necessary to do this messy calc to make sure animations line up
 	// exactly with waveforms of the same frequency
-	int index = (int)( tess.shaderTime * bundle->imageAnimationSpeed * FUNCTABLE_SIZE );
+	int index = (int)( time * bundle->imageAnimationSpeed * FUNCTABLE_SIZE );
 	index >>= FUNCTABLE_SIZE2;
 
 	if ( index < 0 ) {
@@ -804,7 +768,7 @@ void RB_StageIteratorGeneric(shaderCommands_t * const pTess)
 		RB_ComputeTexCoords( pTess->xstages[stage] );
 
         // base, set state
-		R_BindAnimatedImage( &pTess->xstages[stage]->bundle[0], 0 );
+		R_BindAnimatedImage( &pTess->xstages[stage]->bundle[0], 0, pTess->shaderTime );
 		//
 		// do multitexture
 		//
@@ -823,7 +787,7 @@ void RB_StageIteratorGeneric(shaderCommands_t * const pTess)
 
             // lightmap/secondary pass
 
-            R_BindAnimatedImage( &pTess->xstages[stage]->bundle[1], 1 );
+            R_BindAnimatedImage( &pTess->xstages[stage]->bundle[1], 1, pTess->shaderTime );
             // disable texturing on TEXTURE1, then select TEXTURE0
 		}
 
@@ -887,90 +851,4 @@ void RB_StageIteratorGeneric(shaderCommands_t * const pTess)
 	}
 }
 
-/*
-==============
-RB_BeginSurface
 
-We must set some things up before beginning any tesselation,
-because a surface may be forced to perform a RB_End due
-to overflow.
-==============
-*/
-void RB_BeginSurface( shader_t *shader, int fogNum )
-{
-	shader_t *state = (shader->remappedShader) ? shader->remappedShader : shader;
-
-	tess.numIndexes = 0;
-	tess.numVertexes = 0;
-	tess.shader = state;
-	tess.fogNum = fogNum;
-	tess.dlightBits = 0;		// will be OR'd in by surface functions
-	tess.xstages = state->stages;
-	tess.numPasses = state->numUnfoggedPasses;
-
-	tess.shaderTime = backEnd.refdef.floatTime - tess.shader->timeOffset;
-	if (tess.shader->clampTime && tess.shaderTime >= tess.shader->clampTime)
-    {
-		tess.shaderTime = tess.shader->clampTime;
-	}
-}
-
-
-
-void RB_EndSurface( void )
-{
-	shaderCommands_t * const input = &tess;
-
-	if ((input->numIndexes == 0) || (input->numVertexes == 0)) {
-		return;
-	}
-
-
-	if (input->indexes[SHADER_MAX_INDEXES-1] != 0) {
-		ri.Error (ERR_DROP, "RB_EndSurface() - SHADER_MAX_INDEXES hit");
-	}	
-	if (input->xyz[SHADER_MAX_VERTEXES-1][0] != 0) {
-		ri.Error (ERR_DROP, "RB_EndSurface() - SHADER_MAX_VERTEXES hit");
-	}
-
-	if ( input->shader == tr.shadowShader ) {
-		RB_ShadowTessEnd();
-		return;
-	}
-
-	// for debugging of sort order issues, stop rendering after a given sort value
-	if ( r_debugSort->integer && r_debugSort->integer < input->shader->sort ) {
-		return;
-	}
-
-	//
-	// update performance counters
-	//
-	backEnd.pc.c_shaders++;
-	backEnd.pc.c_vertexes += input->numVertexes;
-	backEnd.pc.c_indexes += input->numIndexes;
-	backEnd.pc.c_totalIndexes += input->numIndexes * input->numPasses;
-
-	//
-	// call off to shader specific tess end function
-	//
-	if (input->shader->isSky)
-		RB_StageIteratorSky(input);
-	else
-		RB_StageIteratorGeneric(input);
-
-	//
-	// draw debugging stuff
-	//
-	if ( r_showtris->integer )
-    {
-		RB_DrawTris (&tess, backEnd.viewParms.isMirror);
-	}
-	if ( r_shownormals->integer )
-    {
-		RB_DrawNormals (&tess, tess.numVertexes);
-	}
-	// clear shader so we can tell we don't have any unclosed surfaces
-	input->numIndexes = 0;
-	input->numVertexes = 0;
-}

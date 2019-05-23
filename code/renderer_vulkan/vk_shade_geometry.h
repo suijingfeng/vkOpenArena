@@ -37,6 +37,5 @@ void updateCurDescriptor( VkDescriptorSet curDesSet, uint32_t tmu);
 void vk_clearColorAttachments(const float* color);
 void vk_clearDepthStencilAttachments(void);
 
-
 void RB_StageIteratorGeneric( shaderCommands_t * const pTess );
 #endif

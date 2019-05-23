@@ -21,9 +21,8 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 */
 
 #include "tr_cvar.h"
-#include "vk_shade_geometry.h"
-#include "ref_import.h"
 
+#include "ref_import.h"
 #include "tr_shader.h"
 #include "tr_Cull.h"
 #include "tr_main.h"
@@ -286,7 +285,3 @@ void R_MDRAddAnimSurfaces( trRefEntity_t *ent )
 		surface = (mdrSurface_t *)( (byte *)surface + surface->ofsEnd );
 	}
 }
-
-
-
-

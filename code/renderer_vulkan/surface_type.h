@@ -21,7 +21,7 @@ typedef enum {
 
 typedef struct drawSurf_s {
 	unsigned int	sort;			// bit combination for fast compares
-	surfaceType_t * surface;		// any of surface*_t
+	surfaceType_t * surType;		// any of surface*_t
 } drawSurf_t;
 
 #endif

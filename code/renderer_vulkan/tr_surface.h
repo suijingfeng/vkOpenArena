@@ -8,7 +8,7 @@
 #define	MAX_GRID_SIZE		65			// max dimensions of a grid mesh in memory
 
 
-typedef void (* Fn_RB_SurfaceTable_t)(void *); 
+typedef void (* Fn_RB_SurfaceTable_t)( void *); 
 
 
 extern const Fn_RB_SurfaceTable_t rb_surfaceTable[SF_NUM_SURFACE_TYPES];
@@ -51,15 +51,11 @@ typedef struct srfGridMesh_s {
 #define	SIDE_ON		2
 
 
-
-void RB_CHECKOVERFLOW(uint32_t v, uint32_t i);
-
-
-void RB_BeginSurface(shader_t *shader, int fogNum );
-void RB_EndSurface(void);
-void RB_CheckOverflow( int verts, int indexes );
-void RB_AddQuadStampExt( vec3_t origin, vec3_t left, vec3_t up, byte *color, float s1, float t1, float s2, float t2 );
-void RB_AddQuadStamp( vec3_t origin, vec3_t left, vec3_t up, byte *color );
+void RB_BeginSurface( shader_t *shader, int fogNum, shaderCommands_t * const pTess);
+void RB_EndSurface( shaderCommands_t * const pTess );
+void RB_CheckOverflow( uint32_t verts, uint32_t indexes );
+void RB_AddQuadStampExt( vec3_t origin, vec3_t left, vec3_t up, uint8_t * const color,
+        float s1, float t1, float s2, float t2 );
 
 void R_AddDrawSurf( surfaceType_t *surface, shader_t *shader, int fogIndex, int dlightMap );
 

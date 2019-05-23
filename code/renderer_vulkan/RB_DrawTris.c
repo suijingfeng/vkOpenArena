@@ -11,7 +11,7 @@ Draws triangle outlines for debugging
 */
 void RB_DrawTris (shaderCommands_t * const pInput, int isMirror)
 {
-	updateCurDescriptor( tr.whiteImage->descriptor_set, 0);
+	// updateCurDescriptor( tr.whiteImage->descriptor_set, 0);
 
     memset(pInput->svars.colors, 255, pInput->numVertexes * 4 );
     VkPipeline pipeline = isMirror ? g_debugPipelines.tris_mirror : g_debugPipelines.tris;

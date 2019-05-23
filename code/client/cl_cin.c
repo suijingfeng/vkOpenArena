@@ -1671,8 +1671,8 @@ void SCR_DrawCinematic(int handle)
             }
         }
 
-        Com_Printf("DrawCinematic: cinTable[%d].dirty = 1, drawX: %ld, drawY: %ld, width: %d, height:%d, x: %f, y:%f, w:%f, h:%f. \n",
-                handle, cinTable[handle].drawX, cinTable[handle].drawY, cinTable[handle].width, cinTable[handle].height, x, y, w, h);
+        // Com_Printf("DrawCinematic: cinTable[%d].dirty = 1, drawX: %ld, drawY: %ld, width: %d, height:%d, x: %f, y:%f, w:%f, h:%f. \n",
+        //        handle, cinTable[handle].drawX, cinTable[handle].drawY, cinTable[handle].width, cinTable[handle].height, x, y, w, h);
         
         re.DrawStretchRaw( x, y, w, h, cinTable[handle].drawX, cinTable[handle].drawY, buf, handle, cinTable[handle].dirty);
         cinTable[handle].dirty = qfalse;
