@@ -97,7 +97,7 @@ void RB_ExecuteRenderCommands( const void *data );
 
 void R_IssueRenderCommands( qboolean runPerformanceCounters );
 
-void R_AddDrawSurfCmd( struct drawSurf_s *drawSurfs, int numDrawSurfs );
+void R_AddDrawSurfCmd( struct drawSurf_s * const drawSurfs, uint32_t numDrawSurfs );
 // void R_TakeScreenshotCmd( int x, int y, int width, int height, char *name, qboolean jpeg );
 
 #endif

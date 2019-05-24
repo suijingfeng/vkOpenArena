@@ -1,20 +1,22 @@
 #include "tr_globals.h" //tr.worldEn
 #include "tr_backend.h"
-#include "vk_shade_geometry.h"
 #include "tr_surface.h"
 #include "tr_light.h"
 #include "R_ShaderCommands.h"   //tess
 #include "tr_shadows.h"
 #include "R_RotateForViewer.h"
+#include "vk_shade_geometry.h"
+#include "vk_frame.h"
 
 #include "FixRenderCommandList.h"
 
-void RB_RenderDrawSurfList(const drawSurf_t* const pDrawSurfs, int numDrawSurfs, const trRefdef_t * const pRefdef, viewParms_t * pViewPar )
+void RB_RenderDrawSurfList(const drawSurf_t* const pDrawSurfs, uint32_t numDrawSurfs, 
+        const trRefdef_t * const pRefdef, const viewParms_t * const pViewPar )
 {
 
     backEnd.refdef = *pRefdef;
     backEnd.viewParms = *pViewPar;
-
+	backEnd.projection2D = qfalse;
 
 	// save original time for entity shader offsets
 	float originalTime = backEnd.refdef.floatTime;
@@ -24,22 +26,23 @@ void RB_RenderDrawSurfList(const drawSurf_t* const pDrawSurfs, int numDrawSurfs,
 	// clear the z buffer, set the modelview, etc
 	// RB_BeginDrawingView ();
     //
-	backEnd.projection2D = qtrue;
+	// backEnd.projection2D = qtrue;
     // ensures that depth writes are enabled for the depth clear
 	// VULKAN
-    vk_clearDepthStencilAttachments();
+    // vk_clearDepthStencilAttachments();
 
 	// we will need to change the projection matrix before drawing
 	// 2D images again
-	backEnd.projection2D = qfalse;
+
 
   
     if ( backEnd.refdef.rd.rdflags & RDF_HYPERSPACE )
 	{
 		//RB_Hyperspace();
         // A player has predicted a teleport, but hasn't arrived yet
+
         const float c = ( backEnd.refdef.rd.time & 255 ) / 255.0f;
-        const float color[4] = { c, c, c, 1 };
+        const float color[4] = { c, c, c, 1.0f };
 
         // so short, do we really need this?
 	    vk_clearColorAttachments(color);

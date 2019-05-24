@@ -75,15 +75,15 @@ void* R_GetCommandBuffer( int bytes )
 submits a single 'draw' command into the command queue
 =============
 */
-void R_AddDrawSurfCmd( drawSurf_t *drawSurfs, int numDrawSurfs )
+void R_AddDrawSurfCmd( drawSurf_t * const pDrawSurfs, uint32_t numDrawSurfs )
 {
-	drawSurfsCommand_t* cmd = (drawSurfsCommand_t*) R_GetCommandBuffer( sizeof(drawSurfsCommand_t) );
+	drawSurfsCommand_t* cmd = (drawSurfsCommand_t *) R_GetCommandBuffer( sizeof(drawSurfsCommand_t) );
 	if ( !cmd ) {
 		return;
 	}
 	cmd->commandId = RC_DRAW_SURFS;
 
-	cmd->drawSurfs = drawSurfs;
+	cmd->drawSurfs = pDrawSurfs;
 	cmd->numDrawSurfs = numDrawSurfs;
 
 	cmd->refdef = tr.refdef;
@@ -422,6 +422,7 @@ void R_IssueRenderCommands( qboolean runPerformanceCounters )
                 // finish any 2D drawing if needed
                 if ( tess.numIndexes ) {
                     RB_EndSurface(&tess);
+                    vk_clearDepthStencilAttachments();
                 }
 
 
@@ -435,8 +436,10 @@ void R_IssueRenderCommands( qboolean runPerformanceCounters )
                 // data = RB_DrawBuffer( data ); 
                 // const drawBufferCommand_t * const cmd = (const drawBufferCommand_t *)data;
                 // VULKAN
-                vk_begin_frame();
+
                 vk_resetGeometryBuffer();
+                
+                vk_begin_frame();
 
                 data += sizeof(drawBufferCommand_t);
 

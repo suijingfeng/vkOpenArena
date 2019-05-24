@@ -412,7 +412,8 @@ void vk_UploadXYZI(float (*pXYZ)[4], uint32_t nVertex, uint32_t* pIdx, uint32_t 
 		unsigned char* iDst = shadingDat.index_buffer_ptr + shadingDat.index_buffer_offset;
 		memcpy(iDst, pIdx, indexes_size);
 
-		NO_CHECK( qvkCmdBindIndexBuffer(vk.command_buffer, shadingDat.index_buffer, shadingDat.index_buffer_offset, VK_INDEX_TYPE_UINT32) );
+		NO_CHECK( qvkCmdBindIndexBuffer(vk.command_buffer, shadingDat.index_buffer,
+                    shadingDat.index_buffer_offset, VK_INDEX_TYPE_UINT32) );
 		
         shadingDat.index_buffer_offset += indexes_size;
 
@@ -427,7 +428,7 @@ void vk_resetGeometryBuffer(void)
 	shadingDat.xyz_elements = 0;
 	shadingDat.color_st_elements = 0;
 	shadingDat.index_buffer_offset = 0;
-    shadingDat.s_depth_attachment_dirty = VK_FALSE;
+//    shadingDat.s_depth_attachment_dirty = VK_FALSE;
 
     Mat4Identity(s_modelview_matrix);
 }
@@ -457,14 +458,13 @@ void vk_clearDepthStencilAttachments(void)
     if(shadingDat.s_depth_attachment_dirty)
     {
         VkClearAttachment attachments;
-        memset(&attachments, 0, sizeof(VkClearAttachment));
 
         attachments.aspectMask = VK_IMAGE_ASPECT_DEPTH_BIT;
         attachments.clearValue.depthStencil.depth = 1.0f;
+        attachments.clearValue.depthStencil.stencil = 0.0f;
 
         if (r_shadows->integer == 2) {
             attachments.aspectMask |= VK_IMAGE_ASPECT_STENCIL_BIT;
-            attachments.clearValue.depthStencil.stencil = 0;
         }
 
         VkClearRect clear_rect;
@@ -482,83 +482,6 @@ void vk_clearDepthStencilAttachments(void)
         shadingDat.s_depth_attachment_dirty = VK_FALSE;
     }
 }
-
-
-
-
-void vk_clearColorAttachments(const float* color)
-{
-
-    VkClearAttachment attachments[1];
-    memset(attachments, 0, sizeof(VkClearAttachment));
-    
-    // aspectMask is a mask selecting the color, depth and/or stencil aspects
-    // of the attachment to be cleared. aspectMask can include 
-    // VK_IMAGE_ASPECT_COLOR_BIT for color attachments,
-    // VK_IMAGE_ASPECT_DEPTH_BIT for depth/stencil attachments with a depth
-    // component, and VK_IMAGE_ASPECT_STENCIL_BIT for depth/stencil attachments
-    // with a stencil component. If the subpass\A1\AFs depth/stencil attachment
-    // is VK_ATTACHMENT_UNUSED, then the clear has no effect.
-
-    attachments[0].aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-    // colorAttachment is only meaningful if VK_IMAGE_ASPECT_COLOR_BIT
-    // is set in aspectMask, in which case it is an index to 
-    // the pColorAttachments array in the VkSubpassDescription structure
-    // of the current subpass which selects the color attachment to clear.
-    attachments[0].colorAttachment = 0;
-    attachments[0].clearValue.color.float32[0] = color[0];
-    attachments[0].clearValue.color.float32[1] = color[1];
-    attachments[0].clearValue.color.float32[2] = color[2];
-    attachments[0].clearValue.color.float32[3] = color[3];
-
-/* 
-	VkClearRect clear_rect[2];
-	clear_rect[0].rect = get_scissor_rect();
-	clear_rect[0].baseArrayLayer = 0;
-	clear_rect[0].layerCount = 1;
-	uint32_t rect_count = 1;
-  
-	// Split viewport rectangle into two non-overlapping rectangles.
-	// It's a HACK to prevent Vulkan validation layer's performance warning:
-	//		"vkCmdClearAttachments() issued on command buffer object XXX prior to any Draw Cmds.
-	//		 It is recommended you use RenderPass LOAD_OP_CLEAR on Attachments prior to any Draw."
-	// 
-	// NOTE: we don't use LOAD_OP_CLEAR for color attachment when we begin renderpass
-	// since at that point we don't know whether we need color buffer clear (usually we don't).
-    uint32_t h = clear_rect[0].rect.extent.height / 2;
-    clear_rect[0].rect.extent.height = h;
-    clear_rect[1] = clear_rect[0];
-    clear_rect[1].rect.offset.y = h;
-    rect_count = 2;
-*/
-
-    VkClearRect clear_rect[1];
-	clear_rect[0].rect = vk.renderArea;
-	clear_rect[0].baseArrayLayer = 0;
-	clear_rect[0].layerCount = 1;
-
-    //ri.Printf(PRINT_ALL, "(%d, %d, %d, %d)\n", 
-    //        clear_rect[0].rect.offset.x, clear_rect[0].rect.offset.y, 
-    //        clear_rect[0].rect.extent.width, clear_rect[0].rect.extent.height);
-
-
-    // CmdClearAttachments can clear multiple regions of each attachment
-    // used in the current subpass of a render pass instance. This command
-    // must be called only inside a render pass instance, and implicitly
-    // selects the images to clear based on the current framebuffer 
-    // attachments and the command parameters.
-
-	NO_CHECK( qvkCmdClearAttachments(vk.command_buffer, 1, attachments, 1, clear_rect) );
-}
-
-
-
-
-
-
-
-
-
 
 /*
 ===================

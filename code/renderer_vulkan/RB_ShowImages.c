@@ -1,9 +1,8 @@
 #include "tr_backend.h"
 #include "vk_shade_geometry.h"
 #include "vk_pipelines.h"
-#include "glConfig.h"
-#include "R_ShaderCommands.h"
 
+#include "R_ShaderCommands.h"
 
 
 /*
@@ -22,9 +21,8 @@ void RB_ShowImages(image_t ** const pImg, unsigned int N, int width, int height)
 
     backEnd.projection2D = qtrue;
 
-	const float black[4] = {0, 0, 0, 1};
-	vk_clearColorAttachments(black);
-   
+//	const float black[4] = {0, 0, 0, 1};
+//	vk_clearColorAttachments(black);
 
     const float w = width / 20;
 	const float h = height / 15;
@@ -73,9 +71,9 @@ void RB_ShowImages(image_t ** const pImg, unsigned int N, int width, int height)
         updateCurDescriptor( pImg[i]->descriptor_set, 0);
 
         vk_UploadXYZI(tess.xyz, 4, tess.indexes, 6);
-
+        // backEnd.projection2D = qtrue;
         // updateMVP(backEnd.viewParms.isPortal, backEnd.projection2D, getptr_modelview_matrix());
-        updateMVP( 0 , 1, getptr_modelview_matrix());
+        updateMVP( 0 , VK_TRUE, getptr_modelview_matrix());
 
         vk_shade_geometry(g_debugPipelines.images, VK_FALSE, DEPTH_RANGE_NORMAL, VK_TRUE);
 	}

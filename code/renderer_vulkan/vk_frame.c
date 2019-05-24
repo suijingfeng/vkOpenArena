@@ -286,7 +286,9 @@ void vk_createRenderPass(VkDevice device, VkFormat colorFormat,
     // with it. You can use this if you plan to explicitly clear the
     // attachment or if you know that you'll replace the content of
     // the attachment inside the renderpass.
-	attachmentsArray[0].loadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
+	
+    attachmentsArray[0].loadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
+    // attachmentsArray[0].loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
     // VK_ATTACHMENT_STORE_OP_STORE indicates that you want Vulkan
     // to keep the contents of the attachment for later use, which
     // usually means that it should write them out into memory.
@@ -832,6 +834,72 @@ static void vk_beginCmdBuffer(VkCommandBuffer HCmdBuffer)
 
 // =====================================
 
+void vk_clearColorAttachments(const float* color)
+{
+
+    VkClearAttachment attachments[1];
+    
+    // aspectMask is a mask selecting the color, depth and/or 
+    // stencil aspects of the attachment to be cleared. aspectMask
+    // can include VK_IMAGE_ASPECT_COLOR_BIT for color attachments,
+    // VK_IMAGE_ASPECT_DEPTH_BIT for depth/stencil attachments with
+    // a depth component, and VK_IMAGE_ASPECT_STENCIL_BIT for 
+    // depth/stencil attachments with a stencil component. 
+    // If the subpass's depth/stencil attachment is 
+    // VK_ATTACHMENT_UNUSED, then the clear has no effect.
+
+    attachments[0].aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+    // colorAttachment is only meaningful if VK_IMAGE_ASPECT_COLOR_BIT
+    // is set in aspectMask, in which case it is an index to 
+    // the pColorAttachments array in the VkSubpassDescription structure
+    // of the current subpass which selects the color attachment to clear.
+    attachments[0].colorAttachment = 0;
+    attachments[0].clearValue.color.float32[0] = color[0];
+    attachments[0].clearValue.color.float32[1] = color[1];
+    attachments[0].clearValue.color.float32[2] = color[2];
+    attachments[0].clearValue.color.float32[3] = color[3];
+
+/* 
+	VkClearRect clear_rect[2];
+	clear_rect[0].rect = get_scissor_rect();
+	clear_rect[0].baseArrayLayer = 0;
+	clear_rect[0].layerCount = 1;
+	uint32_t rect_count = 1;
+  
+	// Split viewport rectangle into two non-overlapping rectangles.
+	// It's a HACK to prevent Vulkan validation layer's performance warning:
+	//		"vkCmdClearAttachments() issued on command buffer object XXX prior to any Draw Cmds.
+	//		 It is recommended you use RenderPass LOAD_OP_CLEAR on Attachments prior to any Draw."
+	// 
+	// NOTE: we don't use LOAD_OP_CLEAR for color attachment when we begin renderpass
+	// since at that point we don't know whether we need color buffer clear (usually we don't).
+    uint32_t h = clear_rect[0].rect.extent.height / 2;
+    clear_rect[0].rect.extent.height = h;
+    clear_rect[1] = clear_rect[0];
+    clear_rect[1].rect.offset.y = h;
+    rect_count = 2;
+*/
+
+    VkClearRect clear_rect[1];
+	clear_rect[0].rect = vk.renderArea;
+	clear_rect[0].baseArrayLayer = 0;
+	clear_rect[0].layerCount = 1;
+
+    //ri.Printf(PRINT_ALL, "(%d, %d, %d, %d)\n", 
+    //        clear_rect[0].rect.offset.x, clear_rect[0].rect.offset.y, 
+    //        clear_rect[0].rect.extent.width, clear_rect[0].rect.extent.height);
+
+
+    // CmdClearAttachments can clear multiple regions of each attachment
+    // used in the current subpass of a render pass instance. This command
+    // must be called only inside a render pass instance, and implicitly
+    // selects the images to clear based on the current framebuffer 
+    // attachments and the command parameters.
+
+	NO_CHECK( qvkCmdClearAttachments(vk.command_buffer, 1, attachments, 1, clear_rect) );
+}
+
+
 void vk_begin_frame(void)
 {
     // t_frame_start = R_GetTimeMicroSeconds() ;
@@ -861,8 +929,24 @@ void vk_begin_frame(void)
     VK_CHECK( qvkResetFences(vk.device, 1, &fence_renderFinished) );
 
 
+    // begin_info is an instance of the VkCommandBufferBeginInfo structure,
+    // which defines additional information about how the command buffer 
+    // begins recording.
+    static const VkCommandBufferBeginInfo begin_info = {
+        .sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO,
+        .pNext = NULL,
+        // VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT specifies that
+        // each recording of the command buffer will only be submitted
+        // once, and the command buffer will be reset and recorded again
+        // between each submission.
+        .flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT,
+        .pInheritanceInfo = NULL,
+    };
 
-    vk_beginRecordCmds(vk.command_buffer);
+    // To begin recording a command buffer
+    VK_CHECK( qvkBeginCommandBuffer(vk.command_buffer, &begin_info) );
+
+    // vk_beginRecordCmds(vk.command_buffer);
     //  commandBuffer must not be in the recording or pending state.
     vk_insertLoadingVertexBarrier(vk.command_buffer);
 
@@ -897,6 +981,12 @@ void vk_begin_frame(void)
     // Begin render pass.
     //
     VkClearValue pClearValues[2];
+    
+    pClearValues[0].color.float32[0] = 1.0f;
+    pClearValues[0].color.float32[1] = 1.0f;
+    pClearValues[0].color.float32[2] = 1.0f;
+    pClearValues[0].color.float32[3] = 1.0f;
+    
     // ignore clear_values[0] which corresponds to color attachment
     pClearValues[1].depthStencil.depth = 1.0;
     pClearValues[1].depthStencil.stencil = 0;
@@ -908,6 +998,16 @@ void vk_begin_frame(void)
     renderPass_beginInfo.framebuffer = vk.framebuffers[vk.idx_swapchain_image];
     renderPass_beginInfo.renderArea = vk.renderArea;
     renderPass_beginInfo.clearValueCount = 2;
+    // If any of the attachments in the renderpass have a load operation
+    // of VK_ATTACHMENT_LOAD_OP_CLEAR, then the colors or values that you
+    // want to clear them to are specified in an array of VkClearValue
+    // unions. The index of each attachment is used to index into the 
+    // array of VkClearValue unions. This means that if only some of the
+    // attachments have a load operation of VK_ATTACHMENT_LOAD_OP_CLEAR,
+    // then there could be unused entries in the array. There must be at
+    // least as many entries in pClearValues array as the highest-indexed
+    // attachment with a load operation of VK_ATTACHMENT_LOAD_OP_CLEAR.
+    
     renderPass_beginInfo.pClearValues = pClearValues;
 
     NO_CHECK( qvkCmdBeginRenderPass(vk.command_buffer, &renderPass_beginInfo, VK_SUBPASS_CONTENTS_INLINE) );

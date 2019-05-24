@@ -23,3 +23,8 @@ void R_PrintBackEnd_OR_f(void)
     printMat1x3f("backEnd.or.viewOrigin", backEnd.or.viewOrigin);
     printMat4x4f("backEnd.or.modelMatrix", backEnd.or.modelMatrix);	
 }
+
+uint32_t R_GetRefRdTime(void)
+{
+    return backEnd.refdef.rd.time;
+}

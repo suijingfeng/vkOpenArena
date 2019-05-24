@@ -24,7 +24,7 @@ void vk_destroyRenderPass(VkRenderPass hRenderPassObj);
 void vk_create_sync_primitives(void);
 void vk_destroy_sync_primitives(void);
 
-
+void vk_clearColorAttachments(const float* const color);
 void vk_createDepthAttachment(int Width, int Height, VkFormat depthFmt);
 void vk_destroyDepthAttachment(void);
 
