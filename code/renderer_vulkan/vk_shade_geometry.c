@@ -624,8 +624,10 @@ static void RB_FogPass( shaderCommands_t * const pTess )
 	updateCurDescriptor( tr.fogImage->descriptor_set, 0);
 
 	// VULKAN
+    
+    // ri.Printf(PRINT_ALL, "isFog: %d. \n", pTess->shader->fogPass);
 
-    assert(pTess->shader->fogPass > 0);
+
     VkPipeline pipeline = g_globalPipelines.fog_pipelines[pTess->shader->fogPass - 1][pTess->shader->cullType][pTess->shader->polygonOffset];
     vk_shade_geometry(pipeline, VK_FALSE, VK_FALSE, DEPTH_RANGE_NORMAL, VK_TRUE);
 }
@@ -767,7 +769,7 @@ void RB_StageIteratorGeneric(shaderCommands_t * const pTess, VkBool32 is2D)
 	//
 	// now do fog
 	//
-	if ( pTess->fogNum && pTess->shader->fogPass )
+	if (0 && pTess->fogNum && pTess->shader->fogPass )
     {
 		RB_FogPass(pTess);
 	}

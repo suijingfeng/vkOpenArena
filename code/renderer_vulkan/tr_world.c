@@ -680,7 +680,7 @@ void R_GetWorldBaseName(char* checkname)
 }
 
 
-void R_GetFogArray(fog_t **ppFogs, uint32_t* pNum)
+void R_GetFogArray(fog_t * *const ppFogs, uint32_t* const pNum)
 {
     *ppFogs = tr.world->fogs;
     *pNum = tr.world->numfogs;

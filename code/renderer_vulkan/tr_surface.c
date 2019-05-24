@@ -1169,9 +1169,9 @@ void RB_EndSurface( shaderCommands_t * const input )
 	if (input->shader->isSky) {
 		RB_StageIteratorSky(input);
     }
-    else{
-	    RB_StageIteratorGeneric(input, backEnd.projection2D);
-    }
+
+	RB_StageIteratorGeneric(input, backEnd.projection2D);
+
 	//
 	// draw debugging stuff
 	//

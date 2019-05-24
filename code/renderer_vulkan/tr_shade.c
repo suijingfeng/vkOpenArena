@@ -883,6 +883,9 @@ void RB_CalcFogTexCoords( float *st )
 	fog_t* fog = NULL; // = tr.world->fogs + tess.fogNum;
     uint32_t NumFog = 0;
     R_GetFogArray(&fog, &NumFog);
+    // ugly ? yes !
+    fog += tess.fogNum;
+
 
 	// all fogging distance is based on world Z units
 	VectorSubtract( backEnd.or.origin, backEnd.viewParms.or.origin, local );
