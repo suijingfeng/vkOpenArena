@@ -422,6 +422,7 @@ void R_IssueRenderCommands( qboolean runPerformanceCounters )
                 // finish any 2D drawing if needed
                 if ( tess.numIndexes ) {
                     RB_EndSurface(&tess);
+                    // ensures that depth writes are enabled for the depth clear ???
                     vk_clearDepthStencilAttachments();
                 }
 
@@ -484,7 +485,7 @@ void R_IssueRenderCommands( qboolean runPerformanceCounters )
 
             case RC_END_OF_LIST:
                 // stop rendering on this thread
-                backEnd.pc.msec = ri.Milliseconds () - t1;
+                backEnd.pc.msec = ri.Milliseconds() - t1;
 
                 BE_Commands.used = 0;
                 return;

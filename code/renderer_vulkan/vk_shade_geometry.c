@@ -177,7 +177,8 @@ void updateCurDescriptor( VkDescriptorSet curDesSet, uint32_t tmu)
 
 
 
-void vk_shade_geometry(VkPipeline pipeline, VkBool32 multitexture, enum Vk_Depth_Range depRg, VkBool32 indexed)
+void vk_shade_geometry(VkPipeline pipeline, VkBool32 multitexture, VkBool32 is2D,
+        enum Vk_Depth_Range depRg, VkBool32 indexed)
 {
     // configure vertex data stream
     VkBuffer bufs[3] = { shadingDat.vertex_buffer, shadingDat.vertex_buffer, shadingDat.vertex_buffer };
@@ -229,7 +230,7 @@ void vk_shade_geometry(VkPipeline pipeline, VkBool32 multitexture, enum Vk_Depth
     //, VkRect2D* const pRect , &scissor
     //vk_setViewportScissor(backEnd.projection2D, depRg, &viewport);
 
-    if (backEnd.projection2D)
+    if (is2D)
     {
         viewport.x = 0;
         viewport.y = 0;
@@ -607,7 +608,7 @@ static void ProjectDlightTexture( shaderCommands_t * const pTess, uint32_t num_d
 		// VULKAN
 
 		vk_shade_geometry(g_globalPipelines.dlight_pipelines[pDlights[l].additive > 0 ? 1 : 0][pTess->shader->cullType][pTess->shader->polygonOffset],
-                VK_FALSE, DEPTH_RANGE_NORMAL, VK_TRUE);
+               backEnd.projection2D, VK_FALSE, DEPTH_RANGE_NORMAL, VK_TRUE);
 
 	}
 }
@@ -628,7 +629,7 @@ static void RB_FogPass( shaderCommands_t * const pTess )
 
     assert(pTess->shader->fogPass > 0);
     VkPipeline pipeline = g_globalPipelines.fog_pipelines[pTess->shader->fogPass - 1][pTess->shader->cullType][pTess->shader->polygonOffset];
-    vk_shade_geometry(pipeline, VK_FALSE, DEPTH_RANGE_NORMAL, VK_TRUE);
+    vk_shade_geometry(pipeline, VK_FALSE, VK_FALSE, DEPTH_RANGE_NORMAL, VK_TRUE);
 }
 
 ///////////////////////////////////////////////////////////////////////////////////
@@ -662,7 +663,7 @@ static void R_BindAnimatedImage( textureBundle_t *bundle, int tmu, float time)
 
 /////////////////////////////////////////////////////////////////////////////////
 
-void RB_StageIteratorGeneric(shaderCommands_t * const pTess)
+void RB_StageIteratorGeneric(shaderCommands_t * const pTess, VkBool32 is2D)
 {
 //	shaderCommands_t *input = &tess;
 
@@ -674,8 +675,7 @@ void RB_StageIteratorGeneric(shaderCommands_t * const pTess)
    
     vk_UploadXYZI(pTess->xyz, pTess->numVertexes, pTess->indexes, pTess->numIndexes);
 
-    updateMVP(backEnd.viewParms.isPortal, backEnd.projection2D, 
-            getptr_modelview_matrix() );
+    updateMVP(backEnd.viewParms.isPortal, is2D, getptr_modelview_matrix() );
     
 
     uint32_t stage = 0;
@@ -734,15 +734,15 @@ void RB_StageIteratorGeneric(shaderCommands_t * const pTess)
 
         if (backEnd.viewParms.isMirror)
         {
-            vk_shade_geometry(pTess->xstages[stage]->vk_mirror_pipeline, multitexture, depth_range, VK_TRUE);
+            vk_shade_geometry(pTess->xstages[stage]->vk_mirror_pipeline, multitexture, 0, depth_range, VK_TRUE);
         }
         else if (backEnd.viewParms.isPortal)
         {
-            vk_shade_geometry(pTess->xstages[stage]->vk_portal_pipeline, multitexture, depth_range, VK_TRUE);
+            vk_shade_geometry(pTess->xstages[stage]->vk_portal_pipeline, multitexture, 0, depth_range, VK_TRUE);
         }
         else
         {
-            vk_shade_geometry(pTess->xstages[stage]->vk_pipeline, multitexture, depth_range, VK_TRUE);
+            vk_shade_geometry(pTess->xstages[stage]->vk_pipeline, multitexture, is2D, depth_range, VK_TRUE);
         }
 
                 

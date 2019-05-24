@@ -27,15 +27,13 @@ void RB_RenderDrawSurfList(const drawSurf_t* const pDrawSurfs, uint32_t numDrawS
 	// RB_BeginDrawingView ();
     //
 	// backEnd.projection2D = qtrue;
-    // ensures that depth writes are enabled for the depth clear
+
 	// VULKAN
     // vk_clearDepthStencilAttachments();
 
 	// we will need to change the projection matrix before drawing
 	// 2D images again
 
-
-  
     if ( backEnd.refdef.rd.rdflags & RDF_HYPERSPACE )
 	{
 		//RB_Hyperspace();

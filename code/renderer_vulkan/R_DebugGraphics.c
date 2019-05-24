@@ -71,7 +71,7 @@ void R_DebugPolygon( int color, int numPoints, float *points )
 
     updateMVP(backEnd.viewParms.isPortal, backEnd.projection2D, getptr_modelview_matrix());
 
-    vk_shade_geometry(g_debugPipelines.surface_solid, VK_FALSE, DEPTH_RANGE_NORMAL, VK_TRUE);
+    vk_shade_geometry(g_debugPipelines.surface_solid, VK_FALSE, backEnd.projection2D, DEPTH_RANGE_NORMAL, VK_TRUE);
 
 
 	// Outline.
@@ -88,7 +88,7 @@ void R_DebugPolygon( int color, int numPoints, float *points )
     vk_UploadXYZI(tess.xyz, tess.numVertexes, tess.indexes, 0);
     
     updateMVP(backEnd.viewParms.isPortal, backEnd.projection2D, getptr_modelview_matrix());
-    vk_shade_geometry(g_debugPipelines.surface_outline, VK_FALSE, DEPTH_RANGE_ZERO, VK_FALSE);
+    vk_shade_geometry(g_debugPipelines.surface_outline, VK_FALSE, backEnd.projection2D, DEPTH_RANGE_ZERO, VK_FALSE);
 	
     tess.numVertexes = 0;
 }

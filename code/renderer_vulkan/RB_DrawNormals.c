@@ -1,4 +1,4 @@
-#include "tr_backend.h"
+// #include "tr_backend.h"
 #include "vk_shade_geometry.h"
 #include "tr_globals.h"
 #include "vk_pipelines.h"
@@ -9,7 +9,7 @@
 Draws vertex normals for debugging
 ================
 */
-void RB_DrawNormals (shaderCommands_t* const pTess)
+void RB_DrawNormals (shaderCommands_t* const pTess, VkBool32 isPortal, VkBool32 is2D)
 {
     uint32_t numVertexes = pTess->numVertexes;
     
@@ -38,8 +38,8 @@ void RB_DrawNormals (shaderCommands_t* const pTess)
 
         vk_UploadXYZI(pTess->xyz, pTess->numVertexes, NULL, 0);
         
-        updateMVP(backEnd.viewParms.isPortal, backEnd.projection2D, getptr_modelview_matrix());
-        vk_shade_geometry(g_debugPipelines.normals, VK_FALSE, DEPTH_RANGE_ZERO, VK_FALSE);
+        updateMVP(isPortal, is2D, getptr_modelview_matrix());
+        vk_shade_geometry(g_debugPipelines.normals, VK_FALSE, is2D, DEPTH_RANGE_ZERO, VK_FALSE);
 
         i += count;
     }

@@ -51,7 +51,7 @@ use the shader system.
 */
 
 
-extern void RB_StageIteratorGeneric( shaderCommands_t * const pTess );
+extern void RB_StageIteratorGeneric( shaderCommands_t * const pTess, VkBool32 is2D);
 
 void RB_CheckOverflow(uint32_t verts, uint32_t indexes)
 {
@@ -1173,18 +1173,18 @@ void RB_EndSurface( shaderCommands_t * const input )
 		RB_StageIteratorSky(input);
     }
 	else {
-		RB_StageIteratorGeneric(input);
+		RB_StageIteratorGeneric(input, backEnd.projection2D);
     }
 	//
 	// draw debugging stuff
 	//
 	if ( r_showtris->integer )
     {
-		RB_DrawTris(input, backEnd.viewParms.isMirror);
+		RB_DrawTris(input, backEnd.viewParms.isMirror, backEnd.projection2D);
 	}
 	if ( r_shownormals->integer )
     {
-		RB_DrawNormals(input);
+		RB_DrawNormals(input, backEnd.viewParms.isPortal, backEnd.projection2D);
 	}
 	// clear shader so we can tell we don't have any unclosed surfaces
 	input->numIndexes = 0;
