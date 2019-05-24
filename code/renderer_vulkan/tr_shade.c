@@ -214,14 +214,15 @@ RB_CalcDeformNormals
 Wiggle the normals for wavy environment mapping
 =========================
 */
-void RB_CalcDeformNormals( deformStage_t *ds ) {
+void RB_CalcDeformNormals( deformStage_t * const ds )
+{
 	int i;
-	float	scale;
-	float	*xyz = ( float * ) tess.xyz;
-	float	*normal = ( float * ) tess.normal;
+	float* xyz = ( float * ) tess.xyz;
+	float* normal = ( float * ) tess.normal;
 
-	for ( i = 0; i < tess.numVertexes; i++, xyz += 4, normal += 4 ) {
-		scale = 0.98f;
+	for ( i = 0; i < tess.numVertexes; i++, xyz += 4, normal += 4 )
+    {
+		float scale = 0.98f;
 		scale = R_NoiseGet4f( xyz[0] * scale, xyz[1] * scale, xyz[2] * scale,
 			tess.shaderTime * ds->deformationWave.frequency );
 		normal[ 0 ] += ds->deformationWave.amplitude * scale;
@@ -241,7 +242,8 @@ void RB_CalcDeformNormals( deformStage_t *ds ) {
 }
 
 
-void RB_CalcDeformNormalsEvenMore( deformStage_t *ds ) {
+void RB_CalcDeformNormalsEvenMore( deformStage_t * const ds )
+{
 	int i;
 	float	scale;
 	float	*xyz = ( float * ) tess.xyz;
@@ -273,7 +275,8 @@ RB_CalcBulgeVertexes
 
 ========================
 */
-void RB_CalcBulgeVertexes( deformStage_t *ds ) {
+void RB_CalcBulgeVertexes( deformStage_t * const ds )
+{
 	int i;
 	const float *st = ( const float * ) tess.texCoords[0];
 	float		*xyz = ( float * ) tess.xyz;
@@ -304,7 +307,8 @@ RB_CalcMoveVertexes
 A deformation that can move an entire surface along a wave path
 ======================
 */
-void RB_CalcMoveVertexes( deformStage_t *ds ) {
+void RB_CalcMoveVertexes( deformStage_t * const ds )
+{
 	int			i;
 	float		*xyz;
 	float		*table;
@@ -606,32 +610,32 @@ static void Autosprite2Deform( void ) {
 }
 
 
-void RB_DeformTessGeometry( shaderCommands_t * const pTess )
+void RB_DeformTessGeometry( shaderCommands_t * const pTess, const uint32_t nDeforms, deformStage_t* const pDs )
 {
-	int	i;
-
-	for ( i = 0 ; i < pTess->shader->numDeforms ; ++i )
+	uint32_t i;
+    
+	for ( i = 0; i < nDeforms; ++i )
     {
-		deformStage_t* ds = &pTess->shader->deforms[ i ];
+		//deformStage_t* ds = &pTess->shader->deforms[ i ];
 
-		switch ( ds->deformation )
+		switch ( pDs[i].deformation )
         {
         case DEFORM_NONE:
             break;
 		case DEFORM_NORMALS:
-			RB_CalcDeformNormals( ds );
+			RB_CalcDeformNormals( &pDs[i] );
 			break;
 		case DEFORM_WAVE:
-			RB_CalcDeformVertexes( ds );
+			RB_CalcDeformVertexes( &pDs[i] );
 			break;
 		case DEFORM_BULGE:
-			RB_CalcBulgeVertexes( ds );
+			RB_CalcBulgeVertexes( &pDs[i] );
 			break;
 		case DEFORM_MOVE:
-			RB_CalcMoveVertexes( ds );
+			RB_CalcMoveVertexes( &pDs[i] );
 			break;
 		case DEFORM_PROJECTION_SHADOW:
-			RB_ProjectionShadowDeform();
+			RB_ProjectionShadowDeform( pTess->xyz, pTess->numVertexes );
 			break;
 		case DEFORM_AUTOSPRITE:
 			AutospriteDeform();
@@ -647,7 +651,7 @@ void RB_DeformTessGeometry( shaderCommands_t * const pTess )
 		case DEFORM_TEXT5:
 		case DEFORM_TEXT6:
 		case DEFORM_TEXT7:
-			DeformText( backEnd.refdef.rd.text[ds->deformation - DEFORM_TEXT0] );
+			DeformText( backEnd.refdef.rd.text[pDs->deformation - DEFORM_TEXT0] );
 			break;
 		}
 	}
@@ -1774,7 +1778,10 @@ void RB_ComputeColors( shaderStage_t * const pStage )
 
 			for ( i = 0; i < nVerts; ++i )
             {
-				*(int *)tess.svars.colors[i] = *(int *)pStage->constantColor;
+				tess.svars.colors[i][0] = pStage->constantColor[0];
+                tess.svars.colors[i][1] = pStage->constantColor[1];
+				tess.svars.colors[i][2] = pStage->constantColor[2];
+				tess.svars.colors[i][3] = pStage->constantColor[3];
 			}
         } break;
 		case CGEN_VERTEX:

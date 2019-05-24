@@ -422,8 +422,6 @@ void R_IssueRenderCommands( qboolean runPerformanceCounters )
                 // finish any 2D drawing if needed
                 if ( tess.numIndexes ) {
                     RB_EndSurface(&tess);
-                    // ensures that depth writes are enabled for the depth clear ???
-                    vk_clearDepthStencilAttachments();
                 }
 
 

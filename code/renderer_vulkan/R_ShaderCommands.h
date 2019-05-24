@@ -23,7 +23,7 @@ typedef struct stageVars
 typedef struct shaderCommands_s 
 {
 	unsigned int indexes[SHADER_MAX_INDEXES];
-	vec4_t		xyz[SHADER_MAX_VERTEXES];
+	float		xyz[SHADER_MAX_VERTEXES][4];
 	vec4_t		normal[SHADER_MAX_VERTEXES];
 	vec2_t		texCoords[SHADER_MAX_VERTEXES][2];
 	uint8_t     vertexColors[SHADER_MAX_VERTEXES][4];

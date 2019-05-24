@@ -12,6 +12,6 @@ SHADOWS
 
 void RB_ShadowTessEnd( void );
 void RB_ShadowFinish( void );
-void RB_ProjectionShadowDeform( void );
+void RB_ProjectionShadowDeform( float (* const xyz)[4], uint32_t nVerts );
 
 #endif

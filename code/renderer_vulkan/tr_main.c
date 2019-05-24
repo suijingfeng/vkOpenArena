@@ -170,7 +170,7 @@ void R_AddDrawSurf( surfaceType_t *surface, shader_t *shader, int fogIndex, int 
 }
 
 
-static void R_AddEntitySurfaces (viewParms_t * const pViewParam)
+static void R_AddEntitySurfaces(viewParms_t * const pViewParam)
 {
     // entities that will have procedurally generated surfaces will just
     // point at this for their sorting surface

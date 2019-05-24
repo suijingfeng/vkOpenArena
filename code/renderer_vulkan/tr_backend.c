@@ -28,3 +28,11 @@ uint32_t R_GetRefRdTime(void)
 {
     return backEnd.refdef.rd.time;
 }
+
+void R_UpdatePerformanceCounters(uint32_t nVerts, uint32_t nIdxes, uint32_t nPasses)
+{
+	++backEnd.pc.c_shaders;
+	backEnd.pc.c_vertexes += nVerts;
+	backEnd.pc.c_indexes += nIdxes;
+	backEnd.pc.c_totalIndexes += nIdxes * nPasses;
+}

@@ -305,13 +305,11 @@ RB_ProjectionShadowDeform
 
 =================
 */
-void RB_ProjectionShadowDeform( void )
+void RB_ProjectionShadowDeform( float (* const xyz)[4], uint32_t const nVert )
 {
 	vec3_t	ground;
 	vec3_t	light;
 	vec3_t	lightDir;
-
-	float* xyz = ( float * ) tess.xyz;
 
 	ground[0] = backEnd.or.axis[0][2];
 	ground[1] = backEnd.or.axis[1][2];
@@ -334,13 +332,13 @@ void RB_ProjectionShadowDeform( void )
 	light[1] = lightDir[1] * d;
 	light[2] = lightDir[2] * d;
 
-	int	i;
-	for ( i = 0; i < tess.numVertexes; i++, xyz += 4 )
+	uint32_t i;
+	for ( i = 0; i < nVert; ++i )
     {
-		float h = DotProduct( xyz, ground ) + groundDist;
+		float h = DotProduct( xyz[i], ground ) + groundDist;
 
-		xyz[0] -= light[0] * h;
-		xyz[1] -= light[1] * h;
-		xyz[2] -= light[2] * h;
+		xyz[i][0] -= light[0] * h;
+		xyz[i][1] -= light[1] * h;
+		xyz[i][2] -= light[2] * h;
 	}
 }

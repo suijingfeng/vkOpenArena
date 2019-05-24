@@ -15,6 +15,8 @@
 #include "R_PortalPlane.h"
 
 
+static float s_modelview_matrix[16] QALIGN(16);
+static float s_ProjectMat2d[16] QALIGN(16);
 
 #define VERTEX_CHUNK_SIZE   (768 * 1024)
 #define INDEX_BUFFER_SIZE   (2 * 1024 * 1024)
@@ -69,10 +71,6 @@ VkBuffer vk_getVertexBuffer(void)
     return shadingDat.vertex_buffer;
 }
 
-static float s_modelview_matrix[16] QALIGN(16);
-
-
-static float s_ProjectMat2d[16] QALIGN(16);
 
 
 void R_Set2dProjectMatrix(float width, float height)
@@ -239,15 +237,16 @@ void vk_shade_geometry(VkPipeline pipeline, VkBool32 multitexture, VkBool32 is2D
     }
     else
     {
-        int X = backEnd.viewParms.viewportX;
-        int Y = backEnd.viewParms.viewportY;
-        int W = backEnd.viewParms.viewportWidth;
-        int H = backEnd.viewParms.viewportHeight;
 
-        //pRect->offset.x = backEnd.viewParms.viewportX;
-        //pRect->offset.y = backEnd.viewParms.viewportY;
-        //pRect->extent.width = backEnd.viewParms.viewportWidth;
-        //pRect->extent.height = backEnd.viewParms.viewportHeight;
+        uint32_t X = backEnd.viewParms.viewportX;
+        uint32_t Y = backEnd.viewParms.viewportY;
+        uint32_t W = backEnd.viewParms.viewportWidth;
+        uint32_t H = backEnd.viewParms.viewportHeight;
+
+//        viewport.x = backEnd.viewParms.viewportX;
+//        viewport.y = backEnd.viewParms.viewportY;
+//        viewport.width = backEnd.viewParms.viewportWidth;
+//        viewport.height = backEnd.viewParms.viewportHeight;
 
         if ( X < 0)
             X = 0;
@@ -257,7 +256,6 @@ void vk_shade_geometry(VkPipeline pipeline, VkBool32 multitexture, VkBool32 is2D
             W = vk.renderArea.extent.width - X;
         if (Y + H > vk.renderArea.extent.height)
             H = vk.renderArea.extent.height - Y;
-
         //pRect->offset.x = 
         viewport.x = X;
         //pRect->offset.y = 
@@ -667,7 +665,7 @@ void RB_StageIteratorGeneric(shaderCommands_t * const pTess, VkBool32 is2D)
 {
 //	shaderCommands_t *input = &tess;
 
-	RB_DeformTessGeometry(pTess);
+	RB_DeformTessGeometry(pTess, pTess->shader->numDeforms, pTess->shader->deforms);
 
 	// call shader function
 	//
@@ -734,11 +732,11 @@ void RB_StageIteratorGeneric(shaderCommands_t * const pTess, VkBool32 is2D)
 
         if (backEnd.viewParms.isMirror)
         {
-            vk_shade_geometry(pTess->xstages[stage]->vk_mirror_pipeline, multitexture, 0, depth_range, VK_TRUE);
+            vk_shade_geometry(pTess->xstages[stage]->vk_mirror_pipeline, multitexture, is2D, depth_range, VK_TRUE);
         }
         else if (backEnd.viewParms.isPortal)
         {
-            vk_shade_geometry(pTess->xstages[stage]->vk_portal_pipeline, multitexture, 0, depth_range, VK_TRUE);
+            vk_shade_geometry(pTess->xstages[stage]->vk_portal_pipeline, multitexture, is2D, depth_range, VK_TRUE);
         }
         else
         {
@@ -769,7 +767,8 @@ void RB_StageIteratorGeneric(shaderCommands_t * const pTess, VkBool32 is2D)
 	//
 	// now do fog
 	//
-	if ( pTess->fogNum && pTess->shader->fogPass ) {
+	if ( pTess->fogNum && pTess->shader->fogPass )
+    {
 		RB_FogPass(pTess);
 	}
 }

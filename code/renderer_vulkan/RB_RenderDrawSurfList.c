@@ -29,7 +29,7 @@ void RB_RenderDrawSurfList(const drawSurf_t* const pDrawSurfs, uint32_t numDrawS
 	// backEnd.projection2D = qtrue;
 
 	// VULKAN
-    // vk_clearDepthStencilAttachments();
+    vk_clearDepthStencilAttachments();
 
 	// we will need to change the projection matrix before drawing
 	// 2D images again

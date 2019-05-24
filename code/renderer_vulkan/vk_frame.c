@@ -763,7 +763,7 @@ void vk_destroyFrameBuffers(VkFramebuffer* const pFrameBuffers )
 // and can transition an image subresource from one layout to another. 
 // Transitions can happen with an image memory barrier
 
-static void vk_insertLoadingVertexBarrier(VkCommandBuffer HCmdBuffer)
+void vk_insertLoadingVertexBarrier(VkCommandBuffer HCmdBuffer)
 {
     // Ensur/e visibility of geometry buffers writes.
     VkBufferMemoryBarrier barrier1;
@@ -811,26 +811,6 @@ static void vk_insertLoadingVertexBarrier(VkCommandBuffer HCmdBuffer)
         VK_PIPELINE_STAGE_VERTEX_INPUT_BIT, 0, 0, NULL, 1, &barrier2, 0, NULL) );
 }
 
-/*
-static void vk_beginCmdBuffer(VkCommandBuffer HCmdBuffer)
-{
-    // begin_info is an instance of the VkCommandBufferBeginInfo structure,
-    // which defines additional information about how the command buffer 
-    // begins recording.
-    VkCommandBufferBeginInfo begin_info;
-    begin_info.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
-    begin_info.pNext = NULL;
-    // VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT specifies that
-    // each recording of the command buffer will only be submitted
-    // once, and the command buffer will be reset and recorded again
-    // between each submission.
-    begin_info.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
-    begin_info.pInheritanceInfo = NULL;
-
-    // To begin recording a command buffer
-    VK_CHECK( qvkBeginCommandBuffer(HCmdBuffer, &begin_info) );
-}
-*/
 
 // =====================================
 

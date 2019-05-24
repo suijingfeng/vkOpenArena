@@ -74,7 +74,8 @@ void RB_CheckOverflow(uint32_t verts, uint32_t indexes)
 
 
 
-void RB_AddQuadStampExt( vec3_t origin, vec3_t left, vec3_t up, uint8_t * const color, float s1, float t1, float s2, float t2 )
+void RB_AddQuadStampExt( vec3_t origin, vec3_t left, vec3_t up, uint8_t * const color,
+        float s1, float t1, float s2, float t2 )
 {
 
 	RB_CheckOverflow( 4, 6 );
@@ -154,14 +155,15 @@ void RB_AddQuadStampExt( vec3_t origin, vec3_t left, vec3_t up, uint8_t * const 
 
 	// constant color all the way around
 	// should this be identity and let the shader specify from entity?
-    //  strict alias warnning on gcc 4.8
+    // for elimate strict alias warnning on gcc 4.8
+    /*
 	* ( unsigned int * ) &tess.vertexColors[ndx0] = 
 	* ( unsigned int * ) &tess.vertexColors[ndx1] = 
 	* ( unsigned int * ) &tess.vertexColors[ndx2] = 
     * ( unsigned int * ) &tess.vertexColors[ndx3] = 
 	* ( unsigned int * ) color;
-
-    /*
+    */
+    
     tess.vertexColors[ndx0][0] = color[0];
 	tess.vertexColors[ndx0][1] = color[1];
 	tess.vertexColors[ndx0][2] = color[2];
@@ -181,7 +183,7 @@ void RB_AddQuadStampExt( vec3_t origin, vec3_t left, vec3_t up, uint8_t * const 
 	tess.vertexColors[ndx3][1] = color[1];
 	tess.vertexColors[ndx3][2] = color[2];
 	tess.vertexColors[ndx3][3] = color[3];
-    */
+    
 
 	tess.numVertexes += 4;
 	tess.numIndexes += 6;
@@ -1049,8 +1051,6 @@ void RB_SurfaceAxis( void )
 
 /*
 ====================
-RB_SurfaceEntity
-
 Entities that have a single procedurally generated surface
 ====================
 */
@@ -1161,10 +1161,7 @@ void RB_EndSurface( shaderCommands_t * const input )
 	//
 	// update performance counters
 	//
-	backEnd.pc.c_shaders++;
-	backEnd.pc.c_vertexes += input->numVertexes;
-	backEnd.pc.c_indexes += input->numIndexes;
-	backEnd.pc.c_totalIndexes += input->numIndexes * input->numPasses;
+    R_UpdatePerformanceCounters(input->numVertexes, input->numIndexes, input->numPasses);
 
 	//
 	// call off to shader specific tess end function
@@ -1172,8 +1169,8 @@ void RB_EndSurface( shaderCommands_t * const input )
 	if (input->shader->isSky) {
 		RB_StageIteratorSky(input);
     }
-	else {
-		RB_StageIteratorGeneric(input, backEnd.projection2D);
+    else{
+	    RB_StageIteratorGeneric(input, backEnd.projection2D);
     }
 	//
 	// draw debugging stuff
