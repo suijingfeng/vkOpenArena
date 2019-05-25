@@ -38,9 +38,9 @@ struct ShadingData_t
     // via certain commands,  or by directly specifying them as parameters to 
     // certain commands. Buffers are represented by VkBuffer handles:
 	VkBuffer vertex_buffer;
-	unsigned char* vertex_buffer_ptr ; // pointer to mapped vertex buffer
+	uint8_t * vertex_buffer_ptr ; // pointer to mapped vertex buffer
 	uint32_t xyz_elements;
-	uint32_t color_st_elements;
+	uint32_t colorElemCount;
 
 	VkBuffer index_buffer;
 	unsigned char* index_buffer_ptr; // pointer to mapped index buffer
@@ -126,7 +126,8 @@ void vk_createVertexBuffer(void)
             &shadingDat.vertex_buffer_memory );
 
     void* data;
-    VK_CHECK(qvkMapMemory(vk.device, shadingDat.vertex_buffer_memory, 0, VK_WHOLE_SIZE, 0, &data));
+    VK_CHECK( qvkMapMemory(vk.device, shadingDat.vertex_buffer_memory, 
+                0, VK_WHOLE_SIZE, 0, &data) );
     shadingDat.vertex_buffer_ptr = (unsigned char*)data;
 }
 
@@ -141,7 +142,8 @@ void vk_createIndexBuffer(void)
             &shadingDat.index_buffer, &shadingDat.index_buffer_memory);
 
     void* data;
-    VK_CHECK(qvkMapMemory(vk.device, shadingDat.index_buffer_memory, 0, VK_WHOLE_SIZE, 0, &data));
+    VK_CHECK( qvkMapMemory(vk.device, shadingDat.index_buffer_memory,
+                0, VK_WHOLE_SIZE, 0, &data));
     shadingDat.index_buffer_ptr = (unsigned char*)data;
 }
 
@@ -173,59 +175,146 @@ void updateCurDescriptor( VkDescriptorSet curDesSet, uint32_t tmu)
     shadingDat.curDescriptorSets[tmu] = curDesSet;
 }
 
+// =========================================================
+// Vertex fetching is controlled via configurable state, 
+// as a logically distinct graphics pipeline stage.
+//  
+//  Vertex Attributes
+//
+//  Vertex shaders can define input variables, which receive vertex attribute data
+//  transferred from one or more VkBuffer(s) by drawing commands. Vertex shader 
+//  input variables are bound to buffers via an indirect binding where the vertex 
+//  shader associates a vertex input attribute number with each variable, vertex 
+//  input attributes are associated to vertex input bindings on a per-pipeline basis, 
+//  and vertex input bindings are associated with specific buffers on a per-draw basis
+//  via the vkCmdBindVertexBuffers command. 
+//
+//  Vertex input attribute and vertex input binding descriptions also
+//  contain format information controlling how data is extracted from
+//  buffer memory and converted to the format expected by the vertex shader.
+//
+//  There are VkPhysicalDeviceLimits::maxVertexInputAttributes number of vertex
+//  input attributes and VkPhysicalDeviceLimits::maxVertexInputBindings number of
+//  vertex input bindings (each referred to by zero-based indices), where there 
+//  are at least as many vertex input attributes as there are vertex input bindings.
+//  Applications can store multiple vertex input attributes interleaved in a single 
+//  buffer, and use a single vertex input binding to access those attributes.
+//
+//  In GLSL, vertex shaders associate input variables with a vertex input attribute
+//  number using the location layout qualifier. The component layout qualifier
+//  associates components of a vertex shader input variable with components of
+//  a vertex input attribute.
+
+void vk_UploadXYZI(float (* const pXYZ)[4], uint32_t nVertex, 
+        uint32_t * const pIdx, uint32_t nIndex)
+{
+	// xyz stream
+    const VkDeviceSize xyz_offset = XYZ_OFFSET + shadingDat.xyz_elements * sizeof(vec4_t);
+
+    unsigned char* const vDst = shadingDat.vertex_buffer_ptr + xyz_offset;
+
+    // 4 float in the array, with each 4 bytes.
+    memcpy(vDst, pXYZ, nVertex * 16);
+
+    NO_CHECK( qvkCmdBindVertexBuffers(vk.command_buffer, 0, 1, &shadingDat.vertex_buffer, &xyz_offset) );
+
+    shadingDat.xyz_elements += nVertex;
+
+    assert (shadingDat.xyz_elements * sizeof(vec4_t) < XYZ_SIZE);
+
+	// indexes stream
+    if(nIndex != 0)
+	{
+		const uint32_t indexes_size = nIndex * sizeof(uint32_t);        
+
+		unsigned char* const iDst = shadingDat.index_buffer_ptr + shadingDat.index_buffer_offset;
+		memcpy(iDst, pIdx, indexes_size);
+
+		NO_CHECK( qvkCmdBindIndexBuffer(vk.command_buffer, shadingDat.index_buffer,
+                    shadingDat.index_buffer_offset, VK_INDEX_TYPE_UINT32) );
+		
+        shadingDat.index_buffer_offset += indexes_size;
+
+        assert (shadingDat.index_buffer_offset < INDEX_BUFFER_SIZE);
+	}
+}
 
 
 void vk_shade_geometry(VkPipeline pipeline, VkBool32 multitexture, VkBool32 is2D,
         enum Vk_Depth_Range depRg, VkBool32 indexed)
 {
     // configure vertex data stream
-    VkBuffer bufs[3] = { shadingDat.vertex_buffer, shadingDat.vertex_buffer, shadingDat.vertex_buffer };
-    VkDeviceSize offs[3] = {
-        COLOR_OFFSET + shadingDat.color_st_elements * 4, // sizeof(color4ub_t)
-        ST0_OFFSET   + shadingDat.color_st_elements * sizeof(vec2_t),
-        ST1_OFFSET   + shadingDat.color_st_elements * sizeof(vec2_t)
+    const VkBuffer bufHandleArray[3] = { 
+      shadingDat.vertex_buffer, shadingDat.vertex_buffer, shadingDat.vertex_buffer };
+    
+
+    const VkDeviceSize offsetsArray[3] = {
+        COLOR_OFFSET + shadingDat.colorElemCount * 4, // sizeof(color4ub_t)
+        ST0_OFFSET   + shadingDat.colorElemCount * sizeof(vec2_t),
+        ST1_OFFSET   + shadingDat.colorElemCount * sizeof(vec2_t)
     };
 
-    // color, sizeof(color4ub_t)
-    if ((shadingDat.color_st_elements + tess.numVertexes) * 4 > COLOR_SIZE)
-        ri.Error(ERR_DROP, "vulkan: vertex buffer overflow (color) %d \n", 
-                (shadingDat.color_st_elements + tess.numVertexes) * 4);
 
-    unsigned char* dst_color = shadingDat.vertex_buffer_ptr + offs[0];
-    memcpy(dst_color, tess.svars.colors, tess.numVertexes * 4);
+    const uint32_t Size_Color = tess.numVertexes * 4; // 4 = sizeof(color4ub_t)
+    const uint32_t Size_ST = tess.numVertexes * sizeof(vec2_t);
+
+    shadingDat.colorElemCount += tess.numVertexes;
+    
+    if ( shadingDat.colorElemCount * 4 > COLOR_SIZE)
+    {
+        ri.Error( ERR_DROP, "vulkan: vertex buffer overflow (color) %d \n", 
+                shadingDat.colorElemCount * 4 );
+    }
+
+    memcpy(shadingDat.vertex_buffer_ptr + offsetsArray[0], 
+            tess.svars.colors, Size_Color);
+    
     // st0
-
-    unsigned char* dst_st0 = shadingDat.vertex_buffer_ptr + offs[1];
-    memcpy(dst_st0, tess.svars.texcoords[0], tess.numVertexes * sizeof(vec2_t));
-
+    memcpy( shadingDat.vertex_buffer_ptr + offsetsArray[1], 
+            tess.svars.texcoords[0], Size_ST );
+    
     // st1
     if (multitexture)
     {
-        unsigned char* dst = shadingDat.vertex_buffer_ptr + offs[2];
-        memcpy(dst, tess.svars.texcoords[1], tess.numVertexes * sizeof(vec2_t));
+        memcpy( shadingDat.vertex_buffer_ptr + offsetsArray[2],
+                tess.svars.texcoords[1], Size_ST);
     }
 
-    NO_CHECK( qvkCmdBindVertexBuffers(vk.command_buffer, 1, multitexture ? 3 : 2, bufs, offs) );
-    shadingDat.color_st_elements += tess.numVertexes;
+    // It is perfectly reasonable to bind the same buffer object with 
+    // different offsets to a command buffer, simply include the same
+    // VkBuffer handle multiple times in the pBuffers array. cache ?
+    NO_CHECK( qvkCmdBindVertexBuffers(vk.command_buffer, 1, multitexture ? 3 : 2,
+                bufHandleArray, offsetsArray) );
+    
+    // bind descriptor sets: vkCmdBindDescriptorSets causes the sets 
+    // numbered [firstSet.. firstSet+descriptorSetCount-1] to use the
+    // bindings stored in pDescriptorSets[0..descriptorSetCount-1] 
+    // for subsequent rendering commands (either compute or graphics,
+    // according to the pipelineBindPoint). Any bindings that were 
+    // previously applied via these sets are no longer valid.
+    NO_CHECK( qvkCmdBindDescriptorSets( vk.command_buffer,
+                VK_PIPELINE_BIND_POINT_GRAPHICS, 
+                vk.pipeline_layout, 0, (multitexture ? 2 : 1), 
+                shadingDat.curDescriptorSets, 0, NULL) );
 
-    // bind descriptor sets
+    // Once bound, a pipeline binding affects subsequent graphics
+    // or compute commands in the command buffer until a different
+    // pipeline is bound to the bind point. When a pipeline object
+    // is bound, any pipeline object state that is not specified 
+    // as dynamic is applied to the command buffer state
+    NO_CHECK( qvkCmdBindPipeline(vk.command_buffer, 
+                VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline) );
 
-    //    vkCmdBindDescriptorSets causes the sets numbered [firstSet.. firstSet+descriptorSetCount-1] to use
-    //    the bindings stored in pDescriptorSets[0..descriptorSetCount-1] for subsequent rendering commands 
-    //    (either compute or graphics, according to the pipelineBindPoint).
-    //    Any bindings that were previously applied via these sets are no longer valid.
-
-    NO_CHECK( qvkCmdBindDescriptorSets(vk.command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, 
-                vk.pipeline_layout, 0, (multitexture ? 2 : 1), shadingDat.curDescriptorSets, 0, NULL) );
-
-    // bind pipeline
-    NO_CHECK( qvkCmdBindPipeline(vk.command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline) );
 
     // configure pipeline's dynamic state
+    // Pipeline object state that is specified as dynamic is
+    // not applied to the command buffer state at this time. 
+    // Instead, dynamic state can be modified at any time and
+    // persists for the lifetime of the command buffer, or 
+    // until modified by another dynamic state setting command
+    // or another pipeline bind.
     VkViewport viewport;
 
-    //    VkRect2D scissor = vk.renderArea; 
-    //, VkRect2D* const pRect , &scissor
     //vk_setViewportScissor(backEnd.projection2D, depRg, &viewport);
 
     if (is2D)
@@ -247,7 +336,8 @@ void vk_shade_geometry(VkPipeline pipeline, VkBool32 multitexture, VkBool32 is2D
 //        viewport.y = backEnd.viewParms.viewportY;
 //        viewport.width = backEnd.viewParms.viewportWidth;
 //        viewport.height = backEnd.viewParms.viewportHeight;
-
+        
+        // why this could happend ???
         if ( X < 0)
             X = 0;
         if (Y < 0)
@@ -295,11 +385,39 @@ void vk_shade_geometry(VkPipeline pipeline, VkBool32 multitexture, VkBool32 is2D
 
     NO_CHECK( qvkCmdSetViewport(vk.command_buffer, 0, 1, &viewport) );
 
-    //    qvkCmdSetScissor(vk.command_buffer, 0, 1, &scissor);
+    // original dynamic, I set it when the pipeline is create. 
+    // qvkCmdSetScissor(vk.command_buffer, 0, 1, &scissor);
 
-    if (tess.shader->polygonOffset) {
-        NO_CHECK( qvkCmdSetDepthBias(vk.command_buffer, r_offsetUnits->value, 0.0f, r_offsetFactor->value) );
-    }
+    // if (tess.shader->polygonOffset)
+    // {
+    //  void vkCmdSetDepthBias( VkCommandBuffer commandBuffer, 
+    //  float depthBiasConstantFactor, 
+    //  float depthBiasClamp,
+    //  float depthBiasSlopeFactor);
+    //  
+    //  depthBiasConstantFactor is a scalar factor controlling the constant
+    //  depth value added to each fragment. depthBiasClamp is the maximum 
+    //  (or minimum) depth bias of a fragment.depthBiasSlopeFactor is a 
+    //  scalar factor applied to a fragment¡¯s slope in depth bias calculations.
+    //  depthBiasSlopeFactor, depthBiasConstantFactor, and depthBiasClamp can 
+    //  each be positive, negative, or zero.
+    //  
+    //  depthBiasSlopeFactor scales the maximum depth slope of the polygon,
+    //  and depthBiasConstantFactor scales an implementation-dependent constant
+    //  that relates to the usable resolution of the depth buffer. The resulting
+    //  values are summed to produce the depth bias value which is then clamped
+    //  to a minimum or maximum value specified by depthBiasClamp.
+    //
+    //  The minimum resolvable difference r is an implementation-dependent
+    //  parameter that depends on the depth buffer representation. It is the
+    //  smallest difference in framebuffer coordinate z values that is guaranteed
+    //  to remain distinct throughout polygon rasterization and in the depth buffer.
+    //  All pairs of fragments generated by the rasterization of two polygons
+    //  with otherwise identical vertices, but zf values that differ by r,
+    //  will have distinct depth values.
+    //  
+    //  NO_CHECK( qvkCmdSetDepthBias(vk.command_buffer, r_offsetUnits->value, 0.0f, r_offsetFactor->value) );
+    // }
 
     // issue draw call
     if (indexed)
@@ -355,79 +473,15 @@ void updateMVP(VkBool32 isPortal, VkBool32 is2D, const float mvMat4x4[16])
 }
 
 
-// =========================================================
-// Vertex fetching is controlled via configurable state, 
-// as a logically distinct graphics pipeline stage.
-//  
-//  Vertex Attributes
-//
-//  Vertex shaders can define input variables, which receive vertex attribute data
-//  transferred from one or more VkBuffer(s) by drawing commands. Vertex shader 
-//  input variables are bound to buffers via an indirect binding where the vertex 
-//  shader associates a vertex input attribute number with each variable, vertex 
-//  input attributes are associated to vertex input bindings on a per-pipeline basis, 
-//  and vertex input bindings are associated with specific buffers on a per-draw basis
-//  via the vkCmdBindVertexBuffers command. 
-//
-//  Vertex input attribute and vertex input binding descriptions also
-//  contain format information controlling how data is extracted from
-//  buffer memory and converted to the format expected by the vertex shader.
-//
-//  There are VkPhysicalDeviceLimits::maxVertexInputAttributes number of vertex
-//  input attributes and VkPhysicalDeviceLimits::maxVertexInputBindings number of
-//  vertex input bindings (each referred to by zero-based indices), where there 
-//  are at least as many vertex input attributes as there are vertex input bindings.
-//  Applications can store multiple vertex input attributes interleaved in a single 
-//  buffer, and use a single vertex input binding to access those attributes.
-//
-//  In GLSL, vertex shaders associate input variables with a vertex input attribute
-//  number using the location layout qualifier. The component layout qualifier
-//  associates components of a vertex shader input variable with components of
-//  a vertex input attribute.
-
-void vk_UploadXYZI(float (*pXYZ)[4], uint32_t nVertex, uint32_t* pIdx, uint32_t nIndex)
-{
-	// xyz stream
-	{
-        const VkDeviceSize xyz_offset = XYZ_OFFSET + shadingDat.xyz_elements * sizeof(vec4_t);
-		
-        unsigned char* const vDst = shadingDat.vertex_buffer_ptr + xyz_offset;
-
-        // 4 float in the array, with each 4 bytes.
-		memcpy(vDst, pXYZ, nVertex * 16);
-
-		NO_CHECK( qvkCmdBindVertexBuffers(vk.command_buffer, 0, 1, &shadingDat.vertex_buffer, &xyz_offset) );
-		
-        shadingDat.xyz_elements += tess.numVertexes;
-
-        assert (shadingDat.xyz_elements * sizeof(vec4_t) < XYZ_SIZE);
-	}
-
-	// indexes stream
-    if(nIndex != 0)
-	{
-		const uint32_t indexes_size = nIndex * sizeof(uint32_t);        
-
-		unsigned char* iDst = shadingDat.index_buffer_ptr + shadingDat.index_buffer_offset;
-		memcpy(iDst, pIdx, indexes_size);
-
-		NO_CHECK( qvkCmdBindIndexBuffer(vk.command_buffer, shadingDat.index_buffer,
-                    shadingDat.index_buffer_offset, VK_INDEX_TYPE_UINT32) );
-		
-        shadingDat.index_buffer_offset += indexes_size;
-
-        assert (shadingDat.index_buffer_offset < INDEX_BUFFER_SIZE);
-	}
-}
 
 
 void vk_resetGeometryBuffer(void)
 {
 	// Reset geometry buffer's current offsets.
 	shadingDat.xyz_elements = 0;
-	shadingDat.color_st_elements = 0;
+	shadingDat.colorElemCount = 0;
 	shadingDat.index_buffer_offset = 0;
-//    shadingDat.s_depth_attachment_dirty = VK_FALSE;
+    shadingDat.s_depth_attachment_dirty = VK_FALSE;
 
     Mat4Identity(s_modelview_matrix);
 }
@@ -458,13 +512,10 @@ void vk_clearDepthStencilAttachments(void)
     {
         VkClearAttachment attachments;
 
-        attachments.aspectMask = VK_IMAGE_ASPECT_DEPTH_BIT;
+        attachments.aspectMask = VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT;
         attachments.clearValue.depthStencil.depth = 1.0f;
         attachments.clearValue.depthStencil.stencil = 0.0f;
 
-        if (r_shadows->integer == 2) {
-            attachments.aspectMask |= VK_IMAGE_ASPECT_STENCIL_BIT;
-        }
 
         VkClearRect clear_rect;
         clear_rect.rect = vk.renderArea;
@@ -676,7 +727,6 @@ static void R_BindAnimatedImage( textureBundle_t *bundle, int tmu, float time)
 
 void RB_StageIteratorGeneric(shaderCommands_t * const pTess, VkBool32 is2D)
 {
-//	shaderCommands_t *input = &tess;
 
 	RB_DeformTessGeometry(pTess, pTess->shader->numDeforms, pTess->shader->deforms);
 

@@ -816,7 +816,9 @@ void vk_insertLoadingVertexBarrier(VkCommandBuffer HCmdBuffer)
 
 void vk_clearColorAttachments(const float* color)
 {
-
+    // NOTE: we don't use LOAD_OP_CLEAR for color attachment
+    // when we begin renderpass since at that point we don't
+    // know whether we need color buffer clear, usually we don't.
     VkClearAttachment attachments[1];
     
     // aspectMask is a mask selecting the color, depth and/or 
@@ -839,36 +841,11 @@ void vk_clearColorAttachments(const float* color)
     attachments[0].clearValue.color.float32[2] = color[2];
     attachments[0].clearValue.color.float32[3] = color[3];
 
-/* 
-	VkClearRect clear_rect[2];
-	clear_rect[0].rect = get_scissor_rect();
-	clear_rect[0].baseArrayLayer = 0;
-	clear_rect[0].layerCount = 1;
-	uint32_t rect_count = 1;
-  
-	// Split viewport rectangle into two non-overlapping rectangles.
-	// It's a HACK to prevent Vulkan validation layer's performance warning:
-	//		"vkCmdClearAttachments() issued on command buffer object XXX prior to any Draw Cmds.
-	//		 It is recommended you use RenderPass LOAD_OP_CLEAR on Attachments prior to any Draw."
-	// 
-	// NOTE: we don't use LOAD_OP_CLEAR for color attachment when we begin renderpass
-	// since at that point we don't know whether we need color buffer clear (usually we don't).
-    uint32_t h = clear_rect[0].rect.extent.height / 2;
-    clear_rect[0].rect.extent.height = h;
-    clear_rect[1] = clear_rect[0];
-    clear_rect[1].rect.offset.y = h;
-    rect_count = 2;
-*/
 
     VkClearRect clear_rect[1];
 	clear_rect[0].rect = vk.renderArea;
 	clear_rect[0].baseArrayLayer = 0;
 	clear_rect[0].layerCount = 1;
-
-    //ri.Printf(PRINT_ALL, "(%d, %d, %d, %d)\n", 
-    //        clear_rect[0].rect.offset.x, clear_rect[0].rect.offset.y, 
-    //        clear_rect[0].rect.extent.width, clear_rect[0].rect.extent.height);
-
 
     // CmdClearAttachments can clear multiple regions of each attachment
     // used in the current subpass of a render pass instance. This command
@@ -877,6 +854,8 @@ void vk_clearColorAttachments(const float* color)
     // attachments and the command parameters.
 
 	NO_CHECK( qvkCmdClearAttachments(vk.command_buffer, 1, attachments, 1, clear_rect) );
+
+    
 }
 
 
@@ -968,8 +947,8 @@ void vk_begin_frame(void)
     pClearValues[0].color.float32[3] = 1.0f;
     
     // ignore clear_values[0] which corresponds to color attachment
-    pClearValues[1].depthStencil.depth = 1.0;
-    pClearValues[1].depthStencil.stencil = 0;
+    pClearValues[1].depthStencil.depth = 1.0f;
+    pClearValues[1].depthStencil.stencil = 0.0f;
 
     VkRenderPassBeginInfo renderPass_beginInfo;
     renderPass_beginInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;

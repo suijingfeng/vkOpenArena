@@ -40,8 +40,8 @@ extern cvar_t	*r_gamma;
 extern cvar_t	*r_singleShader;				// make most world faces use default shader
 extern cvar_t	*r_colorMipLevels;				// development aid to see texture mip usage
 extern cvar_t	*r_picmip;						// controls picmip values
-extern cvar_t	*r_offsetFactor;
-extern cvar_t	*r_offsetUnits;
+//extern cvar_t	*r_offsetFactor;
+//extern cvar_t	*r_offsetUnits;
 
 extern cvar_t	*r_fullbright;					// avoid lightmap pass
 extern cvar_t	*r_lightmap;					// render lightmaps only

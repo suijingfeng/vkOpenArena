@@ -369,7 +369,7 @@ static float	s_skyTexCoords[SKY_SUBDIVISIONS+1][SKY_SUBDIVISIONS+1][2];
 
 
 
-static void FillCloudySkySide( const int mins[2], const int maxs[2] )
+static void FillCloudySkySide2( const int mins[2], const int maxs[2] )
 {
 	int s, t;
 	int vertexStart = tess.numVertexes;
@@ -416,9 +416,157 @@ static void FillCloudySkySide( const int mins[2], const int maxs[2] )
 	}
 }
 
-static void FillCloudBox(void)
+
+static void FillCloudySkySide( const int mins[2], const int maxs[2], qboolean addIndexes )
 {
-	for ( int i = 0; i < 5; i++ )
+	int s, t;
+	int vertexStart = tess.numVertexes;
+	int tHeight, sWidth;
+
+	tHeight = maxs[1] - mins[1] + 1;
+	sWidth = maxs[0] - mins[0] + 1;
+
+	for ( t = mins[1]+HALF_SKY_SUBDIVISIONS; t <= maxs[1]+HALF_SKY_SUBDIVISIONS; t++ )
+	{
+		for ( s = mins[0]+HALF_SKY_SUBDIVISIONS; s <= maxs[0]+HALF_SKY_SUBDIVISIONS; s++ )
+		{
+			VectorAdd( s_skyPoints[t][s], backEnd.viewParms.or.origin, tess.xyz[tess.numVertexes] );
+			tess.texCoords[tess.numVertexes][0][0] = s_skyTexCoords[t][s][0];
+			tess.texCoords[tess.numVertexes][0][1] = s_skyTexCoords[t][s][1];
+
+			tess.numVertexes++;
+
+			if ( tess.numVertexes >= SHADER_MAX_VERTEXES )
+			{
+				ri.Error( ERR_DROP, "SHADER_MAX_VERTEXES hit in FillCloudySkySide()" );
+			}
+		}
+	}
+
+	// only add indexes for one pass, otherwise it would draw multiple times for each pass
+	if ( addIndexes ) {
+		for ( t = 0; t < tHeight-1; t++ )
+		{	
+			for ( s = 0; s < sWidth-1; s++ )
+			{
+				tess.indexes[tess.numIndexes] = vertexStart + s + t * ( sWidth );
+				tess.numIndexes++;
+				tess.indexes[tess.numIndexes] = vertexStart + s + ( t + 1 ) * ( sWidth );
+				tess.numIndexes++;
+				tess.indexes[tess.numIndexes] = vertexStart + s + 1 + t * ( sWidth );
+				tess.numIndexes++;
+
+				tess.indexes[tess.numIndexes] = vertexStart + s + ( t + 1 ) * ( sWidth );
+				tess.numIndexes++;
+				tess.indexes[tess.numIndexes] = vertexStart + s + 1 + ( t + 1 ) * ( sWidth );
+				tess.numIndexes++;
+				tess.indexes[tess.numIndexes] = vertexStart + s + 1 + t * ( sWidth );
+				tess.numIndexes++;
+			}
+		}
+	}
+}
+
+static void FillCloudBox( const shader_t *shader, int stage )
+{
+	int i;
+
+	for ( i =0; i < 6; i++ )
+	{
+		int sky_mins_subd[2], sky_maxs_subd[2];
+		int s, t;
+		float MIN_T;
+
+		if ( 1 ) // FIXME? shader->sky.fullClouds )
+		{
+			MIN_T = -HALF_SKY_SUBDIVISIONS;
+
+			// still don't want to draw the bottom, even if fullClouds
+			if ( i == 5 )
+				continue;
+		}
+		else
+		{
+			switch( i )
+			{
+			case 0:
+			case 1:
+			case 2:
+			case 3:
+				MIN_T = -1;
+				break;
+			case 5:
+				// don't draw clouds beneath you
+				continue;
+			case 4:		// top
+			default:
+				MIN_T = -HALF_SKY_SUBDIVISIONS;
+				break;
+			}
+		}
+
+		sky_mins[0][i] = floor( sky_mins[0][i] * HALF_SKY_SUBDIVISIONS ) / HALF_SKY_SUBDIVISIONS;
+		sky_mins[1][i] = floor( sky_mins[1][i] * HALF_SKY_SUBDIVISIONS ) / HALF_SKY_SUBDIVISIONS;
+		sky_maxs[0][i] = ceil( sky_maxs[0][i] * HALF_SKY_SUBDIVISIONS ) / HALF_SKY_SUBDIVISIONS;
+		sky_maxs[1][i] = ceil( sky_maxs[1][i] * HALF_SKY_SUBDIVISIONS ) / HALF_SKY_SUBDIVISIONS;
+
+		if ( ( sky_mins[0][i] >= sky_maxs[0][i] ) ||
+			 ( sky_mins[1][i] >= sky_maxs[1][i] ) )
+		{
+			continue;
+		}
+
+		sky_mins_subd[0] = sky_mins[0][i] * HALF_SKY_SUBDIVISIONS;
+		sky_mins_subd[1] = sky_mins[1][i] * HALF_SKY_SUBDIVISIONS;
+		sky_maxs_subd[0] = sky_maxs[0][i] * HALF_SKY_SUBDIVISIONS;
+		sky_maxs_subd[1] = sky_maxs[1][i] * HALF_SKY_SUBDIVISIONS;
+        
+		if ( sky_mins_subd[0] < -HALF_SKY_SUBDIVISIONS ) 
+			sky_mins_subd[0] = -HALF_SKY_SUBDIVISIONS;
+		else if ( sky_mins_subd[0] > HALF_SKY_SUBDIVISIONS ) 
+			sky_mins_subd[0] = HALF_SKY_SUBDIVISIONS;
+		if ( sky_mins_subd[1] < MIN_T )
+			sky_mins_subd[1] = MIN_T;
+		else if ( sky_mins_subd[1] > HALF_SKY_SUBDIVISIONS ) 
+			sky_mins_subd[1] = HALF_SKY_SUBDIVISIONS;
+
+		if ( sky_maxs_subd[0] < -HALF_SKY_SUBDIVISIONS ) 
+			sky_maxs_subd[0] = -HALF_SKY_SUBDIVISIONS;
+		else if ( sky_maxs_subd[0] > HALF_SKY_SUBDIVISIONS ) 
+			sky_maxs_subd[0] = HALF_SKY_SUBDIVISIONS;
+		if ( sky_maxs_subd[1] < MIN_T )
+			sky_maxs_subd[1] = MIN_T;
+		else if ( sky_maxs_subd[1] > HALF_SKY_SUBDIVISIONS ) 
+			sky_maxs_subd[1] = HALF_SKY_SUBDIVISIONS;
+
+		//
+		// iterate through the subdivisions
+		//
+		for ( t = sky_mins_subd[1]+HALF_SKY_SUBDIVISIONS; t <= sky_maxs_subd[1]+HALF_SKY_SUBDIVISIONS; t++ )
+		{
+			for ( s = sky_mins_subd[0]+HALF_SKY_SUBDIVISIONS; s <= sky_maxs_subd[0]+HALF_SKY_SUBDIVISIONS; s++ )
+			{
+				MakeSkyVec( ( s - HALF_SKY_SUBDIVISIONS ) / ( float ) HALF_SKY_SUBDIVISIONS, 
+							( t - HALF_SKY_SUBDIVISIONS ) / ( float ) HALF_SKY_SUBDIVISIONS, 
+							i, 
+							NULL,
+							s_skyPoints[t][s] );
+
+				s_skyTexCoords[t][s][0] = s_cloudTexCoords[i][t][s][0];
+				s_skyTexCoords[t][s][1] = s_cloudTexCoords[i][t][s][1];
+			}
+		}
+
+		// only add indexes for first stage
+		FillCloudySkySide( sky_mins_subd, sky_maxs_subd, ( stage == 0 ) );
+	}
+}
+
+
+static void FillCloudBox2(shader_t * pSha, uint32_t x)
+{
+    uint32_t i = 0;
+	for ( i = 0; i < 5; ++i )
 	{
 		int sky_mins_subd[2], sky_maxs_subd[2];
 		int s, t;
@@ -478,26 +626,35 @@ static void FillCloudBox(void)
 		}
 
 		// only add indexes for first stage
-		FillCloudySkySide( sky_mins_subd, sky_maxs_subd);
+		FillCloudySkySide2( sky_mins_subd, sky_maxs_subd);
 	}
 }
+
+
 
 /*
 ** R_BuildCloudData
 */
-void R_BuildCloudData( shaderCommands_t *input )
+void R_BuildCloudData( shaderCommands_t * const pTess )
 {
 //	assert( shader->isSky );
-	sky_min = 1.0 / 256.0f;		// FIXME: not correct?
-	sky_max = 255.0 / 256.0f;
+	sky_min = 1.0f / 256.0f;		// FIXME: not correct?
+	sky_max = 255.0f / 256.0f;
 
 	// set up for drawing
-	tess.numIndexes = 0;
-	tess.numVertexes = 0;
+	pTess->numIndexes = 0;
+	pTess->numVertexes = 0;
 
-	if ( input->shader->sky.cloudHeight && tess.xstages[0] )
+	if ( pTess->shader->sky.cloudHeight && pTess->xstages[0] )
 	{
-        FillCloudBox();
+        // FillCloudBox();
+        uint32_t i = 0;
+        for ( i = 0; i < MAX_SHADER_STAGES; ++i )
+		{
+			if ( pTess->xstages[i] ) {
+				FillCloudBox( pTess->shader, i );
+			}
+		}
 	}
 }
 

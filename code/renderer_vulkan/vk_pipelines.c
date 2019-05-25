@@ -479,6 +479,11 @@ void vk_create_pipeline(
     rasterization_state.sType = VK_STRUCTURE_TYPE_PIPELINE_RASTERIZATION_STATE_CREATE_INFO;
     rasterization_state.pNext = NULL;
     rasterization_state.flags = 0;
+    
+    // The depthClampEnable field is used to turn depth clamping on or off.
+    // Depth clamping causes fragments that would have been clipped away
+    // by the near or far planes to instead be projected onto those planes
+    // and can be used to fill holes in geometry that would cause by clipping.
     rasterization_state.depthClampEnable = VK_FALSE;
     rasterization_state.rasterizerDiscardEnable = VK_FALSE;
     rasterization_state.polygonMode = (state_bits & GLS_POLYMODE_LINE) ? VK_POLYGON_MODE_LINE : VK_POLYGON_MODE_FILL;
@@ -500,14 +505,28 @@ void vk_create_pipeline(
 
 
     // how fragments are generated for geometry.
-    // 
     // Q3 defaults to clockwise vertex order
-    rasterization_state.frontFace = VK_FRONT_FACE_CLOCKWISE; 
-    rasterization_state.depthBiasEnable = polygon_offset ? VK_TRUE : VK_FALSE;
-    rasterization_state.depthBiasConstantFactor = 0.0f; // dynamic depth bias state
+    rasterization_state.frontFace = VK_FRONT_FACE_CLOCKWISE;
+
+    // The next four control the depth bias feature, This feature allows
+    // fragments to be offset in depth before the depth test and can be
+    // used to prevent depth fighting. That is when two primitives are
+    // rendered on top of each other or very close to it, their interpolated
+    // depth values may be the same or very close. if the primitives are
+    // exactly coplanar, then their interpolated depth values should be
+    // identical. if there any deviation, then their depth values will
+    // differ by a very small amount. As the interpolated depth values are
+    // subject to floating-point imprecision, this can resulting in depth
+    // testing producing inconsistent and implementation-dependent results.
+    // The visual artifact that results is known as depth fighting.
+    rasterization_state.depthBiasEnable = polygon_offset ? VK_TRUE : VK_FALSE; 
+    rasterization_state.depthBiasConstantFactor = -2.0f; // dynamic depth bias state
     rasterization_state.depthBiasClamp = 0.0f; // dynamic depth bias state
-    rasterization_state.depthBiasSlopeFactor = 0.0f; // dynamic depth bias state
+    rasterization_state.depthBiasSlopeFactor = -1.0f; // dynamic depth bias state
+    // r_offsetUnits->value, 0.0f, r_offsetFactor->value
+
     rasterization_state.lineWidth = 1.0f;
+
 
     VkPipelineMultisampleStateCreateInfo multisample_state;
     multisample_state.sType = VK_STRUCTURE_TYPE_PIPELINE_MULTISAMPLE_STATE_CREATE_INFO;
@@ -534,67 +553,65 @@ void vk_create_pipeline(
     switch (shadow_phase) 
     {
         case SHADOWS_RENDERING_DISABLED:
-            {
-                depth_stencil_state.stencilTestEnable = VK_FALSE;
-                memset(&depth_stencil_state.front, 0, sizeof(depth_stencil_state.front));
-                memset(&depth_stencil_state.back, 0, sizeof(depth_stencil_state.back));
-            }break;
+        {
+            depth_stencil_state.stencilTestEnable = VK_FALSE;
+            memset(&depth_stencil_state.front, 0, sizeof(depth_stencil_state.front));
+            memset(&depth_stencil_state.back, 0, sizeof(depth_stencil_state.back));
+        } break;
         case SHADOWS_RENDERING_EDGES:
-            {
-                depth_stencil_state.stencilTestEnable = VK_TRUE;
+        {
+            depth_stencil_state.stencilTestEnable = VK_TRUE;
 
-                depth_stencil_state.front.failOp = VK_STENCIL_OP_KEEP;
-                depth_stencil_state.front.passOp = ( face_culling == CT_FRONT_SIDED ? 
+            depth_stencil_state.front.failOp = VK_STENCIL_OP_KEEP;
+            depth_stencil_state.front.passOp = ( face_culling == CT_FRONT_SIDED ? 
                         VK_STENCIL_OP_INCREMENT_AND_CLAMP : VK_STENCIL_OP_DECREMENT_AND_CLAMP );
-                depth_stencil_state.front.depthFailOp = VK_STENCIL_OP_KEEP;
-                depth_stencil_state.front.compareOp = VK_COMPARE_OP_ALWAYS;
-                depth_stencil_state.front.compareMask = 255;
-                depth_stencil_state.front.writeMask = 255;
-                depth_stencil_state.front.reference = 0;
-
-                depth_stencil_state.back = depth_stencil_state.front;
-            }break;
+            depth_stencil_state.front.depthFailOp = VK_STENCIL_OP_KEEP;
+            depth_stencil_state.front.compareOp = VK_COMPARE_OP_ALWAYS;
+            depth_stencil_state.front.compareMask = 255;
+            depth_stencil_state.front.writeMask = 255;
+            depth_stencil_state.front.reference = 0;
+            depth_stencil_state.back = depth_stencil_state.front;
+        } break;
 
         case SHADOWS_RENDERING_FULLSCREEN_QUAD:
-            {
-                depth_stencil_state.stencilTestEnable = VK_TRUE;
+        {
+            depth_stencil_state.stencilTestEnable = VK_TRUE;
 
-                depth_stencil_state.front.failOp = VK_STENCIL_OP_KEEP;
-                depth_stencil_state.front.passOp = VK_STENCIL_OP_KEEP;
-                depth_stencil_state.front.depthFailOp = VK_STENCIL_OP_KEEP;
-                depth_stencil_state.front.compareOp = VK_COMPARE_OP_NOT_EQUAL;
-                depth_stencil_state.front.compareMask = 255;
-                depth_stencil_state.front.writeMask = 255;
-                depth_stencil_state.front.reference = 0;
+            depth_stencil_state.front.failOp = VK_STENCIL_OP_KEEP;
+            depth_stencil_state.front.passOp = VK_STENCIL_OP_KEEP;
+            depth_stencil_state.front.depthFailOp = VK_STENCIL_OP_KEEP;
+            depth_stencil_state.front.compareOp = VK_COMPARE_OP_NOT_EQUAL;
+            depth_stencil_state.front.compareMask = 255;
+            depth_stencil_state.front.writeMask = 255;
+            depth_stencil_state.front.reference = 0;
 
-                depth_stencil_state.back = depth_stencil_state.front;
-            }break;
+            depth_stencil_state.back = depth_stencil_state.front;
+        } break;
     }
 
     depth_stencil_state.minDepthBounds = 0.0;
     depth_stencil_state.maxDepthBounds = 0.0;
 
 
-    //After a fragment shader has returned a color, it needs to be combined
-    //with the color that is already in the framebuffer. This transformation
-    //is known as color blending and there are two ways to do it
+    // After a fragment shader has returned a color, it needs to be combined
+    // with the color that is already in the framebuffer. This transformation
+    // is known as color blending and there are two ways to do it
     //
     // 1) Mix the old and new value to produce a final color.
     // 2) combine the old and the new value using a bitwise operation.
 
     // contains the configuraturation per attached framebuffer
 
-    VkPipelineColorBlendAttachmentState attachment_blend_state = {};
-    attachment_blend_state.blendEnable = (state_bits & (GLS_SRCBLEND_BITS | GLS_DSTBLEND_BITS)) ? VK_TRUE : VK_FALSE;
+    VkPipelineColorBlendAttachmentState attachment_blend_state = {0};
+    
+    uint32_t srcBlendbit = state_bits & GLS_SRCBLEND_BITS;
+    uint32_t dstBlendbit = state_bits & GLS_DSTBLEND_BITS;
 
-    if (shadow_phase == SHADOWS_RENDERING_EDGES)
-        attachment_blend_state.colorWriteMask = 0;
-    else
-        attachment_blend_state.colorWriteMask = VK_COLOR_COMPONENT_R_BIT | VK_COLOR_COMPONENT_G_BIT | VK_COLOR_COMPONENT_B_BIT | VK_COLOR_COMPONENT_A_BIT;
-
-    if (attachment_blend_state.blendEnable)
+    if (srcBlendbit || dstBlendbit)
     {
-        switch (state_bits & GLS_SRCBLEND_BITS)
+        attachment_blend_state.blendEnable = 1;
+
+        switch (srcBlendbit)
         {
             case GLS_SRCBLEND_ZERO:
                 attachment_blend_state.srcColorBlendFactor = VK_BLEND_FACTOR_ZERO;
@@ -627,7 +644,8 @@ void vk_create_pipeline(
                 ri.Error( ERR_DROP, "create_pipeline: invalid src blend state bits\n" );
                 break;
         }
-        switch (state_bits & GLS_DSTBLEND_BITS)
+        
+        switch (dstBlendbit)
         {
             case GLS_DSTBLEND_ZERO:
                 attachment_blend_state.dstColorBlendFactor = VK_BLEND_FACTOR_ZERO;
@@ -664,6 +682,10 @@ void vk_create_pipeline(
         attachment_blend_state.alphaBlendOp = VK_BLEND_OP_ADD;
     }
 
+    attachment_blend_state.colorWriteMask = (shadow_phase == SHADOWS_RENDERING_EDGES) ? 
+         0: VK_COLOR_COMPONENT_R_BIT | VK_COLOR_COMPONENT_G_BIT | VK_COLOR_COMPONENT_B_BIT | VK_COLOR_COMPONENT_A_BIT;
+
+
     // Contains the global color blending settings
     VkPipelineColorBlendStateCreateInfo blend_state;
     blend_state.sType = VK_STRUCTURE_TYPE_PIPELINE_COLOR_BLEND_STATE_CREATE_INFO;
@@ -688,8 +710,8 @@ void vk_create_pipeline(
     dynamic_state.sType = VK_STRUCTURE_TYPE_PIPELINE_DYNAMIC_STATE_CREATE_INFO;
     dynamic_state.pNext = NULL;
     dynamic_state.flags = 0;
-    dynamic_state.dynamicStateCount = 2;
-    const VkDynamicState dynamic_state_array[2] = { VK_DYNAMIC_STATE_VIEWPORT, VK_DYNAMIC_STATE_DEPTH_BIAS };
+    dynamic_state.dynamicStateCount = 1;
+    const VkDynamicState dynamic_state_array[1] = {VK_DYNAMIC_STATE_VIEWPORT};
     dynamic_state.pDynamicStates = dynamic_state_array;
 
 
