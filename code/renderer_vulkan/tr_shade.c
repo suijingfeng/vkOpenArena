@@ -793,19 +793,19 @@ void RB_CalcWaveAlpha( const waveForm_t *wf, unsigned char *dstColors )
 	}
 }
 
-/*
-** RB_CalcModulateColorsByFog
-*/
-void RB_CalcModulateColorsByFog( unsigned char *colors ) {
-	int		i;
-	float	texCoords[SHADER_MAX_VERTEXES][2];
+
+void RB_CalcModulateColorsByFog( unsigned char *colors )
+{
+	uint32_t i;
+	float texCoords[SHADER_MAX_VERTEXES][2];
 
 	// calculate texcoords so we can derive density
 	// this is not wasted, because it would only have
 	// been previously called if the surface was opaque
-	RB_CalcFogTexCoords( texCoords[0] );
+	RB_CalcFogTexCoords( texCoords, tess.numVertexes );
 
-	for ( i = 0; i < tess.numVertexes; i++, colors += 4 ) {
+	for ( i = 0; i < tess.numVertexes; ++i, colors += 4 )
+    {
 		float f = 1.0 - R_FogFactor( texCoords[i][0], texCoords[i][1] );
 		colors[0] *= f;
 		colors[1] *= f;
@@ -823,7 +823,7 @@ void RB_CalcModulateAlphasByFog( unsigned char *colors ) {
 	// calculate texcoords so we can derive density
 	// this is not wasted, because it would only have
 	// been previously called if the surface was opaque
-	RB_CalcFogTexCoords( texCoords[0] );
+	RB_CalcFogTexCoords( texCoords, tess.numVertexes );
 
 	for ( i = 0; i < tess.numVertexes; i++, colors += 4 ) {
 		float f = 1.0 - R_FogFactor( texCoords[i][0], texCoords[i][1] );
@@ -841,9 +841,10 @@ void RB_CalcModulateRGBAsByFog( unsigned char *colors ) {
 	// calculate texcoords so we can derive density
 	// this is not wasted, because it would only have
 	// been previously called if the surface was opaque
-	RB_CalcFogTexCoords( texCoords[0] );
+	RB_CalcFogTexCoords( texCoords, tess.numVertexes );
 
-	for ( i = 0; i < tess.numVertexes; i++, colors += 4 ) {
+	for ( i = 0; i < tess.numVertexes; i++, colors += 4 )
+    {
 		float f = 1.0 - R_FogFactor( texCoords[i][0], texCoords[i][1] );
 		colors[0] *= f;
 		colors[1] *= f;
@@ -863,14 +864,12 @@ TEX COORDS
 
 /*
 ========================
-RB_CalcFogTexCoords
-
 To do the clipped fog plane really correctly, we should use
 projected textures, but I don't trust the drivers and it
 doesn't fit our shader data.
 ========================
 */
-void RB_CalcFogTexCoords( float *st )
+void RB_CalcFogTexCoords( float (* const pST)[2], uint32_t nVerts )
 {
 	int			i;
 	float		*v;
@@ -927,7 +926,8 @@ void RB_CalcFogTexCoords( float *st )
 	fogDistanceVector[3] += 1.0/512;
 
 	// calculate density for each point
-	for (i = 0, v = tess.xyz[0] ; i < tess.numVertexes ; i++, v += 4) {
+	for (i = 0, v = tess.xyz[0] ; i < tess.numVertexes ; ++i, v += 4)
+    {
 		// calculate the length in fog
 		s = DotProduct( v, fogDistanceVector ) + fogDistanceVector[3];
 		t = DotProduct( v, fogDepthVector ) + fogDepthVector[3];
@@ -947,9 +947,8 @@ void RB_CalcFogTexCoords( float *st )
 			}
 		}
 
-		st[0] = s;
-		st[1] = t;
-		st += 2;
+		pST[i][0] = s;
+		pST[i][1] = t;
 	}
 }
 
@@ -1979,7 +1978,7 @@ void RB_ComputeTexCoords( shaderStage_t * const pStage )
                 }
                 break;
             case TCGEN_FOG:
-                RB_CalcFogTexCoords( ( float * ) tess.svars.texcoords[b] );
+                RB_CalcFogTexCoords( tess.svars.texcoords[b], tess.numVertexes );
                 break;
             case TCGEN_ENVIRONMENT_MAPPED:
                 RB_CalcEnvironmentTexCoords( ( float * ) tess.svars.texcoords[b] );

@@ -17,7 +17,7 @@ TESSELATOR/SHADER DECLARATIONS
 typedef struct stageVars
 {
 	uint8_t     colors[SHADER_MAX_VERTEXES][4];
-	vec2_t		texcoords[NUM_TEXTURE_BUNDLES][SHADER_MAX_VERTEXES];
+	float		texcoords[NUM_TEXTURE_BUNDLES][SHADER_MAX_VERTEXES][2];
 } stageVars_t;
 
 typedef struct shaderCommands_s 
@@ -44,7 +44,7 @@ typedef struct shaderCommands_s
 
 	// info extracted from current shader
 	int			numPasses;
-	shaderStage_t	**xstages;
+	struct shaderStage_s **xstages;
 } shaderCommands_t;
 
 extern shaderCommands_t	tess;

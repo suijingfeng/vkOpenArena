@@ -101,26 +101,26 @@ Passing NULL will set the color to white
 */
 void RE_SetColor( const float *rgba )
 {
-	setColorCommand_t *cmd = R_GetCommandBuffer( sizeof(*cmd) );
+	setColorCommand_t *cmd = R_GetCommandBuffer( sizeof(setColorCommand_t) );
     if( !cmd ) {
 		return;
 	}
-    if( !tr.registered )
-    {
-        return;
-    }
-	cmd->commandId = RC_SET_COLOR;
-	if ( !rgba )
-    {
-		static float colorWhite[4] = { 1, 1, 1, 1 };
 
-		rgba = colorWhite;
+ 	cmd->commandId = RC_SET_COLOR;
+	if ( NULL == rgba )
+    {
+        cmd->color[0] = 1.0f;
+        cmd->color[1] = 1.0f;
+        cmd->color[2] = 1.0f;
+        cmd->color[3] = 1.0f;
 	}
-
-	cmd->color[0] = rgba[0];
-	cmd->color[1] = rgba[1];
-	cmd->color[2] = rgba[2];
-	cmd->color[3] = rgba[3];
+    else
+    {
+        cmd->color[0] = rgba[0];
+        cmd->color[1] = rgba[1];
+        cmd->color[2] = rgba[2];
+        cmd->color[3] = rgba[3];
+    }
 }
 
 
@@ -260,26 +260,30 @@ void RB_StretchPic( const stretchPicCommand_t * const cmd )
 	    backEnd.refdef.floatTime = t * 0.001f;
 	}
 
-
+    // nearly true all the time, dont know why do this judgement
 	if ( cmd->shader != tess.shader )
     {
 		if ( tess.numIndexes ) {
 			RB_EndSurface(&tess);
 		}
+
 		backEnd.currentEntity = &backEnd.entity2D;
 		RB_BeginSurface(cmd->shader, 0, &tess );
 	}
 
-	RB_CheckOverflow( 4, 6 );
 
+	RB_CheckOverflow( 4, 6 );
 
 	const unsigned int n0 = tess.numVertexes;
 	const unsigned int n1 = n0 + 1;
 	const unsigned int n2 = n0 + 2;
 	const unsigned int n3 = n0 + 3;
 
-	
     uint32_t numIndexes = tess.numIndexes;
+	
+    tess.numVertexes += 4;
+	tess.numIndexes += 6;
+
 
     tess.indexes[ numIndexes ] = n3;
     tess.indexes[ numIndexes + 1 ] = n0;
@@ -289,28 +293,40 @@ void RB_StretchPic( const stretchPicCommand_t * const cmd )
     tess.indexes[ numIndexes + 5 ] = n1;
 	
 
-    // TODO: verify does coding this way run faster in release mode ?
-    // coding this way do harm to debug version because of
-    // introduce additional 4 function call.
-    // memcpy(tess.vertexColors[n0], backEnd.Color2D, 4);
-    // memcpy(tess.vertexColors[n1], backEnd.Color2D, 4);
-    // memcpy(tess.vertexColors[n2], backEnd.Color2D, 4);
-    // memcpy(tess.vertexColors[n3], backEnd.Color2D, 4);
-    // don't worry about strict aliasing 
-	*(int *)tess.vertexColors[n0] =
-		*(int *)tess.vertexColors[n1] =
-		*(int *)tess.vertexColors[n2] =
-		*(int *)tess.vertexColors[n3] = *(int *)backEnd.Color2D;
+    // worry about strict aliasing 
+	tess.vertexColors[n0][0] = backEnd.Color2D[0];
+	tess.vertexColors[n0][1] = backEnd.Color2D[1];
+	tess.vertexColors[n0][2] = backEnd.Color2D[2];
+	tess.vertexColors[n0][3] = backEnd.Color2D[3];
+
+	tess.vertexColors[n1][0] = backEnd.Color2D[0];
+	tess.vertexColors[n1][1] = backEnd.Color2D[1];
+	tess.vertexColors[n1][2] = backEnd.Color2D[2];
+	tess.vertexColors[n1][3] = backEnd.Color2D[3];
+
+	tess.vertexColors[n2][0] = backEnd.Color2D[0];
+	tess.vertexColors[n2][1] = backEnd.Color2D[1];
+	tess.vertexColors[n2][2] = backEnd.Color2D[2];
+	tess.vertexColors[n2][3] = backEnd.Color2D[3];
+
+	tess.vertexColors[n3][0] = backEnd.Color2D[0];
+	tess.vertexColors[n3][1] = backEnd.Color2D[1];
+	tess.vertexColors[n3][2] = backEnd.Color2D[2];
+	tess.vertexColors[n3][3] = backEnd.Color2D[3];
+
 
     tess.xyz[ n0 ][0] = cmd->x;
     tess.xyz[ n0 ][1] = cmd->y;
     tess.xyz[ n0 ][2] = 0;
+
     tess.xyz[ n1 ][0] = cmd->x + cmd->w;
     tess.xyz[ n1 ][1] = cmd->y;
     tess.xyz[ n1 ][2] = 0;
+
     tess.xyz[ n2 ][0] = cmd->x + cmd->w;
     tess.xyz[ n2 ][1] = cmd->y + cmd->h;
     tess.xyz[ n2 ][2] = 0;
+
     tess.xyz[ n3 ][0] = cmd->x;
     tess.xyz[ n3 ][1] = cmd->y + cmd->h;
     tess.xyz[ n3 ][2] = 0;
@@ -327,9 +343,6 @@ void RB_StretchPic( const stretchPicCommand_t * const cmd )
 
     tess.texCoords[ n3 ][0][0] = cmd->s1;
     tess.texCoords[ n3 ][0][1] = cmd->t2;
-
-	tess.numVertexes += 4;
-	tess.numIndexes += 6;
 }
 
 

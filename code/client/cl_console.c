@@ -73,7 +73,7 @@ void Con_ToggleConsole_f(void)
     g_consoleField.widthInChars = g_console_field_width;
 
 	//Con_ClearNotify ();
-	for ( i = 0 ; i < NUM_CON_TIMES ; i++ )
+	for ( i = 0 ; i < NUM_CON_TIMES ; ++i )
 		con.times[i] = 0;
 
 	Key_SetCatcher( Key_GetCatcher( ) ^ KEYCATCH_CONSOLE );
@@ -158,7 +158,7 @@ Con_Clear_f
 void Con_Clear_f (void) {
 	int		i;
 
-	for ( i = 0 ; i < CON_TEXTSIZE ; i++ ) {
+	for ( i = 0 ; i < CON_TEXTSIZE ; ++i ) {
 		con.text[i] = (ColorIndex(COLOR_WHITE)<<8) | ' ';
 	}
 
@@ -250,7 +250,7 @@ void Con_Dump_f (void)
 void Con_ClearNotify( void )
 {
 	int	i;
-	for ( i = 0 ; i < NUM_CON_TIMES ; i++ )
+	for ( i = 0 ; i < NUM_CON_TIMES ; ++i )
 		con.times[i] = 0;
 }
 
@@ -302,9 +302,9 @@ void Con_CheckResize (void)
 			con.text[i] = (ColorIndex(COLOR_WHITE)<<8) | ' ';
 
 
-		for (i=0 ; i<numlines ; i++)
+		for (i=0 ; i<numlines ; ++i)
 		{
-			for (j=0 ; j<numchars ; j++)
+			for (j=0 ; j<numchars ; ++j)
 			{
 				con.text[(con.totallines - 1 - i) * con.linewidth + j] =
 						tbuf[((con.current - i + oldtotallines) %
@@ -445,7 +445,7 @@ void CL_ConsolePrint( char *txt )
 		}
 
 		// count word length
-		for (l=0 ; l< con.linewidth ; l++)
+		for (l=0 ; l< con.linewidth ; ++l)
         {
 			if ( txt[l] <= ' ') {
 				break;
@@ -458,7 +458,7 @@ void CL_ConsolePrint( char *txt )
 			Con_Linefeed(skipnotify);
 		}
 
-		txt++;
+		++txt;
 
 		switch (c)
 		{

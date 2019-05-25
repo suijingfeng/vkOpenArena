@@ -1141,13 +1141,6 @@ void RB_EndSurface( shaderCommands_t * const input )
 	}
 
 
-	if (input->indexes[SHADER_MAX_INDEXES-1] != 0) {
-		ri.Error (ERR_DROP, "RB_EndSurface() - SHADER_MAX_INDEXES hit");
-	}	
-	if (input->xyz[SHADER_MAX_VERTEXES-1][0] != 0) {
-		ri.Error (ERR_DROP, "RB_EndSurface() - SHADER_MAX_VERTEXES hit");
-	}
-
 	if ( input->shader == tr.shadowShader ) {
 		RB_ShadowTessEnd();
 		return;

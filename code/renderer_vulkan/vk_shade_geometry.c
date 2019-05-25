@@ -497,12 +497,15 @@ static void ProjectDlightTexture( shaderCommands_t * const pTess, uint32_t num_d
     {
 		//dlight_t	*dl;
 
-		if ( !( pTess->dlightBits & ( 1 << l ) ) )
+		if ( ( pTess->dlightBits & ( 1 << l ) ) == 0)
         {
 			continue;	// this surface definately doesn't have any of this light
 		}
-		float* texCoords = pTess->svars.texcoords[0][0];
-		//colors = tess.svars.colors[0];
+        
+		//float* texCoords = pTess->svars.texcoords[0][0];
+        float (* const pTexcoords)[2] = pTess->svars.texcoords[0];
+		
+        uint8_t (* const pColors)[4] = pTess->svars.colors;
 
 		//dl = &backEnd.refdef.dlights[l];
         vec3_t origin;
@@ -520,28 +523,31 @@ static void ProjectDlightTexture( shaderCommands_t * const pTess, uint32_t num_d
         };
 
         uint32_t i;
-		for ( i = 0 ; i < pTess->numVertexes ; ++i, texCoords += 2)
+		for ( i = 0 ; i < pTess->numVertexes; ++i)
         {
 			vec3_t dist;
 
-			++backEnd.pc.c_dlightVertexes;
 
 			VectorSubtract( origin, pTess->xyz[i], dist );
-			texCoords[0] = 0.5f + dist[0] * scale;
-			texCoords[1] = 0.5f + dist[1] * scale;
+
+            float u = 0.5f + dist[0] * scale;
+            float v = 0.5f + dist[1] * scale;
+			
+            pTexcoords[i][0] = u;
+			pTexcoords[i][1] = v;
 
 			uint32_t clip = 0;
-			if ( texCoords[0] < 0.0f ) {
+			if ( u < 0.0f ) {
 				clip |= 1;
 			}
-            else if ( texCoords[0] > 1.0f ) {
+            else if ( u > 1.0f ) {
 				clip |= 2;
 			}
 
-			if ( texCoords[1] < 0.0f ) {
+			if ( v < 0.0f ) {
 				clip |= 4;
 			}
-            else if ( texCoords[1] > 1.0f ) {
+            else if ( v > 1.0f ) {
 				clip |= 8;
 			}
 
@@ -569,12 +575,13 @@ static void ProjectDlightTexture( shaderCommands_t * const pTess, uint32_t num_d
 				}
 			}
 			clipBits[i] = clip;
-            
+           
+
             // += 4 
-			pTess->svars.colors[i][0] = (floatColor[0] * modulate);
-			pTess->svars.colors[i][1] = (floatColor[1] * modulate);
-			pTess->svars.colors[i][2] = (floatColor[2] * modulate);
-			pTess->svars.colors[i][3] = 255;
+			pColors[i][0] = (floatColor[0] * modulate);
+			pColors[i][1] = (floatColor[1] * modulate);
+			pColors[i][2] = (floatColor[2] * modulate);
+			pColors[i][3] = 255;
 		}
 
       
@@ -599,10 +606,14 @@ static void ProjectDlightTexture( shaderCommands_t * const pTess, uint32_t num_d
 
 
 		updateCurDescriptor( tr.dlightImage->descriptor_set, 0 );
-		// include GLS_DEPTHFUNC_EQUAL so alpha tested surfaces don't add light where they aren't rendered
-		backEnd.pc.c_totalIndexes += numIndexes;
-		backEnd.pc.c_dlightIndexes += numIndexes;
-
+		
+        // include GLS_DEPTHFUNC_EQUAL so alpha tested surfaces
+        // don't add light where they aren't rendered
+		
+        // backEnd.pc.c_totalIndexes += numIndexes;
+		// backEnd.pc.c_dlightIndexes += numIndexes;
+		// backEnd.pc.c_dlightVertexes += pTess->numVertexes;
+        R_UpdatePerformanceCounters( pTess->numVertexes, numIndexes, 0);
 		// VULKAN
 
 		vk_shade_geometry(g_globalPipelines.dlight_pipelines[pDlights[l].additive > 0 ? 1 : 0][pTess->shader->cullType][pTess->shader->polygonOffset],
@@ -619,7 +630,7 @@ static void RB_FogPass( shaderCommands_t * const pTess )
 
     RB_SetTessFogColor(pTess->svars.colors, pTess->fogNum, pTess->numVertexes);
 
-	RB_CalcFogTexCoords( ( float * ) pTess->svars.texcoords[0] );
+	RB_CalcFogTexCoords( pTess->svars.texcoords[0], pTess->numVertexes);
 
 	updateCurDescriptor( tr.fogImage->descriptor_set, 0);
 
@@ -769,7 +780,7 @@ void RB_StageIteratorGeneric(shaderCommands_t * const pTess, VkBool32 is2D)
 	//
 	// now do fog
 	//
-	if (0 && pTess->fogNum && pTess->shader->fogPass )
+	if ( pTess->fogNum && pTess->shader->fogPass )
     {
 		RB_FogPass(pTess);
 	}
