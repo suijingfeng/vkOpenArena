@@ -15,6 +15,7 @@
 #include "srfSurfaceFace_type.h"
 #include "tr_surface.h"
 
+extern struct shaderCommands_s tess;
 
 extern void R_RenderView (viewParms_t *parms);
 

@@ -4,6 +4,7 @@
 
 #include "R_ShaderCommands.h"
 
+extern struct shaderCommands_s tess;
 
 /*
 ===============
@@ -75,7 +76,8 @@ void RB_ShowImages(image_t ** const pImg, unsigned int N, int width, int height)
         // updateMVP(backEnd.viewParms.isPortal, backEnd.projection2D, getptr_modelview_matrix());
         updateMVP( 0 , VK_TRUE, getptr_modelview_matrix());
 
-        vk_shade_geometry(g_debugPipelines.images, VK_FALSE, VK_TRUE, DEPTH_RANGE_NORMAL, VK_TRUE);
+        // VK_TRUE, 
+        vk_shade_geometry(g_debugPipelines.images, &tess, VK_FALSE, VK_TRUE);
 	}
 	tess.numIndexes = 0;
 	tess.numVertexes = 0;

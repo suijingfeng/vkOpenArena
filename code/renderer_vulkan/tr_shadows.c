@@ -28,7 +28,9 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #include "tr_backend.h"
 
 #include "R_ShaderCommands.h"
-// tess
+
+extern struct shaderCommands_s tess;
+
 
 /*
 
@@ -147,8 +149,10 @@ static void vk_renderShadowEdges(VkPipeline vk_pipeline)
         
         vk_UploadXYZI(tess.xyz, tess.numVertexes, tess.indexes, tess.numIndexes);
         updateMVP(backEnd.viewParms.isPortal, backEnd.projection2D, getptr_modelview_matrix());
-
-        vk_shade_geometry(vk_pipeline, VK_FALSE, backEnd.projection2D, DEPTH_RANGE_NORMAL, VK_TRUE);
+        
+        // vk_rcdUpdateViewport(backEnd.projection2D, DEPTH_RANGE_NORMAL);
+        
+        vk_shade_geometry(vk_pipeline, &tess, VK_FALSE, VK_TRUE);
 
 
 		i += count;
@@ -291,8 +295,8 @@ void RB_ShadowFinish( void )
      
     vk_UploadXYZI(tess.xyz, tess.numVertexes, tess.indexes, tess.numIndexes);
     updateMVP(backEnd.viewParms.isPortal, backEnd.projection2D, tmp);
-    vk_shade_geometry(g_globalPipelines.shadow_finish_pipeline, VK_FALSE,
-            backEnd.projection2D, DEPTH_RANGE_NORMAL, VK_TRUE);
+    vk_shade_geometry(g_globalPipelines.shadow_finish_pipeline, &tess, 
+            VK_FALSE, VK_TRUE);
 
     tess.numIndexes = 0;
     tess.numVertexes = 0;

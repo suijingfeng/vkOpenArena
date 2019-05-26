@@ -37,7 +37,7 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #define HALF_SKY_SUBDIVISIONS	(SKY_SUBDIVISIONS/2)
 
 
-
+extern shaderCommands_t	tess;
 
 static float s_cloudTexCoords[6][SKY_SUBDIVISIONS+1][SKY_SUBDIVISIONS+1][2];
 
@@ -263,7 +263,7 @@ static void ClearSkyBox (void) {
 }
 
 
-void RB_ClipSkyPolygons( shaderCommands_t *input )
+void RB_ClipSkyPolygons( struct shaderCommands_s * const input )
 {
 	vec3_t		p[5];	// need one extra point for clipping
 	int			i, j;
@@ -635,7 +635,7 @@ static void FillCloudBox2(shader_t * pSha, uint32_t x)
 /*
 ** R_BuildCloudData
 */
-void R_BuildCloudData( shaderCommands_t * const pTess )
+void R_BuildCloudData( struct shaderCommands_s * const pTess )
 {
 //	assert( shader->isSky );
 	sky_min = 1.0f / 256.0f;		// FIXME: not correct?
@@ -831,8 +831,9 @@ static void DrawSkyBox( shader_t *shader, float matMV[16] )
         
         updateMVP(backEnd.viewParms.isPortal, backEnd.projection2D, matMV);
 
-        vk_shade_geometry(g_globalPipelines.skybox_pipeline, VK_FALSE, backEnd.projection2D, 
-                r_showsky->integer ? DEPTH_RANGE_ZERO : DEPTH_RANGE_ONE, VK_TRUE);
+        // vk_rcdUpdateViewport(backEnd.projection2D, r_showsky->integer ? DEPTH_RANGE_ZERO : DEPTH_RANGE_ONE);
+
+        vk_shade_geometry(g_globalPipelines.skybox_pipeline, &tess, VK_FALSE, VK_TRUE);
 	}
 }
 
@@ -845,7 +846,7 @@ All of the visible sky triangles are in tess
 Other things could be stuck in here, like birds in the sky, etc
 ================
 */
-void RB_StageIteratorSky( shaderCommands_t * const pTess )
+void RB_StageIteratorSky( struct shaderCommands_s * const pTess )
 {
 
 	// go through all the polygons and project them onto

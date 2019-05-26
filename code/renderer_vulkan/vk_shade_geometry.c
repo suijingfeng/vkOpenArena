@@ -6,13 +6,13 @@
 #include "tr_shader.h"
 #include "tr_shade.h"
 
-#include "vk_shade_geometry.h"
 #include "vk_image.h"
 #include "vk_pipelines.h"
 
 #include "ref_import.h" 
 #include "matrix_multiplication.h"
 #include "R_PortalPlane.h"
+#include "vk_shade_geometry.h"
 
 
 static float s_modelview_matrix[16] QALIGN(16);
@@ -205,16 +205,14 @@ void updateCurDescriptor( VkDescriptorSet curDesSet, uint32_t tmu)
 //  associates components of a vertex shader input variable with components of
 //  a vertex input attribute.
 
-void vk_UploadXYZI(float (* const pXYZ)[4], uint32_t nVertex, 
-        uint32_t * const pIdx, uint32_t nIndex)
+void vk_UploadXYZI(const float (* const pXYZ)[4], uint32_t nVertex, 
+        const uint32_t * const pIdx, uint32_t nIndex)
 {
 	// xyz stream
     const VkDeviceSize xyz_offset = XYZ_OFFSET + shadingDat.xyz_elements * sizeof(vec4_t);
 
-    unsigned char* const vDst = shadingDat.vertex_buffer_ptr + xyz_offset;
-
     // 4 float in the array, with each 4 bytes.
-    memcpy(vDst, pXYZ, nVertex * 16);
+    memcpy(shadingDat.vertex_buffer_ptr + xyz_offset, pXYZ, nVertex * sizeof(vec4_t));
 
     NO_CHECK( qvkCmdBindVertexBuffers(vk.command_buffer, 0, 1, &shadingDat.vertex_buffer, &xyz_offset) );
 
@@ -227,8 +225,7 @@ void vk_UploadXYZI(float (* const pXYZ)[4], uint32_t nVertex,
 	{
 		const uint32_t indexes_size = nIndex * sizeof(uint32_t);        
 
-		unsigned char* const iDst = shadingDat.index_buffer_ptr + shadingDat.index_buffer_offset;
-		memcpy(iDst, pIdx, indexes_size);
+		memcpy( shadingDat.index_buffer_ptr + shadingDat.index_buffer_offset, pIdx, indexes_size);
 
 		NO_CHECK( qvkCmdBindIndexBuffer(vk.command_buffer, shadingDat.index_buffer,
                     shadingDat.index_buffer_offset, VK_INDEX_TYPE_UINT32) );
@@ -240,82 +237,9 @@ void vk_UploadXYZI(float (* const pXYZ)[4], uint32_t nVertex,
 }
 
 
-void vk_shade_geometry(VkPipeline pipeline, VkBool32 multitexture, VkBool32 is2D,
-        enum Vk_Depth_Range depRg, VkBool32 indexed)
+void vk_rcdUpdateViewport(VkBool32 is2D, enum Vk_Depth_Range depRg)
 {
-    // configure vertex data stream
-    const VkBuffer bufHandleArray[3] = { 
-      shadingDat.vertex_buffer, shadingDat.vertex_buffer, shadingDat.vertex_buffer };
-    
-
-    const VkDeviceSize offsetsArray[3] = {
-        COLOR_OFFSET + shadingDat.colorElemCount * 4, // sizeof(color4ub_t)
-        ST0_OFFSET   + shadingDat.colorElemCount * sizeof(vec2_t),
-        ST1_OFFSET   + shadingDat.colorElemCount * sizeof(vec2_t)
-    };
-
-
-    const uint32_t Size_Color = tess.numVertexes * 4; // 4 = sizeof(color4ub_t)
-    const uint32_t Size_ST = tess.numVertexes * sizeof(vec2_t);
-
-    shadingDat.colorElemCount += tess.numVertexes;
-    
-    if ( shadingDat.colorElemCount * 4 > COLOR_SIZE)
-    {
-        ri.Error( ERR_DROP, "vulkan: vertex buffer overflow (color) %d \n", 
-                shadingDat.colorElemCount * 4 );
-    }
-
-    memcpy(shadingDat.vertex_buffer_ptr + offsetsArray[0], 
-            tess.svars.colors, Size_Color);
-    
-    // st0
-    memcpy( shadingDat.vertex_buffer_ptr + offsetsArray[1], 
-            tess.svars.texcoords[0], Size_ST );
-    
-    // st1
-    if (multitexture)
-    {
-        memcpy( shadingDat.vertex_buffer_ptr + offsetsArray[2],
-                tess.svars.texcoords[1], Size_ST);
-    }
-
-    // It is perfectly reasonable to bind the same buffer object with 
-    // different offsets to a command buffer, simply include the same
-    // VkBuffer handle multiple times in the pBuffers array. cache ?
-    NO_CHECK( qvkCmdBindVertexBuffers(vk.command_buffer, 1, multitexture ? 3 : 2,
-                bufHandleArray, offsetsArray) );
-    
-    // bind descriptor sets: vkCmdBindDescriptorSets causes the sets 
-    // numbered [firstSet.. firstSet+descriptorSetCount-1] to use the
-    // bindings stored in pDescriptorSets[0..descriptorSetCount-1] 
-    // for subsequent rendering commands (either compute or graphics,
-    // according to the pipelineBindPoint). Any bindings that were 
-    // previously applied via these sets are no longer valid.
-    NO_CHECK( qvkCmdBindDescriptorSets( vk.command_buffer,
-                VK_PIPELINE_BIND_POINT_GRAPHICS, 
-                vk.pipeline_layout, 0, (multitexture ? 2 : 1), 
-                shadingDat.curDescriptorSets, 0, NULL) );
-
-    // Once bound, a pipeline binding affects subsequent graphics
-    // or compute commands in the command buffer until a different
-    // pipeline is bound to the bind point. When a pipeline object
-    // is bound, any pipeline object state that is not specified 
-    // as dynamic is applied to the command buffer state
-    NO_CHECK( qvkCmdBindPipeline(vk.command_buffer, 
-                VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline) );
-
-
-    // configure pipeline's dynamic state
-    // Pipeline object state that is specified as dynamic is
-    // not applied to the command buffer state at this time. 
-    // Instead, dynamic state can be modified at any time and
-    // persists for the lifetime of the command buffer, or 
-    // until modified by another dynamic state setting command
-    // or another pipeline bind.
     VkViewport viewport;
-
-    //vk_setViewportScissor(backEnd.projection2D, depRg, &viewport);
 
     if (is2D)
     {
@@ -327,10 +251,10 @@ void vk_shade_geometry(VkPipeline pipeline, VkBool32 multitexture, VkBool32 is2D
     else
     {
 
-        uint32_t X = backEnd.viewParms.viewportX;
-        uint32_t Y = backEnd.viewParms.viewportY;
-        uint32_t W = backEnd.viewParms.viewportWidth;
-        uint32_t H = backEnd.viewParms.viewportHeight;
+        int32_t X = backEnd.viewParms.viewportX;
+        int32_t Y = backEnd.viewParms.viewportY;
+        int32_t W = backEnd.viewParms.viewportWidth;
+        int32_t H = backEnd.viewParms.viewportHeight;
 
 //        viewport.x = backEnd.viewParms.viewportX;
 //        viewport.y = backEnd.viewParms.viewportY;
@@ -354,84 +278,39 @@ void vk_shade_geometry(VkPipeline pipeline, VkBool32 multitexture, VkBool32 is2D
         viewport.width = W;
         //pRect->extent.height = 
         viewport.height = H;
+
+        // ri.Printf(PRINT_ALL, "X:%d,Y:%d,W:%d,H:%d\n", X,Y,W,H);
     }
 
     switch(depRg)
     {
         case DEPTH_RANGE_NORMAL:
-            {
-                viewport.minDepth = 0.0f;
-                viewport.maxDepth = 1.0f;
-            }break;
+        {
+            viewport.minDepth = 0.0f;
+            viewport.maxDepth = 1.0f;
+        }break;
 
         case DEPTH_RANGE_ZERO:
-            {
-                viewport.minDepth = 0.0f;
-                viewport.maxDepth = 0.0f;
-            }break;
+        {
+            viewport.minDepth = 0.0f;
+            viewport.maxDepth = 0.0f;
+        }break;
 
         case DEPTH_RANGE_ONE:
-            {
-                viewport.minDepth = 1.0f;
-                viewport.maxDepth = 1.0f;
-            }break;
+        {
+            viewport.minDepth = 1.0f;
+            viewport.maxDepth = 1.0f;
+        }break;
 
         case DEPTH_RANGE_WEAPON:
-            {
-                viewport.minDepth = 0.0f;
-                viewport.maxDepth = 0.3f;
-            }break;
+        {
+            viewport.minDepth = 0.0f;
+            viewport.maxDepth = 0.3f;
+        }break;
     }
 
     NO_CHECK( qvkCmdSetViewport(vk.command_buffer, 0, 1, &viewport) );
-
-    // original dynamic, I set it when the pipeline is create. 
-    // qvkCmdSetScissor(vk.command_buffer, 0, 1, &scissor);
-
-    // if (tess.shader->polygonOffset)
-    // {
-    //  void vkCmdSetDepthBias( VkCommandBuffer commandBuffer, 
-    //  float depthBiasConstantFactor, 
-    //  float depthBiasClamp,
-    //  float depthBiasSlopeFactor);
-    //  
-    //  depthBiasConstantFactor is a scalar factor controlling the constant
-    //  depth value added to each fragment. depthBiasClamp is the maximum 
-    //  (or minimum) depth bias of a fragment.depthBiasSlopeFactor is a 
-    //  scalar factor applied to a fragment¡¯s slope in depth bias calculations.
-    //  depthBiasSlopeFactor, depthBiasConstantFactor, and depthBiasClamp can 
-    //  each be positive, negative, or zero.
-    //  
-    //  depthBiasSlopeFactor scales the maximum depth slope of the polygon,
-    //  and depthBiasConstantFactor scales an implementation-dependent constant
-    //  that relates to the usable resolution of the depth buffer. The resulting
-    //  values are summed to produce the depth bias value which is then clamped
-    //  to a minimum or maximum value specified by depthBiasClamp.
-    //
-    //  The minimum resolvable difference r is an implementation-dependent
-    //  parameter that depends on the depth buffer representation. It is the
-    //  smallest difference in framebuffer coordinate z values that is guaranteed
-    //  to remain distinct throughout polygon rasterization and in the depth buffer.
-    //  All pairs of fragments generated by the rasterization of two polygons
-    //  with otherwise identical vertices, but zf values that differ by r,
-    //  will have distinct depth values.
-    //  
-    //  NO_CHECK( qvkCmdSetDepthBias(vk.command_buffer, r_offsetUnits->value, 0.0f, r_offsetFactor->value) );
-    // }
-
-    // issue draw call
-    if (indexed)
-    {
-        NO_CHECK( qvkCmdDrawIndexed(vk.command_buffer, tess.numIndexes, 1, 0, 0, 0) );
-    }
-    else
-    {
-        NO_CHECK( qvkCmdDraw(vk.command_buffer, tess.numVertexes, 1, 0, 0) );
-    }
-
-    shadingDat.s_depth_attachment_dirty = VK_TRUE;
 }
-
 
 
 void updateMVP(VkBool32 isPortal, VkBool32 is2D, const float mvMat4x4[16])
@@ -468,11 +347,146 @@ void updateMVP(VkBool32 isPortal, VkBool32 is2D, const float mvMat4x4[16])
         // which are updated via Vulkan commands rather than via writes to memory or copy commands.
         // Push constants represent a high speed path to modify constant data in pipelines
         // that is expected to outperform memory-backed resource updates.
-        NO_CHECK( qvkCmdPushConstants(vk.command_buffer, vk.pipeline_layout, VK_SHADER_STAGE_VERTEX_BIT, 0, push_size, push_constants) );
+        NO_CHECK( qvkCmdPushConstants(vk.command_buffer, vk.pipeline_layout,
+                    VK_SHADER_STAGE_VERTEX_BIT, 0, push_size, push_constants) );
     }
 }
 
 
+void vk_shade_geometry(VkPipeline pipeline, struct shaderCommands_s * const pTess,
+        VkBool32 multitexture, VkBool32 indexed)
+{
+    // configure vertex data stream
+    const VkBuffer bufHandleArray[3] = {
+      shadingDat.vertex_buffer, shadingDat.vertex_buffer, shadingDat.vertex_buffer };
+    
+
+    const VkDeviceSize offsetsArray[3] = {
+        COLOR_OFFSET + shadingDat.colorElemCount * 4, // sizeof(color4ub_t)
+        ST0_OFFSET   + shadingDat.colorElemCount * sizeof(vec2_t),
+        ST1_OFFSET   + shadingDat.colorElemCount * sizeof(vec2_t)
+    };
+
+
+    const uint32_t Size_Color = pTess->numVertexes * 4; // 4 = sizeof(color4ub_t)
+    const uint32_t Size_ST =  pTess->numVertexes * sizeof(vec2_t);
+
+    shadingDat.colorElemCount +=  pTess->numVertexes;
+    
+    if ( shadingDat.colorElemCount * 4 > COLOR_SIZE)
+    {
+        ri.Error( ERR_DROP, "vulkan: vertex buffer overflow (color) %d \n", 
+                shadingDat.colorElemCount * 4 );
+    }
+
+    memcpy(shadingDat.vertex_buffer_ptr + offsetsArray[0], 
+             pTess->svars.colors, Size_Color);
+    
+    // st0
+    memcpy( shadingDat.vertex_buffer_ptr + offsetsArray[1], 
+             pTess->svars.texcoords[0], Size_ST );
+    
+    // st1
+    if (multitexture)
+    {
+        memcpy( shadingDat.vertex_buffer_ptr + offsetsArray[2],
+                 pTess->svars.texcoords[1], Size_ST);
+    }
+
+    // It is perfectly reasonable to bind the same buffer object with 
+    // different offsets to a command buffer, simply include the same
+    // VkBuffer handle multiple times in the pBuffers array. cache ?
+    NO_CHECK( qvkCmdBindVertexBuffers(vk.command_buffer, 1, multitexture ? 3 : 2,
+                bufHandleArray, offsetsArray) );
+    
+    // bind descriptor sets: vkCmdBindDescriptorSets causes the sets 
+    // numbered [firstSet.. firstSet+descriptorSetCount-1] to use the
+    // bindings stored in pDescriptorSets[0..descriptorSetCount-1] 
+    // for subsequent rendering commands (either compute or graphics,
+    // according to the pipelineBindPoint). Any bindings that were 
+    // previously applied via these sets are no longer valid.
+    
+    if ( multitexture ) {
+
+        NO_CHECK( qvkCmdBindDescriptorSets( vk.command_buffer,
+                VK_PIPELINE_BIND_POINT_GRAPHICS, 
+                vk.pipeline_layout, 0, 2, 
+                shadingDat.curDescriptorSets, 0, NULL) );
+
+    }
+    else {
+        NO_CHECK( qvkCmdBindDescriptorSets( vk.command_buffer,
+                VK_PIPELINE_BIND_POINT_GRAPHICS, 
+                vk.pipeline_layout, 0, 1, 
+                shadingDat.curDescriptorSets, 0, NULL) );
+    }
+    // Once bound, a pipeline binding affects subsequent graphics
+    // or compute commands in the command buffer until a different
+    // pipeline is bound to the bind point. When a pipeline object
+    // is bound, any pipeline object state that is not specified 
+    // as dynamic is applied to the command buffer state
+    NO_CHECK( qvkCmdBindPipeline(vk.command_buffer, 
+                VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline) );
+
+
+    // configure pipeline's dynamic state
+    // Pipeline object state that is specified as dynamic is
+    // not applied to the command buffer state at this time. 
+    // Instead, dynamic state can be modified at any time and
+    // persists for the lifetime of the command buffer, or 
+    // until modified by another dynamic state setting command
+    // or another pipeline bind.
+//    
+//    vk_rcdUpdateViewport(is2D, depthRange);
+//
+
+    // Original dynamic, set it when the pipeline is created. 
+    // can change pipeline be understand dynamic feature ?
+    // qvkCmdSetScissor(vk.command_buffer, 0, 1, &scissor);
+
+    // if (tess.shader->polygonOffset)
+    // {
+    //  void vkCmdSetDepthBias( VkCommandBuffer commandBuffer, 
+    //  float depthBiasConstantFactor, 
+    //  float depthBiasClamp,
+    //  float depthBiasSlopeFactor);
+    //  
+    //  depthBiasConstantFactor is a scalar factor controlling the constant
+    //  depth value added to each fragment. depthBiasClamp is the maximum 
+    //  (or minimum) depth bias of a fragment.depthBiasSlopeFactor is a 
+    //  scalar factor applied to a fragment¡¯s slope in depth bias calculations.
+    //  depthBiasSlopeFactor, depthBiasConstantFactor, and depthBiasClamp can 
+    //  each be positive, negative, or zero.
+    //  
+    //  depthBiasSlopeFactor scales the maximum depth slope of the polygon,
+    //  and depthBiasConstantFactor scales an implementation-dependent constant
+    //  that relates to the usable resolution of the depth buffer. The resulting
+    //  values are summed to produce the depth bias value which is then clamped
+    //  to a minimum or maximum value specified by depthBiasClamp.
+    //
+    //  The minimum resolvable difference r is an implementation-dependent
+    //  parameter that depends on the depth buffer representation. It is the
+    //  smallest difference in framebuffer coordinate z values that is guaranteed
+    //  to remain distinct throughout polygon rasterization and in the depth buffer.
+    //  All pairs of fragments generated by the rasterization of two polygons
+    //  with otherwise identical vertices, but zf values that differ by r,
+    //  will have distinct depth values.
+    //  
+    //  NO_CHECK( qvkCmdSetDepthBias(vk.command_buffer, r_offsetUnits->value, 0.0f, r_offsetFactor->value) );
+    // }
+
+    // issue draw call
+    if (indexed)
+    {
+        NO_CHECK( qvkCmdDrawIndexed(vk.command_buffer,  pTess->numIndexes, 1, 0, 0, 0) );
+    }
+    else
+    {
+        NO_CHECK( qvkCmdDraw(vk.command_buffer,  pTess->numVertexes, 1, 0, 0) );
+    }
+
+    shadingDat.s_depth_attachment_dirty = VK_TRUE;
+}
 
 
 void vk_resetGeometryBuffer(void)
@@ -538,7 +552,8 @@ void vk_clearDepthStencilAttachments(void)
 Perform dynamic lighting with another rendering pass
 ===================
 */
-static void ProjectDlightTexture( shaderCommands_t * const pTess, uint32_t num_dlights, struct dlight_s	* const pDlights)
+static void ProjectDlightTexture( struct shaderCommands_s * const pTess, 
+        uint32_t num_dlights, struct dlight_s* const pDlights)
 {
 	unsigned char clipBits[SHADER_MAX_VERTEXES];
 
@@ -577,7 +592,6 @@ static void ProjectDlightTexture( shaderCommands_t * const pTess, uint32_t num_d
 		for ( i = 0 ; i < pTess->numVertexes; ++i)
         {
 			vec3_t dist;
-
 
 			VectorSubtract( origin, pTess->xyz[i], dist );
 
@@ -640,12 +654,7 @@ static void ProjectDlightTexture( shaderCommands_t * const pTess, uint32_t num_d
 		uint32_t numIndexes = 0;
 		for ( i = 0 ; i < pTess->numIndexes ; i += 3 )
         {
-			uint32_t a, b, c;
-
-			a = pTess->indexes[i];
-			b = pTess->indexes[i+1];
-			c = pTess->indexes[i+2];
-			if ( clipBits[a] & clipBits[b] & clipBits[c] ) {
+			if ( clipBits[pTess->indexes[i]] & clipBits[pTess->indexes[i+1]] & clipBits[pTess->indexes[i+2]] ) {
 				continue;	// not lighted
 			}
 			numIndexes += 3;
@@ -655,20 +664,18 @@ static void ProjectDlightTexture( shaderCommands_t * const pTess, uint32_t num_d
 			continue;
 		}
 
-
 		updateCurDescriptor( tr.dlightImage->descriptor_set, 0 );
 		
         // include GLS_DEPTHFUNC_EQUAL so alpha tested surfaces
         // don't add light where they aren't rendered
-		
         // backEnd.pc.c_totalIndexes += numIndexes;
 		// backEnd.pc.c_dlightIndexes += numIndexes;
 		// backEnd.pc.c_dlightVertexes += pTess->numVertexes;
         R_UpdatePerformanceCounters( pTess->numVertexes, numIndexes, 0);
 		// VULKAN
 
-		vk_shade_geometry(g_globalPipelines.dlight_pipelines[pDlights[l].additive > 0 ? 1 : 0][pTess->shader->cullType][pTess->shader->polygonOffset],
-               backEnd.projection2D, VK_FALSE, DEPTH_RANGE_NORMAL, VK_TRUE);
+		vk_shade_geometry( g_globalPipelines.dlight_pipelines[pDlights[l].additive > 0 ? 1 : 0][pTess->shader->cullType][pTess->shader->polygonOffset], 
+            pTess, VK_FALSE, VK_TRUE);
 
 	}
 }
@@ -676,7 +683,7 @@ static void ProjectDlightTexture( shaderCommands_t * const pTess, uint32_t num_d
 
 
 
-static void RB_FogPass( shaderCommands_t * const pTess )
+static void RB_FogPass( struct shaderCommands_s * const pTess )
 {
 
     RB_SetTessFogColor(pTess->svars.colors, pTess->fogNum, pTess->numVertexes);
@@ -691,7 +698,7 @@ static void RB_FogPass( shaderCommands_t * const pTess )
 
 
     VkPipeline pipeline = g_globalPipelines.fog_pipelines[pTess->shader->fogPass - 1][pTess->shader->cullType][pTess->shader->polygonOffset];
-    vk_shade_geometry(pipeline, VK_FALSE, VK_FALSE, DEPTH_RANGE_NORMAL, VK_TRUE);
+    vk_shade_geometry(pipeline, pTess, VK_FALSE, VK_TRUE);
 }
 
 ///////////////////////////////////////////////////////////////////////////////////
@@ -725,7 +732,7 @@ static void R_BindAnimatedImage( textureBundle_t *bundle, int tmu, float time)
 
 /////////////////////////////////////////////////////////////////////////////////
 
-void RB_StageIteratorGeneric(shaderCommands_t * const pTess, VkBool32 is2D)
+void RB_StageIteratorGeneric(struct shaderCommands_s * const pTess, VkBool32 is2D)
 {
 
 	RB_DeformTessGeometry(pTess, pTess->shader->numDeforms, pTess->shader->deforms);
@@ -788,30 +795,32 @@ void RB_StageIteratorGeneric(shaderCommands_t * const pTess, VkBool32 is2D)
             depth_range = DEPTH_RANGE_WEAPON;
         }
 
+        vk_rcdUpdateViewport(is2D, depth_range);
+        
 
-        if ( r_lightmap->integer && multitexture) {
-            updateCurDescriptor( tr.whiteImage->descriptor_set, 0 );
-        }
+		// allow skipping out to show just lightmaps during development
+		if ( r_lightmap->integer )
+        {
+            if( pTess->xstages[stage]->bundle[0].isLightmap || pTess->xstages[stage]->bundle[1].isLightmap )
+		    {
+			    updateCurDescriptor( tr.whiteImage->descriptor_set, 0 );
+            }
+		}
+
 
         if (backEnd.viewParms.isMirror)
         {
-            vk_shade_geometry(pTess->xstages[stage]->vk_mirror_pipeline, multitexture, is2D, depth_range, VK_TRUE);
+            vk_shade_geometry(pTess->xstages[stage]->vk_mirror_pipeline, pTess, multitexture, VK_TRUE);
         }
         else if (backEnd.viewParms.isPortal)
         {
-            vk_shade_geometry(pTess->xstages[stage]->vk_portal_pipeline, multitexture, is2D, depth_range, VK_TRUE);
+            vk_shade_geometry(pTess->xstages[stage]->vk_portal_pipeline, pTess, multitexture, VK_TRUE);
         }
         else
         {
-            vk_shade_geometry(pTess->xstages[stage]->vk_pipeline, multitexture, is2D, depth_range, VK_TRUE);
+            vk_shade_geometry(pTess->xstages[stage]->vk_pipeline, pTess, multitexture, VK_TRUE);
         }
-
-                
-		// allow skipping out to show just lightmaps during development
-		if ( r_lightmap->integer && ( pTess->xstages[stage]->bundle[0].isLightmap || pTess->xstages[stage]->bundle[1].isLightmap ) )
-		{
-			break;
-		}
+                        
 	}
 
 	// 

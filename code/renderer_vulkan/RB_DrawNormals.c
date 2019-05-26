@@ -9,7 +9,7 @@
 Draws vertex normals for debugging
 ================
 */
-void RB_DrawNormals (shaderCommands_t* const pTess, VkBool32 isPortal, VkBool32 is2D)
+void RB_DrawNormals (struct shaderCommands_s * const pTess, VkBool32 isPortal, VkBool32 is2D)
 {
     uint32_t numVertexes = pTess->numVertexes;
     
@@ -19,7 +19,9 @@ void RB_DrawNormals (shaderCommands_t* const pTess, VkBool32 isPortal, VkBool32 
     memset(pTess->svars.colors, tr.identityLightByte, SHADER_MAX_VERTEXES * 4);
 
     // updateCurDescriptor( tr.whiteImage->descriptor_set, 0);
-    
+    updateMVP(isPortal, is2D, getptr_modelview_matrix());
+    // vk_rcdUpdateViewport(is2D, DEPTH_RANGE_ZERO);
+
     int i = 0;
     while (i < numVertexes)
     {
@@ -38,8 +40,7 @@ void RB_DrawNormals (shaderCommands_t* const pTess, VkBool32 isPortal, VkBool32 
 
         vk_UploadXYZI(pTess->xyz, pTess->numVertexes, NULL, 0);
         
-        updateMVP(isPortal, is2D, getptr_modelview_matrix());
-        vk_shade_geometry(g_debugPipelines.normals, VK_FALSE, is2D, DEPTH_RANGE_ZERO, VK_FALSE);
+        vk_shade_geometry(g_debugPipelines.normals, pTess, VK_FALSE, VK_FALSE);
 
         i += count;
     }

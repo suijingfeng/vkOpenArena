@@ -29,9 +29,7 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #include "ref_import.h"
 
 #include "R_PrintMat.h"
-
 #include "R_DebugGraphics.h"
-
 #include "tr_cmds.h"
 #include "tr_scene.h"
 #include "tr_world.h"
@@ -408,7 +406,7 @@ void R_RenderView (viewParms_t *parms)
     if ( r_debugSurface->integer )
     {
         // draw main system development information (surface outlines, etc)
-		R_DebugGraphics();
+		RB_DebugGraphics();
 	}
 }
 

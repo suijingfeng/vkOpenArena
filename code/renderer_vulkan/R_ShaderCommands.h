@@ -47,9 +47,9 @@ typedef struct shaderCommands_s
 	struct shaderStage_s **xstages;
 } shaderCommands_t;
 
-extern shaderCommands_t	tess;
+
 
 void R_ClearShaderCommand(void);
-void RB_StageIteratorSky( shaderCommands_t * const pTess );
+
 
 #endif

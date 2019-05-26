@@ -42,10 +42,6 @@ void R_Init( void )
 
     R_ClearBackendState();
 
-	if ( (intptr_t)tess.xyz & 15 ) {
-		ri.Printf( PRINT_ALL, "WARNING: tess.xyz not 16 byte aligned\n" );
-	}
-
 
 	//
 	// init function tables

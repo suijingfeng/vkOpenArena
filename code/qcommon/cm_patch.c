@@ -1672,12 +1672,12 @@ Called from the renderer
 void BotDrawDebugPolygons(void (*drawPoly)(int color, int numPoints, float *points), int value);
 #endif
 
-void CM_DrawDebugSurface( void (*drawPoly)(int color, int numPoints, float *points) ) {
+void CM_DrawDebugSurface( void (*drawPoly)(int color, int numPoints, float *points) )
+{
 	static cvar_t	*cv;
 #ifndef BSPC
 	static cvar_t	*cv2;
 #endif
-	const patchCollide_t	*pc;
 	facet_t			*facet;
 	winding_t		*w;
 	int				i, j, k, n;
@@ -1709,11 +1709,13 @@ void CM_DrawDebugSurface( void (*drawPoly)(int color, int numPoints, float *poin
 		cv = Cvar_Get( "cm_debugSize", "2", 0 );
 	}
 #endif
-	pc = debugPatchCollide;
+	const patchCollide_t* pc = debugPatchCollide;
 
-	for ( i = 0, facet = pc->facets ; i < pc->numFacets ; i++, facet++ ) {
+	for ( i = 0, facet = pc->facets ; i < pc->numFacets ; ++i, facet++ )
+    {
 
-		for ( k = 0 ; k < facet->numBorders + 1; k++ ) {
+		for ( k = 0 ; k < facet->numBorders + 1; k++ )
+        {
 			//
 			if (k < facet->numBorders) {
 				planenum = facet->borderPlanes[k];
@@ -1793,7 +1795,7 @@ void CM_DrawDebugSurface( void (*drawPoly)(int color, int numPoints, float *poin
 
 	// draw the debug block
 	{
-		vec3_t			v[3];
+		vec3_t v[3];
 
 		VectorCopy( debugBlockPoints[0], v[0] );
 		VectorCopy( debugBlockPoints[1], v[1] );

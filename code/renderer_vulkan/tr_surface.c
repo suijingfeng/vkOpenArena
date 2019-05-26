@@ -36,6 +36,8 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #include "srfPoly_type.h"
 #include "srfSurfaceFace_type.h"
 
+
+
 /*
 
   THIS ENTIRE FILE IS BACK END
@@ -49,7 +51,7 @@ The modelview matrix will be set.
 It is safe to actually issue drawing commands here if you don't want to
 use the shader system.
 */
-
+extern struct shaderCommands_s tess;
 
 extern void RB_StageIteratorGeneric( shaderCommands_t * const pTess, VkBool32 is2D);
 

@@ -7,6 +7,7 @@
 #include "tr_surface.h"
 #include "R_ShaderCommands.h"
 
+extern struct shaderCommands_s tess;
 
 
 void RB_MDRSurfaceAnim( mdrSurface_t *surface )

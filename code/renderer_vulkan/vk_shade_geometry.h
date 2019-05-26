@@ -2,7 +2,7 @@
 #define VK_SHADE_GEOMETRY
 
 #include "vk_instance.h"
-#include "R_ShaderCommands.h"
+
 
 enum Vk_Depth_Range {
 	DEPTH_RANGE_NORMAL, // [0..1]
@@ -11,16 +11,18 @@ enum Vk_Depth_Range {
 	DEPTH_RANGE_WEAPON // [0..0.3]
 };
 
+struct shaderCommands_s;
 
 const float * getptr_modelview_matrix(void);
 
 void set_modelview_matrix(const float mv[16]);
 void R_Set2dProjectMatrix(float width, float height);
 
-void vk_shade_geometry(VkPipeline pipeline, VkBool32 multitexture, VkBool32 is2D,
-        enum Vk_Depth_Range depth_range, VkBool32 indexed);
+void vk_shade_geometry(VkPipeline pipeline, struct shaderCommands_s * const pTess, 
+        VkBool32 multitexture, VkBool32 indexed);
 
-void vk_UploadXYZI(float (*pXYZ)[4], uint32_t nVertex, uint32_t* pIdx, uint32_t nIndex);
+void vk_UploadXYZI(const float (* const pXYZ)[4], uint32_t nVertex, 
+        const uint32_t* const pIdx, uint32_t nIndex);
 
 void updateMVP(VkBool32 isPortal, VkBool32 is2D, const float mvMat4x4[16]);
 void vk_resetGeometryBuffer(void);
@@ -35,9 +37,9 @@ void vk_destroy_shading_data(void);
 
 void updateCurDescriptor( VkDescriptorSet curDesSet, uint32_t tmu);
 
-
+void vk_rcdUpdateViewport(VkBool32 is2D, enum Vk_Depth_Range depRg);
 
 void vk_clearDepthStencilAttachments(void);
 
-void RB_StageIteratorGeneric( shaderCommands_t * const pTess, VkBool32 is2d );
+void RB_StageIteratorGeneric( struct shaderCommands_s * const pTess, VkBool32 is2d );
 #endif

@@ -10,6 +10,9 @@
 
 #include "FixRenderCommandList.h"
 
+extern struct shaderCommands_s tess;
+
+
 void RB_RenderDrawSurfList(const drawSurf_t* const pDrawSurfs, uint32_t numDrawSurfs, 
         const trRefdef_t * const pRefdef, const viewParms_t * const pViewPar )
 {
