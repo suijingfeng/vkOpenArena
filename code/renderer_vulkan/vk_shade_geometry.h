@@ -41,5 +41,5 @@ void vk_rcdUpdateViewport(VkBool32 is2D, enum Vk_Depth_Range depRg);
 
 void vk_clearDepthStencilAttachments(void);
 
-void RB_StageIteratorGeneric( struct shaderCommands_s * const pTess, VkBool32 is2d );
+void RB_StageIteratorGeneric( struct shaderCommands_s * const pTess, VkBool32 isPortal, VkBool32 is2d );
 #endif

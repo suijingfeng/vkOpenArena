@@ -28,8 +28,6 @@ typedef struct {
 
     unsigned char	Color2D[4];
     qboolean	projection2D;	// if qtrue, drawstretchpic doesn't need to change modes
-	qboolean	isHyperspace;
-
 } backEndState_t;
 
 extern backEndState_t backEnd;

@@ -74,6 +74,7 @@ PFN_vkCmdBindPipeline							qvkCmdBindPipeline;
 PFN_vkCmdBindVertexBuffers						qvkCmdBindVertexBuffers;
 PFN_vkCmdBlitImage								qvkCmdBlitImage;
 PFN_vkCmdClearAttachments						qvkCmdClearAttachments;
+PFN_vkCmdClearColorImage                        qvkCmdClearColorImage;
 PFN_vkCmdCopyBufferToImage						qvkCmdCopyBufferToImage;
 PFN_vkCmdCopyImage								qvkCmdCopyImage;
 PFN_vkCmdCopyImageToBuffer                      qvkCmdCopyImageToBuffer;
@@ -136,8 +137,6 @@ PFN_vkCreateSwapchainKHR						qvkCreateSwapchainKHR;
 PFN_vkDestroySwapchainKHR						qvkDestroySwapchainKHR;
 PFN_vkGetSwapchainImagesKHR						qvkGetSwapchainImagesKHR;
 PFN_vkQueuePresentKHR							qvkQueuePresentKHR;
-
-
 
 
 
@@ -1069,6 +1068,7 @@ static void vk_loadDeviceFunctions(void)
 	INIT_DEVICE_FUNCTION(vkCmdBindVertexBuffers)
 	INIT_DEVICE_FUNCTION(vkCmdBlitImage)
 	INIT_DEVICE_FUNCTION(vkCmdClearAttachments)
+	INIT_DEVICE_FUNCTION(vkCmdClearColorImage)
 	INIT_DEVICE_FUNCTION(vkCmdCopyBufferToImage)
 	INIT_DEVICE_FUNCTION(vkCmdCopyImage)
     INIT_DEVICE_FUNCTION(vkCmdCopyImageToBuffer)
@@ -1340,6 +1340,7 @@ void vk_clearProcAddress(void)
 	qvkCmdBindVertexBuffers						= NULL;
 	qvkCmdBlitImage								= NULL;
 	qvkCmdClearAttachments						= NULL;
+    qvkCmdClearColorImage                       = NULL;
 	qvkCmdCopyBufferToImage						= NULL;
 	qvkCmdCopyImage								= NULL;
     qvkCmdCopyImageToBuffer                     = NULL;

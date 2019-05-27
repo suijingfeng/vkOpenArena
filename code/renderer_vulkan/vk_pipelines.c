@@ -38,6 +38,11 @@
 // each other, add up or be mixed based opon transparency.
 //
 
+
+// blending: The process of merging a new color value into an existing color
+// attachment using an equation and parameters that are configured as part
+// of a graphics pipeline.
+
 struct ParmsKey {
     uint32_t state_bits; // GLS_XXX flags
 	
@@ -124,8 +129,8 @@ static VkPipeline FindPipeline(const struct ParmsKey * const par)
     pTmp = (struct PipelineParameter_t *) 
         ri.Hunk_Alloc( sizeof(struct PipelineParameter_t ), h_low );
 
-    //    plPar.shadow_phase = SHADOWS_RENDERING_DISABLED;
-    //    plPar.line_primitives = VK_FALSE;
+    // plPar.shadow_phase = SHADOWS_RENDERING_DISABLED;
+    // plPar.line_primitives = VK_FALSE;
 
     vk_create_pipeline( 
             par->state_bits, par->shader_type, par->face_culling, SHADOWS_RENDERING_DISABLED,
@@ -458,12 +463,24 @@ void vk_create_pipeline(
     //
     // Viewport.
     //
+    // if viewport is specified as dynamic, the values of the viewport
+    // bounds specified at pipeline-creation time are ignored.
+    // dont know if this give a initial value
+    VkViewport viewport = {
+        .x = 0,
+        .y = 0,
+        .width = vk.renderArea.extent.width,
+        .height = vk.renderArea.extent.height,
+        .minDepth = 0.0f,
+        .maxDepth = 1.0f,
+    };
+
     VkPipelineViewportStateCreateInfo viewport_state;
     viewport_state.sType = VK_STRUCTURE_TYPE_PIPELINE_VIEWPORT_STATE_CREATE_INFO;
     viewport_state.pNext = NULL;
     viewport_state.flags = 0;
     viewport_state.viewportCount = 1;
-    viewport_state.pViewports = NULL; // dynamic viewport state
+    viewport_state.pViewports = &viewport; // dynamic viewport state
 
     viewport_state.scissorCount = 1;
     viewport_state.pScissors = &vk.renderArea; // dynamic scissor state

@@ -14,7 +14,40 @@
 #include "R_PortalPlane.h"
 #include "vk_shade_geometry.h"
 
-
+// projection: the transformation of lines, points, and polygons
+// form eye coordinates to clipping coordinates on screeen.
+//
+// perspective divide: the transformation applied to homogeneous
+// vectors to move them from clip space into normalized device
+// coordinates by dividing them through by their w components.
+//
+// normalized device coordinate: the coordinate space produced by
+// taking a homogeneous position and deviding it through by its
+// own w component.
+//
+// model-view matrix: the matrix that transforms position vectors
+// from model(or object) space to view(or eye) space.
+//
+// eye coordinates: The coordinate system based on the position of
+// the viewer. The viewer's position is placed along the positive
+// z axis, looking down the negative z axis.
+//
+// clip coordinates: The 2D geometry coordinates that result from
+// the model view and projection transformation.
+//
+// clip distance: A distance value assigned by a shader that is 
+// used by fixed function clipping to allow primitives to be
+// clipped against an arbitrary set of planes before rasterization.
+//
+// clipping: The elimination of a portion of a single primitive
+// or group of the primitives. The points that outside the clipping
+// region or volume would not be rendered. The clipping volume
+// is generally specified by the projection matrix.
+//
+// ambient light: Light in a scene that doesn't come from any
+// specific point source or direction. Ambient light illuminates
+// all surfaces evenly and on all side.
+// 
 static float s_modelview_matrix[16] QALIGN(16);
 static float s_ProjectMat2d[16] QALIGN(16);
 
@@ -250,16 +283,15 @@ void vk_rcdUpdateViewport(VkBool32 is2D, enum Vk_Depth_Range depRg)
     }
     else
     {
-
         int32_t X = backEnd.viewParms.viewportX;
         int32_t Y = backEnd.viewParms.viewportY;
         int32_t W = backEnd.viewParms.viewportWidth;
         int32_t H = backEnd.viewParms.viewportHeight;
 
-//        viewport.x = backEnd.viewParms.viewportX;
-//        viewport.y = backEnd.viewParms.viewportY;
-//        viewport.width = backEnd.viewParms.viewportWidth;
-//        viewport.height = backEnd.viewParms.viewportHeight;
+        // viewport.x = backEnd.viewParms.viewportX;
+        // viewport.y = backEnd.viewParms.viewportY;
+        // viewport.width = backEnd.viewParms.viewportWidth;
+        // viewport.height = backEnd.viewParms.viewportHeight;
         
         // why this could happend ???
         if ( X < 0)
@@ -270,13 +302,10 @@ void vk_rcdUpdateViewport(VkBool32 is2D, enum Vk_Depth_Range depRg)
             W = vk.renderArea.extent.width - X;
         if (Y + H > vk.renderArea.extent.height)
             H = vk.renderArea.extent.height - Y;
-        //pRect->offset.x = 
+
         viewport.x = X;
-        //pRect->offset.y = 
         viewport.y = Y;
-        //pRect->extent.width =
         viewport.width = W;
-        //pRect->extent.height = 
         viewport.height = H;
 
         // ri.Printf(PRINT_ALL, "X:%d,Y:%d,W:%d,H:%d\n", X,Y,W,H);
@@ -318,7 +347,8 @@ void updateMVP(VkBool32 isPortal, VkBool32 is2D, const float mvMat4x4[16])
     // push constants are another way of passing dynamic values to shaders
     if (is2D)
     {            
-        NO_CHECK( qvkCmdPushConstants(vk.command_buffer, vk.pipeline_layout, VK_SHADER_STAGE_VERTEX_BIT, 0, 64, s_ProjectMat2d) );
+        NO_CHECK( qvkCmdPushConstants(vk.command_buffer, vk.pipeline_layout,
+                    VK_SHADER_STAGE_VERTEX_BIT, 0, 64, s_ProjectMat2d) );
     }
     else
     {
@@ -439,7 +469,6 @@ void vk_shade_geometry(VkPipeline pipeline, struct shaderCommands_s * const pTes
 //    
 //    vk_rcdUpdateViewport(is2D, depthRange);
 //
-
     // Original dynamic, set it when the pipeline is created. 
     // can change pipeline be understand dynamic feature ?
     // qvkCmdSetScissor(vk.command_buffer, 0, 1, &scissor);
@@ -540,7 +569,6 @@ void vk_clearDepthStencilAttachments(void)
         //        clear_rect.rect.offset.x, clear_rect.rect.offset.y, 
         //        clear_rect.rect.extent.width, clear_rect.rect.extent.height);
 
-
         NO_CHECK( qvkCmdClearAttachments(vk.command_buffer, 1, &attachments, 1, &clear_rect) );
         
         shadingDat.s_depth_attachment_dirty = VK_FALSE;
@@ -556,7 +584,6 @@ static void ProjectDlightTexture( struct shaderCommands_s * const pTess,
         uint32_t num_dlights, struct dlight_s* const pDlights)
 {
 	unsigned char clipBits[SHADER_MAX_VERTEXES];
-
 
     uint32_t l;
 	for (l = 0; l < num_dlights; ++l)
@@ -668,9 +695,6 @@ static void ProjectDlightTexture( struct shaderCommands_s * const pTess,
 		
         // include GLS_DEPTHFUNC_EQUAL so alpha tested surfaces
         // don't add light where they aren't rendered
-        // backEnd.pc.c_totalIndexes += numIndexes;
-		// backEnd.pc.c_dlightIndexes += numIndexes;
-		// backEnd.pc.c_dlightVertexes += pTess->numVertexes;
         R_UpdatePerformanceCounters( pTess->numVertexes, numIndexes, 0);
 		// VULKAN
 
@@ -695,7 +719,6 @@ static void RB_FogPass( struct shaderCommands_s * const pTess )
 	// VULKAN
     
     // ri.Printf(PRINT_ALL, "isFog: %d. \n", pTess->shader->fogPass);
-
 
     VkPipeline pipeline = g_globalPipelines.fog_pipelines[pTess->shader->fogPass - 1][pTess->shader->cullType][pTess->shader->polygonOffset];
     vk_shade_geometry(pipeline, pTess, VK_FALSE, VK_TRUE);
@@ -732,7 +755,7 @@ static void R_BindAnimatedImage( textureBundle_t *bundle, int tmu, float time)
 
 /////////////////////////////////////////////////////////////////////////////////
 
-void RB_StageIteratorGeneric(struct shaderCommands_s * const pTess, VkBool32 is2D)
+void RB_StageIteratorGeneric(struct shaderCommands_s * const pTess, VkBool32 isPortal, VkBool32 is2D)
 {
 
 	RB_DeformTessGeometry(pTess, pTess->shader->numDeforms, pTess->shader->deforms);
@@ -743,17 +766,37 @@ void RB_StageIteratorGeneric(struct shaderCommands_s * const pTess, VkBool32 is2
    
     vk_UploadXYZI(pTess->xyz, pTess->numVertexes, pTess->indexes, pTess->numIndexes);
 
-    updateMVP(backEnd.viewParms.isPortal, is2D, getptr_modelview_matrix() );
+    updateMVP(isPortal, is2D, getptr_modelview_matrix() );
     
+    // r_showsky will let all the sky blocks be drawn in
+	// front of everything to allow developers to see how
+	// much sky is getting sucked in.
+    
+    if(pTess->shader->isSky)
+    {
+        if (r_showsky->integer)
+        {
+            vk_rcdUpdateViewport(is2D, DEPTH_RANGE_ZERO);
+        }
+        else
+        {
+            vk_rcdUpdateViewport(is2D, DEPTH_RANGE_ONE);
+        }
+    }
+    else if (backEnd.currentEntity->e.renderfx & RF_DEPTHHACK)
+    {
+        vk_rcdUpdateViewport(is2D, DEPTH_RANGE_WEAPON);
+    }
+    else
+    {
+        vk_rcdUpdateViewport(is2D, DEPTH_RANGE_NORMAL);
+    }
+
 
     uint32_t stage = 0;
 
-	for ( stage = 0; stage < MAX_SHADER_STAGES; ++stage )
+	for ( stage = 0; stage < MAX_SHADER_STAGES && pTess->xstages[stage]; ++stage )
 	{
-		if ( NULL == pTess->xstages[stage])
-		{
-			break;
-		}
 
 		RB_ComputeColors( pTess->xstages[stage] );
 		RB_ComputeTexCoords( pTess->xstages[stage] );
@@ -782,22 +825,6 @@ void RB_StageIteratorGeneric(struct shaderCommands_s * const pTess, VkBool32 is2
             // disable texturing on TEXTURE1, then select TEXTURE0
 		}
 
-       
-        enum Vk_Depth_Range depth_range = DEPTH_RANGE_NORMAL;
-        if (pTess->shader->isSky)
-        {
-            depth_range = DEPTH_RANGE_ONE;
-            if (r_showsky->integer)
-                depth_range = DEPTH_RANGE_ZERO;
-        }
-        else if (backEnd.currentEntity->e.renderfx & RF_DEPTHHACK)
-        {
-            depth_range = DEPTH_RANGE_WEAPON;
-        }
-
-        vk_rcdUpdateViewport(is2D, depth_range);
-        
-
 		// allow skipping out to show just lightmaps during development
 		if ( r_lightmap->integer )
         {
@@ -806,7 +833,6 @@ void RB_StageIteratorGeneric(struct shaderCommands_s * const pTess, VkBool32 is2
 			    updateCurDescriptor( tr.whiteImage->descriptor_set, 0 );
             }
 		}
-
 
         if (backEnd.viewParms.isMirror)
         {
@@ -819,21 +845,17 @@ void RB_StageIteratorGeneric(struct shaderCommands_s * const pTess, VkBool32 is2
         else
         {
             vk_shade_geometry(pTess->xstages[stage]->vk_pipeline, pTess, multitexture, VK_TRUE);
-        }
-                        
+        }                 
 	}
+
 
 	// 
 	// now do any dynamic lighting needed
 	//
-	if ( pTess->dlightBits && 
-         pTess->shader->sort <= SS_OPAQUE && 
+	if ( pTess->dlightBits && pTess->shader->sort <= SS_OPAQUE && 
             !(pTess->shader->surfaceFlags & (SURF_NODLIGHT | SURF_SKY) ) )
     {
-        if(backEnd.refdef.num_dlights != 0)
-        {
 	    	ProjectDlightTexture( pTess, backEnd.refdef.num_dlights, backEnd.refdef.dlights);
-        }
 	}
 
 	//
@@ -844,5 +866,3 @@ void RB_StageIteratorGeneric(struct shaderCommands_s * const pTess, VkBool32 is2
 		RB_FogPass(pTess);
 	}
 }
-
-

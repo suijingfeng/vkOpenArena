@@ -53,7 +53,7 @@ use the shader system.
 */
 extern struct shaderCommands_s tess;
 
-extern void RB_StageIteratorGeneric( shaderCommands_t * const pTess, VkBool32 is2D);
+extern void RB_StageIteratorGeneric( shaderCommands_t * const pTess, VkBool32 isPortal ,VkBool32 is2D);
 
 void RB_CheckOverflow(uint32_t verts, uint32_t indexes)
 {
@@ -1134,51 +1134,51 @@ void RB_BeginSurface( shader_t * const pShader, int fogNum, shaderCommands_t * c
 }
 
 
-
-void RB_EndSurface( shaderCommands_t * const input )
+void RB_EndSurface( shaderCommands_t * const pTess )
 {
 
-	if ((input->numIndexes == 0) || (input->numVertexes == 0)) {
+	if ((pTess->numIndexes == 0) || (pTess->numVertexes == 0)) {
 		return;
 	}
 
 
-	if ( input->shader == tr.shadowShader ) {
+	if ( pTess->shader == tr.shadowShader ) {
 		RB_ShadowTessEnd();
 		return;
 	}
 
 	// for debugging of sort order issues, stop rendering after a given sort value
-	if ( r_debugSort->integer && r_debugSort->integer < input->shader->sort ) {
+	if ( r_debugSort->integer && r_debugSort->integer < pTess->shader->sort ) {
 		return;
 	}
 
 	//
 	// update performance counters
 	//
-    R_UpdatePerformanceCounters(input->numVertexes, input->numIndexes, input->numPasses);
+    R_UpdatePerformanceCounters(pTess->numVertexes, pTess->numIndexes, pTess->numPasses);
 
 	//
 	// call off to shader specific tess end function
 	//
-	if (input->shader->isSky) {
-		RB_StageIteratorSky(input);
+	if (pTess->shader->isSky) {
+		RB_StageIteratorSky(pTess);
     }
 
-	RB_StageIteratorGeneric(input, backEnd.projection2D);
 
+	RB_StageIteratorGeneric(pTess, backEnd.viewParms.isPortal, backEnd.projection2D);
+    
 	//
 	// draw debugging stuff
 	//
 	if ( r_showtris->integer )
     {
-		RB_DrawTris(input, backEnd.viewParms.isMirror, backEnd.projection2D);
+		RB_DrawTris(pTess, backEnd.viewParms.isMirror, backEnd.projection2D);
 	}
 	if ( r_shownormals->integer )
     {
-		RB_DrawNormals(input, backEnd.viewParms.isPortal, backEnd.projection2D);
+		RB_DrawNormals(pTess, backEnd.viewParms.isPortal, backEnd.projection2D);
 	}
 	// clear shader so we can tell we don't have any unclosed surfaces
-	input->numIndexes = 0;
-	input->numVertexes = 0;
+	pTess->numIndexes = 0;
+	pTess->numVertexes = 0;
 }

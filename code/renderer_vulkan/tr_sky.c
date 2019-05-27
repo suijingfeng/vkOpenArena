@@ -248,31 +248,22 @@ static void ClipSkyPolygon (int nump, vec3_t vecs, int stage)
 	ClipSkyPolygon (newc[1], newv[1][0], stage+1);
 }
 
-/*
-==============
-ClearSkyBox
-==============
-*/
-static void ClearSkyBox (void) {
-	int		i;
-
-	for (i=0 ; i<6 ; i++) {
-		sky_mins[0][i] = sky_mins[1][i] = 9999;
-		sky_maxs[0][i] = sky_maxs[1][i] = -9999;
-	}
-}
 
 
 void RB_ClipSkyPolygons( struct shaderCommands_s * const input )
 {
-	vec3_t		p[5];	// need one extra point for clipping
-	int			i, j;
+	vec3_t p[5];	// need one extra point for clipping
+	uint32_t i, j;
 
-	ClearSkyBox();
+	for (i=0; i<6; ++i)
+    {
+		sky_mins[0][i] = sky_mins[1][i] = 9999;
+		sky_maxs[0][i] = sky_maxs[1][i] = -9999;
+	}
 
-	for ( i = 0; i < input->numIndexes; i += 3 )
+	for (i = 0; i < input->numIndexes; i += 3)
 	{
-		for (j = 0 ; j < 3 ; j++) 
+		for (j = 0; j < 3; ++j) 
 		{
 			VectorSubtract( input->xyz[input->indexes[i+j]],
 							backEnd.viewParms.or.origin, 
@@ -632,9 +623,7 @@ static void FillCloudBox2(shader_t * pSha, uint32_t x)
 
 
 
-/*
-** R_BuildCloudData
-*/
+
 void R_BuildCloudData( struct shaderCommands_s * const pTess )
 {
 //	assert( shader->isSky );
@@ -718,16 +707,15 @@ void R_InitSkyTexCoords( float heightCloud )
 }
 
 
-static void DrawSkyBox( shader_t *shader, float matMV[16] )
+static void RB_DrawSkyBox( shader_t * const shader, float matMV[16] )
 {
-	int	i;
-
 	sky_min = 0;
 	sky_max = 1;
 
 	memset( s_skyTexCoords, 0, sizeof( s_skyTexCoords ) );
-
-	for (i=0 ; i<6 ; i++)
+	
+    uint32_t i;
+	for (i=0; i<6; ++i)
 	{
 		int sky_mins_subd[2], sky_maxs_subd[2];
 		int s, t;
@@ -783,26 +771,29 @@ static void DrawSkyBox( shader_t *shader, float matMV[16] )
 
 
 		// VULKAN: draw skybox side
-        // GL_Bind(shader->sky.outerbox[sky_texorder[i]]);
-        updateCurDescriptor(tess.shader->sky.outerbox[sky_texorder[i]]->descriptor_set, 0);
 
         tess.numVertexes = 0;
         tess.numIndexes = 0;
 
-        for ( t = sky_mins_subd[1]+HALF_SKY_SUBDIVISIONS; t < sky_maxs_subd[1]+HALF_SKY_SUBDIVISIONS; t++ )
+        uint32_t T_UpLimit = sky_maxs_subd[1]+HALF_SKY_SUBDIVISIONS;
+        uint32_t S_UpLimit = sky_maxs_subd[0]+HALF_SKY_SUBDIVISIONS;
+
+        for ( t = sky_mins_subd[1]+HALF_SKY_SUBDIVISIONS; t < T_UpLimit; ++t )
         {
-            for ( s = sky_mins_subd[0]+HALF_SKY_SUBDIVISIONS; s < sky_maxs_subd[0]+HALF_SKY_SUBDIVISIONS; s++ )
+            for ( s = sky_mins_subd[0]+HALF_SKY_SUBDIVISIONS; s < S_UpLimit; ++s )
             {
-                int ndx = tess.numVertexes;
-
-                tess.indexes[ tess.numIndexes ] = ndx;
-                tess.indexes[ tess.numIndexes + 1 ] = ndx + 1;
-                tess.indexes[ tess.numIndexes + 2 ] = ndx + 2;
-
-                tess.indexes[ tess.numIndexes + 3 ] = ndx + 2;
-                tess.indexes[ tess.numIndexes + 4 ] = ndx + 1;
-                tess.indexes[ tess.numIndexes + 5 ] = ndx + 3;
+                uint32_t ndx = tess.numVertexes;
+                uint32_t idx = tess.numIndexes;
                 tess.numIndexes += 6;
+                tess.numVertexes += 4;
+
+                tess.indexes[ idx ] = ndx;
+                tess.indexes[ idx + 1 ] = ndx + 1;
+                tess.indexes[ idx + 2 ] = ndx + 2;
+
+                tess.indexes[ idx + 3 ] = ndx + 2;
+                tess.indexes[ idx + 4 ] = ndx + 1;
+                tess.indexes[ idx + 5 ] = ndx + 3;
 
                 VectorCopy(s_skyPoints[t][s], tess.xyz[ndx]);
                 tess.svars.texcoords[0][ndx][0] = s_skyTexCoords[t][s][0];
@@ -819,19 +810,17 @@ static void DrawSkyBox( shader_t *shader, float matMV[16] )
                 VectorCopy(s_skyPoints[t + 1][s + 1], tess.xyz[ndx + 3]);
                 tess.svars.texcoords[0][ndx + 3][0] = s_skyTexCoords[t + 1][s + 1][0];
                 tess.svars.texcoords[0][ndx + 3][1] = s_skyTexCoords[t + 1][s + 1][1];
-
-                tess.numVertexes += 4;
             }
         }
 
         memset( tess.svars.colors, tr.identityLightByte, tess.numVertexes * 4 );
-
+        
+        // GL_Bind(shader->sky.outerbox[sky_texorder[i]]);
+        updateCurDescriptor(tess.shader->sky.outerbox[sky_texorder[i]]->descriptor_set, 0);
         //vk_bind_geometry();
         vk_UploadXYZI(tess.xyz, tess.numVertexes, tess.indexes, tess.numIndexes);
         
         updateMVP(backEnd.viewParms.isPortal, backEnd.projection2D, matMV);
-
-        // vk_rcdUpdateViewport(backEnd.projection2D, r_showsky->integer ? DEPTH_RANGE_ZERO : DEPTH_RANGE_ONE);
 
         vk_shade_geometry(g_globalPipelines.skybox_pipeline, &tess, VK_FALSE, VK_TRUE);
 	}
@@ -839,7 +828,6 @@ static void DrawSkyBox( shader_t *shader, float matMV[16] )
 
 /*
 ================
-RB_StageIteratorSky
 
 All of the visible sky triangles are in tess
 
@@ -858,34 +846,41 @@ void RB_StageIteratorSky( struct shaderCommands_s * const pTess )
 	// front of everything to allow developers to see how
 	// much sky is getting sucked in draw the outer skybox
 
+    if (r_showsky->integer)
+    {
+        vk_rcdUpdateViewport(backEnd.projection2D, DEPTH_RANGE_ZERO);
+    }
+    else
+    {
+        vk_rcdUpdateViewport(backEnd.projection2D, DEPTH_RANGE_ONE);
+    }
+
+
 	// draw the outer skybox
 	if ( pTess->shader->sky.outerbox[0] && pTess->shader->sky.outerbox[0] != tr.defaultImage )
     {
 
-        float modelMatrix_original[16] QALIGN(16);
         float modelview_transform[16] QALIGN(16);
-
-        memcpy(modelMatrix_original, getptr_modelview_matrix(), sizeof(float[16]));
-
-        float skybox_translate[16] = {
+        float skybox_translate[16] QALIGN(16) = {
             1, 0, 0, 0,
             0, 1, 0, 0,
             0, 0, 1, 0,
             backEnd.viewParms.or.origin[0], backEnd.viewParms.or.origin[1], backEnd.viewParms.or.origin[2], 1
         };
-        MatrixMultiply4x4_SSE(skybox_translate, modelMatrix_original, modelview_transform);
+        
+        MatrixMultiply4x4_SSE(skybox_translate, getptr_modelview_matrix(), modelview_transform);
 	
-		DrawSkyBox( pTess->shader, modelview_transform);
-
-        //memcpy(getptr_modelview_matrix(), modelMatrix_original, sizeof(float[16]));
-        //set_modelview_matrix();
+		RB_DrawSkyBox( pTess->shader, modelview_transform);
     }
 
 	// generate the vertexes for all the clouds, which will be drawn
 	// by the generic shader routine
 	R_BuildCloudData( pTess );
 
-//	RB_StageIteratorGeneric( pTess, 0 );
+    // ri.Printf(PRINT_ALL, "isSky?\n");
+    // vk_rcdUpdateViewport(backEnd.projection2D, DEPTH_RANGE_NORMAL);
 
-	// draw the inner skybox
+//	RB_StageIteratorGeneric( pTess, 0 );
+	
+    // draw the inner skybox
 }
