@@ -47,14 +47,7 @@ void RB_RenderDrawSurfList(const drawSurf_t* const pDrawSurfs, uint32_t numDrawS
 
         // so short, do we really need this?
 	    vk_clearColorAttachments(color);
-
-	    backEnd.isHyperspace = qtrue;
 	}
-	else
-	{
-		backEnd.isHyperspace = qfalse;
-	}
-
 
 	// draw everything
 
@@ -62,8 +55,6 @@ void RB_RenderDrawSurfList(const drawSurf_t* const pDrawSurfs, uint32_t numDrawS
 	int oldFogNum = -1;
 	int oldDlighted = qfalse;
 	unsigned int oldSort = -1;
-    
-
 
     shader_t* oldShader = NULL;
 
