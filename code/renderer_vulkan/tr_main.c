@@ -36,25 +36,32 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #include "tr_model.h"
 #include "R_SortDrawSurfs.h"
 #include "R_RotateForViewer.h"
+#include "srfPoly_type.h"
 
 /*
 =================
 Setup that culling frustum planes for the current view
 =================
 */
-static void SetPlaneSignbits (cplane_t *out)
+static void SetPlaneSignbits (cplane_t * const out)
 {
 	int	bits = 0;
-    int j;
 
 	// for fast box on planeside test
-	for (j=0; j<3; ++j)
+
+    if (out->normal[0] < 0)
     {
-		if (out->normal[j] < 0)
-        {
-			bits |= 1<<j;
-		}
-	}
+        bits |= 1;
+    }
+    if (out->normal[1] < 0)
+    {
+        bits |= 2;
+    }
+    if (out->normal[2] < 0)
+    {
+        bits |= 4;
+    }
+
 	out->signbits = bits;
 }
 
@@ -318,27 +325,26 @@ static void R_SetupProjection( viewParms_t * const pViewParams, VkBool32 noWorld
     float px = tan(pViewParams->fovX * (M_PI / 360.0f));
 
 	pViewParams->projectionMatrix[0] = 1.0f / px;
-	pViewParams->projectionMatrix[1] = 0;
-	pViewParams->projectionMatrix[2] = 0;
-	pViewParams->projectionMatrix[3] = 0;
+	pViewParams->projectionMatrix[1] = 0.0f;
+	pViewParams->projectionMatrix[2] = 0.0f;
+	pViewParams->projectionMatrix[3] = 0.0f;
     
-    pViewParams->projectionMatrix[4] = 0;
+    pViewParams->projectionMatrix[4] = 0.0f;
 	pViewParams->projectionMatrix[5] = -1.0f / py;
-	pViewParams->projectionMatrix[6] = 0;
-	pViewParams->projectionMatrix[7] = 0;
+	pViewParams->projectionMatrix[6] = 0.0f;
+	pViewParams->projectionMatrix[7] = 0.0f;
 
-    pViewParams->projectionMatrix[8] = 0;	// normally 0
-	pViewParams->projectionMatrix[9] =  0;
+    pViewParams->projectionMatrix[8] = 0.0f;	// normally 0
+	pViewParams->projectionMatrix[9] =  0.0f;
 	pViewParams->projectionMatrix[10] = p10;
 	pViewParams->projectionMatrix[11] = -1.0f;
 
-    pViewParams->projectionMatrix[12] = 0;
-	pViewParams->projectionMatrix[13] = 0;
+    pViewParams->projectionMatrix[12] = 0.0f;
+	pViewParams->projectionMatrix[13] = 0.0f;
 	pViewParams->projectionMatrix[14] = zNear * p10;
-	pViewParams->projectionMatrix[15] = 0;
+	pViewParams->projectionMatrix[15] = 0.0f;
 }
 
-#include "srfPoly_type.h"
 
 /*
 =====================

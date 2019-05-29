@@ -178,12 +178,11 @@ frame:36217 all:  0 sv:  0 ev:  8 cl:  0 gm:  0 rf:  0 bk:  0
 \timedemo 1
 \demo demo088-test1
 
-# Testing on UBUNTU 16.04 
-vulkan : 3398 frames 14.6 seconds 232.1 fps 2.0/4.3/9.0/1.0 ms
-opengl2: 3398 frames 22.2 seconds 153.2 fps 3.0/6.5/15.0/1.4 ms
+# Testing on UBUNTU 16.04, driver: 384.130, tested on 2019.05.29,
+vulkan : 3398 frames 21.0 seconds 162.2 fps 3.0/6.2/11.0/1.1 ms
+opengl2: 3398 frames 25.1 seconds 135.5 fps 4.0/7.4/14.0/1.5 ms
+opengl1: 3398 frames 10.1 seconds 337.0 fps 1.0/3.0/6.0/0.8 ms
 
-# same hardware, tested on 2019.05.17, the FPS drops, i just have no idea :(
-vulkan : 3398 frames 16.9 seconds 201.4 fps 2.0/5.0/10.0/1.0 ms
 
 # Testing on WIN10 Pro 64-bit, Driver version 397.31 
 vulkan : 3398 frames 14.5 seconds 233.6 fps 1.0/4.3/14.0/1.6 ms

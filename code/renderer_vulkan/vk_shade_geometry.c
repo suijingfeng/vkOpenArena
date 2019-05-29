@@ -600,7 +600,6 @@ static void ProjectDlightTexture( struct shaderCommands_s * const pTess,
 		
         uint8_t (* const pColors)[4] = pTess->svars.colors;
 
-		//dl = &backEnd.refdef.dlights[l];
         vec3_t origin;
 		VectorCopy( pDlights[l].transformed, origin );
 
@@ -838,7 +837,7 @@ void RB_StageIteratorGeneric(struct shaderCommands_s * const pTess, VkBool32 isP
         {
             vk_shade_geometry(pTess->xstages[stage]->vk_mirror_pipeline, pTess, multitexture, VK_TRUE);
         }
-        else if (backEnd.viewParms.isPortal)
+        else if (isPortal)
         {
             vk_shade_geometry(pTess->xstages[stage]->vk_portal_pipeline, pTess, multitexture, VK_TRUE);
         }
