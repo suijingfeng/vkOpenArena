@@ -2,8 +2,20 @@
 #include "tr_globals.h"
 #include "tr_world.h"
 #include "tr_model.h"
+#include "render_export.h"
 
-trGlobals_t		tr;
+trGlobals_t	tr;
+
+/*
+=================
+This is called by the clipmodel subsystem so we can share the 1.8 megs of
+space in big maps...
+=================
+*/
+void RE_SetWorldVisData( const uint8_t *vis )
+{
+	tr.externalVisData = vis;
+}
 
 
 void R_ShaderList_f (void)

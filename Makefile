@@ -1645,7 +1645,7 @@ Q3VKOBJ = \
   $(B)/renderer_vulkan/single_texture_vert.o \
   \
   $(B)/renderer_vulkan/R_StretchRaw.o \
-  $(B)/renderer_vulkan/R_DebugGraphics.o \
+  $(B)/renderer_vulkan/RB_DebugGraphics.o \
   $(B)/renderer_vulkan/RB_ShowImages.o \
   $(B)/renderer_vulkan/RB_DrawNormals.o \
   $(B)/renderer_vulkan/RB_DrawTris.o \

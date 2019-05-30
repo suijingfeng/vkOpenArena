@@ -1,0 +1,638 @@
+entityString {
+    "music" "music/OA11.ogg"
+    "message" "Five Steps Ahead"
+    "_blocksize" "512"
+    "_lightmapscale" "0.25"
+    "_minlight" "0"
+    "classname" "worldspawn"
+}
+{
+    "origin" "608 -96 224"
+    "classname" "item_armor_combat"
+}
+{
+    "origin" "-128 240 480"
+    "classname" "item_armor_body"
+}
+{
+    "origin" "792 1160 480"
+    "classname" "item_health_mega"
+}
+{
+    "model" "*1"
+    "target" "teleporter_one_upper"
+    "classname" "trigger_teleport"
+}
+{
+    "angle" "-90"
+    "targetname" "teleporter_one_upper"
+    "origin" "-536 672 88"
+    "classname" "misc_teleporter_dest"
+}
+{
+    "angle" "-90"
+    "targetname" "teleporter_two_lower"
+    "origin" "56 1168 472"
+    "classname" "misc_teleporter_dest"
+}
+{
+    "model" "*2"
+    "target" "teleporter_two_lower"
+    "classname" "trigger_teleport"
+}
+{
+    "model" "*3"
+    "target" "teleporter_two_upper"
+    "classname" "trigger_teleport"
+}
+{
+    "angle" "180"
+    "targetname" "teleporter_two_upper"
+    "origin" "240 304 24"
+    "classname" "misc_teleporter_dest"
+}
+{
+    "model" "*4"
+    "target" "teleporter_one_lower"
+    "classname" "trigger_teleport"
+}
+{
+    "angle" "180"
+    "targetname" "teleporter_one_lower"
+    "origin" "1008 -56 408"
+    "classname" "misc_teleporter_dest"
+}
+{
+    "origin" "864 -96 240"
+    "classname" "item_health"
+}
+{
+    "origin" "-800 -272 384"
+    "classname" "item_health"
+}
+{
+    "origin" "-344 448 320"
+    "classname" "item_health"
+}
+{
+    "origin" "176 448 32"
+    "classname" "item_health"
+}
+{
+    "origin" "96 448 32"
+    "classname" "item_health"
+}
+{
+    "angle" "160"
+    "origin" "912 -160 216"
+    "classname" "info_player_deathmatch"
+}
+{
+    "angle" "90"
+    "origin" "-112 -368 472"
+    "classname" "info_player_deathmatch"
+}
+{
+    "angle" "45"
+    "origin" "-560 -208 88"
+    "classname" "info_player_deathmatch"
+}
+{
+    "notfree" "0"
+    "angle" "-45"
+    "origin" "-144 976 152"
+    "classname" "info_player_deathmatch"
+}
+{
+    "!gametpe" "dom"
+    "angle" "-45"
+    "origin" "-624 784 472"
+    "classname" "info_player_deathmatch"
+}
+{
+    "angle" "-15"
+    "origin" "-864 288 312"
+    "classname" "info_player_deathmatch"
+}
+{
+    "targetname" "jumppad-railgun"
+    "origin" "-432 -96 480"
+    "classname" "target_position"
+}
+{
+    "model" "*5"
+    "target" "jumppad-railgun"
+    "classname" "trigger_push"
+}
+{
+    "origin" "-784 304 320"
+    "classname" "item_armor_shard"
+}
+{
+    "origin" "-736 304 320"
+    "classname" "item_armor_shard"
+}
+{
+    "origin" "-688 304 320"
+    "classname" "item_armor_shard"
+}
+{
+    "origin" "1120 624 480"
+    "classname" "item_armor_shard"
+}
+{
+    "origin" "552 280 448"
+    "classname" "ammo_grenades"
+}
+{
+    "origin" "-328 -336 448"
+    "classname" "ammo_bullets"
+}
+{
+    "origin" "-816 256 128"
+    "classname" "weapon_railgun"
+}
+{
+    "target" "intermission"
+    "origin" "368 484 588"
+    "classname" "info_player_intermission"
+}
+{
+    "targetname" "intermission"
+    "origin" "304 448 560"
+    "classname" "info_notnull"
+}
+{
+    "model" "*6"
+    "wait" "0.5"
+    "classname" "trigger_multiple"
+}
+{
+    "origin" "784 208 224"
+    "classname" "weapon_shotgun"
+}
+{
+    "origin" "792 -56 416"
+    "classname" "weapon_lightning"
+}
+{
+    "origin" "960 224 416"
+    "classname" "ammo_shells"
+}
+{
+    "origin" "-544 864 320"
+    "classname" "ammo_lightning"
+}
+{
+    "origin" "-544 944 320"
+    "classname" "ammo_grenades"
+}
+{
+    "model" "*7"
+    "wait" "0.2"
+    "target" "forcewalk1"
+    "classname" "trigger_multiple"
+}
+{
+    "targetname" "forcewalk1"
+    "noise" "sound/pulchr/forcewalk.wav"
+    "origin" "-288 256 464"
+    "classname" "target_speaker"
+}
+{
+    "model" "*8"
+    "wait" "0.2"
+    "target" "forcewalk2"
+    "classname" "trigger_multiple"
+}
+{
+    "noise" "sound/pulchr/forcewalk.wav"
+    "targetname" "forcewalk2"
+    "origin" "-112 128 464"
+    "classname" "target_speaker"
+}
+{
+    "angle" "-90"
+    "origin" "-208 920 156"
+    "classname" "item_health_small"
+}
+{
+    "angle" "-90"
+    "origin" "-208 968 156"
+    "classname" "item_health_small"
+}
+{
+    "angle" "-90"
+    "origin" "-208 872 156"
+    "classname" "item_health_small"
+}
+{
+    "origin" "-824 136 128"
+    "classname" "item_health_small"
+}
+{
+    "origin" "-824 376 128"
+    "classname" "item_health_small"
+}
+{
+    "angle" "0"
+    "targetname" "jumppad-megahealth"
+    "origin" "944 688 496"
+    "classname" "target_position"
+}
+{
+    "model" "*9"
+    "target" "jumppad-megahealth"
+    "classname" "trigger_push"
+}
+{
+    "model" "*10"
+    "team" "door"
+    "angle" "-1"
+    "classname" "func_door"
+}
+{
+    "model" "*11"
+    "team" "door"
+    "angle" "180"
+    "classname" "func_door"
+}
+{
+    "model" "*12"
+    "team" "door"
+    "angle" "-2"
+    "classname" "func_door"
+}
+{
+    "model" "*13"
+    "team" "door"
+    "angle" "0"
+    "classname" "func_door"
+}
+{
+    "targetname" "forcewalk3"
+    "noise" "sound/pulchr/forcewalk.wav"
+    "origin" "792 192 424"
+    "classname" "target_speaker"
+}
+{
+    "model" "*14"
+    "wait" "0.2"
+    "target" "forcewalk3"
+    "classname" "trigger_multiple"
+}
+{
+    "origin" "496 336 448"
+    "classname" "weapon_grenadelauncher"
+}
+{
+    "origin" "432 992 240"
+    "classname" "weapon_rocketlauncher"
+}
+{
+    "origin" "-640 -64 448"
+    "classname" "weapon_rocketlauncher"
+}
+{
+    "origin" "-408 -336 448"
+    "classname" "ammo_lightning"
+}
+{
+    "origin" "1024 224 416"
+    "classname" "ammo_rockets"
+}
+{
+    "origin" "-400 -240 96"
+    "classname" "ammo_shells"
+}
+{
+    "origin" "552 224 448"
+    "classname" "ammo_bullets"
+}
+{
+    "origin" "-640 304 320"
+    "classname" "item_armor_shard"
+}
+{
+    "origin" "1120 752 480"
+    "classname" "item_armor_shard"
+}
+{
+    "origin" "1120 688 480"
+    "classname" "item_armor_shard"
+}
+{
+    "origin" "912 0 224"
+    "classname" "ammo_slugs"
+}
+{
+    "origin" "856 0 224"
+    "classname" "ammo_bullets"
+}
+{
+    "!gametpe" "dom"
+    "angle" "-215"
+    "origin" "1000 464 472"
+    "classname" "info_player_deathmatch"
+}
+{
+    "origin" "-384 1120 320"
+    "classname" "weapon_shotgun"
+}
+{
+    "angle" "315"
+    "origin" "304 1200 472"
+    "classname" "info_player_deathmatch"
+}
+{
+    "angle" "-90"
+    "origin" "384 1136 216"
+    "classname" "info_player_deathmatch"
+}
+{
+    "origin" "96 112 32"
+    "classname" "ammo_rockets"
+}
+{
+    "origin" "176 112 32"
+    "classname" "ammo_shells"
+}
+{
+    "origin" "-480 -240 96"
+    "classname" "ammo_grenades"
+}
+{
+    "targetname" "spotlight_01"
+    "origin" "-768 -144 408"
+    "classname" "target_position"
+}
+{
+    "targetname" "spotlight_2"
+    "origin" "-112 104 648"
+    "classname" "target_position"
+}
+{
+    "targetname" "spotlight_3"
+    "origin" "-688 -224 408"
+    "classname" "target_position"
+}
+{
+    "targetname" "spotlight_4"
+    "origin" "248 488 200"
+    "classname" "target_position"
+}
+{
+    "targetname" "spotlight_5"
+    "origin" "404 392 448"
+    "classname" "target_position"
+}
+{
+    "targetname" "spotlight_6"
+    "origin" "-112 656 168"
+    "classname" "target_position"
+}
+{
+    "targetname" "spotlight_7"
+    "origin" "-48 112 312"
+    "classname" "target_position"
+}
+{
+    "targetname" "spotlight_8"
+    "origin" "-116 916 488"
+    "classname" "target_position"
+}
+{
+    "targetname" "spotlight_9"
+    "origin" "-336 448 296"
+    "classname" "target_position"
+}
+{
+    "targetname" "spotlight_10"
+    "origin" "-176 112 312"
+    "classname" "target_position"
+}
+{
+    "targetname" "spotlight_11"
+    "origin" "836 404 488"
+    "classname" "target_position"
+}
+{
+    "targetname" "spotlight_12"
+    "origin" "56 768 488"
+    "classname" "target_position"
+}
+{
+    "targetname" "spotlight_13"
+    "origin" "-392 768 488"
+    "classname" "target_position"
+}
+{
+    "targetname" "spotlight_14"
+    "origin" "24 1176 472"
+    "classname" "target_position"
+}
+{
+    "targetname" "spotlight_15"
+    "origin" "88 640 520"
+    "classname" "target_position"
+}
+{
+    "targetname" "spotlight_16"
+    "origin" "960 404 488"
+    "classname" "target_position"
+}
+{
+    "message" "Lower Rocket"
+    "origin" "440 992 280"
+    "classname" "target_location"
+}
+{
+    "message" "Mega Health"
+    "origin" "792 1160 512"
+    "classname" "target_location"
+}
+{
+    "message" "Lightning Gun"
+    "origin" "800 -56 456"
+    "classname" "target_location"
+}
+{
+    "message" "Yellow Armour"
+    "origin" "696 -96 240"
+    "classname" "target_location"
+}
+{
+    "message" "Railgun"
+    "origin" "-632 256 128"
+    "classname" "target_location"
+}
+{
+    "message" "Upper Rocket"
+    "origin" "-832 -296 592"
+    "classname" "target_location"
+}
+{
+    "message" "Another Room"
+    "origin" "-288 1104 488"
+    "classname" "target_location"
+}
+{
+    "message" "Red Armour"
+    "origin" "-152 216 536"
+    "classname" "target_location"
+}
+{
+    "message" "Center"
+    "origin" "72 352 416"
+    "classname" "target_location"
+}
+{
+    "targetname" "spotlight_17"
+    "origin" "120 168 520"
+    "classname" "target_position"
+}
+{
+    "targetname" "spotlight_18"
+    "origin" "404 280 448"
+    "classname" "target_position"
+}
+{
+    "targetname" "spotlight_19"
+    "origin" "508 280 448"
+    "classname" "target_position"
+}
+{
+    "targetname" "spotlight_20"
+    "origin" "508 392 448"
+    "classname" "target_position"
+}
+{
+    "angle" "90"
+    "origin" "112 -240 152"
+    "classname" "info_player_deathmatch"
+}
+{
+    "angle" "30"
+    "origin" "-744 -344 376"
+    "classname" "info_player_deathmatch"
+}
+{
+    "angle" "0"
+    "origin" "-528 1040 312"
+    "classname" "info_player_deathmatch"
+}
+{
+    "targetname" "spotlight_21"
+    "origin" "-220 916 488"
+    "classname" "target_position"
+}
+{
+    "targetname" "spotlight_22"
+    "origin" "-352 1176 312"
+    "classname" "target_position"
+}
+{
+    "origin" "-112 -400 480"
+    "classname" "item_health_small"
+}
+{
+    "origin" "-160 -400 480"
+    "classname" "item_health_small"
+}
+{
+    "origin" "-64 -400 480"
+    "classname" "item_health_small"
+}
+{
+    "noise" "sound/world/wind1.wav"
+    "spawnflags" "1"
+    "origin" "-112 -80 800"
+    "classname" "target_speaker"
+}
+{
+    "noise" "sound/world/portal01.wav"
+    "spawnflags" "1"
+    "origin" "56 1208 512"
+    "classname" "target_speaker"
+}
+{
+    "noise" "sound/world/portal01.wav"
+    "spawnflags" "1"
+    "origin" "280 304 64"
+    "classname" "target_speaker"
+}
+{
+    "noise" "sound/world/portal01.wav"
+    "spawnflags" "1"
+    "origin" "1048 -56 448"
+    "classname" "target_speaker"
+}
+{
+    "noise" "sound/world/portal01.wav"
+    "spawnflags" "1"
+    "origin" "-536 712 128"
+    "classname" "target_speaker"
+}
+{
+    "noise" "sound/world/wind1.wav"
+    "spawnflags" "1"
+    "origin" "-48 408 848"
+    "classname" "target_speaker"
+}
+{
+    "noise" "sound/world/wind1.wav"
+    "spawnflags" "1"
+    "origin" "-160 1104 848"
+    "classname" "target_speaker"
+}
+{
+    "noise" "sound/world/wind1.wav"
+    "spawnflags" "1"
+    "origin" "-608 -168 800"
+    "classname" "target_speaker"
+}
+{
+    "noise" "sound/world/wind1.wav"
+    "spawnflags" "1"
+    "origin" "464 800 848"
+    "classname" "target_speaker"
+}
+{
+    "noise" "sound/world/drone6.wav"
+    "spawnflags" "1"
+    "origin" "-352 -16 80"
+    "classname" "target_speaker"
+}
+{
+    "noise" "sound/world/drone6.wav"
+    "spawnflags" "1"
+    "origin" "896 688 272"
+    "classname" "target_speaker"
+}
+{
+    "message" "West"
+    "origin" "1048.000000 688.000000 480.000000"
+    "classname" "domination_point"
+}
+{
+    "message" "Central"
+    "origin" "0.000000 320.000000 32.000000"
+    "classname" "domination_point"
+}
+{
+    "message" "East"
+    "origin" "-616.000000 456.000000 472.000000"
+    "classname" "domination_point"
+}
+{
+    "gametype" "dom"
+    "origin" "400.000000 -8.000000 440.000000"
+    "classname" "info_player_deathmatch"
+}
+{
+    "gametype" "dom"
+    "angle" "90.000000"
+    "origin" "672.000000 88.000000 216.000000"
+    "classname" "info_player_deathmatch"
+}
+

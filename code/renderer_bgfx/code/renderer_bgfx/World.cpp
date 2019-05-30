@@ -440,7 +440,10 @@ static void CreateOrAppendSkySurface(std::vector<SkySurface> &skySurfaces, const
 
 void Load(const char *name)
 {
-	s_world = std::make_unique<World>();
+    
+    interface::Printf(" World Load %s \n", name);
+	
+    s_world = std::make_unique<World>();
 	util::Strncpyz(s_world->name, name, sizeof(s_world->name));
 	util::Strncpyz(s_world->baseName, util::SkipPath(s_world->name), sizeof(s_world->baseName));
 	util::StripExtension(s_world->baseName, s_world->baseName, sizeof(s_world->baseName));
@@ -488,7 +491,7 @@ void Load(const char *name)
 		0, // LUMP_VISIBILITY
 	};
 
-	for (size_t i = 0; i < HEADER_LUMPS; i++)
+	for (size_t i = 0; i < HEADER_LUMPS; ++i)
 	{
 		lump_t &l = header->lumps[i];
 		l.fileofs = LittleLong(l.fileofs);
@@ -699,10 +702,13 @@ void Load(const char *name)
 			s_world->lightmapAtlases.resize((size_t)ceil(nLightmaps / (float)s_world->nLightmapsPerAtlas));
 
 			// Pack lightmaps into atlas(es).
-			interface::Printf("Packing %d lightmaps into %d atlas(es) sized %dx%d.\n", (int)nLightmaps, (int)s_world->lightmapAtlases.size(), s_world->lightmapAtlasSize.x * s_world->lightmapSize, s_world->lightmapAtlasSize.y * s_world->lightmapSize);
+			interface::Printf("Packing %d lightmaps into %d atlas(es) sized %dx%d.\n", 
+                (int)nLightmaps, (int)s_world->lightmapAtlases.size(), 
+                s_world->lightmapAtlasSize.x * s_world->lightmapSize, 
+                s_world->lightmapAtlasSize.y * s_world->lightmapSize );
 			size_t lightmapIndex = 0;
 
-			for (size_t i = 0; i < s_world->lightmapAtlases.size(); i++)
+			for (size_t i = 0; i < s_world->lightmapAtlases.size(); ++i)
 			{
 				Image image;
 				image.width = s_world->lightmapAtlasSize.x * s_world->lightmapSize;
@@ -760,11 +766,15 @@ void Load(const char *name)
 		assert(s_world->modelDefs.size() > 0);
 		lump_t &lump = header->lumps[LUMP_LIGHTGRID];
 
+
+        interface::Printf("light Grid Size: %f, %f, %f\n", 
+               s_world->lightGridSize.x, s_world->lightGridSize.y, s_world->lightGridSize.z);
+
 		s_world->lightGridInverseSize.x = 1.0f / s_world->lightGridSize.x;
 		s_world->lightGridInverseSize.y = 1.0f / s_world->lightGridSize.y;
 		s_world->lightGridInverseSize.z = 1.0f / s_world->lightGridSize.z;
 
-		for (size_t i = 0; i < 3; i++)
+		for (size_t i = 0; i < 3; ++i)
 		{
 			s_world->lightGridOrigin[i] = s_world->lightGridSize[i] * ceil(s_world->modelDefs[0].bounds.min[i] / s_world->lightGridSize[i]);
 			const float max = s_world->lightGridSize[i] * floor(s_world->modelDefs[0].bounds.max[i] / s_world->lightGridSize[i]);
@@ -772,6 +782,8 @@ void Load(const char *name)
 		}
 
 		const int numGridPoints = s_world->lightGridBounds[0] * s_world->lightGridBounds[1] * s_world->lightGridBounds[2];
+    
+        interface::Printf("numGridPoints: %d\n", numGridPoints);
 
 		if (lump.filelen != numGridPoints * 8)
 		{
@@ -784,7 +796,7 @@ void Load(const char *name)
 		}
 
 		// deal with overbright bits
-		for (int i = 0; i < numGridPoints; i++)
+		for (int i = 0; i < numGridPoints; ++i)
 		{
 			util::OverbrightenColor(&s_world->lightGridData[i*8], &s_world->lightGridData[i*8]);
 			util::OverbrightenColor(&s_world->lightGridData[i*8+3], &s_world->lightGridData[i*8+3]);

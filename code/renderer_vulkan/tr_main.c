@@ -29,7 +29,6 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #include "ref_import.h"
 
 #include "R_PrintMat.h"
-#include "R_DebugGraphics.h"
 #include "tr_cmds.h"
 #include "tr_scene.h"
 #include "tr_world.h"
@@ -37,7 +36,7 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #include "R_SortDrawSurfs.h"
 #include "R_RotateForViewer.h"
 #include "srfPoly_type.h"
-
+#include "RB_DebugGraphics.h"
 /*
 =================
 Setup that culling frustum planes for the current view

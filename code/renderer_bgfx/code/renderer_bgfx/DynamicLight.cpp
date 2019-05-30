@@ -35,7 +35,8 @@ DynamicLightManager::DynamicLightManager() : nLights_(0)
 	interface::Printf("dlight texture size is %ux%u\n", lightsTextureSize_, lightsTextureSize_);
 
 	// Clamp and filter are just for debug drawing. Sampling uses texel fetch.
-	lightsTexture_ = bgfx::createTexture2D(lightsTextureSize_, lightsTextureSize_, false, 1, bgfx::TextureFormat::RGBA32F, BGFX_SAMPLER_U_CLAMP | BGFX_SAMPLER_V_CLAMP | BGFX_SAMPLER_MIN_POINT | BGFX_SAMPLER_MAG_POINT);
+	lightsTexture_ = bgfx::createTexture2D(lightsTextureSize_, lightsTextureSize_, false, 1, bgfx::TextureFormat::RGBA32F, 
+            BGFX_SAMPLER_U_CLAMP | BGFX_SAMPLER_V_CLAMP | BGFX_SAMPLER_MIN_POINT | BGFX_SAMPLER_MAG_POINT);
 }
 
 DynamicLightManager::~DynamicLightManager()
@@ -105,9 +106,10 @@ void DynamicLightManager::initializeGrid()
 	// Cells texture.
 	cellsTextureSize_ = util::CalculateSmallestPowerOfTwoTextureSize((int)gridSize_.x * (int)gridSize_.y * (int)gridSize_.z);
 	interface::Printf("dlight cells texture size is %ux%u\n", cellsTextureSize_, cellsTextureSize_);
-	cellsTexture_ = bgfx::createTexture2D(cellsTextureSize_, cellsTextureSize_, false, 1, bgfx::TextureFormat::R16U, BGFX_SAMPLER_U_CLAMP | BGFX_SAMPLER_V_CLAMP | BGFX_SAMPLER_MIN_POINT | BGFX_SAMPLER_MAG_POINT);
+	cellsTexture_ = bgfx::createTexture2D(cellsTextureSize_, cellsTextureSize_, false, 1, bgfx::TextureFormat::R16U, 
+        BGFX_SAMPLER_U_CLAMP | BGFX_SAMPLER_V_CLAMP | BGFX_SAMPLER_MIN_POINT | BGFX_SAMPLER_MAG_POINT);
 
-	for (int i = 0; i < BGFX_NUM_BUFFER_FRAMES; i++)
+	for (int i = 0; i < BGFX_NUM_BUFFER_FRAMES; ++i)
 	{
 		cellsTextureData_[i].resize(cellsTextureSize_ * cellsTextureSize_);
 	}

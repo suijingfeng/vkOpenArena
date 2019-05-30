@@ -102,28 +102,19 @@ static void HSVtoRGB( float h, float s, float v, float rgb[3] )
 	}
 }
 
-/*
-===============
-R_ColorShiftLightingBytes
-
-===============
-*/
-static	void R_ColorShiftLightingBytes( byte in[4], byte out[4] ) {
-	int		shift, r, g, b;
-
+static void R_ColorShiftLightingBytes( uint8_t in[4], uint8_t out[4] )
+{
 	// shift the color data based on overbright range
-	shift = r_mapOverBrightBits->integer - tr.overbrightBits;
+	uint32_t shift = r_mapOverBrightBits->integer - tr.overbrightBits;
 
 	// shift the data based on overbright range
-	r = in[0] << shift;
-	g = in[1] << shift;
-	b = in[2] << shift;
+	uint32_t r = in[0] << shift;
+	uint32_t g = in[1] << shift;
+	uint32_t b = in[2] << shift;
 	
 	// normalize by color instead of saturating to white
 	if ( ( r | g | b ) > 255 ) {
-		int		max;
-
-		max = r > g ? r : g;
+		int		max = r > g ? r : g;
 		max = max > b ? max : b;
 		r = r * 255 / max;
 		g = g * 255 / max;
@@ -136,41 +127,40 @@ static	void R_ColorShiftLightingBytes( byte in[4], byte out[4] ) {
 	out[3] = in[3];
 }
 
-/*
-===============
-R_LoadLightmaps
 
-===============
-*/
 #define	LIGHTMAP_SIZE	128
-static	void R_LoadLightmaps( lump_t *l ) {
-	byte		*buf, *buf_p;
-	int			len;
+static void R_LoadLightmaps(const lump_t * const l )
+{
+	byte *buf_p;
 	unsigned char image[LIGHTMAP_SIZE*LIGHTMAP_SIZE*4];
 	int			i, j;
 	float maxIntensity = 0;
 	double sumIntensity = 0;
 
-    len = l->filelen;
+    int len = l->filelen;
 	if ( !len ) {
 		return;
 	}
-	buf = fileBase + l->fileofs;
+	uint8_t* buf = fileBase + l->fileofs;
 
 	// create all the lightmaps
-	tr.numLightmaps = len / (LIGHTMAP_SIZE * LIGHTMAP_SIZE * 3);
-	if ( tr.numLightmaps == 1 ) {
+    uint32_t numLightmaps = len / (LIGHTMAP_SIZE * LIGHTMAP_SIZE * 3);
+	if ( numLightmaps == 1 )
+    {
 		//FIXME: HACK: maps with only one lightmap turn up fullbright for some reason.
 		//this avoids this, but isn't the correct solution.
-		tr.numLightmaps++;
+		++numLightmaps;
 	}
+    ri.Printf(PRINT_ALL, "numLightmaps: %d\n", numLightmaps);
+    tr.numLightmaps = numLightmaps;
 
 	// if we are in r_vertexLight mode, we don't need the lightmaps at all
 	if ( r_vertexLight->integer ) {
 		return;
 	}
 
-	for ( i = 0 ; i < tr.numLightmaps ; i++ ) {
+	for ( i = 0 ; i < numLightmaps; ++i )
+    {
 		// expand the 24 bit on-disk to 32 bit
 		buf_p = buf + i * LIGHTMAP_SIZE*LIGHTMAP_SIZE * 3;
 
@@ -203,13 +193,17 @@ static	void R_LoadLightmaps( lump_t *l ) {
 
 				sumIntensity += intensity;
 			}
-		} else {
-			for ( j = 0 ; j < LIGHTMAP_SIZE * LIGHTMAP_SIZE; j++ ) {
+		}
+        else
+        {
+			for ( j = 0 ; j < LIGHTMAP_SIZE * LIGHTMAP_SIZE; ++j )
+            {
 				R_ColorShiftLightingBytes( &buf_p[j*3], &image[j*4] );
 				image[j*4+3] = 255;
 			}
 		}
-		tr.lightmaps[i] = R_CreateImage( va("*lightmap%d",i), image, 
+		
+        tr.lightmaps[i] = R_CreateImage( va("*lightmap%d",i), image, 
 			LIGHTMAP_SIZE, LIGHTMAP_SIZE, qfalse, qfalse, GL_CLAMP);
 	}
 
@@ -219,53 +213,43 @@ static	void R_LoadLightmaps( lump_t *l ) {
 }
 
 
-/*
-=================
-RE_SetWorldVisData
 
-This is called by the clipmodel subsystem so we can share the 1.8 megs of
-space in big maps...
-=================
-*/
-void		RE_SetWorldVisData( const byte *vis ) {
-	tr.externalVisData = vis;
-}
-
-
-/*
-=================
-R_LoadVisibility
-=================
-*/
-static	void R_LoadVisibility( lump_t *l )
+static void R_LoadVisibility( const lump_t * const l, world_t* const pW )
 {
-    ri.Printf (PRINT_ALL, "\n---R_LoadVisibility---\n");
+    ri.Printf (PRINT_ALL, "\n --- Load Visibility --- \n");
 
-	unsigned char* buf;
+    ri.Printf (PRINT_ALL, " numClusters: %d \n", pW->numClusters);
 
-	int len = ( s_worldData.numClusters + 63 ) & ~63;
-	s_worldData.novis = (byte*) ri.Hunk_Alloc( len, h_low );
-	memset( s_worldData.novis, 0xff, len );
+	int len = ( pW->numClusters + 63 ) & ~63;
+	pW->novis = (uint8_t *) ri.Hunk_Alloc( len, h_low );
+	memset( pW->novis, 0xff, len );
 
     len = l->filelen;
 	if ( !len ) {
 		return;
 	}
-	buf = fileBase + l->fileofs;
+    
+	uint8_t * buf = fileBase + l->fileofs;
+    
+#ifdef Q3_BIG_ENDIAN
+	pW->numClusters = LittleLong( ((int *)buf)[0] );
+	pW->clusterBytes = LittleLong( ((int *)buf)[1] );
+#else
+    pW->numClusters = ((int *)buf)[0] ;
+	pW->clusterBytes = ((int *)buf)[1] ;
+#endif
 
-	s_worldData.numClusters = LittleLong( ((int *)buf)[0] );
-	s_worldData.clusterBytes = LittleLong( ((int *)buf)[1] );
 
 	// CM_Load should have given us the vis data to share, so
 	// we don't need to allocate another copy
 	if ( tr.externalVisData ) {
-		s_worldData.vis = tr.externalVisData;
-	} else {
-		byte	*dest;
-
-		dest = (byte*) ri.Hunk_Alloc( len - 8, h_low );
+		pW->vis = tr.externalVisData;
+	}
+    else
+    {
+		uint8_t * dest = (uint8_t * ) ri.Hunk_Alloc( len - 8, h_low );
 		memcpy( dest, buf + 8, len - 8 );
-		s_worldData.vis = dest;
+		pW->vis = dest;
 	}
 }
 
@@ -1240,12 +1224,9 @@ void R_MovePatchSurfacesToHunk(void) {
 	}
 }
 
-/*
-===============
-R_LoadSurfaces
-===============
-*/
-static	void R_LoadSurfaces( lump_t *surfs, lump_t *verts, lump_t *indexLump ) {
+
+static void R_LoadSurfaces( lump_t *surfs, lump_t *verts, lump_t *indexLump )
+{
 	dsurface_t	*in;
 	msurface_t	*out;
 	drawVert_t	*dv;
@@ -1315,66 +1296,77 @@ static	void R_LoadSurfaces( lump_t *surfs, lump_t *verts, lump_t *indexLump ) {
 }
 
 
-/*
-=================
-R_LoadSubmodels
-=================
-*/
-static	void R_LoadSubmodels( lump_t *l )
+
+static void R_LoadSubmodels(const lump_t * const l, world_t* const pW)
 {
-    ri.Printf (PRINT_ALL, "\n---R_LoadSubmodels---\n");
+    ri.Printf (PRINT_ALL, "\n --- R_LoadSubmodels --- \n");
 
-	bmodel_t	*out;
-	int			i, j, count;
+    if (l->filelen % sizeof(dmodel_t)) {
+		ri.Error (ERR_DROP, "LoadMap: funny lump size in %s", pW->name);
+    }
 
-	dmodel_t* in = (dmodel_t*) (fileBase + l->fileofs);
-	if (l->filelen % sizeof(*in))
-		ri.Error (ERR_DROP, "LoadMap: funny lump size in %s",s_worldData.name);
-	count = l->filelen / sizeof(*in);
+    uint32_t const count = l->filelen / sizeof(dmodel_t);
 
-	s_worldData.bmodels = out = (bmodel_t*) ri.Hunk_Alloc( count * sizeof(*out), h_low );
+    dmodel_t* const in = (dmodel_t *) (fileBase + l->fileofs);
+    bmodel_t* const out = (bmodel_t *) ri.Hunk_Alloc( count * sizeof(bmodel_t), h_low );
+	pW->bmodels = out;
 
-	for ( i=0 ; i<count ; i++, in++, out++ )
+    ri.Printf( PRINT_ALL, " %d model in lump. \n", count);
+
+
+    uint32_t i;
+	for ( i=0; i<count; ++i)
     {
 		// model_t *model = R_AllocModel();
 
-        model_t* model = ri.Hunk_Alloc( sizeof( model_t ), h_low );
-        assert( model != NULL );			// this should never happen
+        model_t* const model = ri.Hunk_Alloc( sizeof( model_t ), h_low );
+        assert( model != NULL ); // this should never happen
 
         model->index = tr.numModels;
-        tr.models[tr.numModels] = model;
         model->type = MOD_BRUSH;
-		model->bmodel = out;
+		model->bmodel = &out[i];
 		snprintf( model->name, sizeof( model->name ), "*%d", i );
+        ri.Printf( PRINT_ALL, " model name: %s. \n", model->name);
 
-
+        tr.models[tr.numModels] = model;
 
         if ( ++tr.numModels == MAX_MOD_KNOWN )
         {
-            ri.Printf(PRINT_WARNING, "R_AllocModel: MAX_MOD_KNOWN.\n");
+            ri.Printf(PRINT_WARNING, " Model Memory occupy: MAX_MOD_KNOWN HIT. \n");
 	    }
-
-        // ri.Printf( PRINT_ALL, "Allocate Memory for %s model. \n", model->name);
-		for (j=0 ; j<3 ; j++) {
-			out->bounds[0][j] = LittleFloat (in->mins[j]);
-			out->bounds[1][j] = LittleFloat (in->maxs[j]);
+#ifdef Q3_BIG_ENDIAN
+		uint32_t j;
+        for (j=0; j<3; ++j)
+        {
+			out[i].bounds[0][j] = LittleFloat (in[i].mins[j]);
+			out[i].bounds[1][j] = LittleFloat (in[i].maxs[j]);
 		}
 
-		out->firstSurface = s_worldData.surfaces + LittleLong( in->firstSurface );
-		out->numSurfaces = LittleLong( in->numSurfaces );
+		out[i].firstSurface = pW->surfaces + LittleLong( in[i].firstSurface );
+		out[i].numSurfaces = LittleLong( in[i].numSurfaces );
+#else
+		out[i].bounds[0][0] = in[i].mins[0];
+		out[i].bounds[1][0] = in[i].maxs[0];
+
+		out[i].bounds[0][1] = in[i].mins[1];
+		out[i].bounds[1][1] = in[i].maxs[1];
+		
+        out[i].bounds[0][2] = in[i].mins[2];
+		out[i].bounds[1][2] = in[i].maxs[2];
+        
+        out[i].firstSurface = pW->surfaces + in[i].firstSurface;
+		out[i].numSurfaces = in[i].numSurfaces ;
+#endif
 	}
+
+    ri.Printf (PRINT_ALL, " --- ----------------- --- \n\n");
 }
 
 
 
 //==================================================================
 
-/*
-=================
-R_SetParent
-=================
-*/
-static	void R_SetParent (mnode_t *node, mnode_t *parent)
+static void R_SetParent (mnode_t * const node, const mnode_t * const parent)
 {
 	node->parent = parent;
 	if (node->contents != -1)
@@ -1383,34 +1375,29 @@ static	void R_SetParent (mnode_t *node, mnode_t *parent)
 	R_SetParent (node->children[1], node);
 }
 
-/*
-=================
-R_LoadNodesAndLeafs
-=================
-*/
-static	void R_LoadNodesAndLeafs (lump_t *nodeLump, lump_t *leafLump)
+
+static void R_LoadNodesAndLeafs (const lump_t * const nodeLump, lump_t * const leafLump, world_t* const pWd)
 {
     ri.Printf (PRINT_ALL, "\n---R_LoadNodesAndLeafs---\n");
 
 	int			i, j, p;
-	dnode_t		*in;
 	dleaf_t		*inLeaf;
-	mnode_t 	*out;
 	int			numNodes, numLeafs;
 
-	in = (dnode_t*) (void *)(fileBase + nodeLump->fileofs);
+	dnode_t	* in = (dnode_t*) (void *)(fileBase + nodeLump->fileofs);
 	if (nodeLump->filelen % sizeof(dnode_t) ||
 		leafLump->filelen % sizeof(dleaf_t) ) {
-		ri.Error (ERR_DROP, "LoadMap: funny lump size in %s",s_worldData.name);
+		ri.Error (ERR_DROP, "LoadMap: funny lump size in %s", pWd->name);
 	}
+    
 	numNodes = nodeLump->filelen / sizeof(dnode_t);
 	numLeafs = leafLump->filelen / sizeof(dleaf_t);
 
-	out = (mnode_t*) ri.Hunk_Alloc ( (numNodes + numLeafs) * sizeof(*out), h_low);	
+	mnode_t * out = (mnode_t*) ri.Hunk_Alloc ( (numNodes + numLeafs) * sizeof(*out), h_low);	
 
-	s_worldData.nodes = out;
-	s_worldData.numnodes = numNodes + numLeafs;
-	s_worldData.numDecisionNodes = numNodes;
+	pWd->nodes = out;
+	pWd->numnodes = numNodes + numLeafs;
+	pWd->numDecisionNodes = numNodes;
 
 	// load nodes
 	for ( i=0 ; i<numNodes; i++, in++, out++)
@@ -1422,7 +1409,7 @@ static	void R_LoadNodesAndLeafs (lump_t *nodeLump, lump_t *leafLump)
 		}
 	
 		p = LittleLong(in->planeNum);
-		out->plane = s_worldData.planes + p;
+		out->plane = pWd->planes + p;
 
 		out->contents = CONTENTS_NODE;	// differentiate from leafs
 
@@ -1430,9 +1417,9 @@ static	void R_LoadNodesAndLeafs (lump_t *nodeLump, lump_t *leafLump)
 		{
 			p = LittleLong (in->children[j]);
 			if (p >= 0)
-				out->children[j] = s_worldData.nodes + p;
+				out->children[j] = pWd->nodes + p;
 			else
-				out->children[j] = s_worldData.nodes + numNodes + (-1 - p);
+				out->children[j] = pWd->nodes + numNodes + (-1 - p);
 		}
 	}
 	
@@ -1449,17 +1436,17 @@ static	void R_LoadNodesAndLeafs (lump_t *nodeLump, lump_t *leafLump)
 		out->cluster = LittleLong(inLeaf->cluster);
 		out->area = LittleLong(inLeaf->area);
 
-		if ( out->cluster >= s_worldData.numClusters ) {
-			s_worldData.numClusters = out->cluster + 1;
+		if ( out->cluster >= pWd->numClusters ) {
+			pWd->numClusters = out->cluster + 1;
 		}
 
-		out->firstmarksurface = s_worldData.marksurfaces +
+		out->firstmarksurface = pWd->marksurfaces +
 			LittleLong(inLeaf->firstLeafSurface);
 		out->nummarksurfaces = LittleLong(inLeaf->numLeafSurfaces);
 	}	
 
 	// chain decendants
-	R_SetParent (s_worldData.nodes, NULL);
+	R_SetParent (pWd->nodes, NULL);
 }
 
 //=============================================================================
@@ -1673,100 +1660,115 @@ static	void R_LoadFogs( lump_t *l, lump_t *brushesLump, lump_t *sidesLump ) {
 }
 
 
-void R_LoadLightGrid( lump_t *l )
+static void R_LoadLightGrid( const lump_t * const l, world_t* const w)
 {
-    ri.Printf (PRINT_ALL, "\n---R_LoadLightGrid---\n");
+    ri.Printf (PRINT_ALL, "\n --- Load Light Grid --- \n");
     
 
-	int		i;
-	vec3_t	maxs;
-	int		numGridPoints;
-	world_t	*w;
-	float	*wMins, *wMaxs;
-
-	w = &s_worldData;
+    ri.Printf( PRINT_ALL, "light Grid Size: %f, %f, %f\n", 
+            w->lightGridSize[0], w->lightGridSize[1], w->lightGridSize[2] );
 
 	w->lightGridInverseSize[0] = 1.0f / w->lightGridSize[0];
 	w->lightGridInverseSize[1] = 1.0f / w->lightGridSize[1];
 	w->lightGridInverseSize[2] = 1.0f / w->lightGridSize[2];
 
-	wMins = w->bmodels[0].bounds[0];
-	wMaxs = w->bmodels[0].bounds[1];
+	float* wMins = w->bmodels[0].bounds[0];
+	float* wMaxs = w->bmodels[0].bounds[1];
 
-	for ( i = 0 ; i < 3 ; i++ ) {
+
+	uint32_t i;
+	for ( i = 0 ; i < 3 ; ++i )
+    {
 		w->lightGridOrigin[i] = w->lightGridSize[i] * ceil( wMins[i] / w->lightGridSize[i] );
-		maxs[i] = w->lightGridSize[i] * floor( wMaxs[i] / w->lightGridSize[i] );
-		w->lightGridBounds[i] = (maxs[i] - w->lightGridOrigin[i])/w->lightGridSize[i] + 1;
+		float maxs = w->lightGridSize[i] * floor( wMaxs[i] / w->lightGridSize[i] );
+		w->lightGridBounds[i] = (maxs - w->lightGridOrigin[i])/w->lightGridSize[i] + 1;
 	}
 
-	numGridPoints = w->lightGridBounds[0] * w->lightGridBounds[1] * w->lightGridBounds[2];
+	int numGridPoints = w->lightGridBounds[0] * w->lightGridBounds[1] * w->lightGridBounds[2];
+    ri.Printf( PRINT_ALL, " numGridPoints: %d\n", numGridPoints);
 
-	if ( l->filelen != numGridPoints * 8 ) {
+	if ( l->filelen != numGridPoints * 8 )
+    {
 		ri.Printf( PRINT_WARNING, "WARNING: light grid mismatch\n" );
 		w->lightGridData = NULL;
 		return;
 	}
 
-	w->lightGridData = (byte*) ri.Hunk_Alloc( l->filelen, h_low );
-	memcpy( w->lightGridData, (void *)(fileBase + l->fileofs), l->filelen );
+	w->lightGridData = (uint8_t *) ri.Hunk_Alloc( l->filelen, h_low );
+	memcpy( w->lightGridData, fileBase + l->fileofs, l->filelen );
 
 	// deal with overbright bits
-	for ( i = 0 ; i < numGridPoints ; i++ ) {
+	for ( i = 0 ; i < numGridPoints; ++i )
+    {
 		R_ColorShiftLightingBytes( &w->lightGridData[i*8], &w->lightGridData[i*8] );
 		R_ColorShiftLightingBytes( &w->lightGridData[i*8+3], &w->lightGridData[i*8+3] );
 	}
+
+    ri.Printf (PRINT_ALL, "\n --- --------------- --- \n");
 }
 
 
-void R_LoadEntities( lump_t *l )
+static void R_LoadEntities(const lump_t * const l, world_t* const w )
 {
+    ri.Printf (PRINT_ALL, "\n --- Load Entities --- \n");
 
-    ri.Printf (PRINT_ALL, "\n---R_LoadEntities---\n");
-
-
-	char *p, *token, *s;
+	char *s;
 	char keyname[MAX_TOKEN_CHARS];
 	char value[MAX_TOKEN_CHARS];
-	world_t	*w;
 
-	w = &s_worldData;
 	w->lightGridSize[0] = 64;
 	w->lightGridSize[1] = 64;
 	w->lightGridSize[2] = 128;
 
-	p = (char *)(fileBase + l->fileofs);
+	char* p = (char *)(fileBase + l->fileofs);
 
 	// store for reference by the cgame
 	w->entityString = (char*) ri.Hunk_Alloc( l->filelen + 1, h_low );
 	strcpy( w->entityString, p );
 	w->entityParsePoint = w->entityString;
 
-	token = R_ParseExt( &p, qtrue );
+	char* token = R_ParseExt( &p, qtrue );
 	if (!*token || *token != '{') {
 		return;
 	}
 
 	// only parse the world spawn
-	while ( 1 ) {	
+	while ( 1 )
+    {	
 		// parse key
 		token = R_ParseExt( &p, qtrue );
 
-		if ( !*token || *token == '}' ) {
+        if( *token == 0 ) 
+        {
+            break;
+        }
+        
+		if ( *token == '}' )
+        {
 			break;
 		}
-		Q_strncpyz(keyname, token, sizeof(keyname));
+		
+        Q_strncpyz(keyname, token, sizeof(keyname));
 
 		// parse value
 		token = R_ParseExt( &p, qtrue );
 
-		if ( !*token || *token == '}' ) {
+        if( *token == 0 ) 
+        {
+            break;
+        }
+        
+		if ( *token == '}' )
+        {
 			break;
 		}
+
 		Q_strncpyz(value, token, sizeof(value));
 
 		// check for remapping of shaders for vertex lighting
 		s = "vertexremapshader";
-		if (!Q_strncmp(keyname, s, strlen(s)) ) {
+		if (!Q_strncmp(keyname, s, strlen(s)) )
+        {
 			s = strchr(value, ';');
 			if (!s) {
 				ri.Printf( PRINT_WARNING, "WARNING: no semi colon in vertexshaderremap '%s'\n", value );
@@ -1791,11 +1793,14 @@ void R_LoadEntities( lump_t *l )
 			continue;
 		}
 		// check for a different grid size
-		if (!Q_stricmp(keyname, "gridsize")) {
+		if (!Q_stricmp(keyname, "gridsize"))
+        {
 			sscanf(value, "%f %f %f", &w->lightGridSize[0], &w->lightGridSize[1], &w->lightGridSize[2] );
 			continue;
 		}
 	}
+    
+    ri.Printf (PRINT_ALL, "\n --- --------------- --- \n");
 }
 
 
@@ -1813,8 +1818,6 @@ qboolean RE_GetEntityToken( char *buffer, int size )
 
 /*
 =================
-RE_LoadWorldMap
-
 Called directly from cgame
 =================
 */
@@ -1822,9 +1825,7 @@ Called directly from cgame
 void RE_LoadWorldMap( const char *name )
 {
 	int			i;
-	dheader_t	*header;
 	char* buffer;
-	byte		*startMarker;
 
 	if ( tr.worldMapLoaded ) {
 		ri.Error( ERR_DROP, "ERROR: attempted to redundantly load world map\n" );
@@ -1839,8 +1840,8 @@ void RE_LoadWorldMap( const char *name )
 	VectorNormalize( tr.sunDirection );
 
 
-
 	// load it
+    ri.Printf(PRINT_ALL, " World Load: %s\n", name);
     ri.FS_ReadFile( name, &buffer );
 	if ( !buffer ) {
 		ri.Error (ERR_DROP, "RE_LoadWorldMap: %s not found", name);
@@ -1856,21 +1857,29 @@ void RE_LoadWorldMap( const char *name )
 	Q_strncpyz( s_worldData.baseName, R_SkipPath( s_worldData.name ), sizeof( s_worldData.name ) );
 	R_StripExtension( s_worldData.baseName, s_worldData.baseName, sizeof(s_worldData.baseName) );
 
-	startMarker = (byte*) ri.Hunk_Alloc(0, h_low);
+	unsigned char* startMarker = (byte*) ri.Hunk_Alloc(0, h_low);
 
-	header = (dheader_t *)buffer;
+	dheader_t* header = (dheader_t *)buffer;
 	fileBase = (byte *)header;
-
+#ifdef Q3_BIG_ENDIAN   
 	i = LittleLong (header->version);
-	if ( i != BSP_VERSION ) {
+#else
+    i = header->version;
+#endif
+
+	if ( i != BSP_VERSION )
+    {
 		ri.Error (ERR_DROP, "RE_LoadWorldMap: %s has wrong version number (%i should be %i)", 
 			name, i, BSP_VERSION);
 	}
 
 	// swap all the lumps
-	for (i=0 ; i<sizeof(dheader_t)/4 ; i++) {
-		((int *)header)[i] = LittleLong ( ((int *)header)[i]);
+#ifdef Q3_BIG_ENDIAN   
+	for (i=0 ; i<sizeof(dheader_t)/4 ; ++i)
+    {
+		((int *)header)[i] = LittleLong(((int *)header)[i]);
 	}
+#endif
 
     // load into heap
 	R_LoadShaders( &header->lumps[LUMP_SHADERS] );
@@ -1879,11 +1888,11 @@ void RE_LoadWorldMap( const char *name )
 	R_LoadFogs( &header->lumps[LUMP_FOGS], &header->lumps[LUMP_BRUSHES], &header->lumps[LUMP_BRUSHSIDES] );
 	R_LoadSurfaces( &header->lumps[LUMP_SURFACES], &header->lumps[LUMP_DRAWVERTS], &header->lumps[LUMP_DRAWINDEXES] );
 	R_LoadMarksurfaces (&header->lumps[LUMP_LEAFSURFACES]);
-	R_LoadNodesAndLeafs (&header->lumps[LUMP_NODES], &header->lumps[LUMP_LEAFS]);
-	R_LoadSubmodels (&header->lumps[LUMP_MODELS]);
-	R_LoadVisibility( &header->lumps[LUMP_VISIBILITY] );
-	R_LoadEntities( &header->lumps[LUMP_ENTITIES] );
-	R_LoadLightGrid( &header->lumps[LUMP_LIGHTGRID] );
+	R_LoadNodesAndLeafs (&header->lumps[LUMP_NODES], &header->lumps[LUMP_LEAFS], &s_worldData );
+	R_LoadSubmodels (&header->lumps[LUMP_MODELS], &s_worldData );
+	R_LoadVisibility( &header->lumps[LUMP_VISIBILITY], &s_worldData );
+	R_LoadEntities( &header->lumps[LUMP_ENTITIES], &s_worldData );
+	R_LoadLightGrid( &header->lumps[LUMP_LIGHTGRID], &s_worldData );
 
 	s_worldData.dataSize = (unsigned char *)ri.Hunk_Alloc(0, h_low) - startMarker;
 
