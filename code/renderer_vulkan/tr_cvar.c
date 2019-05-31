@@ -74,6 +74,7 @@ cvar_t	*r_maxpolyverts;
 cvar_t* r_allowResize; // make window resizable
 cvar_t* r_mode;
 
+cvar_t	*r_gpuIndex;
 
 void R_Register( void ) 
 {
@@ -160,4 +161,6 @@ void R_Register( void )
     r_allowResize = ri.Cvar_Get( "r_allowResize", "0", CVAR_ARCHIVE | CVAR_LATCH );
 
     r_mode = ri.Cvar_Get( "r_mode", "-2", CVAR_ARCHIVE | CVAR_LATCH );
+
+	r_gpuIndex = ri.Cvar_Get( "r_gpuIndex", "0", CVAR_ARCHIVE );
 }

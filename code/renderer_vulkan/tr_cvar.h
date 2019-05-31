@@ -36,6 +36,7 @@ extern cvar_t	*r_mode;				// video mode
 extern cvar_t	*r_fullscreen;
 extern cvar_t	*r_gamma;
 
+extern cvar_t   *r_gpuIndex;            // Your GPU card number
 
 extern cvar_t	*r_singleShader;				// make most world faces use default shader
 extern cvar_t	*r_colorMipLevels;				// development aid to see texture mip usage
