@@ -29,7 +29,7 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #include "tr_cvar.h"
 #include "icon_oa.h"
 #include "glConfig.h"
-#include "ref_import.h" 
+#include "ref_import.h"
 
 static SDL_Window* window_sdl = NULL;
 
@@ -40,7 +40,7 @@ static cvar_t* r_displayIndex;
 
 static void VKimp_DetectAvailableModes(void)
 {
-	int i, j;
+	int i;
 	char buf[ MAX_STRING_CHARS ] = { 0 };
 
 	SDL_DisplayMode windowMode;
@@ -65,8 +65,8 @@ static void VKimp_DetectAvailableModes(void)
 	}
 
 	int numModes = 0;
-	SDL_Rect* modes = SDL_calloc(numSDLModes, sizeof( SDL_Rect ));
-	if ( !modes )
+	SDL_Rect* pModesArray = SDL_calloc(numSDLModes, sizeof( SDL_Rect ));
+	if ( !pModesArray )
 	{
         ////////////////////////////////////
 		ri.Error(ERR_FATAL, "Out of memory" );
@@ -83,7 +83,7 @@ static void VKimp_DetectAvailableModes(void)
 		if( !mode.w || !mode.h )
 		{
 			ri.Printf(PRINT_ALL,  "Display supports any resolution\n" );
-			SDL_free( modes );
+			SDL_free( pModesArray );
 			return;
 		}
 
@@ -92,28 +92,31 @@ static void VKimp_DetectAvailableModes(void)
 
 		// SDL can give the same resolution with different refresh rates.
 		// Only list resolution once.
+        int j;
 		for( j = 0; j < numModes; ++j )
 		{
-			if( (mode.w == modes[ j ].w) && (mode.h == modes[ j ].h) )
+			if( (mode.w == pModesArray[ j ].w) && (mode.h == pModesArray[ j ].h) )
 				break;
 		}
 
 		if( j != numModes )
 			continue;
 
-		modes[ numModes ].w = mode.w;
-		modes[ numModes ].h = mode.h;
+		pModesArray[ numModes ].w = mode.w;
+		pModesArray[ numModes ].h = mode.h;
 		numModes++;
 	}
 
 	for( i = 0; i < numModes; ++i )
 	{
-		const char *newModeString = va( "%ux%u ", modes[ i ].w, modes[ i ].h );
+		const char *newModeString = va( "%ux%u ", pModesArray[ i ].w, pModesArray[ i ].h );
 
 		if( strlen( newModeString ) < (int)sizeof( buf ) - strlen( buf ) )
 			Q_strcat( buf, sizeof( buf ), newModeString );
-		else
-			ri.Printf(PRINT_ALL,  "Skipping mode %ux%u, buffer too small\n", modes[ i ].w, modes[ i ].h );
+		else {
+			ri.Printf(PRINT_ALL,  "Skipping mode %ux%u, buffer too small\n",
+                    pModesArray[ i ].w, pModesArray[ i ].h );
+        }
 	}
 
 	if( *buf )
@@ -122,7 +125,7 @@ static void VKimp_DetectAvailableModes(void)
 		ri.Printf(PRINT_ALL, "Available modes: '%s'\n", buf );
 		ri.Cvar_Set( "r_availableModes", buf );
 	}
-	SDL_free( modes );
+	SDL_free( pModesArray );
 }
 
 
@@ -341,7 +344,7 @@ Minimize the game so that user is back at the desktop
 */
 void vk_minimizeWindowImpl( void )
 {
-    VkBool32 toggleWorked = 1;
+    VkBool32 toggleWorked = VK_TRUE;
     ri.Printf( PRINT_ALL, " Minimizing Window (SDL). \n");
 
 	VkBool32 isWinFullscreen = ( SDL_GetWindowFlags( window_sdl ) & SDL_WINDOW_FULLSCREEN );
