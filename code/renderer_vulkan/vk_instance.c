@@ -4,6 +4,7 @@
 #include "VKimpl.h"
 #include "vk_instance.h"
 #include "tr_globals.h"
+#include "tr_cvar.h"
 #include "vk_image.h"
 #include "vk_instance.h"
 #include "vk_shade_geometry.h"
@@ -631,16 +632,19 @@ static void vk_selectPhysicalDevice(void)
 	if (gpu_count <= 0)
 		ri.Error(ERR_FATAL, "Vulkan: no physical device found");
 
+    if (r_gpuIndex->integer > gpu_count -1)
+        ri.Error(ERR_FATAL, "Vulkan: r_gpuIndex out of bound (r_gpuIndex: %d - gpu_count: %d)", r_gpuIndex->integer, gpu_count);
+
     VkPhysicalDevice *pPhyDev = (VkPhysicalDevice *) malloc (sizeof(VkPhysicalDevice) * gpu_count);
     
-    // TODO: multi graphic cards selection support
+
     VK_CHECK(qvkEnumeratePhysicalDevices(vk.instance, &gpu_count, pPhyDev));
-    // For demo app we just grab the first physical device
-    vk.physical_device = pPhyDev[0];
+    // Select the right gpu from r_gpuIndex
+    vk.physical_device = pPhyDev[r_gpuIndex->integer];
 	
     free(pPhyDev);
 
-    ri.Printf(PRINT_ALL, " Total %d graphics card, the first one is choosed. \n", gpu_count);
+    ri.Printf(PRINT_ALL, " Total %d graphics card, selected card index: [%d]. \n", gpu_count, r_gpuIndex->integer);
 
     ri.Printf(PRINT_ALL, " Get physical device memory properties: vk.devMemProperties \n");
     
