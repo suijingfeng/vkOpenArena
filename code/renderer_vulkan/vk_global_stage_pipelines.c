@@ -333,49 +333,52 @@ void vk_destroyGlobalStagePipeline(void)
 {
     ri.Printf(PRINT_ALL, " Destroy global stage pipeline. \n");
 
-    int i, j, k;
+    uint32_t i, j, k;
 
     NO_CHECK( qvkDeviceWaitIdle(vk.device) );
 
+    NO_CHECK( qvkDestroyPipeline(vk.device, g_globalPipelines.skybox_pipeline, NULL) );
 
-    qvkDestroyPipeline(vk.device, g_globalPipelines.skybox_pipeline, NULL);
     ri.Printf(PRINT_ALL, " Skybox pipeline destroyed. \n");
 
 	for (i = 0; i < 2; ++i)
     {
 		for (j = 0; j < 2; ++j)
         {
-			qvkDestroyPipeline(vk.device, g_globalPipelines.shadow_volume_pipelines[i][j], NULL);
+			NO_CHECK( qvkDestroyPipeline(vk.device, g_globalPipelines.shadow_volume_pipelines[i][j], NULL) );
 		}
     }
     ri.Printf(PRINT_ALL, " Stencil shadows volume pipelines destroyed. \n");
 
-    qvkDestroyPipeline(vk.device, g_globalPipelines.shadow_finish_pipeline, NULL);
+    NO_CHECK( qvkDestroyPipeline(vk.device, g_globalPipelines.shadow_finish_pipeline, NULL) );
     ri.Printf(PRINT_ALL, " Stencil shadows finish pipelines destroyed. \n");  
 	
 
-    for (i = 0; i < 2; ++i) {
-		for (j = 0; j < 3; ++j) {
+    for (i = 0; i < 2; ++i)
+    {
+		for (j = 0; j < 3; ++j)
+        {
 			for (k = 0; k < 2; ++k)
             {
-				qvkDestroyPipeline(vk.device, g_globalPipelines.fog_pipelines[i][j][k], NULL);
+				NO_CHECK( qvkDestroyPipeline(vk.device, g_globalPipelines.fog_pipelines[i][j][k], NULL) );
 			}
         }
     }
 
     ri.Printf(PRINT_ALL, " Fog pipeline destroyed. \n");
 
-    for (i = 0; i < 2; i++) {
-		for (j = 0; j < 3; j++) { 
-			for (k = 0; k < 2; k++)
+    for (i = 0; i < 2; ++i)
+    {
+		for (j = 0; j < 3; ++j)
+        { 
+			for (k = 0; k < 2; ++k)
             {
-				qvkDestroyPipeline(vk.device, g_globalPipelines.dlight_pipelines[i][j][k], NULL);
+				NO_CHECK( qvkDestroyPipeline(vk.device, g_globalPipelines.dlight_pipelines[i][j][k], NULL) );
 			}
         }
     }
 
     ri.Printf(PRINT_ALL, " Dlights pipeline destroyed. \n");
-
 
     memset(&g_globalPipelines, 0, sizeof(g_globalPipelines));
 }

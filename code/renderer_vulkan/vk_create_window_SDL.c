@@ -21,17 +21,11 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 */
 
 
-// the window surface needs to be createdd right after the instance creation
-// because it can actually influence the physical device selection
-
-
 // Use local header for easier build
 #include "../SDL2/include/SDL.h"
 #include "../SDL2/include/SDL_vulkan.h"
 
 #include "VKimpl.h"
-#include "vk_instance.h"
-
 #include "tr_cvar.h"
 #include "icon_oa.h"
 #include "glConfig.h"
@@ -98,7 +92,7 @@ static void VKimp_DetectAvailableModes(void)
 
 		// SDL can give the same resolution with different refresh rates.
 		// Only list resolution once.
-		for( j = 0; j < numModes; j++ )
+		for( j = 0; j < numModes; ++j )
 		{
 			if( (mode.w == modes[ j ].w) && (mode.h == modes[ j ].h) )
 				break;
@@ -112,7 +106,7 @@ static void VKimp_DetectAvailableModes(void)
 		numModes++;
 	}
 
-	for( i = 0; i < numModes; i++ )
+	for( i = 0; i < numModes; ++i )
 	{
 		const char *newModeString = va( "%ux%u ", modes[ i ].w, modes[ i ].h );
 
@@ -177,6 +171,7 @@ static int VKimp_SetMode(int mode, qboolean fullscreen)
 		flags |= SDL_WINDOW_BORDERLESS;
     }
 
+    // This function set the render window's height and width.
     R_SetWinMode( mode, desktopMode.w, desktopMode.h, desktopMode.refresh_rate );
     
 
@@ -188,8 +183,10 @@ static int VKimp_SetMode(int mode, qboolean fullscreen)
         ri.Printf(PRINT_ALL, " Destroy existing window. \n");
 	}
 
+    // non-performance code, use getWinWidth() and getWinHeight() instead
+    // reference vk.renderArena 
 	window_sdl = SDL_CreateWindow( CLIENT_WINDOW_TITLE, SDL_WINDOWPOS_CENTERED,
-            SDL_WINDOWPOS_CENTERED, vk.renderArea.extent.width, vk.renderArea.extent.height, flags );
+            SDL_WINDOWPOS_CENTERED, vk_getWinWidth(), vk_getWinHeight(), flags );
 
 
 	if( window_sdl )
@@ -292,20 +289,17 @@ success:
 	ri.IN_Init(window_sdl);
 }
 
-// I can do this ourself
-// I do this way for SDL2, fear of SDL2 may use vulkan function
-// need to check that
-void vk_getInstanceProcAddrImpl(void)
+
+// Need to check that what SDL_Vulkan_GetVkGetInstanceProcAddr() does
+// for fear of SDL2 may need call some vulkan function, so we have to
+// call SDL_Vulkan_GetVkGetInstanceProcAddr().
+void* vk_getInstanceProcAddrImpl(void)
 {
 	SDL_Vulkan_LoadLibrary(NULL);    
-
-    qvkGetInstanceProcAddr = (PFN_vkGetInstanceProcAddr) SDL_Vulkan_GetVkGetInstanceProcAddr();
-    if( qvkGetInstanceProcAddr == NULL)
-    {
-        ri.Error(ERR_FATAL, "Failed to find entrypoint vkGetInstanceProcAddr\n"); 
-    }
     
-    ri.Printf(PRINT_ALL,  " Get instance proc address. (using SDL2)\n");
+    ri.Printf(PRINT_ALL,  " Get instance proc address using SDL_Vulkan_GetVkGetInstanceProcAddr(). \n");
+
+    return SDL_Vulkan_GetVkGetInstanceProcAddr();
 }
 
 
@@ -320,22 +314,23 @@ void vk_destroyWindowImpl( void )
     SDL_DestroyWindow( window_sdl );
     window_sdl = NULL;
 
-    //  Does this is need ?
+    //  is this necessary ?
     SDL_Vulkan_UnloadLibrary();
 }
 
 
-void vk_createSurfaceImpl(VkSurfaceKHR * pSurface)
+void vk_createSurfaceImpl(VkInstance hInstance, VkSurfaceKHR * const pSurface)
 {
-    ri.Printf(PRINT_ALL, " Create Surface: vk.surface.\n");
+    // The window surface needs to be createdd right
+    // after the instance creation because it can 
+    // actually influence the physical device selection
 
-    if( !SDL_Vulkan_CreateSurface(window_sdl, vk.instance, pSurface) )
+    if( !SDL_Vulkan_CreateSurface(window_sdl, hInstance, pSurface) )
     {
         *pSurface = VK_NULL_HANDLE;
         ri.Error(ERR_FATAL, "SDL_Vulkan_CreateSurface(): %s\n", SDL_GetError());
     }
 }
-
 
 
 

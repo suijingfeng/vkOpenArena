@@ -17,9 +17,9 @@ IMPLEMENTATION SPECIFIC FUNCTIONS
 void vk_createWindowImpl(void);
 void vk_destroyWindowImpl(void);
 
-void vk_getInstanceProcAddrImpl(void);
+void* vk_getInstanceProcAddrImpl(void);
 
-void vk_createSurfaceImpl(VkSurfaceKHR* surface);
+void vk_createSurfaceImpl(VkInstance hInstance, VkSurfaceKHR* const pSurface);
 
 void vk_minimizeWindowImpl( void );
 

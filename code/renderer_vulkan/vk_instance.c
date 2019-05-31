@@ -362,7 +362,7 @@ static void vk_fillRequiredInstanceExtention(
 }
 
 
-static void vk_createInstance(void)
+static void vk_createInstance(VkInstance* const pInstance)
 {
     // There is no global state in Vulkan and all per-application state
     // is stored in a VkInstance object. Creating a VkInstance object 
@@ -470,10 +470,10 @@ static void vk_createInstance(void)
 #endif
 
 
-    VkResult e = qvkCreateInstance(&instanceCreateInfo, NULL, &vk.instance);
+    VkResult e = qvkCreateInstance(&instanceCreateInfo, NULL, pInstance);
     if(e == VK_SUCCESS)
     {
-        ri.Printf(PRINT_ALL, "--- Vulkan create instance success! ---\n\n");
+        ri.Printf(PRINT_ALL, " Vulkan create instance success! \n\n");
     }
     else if (e == VK_ERROR_INCOMPATIBLE_DRIVER)
 	{
@@ -523,7 +523,12 @@ static void vk_loadGlobalLevelFunctions(void)
     // and to create the Instance itself.
 
     // qvkGetInstanceProcAddr 
-    vk_getInstanceProcAddrImpl();
+    qvkGetInstanceProcAddr = (PFN_vkGetInstanceProcAddr) vk_getInstanceProcAddrImpl();
+    
+    if( qvkGetInstanceProcAddr == NULL)
+    {
+        ri.Error(ERR_FATAL, "Failed to find entrypoint vkGetInstanceProcAddr. "); 
+    }
 
 
 #define INIT_GLOBAL_LEVEL_FUNCTION( func )                          \
@@ -544,12 +549,7 @@ static void vk_loadGlobalLevelFunctions(void)
 
 static void vk_loadInstanceLevelFunctions(void)
 {
-
     ri.Printf(PRINT_ALL, " Loading Instance level functions. \n");
-
-    vk_createInstance();
-
-    // Loading instance-level functions
 
     // We have created a Vulkan Instance object. 
     // The next step is to enumerate physical devices, 
@@ -1232,6 +1232,9 @@ void vk_getProcAddress(void)
 
     vk_assertStandValidationLayer();
 
+    vk_createInstance( &vk.instance );
+    // We have created a Vulkan Instance object, then 
+    // use that instance to load instance level functions
     vk_loadInstanceLevelFunctions();
 
 	// Create debug callback.
@@ -1239,7 +1242,8 @@ void vk_getProcAddress(void)
 
     // The window surface needs to be created right after the instance creation,
     // because it can actually influence the presentation mode selection.
-	vk_createSurfaceImpl( &vk.surface ); 
+	ri.Printf(PRINT_ALL, " Create Surface: vk.surface. \n");
+    vk_createSurfaceImpl(vk.instance, &vk.surface ); 
 
     // select physical device
     vk_selectPhysicalDevice();

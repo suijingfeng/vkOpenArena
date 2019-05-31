@@ -14,5 +14,7 @@ void glConfig_FillString( void );
 void glConfig_Get(glconfig_t * const pOut);
 void glConfig_Clear(void);
 
+uint32_t vk_getWinWidth(void);
+uint32_t vk_getWinHeight(void);
 
 #endif

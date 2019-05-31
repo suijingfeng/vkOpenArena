@@ -4,13 +4,8 @@
 #include "vk_instance.h"
 #include "ref_import.h" 
 
-// I want keep it locally, as it belong to OpenGL, not VulKan
-// have to use this keep backward Compatibility
-static glconfig_t glConfig;
-
-static cvar_t* r_customwidth;
-static cvar_t* r_customheight;
-static cvar_t* r_customaspect;
+// have to use this crap for backward Compatibility.
+// I want keep it locally, as it belong to OpenGL, not vulkan
 
 typedef struct vidmode_s
 {
@@ -18,6 +13,12 @@ typedef struct vidmode_s
     int         width, height;
 	float		pixelAspect;		// pixel width / height
 } vidmode_t;
+
+
+static glconfig_t glConfig;
+static cvar_t* r_customwidth;
+static cvar_t* r_customheight;
+static cvar_t* r_customaspect;
 
 
 static const vidmode_t r_vidModes[] =
@@ -128,11 +129,19 @@ void R_SetWinMode(int mode, unsigned int width, unsigned int height, unsigned in
         vk.renderArea.extent.height = 480;
 	}
 
-
 	ri.Printf(PRINT_ALL,  "MODE: %d, %d x %d, refresh rate: %dhz\n",
         mode, glConfig.vidWidth, glConfig.vidHeight, glConfig.displayFrequency);
 }
 
+uint32_t vk_getWinWidth(void)
+{
+    return vk.renderArea.extent.width;
+}
+
+uint32_t vk_getWinHeight(void)
+{
+    return vk.renderArea.extent.height;
+}
 
 
 void R_InitDisplayResolution( void )
