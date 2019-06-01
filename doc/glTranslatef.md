@@ -190,7 +190,7 @@ call the SAME function, that is:
 
 myGlMultMatrix(B^T, A^T, out); ------ (2)
 
-this is pretype of myGlMultMatrix function:
+this is protype of myGlMultMatrix function:
 
 But what happens if your were told that matrix A, B and out are specified in column-major order ?
 
