@@ -882,8 +882,6 @@ void RB_StageIteratorSky( struct shaderCommands_s * const pTess )
 
     // ri.Printf(PRINT_ALL, "isSky?\n");
     // vk_rcdUpdateViewport(backEnd.projection2D, DEPTH_RANGE_NORMAL);
-
-//	RB_StageIteratorGeneric( pTess, 0 );
 	
     // draw the inner skybox
 }

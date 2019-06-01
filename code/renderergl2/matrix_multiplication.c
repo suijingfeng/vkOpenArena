@@ -38,26 +38,7 @@ void Mat4Translation( float vec[3], float out[16] )
     out[13] = vec[1];
     out[14] = vec[2];
 }
-//
-// NOTE; out = b * a ???
-// a, b and c are specified in column-major order
-//
-void myGlMultMatrix(const float A[16], const float B[16], float out[16])
-{
-	int	i, j;
 
-	for ( i = 0 ; i < 4 ; i++ )
-    {
-		for ( j = 0 ; j < 4 ; j++ )
-        {
-			out[ i * 4 + j ] =
-				  A [ i * 4 + 0 ] * B [ 0 * 4 + j ]
-				+ A [ i * 4 + 1 ] * B [ 1 * 4 + j ]
-				+ A [ i * 4 + 2 ] * B [ 2 * 4 + j ]
-				+ A [ i * 4 + 3 ] * B [ 3 * 4 + j ];
-		}
-	}
-}
 
 
 void MatrixMultiply4x4(const float A[16], const float B[16], float out[16])

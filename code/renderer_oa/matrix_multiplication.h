@@ -35,6 +35,5 @@ static inline void VectorLerp( float a[3], float b[3], float lerp, float out[3])
 
 void TransformModelToClip( const float src[3], const float *modelMatrix, const float *projectionMatrix, float eye[4], float dst[4] );
 void TransformModelToClip_SSE( const float src[3], const float pMatModel[16], const float pMatProj[16], float dst[4] );
-void myGlMultMatrix(const float A[16], const float B[16], float out[16]);
 void Vec4Transform_SSE( const float A[16], float x[4], float out[4] );
 #endif

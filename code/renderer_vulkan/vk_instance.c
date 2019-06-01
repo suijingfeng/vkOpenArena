@@ -3,7 +3,6 @@
 
 #include "VKimpl.h"
 #include "vk_instance.h"
-#include "tr_globals.h"
 #include "tr_cvar.h"
 #include "vk_image.h"
 #include "vk_instance.h"
@@ -1412,6 +1411,7 @@ void vk_clearProcAddress(void)
 	qvkGetSwapchainImagesKHR					= NULL;
 	qvkQueuePresentKHR							= NULL;
 }
+
 
 void vk_destroy_instance(void)
 {

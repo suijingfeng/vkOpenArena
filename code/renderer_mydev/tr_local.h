@@ -1464,8 +1464,6 @@ void	RB_CalcColorFromOneMinusEntity( unsigned char *dstColors );
 void	RB_CalcSpecularAlpha( unsigned char *alphas );
 
 
-void myGlMultMatrix( const float *a, const float *b, float *out );
-
 /*
 =============================================================
 

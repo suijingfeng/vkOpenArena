@@ -171,7 +171,6 @@ Q: How to use check FPS or using it as a benchmarking tool?
 ```
 # Frames  TotalTime  averageFPS  minimum/average/maximum/std deviation
 
-
 # tested on win10 OS:
 render_vulkan: 3398 frames 4.3 seconds 793.6 fps 1.0/1.3/4.0/0.5 ms
 render_gl2:    3398 frames 24.6 seconds 138.3 fps 1.0/7.2/18.0/1.8 ms
@@ -184,29 +183,6 @@ render_gl2:    3398 frames 6.8 seconds 503.2 fps 1.0/2.0/6.0/0.6 ms
 render_gl1:    3398 frames 5.4 seconds 629.7 fps 1.0/1.6/4.0/0.6 ms
 render_mydev:  3398 frames 5.0 seconds 686.2 fps 1.0/1.5/3.0/0.5 ms
 render_oa:     3398 frames 5.3 seconds 646.9 fps 1.0/1.5/4.0/0.5 ms
-
-# render_vulkan on Ubuntu18.04
-
-\com_speed 1
-
-frame:36203 all:  1 sv:  0 ev:  8 cl:  0 gm:  0 rf:  0 bk:  1
-frame:36204 all:  0 sv:  0 ev:  7 cl:  0 gm:  0 rf:  0 bk:  0
-frame:36205 all:  0 sv:  0 ev:  8 cl:  0 gm:  0 rf:  0 bk:  0
-frame:36206 all:  1 sv:  0 ev:  8 cl:  0 gm:  0 rf:  0 bk:  1
-frame:36207 all:  0 sv:  0 ev:  7 cl:  0 gm:  0 rf:  0 bk:  0
-frame:36208 all:  0 sv:  0 ev:  8 cl:  0 gm:  0 rf:  0 bk:  0
-frame:36209 all:  0 sv:  0 ev:  8 cl:  0 gm:  0 rf:  0 bk:  0
-frame:36210 all:  0 sv:  0 ev:  7 cl:  0 gm:  0 rf:  0 bk:  0
-frame:36211 all:  0 sv:  0 ev:  8 cl:  0 gm:  0 rf:  0 bk:  0
-frame:36212 all:  0 sv:  0 ev:  8 cl:  0 gm:  0 rf:  0 bk:  0
-frame:36213 all:  0 sv:  0 ev:  8 cl:  0 gm:  0 rf:  0 bk:  0
-frame:36214 all:  0 sv:  0 ev:  8 cl:  0 gm:  0 rf:  0 bk:  0
-frame:36215 all:  1 sv:  0 ev:  8 cl:  0 gm:  0 rf:  0 bk:  1
-frame:36216 all:  0 sv:  0 ev:  7 cl:  0 gm:  0 rf:  0 bk:  0
-frame:36217 all:  0 sv:  0 ev:  8 cl:  0 gm:  0 rf:  0 bk:  0
-
-# TODO : make the game run at 1000 FPS.
-# Without loading some non-existing resource which waste some time, I guess this game can got 1000 FPS.
 
 ```
 
@@ -267,20 +243,6 @@ frame:24119 all: 14 sv:  0 ev:  1 cl:  0 gm:  0 rf:  0 bk: 14
 frame:24120 all: 12 sv:  0 ev:  0 cl:  1 gm:  0 rf:  0 bk: 11
 frame:24121 all: 11 sv:  0 ev:  0 cl:  1 gm:  0 rf:  0 bk: 10
 
-
-# ON Ubuntu
-
-\com_speed 1
-# vulkan backend
-frame:76190 all:  3 sv:  0 ev:  5 cl:  0 gm:  0 rf:  0 bk:  3
-frame:76191 all:  3 sv:  0 ev:  5 cl:  0 gm:  0 rf:  0 bk:  3
-frame:76192 all:  2 sv:  0 ev:  5 cl:  0 gm:  0 rf:  0 bk:  2
-frame:76193 all:  2 sv:  0 ev:  6 cl:  0 gm:  0 rf:  0 bk:  2
-frame:76194 all:  2 sv:  0 ev:  6 cl:  0 gm:  0 rf:  0 bk:  2
-frame:76195 all:  3 sv:  0 ev:  6 cl:  0 gm:  0 rf:  0 bk:  3
-frame:76196 all:  3 sv:  0 ev:  5 cl:  0 gm:  0 rf:  0 bk:  3
-frame:76197 all:  3 sv:  0 ev:  5 cl:  0 gm:  0 rf:  0 bk:  3
-frame:76198 all:  2 sv:  0 ev:  5 cl:  0 gm:  0 rf:  0 bk:  2
 ```
 
 ### Aspire v3-772G i7-4702MQ GTX760M 1920x1080 ###
@@ -289,21 +251,6 @@ frame:76198 all:  2 sv:  0 ev:  5 cl:  0 gm:  0 rf:  0 bk:  2
 # Testing on ubuntu 18.04 gnome 
 
 render_vulkan: 3398 frames 15.0 seconds 225.9 fps 2.0/4.4/9.0/0.7 ms
-
-
-frame:62212 all:  2 sv:  0 ev:  6 cl:  1 gm:  0 rf:  0 bk:  1
-frame:62213 all:  2 sv:  0 ev:  6 cl:  0 gm:  0 rf:  0 bk:  2
-frame:62214 all:  2 sv:  0 ev:  6 cl:  1 gm:  0 rf:  0 bk:  1
-frame:62215 all:  2 sv:  0 ev:  6 cl:  1 gm:  0 rf:  0 bk:  1
-frame:62216 all:  3 sv:  0 ev:  7 cl:  1 gm:  0 rf:  0 bk:  2
-frame:62217 all:  2 sv:  0 ev:  4 cl:  0 gm:  0 rf:  1 bk:  1
-frame:62218 all:  1 sv:  0 ev:  6 cl:  0 gm:  0 rf:  0 bk:  1
-frame:62219 all:  2 sv:  0 ev:  7 cl:  0 gm:  0 rf:  1 bk:  1
-frame:62220 all:  2 sv:  0 ev:  6 cl:  0 gm:  0 rf:  0 bk:  2
-frame:62221 all:  2 sv:  0 ev:  6 cl:  0 gm:  0 rf:  1 bk:  1
-frame:62222 all:  3 sv:  0 ev:  6 cl:  0 gm:  0 rf:  1 bk:  2
-frame:62223 all:  2 sv:  0 ev:  5 cl:  0 gm:  0 rf:  0 bk:  2
-frame:62224 all:  1 sv:  0 ev:  6 cl:  1 gm:  0 rf:  0 bk:  0
 
 ```
 
