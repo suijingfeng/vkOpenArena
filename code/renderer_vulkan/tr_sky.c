@@ -713,7 +713,7 @@ static void RB_DrawSkyBox( shader_t * const shader, float matMV[16] )
 	sky_max = 1;
 
 	memset( s_skyTexCoords, 0, sizeof( s_skyTexCoords ) );
-	
+    
     uint32_t i;
 	for (i=0; i<6; ++i)
 	{
@@ -754,12 +754,22 @@ static void RB_DrawSkyBox( shader_t * const shader, float matMV[16] )
 		else if ( sky_maxs_subd[1] > HALF_SKY_SUBDIVISIONS ) 
 			sky_maxs_subd[1] = HALF_SKY_SUBDIVISIONS;
 
+
+        // VULKAN: draw skybox side
+
+
+        const uint32_t T_UpLimit = sky_maxs_subd[1]+HALF_SKY_SUBDIVISIONS;
+        const uint32_t S_UpLimit = sky_maxs_subd[0]+HALF_SKY_SUBDIVISIONS;
+
+        const uint32_t T_LowLimit = sky_mins_subd[1]+HALF_SKY_SUBDIVISIONS;
+        const uint32_t S_LowLimit = sky_mins_subd[0]+HALF_SKY_SUBDIVISIONS;
+
 		//
 		// iterate through the subdivisions
 		//
-		for ( t = sky_mins_subd[1]+HALF_SKY_SUBDIVISIONS; t <= sky_maxs_subd[1]+HALF_SKY_SUBDIVISIONS; t++ )
+		for ( t = T_LowLimit; t <= T_UpLimit; ++t )
 		{
-			for ( s = sky_mins_subd[0]+HALF_SKY_SUBDIVISIONS; s <= sky_maxs_subd[0]+HALF_SKY_SUBDIVISIONS; s++ )
+			for ( s = S_LowLimit; s <= S_UpLimit; ++s )
 			{
 				MakeSkyVec( ( s - HALF_SKY_SUBDIVISIONS ) / ( float ) HALF_SKY_SUBDIVISIONS, 
 							( t - HALF_SKY_SUBDIVISIONS ) / ( float ) HALF_SKY_SUBDIVISIONS, 
@@ -769,18 +779,12 @@ static void RB_DrawSkyBox( shader_t * const shader, float matMV[16] )
 			}
 		}
 
-
-		// VULKAN: draw skybox side
-
         tess.numVertexes = 0;
         tess.numIndexes = 0;
 
-        uint32_t T_UpLimit = sky_maxs_subd[1]+HALF_SKY_SUBDIVISIONS;
-        uint32_t S_UpLimit = sky_maxs_subd[0]+HALF_SKY_SUBDIVISIONS;
-
-        for ( t = sky_mins_subd[1]+HALF_SKY_SUBDIVISIONS; t < T_UpLimit; ++t )
+        for ( t = T_LowLimit; t < T_UpLimit; ++t )
         {
-            for ( s = sky_mins_subd[0]+HALF_SKY_SUBDIVISIONS; s < S_UpLimit; ++s )
+            for ( s = S_LowLimit; s < S_UpLimit; ++s )
             {
                 uint32_t ndx = tess.numVertexes;
                 uint32_t idx = tess.numIndexes;
@@ -816,12 +820,11 @@ static void RB_DrawSkyBox( shader_t * const shader, float matMV[16] )
         memset( tess.svars.colors, tr.identityLightByte, tess.numVertexes * 4 );
         
         // GL_Bind(shader->sky.outerbox[sky_texorder[i]]);
+        updateMVP(backEnd.viewParms.isPortal, backEnd.projection2D, matMV);	
         updateCurDescriptor(tess.shader->sky.outerbox[sky_texorder[i]]->descriptor_set, 0);
-        //vk_bind_geometry();
+
         vk_UploadXYZI(tess.xyz, tess.numVertexes, tess.indexes, tess.numIndexes);
         
-        updateMVP(backEnd.viewParms.isPortal, backEnd.projection2D, matMV);
-
         vk_shade_geometry(g_globalPipelines.skybox_pipeline, &tess, VK_FALSE, VK_TRUE);
 	}
 }
@@ -857,9 +860,9 @@ void RB_StageIteratorSky( struct shaderCommands_s * const pTess )
 
 
 	// draw the outer skybox
-	if ( pTess->shader->sky.outerbox[0] && pTess->shader->sky.outerbox[0] != tr.defaultImage )
+    // why != tr.defaultImage ?
+	if ( pTess->shader->sky.outerbox[0] && pTess->shader->sky.outerbox[0] != tr.defaultImage  )
     {
-
         float modelview_transform[16] QALIGN(16);
         float skybox_translate[16] QALIGN(16) = {
             1, 0, 0, 0,

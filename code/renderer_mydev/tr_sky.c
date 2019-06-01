@@ -773,8 +773,8 @@ void RB_StageIteratorSky( shaderCommands_t * const pTess )
 		qglPushMatrix ();
 
 		GL_State( 0 );
-		qglTranslatef (backEnd.viewParms.or.origin[0], backEnd.viewParms.or.origin[1], backEnd.viewParms.or.origin[2]);
-/*
+//		qglTranslatef (backEnd.viewParms.or.origin[0], backEnd.viewParms.or.origin[1], backEnd.viewParms.or.origin[2]);
+
         float skybox_translate[16] = {
             1, 0, 0, 0,
             0, 1, 0, 0,
@@ -784,7 +784,6 @@ void RB_StageIteratorSky( shaderCommands_t * const pTess )
 		float modelview_transform[16];
         myGlMultMatrix(skybox_translate, backEnd.viewParms.world.modelMatrix, modelview_transform);
         qglLoadMatrixf(modelview_transform);
-*/
 
 		DrawSkyBox( pTess->shader );
 		qglPopMatrix();

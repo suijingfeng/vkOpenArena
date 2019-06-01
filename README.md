@@ -1,9 +1,37 @@
 # OpenArena Engine 
+
 This project is a fork of OpenArena with specific changes to its renderer module.
-I am naive programmer, this repository is mainly for myself learning Vulkan and Quake3's engine.
+It is mainly for myself to study Vulkan/OpenGL API and Quake3's engine. 
+By the way, this render module have nothing special than the default opengl1 render,
+informing you in case of you are disapointed, but I will try to enhance it. 
+However, the opengl2 render module is very beatiful and more powerful, but 
+you have to play with the cvars(r\_pbr, r\_cubemapping, r\_hdr, r\_ssao ...),
+see ioq3's rendergl2 readme.
+
+
+Quake 3 arena released by ID 20 years ago, but is still too large to understand
+for a noob programmers likes me. I'm naive, low level code modifier, I should take
+more time to learn Vulkan/OpenGL, data structure and algorithm, computer network,
+operate system and compiler technology seriously. This code lead me to something deep.
+
+Anyway, the project is under developing, so always check the lastest build.
+There may bugs instrinsic in the code. If i could find it, i will try to fixed it.
+However, there may some I am not able to find and some I could not fix in a short time. 
+
+In my test, It run faster in newer hardware, It may run slower than opengl1 in one of my notebook,
+but this notebook have a 1366x768 resolutions, other computer is 1920x1080. I'm now curious about
+if it is accurate and meaningful, the monitor's resolutions and the driver version which one is 
+major factor. See the benchmark, you are welcome to have test and report the results.
+
 
 For people who want to try the vulkan based renderer on quake3's map,
-go to https://github.com/suijingfeng/vkQuake3
+go to https://github.com/suijingfeng/vkQuake3. 
+
+You can also compile the render module from this repository and copy the renderer 
+binaries( renderer\_vulkan\_x86\_64.so or .dll ) to where ioquake3's executable
+binary directory. Select the renderer in pull down window with `cl_renderer vulkan`
+followed by `vid\_restart`.
+
 
 ![](https://github.com/suijingfeng/vkOpenArena/blob/master/doc/quake3.jpg)
 
@@ -69,10 +97,20 @@ C:\Users\youname\AppData\Roaming\OpenArena\ (on windows)
 
 
 ```sh
-$ cd /build/release-linux-x86_64/
+$ cd ./build/release-linux-x86_64/
 $ ./openarena.x86_64
 ```
 
+## Change Field of Vision (FOV)
+
+```
+# cg_fov default value is 90, but it's a not good value for widescreen
+# I generally set cg_fov to 150, the max value is 160, some game mod
+# restrict this value to 140.
+
+$ \cg_fov 150
+
+```
 
 ## Switching renderers ##
 
