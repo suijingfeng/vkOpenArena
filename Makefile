@@ -1,7 +1,7 @@
 COMPILE_PLATFORM=$(shell uname | sed -e s/_.*//|tr '[:upper:]' '[:lower:]' | sed -e 's/\//_/g')
 COMPILE_ARCH=$(shell uname -m | sed -e s/i.86/x86/ | sed -e 's/^arm.*/arm/')
 
-#CC=clang
+CC=clang
 
 ifeq ($(COMPILE_PLATFORM),darwin)
   # Apple does some things a little differently...
@@ -321,16 +321,16 @@ ifneq (,$(findstring "$(PLATFORM)", "linux" "gnu_kfreebsd" "kfreebsd-gnu" "gnu")
 #####################################
 #  BASE_CFLAGS += -fno-strict-aliasing
 ####################################
-  OPTIMIZEVM = -O3
+  OPTIMIZEVM = -O2
   OPTIMIZE = $(OPTIMIZEVM) -ffast-math
 
   ifeq ($(ARCH),x86_64)
-    OPTIMIZEVM = -O3 -msse2
+    OPTIMIZEVM = -O2 -msse2
     OPTIMIZE = $(OPTIMIZEVM) -ffast-math
     HAVE_VM_COMPILED=true
   else
   ifeq ($(ARCH),x86)
-	OPTIMIZEVM = -O3 -march=i586
+	OPTIMIZEVM = -O2 -march=i586
 	OPTIMIZE = $(OPTIMIZEVM) -ffast-math
 	HAVE_VM_COMPILED=true
   endif
@@ -396,7 +396,7 @@ ifeq ($(PLATFORM),darwin)
 
   ifeq ($(ARCH),ppc)
 	BASE_CFLAGS += -arch ppc -faltivec
-	OPTIMIZEVM += -O3
+	OPTIMIZEVM += -O2
   endif
   ifeq ($(ARCH),ppc64)
 	BASE_CFLAGS += -arch ppc64 -faltivec
@@ -526,12 +526,12 @@ ifdef MINGW
 
 
   ifeq ($(ARCH),x86_64)
-	OPTIMIZEVM = -O3  -funroll-loops -msse2
+	OPTIMIZEVM = -O2 -funroll-loops -msse2
 	OPTIMIZE = $(OPTIMIZEVM) -ffast-math
 	HAVE_VM_COMPILED = true
   endif
   ifeq ($(ARCH),x86)
-	OPTIMIZEVM = -O3 -march=i586
+	OPTIMIZEVM = -O2 -march=i586
 	OPTIMIZE = $(OPTIMIZEVM) -ffast-math
 	HAVE_VM_COMPILED = true
   endif
@@ -611,7 +611,7 @@ else # ifdef MINGW
 # SETUP AND BUILD -- GENERIC
 #############################################################################
   BASE_CFLAGS=
-  OPTIMIZE = -O3
+  OPTIMIZE = -O2
 
   SHLIBEXT=so
   SHLIBCFLAGS=-fPIC

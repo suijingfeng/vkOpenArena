@@ -14,7 +14,7 @@ struct ShaderTextHashArray_t {
 // increase to 4096 ?
 #define MAX_SHADERTEXT_HASH		4096
 
-static struct ShaderTextHashArray_t s_ShaderNameTab[MAX_SHADERTEXT_HASH] = {0};
+static struct ShaderTextHashArray_t s_ShaderNameTab[MAX_SHADERTEXT_HASH];
 
 
 static uint32_t GenHashValue( const char *fname, const uint32_t size )
