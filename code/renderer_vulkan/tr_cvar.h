@@ -44,7 +44,6 @@ extern cvar_t	*r_picmip;						// controls picmip values
 //extern cvar_t	*r_offsetFactor;
 //extern cvar_t	*r_offsetUnits;
 
-extern cvar_t	*r_fullbright;					// avoid lightmap pass
 extern cvar_t	*r_lightmap;					// render lightmaps only
 extern cvar_t	*r_vertexLight;					// vertex lighting mode for better performance
 extern cvar_t	*r_uiFullScreen;				// ui is running fullscreen
@@ -65,7 +64,7 @@ extern cvar_t	*r_portalOnly;
 extern cvar_t	*r_subdivisions;
 extern cvar_t	*r_lodCurveError;
 
-extern	cvar_t	*r_overBrightBits;
+extern	cvar_t	*r_brightness;
 extern	cvar_t	*r_mapOverBrightBits;
 
 extern	cvar_t	*r_debugSurface;

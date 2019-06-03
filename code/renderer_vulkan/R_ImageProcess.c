@@ -1,4 +1,3 @@
-#include "tr_cvar.h"
 #include "ref_import.h"
 #include "vk_image.h"
 #include "R_ImageProcess.h"
@@ -19,7 +18,7 @@ void R_GammaCorrect(unsigned char* buffer, const unsigned int Size)
 }
 */
 
-void R_SetColorMappings( float overbright, float gamma )
+void R_SetColorMappings( float brightness, float gamma )
 {
 	uint32_t i, inf;
 		
@@ -30,7 +29,7 @@ void R_SetColorMappings( float overbright, float gamma )
     {
 		inf = 255 * pow ( i/255.0f, 1.0f / gamma ) + 0.5f;
 		
-        inf *= overbright;
+        inf *= brightness;
         
         if (inf > 255) 
         {    

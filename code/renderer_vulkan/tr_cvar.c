@@ -53,7 +53,7 @@ cvar_t	*r_subdivisions;
 cvar_t	*r_lodCurveError;
 
 // r_overbrightBits->integer, but set to 0 if no hw gamma
-cvar_t	*r_overBrightBits;
+cvar_t	*r_brightness;
 cvar_t	*r_mapOverBrightBits;
 
 cvar_t	*r_debugSurface;
@@ -87,17 +87,23 @@ void R_Register( void )
 	r_simpleMipMaps = ri.Cvar_Get( "r_simpleMipMaps", "1", CVAR_ARCHIVE | CVAR_LATCH );
 	r_colorMipLevels = ri.Cvar_Get ("r_colorMipLevels", "0", CVAR_LATCH );
 
-	r_overBrightBits = ri.Cvar_Get ("r_overBrightBits", "1", CVAR_ARCHIVE | CVAR_LATCH );
-	r_vertexLight = ri.Cvar_Get( "r_vertexLight", "0", CVAR_ARCHIVE | CVAR_LATCH );
+	r_brightness = ri.Cvar_Get ("r_brightness", "1.5", CVAR_ARCHIVE | CVAR_LATCH );
+    // r_brightness = ri.Cvar_Get ("r_brightness", "1", CVAR_ARCHIVE | CVAR_LATCH );
+	
+    r_vertexLight = ri.Cvar_Get( "r_vertexLight", "0", CVAR_ARCHIVE | CVAR_LATCH );
 	r_uiFullScreen = ri.Cvar_Get( "r_uifullscreen", "0", 0);
 	r_subdivisions = ri.Cvar_Get ("r_subdivisions", "4", CVAR_ARCHIVE | CVAR_LATCH);
 
 	//
 	// temporary latched variables that can only change over a restart
 	//
-	r_fullbright = ri.Cvar_Get ("r_fullbright", "0", CVAR_LATCH|CVAR_CHEAT );
-	r_mapOverBrightBits = ri.Cvar_Get ("r_mapOverBrightBits", "2", CVAR_ARCHIVE | CVAR_LATCH );
-	r_intensity = ri.Cvar_Get ("r_intensity", "1", CVAR_LATCH | CVAR_ARCHIVE );
+	
+    r_mapOverBrightBits = ri.Cvar_Get ("r_mapOverBrightBits", "2", CVAR_ARCHIVE | CVAR_LATCH );
+	ri.Cvar_CheckRange( r_mapOverBrightBits, 1, 3, qtrue );
+
+    r_intensity = ri.Cvar_Get ("r_intensity", "2", CVAR_LATCH | CVAR_ARCHIVE );
+    ri.Cvar_CheckRange( r_intensity, 1, 3, qtrue );
+
 	r_singleShader = ri.Cvar_Get ("r_singleShader", "0", CVAR_CHEAT | CVAR_LATCH );
 
 	//
