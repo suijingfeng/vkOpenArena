@@ -1,7 +1,7 @@
 COMPILE_PLATFORM=$(shell uname | sed -e s/_.*//|tr '[:upper:]' '[:lower:]' | sed -e 's/\//_/g')
 COMPILE_ARCH=$(shell uname -m | sed -e s/i.86/x86/ | sed -e 's/^arm.*/arm/')
 
-CC=clang
+#CC=clang
 
 ifeq ($(COMPILE_PLATFORM),darwin)
   # Apple does some things a little differently...

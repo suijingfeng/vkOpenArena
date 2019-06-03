@@ -102,24 +102,45 @@ static void HSVtoRGB( float h, float s, float v, float rgb[3] )
 	}
 }
 
+
 static void R_ColorShiftLightingBytes( uint8_t in[4], uint8_t out[4] )
 {
 	// shift the color data based on overbright range
-	uint32_t shift = r_mapOverBrightBits->integer - tr.overbrightBits;
+	//uint32_t shift = r_mapOverBrightBits->integer - tr.overbrightBits;
+
+    float factor = r_intensity->value;
 
 	// shift the data based on overbright range
-	uint32_t r = in[0] << shift;
-	uint32_t g = in[1] << shift;
-	uint32_t b = in[2] << shift;
+	uint32_t r = in[0] * factor;
+	uint32_t g = in[1] * factor;
+	uint32_t b = in[2] * factor;
 	
 	// normalize by color instead of saturating to white
-	if ( ( r | g | b ) > 255 ) {
-		int		max = r > g ? r : g;
+    uint32_t max = r > g ? r : g;
+    if(b > max)
+    {
+        max = b;
+    }
+
+    if(( r | g | b ) > 255)
+    {
+        float factor2 = 255.0f / max;
+    	r *= factor2;
+		g *= factor2;
+		b *= factor2;
+    }
+
+
+/*  
+	if ( ( r | g | b ) > 255 )
+    {
+		int	max = r > g ? r : g;
 		max = max > b ? max : b;
 		r = r * 255 / max;
 		g = g * 255 / max;
 		b = b * 255 / max;
 	}
+*/
 
 	out[0] = r;
 	out[1] = g;
@@ -1366,7 +1387,7 @@ static void R_LoadSubmodels(const lump_t * const l, world_t* const pW)
 
 //==================================================================
 
-static void R_SetParent (mnode_t * const node, const mnode_t * const parent)
+static void R_SetParent (mnode_t * const node, mnode_t * const parent)
 {
 	node->parent = parent;
 	if (node->contents != -1)

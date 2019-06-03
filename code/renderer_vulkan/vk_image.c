@@ -705,7 +705,6 @@ image_t* R_CreateImage( const char *name, unsigned char* pic, const uint32_t wid
     free(pUploadBuffer);
 
 
-
     const int hash = generateHashValue(name);
     pImage->next = hashTable[hash];
     hashTable[hash] = pImage;
@@ -800,6 +799,7 @@ image_t* R_FindImageFile(const char *name, VkBool32 mipmap, VkBool32 allowPicmip
     return image;
 }
 
+
 image_t	* tr_scratchImage[16];
 shader_t* tr_cinematicShader;
 
@@ -813,7 +813,6 @@ void RE_UploadCinematic (int w, int h, int cols, int rows, const unsigned char *
     {
         ri.Printf(PRINT_ALL, "w=%d, h=%d, cols=%d, rows=%d, client=%d, prtImage->width=%d, prtImage->height=%d\n", 
            w, h, cols, rows, client, prtImage->uploadWidth, prtImage->uploadHeight);
-
 
         // VULKAN
 
@@ -853,7 +852,6 @@ void RE_UploadCinematic (int w, int h, int cols, int rows, const unsigned char *
         vk_stagBufferToDeviceLocalMem(tr_scratchImage[client]->handle, &region, 1);
         
         NO_CHECK( qvkUnmapMemory(vk.device, StagBuf.mappableMem) );
-
     }
     else if (dirty)
     {
@@ -1091,7 +1089,6 @@ static void R_CreateFogImage( void )
 
 image_t* R_CreateImageForCinematic( const char *name, unsigned char* pic, const uint32_t width, const uint32_t height)
 {
-
     // ri.Printf( PRINT_ALL, " Create Image: %s\n", name);
     
     image_t* pImage = (image_t*) ri.Hunk_Alloc( sizeof( image_t ), h_low );
@@ -1181,7 +1178,6 @@ image_t* R_CreateImageForCinematic( const char *name, unsigned char* pic, const 
     vk_stagBufferToDeviceLocalMem(pImage->handle, regions, pImage->mipLevels);
     
     free(pUploadBuffer);
-
 
     return pImage;
 }

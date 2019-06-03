@@ -4,7 +4,7 @@
 void GetScaledDimension(const unsigned int width, const unsigned int height, unsigned int * const outW, unsigned int * const outH, int isPicMip);
 
 void R_SetColorMappings( void );
-void R_LightScaleTexture (unsigned char* dst, unsigned char* in, unsigned int nBytes);
+void R_LightScaleTexture (unsigned char* const dst, unsigned char* const in, uint32_t const nBytes);
 void ResampleTexture(unsigned char *pOut, const unsigned int inwidth, const unsigned int inheight,
                         const unsigned char *pIn, const unsigned int outwidth, const unsigned int outheight);
 void R_BlendOverTexture(unsigned char* data, const uint32_t pixelCount, const uint32_t l);

@@ -25,9 +25,6 @@ void R_SetColorMappings( void )
 	
     // setup the overbright lighting
 	tr.overbrightBits = r_overBrightBits->integer;
-	if ( 0 ) {
-		tr.overbrightBits = 0;		// need hardware gamma for overbright
-	}
 	// allow 2 overbright bits in 24 bit, but only 1 in 16 bit
     if( tr.overbrightBits > 3 )
     {
@@ -81,18 +78,15 @@ void R_SetColorMappings( void )
 
 
 
-void R_LightScaleTexture (unsigned char* dst, unsigned char* in, unsigned int nBytes)
+void R_LightScaleTexture (unsigned char* const dst, unsigned char* const in, uint32_t const nBytes)
 {
-    unsigned int i;
+    uint32_t i;
 
-    if ( 1 )
+    for (i=0; i<nBytes; i+=4)
     {
-        for (i=0; i<nBytes; i+=4)
-        {
-            dst[i] = s_gammatable[in[i]];
-            dst[i+1] = s_gammatable[in[i+1]];
-            dst[i+2] = s_gammatable[in[i+2]];
-        }
+        dst[i] = s_gammatable[in[i]];
+        dst[i+1] = s_gammatable[in[i+1]];
+        dst[i+2] = s_gammatable[in[i+2]];
     }
 }
 
