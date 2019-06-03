@@ -4,7 +4,7 @@
 
 #include "VKimpl.h"
 
-extern PFN_vkGetInstanceProcAddr						qvkGetInstanceProcAddr;
+// extern PFN_vkGetInstanceProcAddr						qvkGetInstanceProcAddr;
 
 extern PFN_vkCreateInstance							    qvkCreateInstance;
 extern PFN_vkEnumerateInstanceExtensionProperties		qvkEnumerateInstanceExtensionProperties;

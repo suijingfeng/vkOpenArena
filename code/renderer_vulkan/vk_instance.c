@@ -190,8 +190,9 @@ static void vk_assertStandValidationLayer(void)
 }
 
 
-//// Platform dependent code, not elegant :(
-//
+// Platform dependent code, not elegant :(
+// doing this to avoid enable every instance extension,
+// not knowing if it is necessary.
 static void vk_fillRequiredInstanceExtention( 
         const VkExtensionProperties * const pInsExt, const uint32_t nInsExt, 
         const char ** const ppInsExt, uint32_t * nExt )
@@ -495,8 +496,7 @@ static void vk_createInstance(VkInstance* const pInstance)
     free(pInsExt);
 }
 
-// Vulkan functions can be divided into three levels, 
-// which are global, instance, and device. 
+// Vulkan functions can be divided into three levels,  global, instance, and device. 
 // 
 // Device-level functions are used to perform typical operations
 // such as drawing, shader-modules creation, image creation, or data copying.
@@ -521,7 +521,6 @@ static void vk_loadGlobalLevelFunctions(void)
     // what instance-level extensions and layers are available
     // and to create the Instance itself.
 
-    // qvkGetInstanceProcAddr 
     qvkGetInstanceProcAddr = (PFN_vkGetInstanceProcAddr) vk_getInstanceProcAddrImpl();
     
     if( qvkGetInstanceProcAddr == NULL)

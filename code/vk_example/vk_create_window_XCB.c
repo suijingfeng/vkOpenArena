@@ -32,9 +32,6 @@ static xcb_window_t window;
 static xcb_screen_t *screen;
 
 
-
-
-
 static void vk_resize( void )
 {
 /*

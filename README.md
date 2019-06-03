@@ -12,8 +12,8 @@ However, The opengl2 render module ported from ioq3 is more beatiful and powerfu
 you can play with the cvars(r\_pbr, r\_cubemapping, r\_hdr, r\_ssao ...) to enable
 corresponding feature. It also consume more compute power and need more memory,
 set com\_hunkMegs to 256 instand 128, otherwise it will quit and inform you hunk  
-allocate failed when there are more player or in some large map. See ioq3's  
-rendergl2 readme.
+allocate failed when there are more player playing or in the case of some large map.
+See ioq3 rendergl2 readme.
 
 
 In my test( See the benchmark blow), It(vulkan backend) run faster in newer hardware,
@@ -25,7 +25,7 @@ welcome to have test on your pc configuration and report the results.
 
 
 Quake 3 arena released by ID 20 years ago, this code lead me to something deep. 
-Its still too large to understand for a noob programmers likes me. I'm naive, 
+It's still too large to understand for a noob programmers likes me. I'm naive, 
 low level code modifier. I will take more time to learn Vulkan/OpenGL, data structure
 and algorithm, computer network, operate system and compiler technology seriously, 
 reduce aimless changing the code which tend to introduce bugs. There may have bugs
@@ -37,7 +37,7 @@ For people who want to try the vulkan based renderer on quake3's map,
 go to https://github.com/suijingfeng/vkQuake3. 
 
 You can also compile the render module from this repository and copy the renderer 
-binaries( renderer\_vulkan\_x86\_64.so or .dll ) to where ioquake3's executable
+binary( renderer\_vulkan\_x86\_64.so or .dll ) to where ioquake3's executable
 binary directory. Select the renderer in pull down window with `cl_renderer vulkan`
 followed by `vid_restart`.
 
@@ -358,7 +358,7 @@ render_oa:     3398 frames 5.3 seconds 646.9 fps 1.0/1.5/4.0/0.5 ms
 \timedemo 1
 \demo demo088-test1
 
-# Testing on UBUNTU 16.04, driver: 384.130, tested on 2019.05.29,
+# Testing on UBUNTU 16.04, driver: 384.130, vulkan 1.0.49, tested on 2019.05.29,
 vulkan : 3398 frames 21.0 seconds 162.2 fps 3.0/6.2/11.0/1.1 ms
 opengl2: 3398 frames 25.1 seconds 135.5 fps 4.0/7.4/14.0/1.5 ms
 opengl1: 3398 frames 10.1 seconds 337.0 fps 1.0/3.0/6.0/0.8 ms
