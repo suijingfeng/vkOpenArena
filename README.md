@@ -5,7 +5,8 @@ It is mainly for myself to study Vulkan/OpenGL API and Quake3's engine.
 I add a vulkan-based render module to this game, the vulkan-based render have
 the same visual effects with the default opengl1 render. ( Informing you in case
 of you are disapointed, vulkan is just a 2D/3D render API, whether the rendered
-image is beautiful depend more on the texture and shader provided ).
+image is beautiful depend more on the texture and shader provided ). 
+The project is under developing, so always check the lastest build.
 
 However, The opengl2 render module ported from ioq3 is more beatiful and powerful, 
 you can play with the cvars(r\_pbr, r\_cubemapping, r\_hdr, r\_ssao ...) to enable
@@ -16,20 +17,20 @@ rendergl2 readme.
 
 
 In my test( See the benchmark blow), It(vulkan backend) run faster in newer hardware,
-It may run slower than opengl1 in one of my notebook, but this notebook have a 1366x768
-resolutions, other computer is 1920x1080. I'm now curious about whether it is accurate or
-meaningful, the monitor's resolutions and the driver version which one is 
-major factor? you are welcome to have test and report the results.
+It may run slower than opengl1 according to the test on one of my notebook(i5 5200U, Gforce 840M),
+but this notebook have a 1366x768 resolutions with ubuntu 16.04 installed, other computer is 1920x1080.
+I'm now curious about whether it is accurate or meaningful, there are many factors, such as the monitor's
+resolutions, the driver version, operate system and library etc. which one is major factor? You are 
+welcome to have test on your pc configuration and report the results.
 
-    
-Quake 3 arena released by ID 20 years ago, but is still too large to understand
-for a noob programmers likes me. I'm naive, low level code modifier. I should take
-more time to learn Vulkan/OpenGL, data structure and algorithm, computer network,
-operate system and compiler technology seriously. This code lead me to something deep.
-Anyway, the project is under developing, so always check the lastest build.
-There may have bugs instrinsic in the code. If i could find it, i will try to fixed it.
+
+Quake 3 arena released by ID 20 years ago, this code lead me to something deep. 
+Its still too large to understand for a noob programmers likes me. I'm naive, 
+low level code modifier. I will take more time to learn Vulkan/OpenGL, data structure
+and algorithm, computer network, operate system and compiler technology seriously, 
+reduce aimless changing the code which tend to introduce bugs. There may have bugs
+instrinsic in the code. If i could find it, i will try to fixed it.
 However, there may some I am not able to find and some I could not fix in a short time. 
-
 
 
 For people who want to try the vulkan based renderer on quake3's map,
@@ -123,7 +124,7 @@ $ \cg_fov 150
 
 * r\_brightness and r\_gamma, r\_gamma nonlinearly calibrate the image
 before upload it to GPU, r\_brightness do it linearly,
-both value cam be float. You must restart the game after change it.
+both value can be float. You must restart the game after change it.
 
 ```
 # large number with make the image more brighter.
