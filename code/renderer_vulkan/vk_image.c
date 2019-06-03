@@ -1225,9 +1225,33 @@ void R_InitImages( void )
 	//tr.identityLight = 1.0f / ( 1 << 2 );
 	//tr.identityLightByte = 255 * 2;
 
+	tr.identityLight = 1.0f;
+	tr.identityLightByte = 255 * tr.identityLight;
+
+
+	if( r_overBrightBits->value < 1.0f )
+    {
+		ri.Cvar_Set( "r_overBrightBits", "1.0" );
+	}
+    else if ( r_overBrightBits->value > 3.0f )
+    {
+		ri.Cvar_Set( "r_overBrightBits", "3.0" );
+	}
+
+    // setup the overbright lighting
+
+
+	if( r_gamma->value < 1.0f )
+    {
+		ri.Cvar_Set( "r_gamma", "1.0" );
+	}
+    else if ( r_gamma->value > 3.0f )
+    {
+		ri.Cvar_Set( "r_gamma", "3.0" );
+	}
 
     // build brightness translation tables
-    R_SetColorMappings();
+    R_SetColorMappings(r_overBrightBits->value, r_gamma->value);
 
     // create default texture and white texture
     // R_CreateBuiltinImages();

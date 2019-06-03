@@ -19,60 +19,25 @@ void R_GammaCorrect(unsigned char* buffer, const unsigned int Size)
 }
 */
 
-void R_SetColorMappings( void )
+void R_SetColorMappings( float overbright, float gamma )
 {
-	int	i, inf,	shift;
-	
-    // setup the overbright lighting
-	tr.overbrightBits = r_overBrightBits->integer;
-	// allow 2 overbright bits in 24 bit, but only 1 in 16 bit
-    if( tr.overbrightBits > 3 )
+	uint32_t i, inf;
+		
+    // hardware gamma to work (if available) since we can't do alternate gamma via blends
+
+
+	for ( i = 0; i < 256; ++i )
     {
-        tr.overbrightBits = 3;
-    }
-    else if( tr.overbrightBits < 0 )
-    {
-		tr.overbrightBits = 0;
-	}
-
-	tr.identityLight = 1.0f / ( 1 << tr.overbrightBits );
-	tr.identityLightByte = 255 * tr.identityLight;
-
-
-	if( r_gamma->value < 0.4f )
-    {
-		ri.Cvar_Set( "r_gamma", "0.4" );
-	}
-    else if ( r_gamma->value > 3.0f )
-    {
-		ri.Cvar_Set( "r_gamma", "3.0" );
-	}
-
-	float g = r_gamma->value;
-
-	shift = tr.overbrightBits;		// hardware gamma to work (if available) since we can't do alternate gamma via blends
-
-
-	for ( i = 0; i < 256; i++ )
-    {
-		if ( g == 1 )
-        {
-			inf = i;
-		}
-        else
-        {
-			inf = 255 * pow ( i/255.0f, 1.0f / g ) + 0.5f;
-		}
-		inf <<= shift;
-		if (inf < 0)
-        {
-			inf = 0;
-		}
-        else if (inf > 255) 
+		inf = 255 * pow ( i/255.0f, 1.0f / gamma ) + 0.5f;
+		
+        inf *= overbright;
+        
+        if (inf > 255) 
         {    
 			inf = 255;
 		}
-		s_gammatable[i] = inf;
+
+		s_gammatable[i] = inf < 255 ? inf:255;
 	}
 }
 
@@ -359,39 +324,6 @@ void ResampleTexture(unsigned char * pOut, const unsigned int inwidth, const uns
         pOut += outwidth*4;
 	}
 }
-
-
-void GetScaledDimension(const unsigned int width, const unsigned int height, unsigned int * const outW, unsigned int * const outH, int isPicMip)
-{
-    const unsigned int max_texture_size = 2048;
-    
-    unsigned int scaled_width, scaled_height;
-
-    for(scaled_width = max_texture_size; scaled_width > width; scaled_width>>=1)
-        ;
-    
-    for (scaled_height = max_texture_size; scaled_height > height; scaled_height>>=1)
-        ;
-
-    // perform optional picmip operation
-    if ( isPicMip )
-    {
-        scaled_width >>= r_picmip->integer;
-        scaled_height >>= r_picmip->integer;
-    }
-
-	// clamp to minimum size
-    if (scaled_width == 0) {
-        scaled_width = 1;
-    }
-    if (scaled_height == 0) {
-        scaled_height = 1;
-    }
-
-    *outW = scaled_width;
-    *outH = scaled_height;
-}
-
 
 ///////////////////////////////////////////////////////////////////////////////////////////////
 // DEBUG HELPER FUNCTIONAS ...
