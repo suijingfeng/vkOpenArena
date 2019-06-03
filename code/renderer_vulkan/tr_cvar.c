@@ -17,7 +17,6 @@ cvar_t	*r_norefresh;
 cvar_t	*r_drawentities;
 cvar_t	*r_drawworld;
 cvar_t	*r_speeds;
-cvar_t	*r_fullbright;
 cvar_t	*r_novis;
 cvar_t	*r_nocull;
 cvar_t	*r_facePlaneCull;
@@ -82,14 +81,15 @@ void R_Register( void )
 	// latched and archived variables
 	//
 	r_picmip = ri.Cvar_Get ("r_picmip", "1", CVAR_ARCHIVE | CVAR_LATCH );
-    ri.Cvar_CheckRange( r_picmip, 0, 8, qtrue );
+    ri.Cvar_CheckRange( r_picmip, 0, 4, qtrue );
 
 	r_simpleMipMaps = ri.Cvar_Get( "r_simpleMipMaps", "1", CVAR_ARCHIVE | CVAR_LATCH );
 	r_colorMipLevels = ri.Cvar_Get ("r_colorMipLevels", "0", CVAR_LATCH );
 
 	r_brightness = ri.Cvar_Get ("r_brightness", "1.5", CVAR_ARCHIVE | CVAR_LATCH );
-    // r_brightness = ri.Cvar_Get ("r_brightness", "1", CVAR_ARCHIVE | CVAR_LATCH );
-	
+    ri.Cvar_CheckRange( r_brightness, 1.0f, 3.0f, qfalse );
+
+
     r_vertexLight = ri.Cvar_Get( "r_vertexLight", "0", CVAR_ARCHIVE | CVAR_LATCH );
 	r_uiFullScreen = ri.Cvar_Get( "r_uifullscreen", "0", 0);
 	r_subdivisions = ri.Cvar_Get ("r_subdivisions", "4", CVAR_ARCHIVE | CVAR_LATCH);
@@ -101,8 +101,8 @@ void R_Register( void )
     r_mapOverBrightBits = ri.Cvar_Get ("r_mapOverBrightBits", "2", CVAR_ARCHIVE | CVAR_LATCH );
 	ri.Cvar_CheckRange( r_mapOverBrightBits, 1, 3, qtrue );
 
-    r_intensity = ri.Cvar_Get ("r_intensity", "2", CVAR_LATCH | CVAR_ARCHIVE );
-    ri.Cvar_CheckRange( r_intensity, 1, 3, qtrue );
+    r_intensity = ri.Cvar_Get ("r_intensity", "2.0", CVAR_LATCH | CVAR_ARCHIVE );
+    ri.Cvar_CheckRange( r_intensity, 1.0f, 3.0f, qfalse );
 
 	r_singleShader = ri.Cvar_Get ("r_singleShader", "0", CVAR_CHEAT | CVAR_LATCH );
 
@@ -112,12 +112,15 @@ void R_Register( void )
 	r_lodCurveError = ri.Cvar_Get( "r_lodCurveError", "250", CVAR_ARCHIVE|CVAR_CHEAT );
     r_flares = ri.Cvar_Get ("r_flares", "0", CVAR_ARCHIVE );
 	r_znear = ri.Cvar_Get( "r_znear", "4", CVAR_CHEAT );
-    ri.Cvar_CheckRange( r_znear, 0.001f, 200, qtrue );
+    ri.Cvar_CheckRange( r_znear, 0.001f, 200.0f, qfalse );
 
 	r_inGameVideo = ri.Cvar_Get( "r_inGameVideo", "1", CVAR_ARCHIVE );
 	r_dynamiclight = ri.Cvar_Get( "r_dynamiclight", "1", CVAR_ARCHIVE );
-	r_gamma = ri.Cvar_Get( "r_gamma", "1", CVAR_ARCHIVE | CVAR_LATCH );
-	r_facePlaneCull = ri.Cvar_Get ("r_facePlaneCull", "1", CVAR_ARCHIVE );
+	
+    r_gamma = ri.Cvar_Get( "r_gamma", "1", CVAR_ARCHIVE | CVAR_LATCH );
+    ri.Cvar_CheckRange( r_gamma, 1.0f, 3.0f, qfalse );
+	
+    r_facePlaneCull = ri.Cvar_Get ("r_facePlaneCull", "1", CVAR_ARCHIVE );
 
 	r_railWidth = ri.Cvar_Get( "r_railWidth", "16", CVAR_ARCHIVE );
 	r_railCoreWidth = ri.Cvar_Get( "r_railCoreWidth", "6", CVAR_ARCHIVE );
@@ -162,7 +165,7 @@ void R_Register( void )
 
     r_fullscreen = ri.Cvar_Get( "r_fullscreen", "1", CVAR_ARCHIVE | CVAR_LATCH );
     r_displayRefresh = ri.Cvar_Get( "r_displayRefresh", "60", CVAR_LATCH );
-    ri.Cvar_CheckRange( r_displayRefresh, 0, 200, qtrue );
+    ri.Cvar_CheckRange( r_displayRefresh, 30.0f, 200.0f, qfalse );
 
     r_allowResize = ri.Cvar_Get( "r_allowResize", "0", CVAR_ARCHIVE | CVAR_LATCH );
 

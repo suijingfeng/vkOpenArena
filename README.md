@@ -121,24 +121,28 @@ $ \cg_fov 150
 
 ## Too dark ? How to turn the brightness of the drawing window ?
 
-* Use r\_gamma in the pulldown window, which nonlinearly calibrate the image
-before upload it to GPU, so if you must restart the game after change it.
+* r\_brightness and r\_gamma, r\_gamma nonlinearly calibrate the image
+before upload it to GPU, r\_brightness do it linearly,
+both value cam be float. You must restart the game after change it.
+
 ```
-# defalut is 1.0.
+# large number with make the image more brighter.
 $ \r_gamma 1.2
+$ \r_brightness 1.5 
 $ \vid_restart
+
 ```
 
 * Use r\_intensity to turn the intensity/brightness of the lightmap. this value
 can be float, you must restart the game after change it.
 ```
-# 1.0 ~ 2.0 give acceptable result
-$ \r_intensity 1.8
+# this don't influence UI brightness, as it intended only for lightmap.
+# 1.5 ~ 2.5 give acceptable result
+$ \r_intensity 2
 $ \vid_restart
 ```
 
-* r\_mapOverbrightBit, integer, defalut is 2,
-* r\_overbrightBit, integer, default is 1,
+* r\_mapOverbrightBit, integer, defalut is 2, r\_overbrightBit get remove in vulkan render, misleading.
 
 * The image/texture is multiply/add(depend on the shader) with the lightmap.
 
