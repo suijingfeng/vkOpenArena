@@ -20,8 +20,8 @@ In my test( See the benchmark blow), It(vulkan backend) run faster in newer hard
 It may run slower than opengl1 according to the test on one of my notebook(i5 5200U, Gforce 840M),
 but this notebook have a 1366x768 resolutions with ubuntu 16.04 installed, other computer is 1920x1080.
 I'm now curious about whether it is accurate or meaningful, there are many factors, such as the monitor's
-resolutions, the driver version, operate system and library etc. which one is major factor?  
-you are welcome to have test on your pc configuration and report the results.
+resolutions, the driver version, operate system and library etc. which one is major factor? You are 
+welcome to have test on your pc configuration and report the results.
 
 
 Quake 3 arena released by ID 20 years ago, this code lead me to something deep. 
