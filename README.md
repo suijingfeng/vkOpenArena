@@ -2,26 +2,34 @@
 
 This project is a fork of OpenArena with specific changes to its renderer module.
 It is mainly for myself to study Vulkan/OpenGL API and Quake3's engine. 
-By the way, this render module have nothing special than the default opengl1 render,
-informing you in case of you are disapointed, but I will try to enhance it. 
-However, the opengl2 render module is very beatiful and more powerful, but 
-you have to play with the cvars(r\_pbr, r\_cubemapping, r\_hdr, r\_ssao ...),
-see ioq3's rendergl2 readme.
+I add a vulkan-based render module to this game, the vulkan-based render have
+the same visual effects with the default opengl1 render. ( Informing you in case
+of you are disapointed, vulkan is just a 2D/3D render API, whether the rendered
+image is beautiful depend more on the texture and shader provided ).
+
+However, The opengl2 render module ported from ioq3 is more beatiful and powerful, 
+you can play with the cvars(r\_pbr, r\_cubemapping, r\_hdr, r\_ssao ...) to enable
+corresponding feature. It also consume more compute power and need more memory,
+set com\_hunkMegs to 256 instand 128, otherwise it will quit and inform you hunk  
+allocate failed when there are more player or in some large map. See ioq3's  
+rendergl2 readme.
 
 
+In my test( See the benchmark blow), It(vulkan backend) run faster in newer hardware,
+It may run slower than opengl1 in one of my notebook, but this notebook have a 1366x768
+resolutions, other computer is 1920x1080. I'm now curious about whether it is accurate or
+meaningful, the monitor's resolutions and the driver version which one is 
+major factor? you are welcome to have test and report the results.
+
+    
 Quake 3 arena released by ID 20 years ago, but is still too large to understand
-for a noob programmers likes me. I'm naive, low level code modifier, I should take
+for a noob programmers likes me. I'm naive, low level code modifier. I should take
 more time to learn Vulkan/OpenGL, data structure and algorithm, computer network,
 operate system and compiler technology seriously. This code lead me to something deep.
-
 Anyway, the project is under developing, so always check the lastest build.
-There may bugs instrinsic in the code. If i could find it, i will try to fixed it.
+There may have bugs instrinsic in the code. If i could find it, i will try to fixed it.
 However, there may some I am not able to find and some I could not fix in a short time. 
 
-In my test, It run faster in newer hardware, It may run slower than opengl1 in one of my notebook,
-but this notebook have a 1366x768 resolutions, other computer is 1920x1080. I'm now curious about
-if it is accurate and meaningful, the monitor's resolutions and the driver version which one is 
-major factor. See the benchmark, you are welcome to have test and report the results.
 
 
 For people who want to try the vulkan based renderer on quake3's map,
@@ -30,7 +38,7 @@ go to https://github.com/suijingfeng/vkQuake3.
 You can also compile the render module from this repository and copy the renderer 
 binaries( renderer\_vulkan\_x86\_64.so or .dll ) to where ioquake3's executable
 binary directory. Select the renderer in pull down window with `cl_renderer vulkan`
-followed by `vid\_restart`.
+followed by `vid_restart`.
 
 
 ![](https://github.com/suijingfeng/vkOpenArena/blob/master/doc/quake3.jpg)
@@ -109,8 +117,39 @@ $ ./openarena.x86_64
 # restrict this value to 140.
 
 $ \cg_fov 150
-
 ```
+
+## Too dark ? How to turn the brightness of the drawing window ?
+
+* Use r\_gamma in the pulldown window, which nonlinearly calibrate the image
+before upload it to GPU, so if you must restart the game after change it.
+```
+# defalut is 1.0.
+$ \r_gamma 1.2
+$ \vid_restart
+```
+
+* Use r\_intensity to turn the intensity/brightness of the lightmap. this value
+can be float, you must restart the game after change it.
+```
+# 1.0 ~ 2.0 give acceptable result
+$ \r_intensity 1.8
+$ \vid_restart
+```
+
+* r\_mapOverbrightBit, integer, defalut is 2,
+* r\_overbrightBit, integer, default is 1,
+
+* The image/texture is multiply/add(depend on the shader) with the lightmap.
+
+NOTE: original gamma setting program setting the gamma of the entire destop by use SDL's hardware.
+which works on newer computer hardware but not works on some old machine. 
+It is buggy and embarrasing when program abnormal quit or stall accidently, left the desktop entire washing write.
+so i change it,
+we use software gamma only, take effects before the image is uploading to GPU.
+One cvar for one thing, don't mess it with r\_overbrightBit and r\_mapOverbrightBit.
+
+
 
 ## Switching renderers ##
 
@@ -141,7 +180,6 @@ When you start OpenArena, you can switch witch dynamic library to load by passin
 Example:
 
 ```sh
-
 # New vulkan renderer backend, under developing, 
 # work on ubuntu 18.04, ubuntu16.04, win10, win7.
 # associate code located in code/renderer_vulkan, see readme there.
@@ -159,6 +197,131 @@ $ ./openarena.x86_64 +set cl_renderer opengl1
 $ ./openarena.x86_64 +set cl_renderer openarena
 ```
 
+
+Q: How to check that Vulkan backend is really active ? 
+
+```sh
+\vkinfo
+
+Type \vkinfo in the console reports information about active rendering backend.
+It will report something as following:
+
+Active 3D API: Vulkan
+Vk api version: 1.0.65
+Vk driver version: 1637679104
+Vk vendor id: 0x10DE (NVIDIA)
+Vk device id: 0x1B80
+Vk device type: DISCRETE_GPU
+Vk device name: GeForce GTX 1080
+
+Total Device Extension Supported:
+
+...
+
+Vk instance extensions:
+
+...
+
+Image chuck memory(device local) used: 8 M 
+```
+
+besides, the following new cmd only exist in vulkan renderer.
+
+* gpuMem: image memmory allocated on GPU;
+* printOR: print the value of backend.or;
+* pipelineList: list the number of pipelines we have created for the shader stage. (about 80~100, seem too much?)
+* displayResoList: list of the display resolution the render software provided.
+* monitorInfo: you monitor actually supported resolution, need the vulkan driver support VK\_KHR\_display,
+    only supported on newer haveware and linux platform. It actually not work properly as intended on my two old
+    notebook(in this casem it will not print anything), maybe the driver side bug (nvidia vulkan driver 1.0.65).
+* printDeviceExtensions: list the device extensions supported on you GPU
+* printInstanceExtensions: list the instance extensions supported on you GPU
+* printImgHashTable: print the image hash table usage, which also list the image creaeted and is size info etc.
+* printShaderTextHashTable: I am curious about the q3 handle out the shader collision problem of two different shader.
+
+For example:
+
+```
+$ \monitorInfo
+ Display 0: LG Electronics LG HDR WFHD (HDMI-0). 
+ Resolution: 2560x1080, Dimension: 800x340. 
+ -------- --------------------- --------
+ Display Mode Propertie 0: 2560x1080 60.0 hz. 
+ Display Mode Propertie 1: 1920x1080 60.0 hz. 
+ Display Mode Propertie 2: 1920x1080 59.9 hz. 
+ Display Mode Propertie 3: 1280x720 59.9 hz. 
+ Display Mode Propertie 4: 720x480 59.9 hz. 
+ Display Mode Propertie 5: 640x480 59.9 hz. 
+ Display Mode Propertie 6: 1920x1080 50.0 hz. 
+ Display Mode Propertie 7: 1280x720 50.0 hz. 
+ Display Mode Propertie 8: 2560x1080 50.0 hz. 
+ Display Mode Propertie 9: 2560x1080 59.9 hz. 
+ Display Mode Propertie 10: 720x576 50.0 hz. 
+ Display Mode Propertie 11: 3840x2160 24.0 hz. 
+ Display Mode Propertie 12: 3840x2160 25.0 hz. 
+ Display Mode Propertie 13: 3840x2160 30.0 hz. 
+ Display Mode Propertie 14: 3840x2160 50.0 hz. 
+ Display Mode Propertie 15: 3840x2160 59.9 hz. 
+ Display Mode Propertie 16: 2560x1080 75.0 hz. 
+ Display Mode Propertie 17: 2560x1440 60.0 hz. 
+ Display Mode Propertie 18: 1152x864 60.0 hz. 
+ Display Mode Propertie 19: 1280x1024 60.0 hz. 
+ Display Mode Propertie 20: 1280x720 60.0 hz. 
+ Display Mode Propertie 21: 1600x900 60.0 hz. 
+ Display Mode Propertie 22: 1680x1050 60.0 hz. 
+ Display Mode Propertie 23: 1920x1080 60.0 hz. 
+ Display Mode Propertie 24: 1280x800 59.8 hz. 
+ Display Mode Propertie 25: 1920x1080 75.0 hz. 
+ Display Mode Propertie 26: 640x480 59.9 hz. 
+ Display Mode Propertie 27: 640x480 75.0 hz. 
+ Display Mode Propertie 28: 800x600 60.3 hz. 
+ Display Mode Propertie 29: 800x600 75.0 hz. 
+ Display Mode Propertie 30: 1024x768 60.0 hz. 
+ Display Mode Propertie 31: 1024x768 75.0 hz. 
+ Display Mode Propertie 32: 1280x1024 75.0 hz. 
+ Display Mode Propertie 33: 3840x2160 30.0 hz. 
+ Display Mode Propertie 34: 3840x2160 25.0 hz. 
+ Display Mode Propertie 35: 3840x2160 24.0 hz. 
+
+
+# software provided resolution
+$ \displayResoList 
+
+Mode  0: 320x240
+Mode  1: 400x300
+Mode  2: 512x384
+Mode  3: 640x480 (480p)
+Mode  4: 800x600
+Mode  5: 960x720
+Mode  6: 1024x768
+Mode  7: 1152x864
+Mode  8: 1280x1024
+Mode  9: 1600x1200
+Mode 10: 2048x1536
+Mode 11: 856x480
+Mode 12: 1280x720 (720p)
+Mode 13: 1280x768
+Mode 14: 1280x800
+Mode 15: 1280x960
+Mode 16: 1360x768
+Mode 17: 1366x768
+Mode 18: 1360x1024
+Mode 19: 1400x1050
+Mode 20: 1400x900
+Mode 21: 1600x900
+Mode 22: 1680x1050
+Mode 23: 1920x1080 (1080p)
+Mode 24: 1920x1200
+Mode 25: 1920x1440
+Mode 26: 2560x1080
+Mode 27: 2560x1600
+Mode 28: 3840x2160 (4K)
+
+$ \r_mode 12
+$ \vid_restart
+```
+
+
 Q: How to use check FPS or using it as a benchmarking tool?
 
 ```
@@ -167,7 +330,6 @@ Q: How to use check FPS or using it as a benchmarking tool?
 ```
 
 ### AMD2700X CPU, GTX1080 GPU, 1920x1080 60 hz LG display ###
-
 ```
 # Frames  TotalTime  averageFPS  minimum/average/maximum/std deviation
 
@@ -183,7 +345,6 @@ render_gl2:    3398 frames 6.8 seconds 503.2 fps 1.0/2.0/6.0/0.6 ms
 render_gl1:    3398 frames 5.4 seconds 629.7 fps 1.0/1.6/4.0/0.6 ms
 render_mydev:  3398 frames 5.0 seconds 686.2 fps 1.0/1.5/3.0/0.5 ms
 render_oa:     3398 frames 5.3 seconds 646.9 fps 1.0/1.5/4.0/0.5 ms
-
 ```
 
 ### HardWare: Aspire E5-471G-51SP, i5-5200U, GeForce 840M, 1366x768 ###
@@ -203,7 +364,9 @@ vulkan : 3398 frames 14.5 seconds 233.6 fps 1.0/4.3/14.0/1.6 ms
 opengl2: 3398 frames 83.4 seconds 40.8 fps 8.0/24.5/331.0/9.6 ms
 opengl1: 3398 frames 22.2 seconds 152.8 fps 2.0/6.5/17.0/1.9 ms
 
-# opengl2 renderer acieve best virsual result but consume the compute power most
+# opengl2 renderer achieve best virsual result but also consume the compute power most
+# which in other word is slow, but it is ok on modern GPU/CPU.
+# it is NOT OK on i5-5200U, GeForce 840M, I think.
 
 \com_speed 1
 # opengl2 backend
@@ -242,13 +405,10 @@ frame:24118 all: 10 sv:  0 ev:  0 cl:  1 gm:  0 rf:  0 bk:  9
 frame:24119 all: 14 sv:  0 ev:  1 cl:  0 gm:  0 rf:  0 bk: 14
 frame:24120 all: 12 sv:  0 ev:  0 cl:  1 gm:  0 rf:  0 bk: 11
 frame:24121 all: 11 sv:  0 ev:  0 cl:  1 gm:  0 rf:  0 bk: 10
-
 ```
 
 ### Aspire v3-772G i7-4702MQ GTX760M 1920x1080 ###
-
-```
-# Testing on ubuntu 18.04 gnome 
+# Testing on ubuntu 18.04 gnome, nvidia vulkan driver 1.0.65 
 
 render_vulkan: 3398 frames 15.0 seconds 225.9 fps 2.0/4.4/9.0/0.7 ms
 
@@ -263,104 +423,6 @@ opengl2: 3398 frames 7.2 seconds 469.7 fps 1.0/2.1/21.0/0.7 ms
 ```
 
 
-Q: How to turn the intensity/gamma of the drawing wondow ?
-
-* use r\_gamma in the pulldown window, which nonlinearly correct the image before the uploading to GPU.
-`\r_gamma 1.5` then `vid_restart`
-
-* you can also use r\_intensity which turn the intensity linearly.
-```
-# 1.5 ~ 2.0 give acceptable result
-$ \r_intensity 1.8
-$ \vid_restart
-```
-
-note: original gamma setting program setting the gamma of entire destop window.
-which works on newer computer but not works on some machine. 
-It is buggy and embarrasing when program abnormal quit or stall.
-
-
-
-Q: How to check that Vulkan backend is really active ? 
-```sh
-\vkinfo
-```
-
-besides, the following new cmd only exist in vulkan renderer.
-
-
-* pipelineList: list the pipeline we have created;
-* gpuMem: image memmory allocated on GPU;
-* printOR: print the value of backend.or;
-
-* pipelineList: list the number of pipelines created (about 100, seem too much ?)
-
-* displayResoList: list of the display resolution you monitor supported
-
-* printDeviceExtensions: list the device extensions supported on you device/GPU
-* printInstanceExtensions: list the instance extensions supported on you device/GPU
-* printImgHashTable: print the image hash table usage, which also list the image creaeted and is size info etc.
-For example:
-```
-$ \displayResoList 
-
-Mode  0: 320x240
-Mode  1: 400x300
-Mode  2: 512x384
-Mode  3: 640x480 (480p)
-Mode  4: 800x600
-Mode  5: 960x720
-Mode  6: 1024x768
-Mode  7: 1152x864
-Mode  8: 1280x1024
-Mode  9: 1600x1200
-Mode 10: 2048x1536
-Mode 11: 856x480
-Mode 12: 1280x720 (720p)
-Mode 13: 1280x768
-Mode 14: 1280x800
-Mode 15: 1280x960
-Mode 16: 1360x768
-Mode 17: 1366x768
-Mode 18: 1360x1024
-Mode 19: 1400x1050
-Mode 20: 1400x900
-Mode 21: 1600x900
-Mode 22: 1680x1050
-Mode 23: 1920x1080 (1080p)
-Mode 24: 1920x1200
-Mode 25: 1920x1440
-Mode 26: 2560x1080
-Mode 27: 2560x1600
-Mode 28: 3840x2160 (4K)
-
-$ \r_mode 12
-$ \vid_restart
-```
-
-Type \vkinfo in the console reports information about active rendering backend.
-It will report something as following:
-
-```
-Active 3D API: Vulkan
-Vk api version: 1.0.65
-Vk driver version: 1637679104
-Vk vendor id: 0x10DE (NVIDIA)
-Vk device id: 0x1B80
-Vk device type: DISCRETE_GPU
-Vk device name: GeForce GTX 1080
-
-Total Device Extension Supported:
-
-...
-
-Vk instance extensions:
-
-...
-
-Image chuck memory(device local) used: 8 M 
-
-```
 
 You can also get the information from the UI: SETUP >> SYSTEM >> DRIVER INFO
 
