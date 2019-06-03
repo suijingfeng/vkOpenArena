@@ -408,10 +408,9 @@ frame:24121 all: 11 sv:  0 ev:  0 cl:  1 gm:  0 rf:  0 bk: 10
 ```
 
 ### Aspire v3-772G i7-4702MQ GTX760M 1920x1080 ###
+```
 # Testing on ubuntu 18.04 gnome, nvidia vulkan driver 1.0.65 
-
 render_vulkan: 3398 frames 15.0 seconds 225.9 fps 2.0/4.4/9.0/0.7 ms
-
 ```
 
 ### GT72VR 6RD, i7-6700HQ, GTX 1060, ubuntu 18.04 GNOME 3.28.2
@@ -506,7 +505,7 @@ gprof openarena.x86_64 gmon.out > report.txt
 ```
 
 
-## Developing notes
+### Developing notes
 
 ```
 \printInstanceExtensions
@@ -571,17 +570,19 @@ VK_EXT_debug_utils
  VK_NVX_multiview_per_view_attributes
 --------- ----------------------------------- ---------
 
+```
 
+
+### Ubuntu 18.04 gnome Aspire v3-772G i7-4702MQ GTX760M 1920x1080
+
+```
 total 2 Queue families:
 
  Queue family [0]: 16 queues,  Graphic,  Compute,  Transfer,  Sparse,  presentation supported.
  Queue family [1]: 1 queues,  Transfer,
 
-```
 
-ubuntu 18.04 gnome Aspire v3-772G i7-4702MQ GTX760M 1920x1080
 
-```
 ----- Total 14 Instance Extension Supported -----
 VK_EXT_acquire_xlib_display
 VK_EXT_debug_report
