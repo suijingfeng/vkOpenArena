@@ -235,8 +235,8 @@ If running in stereo, RE_BeginFrame will be called twice
 for each RE_EndFrame
 ====================
 */
-void RE_BeginFrame(void) {
-
+void RE_BeginFrame(stereoFrame_t notUsed)
+{
 	if ( !tr.registered ) {
 		return;
 	}

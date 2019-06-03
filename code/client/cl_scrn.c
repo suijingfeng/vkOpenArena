@@ -466,11 +466,11 @@ void SCR_Init( void ) {
 
 static void SCR_DrawScreenField(void)
 {
-	qboolean uiFullscreen;
+    // stereo feature get removed, as not useful I think.
+    // but keep the ABI / interface consistent ...
+	re.BeginFrame( 0 );
 
-	re.BeginFrame();
-
-	uiFullscreen = (uivm && VM_Call( uivm, UI_IS_FULLSCREEN ));
+	qboolean uiFullscreen = (uivm && VM_Call( uivm, UI_IS_FULLSCREEN ));
 
 	// wide aspect ratio screens need to have the sides cleared
 	// unless they are displaying game renderings

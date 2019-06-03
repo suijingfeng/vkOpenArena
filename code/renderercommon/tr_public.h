@@ -69,7 +69,7 @@ typedef struct
 	void (*DrawStretchRaw) (int x, int y, int w, int h, int cols, int rows, const byte *data, int client, qboolean dirty);
 	void (*UploadCinematic) (int w, int h, int cols, int rows, const byte *data, int client, qboolean dirty);
 
-	void (*BeginFrame)(void);
+	void (*BeginFrame)( stereoFrame_t stereoFrame );
 
 	// if the pointers are not NULL, timing info will be returned
 	void (*EndFrame)( int *frontEndMsec, int *backEndMsec );

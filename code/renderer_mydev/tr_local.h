@@ -1218,7 +1218,7 @@ void	GL_Cull( int cullType );
 void	RE_StretchRaw (int x, int y, int w, int h, int cols, int rows, const byte *data, int client, qboolean dirty);
 void	RE_UploadCinematic (int w, int h, int cols, int rows, const byte *data, int client, qboolean dirty);
 
-void		RE_BeginFrame( void );
+void		RE_BeginFrame( stereoFrame_t notUsed );
 void		RE_BeginRegistration( glconfig_t *glconfig );
 void		RE_LoadWorldMap( const char *mapname );
 void		RE_SetWorldVisData( const byte *vis );

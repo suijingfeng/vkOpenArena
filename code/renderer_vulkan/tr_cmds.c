@@ -192,9 +192,8 @@ void RE_TakeVideoFrame( int width, int height,
 	cmd->motionJpeg = motionJpeg;
 }
 
-void RE_BeginFrame( void )
+void RE_BeginFrame( stereoFrame_t notUsed )
 {
-
 	if ( !tr.registered ) {
 		return;
 	}
@@ -203,10 +202,9 @@ void RE_BeginFrame( void )
 	// may still be rendering into the current ones
 	// draw buffer stuff
 	drawBufferCommand_t* cmd = (drawBufferCommand_t*) R_GetCommandBuffer(sizeof(drawBufferCommand_t));
-	if ( !cmd ) {
-		return;
+	if ( cmd ) {
+		cmd->commandId = RC_DRAW_BUFFER;
 	}
-	cmd->commandId = RC_DRAW_BUFFER;
 }
 
 

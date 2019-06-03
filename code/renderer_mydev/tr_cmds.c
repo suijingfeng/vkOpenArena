@@ -204,7 +204,7 @@ void RE_StretchPic( float x, float y, float w, float h, float s1, float t1, floa
 
 
 
-void RE_BeginFrame(void)
+void RE_BeginFrame(stereoFrame_t notUsed)
 {
 	if ( !tr.registered ) {
 		return;
