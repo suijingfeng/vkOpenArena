@@ -77,38 +77,39 @@ cvar_t	*r_gpuIndex;
 
 void R_Register( void ) 
 {
-	//
 	// latched and archived variables
+    //
+	// temporary latched variables that can only change over a restart
 	//
+	// archived variables that can change at any time
+
 	r_picmip = ri.Cvar_Get ("r_picmip", "1", CVAR_ARCHIVE | CVAR_LATCH );
     ri.Cvar_CheckRange( r_picmip, 0, 4, qtrue );
-
 	r_simpleMipMaps = ri.Cvar_Get( "r_simpleMipMaps", "1", CVAR_ARCHIVE | CVAR_LATCH );
 	r_colorMipLevels = ri.Cvar_Get ("r_colorMipLevels", "0", CVAR_LATCH );
 
-	r_brightness = ri.Cvar_Get ("r_brightness", "1.5", CVAR_ARCHIVE | CVAR_LATCH );
-    ri.Cvar_CheckRange( r_brightness, 1.0f, 3.0f, qfalse );
 
+    // image/linghtmap brightness
+    r_gamma = ri.Cvar_Get( "r_gamma", "1", CVAR_ARCHIVE | CVAR_LATCH );
+    ri.Cvar_CheckRange( r_gamma, 1.0f, 3.0f, qfalse );
+	
+    r_brightness = ri.Cvar_Get ("r_brightness", "1.5", CVAR_ARCHIVE | CVAR_LATCH );
+    ri.Cvar_CheckRange( r_brightness, 1.0f, 3.0f, qfalse );
+    
+    r_intensity = ri.Cvar_Get ("r_intensity", "2.0", CVAR_LATCH | CVAR_ARCHIVE );
+    ri.Cvar_CheckRange( r_intensity, 1.0f, 3.0f, qfalse );
+    
+    r_mapOverBrightBits = ri.Cvar_Get ("r_mapOverBrightBits", "2", CVAR_ARCHIVE | CVAR_LATCH );
+	ri.Cvar_CheckRange( r_mapOverBrightBits, 1, 3, qtrue );
+
+    
 
     r_vertexLight = ri.Cvar_Get( "r_vertexLight", "0", CVAR_ARCHIVE | CVAR_LATCH );
 	r_uiFullScreen = ri.Cvar_Get( "r_uifullscreen", "0", 0);
 	r_subdivisions = ri.Cvar_Get ("r_subdivisions", "4", CVAR_ARCHIVE | CVAR_LATCH);
 
-	//
-	// temporary latched variables that can only change over a restart
-	//
-	
-    r_mapOverBrightBits = ri.Cvar_Get ("r_mapOverBrightBits", "2", CVAR_ARCHIVE | CVAR_LATCH );
-	ri.Cvar_CheckRange( r_mapOverBrightBits, 1, 3, qtrue );
-
-    r_intensity = ri.Cvar_Get ("r_intensity", "2.0", CVAR_LATCH | CVAR_ARCHIVE );
-    ri.Cvar_CheckRange( r_intensity, 1.0f, 3.0f, qfalse );
-
 	r_singleShader = ri.Cvar_Get ("r_singleShader", "0", CVAR_CHEAT | CVAR_LATCH );
 
-	//
-	// archived variables that can change at any time
-	//
 	r_lodCurveError = ri.Cvar_Get( "r_lodCurveError", "250", CVAR_ARCHIVE|CVAR_CHEAT );
     r_flares = ri.Cvar_Get ("r_flares", "0", CVAR_ARCHIVE );
 	r_znear = ri.Cvar_Get( "r_znear", "4", CVAR_CHEAT );
@@ -117,8 +118,6 @@ void R_Register( void )
 	r_inGameVideo = ri.Cvar_Get( "r_inGameVideo", "1", CVAR_ARCHIVE );
 	r_dynamiclight = ri.Cvar_Get( "r_dynamiclight", "1", CVAR_ARCHIVE );
 	
-    r_gamma = ri.Cvar_Get( "r_gamma", "1", CVAR_ARCHIVE | CVAR_LATCH );
-    ri.Cvar_CheckRange( r_gamma, 1.0f, 3.0f, qfalse );
 	
     r_facePlaneCull = ri.Cvar_Get ("r_facePlaneCull", "1", CVAR_ARCHIVE );
 
@@ -133,7 +132,6 @@ void R_Register( void )
 	// temporary variables that can change at any time
 	//
 	r_showImages = ri.Cvar_Get( "r_showImages", "0", CVAR_TEMP );
-
 	r_debugLight = ri.Cvar_Get( "r_debuglight", "0", CVAR_TEMP );
 	r_debugSort = ri.Cvar_Get( "r_debugSort", "0", CVAR_CHEAT );
 	r_printShaders = ri.Cvar_Get( "r_printShaders", "0", 0 );
@@ -163,13 +161,14 @@ void R_Register( void )
 	r_maxpolys = ri.Cvar_Get( "r_maxpolys", va("%d", 600), 0);
 	r_maxpolyverts = ri.Cvar_Get( "r_maxpolyverts", va("%d", 3000), 0);
 
+    
+    r_mode = ri.Cvar_Get( "r_mode", "-2", CVAR_ARCHIVE | CVAR_LATCH );
     r_fullscreen = ri.Cvar_Get( "r_fullscreen", "1", CVAR_ARCHIVE | CVAR_LATCH );
     r_displayRefresh = ri.Cvar_Get( "r_displayRefresh", "60", CVAR_LATCH );
     ri.Cvar_CheckRange( r_displayRefresh, 30.0f, 200.0f, qfalse );
 
     r_allowResize = ri.Cvar_Get( "r_allowResize", "0", CVAR_ARCHIVE | CVAR_LATCH );
 
-    r_mode = ri.Cvar_Get( "r_mode", "-2", CVAR_ARCHIVE | CVAR_LATCH );
 
 	r_gpuIndex = ri.Cvar_Get( "r_gpuIndex", "0", CVAR_ARCHIVE );
 }

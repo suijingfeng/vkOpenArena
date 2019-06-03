@@ -1,10 +1,37 @@
 #include "ref_import.h"
 #include "vk_image.h"
 #include "R_ImageProcess.h"
-#include "tr_globals.h"
+
+//////////////////////////////////////////////////////////////////////
+//
+//      MIP maps
+//
+//////////////////////////////////////////////////////////////////////
+
+
+// In computer graphics, mipmaps (also MIP maps) or pyramids are pre-calculated,
+// optimized sequences of images, each of which is a progressively lower resolution
+// representation of the same image. The height and width of each image, or level, 
+// in the mipmap is a power of two smaller than the previous level. 
+// Mipmaps do not have to be square. They are intended to increase rendering speed
+// and reduce aliasing artifacts.
+// A high-resolution mipmap image is used for high-density samples, such as for 
+// objects close to the camera. Lower-resolution images are used as the object
+// appears farther away.
+// This is a more efficient way of downfiltering (minifying) a texture than
+// sampling all texels in the original texture that would contribute to a 
+// screen pixel; it is faster to take a constant number of samples from the
+// appropriately downfiltered textures. Mipmaps are widely used in 3D computer games. 
+
+// The letters "MIP" in the name are an acronym of the Latin phrase multum in parvo, 
+// meaning "much in little".Since mipmaps, by definition, are pre-allocated, 
+// additional storage space is required to take advantage of them. 
+// Mipmap textures are used in 3D scenes to decrease the time required to 
+// render a scene. They also improve the scene's realism.
 
 
 static unsigned char s_gammatable[256];
+
 
 /*
 void R_GammaCorrect(unsigned char* buffer, const unsigned int Size)
@@ -17,6 +44,8 @@ void R_GammaCorrect(unsigned char* buffer, const unsigned int Size)
 	}
 }
 */
+
+
 
 void R_SetColorMappings( float brightness, float gamma )
 {
@@ -53,33 +82,6 @@ void R_LightScaleTexture (unsigned char* const dst, unsigned char* const in, uin
         dst[i+2] = s_gammatable[in[i+2]];
     }
 }
-
-//////////////////////////////////////////////////////////////////////
-//
-//      MIP maps
-//
-//////////////////////////////////////////////////////////////////////
-
-
-// In computer graphics, mipmaps (also MIP maps) or pyramids are pre-calculated,
-// optimized sequences of images, each of which is a progressively lower resolution
-// representation of the same image. The height and width of each image, or level, 
-// in the mipmap is a power of two smaller than the previous level. 
-// Mipmaps do not have to be square. They are intended to increase rendering speed
-// and reduce aliasing artifacts.
-// A high-resolution mipmap image is used for high-density samples, such as for 
-// objects close to the camera. Lower-resolution images are used as the object
-// appears farther away.
-// This is a more efficient way of downfiltering (minifying) a texture than
-// sampling all texels in the original texture that would contribute to a 
-// screen pixel; it is faster to take a constant number of samples from the
-// appropriately downfiltered textures. Mipmaps are widely used in 3D computer games. 
-
-// The letters "MIP" in the name are an acronym of the Latin phrase multum in parvo, 
-// meaning "much in little".Since mipmaps, by definition, are pre-allocated, 
-// additional storage space is required to take advantage of them. 
-// Mipmap textures are used in 3D scenes to decrease the time required to 
-// render a scene. They also improve the scene's realism.
 
 
 /*
@@ -120,7 +122,7 @@ void R_BlendOverTexture(unsigned char* data, const uint32_t pixelCount, uint32_t
 	const unsigned int bG = mipBlendColors[l][1] * alpha;
 	const unsigned int bB = mipBlendColors[l][2] * alpha;
 
-	for ( i = 0; i < pixelCount; i++, data+=4 )
+	for ( i = 0; i < pixelCount; ++i, data+=4 )
     {
 		data[0] = ( data[0] * inverseAlpha + bR ) >> 9;
 		data[1] = ( data[1] * inverseAlpha + bG ) >> 9;
@@ -153,7 +155,7 @@ void R_MipMap(const unsigned char* in, uint32_t width, uint32_t height, unsigned
 	if ( (width == 0) || (height == 0) )
     {
 		width += height;	// get largest
-		for (i=0; i<width; i++, out+=4, in+=8 )
+		for (i=0; i<width; ++i, out+=4, in+=8 )
         {
 			out[0] = ( in[0] + in[4] )>>1;
 			out[1] = ( in[1] + in[5] )>>1;
@@ -163,7 +165,7 @@ void R_MipMap(const unsigned char* in, uint32_t width, uint32_t height, unsigned
 	}
     else
     {   
-        for (i=0; i<height; i++, in+=row)
+        for (i=0; i<height; ++i, in+=row)
         {
             uint32_t j;
             for (j=0; j<width; j++, out+=4, in+=8)
@@ -270,7 +272,7 @@ If a larger shrinking is needed, use the mipmap function before or after.
 */
 
 void ResampleTexture(unsigned char * pOut, const unsigned int inwidth, const unsigned int inheight,
-                               const unsigned char *pIn, const unsigned int outwidth, const unsigned int outheight)
+                            const unsigned char *pIn, const unsigned int outwidth, const unsigned int outheight)
 {
 	unsigned int i, j;
 	unsigned int p1[2048], p2[2048];
