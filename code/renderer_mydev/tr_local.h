@@ -59,10 +59,6 @@ void* GLimp_GetProcAddress(const char* fun);
 typedef unsigned int glIndex_t;
 
 
-// everything that is needed by the backend needs
-// to be double buffered to allow it to run in
-// parallel on a dual cpu machine
-#define	SMP_FRAMES		1
 
 // 12 bits
 // see QSORT_SHADERNUM_SHIFT
@@ -578,7 +574,7 @@ typedef struct srfGridMesh_s {
 	surfaceType_t	surfaceType;
 
 	// dynamic lighting information
-	int				dlightBits[SMP_FRAMES];
+	int				dlightBits;
 
 	// culling information
 	vec3_t			meshBounds[2];
@@ -608,7 +604,7 @@ typedef struct {
 	cplane_t	plane;
 
 	// dynamic lighting information
-	int			dlightBits[SMP_FRAMES];
+	int			dlightBits;
 
 	// triangle definitions (no normals at points)
 	int			numPoints;
@@ -624,7 +620,7 @@ typedef struct {
 	surfaceType_t	surfaceType;
 
 	// dynamic lighting information
-	int				dlightBits[SMP_FRAMES];
+	int				dlightBits;
 
 	// culling information (FIXME: use this!)
 	vec3_t			bounds[2];
@@ -1593,7 +1589,7 @@ typedef struct {
 extern	int		max_polys;
 extern	int		max_polyverts;
 
-extern	backEndData_t	*backEndData[SMP_FRAMES];	// the second one may not be allocated
+extern	backEndData_t	*backEndData;	// the second one may not be allocated
 
 extern	volatile renderCommandList_t	*renderCommandList;
 

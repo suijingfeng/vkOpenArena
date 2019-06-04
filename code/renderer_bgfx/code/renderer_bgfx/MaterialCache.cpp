@@ -311,8 +311,10 @@ Material *MaterialCache::createMaterial(const Material &base)
 
 Material *MaterialCache::findMaterial(const char *name, int lightmapIndex, bool mipRawImage)
 {
-	if (!name || !name[0])
-		return defaultMaterial_;
+	if (!name || !name[0]){
+    	interface::PrintWarningf("WARNING: name = NULL!\n");
+        return defaultMaterial_;
+    }
 
 	char strippedName[MAX_QPATH];
 	util::StripExtension(name, strippedName, sizeof(strippedName));
@@ -343,6 +345,8 @@ Material *MaterialCache::findMaterial(const char *name, int lightmapIndex, bool 
 		if (!m.parse(&shaderText))
 		{
 			// had errors, so use default shader
+            interface::PrintWarningf("WARNING: ParseShader: %s had errors\n", name );
+
 			m.defaultShader = true;
 		}
 
@@ -361,11 +365,11 @@ Material *MaterialCache::findMaterial(const char *name, int lightmapIndex, bool 
 		flags |= TextureFlags::ClampToEdge;
 	}
 
-	Texture *texture = g_textureCache->find(name, flags);
+	Texture *texture = g_textureCache->find(strippedName, flags);
 
 	if (!texture)
 	{
-		interface::PrintDeveloperf("Couldn't find image file for shader %s\n", name);
+		interface::PrintWarningf("Couldn't find image file for shader %s\n", strippedName);
 		m.defaultShader = true;
 		return createMaterial(m);
 	}
@@ -572,6 +576,7 @@ size_t MaterialCache::generateHash(const char *fname, size_t size)
 
 void MaterialCache::createInternalShaders()
 {
+    interface::Printf("Create Internal Shaders\n");
 	Material m("<default>");
 	m.stages[0].bundles[0].textures[0] = g_textureCache->getDefault();
 	m.stages[0].active = true;
@@ -580,7 +585,7 @@ void MaterialCache::createInternalShaders()
 
 void MaterialCache::scanAndLoadShaderFiles()
 {
-	// scan for shader files
+    interface::Printf("Scan and load shader files\n");
 	int numShaderFiles;
 	char **shaderFiles = interface::FS_ListFiles("scripts", ".shader", &numShaderFiles);
 
@@ -591,12 +596,13 @@ void MaterialCache::scanAndLoadShaderFiles()
 	}
 
 	numShaderFiles = std::min(numShaderFiles, (int)maxShaderFiles_);
+    interface::Printf("numShaderFiles: %d, max: %ld\n", numShaderFiles, maxShaderFiles_);
 
 	// load and parse shader files
 	char *buffers[maxShaderFiles_] = {NULL};
 	long sum = 0;
 
-	for (int i = 0; i < numShaderFiles; i++)
+	for (int i = 0; i < numShaderFiles; ++i)
 	{
 		char filename[MAX_QPATH];
 
@@ -642,11 +648,13 @@ void MaterialCache::scanAndLoadShaderFiles()
 
 			if (token[0] != '{' || token[1] != '\0')
 			{
-				interface::PrintWarningf("WARNING: Shader file %s. Shader \"%s\" on line %d missing opening brace", filename, shaderName, shaderLine);
+				interface::PrintWarningf("WARNING: Shader file %s. Shader \"%s\" on line %d missing opening brace",
+                        filename, shaderName, shaderLine);
 
 				if (token[0])
 				{
-					interface::PrintWarningf(" (found \"%s\" on line %d)", token, util::GetCurrentParseLine());
+					interface::PrintWarningf(" (found \"%s\" on line %d)",
+                            token, util::GetCurrentParseLine());
 				}
 
 				interface::PrintWarningf(". Ignoring rest of shader file.\n");
@@ -672,7 +680,7 @@ void MaterialCache::scanAndLoadShaderFiles()
 	char *textEnd = shaderText_.data();
  
 	// free in reverse order, so the temp files are all dumped
-	for (int i = numShaderFiles - 1; i >= 0 ; i--)
+	for (int i = numShaderFiles - 1; i >= 0 ; --i)
 	{
 		if (!buffers[i])
 			continue;
@@ -710,7 +718,7 @@ void MaterialCache::scanAndLoadShaderFiles()
 	size += textHashTableSize_;
 	auto hashMem = (char *)interface::Hunk_Alloc(size * sizeof(char *));
 
-	for (int i = 0; i < textHashTableSize_; i++)
+	for (int i = 0; i < textHashTableSize_; ++i)
 	{
 		textHashTable_[i] = (char **) hashMem;
 		hashMem = ((char *) hashMem) + ((textHashTable_Sizes[i] + 1) * sizeof(char *));
@@ -736,6 +744,7 @@ void MaterialCache::scanAndLoadShaderFiles()
 
 void MaterialCache::createExternalShaders()
 {
+    interface::Printf(" Create external shaders.\n");
 }
 
 char *MaterialCache::findShaderInShaderText(const char *name)

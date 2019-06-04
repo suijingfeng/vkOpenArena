@@ -1008,8 +1008,10 @@ static void R_CreateIdentityLightImage(void)
 
 	// with overbright bits active, we need an image which is some fraction of full color,
 	// for default lightmaps, etc
-	for (x=0 ; x<DEFAULT_SIZE ; x++) {
-		for (y=0 ; y<DEFAULT_SIZE ; y++) {
+	for (x=0 ; x<DEFAULT_SIZE ; ++x)
+    {
+		for (y=0; y<DEFAULT_SIZE; ++y)
+        {
 			data[y][x][0] = 
 			data[y][x][1] = 
 			data[y][x][2] = tr.identityLightByte;
@@ -1232,7 +1234,7 @@ void R_InitImages( void )
 
     R_CreateWhiteImage();
 
-    R_CreateIdentityLightImage();
+    // R_CreateIdentityLightImage();
 
     R_CreateScratchImage();
     

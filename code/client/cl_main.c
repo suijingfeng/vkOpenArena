@@ -27,6 +27,7 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #include "../sys/sys_local.h"
 #include "../qcommon/sys_loadlib.h"
 #include "../sdl/input.h"
+
 #ifdef USE_MUMBLE
 #include "libmumblelink.h"
 #endif
@@ -51,7 +52,6 @@ cvar_t	*cl_voip;
 #ifdef USE_RENDERER_DLOPEN
 cvar_t	*cl_renderer;
 #endif
-
 
 cvar_t	*cl_nodelta;
 cvar_t	*cl_debugMove;
@@ -157,7 +157,6 @@ void CL_CheckForResend( void );
 void CL_ShowIP_f(void);
 void CL_ServerStatus_f(void);
 void CL_ServerStatusResponse( netadr_t from, msg_t *msg );
-
 
 /*
 ===============
@@ -743,7 +742,7 @@ void CL_Record_f( void ) {
 
 	// open the demo file
 
-	Com_Printf("recording to %s.\n", name);
+	Com_Printf ("recording to %s.\n", name);
 	clc.demofile = FS_FOpenFileWrite( name );
 	if ( !clc.demofile ) {
 		Com_Printf ("ERROR: couldn't open.\n");
@@ -884,7 +883,6 @@ void CL_DemoCompleted( void )
 					clc.timeDemoMaxDuration,
 					CL_DemoFrameDurationSDev( ) );
 			Com_Printf( "%s", buffer );
-
 
 			// Write a log of all the frame durations
 			if( cl_timedemoLog && strlen( cl_timedemoLog->string ) > 0 )
@@ -1027,6 +1025,7 @@ static int CL_WalkDemoExt(char *arg, char *name, int *demofile)
 		if (*demofile)
 		{
 			Com_Printf("Demo file: %s\n", name);
+
 			return demo_protocols[i];
 		}
 		else
@@ -1063,7 +1062,8 @@ demo <demoname>
 */
 void CL_PlayDemo_f( void ) {
 	char		name[MAX_OSPATH];
-	char		*arg, *ext_test;
+	char		arg[MAX_OSPATH];
+	char		*ext_test;
 	int			protocol, i;
 	char		retry[MAX_OSPATH];
 
@@ -1077,7 +1077,7 @@ void CL_PlayDemo_f( void ) {
 	Cvar_Set( "sv_killserver", "2" );
 
 	// open the demo file
-	arg = Cmd_Argv(1);
+	Q_strncpyz( arg, Cmd_Argv(1), sizeof( arg ) );
 	
 	CL_Disconnect( qtrue );
 
@@ -1182,8 +1182,8 @@ void CL_NextDemo( void ) {
 	}
 
 	Cvar_Set ("nextdemo","");
-	Cbuf_AddText(v);
-	Cbuf_AddText("\n");
+	Cbuf_AddText (v);
+	Cbuf_AddText ("\n");
 	Cbuf_Execute();
 }
 
@@ -2454,7 +2454,7 @@ void CL_ServersResponsePacket( const netadr_t* from, msg_t *msg, qboolean extend
 	byte*			buffptr;
 	byte*			buffend;
 	
-	Com_Printf("CL_ServersResponsePacket\n");
+	Com_Printf("CL_ServersResponsePacket from %s\n", NET_AdrToStringwPort(*from));
 
 	if (cls.numglobalservers == -1) {
 		// state to detect lack of servers or lack of response
@@ -2938,7 +2938,8 @@ void CL_Frame ( int msec )
 	}
 
 	// if recording an avi, lock to a fixed fps
-	if ( CL_VideoRecording( ) && cl_aviFrameRate->integer && msec) {
+	if ( CL_VideoRecording( ) && cl_aviFrameRate->integer && msec)
+    {
 		// save the current screen
 		if ( clc.state == CA_ACTIVE || cl_forceavidemo->integer)
 		{
@@ -3053,7 +3054,8 @@ void CL_Frame ( int msec )
 //============================================================================
 
 /* CL_RefPrintf DLL glue */
-static __attribute__((format(printf, 2, 3))) void QDECL CL_RefPrintf( int print_level, const char *fmt, ...)
+__attribute__((format(printf, 2, 3))) 
+static void QDECL CL_RefPrintf( int print_level, const char *fmt, ...)
 {
 	va_list	argptr;
 	char msg[MAXPRINTMSG];
@@ -3084,7 +3086,7 @@ void CL_ShutdownRef( void )
 #ifdef USE_RENDERER_DLOPEN
 	if ( rendererLib )
     {
-        Com_Printf("Unloading renderer dll.\n");
+        Com_Printf(" Unloading renderer dll. \n");
 		Sys_UnloadLibrary( rendererLib );
 		rendererLib = NULL;
 	}
@@ -3103,13 +3105,13 @@ This is the only place that any of these functions are called from
 */
 void CL_StartHunkUsers( qboolean rendererOnly )
 {
-    Com_Printf("CL_StartHunkUsers(%d)\n", rendererOnly==qtrue?1:0);
+    Com_Printf(" CL_StartHunkUsers(%d)\n", rendererOnly);
 
-	if (!com_cl_running || !com_cl_running->integer) {
+	if ( com_cl_running->integer == 0) {
 		return;
 	}
 
-	if( !cls.rendererStarted )
+	if( cls.rendererStarted == 0 )
     {
 		cls.rendererStarted = qtrue;
 		
@@ -3125,8 +3127,9 @@ void CL_StartHunkUsers( qboolean rendererOnly )
         g_consoleField.widthInChars = g_console_field_width;
 	}
 
-	if( rendererOnly )
+	if( rendererOnly ){
 		return;
+    }
 
 	if( !cls.soundStarted )
     {
@@ -3140,9 +3143,9 @@ void CL_StartHunkUsers( qboolean rendererOnly )
 		S_BeginRegistration();
 	}
 
-	if( com_dedicated->integer )
+	if( com_dedicated->integer ) {
 		return;
-
+	}
 
 	if ( !cls.uiStarted )
     {
@@ -3161,6 +3164,11 @@ int CL_ScaledMilliseconds(void) {
 }
 
 
+// not used
+static long Q_ftol(float f)
+{
+	return (long)f;
+}
 
 void CL_InitRef(void)
 {
@@ -3202,12 +3210,12 @@ void CL_InitRef(void)
 	    }
         else
         {
-            Com_Printf("Loading %s success.\n", dllName);
+            Com_Printf(" Loading %s success.\n", dllName);
         }
 	}
     else
     {
-        Com_Printf("Loading %s success.\n", dllName);
+        Com_Printf(" Loading %s success.\n", dllName);
     }
 
 
@@ -3240,7 +3248,6 @@ void CL_InitRef(void)
 	ri.CM_DrawDebugSurface = CM_DrawDebugSurface;
 
 	ri.FS_ReadFile = FS_ReadFile;
-
 	ri.FS_FreeFile = FS_FreeFile;
 	ri.FS_WriteFile = FS_WriteFile;
 	ri.FS_FreeFileList = FS_FreeFileList;
@@ -3262,17 +3269,16 @@ void CL_InitRef(void)
   
 	ri.CL_WriteAVIVideoFrame = CL_WriteAVIVideoFrame;
 
-    //	Sys;
-	ri.Sys_SetEnv = Sys_SetEnv;
-	ri.Sys_LowPhysicalMemory = Sys_LowPhysicalMemory;
-
- 
-    // 
 	ri.IN_Init = IN_Init;
 	ri.IN_Shutdown = IN_Shutdown;
 	ri.IN_Restart = IN_Restart;
 
-	ret = GetRefAPI(REF_API_VERSION, &ri);
+	ri.ftol = Q_ftol;
+
+	ri.Sys_SetEnv = Sys_SetEnv;
+	ri.Sys_LowPhysicalMemory = Sys_LowPhysicalMemory;
+
+	ret = GetRefAPI( REF_API_VERSION, &ri );
 
 #if defined __USEA3D && defined __A3D_GEOM
 	hA3Dg_ExportRenderGeom (ret);
@@ -3282,11 +3288,11 @@ void CL_InitRef(void)
 		Com_Error(ERR_FATAL, "Couldn't initialize refresh" );
 
 	re = *ret;
+    Com_Printf(" CL_InitRef() finished. \n");
+	Com_Printf( "-------------------------------\n");
 
 	// unpause so the cgame definately gets a snapshot and renders a frame
 	Cvar_Set("cl_paused", "0");
-
-    Com_Printf("CL_InitRef() finished.\n");
 }
 
 
@@ -3857,7 +3863,7 @@ void CL_ServerInfoPacket( netadr_t from, msg_t *msg ) {
 		return;
 	}
 
-	for( i = 0 ; i < MAX_OTHER_SERVERS ; i++ ) {
+	for( i = 0 ; i < MAX_OTHER_SERVERS ; ++i ) {
 		// empty slot
 		if ( cls.localServers[i].adr.port == 0 ) {
 			break;
@@ -4154,7 +4160,7 @@ void CL_GlobalServers_f( void ) {
 	else if(i == 2)
 		to.port = BigShort(PORT_MASTER);
 
-	Com_Printf("Requesting servers from master %s...\n", masteraddress);
+	Com_Printf("Requesting servers from %s (%s)...\n", masteraddress, NET_AdrToStringwPort(to));
 
 	cls.numglobalservers = -1;
 	cls.pingUpdateSource = AS_GLOBAL;

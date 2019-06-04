@@ -263,7 +263,8 @@ RE_AddRefEntityToScene
 
 =====================
 */
-void RE_AddRefEntityToScene( const refEntity_t *ent ) {
+void RE_AddRefEntityToScene( const refEntity_t *ent )
+{
 	if ( !tr.registered ) {
 		return;
 	}
@@ -282,51 +283,41 @@ void RE_AddRefEntityToScene( const refEntity_t *ent ) {
 }
 
 
-/*
-=====================
-RE_AddDynamicLightToScene
+static void R_AddDynamicLightToScene( const vec3_t org, float intensity, float r, float g, float b, int additive,
+        dlight_t* const pDlightArrary)
+{
 
-=====================
-*/
-void RE_AddDynamicLightToScene( const vec3_t org, float intensity, float r, float g, float b, int additive ) {
-	dlight_t	*dl;
-
-	if ( !tr.registered ) {
+	if ( r_numdlights >= MAX_DLIGHTS )
+    {
+        ri.Printf(PRINT_WARNING, "MAX_DLIGHTS HITS\n");
 		return;
 	}
-	if ( r_numdlights >= MAX_DLIGHTS ) {
-		return;
-	}
-	if ( intensity <= 0 ) {
-		return;
-	}
-	dl = &backEndData->dlights[r_numdlights++];
-	VectorCopy (org, dl->origin);
-	dl->radius = intensity;
-	dl->color[0] = r;
-	dl->color[1] = g;
-	dl->color[2] = b;
-	dl->additive = additive;
+    
+    pDlightArrary[r_numdlights].origin[0] = org[0];
+    pDlightArrary[r_numdlights].origin[1] = org[1];
+    pDlightArrary[r_numdlights].origin[2] = org[2];
+	pDlightArrary[r_numdlights].color[0] = r;
+	pDlightArrary[r_numdlights].color[1] = g;
+	pDlightArrary[r_numdlights].color[2] = b;
+    pDlightArrary[r_numdlights].radius = intensity;
+	pDlightArrary[r_numdlights].additive = additive;
+    ++r_numdlights;
 }
 
-/*
-=====================
-RE_AddLightToScene
-
-=====================
-*/
-void RE_AddLightToScene( const vec3_t org, float intensity, float r, float g, float b ) {
-	RE_AddDynamicLightToScene( org, intensity, r, g, b, qfalse );
+void RE_AddLightToScene( const vec3_t org, float intensity, float r, float g, float b ) 
+{
+	if ( tr.registered && (intensity > 0.0f) )
+    {
+        R_AddDynamicLightToScene( org, intensity, r, g, b, qfalse, backEndData->dlights );
+    }
 }
 
-/*
-=====================
-RE_AddAdditiveLightToScene
-
-=====================
-*/
-void RE_AddAdditiveLightToScene( const vec3_t org, float intensity, float r, float g, float b ) {
-	RE_AddDynamicLightToScene( org, intensity, r, g, b, qtrue );
+void RE_AddAdditiveLightToScene( const vec3_t org, float intensity, float r, float g, float b )
+{
+    if ( tr.registered && (intensity <= 0.0f) )
+    {
+	    R_AddDynamicLightToScene( org, intensity, r, g, b, qtrue, backEndData->dlights );
+    }
 }
 
 

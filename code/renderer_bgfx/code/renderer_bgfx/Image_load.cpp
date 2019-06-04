@@ -68,10 +68,10 @@ struct ImageHandler
 
 static const ImageHandler imageHandlers[] =
 {
-	{ "bmp", &Stbi_LoadImage },
+	{ "tga", &Stbi_LoadImage },
 	{ "jpg", &Stbi_LoadImage },
 	{ "jpeg", &Stbi_LoadImage },
-	{ "tga", &Stbi_LoadImage },
+	{ "bmp", &Stbi_LoadImage },
 	{ "png", &Stbi_LoadImage }
 };
 

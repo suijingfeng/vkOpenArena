@@ -66,7 +66,7 @@ void R_PerformanceCounters( void ) {
 
 void R_IssueRenderCommands( qboolean runPerformanceCounters )
 {
-	renderCommandList_t	*cmdList = &backEndData[0]->commands;
+	renderCommandList_t	*cmdList = &backEndData->commands;
 	assert(cmdList); // bk001205
 	// add an end-of-list command
 	*(int *)(cmdList->cmds + cmdList->used) = RC_END_OF_LIST;
@@ -114,7 +114,7 @@ render thread if needed.
 */
 void *R_GetCommandBuffer( int bytes )
 {
-	renderCommandList_t	*cmdList = &backEndData[0]->commands;
+	renderCommandList_t	*cmdList = &backEndData->commands;
 
 	// always leave room for the end of list command
 	if ( cmdList->used + bytes + 4 > MAX_RENDER_COMMANDS ) {

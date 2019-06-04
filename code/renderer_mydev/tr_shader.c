@@ -1851,7 +1851,7 @@ sortedIndex.
 */
 static void FixRenderCommandList( int newShader )
 {
-	renderCommandList_t	*cmdList = &backEndData[0]->commands;
+	renderCommandList_t	*cmdList = &backEndData->commands;
 
 	if( cmdList )
     {

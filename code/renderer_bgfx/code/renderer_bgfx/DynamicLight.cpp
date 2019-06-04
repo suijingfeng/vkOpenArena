@@ -35,7 +35,8 @@ DynamicLightManager::DynamicLightManager() : nLights_(0)
 	interface::Printf("dlight texture size is %ux%u\n", lightsTextureSize_, lightsTextureSize_);
 
 	// Clamp and filter are just for debug drawing. Sampling uses texel fetch.
-	lightsTexture_ = bgfx::createTexture2D(lightsTextureSize_, lightsTextureSize_, false, 1, bgfx::TextureFormat::RGBA32F, 
+	lightsTexture_ = bgfx::createTexture2D(lightsTextureSize_, lightsTextureSize_, false, 1, 
+            bgfx::TextureFormat::RGBA32F, 
             BGFX_SAMPLER_U_CLAMP | BGFX_SAMPLER_V_CLAMP | BGFX_SAMPLER_MIN_POINT | BGFX_SAMPLER_MAG_POINT);
 }
 

@@ -581,6 +581,7 @@ Perform dynamic lighting with another rendering pass
 ===================
 */
 static void ProjectDlightTexture( struct shaderCommands_s * const pTess, 
+        float (* const pTexcoords)[2], uint8_t (* const pColors)[4],
         uint32_t num_dlights, struct dlight_s* const pDlights)
 {
 	unsigned char clipBits[SHADER_MAX_VERTEXES];
@@ -595,10 +596,8 @@ static void ProjectDlightTexture( struct shaderCommands_s * const pTess,
 			continue;	// this surface definately doesn't have any of this light
 		}
         
-		//float* texCoords = pTess->svars.texcoords[0][0];
-        float (* const pTexcoords)[2] = pTess->svars.texcoords[0];
-		
-        uint8_t (* const pColors)[4] = pTess->svars.colors;
+        // float (* const pTexcoords)[2] = pTess->svars.texcoords[0];
+        // uint8_t (* const pColors)[4] = pTess->svars.colors;
 
         vec3_t origin;
 		VectorCopy( pDlights[l].transformed, origin );
@@ -680,7 +679,8 @@ static void ProjectDlightTexture( struct shaderCommands_s * const pTess,
 		uint32_t numIndexes = 0;
 		for ( i = 0 ; i < pTess->numIndexes ; i += 3 )
         {
-			if ( clipBits[pTess->indexes[i]] & clipBits[pTess->indexes[i+1]] & clipBits[pTess->indexes[i+2]] ) {
+			if ( clipBits[pTess->indexes[i]] & clipBits[pTess->indexes[i+1]] & clipBits[pTess->indexes[i+2]] )
+            {
 				continue;	// not lighted
 			}
 			numIndexes += 3;
@@ -699,7 +699,6 @@ static void ProjectDlightTexture( struct shaderCommands_s * const pTess,
 
 		vk_shade_geometry( g_globalPipelines.dlight_pipelines[pDlights[l].additive > 0 ? 1 : 0][pTess->shader->cullType][pTess->shader->polygonOffset], 
             pTess, VK_FALSE, VK_TRUE);
-
 	}
 }
 
@@ -854,7 +853,8 @@ void RB_StageIteratorGeneric(struct shaderCommands_s * const pTess, VkBool32 isP
 	if ( pTess->dlightBits && pTess->shader->sort <= SS_OPAQUE && 
             !(pTess->shader->surfaceFlags & (SURF_NODLIGHT | SURF_SKY) ) )
     {
-	    	ProjectDlightTexture( pTess, backEnd.refdef.num_dlights, backEnd.refdef.dlights);
+	    	ProjectDlightTexture( pTess, pTess->svars.texcoords[0], pTess->svars.colors,
+                    backEnd.refdef.num_dlights, backEnd.refdef.dlights);
 	}
 
 	//

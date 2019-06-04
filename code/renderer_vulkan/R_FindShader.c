@@ -10,7 +10,6 @@
 #define FILE_HASH_SIZE		1024
 static shader_t* hashTable[FILE_HASH_SIZE] = {0};
 
-
 static char * s_pShaderText = NULL;
 
 /*
@@ -87,6 +86,12 @@ shader_t* R_FindShader( const char *name, int lightmapIndex, qboolean mipRawImag
         ri.Printf( PRINT_WARNING, "Find Shader: name = NULL\n");
 		return tr.defaultShader;
 	}
+    
+    if( name[0] == 0 )
+    {
+        ri.Printf( PRINT_WARNING, "Find Shader: name = ""\n");
+		return tr.defaultShader;
+    }
 
 
 	// use (fullbright) vertex lighting if the bsp file doesn't have lightmaps
@@ -170,12 +175,14 @@ shader_t* R_FindShader( const char *name, int lightmapIndex, qboolean mipRawImag
         (fileName[0] = 'D') ||
         (fileName[0] = 'E') || 
         (fileName[0] = 'F') ) )
-        ri.Printf( PRINT_WARNING, "Ugly shader name: %s\n", fileName );
+    {
+        // ri.Printf( PRINT_WARNING, "Ugly shader name: %s\n", fileName );
+    }
     else if( (fileName[0] == '/') && 
         (fileName[1] = 'h') && (fileName[2] = 'o') &&
         (fileName[3] = 'm') && (fileName[4] = 'e') )
     {
-        ri.Printf( PRINT_WARNING, "Ugly shader name: %s\n", fileName );
+        // ri.Printf( PRINT_WARNING, "Ugly shader name: %s\n", fileName );
     }
     else {
         image = R_FindImageFile( name, mipRawImage, mipRawImage,

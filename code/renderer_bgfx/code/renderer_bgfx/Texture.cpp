@@ -236,7 +236,7 @@ Texture *TextureCache::find(const char *name, int flags)
 
 	if (!image.data)
     {
-        // interface::PrintWarningf("WARNING: image %s can not be loaded.\n", name);
+        interface::PrintWarningf("WARNING: image %s can not be loaded.\n", name);
 		return nullptr;
     }
 

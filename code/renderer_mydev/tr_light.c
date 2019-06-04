@@ -91,15 +91,16 @@ void R_DlightBmodel( bmodel_t *bmodel ) {
 	tr.currentEntity->needDlights = (qboolean) (mask != 0);
 
 	// set the dlight bits in all the surfaces
-	for ( i = 0 ; i < bmodel->numSurfaces ; i++ ) {
+	for ( i = 0 ; i < bmodel->numSurfaces ; ++i )
+    {
 		surf = bmodel->firstSurface + i;
 
 		if ( *surf->data == SF_FACE ) {
-			((srfSurfaceFace_t *)surf->data)->dlightBits[ 0 ] = mask;
+			((srfSurfaceFace_t *)surf->data)->dlightBits = mask;
 		} else if ( *surf->data == SF_GRID ) {
-			((srfGridMesh_t *)surf->data)->dlightBits[ 0 ] = mask;
+			((srfGridMesh_t *)surf->data)->dlightBits = mask;
 		} else if ( *surf->data == SF_TRIANGLES ) {
-			((srfTriangles_t *)surf->data)->dlightBits[ 0 ] = mask;
+			((srfTriangles_t *)surf->data)->dlightBits = mask;
 		}
 	}
 }

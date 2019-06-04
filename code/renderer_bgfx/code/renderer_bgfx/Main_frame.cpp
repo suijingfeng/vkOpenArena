@@ -527,7 +527,7 @@ static void RenderSpriteEntity(mat3 viewRotation, Entity *entity)
 	}
 	else
 	{
-		const float ang = (float)M_PI * entity->angle / 180.0f;
+		const float ang = (float)(M_PI/180.0) * entity->angle ;
 		const float s = sin(ang);
 		const float c = cos(ang);
 		left = viewRotation[1] * (c * entity->radius) + viewRotation[2] * (-s * entity->radius);
@@ -574,7 +574,7 @@ static void RenderSpriteEntity(mat3 viewRotation, Entity *entity)
 	indices[3] = 3; indices[4] = 1; indices[5] = 2;
 
 	DrawCall dc;
-	dc.dynamicLighting = false;
+	dc.dynamicLighting = true;
 	dc.entity = entity;
 	dc.fogIndex = s_main->isWorldCamera ? world::FindFogIndex(entity->position, entity->radius) : -1;
 	dc.material = s_main->materialCache->getMaterial(entity->customMaterial);
@@ -687,7 +687,7 @@ static void RenderPolygons()
 		size_t batchEnd;
 
 		// Find the last polygon index that matches the current material and fog. Count geo as we go.
-		for (batchEnd = batchStart; batchEnd < s_main->sortedScenePolygons.size(); batchEnd++)
+		for (batchEnd = batchStart; batchEnd < s_main->sortedScenePolygons.size(); ++batchEnd)
 		{
 			const Main::Polygon *p = s_main->sortedScenePolygons[batchEnd];
 
@@ -714,12 +714,12 @@ static void RenderPolygons()
 		auto indices = (uint16_t *)tib.data;
 		uint32_t currentVertex = 0, currentIndex = 0;
 
-		for (size_t i = batchStart; i <= batchEnd; i++)
+		for (size_t i = batchStart; i <= batchEnd; ++i)
 		{
 			const Main::Polygon *p = s_main->sortedScenePolygons[i];
 			const uint32_t firstVertex = currentVertex;
 
-			for (size_t j = 0; j < p->nVertices; j++)
+			for (size_t j = 0; j < p->nVertices; ++j)
 			{
 				Vertex &v = vertices[currentVertex++];
 				const polyVert_t &pv = s_main->scenePolygonVertices[p->firstVertex + j];
@@ -728,7 +728,7 @@ static void RenderPolygons()
 				v.setColor(vec4::fromBytes(pv.modulate));
 			}
 
-			for (size_t j = 0; j < p->nVertices - 2; j++)
+			for (size_t j = 0; j < p->nVertices - 2; ++j)
 			{
 				indices[currentIndex++] = firstVertex + 0;
 				indices[currentIndex++] = firstVertex + uint16_t(j) + 1;

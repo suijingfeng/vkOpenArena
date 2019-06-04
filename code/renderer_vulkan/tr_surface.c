@@ -205,7 +205,7 @@ static void RB_SurfaceSprite(refEntity_t* const pEnt, VkBool32 isMirror )
 	}
     else
     {
-		float ang = (M_PI / 180) * pEnt->rotation ;
+		float ang = (float)(M_PI / 180.0) * pEnt->rotation ;
 		// float s = sin( ang );
 		// float c = cos( ang );
 

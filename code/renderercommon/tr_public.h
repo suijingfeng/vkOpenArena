@@ -122,6 +122,7 @@ typedef struct {
 	void (*Cvar_SetValue) (const char *name, float value);
 	void (*Cvar_CheckRange)( cvar_t *cv, float minVal, float maxVal, qboolean shouldBeIntegral );
 	void (*Cvar_SetDescription)( cvar_t *cv, const char *description );
+
 	int (*Cvar_VariableIntegerValue) (const char *var_name);
 
 	void (*Cmd_AddCommand)( const char *name, void(*cmd)(void) );
@@ -139,7 +140,7 @@ typedef struct {
 	// a -1 return means the file does not exist
 	// NULL can be passed for buf to just determine existance
 	int		(*FS_FileIsInPAK)( const char *name, int *pCheckSum );
-	long (*FS_ReadFile)( const char *name, void **buf );
+	long	(*FS_ReadFile)( const char *name, void **buf );
 	void	(*FS_FreeFile)( void *buf );
 	char **	(*FS_ListFiles)( const char *name, const char *extension, int *numfilesfound );
 	void	(*FS_FreeFileList)( char **filelist );
@@ -153,20 +154,20 @@ typedef struct {
 
 	void	(*CL_WriteAVIVideoFrame)( const unsigned char *buffer, int size );
 
-// input event handling
+	// input event handling
 	void (* IN_Init)( void* );
 	void (* IN_Shutdown)( void );
 	void (* IN_Restart)( void );
+
+
 	// math
-	long(*ftol)(float f);
+	long (* ftol)(float f);
 
 	// system stuff
-	void(*Sys_SetEnv)(const char *name, const char *value);
-	void(*Sys_GLimpSafeInit)(void);
-	void(*Sys_GLimpInit)(void);
-	qboolean(*Sys_LowPhysicalMemory)(void);
-
-
+	void (* Sys_SetEnv)(const char *name, const char *value);
+//	void (* Sys_GLimpSafeInit)(void);
+//	void (* Sys_GLimpInit)(void);
+	qboolean (* Sys_LowPhysicalMemory)(void);
 } refimport_t;
 
 
