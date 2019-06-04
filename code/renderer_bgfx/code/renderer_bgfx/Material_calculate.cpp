@@ -19,28 +19,7 @@ along with Quake III Arena source code; if not, write to the Free Software
 Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 ===========================================================================
 */
-/*
-===========================================================================
-Copyright (C) 1999-2005 Id Software, Inc.
-Copyright (C) 2006-2008 Robert Beckebans <trebor_7@users.sourceforge.net>
 
-This file is part of Daemon source code.
-
-Daemon source code is free software; you can redistribute it
-and/or modify it under the terms of the GNU General Public License as
-published by the Free Software Foundation; either version 2 of the License,
-or (at your option) any later version.
-
-Daemon source code is distributed in the hope that it will be
-useful, but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU General Public License for more details.
-
-You should have received a copy of the GNU General Public License
-along with Daemon source code; if not, write to the Free Software
-Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
-===========================================================================
-*/
 #include "Precompiled.h"
 #pragma hdrstop
 
@@ -591,17 +570,24 @@ bool Material::hasAutoSpriteDeform() const
 	for (const MaterialDeformStage &ds : deforms)
 	{
 		if (ds.deformation == MaterialDeform::Autosprite || ds.deformation == MaterialDeform::Autosprite2)
+        {
 			return true;
-	}
+	    }
+    }
 
 	return false;
 }
 
-void Material::doAutoSpriteDeform(const mat3 &sceneRotation, Vertex *vertices, uint32_t nVertices, uint16_t *indices, uint32_t nIndices, float *softSpriteDepth) const
+void Material::doAutoSpriteDeform(const mat3 &sceneRotation, Vertex *vertices, 
+        uint32_t nVertices, uint16_t *indices, uint32_t nIndices, float *softSpriteDepth) const
 {
 	assert(vertices);
 	assert(indices);
 	assert(softSpriteDepth);
+    
+    interface::Printf(" Autosprite material %s had index count %u\n", name, nIndices);
+
+
 	MaterialDeform deform = MaterialDeform::None;
 
 	for (const MaterialDeformStage &ds : deforms)
@@ -648,7 +634,7 @@ void Material::doAutoSpriteDeform(const mat3 &sceneRotation, Vertex *vertices, u
 	// Assuming the geometry is triangulated quads.
 	// Autosprite will rebuild them as forward facing sprites.
 	// Autosprite2 will pivot a rectangular quad along the center of its long axis.
-	for (size_t quadIndex = 0; quadIndex < nIndices / 6; quadIndex++)
+	for (size_t quadIndex = 0; quadIndex < nIndices / 6; ++quadIndex)
 	{
 		//const size_t firstIndex = dc->ib.firstIndex + quadIndex * 6;
 		const size_t firstIndex = quadIndex * 6;
@@ -657,7 +643,7 @@ void Material::doAutoSpriteDeform(const mat3 &sceneRotation, Vertex *vertices, u
 		auto v = util::ExtractQuadCorners(vertices, &indices[firstIndex]);
 		std::array<uint16_t, 4> vi;
 
-		for (size_t i = 0; i < vi.size(); i++)
+		for (size_t i = 0; i < vi.size(); ++i)
 			vi[i] = uint16_t(v[i] - vertices);
 
 		// Find the midpoint.
@@ -733,7 +719,7 @@ void Material::doAutoSpriteDeform(const mat3 &sceneRotation, Vertex *vertices, u
 			float lengths[2];
 			lengths[0] = lengths[1] = 999999;
 
-			for (int i = 0; i < 6; i++)
+			for (int i = 0; i < 6; ++i)
 			{
 				const vec3 temp = vec3(v[edgeVerts[i][0]]->pos) - vec3(v[edgeVerts[i][1]]->pos);
 				const float l = vec3::dotProduct(temp, temp);
@@ -755,7 +741,7 @@ void Material::doAutoSpriteDeform(const mat3 &sceneRotation, Vertex *vertices, u
 			// Find the midpoints.
 			vec3 midpoints[2];
 
-			for (int i = 0; i < 2; i++)
+			for (int i = 0; i < 2; ++i)
 			{
 				midpoints[i] = (v[edgeVerts[nums[i]][0]]->pos + v[edgeVerts[nums[i]][1]]->pos) * 0.5f;
 			}
@@ -767,14 +753,15 @@ void Material::doAutoSpriteDeform(const mat3 &sceneRotation, Vertex *vertices, u
 			const vec3 minor(vec3::crossProduct(major, forward).normal());
 
 			// Re-project the points.
-			for (int i = 0; i < 2; i++)
+			for (int i = 0; i < 2; ++i)
 			{
 				// We need to see which direction this edge is used to determine direction of projection.
 				int j;
 
-				for (j = 0; j < 5; j++)
+				for (j = 0; j < 5; ++j)
 				{
-					if (indices[firstIndex + j] == smallestIndex + edgeVerts[nums[i]][0] && indices[firstIndex + j + 1] == smallestIndex + edgeVerts[nums[i]][1])
+					if (indices[firstIndex + j] == smallestIndex + edgeVerts[nums[i]][0] &&
+                        indices[firstIndex + j + 1] == smallestIndex + edgeVerts[nums[i]][1])
 						break;
 				}
 
@@ -797,6 +784,7 @@ void Material::doAutoSpriteDeform(const mat3 &sceneRotation, Vertex *vertices, u
 	}
 }
 
+
 void Material::setDeformUniforms(Uniforms_Material *uniforms) const
 {
 	assert(uniforms);
@@ -810,30 +798,55 @@ void Material::setDeformUniforms(Uniforms_Material *uniforms) const
 		switch (ds.deformation)
 		{
 		case MaterialDeform::Wave:
-			gen_Wave_Base_Amplitude[nDeforms] = vec4((float)ds.deformation, (float)ds.deformationWave.func, ds.deformationWave.base, ds.deformationWave.amplitude);
-			frequency_Phase_Spread[nDeforms] = vec4(ds.deformationWave.frequency, ds.deformationWave.phase, ds.deformationSpread, 0);
+			gen_Wave_Base_Amplitude[nDeforms] = vec4( 
+                    (float)ds.deformation, 
+                    (float)ds.deformationWave.func, 
+                    ds.deformationWave.base, 
+                    ds.deformationWave.amplitude );
+			
+            frequency_Phase_Spread[nDeforms] = vec4( 
+                    ds.deformationWave.frequency,
+                    ds.deformationWave.phase,
+                    ds.deformationSpread,
+                    0 );
+            
 			nDeforms++;
 			break;
 
 		case MaterialDeform::Bulge:
-			gen_Wave_Base_Amplitude[nDeforms] = vec4((float)ds.deformation, (float)ds.deformationWave.func, 0, ds.bulgeHeight);
-			frequency_Phase_Spread[nDeforms] = vec4(ds.bulgeSpeed, ds.bulgeWidth, 0, 0);
-			nDeforms++;
+			gen_Wave_Base_Amplitude[nDeforms] = vec4( 
+                    (float)ds.deformation, 
+                    (float)ds.deformationWave.func,
+                    0, 
+                    ds.bulgeHeight);
+            
+			frequency_Phase_Spread[nDeforms] = vec4( 
+                    ds.bulgeSpeed, ds.bulgeWidth, 0, 0);
+			
+            nDeforms++;
 			break;
 
 		case MaterialDeform::Move:
-			gen_Wave_Base_Amplitude[nDeforms] = vec4((float)ds.deformation, (float)ds.deformationWave.func, ds.deformationWave.base, ds.deformationWave.amplitude);
-			frequency_Phase_Spread[nDeforms] = vec4(ds.deformationWave.frequency, ds.deformationWave.phase, 0, 0);
-			moveDirs[nDeforms] = ds.moveVector;
+			gen_Wave_Base_Amplitude[nDeforms] = vec4(
+                    (float)ds.deformation, 
+                    (float)ds.deformationWave.func, 
+                    ds.deformationWave.base, 
+                    ds.deformationWave.amplitude );
+			
+            frequency_Phase_Spread[nDeforms] = vec4(
+                    ds.deformationWave.frequency,
+                    ds.deformationWave.phase,
+                    0, 0);
+			
+            moveDirs[nDeforms] = ds.moveVector;
 			nDeforms++;
 			break;
-
 		default:
 			break;
 		}
 	}
 
-	uniforms->nDeforms.set(vec4(nDeforms, 0, 0, 0));
+	uniforms->nDeforms.set( vec4(nDeforms, 0, 0, 0) );
 
 	if (nDeforms > 0)
 	{

@@ -1,8 +1,6 @@
 #ifndef VK_SHADERS_H_
 #define VK_SHADERS_H_
 
-
-
 #define GLS_SRCBLEND_ZERO						0x00000001
 #define GLS_SRCBLEND_ONE						0x00000002
 #define GLS_SRCBLEND_DST_COLOR					0x00000003
@@ -45,7 +43,8 @@ enum Vk_Shader_Type {
 };
 
 void vk_loadShaderModules(void);
-void vk_specifyShaderModule(const enum Vk_Shader_Type shader_type, const VkBool32 isClippingPlane, VkShaderModule* vs, VkShaderModule* fs);
+void vk_specifyShaderModule(const enum Vk_Shader_Type shader_type, const VkBool32 isClippingPlane,
+        VkShaderModule* const pVs, VkShaderModule* const pFs);
 void vk_destroyShaderModules(void);
 
 #endif

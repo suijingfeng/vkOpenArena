@@ -96,7 +96,7 @@ void vk_loadShaderModules(void)
 
 
 void vk_specifyShaderModule(const enum Vk_Shader_Type shader_type, const VkBool32 isClippingPlane,
-                            VkShaderModule* vs, VkShaderModule* fs)
+                            VkShaderModule* const vs, VkShaderModule* const fs)
 {
     // Specify the shader module containing the shader code, and the function
     // to invoke. This means that it's possible to combine multiple fragment

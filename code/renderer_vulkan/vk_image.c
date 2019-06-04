@@ -1045,13 +1045,14 @@ static void R_CreateDlightImage( void )
 				b = 0;
 			}
 
-			data[y][x][0] = 
-			data[y][x][1] = 
-			data[y][x][2] = b;
-			data[y][x][3] = 255;			
+			data[x][y][0] = 
+			data[x][y][1] = 
+			data[x][y][2] = b;
+			data[x][y][3] = 255;			
 		}
 	}
-	tr.dlightImage = R_CreateImage("*dlight", data, DLIGHT_SIZE, DLIGHT_SIZE, qfalse, qfalse, GL_CLAMP);
+	tr.dlightImage = R_CreateImage("*dlight", (unsigned char*) data, DLIGHT_SIZE, DLIGHT_SIZE,
+            qfalse, qfalse, GL_CLAMP);
     #undef DEFAULT_SIZE
 }
 

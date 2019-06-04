@@ -830,6 +830,7 @@ int Model_md3::lerpTag(const char *name, const Entity &entity, int startIndex, T
 	return tagIndex;
 }
 
+
 void Model_md3::render(const mat3 &sceneRotation, DrawCallList *drawCallList, Entity *entity)
 {
 	assert(drawCallList);
@@ -840,11 +841,19 @@ void Model_md3::render(const mat3 &sceneRotation, DrawCallList *drawCallList, En
 		return;
 
 	// It is possible to have a bad frame while changing models.
-	const int frameIndex = Clamped(entity->frame, 0, (int)frames_.size() - 1);
-	const int oldFrameIndex = Clamped(entity->oldFrame, 0, (int)frames_.size() - 1);
+    int nFrames = frames_.size();
+    const bool isAnimated = nFrames > 1;
+	const int frameIndex = Clamped(entity->frame, 0, nFrames - 1);
+	const int oldFrameIndex = Clamped(entity->oldFrame, 0, nFrames - 1);
 	const mat4 modelMatrix = mat4::transform(entity->rotation, entity->position);
-	const bool isAnimated = frames_.size() > 1;
-	bgfx::TransientVertexBuffer tvb;
+	
+    if( isAnimated ) 
+    {
+	 interface::Printf("md3 model:%s, nFrames: %d, frameIndex: %d, oldFrameIndex: %d\n",
+       getName(), nFrames, frameIndex, oldFrameIndex);
+    }
+
+    bgfx::TransientVertexBuffer tvb;
 	Vertex *vertices = nullptr;
 
 	if (isAnimated)
@@ -860,7 +869,7 @@ void Model_md3::render(const mat3 &sceneRotation, DrawCallList *drawCallList, En
 		vertices = (Vertex *)tvb.data;
 
 		// Lerp vertices.
-		for (size_t i = 0; i < nVertices_; i++)
+		for (size_t i = 0; i < nVertices_; ++i)
 		{
 			Vertex &fromVertex = frames_[oldFrameIndex].vertices[i];
 			Vertex &toVertex = frames_[frameIndex].vertices[i];
@@ -938,7 +947,8 @@ void Model_md3::render(const mat3 &sceneRotation, DrawCallList *drawCallList, En
 
 				bgfx::allocTransientIndexBuffer(&tib, surface.nIndices);
 				memcpy(tib.data, &indices_[surface.startIndex], sizeof(uint16_t) * surface.nIndices);
-				mat->doAutoSpriteDeform(sceneRotation, (Vertex *)tvb.data, nVertices_, (uint16_t *)tib.data, surface.nIndices, &dc.softSpriteDepth);
+				mat->doAutoSpriteDeform(sceneRotation, (Vertex *)tvb.data, nVertices_,
+                        (uint16_t *)tib.data, surface.nIndices, &dc.softSpriteDepth);
 				dc.ib.type = DrawCall::BufferType::Transient;
 				dc.ib.transientHandle = tib;
 				dc.ib.nIndices = surface.nIndices;
@@ -965,6 +975,7 @@ void Model_md3::render(const mat3 &sceneRotation, DrawCallList *drawCallList, En
 		drawCallList->push_back(dc);
 	}
 }
+
 
 vec3 Model_md3::decodeNormal(short normal) const
 {

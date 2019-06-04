@@ -178,7 +178,7 @@ typedef struct {
 	byte		modulate[4];
 } polyVert_t;
 
-#define CLIENT_WINDOW_TITLE		"ioquake3"
+#define CLIENT_WINDOW_TITLE		"OpenArena"
 
 namespace interface
 {

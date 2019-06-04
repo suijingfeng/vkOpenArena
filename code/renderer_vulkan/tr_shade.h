@@ -10,7 +10,7 @@ void RB_SetTessFogColor( unsigned char (* const pcolor)[4],
 
 
 
-void	RB_DeformTessGeometry(shaderCommands_t * const pTess, const uint32_t nDeforms, deformStage_t* const pDs );
+void	RB_DeformTessGeometry(shaderCommands_t * const pTess);
 void	RB_CalcEnvironmentTexCoords( float *dstTexCoords );
 void	RB_CalcFogTexCoords( float (* const pST)[2], uint32_t );
 void	RB_CalcScrollTexCoords( const float scroll[2], float *dstTexCoords );

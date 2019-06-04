@@ -254,7 +254,9 @@ qhandle_t RE_RegisterShaderNoMip( const char *name )
 		ri.Printf(PRINT_ALL, "Shader name exceeds MAX_QPATH\n" );
 		return 0;
 	}
- 
+
+    ri.Printf(PRINT_ALL, " ShaderNoMip: %s \n", name );
+
 	shader_t* sh = R_FindShader( name, LIGHTMAP_2D, qfalse );
 
 	// we want to return 0 if the shader failed to

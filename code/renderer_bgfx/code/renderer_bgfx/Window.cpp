@@ -194,7 +194,7 @@ static SetModeResult SetMode(int mode, bool fullscreen, bool noborder)
 	if (SDL_window != NULL)
 	{
 		SDL_GetWindowPosition(SDL_window, &x, &y);
-		interface::PrintDeveloperf("Existing window at %dx%d before being destroyed\n", x, y);
+		interface::Printf("Existing window at %dx%d before being destroyed\n", x, y);
 		SDL_DestroyWindow(SDL_window);
 		SDL_window = NULL;
 	}

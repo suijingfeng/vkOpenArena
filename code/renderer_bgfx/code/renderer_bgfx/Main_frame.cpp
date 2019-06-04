@@ -758,7 +758,7 @@ static void RenderPolygons()
 static void SetDrawCallGeometry(const DrawCall &dc)
 {
 	assert(dc.vb.nVertices);
-	assert(dc.ib.nIndices);
+//	assert(dc.ib.nIndices);
 
 	if (dc.vb.type == DrawCall::BufferType::Static)
 	{
@@ -1223,7 +1223,8 @@ static void RenderCamera(const RenderCameraArgs &args)
 		}
 		else
 		{
-			// For non-world scenes, dlight contribution is added to entities in SetupEntityLighting, so write 0 to the uniform for num dlights.
+			// For non-world scenes, dlight contribution is added to entities
+            // in SetupEntityLighting, so write 0 to the uniform for num dlights.
 			s_main->uniforms->dynamicLight_Num_Intensity.set(vec4::empty);
 		}
 

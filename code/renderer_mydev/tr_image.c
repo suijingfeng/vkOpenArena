@@ -808,7 +808,7 @@ image_t* R_FindImageFile(const char *name, qboolean mipmap,
 R_CreateDlightImage
 ================
 */
-#define	DLIGHT_SIZE	16
+#define	DLIGHT_SIZE	32
 static void R_CreateDlightImage( void ) {
 	int		x,y;
 	byte	data[DLIGHT_SIZE][DLIGHT_SIZE][4];
@@ -980,11 +980,13 @@ void R_CreateBuiltinImages( void ) {
 
 	// we use a solid white image instead of disabling texturing
 	memset( data, 255, sizeof( data ) );
-	tr.whiteImage = R_CreateImage("*white", (byte *)data, 8, 8, qfalse, qfalse, GL_REPEAT );
+	tr.whiteImage = R_CreateImage("*white", (byte *)data, 32, 32, qfalse, qfalse, GL_REPEAT );
 	// with overbright bits active, we need an image which is some fraction of full color,
 	// for default lightmaps, etc
-	for (x=0 ; x<DEFAULT_SIZE ; x++) {
-		for (y=0 ; y<DEFAULT_SIZE ; y++) {
+	for (x=0 ; x<DEFAULT_SIZE ; ++x)
+    {
+		for (y=0 ; y<DEFAULT_SIZE ; ++y)
+        {
 			data[y][x][0] = 
 			data[y][x][1] = 
 			data[y][x][2] = tr.identityLightByte;
@@ -992,7 +994,7 @@ void R_CreateBuiltinImages( void ) {
 		}
 	}
 
-	tr.identityLightImage = R_CreateImage("*identityLight", (byte *)data, 8, 8, qfalse, qfalse, GL_REPEAT );
+	tr.identityLightImage = R_CreateImage("*identityLight", (byte *)data, 32, 32, qfalse, qfalse, GL_REPEAT );
 
 	for(x=0;x<32;x++) {
 		// scratchimage is usually used for cinematic drawing
