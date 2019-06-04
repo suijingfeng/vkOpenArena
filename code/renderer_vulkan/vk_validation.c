@@ -4,7 +4,6 @@
 #include <assert.h>
 
 #include "vk_instance.h"
-
 #include "ref_import.h" 
 
 
@@ -94,7 +93,7 @@ void vk_destroyDebugReportHandle(void)
 }
 
 
-const char * cvtResToStr(VkResult result)
+static const char * cvtResToStr(VkResult result)
 {
     switch(result)
     {
@@ -181,5 +180,5 @@ void debug_vkapi_call(VkResult result, const char * const proc_str)
     {
         ri.Printf(PRINT_ALL, "Vulkan: error %s returned by %s \n", cvtResToStr(result), proc_str);
     }
-#endif    
+#endif
 }

@@ -124,12 +124,14 @@ extern PFN_vkQueuePresentKHR							qvkQueuePresentKHR;
 void vk_getProcAddress(void);
 void vk_clearProcAddress(void);
 
-extern void debug_vkapi_call(VkResult result, const char * const proc_str);
+
 void vk_destroy_instance(void);
 
 void printInstanceExtensionsSupported_f(void);
 
 #ifndef NDEDBG
+
+extern void debug_vkapi_call(VkResult result, const char * const proc_str);
 
 #define VK_CHECK(function_call) \
 { \
@@ -148,7 +150,7 @@ void printInstanceExtensionsSupported_f(void);
 #define VK_CHECK(function_call)	\
 	function_call;
 
-#define NO_CHECK(function_call)  \
+#define NO_CHECK(function_call) \
 { \
     function_call; \
 }

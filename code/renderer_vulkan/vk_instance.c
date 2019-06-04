@@ -656,23 +656,26 @@ static void vk_selectPhysicalDevice(void)
 	if (gpu_count <= 0)
 		ri.Error(ERR_FATAL, "Vulkan: no physical device found");
 
-    if (r_gpuIndex->integer > gpu_count -1)
-        ri.Error(ERR_FATAL, "Vulkan: r_gpuIndex out of bound (r_gpuIndex: %d - gpu_count: %d)", r_gpuIndex->integer, gpu_count);
+    if (r_gpuIndex->integer > gpu_count -1) {
+        ri.Error(ERR_FATAL, "Vulkan: r_gpuIndex out of bound (r_gpuIndex: %d - gpu_count: %d)",
+                r_gpuIndex->integer, gpu_count);
+    }
 
-    VkPhysicalDevice *pPhyDev = (VkPhysicalDevice *) malloc (sizeof(VkPhysicalDevice) * gpu_count);
+    VkPhysicalDevice * const pPhyDev = (VkPhysicalDevice *) malloc (sizeof(VkPhysicalDevice) * gpu_count);
     
 
-    VK_CHECK(qvkEnumeratePhysicalDevices(vk.instance, &gpu_count, pPhyDev));
+    VK_CHECK( qvkEnumeratePhysicalDevices(vk.instance, &gpu_count, pPhyDev) );
     // Select the right gpu from r_gpuIndex
     vk.physical_device = pPhyDev[r_gpuIndex->integer];
 	
     free(pPhyDev);
 
-    ri.Printf(PRINT_ALL, " Total %d graphics card, selected card index: [%d]. \n", gpu_count, r_gpuIndex->integer);
+    ri.Printf(PRINT_ALL, " Total %d graphics card, selected card index: [%d]. \n",
+            gpu_count, r_gpuIndex->integer);
 
     ri.Printf(PRINT_ALL, " Get physical device memory properties: vk.devMemProperties \n");
     
-    qvkGetPhysicalDeviceMemoryProperties(vk.physical_device, &vk.devMemProperties);
+    NO_CHECK( qvkGetPhysicalDeviceMemoryProperties(vk.physical_device, &vk.devMemProperties) );
 }
 
 
@@ -714,6 +717,7 @@ const char * ColorSpaceEnum2str(enum VkColorSpaceKHR cs)
             return "Not_Known";
     }
 }
+
 
 static void vk_assertSurfaceCapabilities(VkSurfaceKHR HSurface)
 {
@@ -813,7 +817,7 @@ static void vk_selectSurfaceFormat(VkSurfaceKHR HSurface)
     {
         ri.Printf(PRINT_ALL, " we choose: \n" );
 
-        for( i = 0; i < nSurfmt; i++)
+        for( i = 0; i < nSurfmt; ++i)
         {
             if( ( pSurfFmts[i].format == VK_FORMAT_B8G8R8A8_UNORM) &&
                 ( pSurfFmts[i].colorSpace == VK_COLORSPACE_SRGB_NONLINEAR_KHR) )
@@ -846,7 +850,7 @@ static void vk_selectSurfaceFormat(VkSurfaceKHR HSurface)
 // The number of queue families, the capabilities of each family,
 // and the number of queues belonging to each family are all
 // properties of the physical device.
-static void vk_selectQueueFamilyForPresentation(void)
+static void vk_selectQueueFamilyForPresentation(VkSurfaceKHR HSurface)
 {
     // Almosty every operation in Vulkan, anything from drawing textures,
     // requires commands to be submitted to a queue. There are different
@@ -865,15 +869,14 @@ static void vk_selectQueueFamilyForPresentation(void)
     
     assert(nQueueFamily > 0);
 
-    VkQueueFamilyProperties* pQueueFamilies = (VkQueueFamilyProperties *) malloc (
-            nQueueFamily * sizeof(VkQueueFamilyProperties) );
+    VkQueueFamilyProperties* const pQueueFamilies = (VkQueueFamilyProperties *) 
+        malloc( nQueueFamily * sizeof(VkQueueFamilyProperties) );
 
     // To query properties of queues available on a physical device
     qvkGetPhysicalDeviceQueueFamilyProperties(vk.physical_device, &nQueueFamily, pQueueFamilies);
 
-    ri.Printf(PRINT_ALL, "\n -------- Total %d Queue families -------- \n",  nQueueFamily);
+    ri.Printf(PRINT_ALL, "\n -------- Total %d Queue families -------- \n", nQueueFamily);
 
-    // info
     // Queues within a family are essentially identical. 
     // Queues in different families may have different internal capabilities
     // that can't be expressed easily in the Vulkan API. For this reason,
@@ -906,8 +909,8 @@ static void vk_selectQueueFamilyForPresentation(void)
 
 
         VkBool32 isPresentSupported = VK_FALSE;
-        VK_CHECK(qvkGetPhysicalDeviceSurfaceSupportKHR(
-                    vk.physical_device, i, vk.surface, &isPresentSupported));
+        VK_CHECK( qvkGetPhysicalDeviceSurfaceSupportKHR(
+                    vk.physical_device, i, HSurface, &isPresentSupported));
 
         if (isPresentSupported)
         {
@@ -919,7 +922,6 @@ static void vk_selectQueueFamilyForPresentation(void)
         }
     }
 
-
     // Select queue family with presentation and graphics support
     // Iterate over each queue to learn whether it supports presenting:
     vk.queue_family_index = -1;
@@ -930,32 +932,30 @@ static void vk_selectQueueFamilyForPresentation(void)
         // to our window surface
         
         VkBool32 presentation_supported = VK_FALSE;
-        VK_CHECK(qvkGetPhysicalDeviceSurfaceSupportKHR(
-                    vk.physical_device, i, vk.surface, &presentation_supported));
+        VK_CHECK( qvkGetPhysicalDeviceSurfaceSupportKHR(
+                    vk.physical_device, i, HSurface, &presentation_supported) );
 
         if (presentation_supported && 
                 (pQueueFamilies[i].queueFlags & VK_QUEUE_GRAPHICS_BIT) != 0)
         {
             vk.queue_family_index = i;
             
-            ri.Printf(PRINT_ALL, " Queue family index %d selected for presentation.\n",
-                    vk.queue_family_index);
-
+            ri.Printf(PRINT_ALL, " Queue family index %d selected for presentation.\n", i);
             break;
         }
     }
 
+    if (vk.queue_family_index == -1) {
+        ri.Error(ERR_FATAL, "Vulkan: failed to find a queue family for presentation. ");
+    }
     ri.Printf(PRINT_ALL, " -------- ---------------------------- -------- \n\n");
 
     free(pQueueFamilies);
-
-    if (vk.queue_family_index == -1)
-        ri.Error(ERR_FATAL, "Vulkan: failed to find queue family");
 }
 
 
 
-void vk_checkSwapChainExtention(const char * const pName)
+static void vk_checkSwapChainExtention(const char * const pName)
 {
     /* Look for device extensions */
 
@@ -976,14 +976,14 @@ void vk_checkSwapChainExtention(const char * const pName)
 
     qvkEnumerateDeviceExtensionProperties( vk.physical_device, NULL, &nDevExts, NULL);
 
-    VkExtensionProperties* pDeviceExt = 
+    VkExtensionProperties* const pDeviceExt = 
         (VkExtensionProperties *) malloc( sizeof(VkExtensionProperties) * nDevExts );
 
     qvkEnumerateDeviceExtensionProperties( vk.physical_device, NULL, &nDevExts, pDeviceExt);
 
 
     uint32_t j;
-    for (j = 0; j < nDevExts; j++)
+    for (j = 0; j < nDevExts; ++j)
     {
         if (0 == strcmp(pName, pDeviceExt[j].extensionName))
         {
@@ -1013,14 +1013,10 @@ void vk_checkSwapChainExtention(const char * const pName)
 
 
 
-static void vk_createLogicalDevice(void)
+static void vk_createLogicalDevice(const char* const* ppExtNamesEnabled, uint32_t nExtEnabled,
+        VkDevice * const pLogicalDev)
 {
 ////////////////////////
-    const char* enable_ext_names[1] = {
-        VK_KHR_SWAPCHAIN_EXTENSION_NAME
-    };
-
-    vk_checkSwapChainExtention(enable_ext_names[0]);
 
     const float priority = 1.0;
     VkDeviceQueueCreateInfo queue_desc;
@@ -1032,19 +1028,23 @@ static void vk_createLogicalDevice(void)
     queue_desc.pQueuePriorities = &priority;
 
 
-    // Query fine-grained feature support for this device. If APP 
-    // has specific feature requirements it should check supported
+    // Query fine-grained feature support for this physical device.
+    // If APP has specific feature requirements it should check supported
     // features based on this query.
 
 	VkPhysicalDeviceFeatures features;
 	qvkGetPhysicalDeviceFeatures(vk.physical_device, &features);
 	if (features.shaderClipDistance == VK_FALSE)
+    {
 		ri.Error(ERR_FATAL,
             "vk_create_device: shaderClipDistance feature is not supported");
-	if (features.fillModeNonSolid == VK_FALSE)
+        // vulkan need this to render portal and mirrors
+        // wandering if we can provide a soft impl ...
+    }
+    if (features.fillModeNonSolid == VK_FALSE) {
 	    ri.Error(ERR_FATAL,
             "vk_create_device: fillModeNonSolid feature is not supported");
-
+    }
 
     VkDeviceCreateInfo device_desc;
     device_desc.sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO;
@@ -1055,8 +1055,8 @@ static void vk_createLogicalDevice(void)
     device_desc.pQueueCreateInfos = &queue_desc;
     device_desc.enabledLayerCount = 0;
     device_desc.ppEnabledLayerNames = NULL;
-    device_desc.enabledExtensionCount = 1;
-    device_desc.ppEnabledExtensionNames = enable_ext_names;
+    device_desc.enabledExtensionCount = nExtEnabled;
+    device_desc.ppEnabledExtensionNames = ppExtNamesEnabled;
     device_desc.pEnabledFeatures = &features;
     
 
@@ -1068,7 +1068,7 @@ static void vk_createLogicalDevice(void)
     // queue families are available. You can create multiple logical
     // devices from the same physical device if you have varying requirements.
     ri.Printf( PRINT_ALL, " Create logical device: vk.device \n" );
-    VK_CHECK( qvkCreateDevice(vk.physical_device, &device_desc, NULL, &vk.device) );
+    VK_CHECK( qvkCreateDevice(vk.physical_device, &device_desc, NULL, pLogicalDev) );
 
 }
 
@@ -1278,9 +1278,17 @@ void vk_getProcAddress(void)
     
     vk.present_mode = vk_selectPresentationMode(vk.surface);
 
-    vk_selectQueueFamilyForPresentation();
+    vk_selectQueueFamilyForPresentation(vk.surface);
 
-    vk_createLogicalDevice();
+    
+    //////////
+    const char* enable_features_name_array[1] = {
+        VK_KHR_SWAPCHAIN_EXTENSION_NAME
+    };
+
+    vk_checkSwapChainExtention(enable_features_name_array[0]);
+    
+    vk_createLogicalDevice(enable_features_name_array, 1, &vk.device);
 
     // Get device level functions. depended on the created logical device
     // thus must be called AFTER vk_createLogicalDevice.
@@ -1290,7 +1298,7 @@ void vk_getProcAddress(void)
     // a call to retrieve queue handle
     // The queues are constructed when the device is created, For this
     // reason, we don't create queues, but obtain them from the device.
-    //
+    // maybe the queue is abstraction of specific hardware ...
 	NO_CHECK( qvkGetDeviceQueue(vk.device, vk.queue_family_index, 0, &vk.queue) );
     //
     //     Queue Family Index
@@ -1442,14 +1450,12 @@ void vk_destroy_instance(void)
 {
 
     ri.Printf( PRINT_ALL, " Destroy surface: vk.surface. \n" );
+    
     // make sure that the surface is destroyed before the instance
     qvkDestroySurfaceKHR(vk.instance, vk.surface, NULL);
 
-    
     vk_destroyDebugReportHandle();
-
 
     ri.Printf( PRINT_ALL, " Destroy instance: vk.instance. \n" );
 	qvkDestroyInstance(vk.instance, NULL);
-
 }
