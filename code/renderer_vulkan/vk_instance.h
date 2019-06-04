@@ -6,9 +6,9 @@
 
 // extern PFN_vkGetInstanceProcAddr						qvkGetInstanceProcAddr;
 
-extern PFN_vkCreateInstance							    qvkCreateInstance;
-extern PFN_vkEnumerateInstanceExtensionProperties		qvkEnumerateInstanceExtensionProperties;
-extern PFN_vkEnumerateInstanceLayerProperties           qvkEnumerateInstanceLayerProperties;//
+// extern PFN_vkCreateInstance							    qvkCreateInstance;
+// extern PFN_vkEnumerateInstanceExtensionProperties		qvkEnumerateInstanceExtensionProperties;
+// extern PFN_vkEnumerateInstanceLayerProperties           qvkEnumerateInstanceLayerProperties;//
 
 extern PFN_vkCreateDevice								qvkCreateDevice;
 extern PFN_vkDestroyInstance							qvkDestroyInstance;
@@ -126,6 +126,8 @@ void vk_clearProcAddress(void);
 
 extern void debug_vkapi_call(VkResult result, const char * const proc_str);
 void vk_destroy_instance(void);
+
+void printInstanceExtensionsSupported_f(void);
 
 #ifndef NDEDBG
 

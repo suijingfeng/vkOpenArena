@@ -33,31 +33,6 @@ void printDeviceExtensionsSupported_f(void)
 }
 
 
-void printInstanceExtensionsSupported_f(void)
-{
-    uint32_t i = 0;
-
-	uint32_t nInsExt = 0;
-    // To retrieve a list of supported extensions before creating an instance
-	VK_CHECK( qvkEnumerateInstanceExtensionProperties( NULL, &nInsExt, NULL) );
-
-    assert(nInsExt > 0);
-
-    VkExtensionProperties* pInsExt = (VkExtensionProperties *) malloc(sizeof(VkExtensionProperties) * nInsExt);
-    
-    VK_CHECK(qvkEnumerateInstanceExtensionProperties( NULL, &nInsExt, pInsExt));
-
-    ri.Printf(PRINT_ALL, "\n");
-
-    ri.Printf(PRINT_ALL, "----- Total %d Instance Extension Supported -----\n", nInsExt);
-    for (i = 0; i < nInsExt; ++i)
-    {            
-        ri.Printf(PRINT_ALL, "%s\n", pInsExt[i].extensionName );
-    }
-    ri.Printf(PRINT_ALL, "----- ------------------------------------- -----\n\n");
-   
-    free(pInsExt);
-}
 
 
 void printVulkanInfo_f( void ) 
