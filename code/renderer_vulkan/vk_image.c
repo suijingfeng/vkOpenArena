@@ -953,7 +953,7 @@ void R_SetCinematicShader( shader_t * pShader)
 
 static void R_CreateDefaultImage( void )
 {
-	#define	DEFAULT_SIZE 16
+	#define	DEFAULT_SIZE 32
 
 	unsigned char data[DEFAULT_SIZE][DEFAULT_SIZE][4];
 
@@ -991,18 +991,18 @@ static void R_CreateDefaultImage( void )
 
 static void R_CreateWhiteImage(void)
 {
-    #define	DEFAULT_SIZE 16
+    #define	DEFAULT_SIZE 32
 	// we use a solid white image instead of disabling texturing
 	unsigned char data[DEFAULT_SIZE][DEFAULT_SIZE][4];
 	memset( data, 255, sizeof( data ) );
-	tr.whiteImage = R_CreateImage("*white", (unsigned char *)data, 8, 8, qfalse, qfalse, GL_REPEAT);
+	tr.whiteImage = R_CreateImage("*white", (unsigned char *)data, DEFAULT_SIZE, DEFAULT_SIZE, qfalse, qfalse, GL_REPEAT);
     #undef DEFAULT_SIZE
 }
 
 
 static void R_CreateIdentityLightImage(void)
 {
-    #define	DEFAULT_SIZE 16
+    #define	DEFAULT_SIZE 64
     uint32_t x,y;
 	unsigned char data[DEFAULT_SIZE][DEFAULT_SIZE][4];
 
@@ -1014,33 +1014,34 @@ static void R_CreateIdentityLightImage(void)
         {
 			data[y][x][0] = 
 			data[y][x][1] = 
-			data[y][x][2] = tr.identityLightByte;
+			data[y][x][2] = 255;
 			data[y][x][3] = 255;
 		}
 	}
-	tr.identityLightImage = R_CreateImage("*identityLight", (unsigned char *)data, 8, 8, qfalse, qfalse, GL_REPEAT);
+	tr.identityLightImage = R_CreateImage("*identityLight", (unsigned char *)data, DEFAULT_SIZE, DEFAULT_SIZE,
+            qfalse, qfalse, GL_REPEAT);
     #undef DEFAULT_SIZE
 }
 
 
 static void R_CreateDlightImage( void )
 {
-    #define	DLIGHT_SIZE	16
-
+    #define	DLIGHT_SIZE	32
 	uint32_t x,y;
 	unsigned char data[DLIGHT_SIZE][DLIGHT_SIZE][4];
 
 	// make a centered inverse-square falloff blob for dynamic lighting
-	for (x=0; x<DLIGHT_SIZE; x++)
+	for (x=0; x<DLIGHT_SIZE; ++x)
     {
-		for (y=0; y<DLIGHT_SIZE; y++)
+		for (y=0; y<DLIGHT_SIZE; ++y)
         {
-			float d = ( DLIGHT_SIZE/2 - 0.5f - x ) * ( DLIGHT_SIZE/2 - 0.5f - x ) +
-				( DLIGHT_SIZE/2 - 0.5f - y ) * ( DLIGHT_SIZE/2 - 0.5f - y );
-			int b = 4000 / d;
+            float w = DLIGHT_SIZE/2 - 0.5f - x;
+            float h = DLIGHT_SIZE/2 - 0.5f - y;
+			float d = w * w + h * h;
+			int b = 16000 / d;
 			if (b > 255) {
 				b = 255;
-			} else if ( b < 75 ) {
+			} else if ( b < 95 ) {
 				b = 0;
 			}
 
@@ -1050,9 +1051,8 @@ static void R_CreateDlightImage( void )
 			data[y][x][3] = 255;			
 		}
 	}
-	tr.dlightImage = R_CreateImage("*dlight", (unsigned char *)data, DLIGHT_SIZE, DLIGHT_SIZE, qfalse, qfalse, GL_CLAMP);
+	tr.dlightImage = R_CreateImage("*dlight", data, DLIGHT_SIZE, DLIGHT_SIZE, qfalse, qfalse, GL_CLAMP);
     #undef DEFAULT_SIZE
-
 }
 
 
@@ -1187,7 +1187,7 @@ image_t* R_CreateImageForCinematic( const char *name, unsigned char* pic, const 
 
 static void R_CreateScratchImage(void)
 {
-    #define DEFAULT_SIZE 16
+    #define DEFAULT_SIZE 512
 
     uint32_t x;
     

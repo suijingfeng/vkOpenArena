@@ -38,7 +38,6 @@
 // each other, add up or be mixed based opon transparency.
 //
 
-
 // blending: The process of merging a new color value into an existing color
 // attachment using an equation and parameters that are configured as part
 // of a graphics pipeline.
@@ -115,22 +114,22 @@ static VkPipeline FindPipeline(const struct ParmsKey * const par)
 {
     int32_t hVal = genHashVal(par, PL_TAB_SIZE);
 
-    struct PipelineParameter_t * pTmp;
+    struct PipelineParameter_t * pTmp = plHashTable[hVal];
 
-    for( pTmp = plHashTable[hVal]; pTmp != NULL; pTmp = pTmp->next )
+    for( ; pTmp != NULL; pTmp = pTmp->next )
     {
         if( 0 == ComparePar(par, &pTmp->key) )
             return pTmp->pipeline;
     }
 
-    // not find, create new
-    VkPipeline newPipeline;
-
+    // not find, create a new
+    // Hunk_Alloc vs malloc ?
     pTmp = (struct PipelineParameter_t *) 
         ri.Hunk_Alloc( sizeof(struct PipelineParameter_t ), h_low );
 
     // plPar.shadow_phase = SHADOWS_RENDERING_DISABLED;
     // plPar.line_primitives = VK_FALSE;
+    VkPipeline newPipeline;
 
     vk_create_pipeline( 
             par->state_bits, par->shader_type, par->face_culling, SHADOWS_RENDERING_DISABLED,
@@ -141,9 +140,8 @@ static VkPipeline FindPipeline(const struct ParmsKey * const par)
     pTmp->key = *par;
     pTmp->pipeline = newPipeline; 
     pTmp->next = plHashTable[hVal];
-
     plHashTable[hVal] = pTmp;
-
+   
     ++s_numPipelines;
 
     return newPipeline;

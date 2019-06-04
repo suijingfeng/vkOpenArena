@@ -596,6 +596,8 @@ static void ProjectDlightTexture( struct shaderCommands_s * const pTess,
 			continue;	// this surface definately doesn't have any of this light
 		}
         
+
+        uint32_t isAdditive = pDlights[l].additive > 0 ? 1 : 0;
         // float (* const pTexcoords)[2] = pTess->svars.texcoords[0];
         // uint8_t (* const pColors)[4] = pTess->svars.colors;
 
@@ -645,12 +647,12 @@ static void ProjectDlightTexture( struct shaderCommands_s * const pTess,
 			if ( dist[2] > radius )
             {
 				clip |= 16;
-				modulate = 0.0f;
+				modulate = 1.0f;
 			}
             else if ( dist[2] < -radius )
             {
 				clip |= 32;
-				modulate = 0.0f;
+				modulate = 1.0f;
 			}
             else
             {
@@ -666,7 +668,6 @@ static void ProjectDlightTexture( struct shaderCommands_s * const pTess,
 			}
 			clipBits[i] = clip;
            
-
             // += 4 
 			pColors[i][0] = (floatColor[0] * modulate);
 			pColors[i][1] = (floatColor[1] * modulate);
@@ -697,7 +698,7 @@ static void ProjectDlightTexture( struct shaderCommands_s * const pTess,
         R_UpdatePerformanceCounters( pTess->numVertexes, numIndexes, 0);
 		// VULKAN
 
-		vk_shade_geometry( g_globalPipelines.dlight_pipelines[pDlights[l].additive > 0 ? 1 : 0][pTess->shader->cullType][pTess->shader->polygonOffset], 
+		vk_shade_geometry( g_globalPipelines.dlight_pipelines[isAdditive][pTess->shader->cullType][pTess->shader->polygonOffset], 
             pTess, VK_FALSE, VK_TRUE);
 	}
 }
