@@ -390,3 +390,42 @@ void BoundingSphereOfSpheres(vec3_t origin1, float radius1, vec3_t origin2, floa
 	VectorSubtract(origin1, origin2, diff);
 	*radius3 = VectorLen(diff) * 0.5f + MAX(radius1, radius2);
 }
+
+VkBool32 isNonCaseStringEqual(const char * s1, const char * s2)
+{
+    if( (s1 != NULL) && (s2 != NULL) )
+    {
+        int	c1;
+        int c2;
+        do
+        {
+            c1 = *s1++; 
+            c2 = *s2++;
+
+            // consider that most shader is little a - z, 
+            if( (c1 >= 'A') && (c1 <= 'Z') )
+            {
+                c1 += 'a' - 'A';
+            }
+            
+            // to a - z
+            if( (c2 >= 'A') && (c2 <= 'Z') )
+            {
+                c2 +=  'a' - 'A';
+            }
+
+            if( c1 != c2 )
+            {
+                // string are not equal
+                return VK_FALSE;
+            }
+        } while(c1 || c2);
+
+        return VK_TRUE;
+    }
+
+    // should not compare null, this is not meaningful ...
+    ri.Printf( PRINT_WARNING, "WARNING: compare NULL string. %p == %p ? \n", s1, s2 );
+    return VK_FALSE;
+}
+

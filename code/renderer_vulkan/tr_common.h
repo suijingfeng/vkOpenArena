@@ -25,6 +25,8 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #include "../qcommon/q_shared.h"
 #include "../renderercommon/tr_public.h"
 
+#include "VKimpl.h"
+
 static const float ORIGIN[3] = {0,0,0};
 // outside of TR since it shouldn't be cleared during ref re-init
 
@@ -32,12 +34,6 @@ static const float ORIGIN[3] = {0,0,0};
 // compatibility issues to the original ID vms.  If you release a stand-alone
 // game and your mod uses tr_types.h from this build you can safely move them
 // to the glconfig_t struct.
-
-union uInt4bytes{
-    unsigned int i;
-    unsigned char uc[4];
-};
-
 
 
 // any change in the LIGHTMAP_* defines here MUST be reflected in
@@ -55,7 +51,7 @@ union uInt4bytes{
 
 
 
-void R_IssuePendingRenderCommands( void );
+VkBool32 isNonCaseStringEqual(const char * s1, const char * s2);
 
 
 /*

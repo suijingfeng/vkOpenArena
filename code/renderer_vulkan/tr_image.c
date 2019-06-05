@@ -156,8 +156,6 @@ static char *CommaParse( char **data_p )
 qhandle_t RE_RegisterSkin( const char *name )
 {
     skinSurface_t parseSurfaces[MAX_SKIN_SURFACES]; 
-	qhandle_t	hSkin;
-	skin_t		*skin;
 	skinSurface_t	*surf;
 	char		*text, *text_p;
 	char		*token;
@@ -175,10 +173,13 @@ qhandle_t RE_RegisterSkin( const char *name )
 
 
 	// see if the skin is already loaded
-	for ( hSkin = 1; hSkin < tr.numSkins ; hSkin++ ) {
-		skin = tr.skins[hSkin];
-		if ( !Q_stricmp( skin->name, name ) ) {
-			if( skin->numSurfaces == 0 ) {
+    qhandle_t	hSkin;
+	for ( hSkin = 1; hSkin < tr.numSkins ; ++hSkin )
+    {
+		skin_t * pSkin = tr.skins[hSkin];
+		if ( isNonCaseStringEqual( pSkin->name, name ) )
+        {
+			if( pSkin->numSurfaces == 0 ) {
 				return 0;		// default skin
 			}
 			return hSkin;
@@ -190,8 +191,10 @@ qhandle_t RE_RegisterSkin( const char *name )
 		ri.Printf( PRINT_WARNING, "WARNING: RE_RegisterSkin( '%s' ) MAX_SKINS hit\n", name );
 		return 0;
 	}
-	tr.numSkins++;
-	skin = (skin_t*) ri.Hunk_Alloc( sizeof( skin_t ), h_low );
+
+	++tr.numSkins;
+
+	skin_t * skin = (skin_t*) ri.Hunk_Alloc( sizeof( skin_t ), h_low );
 	tr.skins[hSkin] = skin;
 	Q_strncpyz( skin->name, name, sizeof( skin->name ) );
 	skin->numSurfaces = 0;

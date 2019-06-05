@@ -5,7 +5,7 @@
 #include "../qcommon/qfiles.h"
 #include "tr_common.h"
 
-#include "tr_shader.h"
+//#include "tr_shader.h"
 #include "tr_image.h"
 #include "viewParms.h"
 #include "trRefDef.h"
@@ -49,7 +49,7 @@ typedef struct {
 } frontEndCounters_t;
 
 
-typedef struct
+typedef struct trGlobals_s
 {
 	qboolean				registered;		// cleared at shutdown, set at beginRegistration
 
@@ -69,10 +69,10 @@ typedef struct
 	image_t					*whiteImage;			// full of 0xff
 	image_t					*identityLightImage;	// full of tr.identityLightByte
 
-	shader_t				*defaultShader;
-
-	shader_t				*shadowShader;
-	shader_t				*projectionShadowShader;
+	struct shader_s	* defaultShader;
+	struct shader_s	* shadowShader;
+	struct shader_s	* projectionShadowShader;
+	struct shader_s	* shaders[MAX_SHADERS];
 
 	int						numLightmaps;
 	image_t					*lightmaps[MAX_LIGHTMAPS];
@@ -114,8 +114,8 @@ typedef struct
 	// shader indexes from drawsurfs will be looked up in sortedShaders[]
 	// lower indexed sortedShaders must be rendered first (opaque surfaces before translucent)
 	int						numShaders;
-	shader_t				*shaders[MAX_SHADERS];
-//	shader_t				*sortedShaders[MAX_SHADERS];
+
+//	struct shader_s				*sortedShaders[MAX_SHADERS];
 
 	int						numSkins;
 	struct skin_s *         skins[MAX_SKINS];

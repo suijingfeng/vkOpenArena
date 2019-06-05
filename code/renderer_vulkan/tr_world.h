@@ -60,7 +60,7 @@ typedef struct world_s{
 	struct msurface_s** marksurfaces;
 
 	int			numfogs;
-	fog_t		*fogs;
+	struct fog_s * fogs;
 
 	vec3_t		lightGridOrigin;
 	vec3_t		lightGridSize;
@@ -92,6 +92,6 @@ WORLD MAP
 void R_AddBrushModelSurfaces( trRefEntity_t *e );
 void R_AddWorldSurfaces(viewParms_t * const pViewParams);
 void R_GetWorldBaseName(char* checkname);
-void R_GetFogArray(fog_t **ppFogs, uint32_t* pNum);
+void R_GetFogArray(struct fog_s ** ppFogs, uint32_t* pNum);
 
 #endif

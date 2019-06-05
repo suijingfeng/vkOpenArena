@@ -369,7 +369,7 @@ void RE_RegisterFont(const char *fontName, int pointSize, fontInfo_t *font)
 
 	snprintf(name, sizeof(name), "fonts/fontImage_%i.dat",pointSize);
 	for (i = 0; i < registeredFontCount; i++) {
-		if (Q_stricmp(name, registeredFont[i].name) == 0) {
+		if (isNonCaseStringEqual(name, registeredFont[i].name)) {
 			memcpy(font, &registeredFont[i], sizeof(fontInfo_t));
 			return;
 		}

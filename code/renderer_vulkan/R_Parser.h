@@ -7,5 +7,4 @@ int R_GetCurrentParseLine( void );
 void R_BeginParseSession(const char* const name);
 qboolean SkipBracedSection(char **program, int depth);
 
-
 #endif

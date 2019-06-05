@@ -4,7 +4,7 @@
 #include "tr_model.h"
 #include "render_export.h"
 
-trGlobals_t	tr;
+struct trGlobals_s tr;
 
 /*
 =================
@@ -15,6 +15,16 @@ space in big maps...
 void RE_SetWorldVisData( const uint8_t *vis )
 {
 	tr.externalVisData = vis;
+}
+
+struct shader_s	* R_GetDefaultShaderPtr(void)
+{
+    return tr.defaultShader;
+}
+
+uint32_t R_GetNumOfLightmaps(void)
+{
+    return tr.numLightmaps;
 }
 
 

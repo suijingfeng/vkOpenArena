@@ -38,7 +38,7 @@ typedef struct {
 
 typedef struct {
 	int		commandId;
-	shader_t* shader;
+	struct shader_s* shader;
 	float	x, y;
 	float	w, h;
 	float	s1, t1;

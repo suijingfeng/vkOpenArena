@@ -1679,3 +1679,26 @@ END_ANIMA2:
 		}
 */
 
+
+/*
+static unsigned int NameToAFunc( const char *funcname )
+{	
+	if ( isNonCaseStringEqual( funcname, "GT0" ) )
+	{
+		return GLS_ATEST_GT_0;
+	}
+	else if ( isNonCaseStringEqual( funcname, "LT128" ) )
+	{
+		return GLS_ATEST_LT_80;
+	}
+	else if ( isNonCaseStringEqual( funcname, "GE128" ) )
+	{
+		return GLS_ATEST_GE_80;
+	}
+
+	ri.Printf( PRINT_WARNING, "WARNING: invalid alphaFunc name '%s' in shader '%s'\n",
+            funcname, shader.name );
+	return 0;
+}
+*/
+

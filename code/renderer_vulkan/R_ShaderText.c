@@ -4,7 +4,7 @@
 #include "R_Parser.h"
 #include "R_SortAlgorithm.h"
 #include "R_PrintMat.h"
-
+#include "tr_common.h"
 
 struct ShaderTextHashArray_t {
     char ** ppShaderName; // char * ppShaderName[count]; but count variary
@@ -100,15 +100,13 @@ char* FindShaderInShaderText(const char * pStr)
 
 
     uint32_t Count = s_ShaderNameTab[hash].Count;
-    char ** const ppNames = s_ShaderNameTab[hash].ppShaderName;
+    //char ** const ppNames = s_ShaderNameTab[hash].ppShaderName;
     for (i = 0; i < Count; ++i)
     {
         // str pointed by p is tolower-ed
-        char* p = ppNames[i];
+        char* p = s_ShaderNameTab[hash].ppShaderName[i];
         // token is the shader name ???
-        char* token = R_ParseExt(&p, qtrue);
-        // if ( !Q_stricmp( token, pShaderName ) )
-        if ( 0 == Q_stricmp( token, pStr ) )
+        if ( isNonCaseStringEqual( R_ParseExt(&p, qtrue), pStr ) )
         {
             return p;
         }

@@ -2,6 +2,7 @@
 #include "vk_cmd.h"
 #include "vk_instance.h"
 #include "tr_globals.h"
+#include "tr_shader.h"
 #include "tr_cvar.h"
 #include "tr_fog.h"
 #include "vk_image_sampler.h"
@@ -801,7 +802,7 @@ image_t* R_FindImageFile(const char *name, VkBool32 mipmap, VkBool32 allowPicmip
 
 
 image_t	* tr_scratchImage[16];
-shader_t* tr_cinematicShader;
+struct shader_s * tr_cinematicShader;
 
 void RE_UploadCinematic (int w, int h, int cols, int rows, const unsigned char *data, int client, VkBool32 dirty)
 {
@@ -943,7 +944,7 @@ image_t * R_GetScratchImageHandle(int idx)
     return tr_scratchImage[idx];
 }
 
-void R_SetCinematicShader( shader_t * pShader)
+void R_SetCinematicShader( struct shader_s * pShader)
 {
     ri.Printf (PRINT_ALL, " R_SetCinematicShader \n");
 

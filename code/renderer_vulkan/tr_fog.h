@@ -15,7 +15,7 @@ typedef struct {
 } fogParms_t;
 
 
-typedef struct {
+typedef struct fog_s{
 	int			originalBrushNumber;
 	float		bounds[2][3];
 

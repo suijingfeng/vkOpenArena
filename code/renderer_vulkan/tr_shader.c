@@ -41,26 +41,54 @@ static	shader_t		shader;
 
 // static	texModInfo_t	texMods[MAX_SHADER_STAGES][TR_MAX_TEXMODS];
 
+// all we care about is whether the two string is equal,
+// not who is bigger or less than the other, 
+// inspired by c++ operator ==
+static VkBool32 isCaseStringEqual(const char * s1, const char * s2)
+{
+    if( s1 == NULL || s2 == NULL)
+    {
+        ri.Printf( PRINT_WARNING, "WARNING: compare NULL string. %p == %p ? \n", s1, s2 );
+        // should not compare null, this is not meaningful ...
+        return VK_FALSE;
+    }
+    else
+    {
+        while( (*s1 != 0) || (*s2 != 0) )
+        {
+            if(*s1++ == *s2++)
+            {
+                continue;
+            }
+            else
+            {
+                // string are not equal
+                return VK_FALSE;
+            }
+        }
+    }
+    return VK_TRUE;
+}
 
-/*
-===============
-ParseVector
-===============
-*/
-static qboolean ParseVector( char **text, int count, float *v )
+
+
+static qboolean ParseVector( char **text, const int count, float * const v )
 {
 	// FIXME: spaces are currently required after parens, should change parseext...
 	char* token = R_ParseExt( text, qfalse );
-	if ( strcmp( token, "(" ) ) {
+	
+    if ( VK_TRUE != isCaseStringEqual( token, "(" ) )
+    {
 		ri.Printf( PRINT_WARNING, "WARNING: missing parenthesis in shader '%s'\n", shader.name );
 		return qfalse;
 	}
 
-    int	i;
-
-	for ( i = 0 ; i < count ; i++ ) {
+    uint32_t i;
+	for ( i = 0; i < count; ++i )
+    {
 		token = R_ParseExt( text, qfalse );
-		if ( !token[0] ) {
+		if ( !token[0] )
+        {
 			ri.Printf( PRINT_WARNING, "WARNING: missing vector element in shader '%s'\n", shader.name );
 			return qfalse;
 		}
@@ -68,7 +96,8 @@ static qboolean ParseVector( char **text, int count, float *v )
 	}
 
 	token = R_ParseExt( text, qfalse );
-	if ( strcmp( token, ")" ) ) {
+	if ( VK_TRUE != isCaseStringEqual( token, ")" ) )
+    {
 		ri.Printf( PRINT_WARNING, "WARNING: missing parenthesis in shader '%s'\n", shader.name );
 		return qfalse;
 	}
@@ -77,151 +106,123 @@ static qboolean ParseVector( char **text, int count, float *v )
 }
 
 
-/*
-===============
-NameToAFunc
-===============
-*/
-static unsigned NameToAFunc( const char *funcname )
-{	
-	if ( !Q_stricmp( funcname, "GT0" ) )
-	{
-		return GLS_ATEST_GT_0;
-	}
-	else if ( !Q_stricmp( funcname, "LT128" ) )
-	{
-		return GLS_ATEST_LT_80;
-	}
-	else if ( !Q_stricmp( funcname, "GE128" ) )
-	{
-		return GLS_ATEST_GE_80;
-	}
-
-	ri.Printf( PRINT_WARNING, "WARNING: invalid alphaFunc name '%s' in shader '%s'\n", funcname, shader.name );
-	return 0;
-}
-
-
-/*
-===============
-NameToSrcBlendMode
-===============
-*/
 static int NameToSrcBlendMode( const char *name )
 {
-	if ( !Q_stricmp( name, "GL_ONE" ) )
+	if ( isNonCaseStringEqual( name, "GL_ONE" ) )
 	{
 		return GLS_SRCBLEND_ONE;
 	}
-	else if ( !Q_stricmp( name, "GL_ZERO" ) )
+	else if ( isNonCaseStringEqual( name, "GL_ZERO" ) )
 	{
 		return GLS_SRCBLEND_ZERO;
 	}
-	else if ( !Q_stricmp( name, "GL_DST_COLOR" ) )
+	else if ( isNonCaseStringEqual( name, "GL_DST_COLOR" ) )
 	{
 		return GLS_SRCBLEND_DST_COLOR;
 	}
-	else if ( !Q_stricmp( name, "GL_ONE_MINUS_DST_COLOR" ) )
+	else if ( isNonCaseStringEqual( name, "GL_ONE_MINUS_DST_COLOR" ) )
 	{
 		return GLS_SRCBLEND_ONE_MINUS_DST_COLOR;
 	}
-	else if ( !Q_stricmp( name, "GL_SRC_ALPHA" ) )
+	else if ( isNonCaseStringEqual( name, "GL_SRC_ALPHA" ) )
 	{
 		return GLS_SRCBLEND_SRC_ALPHA;
 	}
-	else if ( !Q_stricmp( name, "GL_ONE_MINUS_SRC_ALPHA" ) )
+	else if ( isNonCaseStringEqual( name, "GL_ONE_MINUS_SRC_ALPHA" ) )
 	{
 		return GLS_SRCBLEND_ONE_MINUS_SRC_ALPHA;
 	}
-	else if ( !Q_stricmp( name, "GL_DST_ALPHA" ) )
+	else if ( isNonCaseStringEqual( name, "GL_DST_ALPHA" ) )
 	{
 		return GLS_SRCBLEND_DST_ALPHA;
 	}
-	else if ( !Q_stricmp( name, "GL_ONE_MINUS_DST_ALPHA" ) )
+	else if ( isNonCaseStringEqual( name, "GL_ONE_MINUS_DST_ALPHA" ) )
 	{
 		return GLS_SRCBLEND_ONE_MINUS_DST_ALPHA;
 	}
-	else if ( !Q_stricmp( name, "GL_SRC_ALPHA_SATURATE" ) )
+	else if ( isNonCaseStringEqual( name, "GL_SRC_ALPHA_SATURATE" ) )
 	{
 		return GLS_SRCBLEND_ALPHA_SATURATE;
 	}
-
-	ri.Printf( PRINT_WARNING, "WARNING: unknown blend mode '%s' in shader '%s', substituting GL_ONE\n", name, shader.name );
+    else
+    {
+	    ri.Printf( PRINT_WARNING, "WARNING: unknown blend mode '%s' in shader '%s', substituting GL_ONE\n",
+                name, shader.name );
+    }
+    
 	return GLS_SRCBLEND_ONE;
 }
 
-/*
-===============
-NameToDstBlendMode
-===============
-*/
+
+
 static int NameToDstBlendMode( const char *name )
 {
-	if ( !Q_stricmp( name, "GL_ONE" ) )
+	if ( isNonCaseStringEqual( name, "GL_ONE" ) )
 	{
 		return GLS_DSTBLEND_ONE;
 	}
-	else if ( !Q_stricmp( name, "GL_ZERO" ) )
+	else if ( isNonCaseStringEqual( name, "GL_ZERO" ) )
 	{
 		return GLS_DSTBLEND_ZERO;
 	}
-	else if ( !Q_stricmp( name, "GL_SRC_ALPHA" ) )
+	else if ( isNonCaseStringEqual( name, "GL_SRC_ALPHA" ) )
 	{
 		return GLS_DSTBLEND_SRC_ALPHA;
 	}
-	else if ( !Q_stricmp( name, "GL_ONE_MINUS_SRC_ALPHA" ) )
+	else if ( isNonCaseStringEqual( name, "GL_ONE_MINUS_SRC_ALPHA" ) )
 	{
 		return GLS_DSTBLEND_ONE_MINUS_SRC_ALPHA;
 	}
-	else if ( !Q_stricmp( name, "GL_DST_ALPHA" ) )
+	else if ( isNonCaseStringEqual( name, "GL_DST_ALPHA" ) )
 	{
 		return GLS_DSTBLEND_DST_ALPHA;
 	}
-	else if ( !Q_stricmp( name, "GL_ONE_MINUS_DST_ALPHA" ) )
+	else if ( isNonCaseStringEqual( name, "GL_ONE_MINUS_DST_ALPHA" ) )
 	{
 		return GLS_DSTBLEND_ONE_MINUS_DST_ALPHA;
 	}
-	else if ( !Q_stricmp( name, "GL_SRC_COLOR" ) )
+	else if ( isNonCaseStringEqual( name, "GL_SRC_COLOR" ) )
 	{
 		return GLS_DSTBLEND_SRC_COLOR;
 	}
-	else if ( !Q_stricmp( name, "GL_ONE_MINUS_SRC_COLOR" ) )
+	else if ( isNonCaseStringEqual( name, "GL_ONE_MINUS_SRC_COLOR" ) )
 	{
 		return GLS_DSTBLEND_ONE_MINUS_SRC_COLOR;
 	}
-
-	ri.Printf( PRINT_WARNING, "WARNING: unknown blend mode '%s' in shader '%s', substituting GL_ONE\n", name, shader.name );
+    else
+    {
+	    ri.Printf( PRINT_WARNING, "WARNING: unknown blend mode '%s' in shader '%s', substituting GL_ONE\n",
+                name, shader.name );
+    }
+    
 	return GLS_DSTBLEND_ONE;
 }
 
-/*
-===============
-NameToGenFunc
-===============
-*/
+
+
 static genFunc_t NameToGenFunc( const char *funcname )
 {
-	if ( !Q_stricmp( funcname, "sin" ) )
+	if ( isNonCaseStringEqual( funcname, "sin" ) )
 	{
 		return GF_SIN;
 	}
-	else if ( !Q_stricmp( funcname, "square" ) )
+	else if ( isNonCaseStringEqual( funcname, "square" ) )
 	{
 		return GF_SQUARE;
 	}
-	else if ( !Q_stricmp( funcname, "triangle" ) )
+	else if ( isNonCaseStringEqual( funcname, "triangle" ) )
 	{
 		return GF_TRIANGLE;
 	}
-	else if ( !Q_stricmp( funcname, "sawtooth" ) )
+	else if ( isNonCaseStringEqual( funcname, "sawtooth" ) )
 	{
 		return GF_SAWTOOTH;
 	}
-	else if ( !Q_stricmp( funcname, "inversesawtooth" ) )
+	else if ( isNonCaseStringEqual( funcname, "inversesawtooth" ) )
 	{
 		return GF_INVERSE_SAWTOOTH;
 	}
-	else if ( !Q_stricmp( funcname, "noise" ) )
+	else if ( isNonCaseStringEqual( funcname, "noise" ) )
 	{
 		return GF_NOISE;
 	}
@@ -303,7 +304,7 @@ static void ParseTexMod( char *_text, shaderStage_t *stage )
 	//
 	// turb
 	//
-	if ( !Q_stricmp( token, "turb" ) )
+	if ( isNonCaseStringEqual( token, "turb" ) )
 	{
 		token = R_ParseExt( text, qfalse );
 		if ( token[0] == 0 )
@@ -339,7 +340,7 @@ static void ParseTexMod( char *_text, shaderStage_t *stage )
 	//
 	// scale
 	//
-	else if ( !Q_stricmp( token, "scale" ) )
+	else if ( isNonCaseStringEqual( token, "scale" ) )
 	{
 		token = R_ParseExt( text, qfalse );
 		if ( token[0] == 0 )
@@ -361,7 +362,7 @@ static void ParseTexMod( char *_text, shaderStage_t *stage )
 	//
 	// scroll
 	//
-	else if ( !Q_stricmp( token, "scroll" ) )
+	else if ( isNonCaseStringEqual( token, "scroll" ) )
 	{
 		token = R_ParseExt( text, qfalse );
 		if ( token[0] == 0 )
@@ -382,7 +383,7 @@ static void ParseTexMod( char *_text, shaderStage_t *stage )
 	//
 	// stretch
 	//
-	else if ( !Q_stricmp( token, "stretch" ) )
+	else if ( isNonCaseStringEqual( token, "stretch" ) )
 	{
 		token = R_ParseExt( text, qfalse );
 		if ( token[0] == 0 )
@@ -426,7 +427,7 @@ static void ParseTexMod( char *_text, shaderStage_t *stage )
 		
 		tmi->type = TMOD_STRETCH;
 	}
-	else if ( !Q_stricmp( token, "atlas" ) )
+	else if ( isNonCaseStringEqual( token, "atlas" ) )
 	{   // leilei - atlas
 		token = R_ParseExt( text, qfalse );
 		if ( token[0] == 0 )
@@ -471,13 +472,13 @@ static void ParseTexMod( char *_text, shaderStage_t *stage )
 		
 		tmi->type = TMOD_ATLAS;
 	}
-	else if ( !Q_stricmp( token, "lightscale" ) )
+	else if ( isNonCaseStringEqual( token, "lightscale" ) )
 	{
 		token = R_ParseExt( text, qfalse );
 	//
 		tmi->type = TMOD_LIGHTSCALE;
 	}
-	else if ( !Q_stricmp( token, "transform" ) )
+	else if ( isNonCaseStringEqual( token, "transform" ) )
 	{   // transform
 		token = R_ParseExt( text, qfalse );
 		if ( token[0] == 0 )
@@ -532,7 +533,7 @@ static void ParseTexMod( char *_text, shaderStage_t *stage )
 	//
 	// rotate
 	//
-	else if ( !Q_stricmp( token, "rotate" ) )
+	else if ( isNonCaseStringEqual( token, "rotate" ) )
 	{
 		token = R_ParseExt( text, qfalse );
 		if ( token[0] == 0 )
@@ -546,7 +547,7 @@ static void ParseTexMod( char *_text, shaderStage_t *stage )
 	//
 	// entityTranslate
 	//
-	else if ( !Q_stricmp( token, "entityTranslate" ) )
+	else if ( isNonCaseStringEqual( token, "entityTranslate" ) )
 	{
 		tmi->type = TMOD_ENTITY_TRANSLATE;
 	}
@@ -578,7 +579,7 @@ static qboolean ParseStage( shaderStage_t *stage, char **text )
 		{
 			break;
 		}
-		else if ( !Q_stricmp( token, "map" ) )
+		else if ( isNonCaseStringEqual( token, "map" ) )
 		{
             //
 		    // map <name>
@@ -590,12 +591,12 @@ static qboolean ParseStage( shaderStage_t *stage, char **text )
 				return qfalse;
 			}
 
-			if ( !Q_stricmp( token, "$whiteimage" ) )
+			if ( isNonCaseStringEqual( token, "$whiteimage" ) )
 			{
 				stage->bundle[0].image[0] = tr.whiteImage;
 				continue;
 			}
-			else if ( !Q_stricmp( token, "$lightmap" ) )
+			else if ( isNonCaseStringEqual( token, "$lightmap" ) )
 			{
 				stage->bundle[0].isLightmap = qtrue;
 				if ( shader.lightmapIndex < 0 ) {
@@ -615,7 +616,7 @@ static qboolean ParseStage( shaderStage_t *stage, char **text )
 				}
 			}
 		}
-		else if ( !Q_stricmp( token, "clampmap" ) )
+		else if ( isNonCaseStringEqual( token, "clampmap" ) )
 		{
             //
 		    // clampmap <name>
@@ -636,7 +637,7 @@ static qboolean ParseStage( shaderStage_t *stage, char **text )
 				return qfalse;
 			}
 		}
-		else if ( !Q_stricmp( token, "animMap" ) )
+		else if ( isNonCaseStringEqual( token, "animMap" ) )
 		{
             //
 	        // animMap <frequency> <image1> .... <imageN>
@@ -669,7 +670,7 @@ static qboolean ParseStage( shaderStage_t *stage, char **text )
 				}
 			}
 		}
-		else if ( !Q_stricmp( token, "videoMap" ) )
+		else if ( isNonCaseStringEqual( token, "videoMap" ) )
 		{
 			token = R_ParseExt( text, qfalse );
 			if ( !token[0] )
@@ -687,21 +688,39 @@ static qboolean ParseStage( shaderStage_t *stage, char **text )
 		//
 		// alphafunc <func>
 		//
-		else if ( !Q_stricmp( token, "alphaFunc" ) )
+		else if ( isNonCaseStringEqual( token, "alphaFunc" ) )
 		{
 			token = R_ParseExt( text, qfalse );
 			if ( !token[0] )
 			{
 				ri.Printf( PRINT_WARNING, "WARNING: missing parameter for 'alphaFunc' keyword in shader '%s'\n", shader.name );
 				return qfalse;
-			}
+            }
 
-			atestBits = NameToAFunc( token );
+            // atestBits = NameToAFunc( token );
+            if ( isNonCaseStringEqual( token, "GT0" ) )
+            {
+                atestBits = GLS_ATEST_GT_0;
+            }
+            else if ( isNonCaseStringEqual( token, "LT128" ) )
+            {
+                atestBits = GLS_ATEST_LT_80;
+            }
+            else if ( isNonCaseStringEqual( token, "GE128" ) )
+            {
+                atestBits = GLS_ATEST_GE_80;
+            }
+            else
+            {
+                atestBits = 0;
+                ri.Printf( PRINT_WARNING, "WARNING: invalid alphaFunc name '%s' in shader '%s'\n",
+                    token, shader.name );
+            }
 		}
 		//
 		// depthFunc <func>
 		//
-		else if ( !Q_stricmp( token, "depthfunc" ) )
+		else if ( isNonCaseStringEqual( token, "depthfunc" ) )
 		{
 			token = R_ParseExt( text, qfalse );
 
@@ -711,11 +730,11 @@ static qboolean ParseStage( shaderStage_t *stage, char **text )
 				return qfalse;
 			}
 
-			if ( !Q_stricmp( token, "lequal" ) )
+			if ( isNonCaseStringEqual( token, "lequal" ) )
 			{
 				depthFuncBits = 0;
 			}
-			else if ( !Q_stricmp( token, "equal" ) )
+			else if ( isNonCaseStringEqual( token, "equal" ) )
 			{
 				depthFuncBits = GLS_DEPTHFUNC_EQUAL;
 			}
@@ -725,14 +744,14 @@ static qboolean ParseStage( shaderStage_t *stage, char **text )
 				continue;
 			}
 		}
-		else if ( !Q_stricmp( token, "detail" ) )
+		else if ( isNonCaseStringEqual( token, "detail" ) )
 		{
             //
 		    // detail
 		    //
 			stage->isDetail = qtrue;
 		}
-		else if ( !Q_stricmp( token, "blendfunc" ) )
+		else if ( isNonCaseStringEqual( token, "blendfunc" ) )
 		{
             //
 		    // blendfunc <srcFactor> <dstFactor>
@@ -745,13 +764,13 @@ static qboolean ParseStage( shaderStage_t *stage, char **text )
 				continue;
 			}
 			// check for "simple" blends first
-			if ( !Q_stricmp( token, "add" ) ) {
+			if ( isNonCaseStringEqual( token, "add" ) ) {
 				blendSrcBits = GLS_SRCBLEND_ONE;
 				blendDstBits = GLS_DSTBLEND_ONE;
-			} else if ( !Q_stricmp( token, "filter" ) ) {
+			} else if ( isNonCaseStringEqual( token, "filter" ) ) {
 				blendSrcBits = GLS_SRCBLEND_DST_COLOR;
 				blendDstBits = GLS_DSTBLEND_ZERO;
-			} else if ( !Q_stricmp( token, "blend" ) ) {
+			} else if ( isNonCaseStringEqual( token, "blend" ) ) {
 				blendSrcBits = GLS_SRCBLEND_SRC_ALPHA;
 				blendDstBits = GLS_DSTBLEND_ONE_MINUS_SRC_ALPHA;
 			} else {
@@ -777,7 +796,7 @@ static qboolean ParseStage( shaderStage_t *stage, char **text )
 		//
 		// rgbGen
 		//
-		else if ( !Q_stricmp( token, "rgbGen" ) )
+		else if ( isNonCaseStringEqual( token, "rgbGen" ) )
 		{
 			token = R_ParseExt( text, qfalse );
 			if ( token[0] == 0 )
@@ -786,12 +805,12 @@ static qboolean ParseStage( shaderStage_t *stage, char **text )
 				continue;
 			}
 
-			if ( !Q_stricmp( token, "wave" ) )
+			if ( isNonCaseStringEqual( token, "wave" ) )
 			{
 				ParseWaveForm( text, &stage->rgbWave );
 				stage->rgbGen = CGEN_WAVEFORM;
 			}
-			else if ( !Q_stricmp( token, "const" ) )
+			else if ( isNonCaseStringEqual( token, "const" ) )
 			{
 				vec3_t	color;
 
@@ -802,72 +821,72 @@ static qboolean ParseStage( shaderStage_t *stage, char **text )
 
 				stage->rgbGen = CGEN_CONST;
 			}
-			else if ( !Q_stricmp( token, "identity" ) )
+			else if ( isNonCaseStringEqual( token, "identity" ) )
 			{
 				stage->rgbGen = CGEN_IDENTITY;
 			}
-			else if ( !Q_stricmp( token, "identityLighting" ) )
+			else if ( isNonCaseStringEqual( token, "identityLighting" ) )
 			{
 				stage->rgbGen = CGEN_IDENTITY_LIGHTING;
 			}
-			else if ( !Q_stricmp( token, "entity" ) )
+			else if ( isNonCaseStringEqual( token, "entity" ) )
 			{
 				stage->rgbGen = CGEN_ENTITY;
 			}
-			else if ( !Q_stricmp( token, "oneMinusEntity" ) )
+			else if ( isNonCaseStringEqual( token, "oneMinusEntity" ) )
 			{
 				stage->rgbGen = CGEN_ONE_MINUS_ENTITY;
 			}
-			else if ( !Q_stricmp( token, "vertex" ) )
+			else if ( isNonCaseStringEqual( token, "vertex" ) )
 			{
 				stage->rgbGen = CGEN_VERTEX;
 				if ( stage->alphaGen == 0 ) {
 					stage->alphaGen = AGEN_VERTEX;
 				}
 			}
-			else if ( !Q_stricmp( token, "exactVertex" ) )
+			else if ( isNonCaseStringEqual( token, "exactVertex" ) )
 			{
 				stage->rgbGen = CGEN_EXACT_VERTEX;
 			}
-			else if ( !Q_stricmp( token, "vertexLighting" ) )	// leilei - vertex WITH a lighting pass after
+			else if ( isNonCaseStringEqual( token, "vertexLighting" ) )	// leilei - vertex WITH a lighting pass after
 			{
 				stage->rgbGen = CGEN_VERTEX_LIT;
 				if ( stage->alphaGen == 0 ) {
 					stage->alphaGen = AGEN_VERTEX;
 				}
 			}
-			else if ( !Q_stricmp( token, "vertexLighting2" ) )	// leilei - second vertex color
+			else if ( isNonCaseStringEqual( token, "vertexLighting2" ) )	// leilei - second vertex color
 			{
 				stage->rgbGen = CGEN_VERTEX_LIT;
 				if ( stage->alphaGen == 0 ) {
 					stage->alphaGen = AGEN_VERTEX;
 				}
 			}
-			else if ( !Q_stricmp( token, "lightingDiffuse" ) )
+			else if ( isNonCaseStringEqual( token, "lightingDiffuse" ) )
 			{
 				stage->rgbGen = CGEN_LIGHTING_DIFFUSE;
 			}
-			else if ( !Q_stricmp( token, "lightingUniform" ) )
+			else if ( isNonCaseStringEqual( token, "lightingUniform" ) )
 			{
 				stage->rgbGen = CGEN_LIGHTING_UNIFORM;
 			}
-			else if ( !Q_stricmp( token, "lightingDynamic" ) )
+			else if ( isNonCaseStringEqual( token, "lightingDynamic" ) )
 			{
 				stage->rgbGen = CGEN_LIGHTING_DYNAMIC;
 			}
-			else if ( !Q_stricmp( token, "flatAmbient" ) )
+			else if ( isNonCaseStringEqual( token, "flatAmbient" ) )
 			{
 				stage->rgbGen = CGEN_LIGHTING_FLAT_AMBIENT;
 			}
-			else if ( !Q_stricmp( token, "flatDirect" ) )
+			else if ( isNonCaseStringEqual( token, "flatDirect" ) )
 			{
 				stage->rgbGen = CGEN_LIGHTING_FLAT_DIRECT;
 			}
-			else if ( !Q_stricmp( token, "oneMinusVertex" ) )
+			else if ( isNonCaseStringEqual( token, "oneMinusVertex" ) )
 			{
 				stage->rgbGen = CGEN_ONE_MINUS_VERTEX;
 			}
-			else if ( !Q_stricmp( token, "lightingSpecularDiffuse" ) )	// leilei - deprecated
+			else if ( isNonCaseStringEqual( token, "lightingSpecularDiffuse" ) )	// leilei - deprecated
 			{
 				stage->rgbGen = CGEN_LIGHTING_DIFFUSE;
 			}
@@ -880,7 +899,7 @@ static qboolean ParseStage( shaderStage_t *stage, char **text )
 		//
 		// alphaGen 
 		//
-		else if ( !Q_stricmp( token, "alphaGen" ) )
+		else if ( isNonCaseStringEqual( token, "alphaGen" ) )
 		{
 			token = R_ParseExt( text, qfalse );
 			if ( token[0] == 0 )
@@ -889,42 +908,42 @@ static qboolean ParseStage( shaderStage_t *stage, char **text )
 				continue;
 			}
 
-			if ( !Q_stricmp( token, "wave" ) )
+			if ( isNonCaseStringEqual( token, "wave" ) )
 			{
 				ParseWaveForm( text, &stage->alphaWave );
 				stage->alphaGen = AGEN_WAVEFORM;
 			}
-			else if ( !Q_stricmp( token, "const" ) )
+			else if ( isNonCaseStringEqual( token, "const" ) )
 			{
 				token = R_ParseExt( text, qfalse );
 				stage->constantColor[3] = 255 * atof( token );
 				stage->alphaGen = AGEN_CONST;
 			}
-			else if ( !Q_stricmp( token, "identity" ) )
+			else if ( isNonCaseStringEqual( token, "identity" ) )
 			{
 				stage->alphaGen = AGEN_IDENTITY;
 			}
-			else if ( !Q_stricmp( token, "entity" ) )
+			else if ( isNonCaseStringEqual( token, "entity" ) )
 			{
 				stage->alphaGen = AGEN_ENTITY;
 			}
-			else if ( !Q_stricmp( token, "oneMinusEntity" ) )
+			else if ( isNonCaseStringEqual( token, "oneMinusEntity" ) )
 			{
 				stage->alphaGen = AGEN_ONE_MINUS_ENTITY;
 			}
-			else if ( !Q_stricmp( token, "vertex" ) )
+			else if ( isNonCaseStringEqual( token, "vertex" ) )
 			{
 				stage->alphaGen = AGEN_VERTEX;
 			}
-			else if ( !Q_stricmp( token, "lightingSpecular" ) )
+			else if ( isNonCaseStringEqual( token, "lightingSpecular" ) )
 			{
 				stage->alphaGen = AGEN_LIGHTING_SPECULAR;
 			}
-			else if ( !Q_stricmp( token, "oneMinusVertex" ) )
+			else if ( isNonCaseStringEqual( token, "oneMinusVertex" ) )
 			{
 				stage->alphaGen = AGEN_ONE_MINUS_VERTEX;
 			}
-			else if ( !Q_stricmp( token, "portal" ) )
+			else if ( isNonCaseStringEqual( token, "portal" ) )
 			{
 				stage->alphaGen = AGEN_PORTAL;
 				token = R_ParseExt( text, qfalse );
@@ -947,7 +966,7 @@ static qboolean ParseStage( shaderStage_t *stage, char **text )
 		//
 		// tcGen <function>
 		//
-		else if ( !Q_stricmp(token, "texgen") || !Q_stricmp( token, "tcGen" ) ) 
+		else if ( isNonCaseStringEqual(token, "texgen") || isNonCaseStringEqual( token, "tcGen" ) ) 
 		{
 			token = R_ParseExt( text, qfalse );
 			if ( token[0] == 0 )
@@ -956,31 +975,31 @@ static qboolean ParseStage( shaderStage_t *stage, char **text )
 				continue;
 			}
 
-			if ( !Q_stricmp( token, "environment" ) )
+			if ( isNonCaseStringEqual( token, "environment" ) )
 			{
 				stage->bundle[0].tcGen = TCGEN_ENVIRONMENT_MAPPED;
 			}
-			else if ( !Q_stricmp( token, "cel" ) )
+			else if ( isNonCaseStringEqual( token, "cel" ) )
 			{
 				stage->bundle[0].tcGen = TCGEN_ENVIRONMENT_CELSHADE_MAPPED;
 			}
-			else if ( !Q_stricmp( token, "celshading" ) )		// leilei - my technique is different
+			else if ( isNonCaseStringEqual( token, "celshading" ) )		// leilei - my technique is different
 			{
 				stage->bundle[0].tcGen = TCGEN_ENVIRONMENT_CELSHADE_LEILEI;
 			}
-			else if ( !Q_stricmp( token, "environmentWater" ) )
+			else if ( isNonCaseStringEqual( token, "environmentWater" ) )
 			{
 				stage->bundle[0].tcGen = TCGEN_ENVIRONMENT_MAPPED_WATER;	// leilei - water's envmaps
 			}
-			else if ( !Q_stricmp( token, "lightmap" ) )
+			else if ( isNonCaseStringEqual( token, "lightmap" ) )
 			{
 				stage->bundle[0].tcGen = TCGEN_LIGHTMAP;
 			}
-			else if ( !Q_stricmp( token, "texture" ) || !Q_stricmp( token, "base" ) )
+			else if ( isNonCaseStringEqual( token, "texture" ) || isNonCaseStringEqual( token, "base" ) )
 			{
 				stage->bundle[0].tcGen = TCGEN_TEXTURE;
 			}
-			else if ( !Q_stricmp( token, "vector" ) )
+			else if ( isNonCaseStringEqual( token, "vector" ) )
 			{
 				ParseVector( text, 3, stage->bundle[0].tcGenVectors[0] );
 				ParseVector( text, 3, stage->bundle[0].tcGenVectors[1] );
@@ -995,7 +1014,7 @@ static qboolean ParseStage( shaderStage_t *stage, char **text )
 		//
 		// tcMod <type> <...>
 		//
-		else if ( !Q_stricmp( token, "tcMod" ) )
+		else if ( isNonCaseStringEqual( token, "tcMod" ) )
 		{
 			char buffer[1024] = "";
 
@@ -1015,7 +1034,7 @@ static qboolean ParseStage( shaderStage_t *stage, char **text )
 		//
 		// depthmask
 		//
-		else if ( !Q_stricmp( token, "depthwrite" ) )
+		else if ( isNonCaseStringEqual( token, "depthwrite" ) )
 		{
 			depthMaskBits = GLS_DEPTHMASK_TRUE;
 			depthMaskExplicit = qtrue;
@@ -1089,11 +1108,10 @@ deformVertexes autoSprite2
 deformVertexes text[0-7]
 ===============
 */
-static void ParseDeform( char **text ) {
-	char	*token;
-	deformStage_t	*ds;
+static void ParseDeform( char **text )
+{
 
-	token = R_ParseExt( text, qfalse );
+	char* token = R_ParseExt( text, qfalse );
 	if ( token[0] == 0 )
 	{
 		ri.Printf( PRINT_WARNING, "WARNING: missing deform parm in shader '%s'\n", shader.name );
@@ -1105,28 +1123,29 @@ static void ParseDeform( char **text ) {
 		return;
 	}
 
-	ds = &shader.deforms[ shader.numDeforms ];
-	shader.numDeforms++;
+	deformStage_t* ds = &shader.deforms[ shader.numDeforms ];
+	++shader.numDeforms;
 
-	if ( !Q_stricmp( token, "projectionShadow" ) ) {
+	if ( isNonCaseStringEqual( token, "projectionShadow" ) ) {
 		ds->deformation = DEFORM_PROJECTION_SHADOW;
 		return;
 	}
 
-	if ( !Q_stricmp( token, "autosprite" ) ) {
+	if ( isNonCaseStringEqual( token, "autosprite" ) ) {
 		ds->deformation = DEFORM_AUTOSPRITE;
 		return;
 	}
 
-	if ( !Q_stricmp( token, "autosprite2" ) ) {
+	if ( isNonCaseStringEqual( token, "autosprite2" ) ) {
 		ds->deformation = DEFORM_AUTOSPRITE2;
 		return;
 	}
 
-	if ( !Q_stricmpn( token, "text", 4 ) ) {
-		int		n;
-		
-		n = token[4] - '0';
+	// if ( !Q_stricmpn( token, "text", 4 ) )
+    if(  ( (token[0] == 't') && (token[1] == 'e') && (token[2] == 'x') && (token[3] == 't') ) ||
+        ( (token[0] == 'T') && (token[1] == 'E') && (token[2] == 'X') && (token[3] == 'T') ) )
+    {
+		int	n = token[4] - '0';
 		if ( n < 0 || n > 7 ) {
 			n = 0;
 		}
@@ -1134,7 +1153,7 @@ static void ParseDeform( char **text ) {
 		return;
 	}
 
-	if ( !Q_stricmp( token, "bulge" ) )	{
+	if ( isNonCaseStringEqual( token, "bulge" ) )	{
 		token = R_ParseExt( text, qfalse );
 		if ( token[0] == 0 )
 		{
@@ -1163,7 +1182,7 @@ static void ParseDeform( char **text ) {
 		return;
 	}
 
-	if ( !Q_stricmp( token, "wave" ) )
+	if ( isNonCaseStringEqual( token, "wave" ) )
 	{
 		token = R_ParseExt( text, qfalse );
 		if ( token[0] == 0 )
@@ -1187,7 +1206,7 @@ static void ParseDeform( char **text ) {
 		return;
 	}
 
-	if ( !Q_stricmp( token, "normal" ) )
+	if ( isNonCaseStringEqual( token, "normal" ) )
 	{
 		token = R_ParseExt( text, qfalse );
 		if ( token[0] == 0 )
@@ -1209,7 +1228,7 @@ static void ParseDeform( char **text ) {
 		return;
 	}
 
-	if ( !Q_stricmp( token, "move" ) ) {
+	if ( isNonCaseStringEqual( token, "move" ) ) {
 		int		i;
 
 		for ( i = 0 ; i < 3 ; i++ ) {
@@ -1308,23 +1327,23 @@ void ParseSort( char **text ) {
 		return;
 	}
 
-	if ( !Q_stricmp( token, "portal" ) ) {
+	if ( isNonCaseStringEqual( token, "portal" ) ) {
 		shader.sort = SS_PORTAL;
-	} else if ( !Q_stricmp( token, "sky" ) ) {
+	} else if ( isNonCaseStringEqual( token, "sky" ) ) {
 		shader.sort = SS_ENVIRONMENT;
-	} else if ( !Q_stricmp( token, "opaque" ) ) {
+	} else if ( isNonCaseStringEqual( token, "opaque" ) ) {
 		shader.sort = SS_OPAQUE;
-	}else if ( !Q_stricmp( token, "decal" ) ) {
+	}else if ( isNonCaseStringEqual( token, "decal" ) ) {
 		shader.sort = SS_DECAL;
-	} else if ( !Q_stricmp( token, "seeThrough" ) ) {
+	} else if ( isNonCaseStringEqual( token, "seeThrough" ) ) {
 		shader.sort = SS_SEE_THROUGH;
-	} else if ( !Q_stricmp( token, "banner" ) ) {
+	} else if ( isNonCaseStringEqual( token, "banner" ) ) {
 		shader.sort = SS_BANNER;
-	} else if ( !Q_stricmp( token, "additive" ) ) {
+	} else if ( isNonCaseStringEqual( token, "additive" ) ) {
 		shader.sort = SS_BLEND1;
-	} else if ( !Q_stricmp( token, "nearest" ) ) {
+	} else if ( isNonCaseStringEqual( token, "nearest" ) ) {
 		shader.sort = SS_NEAREST;
-	} else if ( !Q_stricmp( token, "underwater" ) ) {
+	} else if ( isNonCaseStringEqual( token, "underwater" ) ) {
 		shader.sort = SS_UNDERWATER;
 	} else {
 		shader.sort = atof( token );
@@ -1400,7 +1419,7 @@ static void ParseSurfaceParm( char **text )
 
 	token = R_ParseExt( text, qfalse );
 	for ( i = 0 ; i < numInfoParms ; i++ ) {
-		if ( !Q_stricmp( token, infoParms[i].name ) )
+		if ( isNonCaseStringEqual( token, infoParms[i].name ) )
 		{
 			shader.surfaceFlags |= infoParms[i].surfaceFlags;
 			shader.contentFlags |= infoParms[i].contents;
@@ -1465,7 +1484,7 @@ qboolean ParseShader( char ** text )
 			continue;
 		}
 		// sun parms
-		else if ( !Q_stricmp( token, "q3map_sun" ) ) {
+		else if ( isNonCaseStringEqual( token, "q3map_sun" ) ) {
 			float	a, b;
 
 			token = R_ParseExt( text, qfalse );
@@ -1493,15 +1512,15 @@ qboolean ParseShader( char ** text )
 			tr.sunDirection[1] = sin( a ) * cos( b );
 			tr.sunDirection[2] = sin( b );
 		}
-		else if ( !Q_stricmp( token, "deformVertexes" ) ) {
+		else if ( isNonCaseStringEqual( token, "deformVertexes" ) ) {
 			ParseDeform( text );
 			continue;
 		}
-		else if ( !Q_stricmp( token, "tesssize" ) ) {
+		else if ( isNonCaseStringEqual( token, "tesssize" ) ) {
 			SkipRestOfLine( text );
 			continue;
 		}
-		else if ( !Q_stricmp( token, "clampTime" ) )
+		else if ( isNonCaseStringEqual( token, "clampTime" ) )
         {
             token = R_ParseExt( text, qfalse );
             if (token[0]) {
@@ -1514,25 +1533,25 @@ qboolean ParseShader( char ** text )
 			continue;
 		}
 		// skip stuff that only q3map or the server needs
-		else if ( !Q_stricmp( token, "surfaceParm" ) ) {
+		else if ( isNonCaseStringEqual( token, "surfaceParm" ) ) {
 			ParseSurfaceParm( text );
 			continue;
 		}
 		// no mip maps
-		else if ( !Q_stricmp( token, "nomipmaps" ) )
+		else if ( isNonCaseStringEqual( token, "nomipmaps" ) )
 		{
 			shader.noMipMaps = qtrue;
 			shader.noPicMip = qtrue;
 			continue;
 		}
 		// no picmip adjustment
-		else if ( !Q_stricmp( token, "nopicmip" ) )
+		else if ( isNonCaseStringEqual( token, "nopicmip" ) )
 		{
 			shader.noPicMip = qtrue;
 			continue;
 		}
 		// polygonOffset
-		else if ( !Q_stricmp( token, "polygonOffset" ) )
+		else if ( isNonCaseStringEqual( token, "polygonOffset" ) )
 		{
 			shader.polygonOffset = qtrue;
 			continue;
@@ -1541,13 +1560,13 @@ qboolean ParseShader( char ** text )
 		// to be merged into one batch.  This is a savings for smoke
 		// puffs and blood, but can't be used for anything where the
 		// shader calcs (not the surface function) reference the entity color or scroll
-		else if ( !Q_stricmp( token, "entityMergable" ) )
+		else if ( isNonCaseStringEqual( token, "entityMergable" ) )
 		{
 			shader.entityMergable = qtrue;
 			continue;
 		}
 		// fogParms
-		else if ( !Q_stricmp( token, "fogParms" ) ) 
+		else if ( isNonCaseStringEqual( token, "fogParms" ) ) 
 		{
 			if ( !ParseVector( text, 3, shader.fogParms.color ) ) {
 				return qfalse;
@@ -1566,25 +1585,25 @@ qboolean ParseShader( char ** text )
 			continue;
 		}
 		// portal
-		else if ( !Q_stricmp(token, "portal") )
+		else if ( isNonCaseStringEqual(token, "portal") )
 		{
 			shader.sort = SS_PORTAL;
 			continue;
 		}
 		// skyparms <cloudheight> <outerbox> <innerbox>
-		else if ( !Q_stricmp( token, "skyparms" ) )
+		else if ( isNonCaseStringEqual( token, "skyparms" ) )
 		{
 			ParseSkyParms( text );
 			continue;
 		}
 		// light <value> determines flaring in q3map, not needed here
-		else if ( !Q_stricmp(token, "light") ) 
+		else if ( isNonCaseStringEqual(token, "light") ) 
 		{
 			token = R_ParseExt( text, qfalse );
 			continue;
 		}
 		// cull <face>
-		else if ( !Q_stricmp( token, "cull") ) 
+		else if ( isNonCaseStringEqual( token, "cull") ) 
 		{
 			token = R_ParseExt( text, qfalse );
 			if ( token[0] == 0 )
@@ -1593,11 +1612,11 @@ qboolean ParseShader( char ** text )
 				continue;
 			}
 
-			if ( !Q_stricmp( token, "none" ) || !Q_stricmp( token, "twosided" ) || !Q_stricmp( token, "disable" ) )
+			if ( isNonCaseStringEqual( token, "none" ) || isNonCaseStringEqual( token, "twosided" ) || isNonCaseStringEqual( token, "disable" ) )
 			{
 				shader.cullType = CT_TWO_SIDED;
 			}
-			else if ( !Q_stricmp( token, "back" ) || !Q_stricmp( token, "backside" ) || !Q_stricmp( token, "backsided" ) )
+			else if ( isNonCaseStringEqual( token, "back" ) || isNonCaseStringEqual( token, "backside" ) || isNonCaseStringEqual( token, "backsided" ) )
 			{
 				shader.cullType = CT_BACK_SIDED;
 			}
@@ -1608,7 +1627,7 @@ qboolean ParseShader( char ** text )
 			continue;
 		}
 		// sort
-		else if ( !Q_stricmp( token, "sort" ) )
+		else if ( isNonCaseStringEqual( token, "sort" ) )
 		{
 			ParseSort( text );
 			continue;

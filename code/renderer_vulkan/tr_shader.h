@@ -168,4 +168,5 @@ void R_SetDefaultShader( void );
 shader_t *FinishShader( void );
 void R_CreateDefaultShadingCmds(const char* name, image_t* image);
 
+
 #endif
