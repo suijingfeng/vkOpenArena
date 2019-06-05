@@ -5,10 +5,10 @@ It is mainly for myself to study Vulkan/OpenGL API and Quake3's engine.
 I add a vulkan-based render module to this game, the vulkan-based render have
 the same visual effects with the default opengl1 render. ( Informing you in case
 of you are disapointed, vulkan is just a 2D/3D render API, whether the rendered
-image is beautiful depend more on the texture and shader provided ). 
+image is beautiful or not depend more on the texture and shader provided than API itself). 
 The project is under developing, so always check the lastest build.
 
-However, The opengl2 render module ported from ioq3 is more beatiful and powerful, 
+The opengl2 render module ported from ioq3 is more beatiful and powerful, 
 you can play with the cvars(r\_pbr, r\_cubemapping, r\_hdr, r\_ssao ...) to enable
 corresponding feature. It also consume more compute power and need more memory,
 set com\_hunkMegs to 256 instand 128, otherwise it will quit and inform you hunk  
@@ -17,7 +17,7 @@ See ioq3 rendergl2 readme.
 
 
 In my test( See the benchmark blow), It(vulkan backend) run faster in newer hardware,
-It may run slower than opengl1 according to the test on one of my notebook(i5 5200U, Gforce 840M),
+may run slower than opengl1. for example my notebook(i5 5200U, Gforce 840M),
 but this notebook have a 1366x768 resolutions with ubuntu 16.04 installed, other computer is 1920x1080.
 I'm now curious about whether it is accurate or meaningful, there are many factors, such as the monitor's
 resolutions, the driver version, operate system and library etc. which one is major factor? You are 
