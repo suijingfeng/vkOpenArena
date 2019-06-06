@@ -131,7 +131,7 @@ int R_SpriteFogNum( trRefEntity_t *ent )
 	int	i, j;
 	fog_t* fog;
 
-	if ( tr.refdef.rd.rdflags & RDF_NOWORLDMODEL ) {
+	if ( tr.refdef.rdflags & RDF_NOWORLDMODEL ) {
 		return 0;
 	}
 
@@ -398,7 +398,7 @@ void R_RenderView (viewParms_t *parms)
 	// added, because they use the projection matrix for LOD calculation
     //
         
-	R_SetupProjection (&tr.viewParms, tr.refdef.rd.rdflags & RDF_NOWORLDMODEL);
+	R_SetupProjection (&tr.viewParms, tr.refdef.rdflags & RDF_NOWORLDMODEL);
 
     if ( r_drawentities->integer ) {
 	    R_AddEntitySurfaces (&tr.viewParms);
@@ -433,35 +433,51 @@ void RE_RenderScene( const refdef_t *fd )
 		return;
 	}
 
-	if ( r_norefresh->integer ) {
-		return;
-	}
-
 	int startTime = ri.Milliseconds();
+	qboolean customscrn = !(fd->rdflags & RDF_NOWORLDMODEL);
 
+	memcpy( tr.refdef.text, fd->text, sizeof( tr.refdef.text ) );
+
+	tr.refdef.x = fd->x;
+	tr.refdef.y = fd->y;
+	tr.refdef.width = fd->width;
+	tr.refdef.height = fd->height;
+	tr.refdef.fov_x = fd->fov_x;
+	tr.refdef.fov_y = fd->fov_y;
+
+	VectorCopy( fd->vieworg, tr.refdef.vieworg );
+	VectorCopy( fd->viewaxis[0], tr.refdef.viewaxis[0] );
+	VectorCopy( fd->viewaxis[1], tr.refdef.viewaxis[1] );
+	VectorCopy( fd->viewaxis[2], tr.refdef.viewaxis[2] );
+
+	tr.refdef.time = fd->time;
+	tr.refdef.rdflags = fd->rdflags;
+    
+    
 	tr.refdef.AreamaskModified = qfalse;
 	
-    if ( ! (fd->rdflags & RDF_NOWORLDMODEL) )
+    if ( customscrn )
     {
-		int	i;
-        // check if the areamask data has changed, which will force 
-        // a reset of the visible leafs even if the view hasn't moved
-		// compare the area bits
-		for (i = 0 ; i < MAX_MAP_AREA_BYTES; ++i)
-        {
+		int	areaDiff = 0;
+		int		i;
 
-			if( tr.refdef.rd.areamask[i] ^ fd->areamask[i] )
-            {
-			    tr.refdef.AreamaskModified = qtrue;
-//                if(tr.refdef.AreamaskModified)
-//                    ri.Printf(PRINT_ALL, "%d:%d,%d\n",
-//                            i, tr.refdef.rd.areamask[i], fd->areamask[i]);
-                break;
-            }
+		// compare the area bits
+		for (i = 0 ; i < MAX_MAP_AREA_BYTES; i++)
+		{
+			areaDiff |= tr.refdef.areamask[i] ^ fd->areamask[i];
+			tr.refdef.areamask[i] = fd->areamask[i];
+		}
+
+		if ( areaDiff ) {
+            
+            ri.Printf(PRINT_ALL, "%d\n", i);
+
+			// a door just opened or something
+			tr.refdef.AreamaskModified = qtrue;
 		}
 	}
 
-    tr.refdef.rd = *fd;
+
 
     R_SceneSetRefDef();
     

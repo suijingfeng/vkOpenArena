@@ -6,7 +6,7 @@
 #include "tr_common.h"
 
 //#include "tr_shader.h"
-#include "tr_image.h"
+// #include "tr_image.h"
 #include "viewParms.h"
 #include "trRefDef.h"
 
@@ -62,20 +62,23 @@ typedef struct trGlobals_s
 
 	const unsigned char		*externalVisData;	// from RE_SetWorldVisData, shared with CM_Load
 
-	image_t					*defaultImage;
+	struct image_s * defaultImage;
 
-	image_t					*fogImage;
-	image_t					*dlightImage;	// inverse-quare highlight for projective adding
-	image_t					*whiteImage;			// full of 0xff
-	image_t					*identityLightImage;	// full of tr.identityLightByte
+	struct image_s * fogImage;
+	struct image_s * dlightImage;	// inverse-quare highlight for projective adding
+	struct image_s * whiteImage;			// full of 0xff
+	struct image_s * identityLightImage;	// full of tr.identityLightByte
+	struct image_s * images[MAX_DRAWIMAGES];
+    struct image_s * lightmaps[MAX_LIGHTMAPS];
+	int				 numImages;
+	int				 numLightmaps;
 
 	struct shader_s	* defaultShader;
 	struct shader_s	* shadowShader;
 	struct shader_s	* projectionShadowShader;
 	struct shader_s	* shaders[MAX_SHADERS];
 
-	int						numLightmaps;
-	image_t					*lightmaps[MAX_LIGHTMAPS];
+
 
 	trRefEntity_t			*currentEntity;
 	trRefEntity_t			worldEntity;		// point currentEntity at this when rendering world
@@ -107,8 +110,6 @@ typedef struct trGlobals_s
 	struct model_s *        models[MAX_MOD_KNOWN];
 	int						numModels;
 
-	int						numImages;
-	image_t	*               images[MAX_DRAWIMAGES];
 
 	// shader indexes from other modules will be looked up in tr.shaders[]
 	// shader indexes from drawsurfs will be looked up in sortedShaders[]

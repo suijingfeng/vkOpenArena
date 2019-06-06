@@ -26,7 +26,7 @@ void R_PrintBackEnd_OR_f(void)
 
 uint32_t R_GetRefRdTime(void)
 {
-    return backEnd.refdef.rd.time;
+    return backEnd.refdef.time;
 }
 
 void R_UpdatePerformanceCounters(uint32_t nVerts, uint32_t nIdxes, uint32_t nPasses)

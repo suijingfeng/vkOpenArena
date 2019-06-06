@@ -200,7 +200,7 @@ int R_ComputeFogNum( md3Header_t *header, trRefEntity_t *ent ) {
 	md3Frame_t		*md3Frame;
 	vec3_t			localOrigin;
 
-	if ( tr.refdef.rd.rdflags & RDF_NOWORLDMODEL ) {
+	if ( tr.refdef.rdflags & RDF_NOWORLDMODEL ) {
 		return 0;
 	}
 

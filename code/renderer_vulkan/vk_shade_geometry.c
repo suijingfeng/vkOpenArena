@@ -580,7 +580,7 @@ void vk_clearDepthStencilAttachments(void)
 Perform dynamic lighting with another rendering pass
 ===================
 */
-static void ProjectDlightTexture( struct shaderCommands_s * const pTess, 
+static void RB_ProjectDlightTexture( struct shaderCommands_s * const pTess, 
         float (* const pTexcoords)[2], uint8_t (* const pColors)[4],
         uint32_t num_dlights, struct dlight_s* const pDlights)
 {
@@ -598,6 +598,9 @@ static void ProjectDlightTexture( struct shaderCommands_s * const pTess,
         
 
         uint32_t isAdditive = pDlights[l].additive > 0 ? 1 : 0;
+        uint32_t cullType = pTess->shader->cullType;
+        uint32_t polyOffset = pTess->shader->polygonOffset;
+
         // float (* const pTexcoords)[2] = pTess->svars.texcoords[0];
         // uint8_t (* const pColors)[4] = pTess->svars.colors;
 
@@ -607,7 +610,7 @@ static void ProjectDlightTexture( struct shaderCommands_s * const pTess,
 
         float radius = pDlights[l].radius;
 		float scale = 1.0f / radius;
-    	float modulate;
+    	float modulate = 0.0f;
 
         float floatColor[3] = {
 		    pDlights[l].color[0] * 255.0f,
@@ -647,12 +650,12 @@ static void ProjectDlightTexture( struct shaderCommands_s * const pTess,
 			if ( dist[2] > radius )
             {
 				clip |= 16;
-				modulate = 1.0f;
+				modulate = 0.0f;
 			}
             else if ( dist[2] < -radius )
             {
 				clip |= 32;
-				modulate = 1.0f;
+				modulate = 0.0f;
 			}
             else
             {
@@ -698,7 +701,7 @@ static void ProjectDlightTexture( struct shaderCommands_s * const pTess,
         R_UpdatePerformanceCounters( pTess->numVertexes, numIndexes, 0);
 		// VULKAN
 
-		vk_shade_geometry( g_globalPipelines.dlight_pipelines[isAdditive][pTess->shader->cullType][pTess->shader->polygonOffset], 
+		vk_shade_geometry( g_globalPipelines.dlight_pipelines[isAdditive][cullType][polyOffset], 
             pTess, VK_FALSE, VK_TRUE);
 	}
 }
@@ -854,7 +857,7 @@ void RB_StageIteratorGeneric(struct shaderCommands_s * const pTess, VkBool32 isP
 	if ( pTess->dlightBits && pTess->shader->sort <= SS_OPAQUE && 
             !(pTess->shader->surfaceFlags & (SURF_NODLIGHT | SURF_SKY) ) )
     {
-	    	ProjectDlightTexture( pTess, pTess->svars.texcoords[0], pTess->svars.colors,
+	    	RB_ProjectDlightTexture( pTess, pTess->svars.texcoords[0], pTess->svars.colors,
                     backEnd.refdef.num_dlights, backEnd.refdef.dlights);
 	}
 

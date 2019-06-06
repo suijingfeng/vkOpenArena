@@ -254,7 +254,7 @@ void RB_StretchPic( const stretchPicCommand_t * const cmd )
         // set time for 2D shaders
 	    int t = ri.Milliseconds();
         
-        backEnd.refdef.rd.time = t;
+        backEnd.refdef.time = t;
 	    backEnd.refdef.floatTime = t * 0.001f;
 	}
 

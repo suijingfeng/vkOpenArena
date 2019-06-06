@@ -140,7 +140,7 @@ static int R_MDRComputeFogNum( mdrHeader_t *header, trRefEntity_t *ent )
 {
 	vec3_t localOrigin;
 
-	if ( tr.refdef.rd.rdflags & RDF_NOWORLDMODEL ) {
+	if ( tr.refdef.rdflags & RDF_NOWORLDMODEL ) {
 		return 0;
 	}
 	

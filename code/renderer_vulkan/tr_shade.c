@@ -81,32 +81,15 @@ static float EvalWaveForm( const waveForm_t *wf )
 	return WAVEVALUE( table, wf->base, wf->amplitude, wf->phase, wf->frequency );
 }
 
-static float EvalWaveFormClamped( const waveForm_t *wf )
-{
-	float glow  = EvalWaveForm( wf );
 
-	if ( glow < 0 )
-	{
-		return 0;
-	}
-
-	if ( glow > 1 )
-	{
-		return 1;
-	}
-
-	return glow;
-}
 
 /*
 ** RB_CalcStretchTexCoords
 */
 void RB_CalcStretchTexCoords( const waveForm_t *wf, float *st )
 {
-	float p;
+	float p = 1.0f / EvalWaveForm( wf );
 	texModInfo_t tmi;
-
-	p = 1.0f / EvalWaveForm( wf );
 
 	tmi.matrix[0][0] = p;
 	tmi.matrix[1][0] = 0;
@@ -283,9 +266,7 @@ void RB_CalcBulgeVertexes( deformStage_t * const ds )
 	const float *st = ( const float * ) tess.texCoords[0];
 	float		*xyz = ( float * ) tess.xyz;
 	float		*normal = ( float * ) tess.normal;
-	float		now;
-
-	now = backEnd.refdef.rd.time * ds->bulgeSpeed * 0.001f;
+	float		now = backEnd.refdef.time * ds->bulgeSpeed * 0.001f;
 
 	for ( i = 0; i < tess.numVertexes; i++, xyz += 4, st += 4, normal += 4 ) {
 		int		off;
@@ -359,7 +340,7 @@ void DeformText( const char *text )
 	VectorClear( mid );
 	bottom = 999999;
 	top = -999999;
-	for ( i = 0 ; i < 4 ; i++ ) {
+	for ( i = 0 ; i < 4 ; ++i ) {
 		VectorAdd( tess.xyz[i], mid, mid );
 		if ( tess.xyz[i][2] < bottom ) {
 			bottom = tess.xyz[i][2];
@@ -388,7 +369,7 @@ void DeformText( const char *text )
 	color[0] = color[1] = color[2] = color[3] = 255;
 
 	// draw each character
-	for ( i = 0 ; i < len ; i++ )
+	for ( i = 0 ; i < len ; ++i )
     {
 		ch = text[i];
 		ch &= 255;
@@ -410,12 +391,9 @@ void DeformText( const char *text )
 	}
 }
 
-/*
-==================
-GlobalVectorToLocal
-==================
-*/
-static void GlobalVectorToLocal( const vec3_t in, vec3_t out ) {
+
+static void GlobalVectorToLocal( const vec3_t in, vec3_t out )
+{
 	out[0] = DotProduct( in, backEnd.or.axis[0] );
 	out[1] = DotProduct( in, backEnd.or.axis[1] );
 	out[2] = DotProduct( in, backEnd.or.axis[2] );
@@ -427,12 +405,14 @@ Assuming all the triangles for this shader are independant
 quads, rebuild them as forward facing sprites
 =====================
 */
-static void AutospriteDeform( shaderCommands_t * const pTess )
+static void AutospriteDeform( shaderCommands_t * const pTess, trRefEntity_t * const pCurEntity)
 {
     int		i;
-    vec3_t	mid, delta;
+
     vec3_t	left, up;
     vec3_t	leftDir, upDir;
+    
+    uint32_t oldVerts = pTess->numVertexes;
 
     if ( pTess->numVertexes & 3 )
     {
@@ -442,11 +422,10 @@ static void AutospriteDeform( shaderCommands_t * const pTess )
         ri.Printf( PRINT_WARNING, "Autosprite shader %s had odd index count. \n", pTess->shader->name );
     }
 
-    int oldVerts = tess.numVertexes;
     pTess->numVertexes = 0;
     pTess->numIndexes = 0;
 
-    if ( backEnd.currentEntity != &tr.worldEntity )
+    if ( pCurEntity != &tr.worldEntity )
     {
         GlobalVectorToLocal( backEnd.viewParms.or.axis[1], leftDir );
         GlobalVectorToLocal( backEnd.viewParms.or.axis[2], upDir );
@@ -457,40 +436,114 @@ static void AutospriteDeform( shaderCommands_t * const pTess )
         VectorCopy( backEnd.viewParms.or.axis[2], upDir );
     }
 
+
+    // constant normal all the way around
+    float normal[3] = { -backEnd.viewParms.or.axis[0][0],
+        -backEnd.viewParms.or.axis[0][1],
+        -backEnd.viewParms.or.axis[0][2]};
+
+
+    // ri.Printf( PRINT_WARNING, "AutospriteDeform: %d\n", oldVerts);
+    float axisLength = pCurEntity->e.nonNormalizedAxes ? 
+        1.0f / VectorLen( backEnd.currentEntity->e.axis[0] ) : 1.0f;
+    float lr_factor = backEnd.viewParms.isMirror ? -1.0f : 1.0f;
+
     for ( i = 0; i < oldVerts; i+=4 )
     {
         // find the midpoint
-        float * xyz = pTess->xyz[i];
+        float origin[3] = {
+            0.25f * (pTess->xyz[i][0] + pTess->xyz[i+1][0] + pTess->xyz[i+2][0] + pTess->xyz[i+3][0]),
+            0.25f * (pTess->xyz[i][1] + pTess->xyz[i+1][1] + pTess->xyz[i+2][1] + pTess->xyz[i+3][1]),
+            0.25f * (pTess->xyz[i][2] + pTess->xyz[i+1][2] + pTess->xyz[i+2][2] + pTess->xyz[i+3][2]) };
 
-        mid[0] = 0.25f * (xyz[0] + xyz[4] + xyz[8] + xyz[12]);
-        mid[1] = 0.25f * (xyz[1] + xyz[5] + xyz[9] + xyz[13]);
-        mid[2] = 0.25f * (xyz[2] + xyz[6] + xyz[10] + xyz[14]);
-
-        VectorSubtract( xyz, mid, delta );
-        float radius = VectorLength( delta ) * 0.707f;		// / sqrt(2)
-
-        VectorScale( leftDir, radius, left );
+        float vx = pTess->xyz[i][0] - origin[0];
+        float vy = pTess->xyz[i][1] - origin[1];
+        float vz = pTess->xyz[i][2] - origin[2];
+        
+        float radius = axisLength * sqrtf(vx*vx + vy*vy + vz*vz) ;	// / sqrt(2)
+        float radius_l = radius * lr_factor;
+        
+        VectorScale( leftDir, radius_l, left );
         VectorScale( upDir, radius, up );
 
-        if ( backEnd.viewParms.isMirror )
-        {
-            left[0] = -left[0];
-            left[1] = -left[1];
-            left[2] = -left[2];
-        }
+        //
+        // AddQuadStampExt( mid, left, up, pTess->vertexColors[i], 0.0f, 0.0f, 1.0f, 1.0f );
+        // void AddQuadStampExt( vec3_t origin, vec3_t left, vec3_t up, uint8_t * const color,
+        // float s1, float t1, float s2, float t2 )
+        // 
+        uint32_t ndx0 = pTess->numVertexes;
+        uint32_t ndx1 = ndx0 + 1;
+        uint32_t ndx2 = ndx0 + 2;
+        uint32_t ndx3 = ndx0 + 3;
 
-        // compensate for scale in the axes if necessary
-        if ( backEnd.currentEntity->e.nonNormalizedAxes )
-        {
-            float axisLength = VectorLength( backEnd.currentEntity->e.axis[0] );
-            if ( axisLength != 0 ) {
-                axisLength = 1.0f / axisLength;
-            }
-            VectorScale(left, axisLength, left);
-            VectorScale(up, axisLength, up);
-        }
+        // triangle indexes for a simple quad
+        pTess->indexes[ pTess->numIndexes ] = ndx0;
+        pTess->indexes[ pTess->numIndexes + 1 ] = ndx1;
+        pTess->indexes[ pTess->numIndexes + 2 ] = ndx3;
 
-        RB_AddQuadStampExt( mid, left, up, pTess->vertexColors[i], 0.0f, 0.0f, 1.0f, 1.0f );
+        pTess->indexes[ pTess->numIndexes + 3 ] = ndx3;
+        pTess->indexes[ pTess->numIndexes + 4 ] = ndx1;
+        pTess->indexes[ pTess->numIndexes + 5 ] = ndx2;
+
+        pTess->numVertexes += 4;
+        pTess->numIndexes += 6;
+
+
+        pTess->xyz[ndx0][0] = origin[0] + left[0] + up[0];
+        pTess->xyz[ndx0][1] = origin[1] + left[1] + up[1];
+        pTess->xyz[ndx0][2] = origin[2] + left[2] + up[2];
+
+        pTess->xyz[ndx1][0] = origin[0] - left[0] + up[0];
+        pTess->xyz[ndx1][1] = origin[1] - left[1] + up[1];
+        pTess->xyz[ndx1][2] = origin[2] - left[2] + up[2];
+
+        pTess->xyz[ndx2][0] = origin[0] - left[0] - up[0];
+        pTess->xyz[ndx2][1] = origin[1] - left[1] - up[1];
+        pTess->xyz[ndx2][2] = origin[2] - left[2] - up[2];
+
+        pTess->xyz[ndx3][0] = origin[0] + left[0] - up[0];
+        pTess->xyz[ndx3][1] = origin[1] + left[1] - up[1];
+        pTess->xyz[ndx3][2] = origin[2] + left[2] - up[2];
+
+
+        pTess->normal[ndx0][0] = normal[0];
+        pTess->normal[ndx0][1] = normal[1];
+        pTess->normal[ndx0][2] = normal[2];
+
+        pTess->normal[ndx1][0] = normal[0];
+        pTess->normal[ndx1][1] = normal[1];
+        pTess->normal[ndx1][2] = normal[2];
+
+        pTess->normal[ndx2][0] = normal[0];
+        pTess->normal[ndx2][1] = normal[1];
+        pTess->normal[ndx2][2] = normal[2];
+
+        pTess->normal[ndx3][0] = normal[0];
+        pTess->normal[ndx3][1] = normal[1];
+        pTess->normal[ndx3][2] = normal[2];
+
+        // standard square texture coordinates
+        pTess->texCoords[ndx0][0][0] = 0.0f;
+        pTess->texCoords[ndx0][1][0] = 0.0f;
+        pTess->texCoords[ndx0][0][1] = 0.0f;
+        pTess->texCoords[ndx0][1][1] = 0.0f;
+
+        pTess->texCoords[ndx1][0][0] = 1.0f;
+        pTess->texCoords[ndx1][1][0] = 1.0f;
+        pTess->texCoords[ndx1][0][1] = 0.0f;
+        pTess->texCoords[ndx1][1][1] = 0.0f;
+
+        pTess->texCoords[ndx2][0][0] = 1.0f;
+        pTess->texCoords[ndx2][1][0] = 1.0f;
+        pTess->texCoords[ndx2][0][1] = 1.0f;
+        pTess->texCoords[ndx2][1][1] = 1.0f;
+
+        pTess->texCoords[ndx3][0][0] = 0.0f;
+        pTess->texCoords[ndx3][1][0] = 0.0f;
+        pTess->texCoords[ndx3][0][1] = 1.0f;
+        pTess->texCoords[ndx3][1][1] = 1.0f;
+
+        // Vertex color need not to be change
     }
 }
 
@@ -502,7 +555,7 @@ Autosprite2Deform
 Autosprite2 will pivot a rectangular quad along the center of its long axis
 =====================
 */
-int edgeVerts[6][2] = {
+const int edgeVerts[6][2] = {
 	{ 0, 1 },
 	{ 0, 2 },
 	{ 0, 3 },
@@ -646,7 +699,7 @@ void RB_DeformTessGeometry( shaderCommands_t * const pTess)
 			RB_ProjectionShadowDeform( pTess->xyz, pTess->numVertexes );
 			break;
 		case DEFORM_AUTOSPRITE:
-			AutospriteDeform(pTess);
+			AutospriteDeform(pTess, backEnd.currentEntity);
 			break;
 		case DEFORM_AUTOSPRITE2:
 			Autosprite2Deform();
@@ -659,7 +712,7 @@ void RB_DeformTessGeometry( shaderCommands_t * const pTess)
 		case DEFORM_TEXT5:
 		case DEFORM_TEXT6:
 		case DEFORM_TEXT7:
-			DeformText( backEnd.refdef.rd.text[pDs->deformation - DEFORM_TEXT0] );
+			DeformText( backEnd.refdef.text[pDs->deformation - DEFORM_TEXT0] );
 			break;
 		}
 	}
@@ -674,23 +727,22 @@ COLORS
 */
 
 
-void RB_CalcColorFromEntity( unsigned char (*dstColors)[4] )
+void RB_CalcColorFromEntity( unsigned char (* const dstColors)[4], const uint32_t nVerts )
 {
 	if ( backEnd.currentEntity )
 	{
 		uint32_t i;
-		uint32_t nVerts = tess.numVertexes; 
 		
-        unsigned char srColor[4];
+        // unsigned char srColor[4];
 
-        memcpy(srColor, backEnd.currentEntity->e.shaderRGBA, 4);
-        for ( i = 0; i < nVerts; i++)
+        // memcpy(srColor, backEnd.currentEntity->e.shaderRGBA, 4);
+        for ( i = 0; i < nVerts; ++i)
 		{
-			// dstColors[i][0]=backEnd.currentEntity->e.shaderRGBA[0];
-			// dstColors[i][1]=backEnd.currentEntity->e.shaderRGBA[1];
-			// dstColors[i][2]=backEnd.currentEntity->e.shaderRGBA[2];
-			// dstColors[i][3]=backEnd.currentEntity->e.shaderRGBA[3];
-            memcpy(dstColors[i], srColor, 4);
+			dstColors[i][0]=backEnd.currentEntity->e.shaderRGBA[0];
+			dstColors[i][1]=backEnd.currentEntity->e.shaderRGBA[1];
+			dstColors[i][2]=backEnd.currentEntity->e.shaderRGBA[2];
+			dstColors[i][3]=backEnd.currentEntity->e.shaderRGBA[3];
+            // memcpy(dstColors[i], srColor, 4);
 		}
 	}	
 }
@@ -711,16 +763,14 @@ void RB_CalcColorFromOneMinusEntity( unsigned char (*dstColors)[4] )
         
         uint32_t nVerts = tess.numVertexes; 
         uint32_t i;       
-        for ( i = 0; i < nVerts; i++ )
+        for ( i = 0; i < nVerts; ++i )
         {
             memcpy(dstColors[i], invModulate, 4);
         }
     }
 }
 
-/*
-** RB_CalcAlphaFromEntity
-*/
+
 void RB_CalcAlphaFromEntity( unsigned char *dstColors )
 {
 	int	i;
@@ -782,22 +832,23 @@ void RB_CalcWaveColor( const waveForm_t* wf, unsigned char (*dstColors)[4] )
     }
 }
 
-/*
-** RB_CalcWaveAlpha
-*/
-void RB_CalcWaveAlpha( const waveForm_t *wf, unsigned char *dstColors )
+
+void RB_CalcWaveAlpha( const waveForm_t *wf, const uint32_t nVert , unsigned char (*const pDstColors)[4] )
 {
 	int i;
-	int v;
-	float glow;
 
-	glow = EvalWaveFormClamped( wf );
-
-	v = 255 * glow;
-
-	for ( i = 0; i < tess.numVertexes; i++, dstColors += 4 )
+	int v = 255 * EvalWaveForm( wf );
+    if(v < 0) {
+        v = 0;
+    }
+    else if(v > 255)
+    {
+        v = 255;
+    }
+    
+	for ( i = 0; i < nVert; ++i)
 	{
-		dstColors[3] = v;
+		pDstColors[i][3] = v;
 	}
 }
 
@@ -1077,8 +1128,6 @@ void RB_CalcCelTexCoords( float *st )
 **
 ** RiO; celshade 1D environment map
 */
-
-
 
 
 void RB_CalcEnvironmentCelShadeTexCoords( float *st ) 
@@ -1838,7 +1887,7 @@ void RB_ComputeColors( shaderStage_t * const pStage )
 			RB_CalcWaveColor( &pStage->rgbWave, tess.svars.colors );
 			break;
 		case CGEN_ENTITY:
-			RB_CalcColorFromEntity( tess.svars.colors );
+			RB_CalcColorFromEntity( tess.svars.colors, tess.numVertexes );
 			break;
 		case CGEN_ONE_MINUS_ENTITY:
 			RB_CalcColorFromOneMinusEntity( tess.svars.colors );
@@ -1870,7 +1919,7 @@ void RB_ComputeColors( shaderStage_t * const pStage )
 		}
 		break;
 	case AGEN_WAVEFORM:
-		RB_CalcWaveAlpha( &pStage->alphaWave, ( unsigned char * ) tess.svars.colors );
+		RB_CalcWaveAlpha( &pStage->alphaWave, tess.numVertexes, tess.svars.colors );
 		break;
 	 case AGEN_LIGHTING_SPECULAR:
 		// RB_CalcSpecularAlpha( ( unsigned char * ) tess.svars.colors );
@@ -1968,19 +2017,22 @@ void RB_ComputeTexCoords( shaderStage_t * const pStage )
                 memset( tess.svars.texcoords[b], 0, sizeof( float ) * 2 * tess.numVertexes );
                 break;
             case TCGEN_TEXTURE:
-                for ( i = 0 ; i < tess.numVertexes ; i++ ) {
+                for ( i = 0 ; i < tess.numVertexes ; ++i )
+                {
                     tess.svars.texcoords[b][i][0] = tess.texCoords[i][0][0];
                     tess.svars.texcoords[b][i][1] = tess.texCoords[i][0][1];
                 }
                 break;
             case TCGEN_LIGHTMAP:
-                for ( i = 0 ; i < tess.numVertexes ; i++ ) {
+                for ( i = 0 ; i < tess.numVertexes ; ++i )
+                {
                     tess.svars.texcoords[b][i][0] = tess.texCoords[i][1][0];
                     tess.svars.texcoords[b][i][1] = tess.texCoords[i][1][1];
                 }
                 break;
             case TCGEN_VECTOR:
-                for ( i = 0 ; i < tess.numVertexes ; i++ ) {
+                for ( i = 0 ; i < tess.numVertexes ; ++i )
+                {
                     tess.svars.texcoords[b][i][0] = DotProduct( tess.xyz[i], pStage->bundle[b].tcGenVectors[0] );
                     tess.svars.texcoords[b][i][1] = DotProduct( tess.xyz[i], pStage->bundle[b].tcGenVectors[1] );
                 }
@@ -2046,7 +2098,8 @@ void RB_ComputeTexCoords( shaderStage_t * const pStage )
 				break;
 
 			default:
-				ri.Error( ERR_DROP, "ERROR: unknown texmod '%d' in shader '%s'\n", pStage->bundle[b].texMods[tm].type, tess.shader->name );
+				ri.Error( ERR_DROP, "ERROR: unknown texmod '%d' in shader '%s'\n", 
+                        pStage->bundle[b].texMods[tm].type, tess.shader->name );
 				break;
 			}
 		}

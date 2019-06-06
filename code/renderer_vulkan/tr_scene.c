@@ -85,7 +85,7 @@ void R_SceneSetRefDef(void)
 
 	// derived info
 
-	tr.refdef.floatTime = tr.refdef.rd.time * 0.001f;
+	tr.refdef.floatTime = tr.refdef.time * 0.001f;
 
 	tr.refdef.numDrawSurfs = r_firstSceneDrawSurf;
 	tr.refdef.drawSurfs = backEndData->drawSurfs;
@@ -164,13 +164,7 @@ void R_TheNextScene(void)
 	r_firstSceneDlight = r_numdlights;
 	r_firstScenePoly = r_numpolys;
 }
-/*
-===========================================================================
 
-DISCRETE POLYS
-
-===========================================================================
-*/
 
 
 

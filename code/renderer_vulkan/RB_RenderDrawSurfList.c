@@ -37,12 +37,12 @@ void RB_RenderDrawSurfList(const drawSurf_t* const pDrawSurfs, uint32_t numDrawS
 	// we will need to change the projection matrix before drawing
 	// 2D images again
 
-    if ( backEnd.refdef.rd.rdflags & RDF_HYPERSPACE )
+    if ( backEnd.refdef.rdflags & RDF_HYPERSPACE )
 	{
 		//RB_Hyperspace();
         // A player has predicted a teleport, but hasn't arrived yet
 
-        const float c = ( backEnd.refdef.rd.time & 255 ) / 255.0f;
+        const float c = ( backEnd.refdef.time & 255 ) / 255.0f;
         const float color[4] = { c, c, c, 1.0f };
 
         // so short, do we really need this?

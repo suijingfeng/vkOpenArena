@@ -33,9 +33,9 @@ static qboolean R_LoadMDR(model_t *mod, void *buffer, int filesize, const char *
 R_RegisterMD3
 ====================
 */
-qhandle_t R_RegisterMD3(const char *name, model_t *mod)
+qhandle_t R_RegisterMD3(const char * name, model_t * mod)
 {
-	
+
 	char* buf;
 	int			lod;
 	qboolean	loaded = qfalse;
@@ -366,12 +366,9 @@ qhandle_t RE_RegisterModel( const char *name ) {
 	return hModel;
 }
 
-/*
-=================
-R_LoadMD3
-=================
-*/
-static qboolean R_LoadMD3 (model_t *mod, int lod, void *buffer, const char *mod_name ) {
+
+static qboolean R_LoadMD3 (model_t *mod, int lod, void *buffer, const char *mod_name )
+{
 	int					i, j;
 	md3Header_t			*pinmodel;
     md3Frame_t			*frame;
@@ -481,11 +478,11 @@ static qboolean R_LoadMD3 (model_t *mod, int lod, void *buffer, const char *mod_
 
         // register the shaders
         shader = (md3Shader_t *) ( (byte *)surf + surf->ofsShaders );
-        for ( j = 0 ; j < surf->numShaders ; j++, shader++ ) {
-            shader_t	*sh;
-
-            sh = R_FindShader( shader->name, LIGHTMAP_NONE, qtrue );
-			if ( sh->defaultShader ) {
+        for ( j = 0 ; j < surf->numShaders ; ++j, ++shader )
+        {
+            shader_t* sh = R_FindShader( shader->name, LIGHTMAP_NONE, qtrue );
+			
+            if ( sh->defaultShader ) {
 				shader->shaderIndex = 0;
 			} else {
 				shader->shaderIndex = sh->index;

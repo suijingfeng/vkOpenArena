@@ -4,8 +4,197 @@
 
 #define	LL(x) x=LittleLong(x)
 
+qboolean R_LoadMD3 (model_t *mod, int lod, void *buffer, const char *mod_name );
 
-static qboolean R_LoadMD3 (model_t *mod, int lod, void *buffer, const char *mod_name )
+/*
+====================
+R_RegisterMD3
+====================
+*/
+qhandle_t R_RegisterMD3_2(const char * name, model_t * mod)
+{
+
+	char* buf;
+	int	numLoaded = 0;
+
+	ri.FS_ReadFile( name, &buf );
+	
+    if( NULL != buf)
+    {
+        qboolean loaded = qfalse;
+
+#if defined( Q3_BIG_ENDIAN )		
+		int ident = LittleLong(*(int *)buf);
+#else
+		int ident = *(int *)buf;
+#endif
+		if (ident == MD3_IDENT)
+			loaded = R_LoadMD3(mod, 0, buf, name);
+		else
+			ri.Printf(PRINT_WARNING,"RegisterMD3: unknown fileid for %s\n", name);
+		
+        ri.FS_FreeFile(buf);
+
+        if(loaded)
+		{
+			mod->numLods++;
+			numLoaded++;
+		}
+        else
+        {
+            ri.Printf(PRINT_WARNING, "RegisterMD3: couldn't load %s\n", name);
+
+	        mod->type = MOD_BAD;
+	        return 0;
+        }
+    }
+    else
+    {
+        ri.Printf(PRINT_WARNING, "RegisterMD3: failed loading %s from disk. \n", name);
+    }
+
+
+	char filename[MAX_QPATH] = {0};
+	strcpy(filename, name);
+	char* const dot = strrchr(filename, '.');
+    *dot = 0;
+
+    uint32_t lod;
+	for (lod = 1; lod < MD3_MAX_LODS; lod++)
+	{
+        qboolean	loaded = qfalse;
+
+		char namebuf[MAX_QPATH+20] = {0};
+        snprintf(namebuf, sizeof(namebuf), "%s_%d.md3", filename, lod);
+
+		ri.FS_ReadFile( namebuf, &buf );
+		if(!buf)
+			continue;
+		
+#if defined( Q3_BIG_ENDIAN )		
+		int ident = LittleLong(*(int *)buf);
+#else
+		int ident = *(int *)buf;
+#endif
+		if (ident == MD3_IDENT)
+			loaded = R_LoadMD3(mod, lod, buf, name);
+		else
+			ri.Printf(PRINT_WARNING, "R_RegisterMD3: unknown fileid for %s\n", name);
+		
+		ri.FS_FreeFile(buf);
+
+		if(loaded)
+		{
+			mod->numLods++;
+			numLoaded++;
+		}
+		else
+			break;
+	}
+
+	if(numLoaded)
+	    return mod->index;
+    else
+        ri.Printf(PRINT_WARNING, "R_RegisterMD3: couldn't load %s\n", name);
+
+
+/*
+	if(numLoaded)
+	{
+		// duplicate into higher lod spots that weren't loaded,
+        // in case the user changes r_lodbias on the fly
+		for(lod--; lod >= 0; lod--)
+		{
+			mod->numLods++;
+			mod->md3[lod] = mod->md3[lod + 1];
+		}
+
+		return mod->index;
+	}
+*/
+
+	mod->type = MOD_BAD;
+	return 0;
+}
+
+
+qhandle_t R_RegisterMD3(const char * name, model_t * mod)
+{
+
+	char* buf;
+	int			lod;
+	qboolean	loaded = qfalse;
+	int			numLoaded;
+	char filename[MAX_QPATH], namebuf[MAX_QPATH+20];
+	char *fext, defex[] = "md3";
+
+	numLoaded = 0;
+
+	strcpy(filename, name);
+
+	fext = strchr(filename, '.');
+	if(!fext)
+		fext = defex;
+	else
+	{
+		*fext = '\0';
+		fext++;
+	}
+
+	for (lod = MD3_MAX_LODS - 1 ; lod >= 0 ; lod--)
+	{
+		if(lod)
+			snprintf(namebuf, sizeof(namebuf), "%s_%d.%s", filename, lod, fext);
+		else
+			snprintf(namebuf, sizeof(namebuf), "%s.%s", filename, fext);
+
+		ri.FS_ReadFile( namebuf, &buf );
+		if(!buf)
+			continue;
+		
+#if defined( Q3_BIG_ENDIAN )		
+		int ident = LittleLong(*(int *)buf);
+#else
+		int ident = *(int *)buf;
+#endif
+		if (ident == MD3_IDENT)
+			loaded = R_LoadMD3(mod, lod, buf, name);
+		else
+			ri.Printf(PRINT_WARNING, "RegisterMD3: unknown fileid for %s\n", name);
+		
+		ri.FS_FreeFile(buf);
+
+		if(loaded)
+		{
+			mod->numLods++;
+			numLoaded++;
+		}
+		else
+			break;
+	}
+
+	if(numLoaded)
+	{
+		// duplicate into higher lod spots that weren't
+		// loaded, in case the user changes r_lodbias on the fly
+		for(lod--; lod >= 0; lod--)
+		{
+			mod->numLods++;
+			mod->md3[lod] = mod->md3[lod + 1];
+		}
+
+		return mod->index;
+	}
+
+	mod->type = MOD_BAD;
+    
+    ri.Printf(PRINT_WARNING, "RegisterMD3: couldn't load %s\n", name);
+
+	return 0;
+}
+
+
+qboolean R_LoadMD3 (model_t *mod, int lod, void *buffer, const char *mod_name )
 {
 	int					i, j;
 	md3Header_t			*pinmodel;
@@ -116,7 +305,8 @@ static qboolean R_LoadMD3 (model_t *mod, int lod, void *buffer, const char *mod_
 
         // register the shaders
         shader = (md3Shader_t *) ( (byte *)surf + surf->ofsShaders );
-        for ( j = 0 ; j < surf->numShaders ; j++, shader++ ) {
+        for ( j = 0 ; j < surf->numShaders ; ++j, ++shader )
+        {
             shader_t* sh = R_FindShader( shader->name, LIGHTMAP_NONE, qtrue );
 			
             if ( sh->defaultShader ) {
@@ -162,108 +352,3 @@ static qboolean R_LoadMD3 (model_t *mod, int lod, void *buffer, const char *mod_
 
 
 
-qhandle_t R_RegisterMD3(const char* name, model_t* mod)
-{
-
-	char* buf;
-	int	numLoaded = 0;
-
-	ri.FS_ReadFile( name, &buf );
-	
-    if( NULL != buf)
-    {
-        qboolean loaded = qfalse;
-
-#if defined( Q3_BIG_ENDIAN )		
-		int ident = LittleLong(*(int *)buf);
-#else
-		int ident = *(int *)buf;
-#endif
-		if (ident == MD3_IDENT)
-			loaded = R_LoadMD3(mod, 0, buf, name);
-		else
-			ri.Printf(PRINT_WARNING,"R_RegisterMD3: unknown fileid for %s\n", name);
-		
-        ri.FS_FreeFile(buf);
-
-        if(loaded)
-		{
-			mod->numLods++;
-			numLoaded++;
-		}
-        else
-        {
-            ri.Printf(PRINT_WARNING, "R_RegisterMD3: couldn't load %s\n", name);
-
-	        mod->type = MOD_BAD;
-	        return 0;
-        }
-    }
-    else
-    {
-        ri.Printf(PRINT_WARNING, "R_RegisterMD3: failed loading %s from disk. \n", name);
-    }
-
-
-	char filename[MAX_QPATH] = {0};
-	strcpy(filename, name);
-	char* const dot = strrchr(filename, '.');
-    *dot = 0;
-
-    uint32_t lod;
-	for (lod = 1; lod < MD3_MAX_LODS; lod++)
-	{
-        qboolean	loaded = qfalse;
-
-		char namebuf[MAX_QPATH+20] = {0};
-        snprintf(namebuf, sizeof(namebuf), "%s_%d.md3", filename, lod);
-
-		ri.FS_ReadFile( namebuf, &buf );
-		if(!buf)
-			continue;
-		
-#if defined( Q3_BIG_ENDIAN )		
-		int ident = LittleLong(*(int *)buf);
-#else
-		int ident = *(int *)buf;
-#endif
-		if (ident == MD3_IDENT)
-			loaded = R_LoadMD3(mod, lod, buf, name);
-		else
-			ri.Printf(PRINT_WARNING, "R_RegisterMD3: unknown fileid for %s\n", name);
-		
-		ri.FS_FreeFile(buf);
-
-		if(loaded)
-		{
-			mod->numLods++;
-			numLoaded++;
-		}
-		else
-			break;
-	}
-
-	if(numLoaded)
-	    return mod->index;
-    else
-        ri.Printf(PRINT_WARNING, "R_RegisterMD3: couldn't load %s\n", name);
-
-
-/*
-	if(numLoaded)
-	{
-		// duplicate into higher lod spots that weren't loaded,
-        // in case the user changes r_lodbias on the fly
-		for(lod--; lod >= 0; lod--)
-		{
-			mod->numLods++;
-			mod->md3[lod] = mod->md3[lod + 1];
-		}
-
-		return mod->index;
-	}
-*/
-
-	mod->type = MOD_BAD;
-	return 0;
-}

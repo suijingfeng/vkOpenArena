@@ -33,7 +33,7 @@ typedef struct {
 // trRefdef_t holds everything that comes in refdef_t,
 // as well as the locally generated scene information
 typedef struct {
-/*
+
     int			x, y, width, height;
 	float		fov_x, fov_y;
 	vec3_t		vieworg;
@@ -44,14 +44,14 @@ typedef struct {
 
 	// 1 bits will prevent the associated area from rendering at all
 	byte		areamask[MAX_MAP_AREA_BYTES];
-
+    
+    qboolean	AreamaskModified;	// qtrue if areamask changed since last scene
+	float		floatTime;			// tr.refdef.time / 1000.0
 
 	// text messages for deform text shaders
 	char		text[MAX_RENDER_STRINGS][MAX_RENDER_STRING_LENGTH];
-*/
-    refdef_t    rd;
-    qboolean	AreamaskModified;	// qtrue if areamask changed since last scene
-	float		floatTime;			// tr.refdef.time / 1000.0
+
+
 	int			num_entities;
 	trRefEntity_t	*entities;
 

@@ -15,7 +15,7 @@ MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 GNU General Public License for more details.
 
 You should have received a copy of the GNU General Public License
-along with Foobar; if not, write to the Free Software
+along with Quake III Arena source code; if not, write to the Free Software
 Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 ===========================================================================
 */
@@ -627,7 +627,7 @@ static void R_MarkLeaves (void)
 		}
 
 		// check for door connection
-		if ( (tr.refdef.rd.areamask[leaf->area>>3] & (1<<(leaf->area&7)) ) ) {
+		if ( (tr.refdef.areamask[leaf->area>>3] & (1<<(leaf->area&7)) ) ) {
 			continue;		// not visible
 		}
 
@@ -653,7 +653,7 @@ void R_AddWorldSurfaces (viewParms_t * const pViewParams)
 		return;
 	}
 
-	if ( tr.refdef.rd.rdflags & RDF_NOWORLDMODEL ) {
+	if ( tr.refdef.rdflags & RDF_NOWORLDMODEL ) {
 		return;
 	}
 

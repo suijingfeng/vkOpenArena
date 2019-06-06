@@ -31,10 +31,9 @@ Returns true if the grid is completely culled away.
 Also sets the clipped hint bit in tess
 =================
 */
-static qboolean	R_CullTriSurf( srfTriangles_t *cv ) {
-	int 	boxCull;
-
-	boxCull = R_CullLocalBox( cv->bounds );
+static qboolean	R_CullTriSurf( srfTriangles_t *cv )
+{
+	int 	boxCull = R_CullLocalBox( cv->bounds );
 
 	if ( boxCull == CULL_OUT ) {
 		return qtrue;
@@ -63,6 +62,7 @@ static qboolean	R_CullGrid( srfGridMesh_t *cv ) {
 	} else {
 		sphereCull = R_CullPointAndRadius( cv->localOrigin, cv->meshRadius );
 	}
+	boxCull = CULL_OUT;
 	
 	// check for trivial reject
 	if ( sphereCull == CULL_OUT )
@@ -443,7 +443,7 @@ static void R_RecursiveWorldNode( mnode_t *node, unsigned int planeBits, unsigne
 		}
 
 		// recurse down the children, front side first
-		R_RecursiveWorldNode(node->children[0], planeBits, newDlights[0] );
+		R_RecursiveWorldNode (node->children[0], planeBits, newDlights[0] );
 
 		// tail recurse
 		node = node->children[1];
