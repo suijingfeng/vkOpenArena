@@ -1,3 +1,17 @@
+### Coordinate
+id software still uses the same coordinate system from 1992 Wolfenstein 3D (as of Doom3 this was still true). It is important to know that if you try to read the renderer source code:
+
+With id's system:
+
+    X axis = Left/Right
+    Y axis = Forward/Backward
+    Z axis = Up/Down
+
+OpenGL's coordinate system:
+
+    X axis = Left/Right
+    Y axis = Up/Down
+    Z axis = Forward/Backward
 
 ### The Viewport Transformation
 
@@ -14,7 +28,7 @@ own w components, producing normalized device coordinates.
     z_c  *  1/w_c = z_d 
     w_c             1.0
 ```
-Here, the vertex's clip coordinates are represented by `(x\_c, y_c, z_c, w_c)`
+Here, the vertex's clip coordinates are represented by `(x_c, y_c, z_c, w_c)`
 and the normalized device coordinates are represented by `(x_d, y_d, z_d)`.
 The normalized device coordinate is considered to be a 3D coordinate.
 
@@ -43,6 +57,36 @@ The x and y fileds of VkViewport are o\_x and o\_y, respecitively,
 and the minDepth is o\_z, The width and height fields are used for p\_x, p\_y
 p\_z is formed from the expression (maxDepth - minDepth).
 
+
+![](https://github.com/suijingfeng/vkOpenArena/blob/master/doc/vulkan_vs_opengl_coordinate.jpg)
+
+
+### 2D Case
+
+```
+void R_Set2dProjectMatrix(float width, float height)
+{
+    s_ProjectMat2d[0] = 2.0f / width; 
+    s_ProjectMat2d[1] = 0.0f; 
+    s_ProjectMat2d[2] = 0.0f;
+    s_ProjectMat2d[3] = 0.0f;
+
+    s_ProjectMat2d[4] = 0.0f; 
+    s_ProjectMat2d[5] = 2.0f / height; 
+    s_ProjectMat2d[6] = 0.0f;
+    s_ProjectMat2d[7] = 0.0f;
+
+    s_ProjectMat2d[8] = 0.0f; 
+    s_ProjectMat2d[9] = 0.0f; 
+    s_ProjectMat2d[10] = 1.0f; 
+    s_ProjectMat2d[11] = 0.0f;
+
+    s_ProjectMat2d[12] = -1.0f; 
+    s_ProjectMat2d[13] = -1.0f; 
+    s_ProjectMat2d[14] = 0.0f;
+    s_ProjectMat2d[15] = 1.0f;
+}
+```
 
 fovX: 60.000000, fovY: 19.687500, aspect: 3.327352
 

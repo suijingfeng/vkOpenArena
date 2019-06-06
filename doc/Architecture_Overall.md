@@ -1,6 +1,6 @@
 # Quake III Architecture Overview
 
-![](https://github.com/suijingfeng/engine/blob/master/doc/q3_workspace_architecture2.png)
+![](https://github.com/suijingfeng/vkOpenArena/blob/master/doc/q3_workspace_architecture2.png)
 
 
 ## Introduction
