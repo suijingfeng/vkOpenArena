@@ -3,6 +3,7 @@
 #include "tr_world.h"
 #include "tr_model.h"
 #include "render_export.h"
+#include "tr_shader.h"
 
 struct trGlobals_s tr;
 

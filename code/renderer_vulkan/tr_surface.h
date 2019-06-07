@@ -2,14 +2,13 @@
 #define RB_SURFACE_H_
 
 #include "../renderercommon/tr_types.h"
-#include "tr_shader.h"
 #include "surface_type.h"
+#include "tr_shader.h"
 
 #define	MAX_GRID_SIZE		65			// max dimensions of a grid mesh in memory
 
 
 typedef void (* Fn_RB_SurfaceTable_t)( void *); 
-
 
 extern const Fn_RB_SurfaceTable_t rb_surfaceTable[SF_NUM_SURFACE_TYPES];
 
@@ -51,13 +50,13 @@ typedef struct srfGridMesh_s {
 #define	SIDE_ON		2
 
 
-void RB_BeginSurface( shader_t *shader, int fogNum, shaderCommands_t * const pTess);
-void RB_EndSurface( shaderCommands_t * const pTess );
-void RB_CheckOverflow( uint32_t verts, uint32_t indexes );
+void RB_BeginSurface(struct shader_s *shader, int fogNum, struct shaderCommands_s * const pTess);
+void RB_EndSurface( struct shaderCommands_s * const pTess );
+void RB_CheckOverflow( uint32_t verts, uint32_t indexes, struct shaderCommands_s * const pTess);
 void RB_AddQuadStampExt( vec3_t origin, vec3_t left, vec3_t up, uint8_t * const color,
         float s1, float t1, float s2, float t2 );
 
-void R_AddDrawSurf( surfaceType_t *surface, shader_t *shader, int fogIndex, int dlightMap );
+void R_AddDrawSurf( surfaceType_t *surface, struct shader_s *shader, int fogIndex, int dlightMap );
 
 
 #endif

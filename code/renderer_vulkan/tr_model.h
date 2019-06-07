@@ -100,7 +100,7 @@ typedef struct {
 typedef struct srfIQModel_s {
 	surfaceType_t	surfaceType;
 	char		name[MAX_QPATH];
-	shader_t	*shader;
+	struct shader_s * shader;
 	iqmData_t	*data;
 	int		first_vertex, num_vertexes;
 	int		first_triangle, num_triangles;

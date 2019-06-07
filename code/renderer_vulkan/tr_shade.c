@@ -316,17 +316,13 @@ void RB_CalcMoveVertexes( deformStage_t * const ds )
 
 /*
 =============
-DeformText
-
 Change a polygon into a bunch of text polygons
 =============
 */
-void DeformText( const char *text )
+static void RB_DeformText( const char * const text )
 {
 	int		i;
 	vec3_t	origin, width, height;
-	int		len;
-	int		ch;
 	byte	color[4];
 	float	bottom, top;
 	vec3_t	mid;
@@ -340,7 +336,8 @@ void DeformText( const char *text )
 	VectorClear( mid );
 	bottom = 999999;
 	top = -999999;
-	for ( i = 0 ; i < 4 ; ++i ) {
+	for ( i = 0 ; i < 4 ; ++i )
+    {
 		VectorAdd( tess.xyz[i], mid, mid );
 		if ( tess.xyz[i][2] < bottom ) {
 			bottom = tess.xyz[i][2];
@@ -359,7 +356,7 @@ void DeformText( const char *text )
 	VectorScale( width, height[2] * -0.75f, width );
 
 	// determine the starting position
-	len = strlen( text );
+	int len = strlen( text );
 	VectorMA( origin, (len-1), width, origin );
 
 	// clear the shader indexes
@@ -371,19 +368,14 @@ void DeformText( const char *text )
 	// draw each character
 	for ( i = 0 ; i < len ; ++i )
     {
-		ch = text[i];
-		ch &= 255;
-
-		if ( ch != ' ' ) {
-			int		row, col;
-			float	frow, fcol, size;
-
-			row = ch>>4;
-			col = ch&15;
-
-			frow = row*0.0625f;
-			fcol = col*0.0625f;
-			size = 0.0625f;
+		int8_t ch = text[i];
+		
+		if ( ch != ' ' )
+        {
+			
+			float frow = (ch >> 4 )* 0.0625f;
+			float fcol = (ch & 15) * 0.0625f;
+			float size = 0.0625f;
 
 			RB_AddQuadStampExt( origin, width, height, color, fcol, frow, fcol + size, frow + size );
 		}
@@ -712,7 +704,7 @@ void RB_DeformTessGeometry( shaderCommands_t * const pTess)
 		case DEFORM_TEXT5:
 		case DEFORM_TEXT6:
 		case DEFORM_TEXT7:
-			DeformText( backEnd.refdef.text[pDs->deformation - DEFORM_TEXT0] );
+			RB_DeformText( backEnd.refdef.text[pDs->deformation - DEFORM_TEXT0] );
 			break;
 		}
 	}

@@ -13,7 +13,7 @@
 extern struct shaderCommands_s tess;
 
 
-void RB_RenderDrawSurfList(const drawSurf_t* const pDrawSurfs, uint32_t numDrawSurfs, 
+void RB_RenderDrawSurfList(const struct drawSurf_s * const pSurf, const uint32_t numDrawSurfs, 
         const trRefdef_t * const pRefdef, const viewParms_t * const pViewPar )
 {
 
@@ -32,7 +32,6 @@ void RB_RenderDrawSurfList(const drawSurf_t* const pDrawSurfs, uint32_t numDrawS
 	// backEnd.projection2D = qtrue;
 
 	// VULKAN
-    vk_clearDepthStencilAttachments();
 
 	// we will need to change the projection matrix before drawing
 	// 2D images again
@@ -48,7 +47,8 @@ void RB_RenderDrawSurfList(const drawSurf_t* const pDrawSurfs, uint32_t numDrawS
         // so short, do we really need this?
 	    vk_clearColorAttachments(color);
 	}
-
+    vk_clearDepthStencilAttachments();
+    
 	// draw everything
 
 	int oldEntityNum = -1;
@@ -62,26 +62,24 @@ void RB_RenderDrawSurfList(const drawSurf_t* const pDrawSurfs, uint32_t numDrawS
 	backEnd.pc.c_surfaces += numDrawSurfs;
 
 
-
-    int	i;
-	const drawSurf_t* pSurf = pDrawSurfs;
-	for (i = 0; i < numDrawSurfs; ++i, ++pSurf)
+    uint32_t i;
+	for (i = 0; i < numDrawSurfs; ++i)
     {
 		
-        if ( pSurf->sort == oldSort )
+        if ( pSurf[i].sort == oldSort )
         {
 			// fast path, same as previous sort
-			rb_surfaceTable[ *pSurf->surType ]( pSurf->surType );
+			rb_surfaceTable[ *pSurf[i].surType ]( pSurf[i].surType );
 			continue;
 		}
 
-		oldSort = pSurf->sort;
+		oldSort = pSurf[i].sort;
 		
 
         int entityNum, fogNum, dlighted;
-        shader_t* shader;
+        shader_t* shader = NULL;
 
-        R_DecomposeSort( pSurf->sort, &entityNum, &shader, &fogNum, &dlighted );
+        R_DecomposeSort( oldSort, &entityNum, &shader, &fogNum, &dlighted );
 
 		//
 		// change the tess parameters if needed
@@ -92,7 +90,8 @@ void RB_RenderDrawSurfList(const drawSurf_t* const pDrawSurfs, uint32_t numDrawS
              (dlighted != oldDlighted) || 
              (entityNum != oldEntityNum && !shader->entityMergable) )
         {
-			if (oldShader != NULL) {
+			if (oldShader != NULL)
+            {
 				RB_EndSurface(&tess);
 			}
 			RB_BeginSurface( shader, fogNum, &tess );
@@ -106,7 +105,9 @@ void RB_RenderDrawSurfList(const drawSurf_t* const pDrawSurfs, uint32_t numDrawS
 		//
 		if ( entityNum != oldEntityNum )
         {
-			if ( entityNum != REFENTITYNUM_WORLD )
+            oldEntityNum = entityNum;
+			
+            if ( entityNum != REFENTITYNUM_WORLD )
             {
 				backEnd.currentEntity = &backEnd.refdef.entities[entityNum];
 				backEnd.refdef.floatTime = originalTime - backEnd.currentEntity->e.shaderTime;
@@ -141,12 +142,12 @@ void RB_RenderDrawSurfList(const drawSurf_t* const pDrawSurfs, uint32_t numDrawS
 
 			// VULKAN
             set_modelview_matrix(backEnd.or.modelMatrix);
-            oldEntityNum = entityNum;
+
         }
 
 		// add the triangles for this surface
-		rb_surfaceTable[ *pSurf->surType ]( pSurf->surType );
-
+		// rb_surfaceTable[ *pSurf->surType ]( pSurf->surType );
+		rb_surfaceTable[ *pSurf[i].surType ]( pSurf[i].surType );
 	}
 
 	backEnd.refdef.floatTime = originalTime;

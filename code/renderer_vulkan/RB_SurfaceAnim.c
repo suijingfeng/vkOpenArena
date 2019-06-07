@@ -36,7 +36,7 @@ void RB_MDRSurfaceAnim( mdrSurface_t *surface )
 	
     mdrFrame_t* oldFrame = (mdrFrame_t *)((byte *)header + header->ofsFrames + backEnd.currentEntity->e.oldframe * frameSize );
 
-	RB_CheckOverflow( surface->numVerts, surface->numTriangles * 3 );
+	RB_CheckOverflow( surface->numVerts, surface->numTriangles * 3, &tess );
 
 	int* triangles = (int *) ((byte *)surface + surface->ofsTriangles);
 	int indexes	= surface->numTriangles * 3;

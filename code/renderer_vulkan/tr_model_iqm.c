@@ -1032,7 +1032,7 @@ void RB_IQMSurfaceAnim( surfaceType_t *surface )
 	unsigned int* ptr;
 	unsigned int	base;
 
-	RB_CheckOverflow( surf->num_vertexes, surf->num_triangles * 3 );
+	RB_CheckOverflow( surf->num_vertexes, surf->num_triangles * 3, &tess);
 
 	outXYZ = &tess.xyz[tess.numVertexes];
 	outNormal = &tess.normal[tess.numVertexes];

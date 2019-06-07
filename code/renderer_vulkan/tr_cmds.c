@@ -241,8 +241,10 @@ void RE_EndFrame( int *frontEndMsec, int *backEndMsec )
 }
 
 
+// const stretchPicCommand_t * const cmd
 
-void RB_StretchPic( const stretchPicCommand_t * const cmd )
+void RB_StretchPic(float x, float y, float w, float h, 
+				  float s1, float t1, float s2, float t2, shader_t * pShader )
 {
     // called every frame
 	if ( qfalse == backEnd.projection2D )
@@ -259,25 +261,25 @@ void RB_StretchPic( const stretchPicCommand_t * const cmd )
 	}
 
     // nearly true all the time, dont know why do this judgement
-	if ( cmd->shader != tess.shader )
+	if ( pShader != tess.shader )
     {
 		if ( tess.numIndexes ) {
 			RB_EndSurface(&tess);
 		}
 
 		backEnd.currentEntity = &backEnd.entity2D;
-		RB_BeginSurface(cmd->shader, 0, &tess );
+		RB_BeginSurface(pShader, 0, &tess );
 	}
 
 
-	RB_CheckOverflow( 4, 6 );
-
+	RB_CheckOverflow( 4, 6, &tess);
+    
+    uint32_t numIndexes = tess.numIndexes;
 	const unsigned int n0 = tess.numVertexes;
 	const unsigned int n1 = n0 + 1;
 	const unsigned int n2 = n0 + 2;
 	const unsigned int n3 = n0 + 3;
 
-    uint32_t numIndexes = tess.numIndexes;
 	
     tess.numVertexes += 4;
 	tess.numIndexes += 6;
@@ -313,34 +315,34 @@ void RB_StretchPic( const stretchPicCommand_t * const cmd )
 	tess.vertexColors[n3][3] = backEnd.Color2D[3];
 
 
-    tess.xyz[ n0 ][0] = cmd->x;
-    tess.xyz[ n0 ][1] = cmd->y;
+    tess.xyz[ n0 ][0] = x;
+    tess.xyz[ n0 ][1] = y;
     tess.xyz[ n0 ][2] = 0;
 
-    tess.xyz[ n1 ][0] = cmd->x + cmd->w;
-    tess.xyz[ n1 ][1] = cmd->y;
+    tess.xyz[ n1 ][0] = x + w;
+    tess.xyz[ n1 ][1] = y;
     tess.xyz[ n1 ][2] = 0;
 
-    tess.xyz[ n2 ][0] = cmd->x + cmd->w;
-    tess.xyz[ n2 ][1] = cmd->y + cmd->h;
+    tess.xyz[ n2 ][0] = x + w;
+    tess.xyz[ n2 ][1] = y + h;
     tess.xyz[ n2 ][2] = 0;
 
-    tess.xyz[ n3 ][0] = cmd->x;
-    tess.xyz[ n3 ][1] = cmd->y + cmd->h;
+    tess.xyz[ n3 ][0] = x;
+    tess.xyz[ n3 ][1] = y + h;
     tess.xyz[ n3 ][2] = 0;
 
 
-    tess.texCoords[ n0 ][0][0] = cmd->s1;
-    tess.texCoords[ n0 ][0][1] = cmd->t1;
+    tess.texCoords[ n0 ][0][0] = s1;
+    tess.texCoords[ n0 ][0][1] = t1;
 
-    tess.texCoords[ n1 ][0][0] = cmd->s2;
-    tess.texCoords[ n1 ][0][1] = cmd->t1;
+    tess.texCoords[ n1 ][0][0] = s2;
+    tess.texCoords[ n1 ][0][1] = t1;
 
-    tess.texCoords[ n2 ][0][0] = cmd->s2;
-    tess.texCoords[ n2 ][0][1] = cmd->t2;
+    tess.texCoords[ n2 ][0][0] = s2;
+    tess.texCoords[ n2 ][0][1] = t2;
 
-    tess.texCoords[ n3 ][0][0] = cmd->s1;
-    tess.texCoords[ n3 ][0][1] = cmd->t2;
+    tess.texCoords[ n3 ][0][0] = s1;
+    tess.texCoords[ n3 ][0][1] = t2;
 }
 
 
@@ -420,7 +422,8 @@ void R_IssueRenderCommands( qboolean runPerformanceCounters )
             {
                 const stretchPicCommand_t * const cmd = data;
 
-                RB_StretchPic( cmd );
+                RB_StretchPic( cmd->x, cmd->y, cmd->w, cmd->h,
+                        cmd->s1, cmd->t1, cmd->s2, cmd->t2, cmd->shader);
 
                 data += sizeof(stretchPicCommand_t);
             } break;
@@ -474,6 +477,9 @@ void R_IssueRenderCommands( qboolean runPerformanceCounters )
                 data += sizeof(swapBuffersCommand_t);
             } break;
 
+            // verify that if vulkan can use this stucture ?
+            // feeling that get data back should happen after the
+            // compileshment of rendering but before presentation.
             case RC_SCREENSHOT:
             {   
                 const screenshotCommand_t * const cmd = data;

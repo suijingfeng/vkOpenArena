@@ -25,6 +25,8 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #include "tr_curve.h"
 #include "tr_model.h"
 #include "tr_world.h"
+#include "tr_shader.h"
+
 #include "srfSurfaceFace_type.h"
 
 #define MAX_VERTS_ON_POLY		64
@@ -41,6 +43,9 @@ Out must have space for two more vertexes than in
 #define	SIDE_FRONT	0
 #define	SIDE_BACK	1
 #define	SIDE_ON		2
+
+
+
 static void R_ChopPolyBehindPlane( int numInPoints, vec3_t inPoints[MAX_VERTS_ON_POLY],
 								   int *numOutPoints, vec3_t outPoints[MAX_VERTS_ON_POLY], 
 							vec3_t normal, vec_t dist, vec_t epsilon) {

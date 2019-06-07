@@ -268,6 +268,7 @@ void RB_ShadowFinish( void )
     tess.indexes[4] = 2;
     tess.indexes[5] = 3;
     tess.numIndexes = 6;
+    tess.numVertexes = 4;
 
     VectorSet(tess.xyz[0], -100,  100, -10);
     VectorSet(tess.xyz[1],  100,  100, -10);
@@ -275,14 +276,14 @@ void RB_ShadowFinish( void )
     VectorSet(tess.xyz[3], -100, -100, -10);
     int i = 0;
 
-    for (i = 0; i < 4; i++)
+    for (i = 0; i < 4; ++i)
     {
         tess.svars.colors[i][0] = 153;
         tess.svars.colors[i][1] = 153;
         tess.svars.colors[i][2] = 153;
         tess.svars.colors[i][3] = 255;
     }
-    tess.numVertexes = 4;
+
 
 	//PushModelView();
 
@@ -292,9 +293,11 @@ void RB_ShadowFinish( void )
         0, 1, 0, 0,
         0, 0, 1, 0,
         0, 0, 0, 1};
-     
+    
+    updateMVP(backEnd.viewParms.isPortal, 0, tmp); 
+    
     vk_UploadXYZI(tess.xyz, tess.numVertexes, tess.indexes, tess.numIndexes);
-    updateMVP(backEnd.viewParms.isPortal, backEnd.projection2D, tmp);
+
     vk_shade_geometry(g_globalPipelines.shadow_finish_pipeline, &tess, 
             VK_FALSE, VK_TRUE);
 
@@ -303,12 +306,7 @@ void RB_ShadowFinish( void )
 }
 
 
-/*
-=================
-RB_ProjectionShadowDeform
 
-=================
-*/
 void RB_ProjectionShadowDeform( float (* const xyz)[4], uint32_t const nVert )
 {
 	vec3_t	ground;

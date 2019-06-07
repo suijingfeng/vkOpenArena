@@ -59,11 +59,40 @@ p\_z is formed from the expression (maxDepth - minDepth).
 
 
 ![](https://github.com/suijingfeng/vkOpenArena/blob/master/doc/vulkan_vs_opengl_coordinate.jpg)
+OpenGL left-hand NDC space   V.S.  Vulkan right hand NDC space
 
+The first change of note is that the y axis now points down the screen. 
+The x and z axes point in the same direction as before. This means that
+if you do not correct for this two notable things happen. Firstly your 
+image will be flipped. Secondly your face culling order will be backwards. 
+
+There are multiple ways of resolving this. The method used in the samples
+is to simply add the following line to all vertex shaders:
+```
+gl_Position.y = -gl_Position.y;
+```
+
+The other change to the coordinate system is to the z axis i.e. the depth range.
+After the programmable vertex stage a set of fixed function vertex operations
+are run. During this process your homogeneous coordinates in clip space are 
+divided by `w\_c` (to give NDC space) and then transformed into window space
+(now called framebuffer space). The divide by `w_c` is the first of these two steps
+and has not changed but the transformation into window space has.
+
+OpenGL expected a final depth range for `z_f` of [0-1]. The standard perspective
+projection matrix transforms points on the near plane to have a `z_d` value of -1
+and points on the far plane to have `z_d` of 1. These were placed into the range
+[0-1] by the transform into window space. In OpenGL this transform was defined as:
 
 ### 2D Case
 
+q3 UI/2D drawing are defalut 640x480 Coordinates, and then stretch/ scale up to
+the rendered window's resolution, such as 1366x768, 1920x1080.
+see `SCR_AdjustFrom640` and `RE_StretchPic`.
+
 ```
+float s_ProjectMat2d[16];
+
 void R_Set2dProjectMatrix(float width, float height)
 {
     s_ProjectMat2d[0] = 2.0f / width; 
@@ -87,6 +116,16 @@ void R_Set2dProjectMatrix(float width, float height)
     s_ProjectMat2d[15] = 1.0f;
 }
 ```
+This is MVP Translate (0, 0, 0, 1) ~ (1920, 1080, 0, 1) => (-1, -1) ~ (1, 1)
+    glsl is column-majored.
+
+```
+      2/w   0     0   0.0f
+       0    2/h   0   0.0f
+       0    0     1   0.0f
+     -1.0  -1.0   0   1.0f
+```
+
 
 fovX: 60.000000, fovY: 19.687500, aspect: 3.327352
 

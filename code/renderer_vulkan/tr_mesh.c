@@ -30,6 +30,8 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #include "tr_Cull.h"
 #include "tr_model.h"
 #include "tr_world.h"
+#include "tr_fog.h"
+#include "tr_shader.h"
 
 static int R_CullModel( md3Header_t *header, trRefEntity_t *ent )
 {
