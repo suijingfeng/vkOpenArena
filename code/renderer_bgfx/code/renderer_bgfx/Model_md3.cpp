@@ -847,11 +847,11 @@ void Model_md3::render(const mat3 &sceneRotation, DrawCallList *drawCallList, En
 	const int oldFrameIndex = Clamped(entity->oldFrame, 0, nFrames - 1);
 	const mat4 modelMatrix = mat4::transform(entity->rotation, entity->position);
 	
-    if( isAnimated ) 
-    {
-	 interface::Printf("md3 model:%s, nFrames: %d, frameIndex: %d, oldFrameIndex: %d\n",
-       getName(), nFrames, frameIndex, oldFrameIndex);
-    }
+    // if( isAnimated ) 
+    // {
+    //    interface::Printf("md3 model:%s, nFrames: %d, frameIndex: %d, oldFrameIndex: %d\n",
+    //            getName(), nFrames, frameIndex, oldFrameIndex);
+    //}
 
     bgfx::TransientVertexBuffer tvb;
 	Vertex *vertices = nullptr;
@@ -935,7 +935,7 @@ void Model_md3::render(const mat3 &sceneRotation, DrawCallList *drawCallList, En
 			dc.vb.transientHandle = tvb;
 
 			// Handle CPU deforms.
-			if (isAnimated && mat->hasAutoSpriteDeform())
+			if ( mat->hasAutoSpriteDeform())
 			{
 				bgfx::TransientIndexBuffer tib;
 

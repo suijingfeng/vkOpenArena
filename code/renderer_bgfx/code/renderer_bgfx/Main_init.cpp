@@ -273,7 +273,7 @@ void Initialize()
 	s_main->extraDynamicLightsEnabled = extraDynamicLights.getBool();
 	ConsoleVariable fastPath = interface::Cvar_Get("r_fastPath", "0", ConsoleVariableFlags::Archive | ConsoleVariableFlags::Latch);
 	s_main->fastPathEnabled = fastPath.getBool();
-	ConsoleVariable lerpTextureAnimation = interface::Cvar_Get("r_lerpTextureAnimation", "0", ConsoleVariableFlags::Archive | ConsoleVariableFlags::Latch);
+	ConsoleVariable lerpTextureAnimation = interface::Cvar_Get("r_lerpTextureAnimation", "1", ConsoleVariableFlags::Archive | ConsoleVariableFlags::Latch);
 	s_main->lerpTextureAnimationEnabled = lerpTextureAnimation.getBool();
 	ConsoleVariable maxAnisotropy = interface::Cvar_Get("r_maxAnisotropy", "0", ConsoleVariableFlags::Archive | ConsoleVariableFlags::Latch);
 	s_main->maxAnisotropyEnabled = maxAnisotropy.getBool();

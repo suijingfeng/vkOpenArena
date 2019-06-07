@@ -2,7 +2,7 @@
 #define TR_WAVE_H_
 
 
-typedef enum {
+typedef enum GenFunc_T {
 	GF_NONE,
 
 	GF_SIN,

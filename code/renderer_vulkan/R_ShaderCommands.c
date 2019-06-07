@@ -14,3 +14,8 @@ void R_ClearShaderCommand(void)
 		ri.Printf( PRINT_ALL, "WARNING: tess.xyz not 16 byte aligned\n" );
 	}
 }
+
+float R_GetTessShaderTime(void)
+{
+    return tess.shaderTime;
+}

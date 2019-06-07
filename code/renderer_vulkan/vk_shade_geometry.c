@@ -12,6 +12,7 @@
 #include "ref_import.h" 
 #include "matrix_multiplication.h"
 #include "R_PortalPlane.h"
+#include "RB_DeformGeometry.h"
 #include "vk_shade_geometry.h"
 
 // projection: the transformation of lines, points, and polygons

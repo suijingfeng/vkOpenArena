@@ -49,6 +49,63 @@ static const LerpTextureAnimationMaterial s_lerpTextureAnimationMaterials[] =
 	{ "grenadeExplosion", MaterialStageTextureAnimationLerp::Clamp },
 	//{ "railExplosion", MaterialStageTextureAnimationLerp::Clamp },
 	{ "rocketExplosion", MaterialStageTextureAnimationLerp::Clamp },
+    { "textures/oafx/flare", MaterialStageTextureAnimationLerp::Clamp }, // suijingfeng
+    { "textures/oafx/rocketflare", MaterialStageTextureAnimationLerp::Clamp }, // suijingfeng
+    { "textures/oafx/rocketflare.tga", MaterialStageTextureAnimationLerp::Clamp }, // suijingfeng
+    { "textures/oafx/plastrail", MaterialStageTextureAnimationLerp::Clamp }, // suijingfeng
+    { "models/weapons2/rocketl/skin" , MaterialStageTextureAnimationLerp::Clamp },
+    { "gfx/fx/detail/d_met" , MaterialStageTextureAnimationLerp::Clamp },
+    { "gfx/fx/spec/spots" , MaterialStageTextureAnimationLerp::Clamp },
+    { "textures/oa/fiar" , MaterialStageTextureAnimationLerp::Clamp },
+    { "textures/oa/fiar2" , MaterialStageTextureAnimationLerp::Clamp },
+    { "models/weaphits/rlboom/rlboom_1" , MaterialStageTextureAnimationLerp::Clamp },
+    { "models/weaphits/rlboom/rlboom_2" , MaterialStageTextureAnimationLerp::Clamp },
+    { "models/weaphits/rlboom/rlboom_3" , MaterialStageTextureAnimationLerp::Clamp },
+    { "models/weaphits/rlboom/rlboom_4" , MaterialStageTextureAnimationLerp::Clamp },
+    { "models/weaphits/rlboom/rlboom_5" , MaterialStageTextureAnimationLerp::Clamp },
+    { "models/weaphits/rlboom/rlboom_6" , MaterialStageTextureAnimationLerp::Clamp },
+    { "models/weaphits/rlboom/rlboom_7" , MaterialStageTextureAnimationLerp::Clamp },
+    { "models/weaphits/rlboom/rlboom_8" , MaterialStageTextureAnimationLerp::Clamp },
+    { "rocketFlare" , MaterialStageTextureAnimationLerp::Clamp },
+    { "rocketThrust" , MaterialStageTextureAnimationLerp::Clamp },
+    { "explode13" , MaterialStageTextureAnimationLerp::Clamp },
+    { "explode14" , MaterialStageTextureAnimationLerp::Clamp },
+    { "explode15" , MaterialStageTextureAnimationLerp::Clamp },
+    { "explode16" , MaterialStageTextureAnimationLerp::Clamp },
+    { "explode17" , MaterialStageTextureAnimationLerp::Clamp },
+    { "explode18" , MaterialStageTextureAnimationLerp::Clamp },
+    { "explode19" , MaterialStageTextureAnimationLerp::Clamp },
+    { "explode110" , MaterialStageTextureAnimationLerp::Clamp },
+    { "explode111" , MaterialStageTextureAnimationLerp::Clamp },
+    { "explode112" , MaterialStageTextureAnimationLerp::Clamp },
+    { "explode113" , MaterialStageTextureAnimationLerp::Clamp },
+    { "explode114" , MaterialStageTextureAnimationLerp::Clamp },
+    { "explode115" , MaterialStageTextureAnimationLerp::Clamp },
+    { "explode116" , MaterialStageTextureAnimationLerp::Clamp },
+    { "explode117" , MaterialStageTextureAnimationLerp::Clamp },
+    { "explode118" , MaterialStageTextureAnimationLerp::Clamp },
+    { "explode119" , MaterialStageTextureAnimationLerp::Clamp },
+    { "explode120" , MaterialStageTextureAnimationLerp::Clamp },
+    { "explode121" , MaterialStageTextureAnimationLerp::Clamp },
+    { "explode122" , MaterialStageTextureAnimationLerp::Clamp },
+    { "explode123" , MaterialStageTextureAnimationLerp::Clamp },
+    { "markShadow" , MaterialStageTextureAnimationLerp::Clamp },
+    { "models/weaphits/smokering2", MaterialStageTextureAnimationLerp::Clamp },
+    { "models/weaphits/spark", MaterialStageTextureAnimationLerp::Clamp },
+    { "textures/sfx/130boom/dpexplosion4_0000" , MaterialStageTextureAnimationLerp::Clamp },
+
+
+    { "logoHalo", MaterialStageTextureAnimationLerp::Clamp },
+    { "textures/oafx/flare.tga", MaterialStageTextureAnimationLerp::Clamp },
+    { "textures/flares/newflare", MaterialStageTextureAnimationLerp::Clamp },
+    { "textures/flares/wide.tga", MaterialStageTextureAnimationLerp::Clamp },
+    { "models/weapons2/rocketl/muzzy", MaterialStageTextureAnimationLerp::Clamp },
+    { "textures/flares/flarey", MaterialStageTextureAnimationLerp::Clamp }, 
+    { "gfx/fx/flares/blur", MaterialStageTextureAnimationLerp::Clamp },
+    { "textures/flares/largeglow", MaterialStageTextureAnimationLerp::Clamp },
+    { "textures/flares/twilightflare", MaterialStageTextureAnimationLerp::Clamp },
+    
+    //
 	{ "textures/sfx/flame1", MaterialStageTextureAnimationLerp::Wrap },
 	{ "textures/sfx/flame1dark", MaterialStageTextureAnimationLerp::Wrap },
 	{ "textures/sfx/flame1side", MaterialStageTextureAnimationLerp::Wrap },
@@ -63,6 +120,7 @@ static const LerpTextureAnimationMaterial s_lerpTextureAnimationMaterials[] =
 	{ "textures/sfx/xflame1side", MaterialStageTextureAnimationLerp::Wrap },
 	{ "textures/sfx/xflame2_1800", MaterialStageTextureAnimationLerp::Wrap },
 	{ "textures/sfx/x_conduit", MaterialStageTextureAnimationLerp::Wrap }
+    // suijingfeng
 };
 
 static const char *s_reflectiveMaterialNames[] =
@@ -312,12 +370,16 @@ void OnEntityAddedToScene(const Entity &entity, bool isWorldScene)
 		dl.position_type.w = DynamicLight::Capsule;
 	}
 	// Plasma ball.
-	else if (entity.type == EntityType::Sprite && s_meta.plasmaBallMaterial && entity.customMaterial == s_meta.plasmaBallMaterial->index)
+	else if (entity.type == EntityType::Sprite && 
+            s_meta.plasmaBallMaterial && 
+            entity.customMaterial == s_meta.plasmaBallMaterial->index)
 	{
 		dl.color_radius = vec4(plasmaColor, 150);
 	}
 	// Plasma explosion.
-	else if (entity.type == EntityType::Model && s_meta.plasmaExplosionMaterial && entity.customMaterial == s_meta.plasmaExplosionMaterial->index)
+	else if (entity.type == EntityType::Model &&
+            s_meta.plasmaExplosionMaterial &&
+            entity.customMaterial == s_meta.plasmaExplosionMaterial->index)
 	{
 		// CG_MissileHitWall: 600ms duration.
 		dl.color_radius = vec4(plasmaColor, 200 * CalculateExplosionLight(entity.materialTime, 600));
@@ -354,25 +416,26 @@ void OnMaterialCreate(Material *material)
 	// Enable texture variation.
 	bool textureVariation = false;
 
-	for (int k = 0; k < BX_COUNTOF(s_textureVariationWhitelist); k++)
+	for (int k = 0; k < BX_COUNTOF(s_textureVariationWhitelist); ++k)
 	{
 		const char *entry = s_textureVariationWhitelist[k];
 		const char *wildcard = strstr(entry, "*");
 
-		if (!util::Stricmp(material->name, entry) || (wildcard && !util::Stricmpn(material->name, entry, int(wildcard - entry))))
+		if (!util::Stricmp(material->name, entry) || 
+                (wildcard && !util::Stricmpn(material->name, entry, int(wildcard - entry))))
 		{
 			textureVariation = true;
 		}
 	}
 
-	for (int i = 0; i < Material::maxStages; i++)
+	for (int i = 0; i < Material::maxStages; ++i)
 	{
 		MaterialStage &stage = material->stages[i];
 
 		if (!stage.active)
 			break;
 
-		for (int j = 0; j < MaterialTextureBundle::maxImageAnimations; j++)
+		for (int j = 0; j < MaterialTextureBundle::maxImageAnimations; ++j)
 		{
 			const Texture *texture = stage.bundles[MaterialTextureBundleIndex::DiffuseMap].textures[j];
 
@@ -380,12 +443,13 @@ void OnMaterialCreate(Material *material)
 				break;
 
 			// Enable bloom.
-			for (int k = 0; k < BX_COUNTOF(s_bloomWhitelist); k++)
+			for (int k = 0; k < BX_COUNTOF(s_bloomWhitelist); ++k)
 			{
 				const char *entry = s_bloomWhitelist[k];
 				const char *wildcard = strstr(entry, "*");
 
-				if (!util::Stricmp(texture->getName(), entry) || (wildcard && !util::Stricmpn(texture->getName(), entry, int(wildcard - entry))))
+				if (!util::Stricmp(texture->getName(), entry) || 
+                        (wildcard && !util::Stricmpn(texture->getName(), entry, int(wildcard - entry))))
 				{
 					stage.bloom = true;
 				}
@@ -399,6 +463,11 @@ void OnMaterialCreate(Material *material)
 	{
 		for (const LerpTextureAnimationMaterial &m : s_lerpTextureAnimationMaterials)
 		{
+           
+
+            interface::PrintWarningf("WARNING: '%s'!\n",  material->name );
+
+
 			if (util::Stricmp(material->name, m.name) != 0)
 				continue;
 
@@ -416,7 +485,8 @@ void OnMaterialCreate(Material *material)
 					}
 				}
 
-				// Waveforms are used to hide the default choppy animations. They make the lerped animations flicker, so disable them.
+				// Waveforms are used to hide the default choppy animations.
+                // They make the lerped animations flicker, so disable them.
 				if (stage.rgbGen == MaterialColorGen::Waveform)
 					stage.rgbGen = MaterialColorGen::Identity;
 			}

@@ -207,7 +207,8 @@ Skin::Skin(const char *name, qhandle_t handle)
 
 				if (nModels_ >= maxModels_)
 				{
-					interface::PrintWarningf("WARNING: Ignoring models in '%s', the max is %d!\n", name, (int)maxModels_);
+					interface::PrintWarningf("WARNING: Ignoring models in '%s', the max is %d!\n",
+                            name, (int)maxModels_);
 					break;
 				}
 

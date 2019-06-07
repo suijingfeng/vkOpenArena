@@ -24,8 +24,8 @@ typedef struct shaderCommands_s
 {
 	unsigned int indexes[SHADER_MAX_INDEXES];
 	float		xyz[SHADER_MAX_VERTEXES][4];
-	vec4_t		normal[SHADER_MAX_VERTEXES];
-	vec2_t		texCoords[SHADER_MAX_VERTEXES][2];
+	float		normal[SHADER_MAX_VERTEXES][4];
+	float		texCoords[SHADER_MAX_VERTEXES][2][2];
 	uint8_t     vertexColors[SHADER_MAX_VERTEXES][4];
 	int			vertexDlightBits[SHADER_MAX_VERTEXES];
 
@@ -50,6 +50,7 @@ typedef struct shaderCommands_s
 
 
 void R_ClearShaderCommand(void);
+float R_GetTessShaderTime(void);
 
 
 #endif

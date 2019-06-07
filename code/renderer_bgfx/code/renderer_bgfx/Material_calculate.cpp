@@ -185,7 +185,9 @@ void MaterialStage::setTextureSamplers(Uniforms_MaterialStage *uniforms) const
 
 bool MaterialStage::shouldLerpTextureAnimation() const
 {
-	return bundles[MaterialTextureBundleIndex::DiffuseMap].numImageAnimations > 1 && textureAnimationLerp != MaterialStageTextureAnimationLerp::Disabled && main::IsLerpTextureAnimationEnabled();
+	return bundles[MaterialTextureBundleIndex::DiffuseMap].numImageAnimations > 1 && 
+        textureAnimationLerp != MaterialStageTextureAnimationLerp::Disabled && 
+        main::IsLerpTextureAnimationEnabled();
 }
 
 void MaterialStage::calculateTextureAnimation(int *frame, int *nextFrame, float *fraction) const
@@ -194,7 +196,8 @@ void MaterialStage::calculateTextureAnimation(int *frame, int *nextFrame, float 
 
 	if (frame)
 	{
-		// It is necessary to do this messy calc to make sure animations line up exactly with waveforms of the same frequency.
+		// It is necessary to do this messy calc to make sure animations
+        // line up exactly with waveforms of the same frequency.
 		*frame = std::lrintf(material->time_ * diffuseBundle.imageAnimationSpeed * g_funcTableSize);
 		*frame >>= g_funcTableSize2;
 		*frame = std::max(0, *frame); // May happen with shader time offsets.
