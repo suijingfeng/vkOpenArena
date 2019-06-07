@@ -3,10 +3,11 @@
 This project is a fork of OpenArena with specific changes to its renderer module.
 It is mainly for myself to study Vulkan/OpenGL API and Quake3's engine. 
 I add a vulkan-based render module to this game, the vulkan-based render have
-the same visual effects with the default opengl1 render. ( Informing you in case
+the nearly same visual effects with the default opengl1 render. ( Informing you in case
 of you are disapointed, vulkan is just a 2D/3D render API, whether the rendered
-image is beautiful or not depend more on the texture and shader provided than API itself). 
-The project is under developing, so always check the lastest build.
+image is beautiful or not depend more on the textures，shaders，material provided). 
+Of course I will try to add some new features to it，so the project is under developing, 
+so always check the lastest build.
 
 The opengl2 render module ported from ioq3 is more beatiful and powerful, 
 you can play with the cvars(r\_pbr, r\_cubemapping, r\_hdr, r\_ssao ...) to enable
