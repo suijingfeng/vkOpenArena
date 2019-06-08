@@ -10,6 +10,7 @@
 #include "vk_shade_geometry.h"
 #include "vk_pipelines.h"
 #include "vk_image.h"
+#include "vk_cinematic.h"
 
 #include "tr_fog.h"
 #include "tr_backend.h"
@@ -124,6 +125,8 @@ void R_Init( void )
     
     vk_InitShaderStagePipeline();
 
+    vk_initScratchImage();
+
 	R_InitImages();
 
 	R_InitShaders();
@@ -188,7 +191,8 @@ void RE_Shutdown( qboolean destroyWindow )
 
 
 	if ( tr.registered )
-    {	
+    {
+        vk_destroyScratchImage();
 		vk_destroyImageRes();
         tr.registered = qfalse;
 	}

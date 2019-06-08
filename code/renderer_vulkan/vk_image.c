@@ -11,7 +11,6 @@
 #include "R_SortAlgorithm.h"
 #include "vk_descriptor_sets.h"
 #include "ref_import.h" 
-#include "render_export.h"
 
 #define IMAGE_CHUNK_SIZE        (64 * 1024 * 1024)
 
@@ -76,9 +75,10 @@ void gpuMemUsageInfo_f(void)
 uint32_t find_memory_type(uint32_t memory_type_bits, VkMemoryPropertyFlags properties)
 {
     uint32_t i;
-    for (i = 0; i < vk.devMemProperties.memoryTypeCount; i++)
+    for (i = 0; i < vk.devMemProperties.memoryTypeCount; ++i)
     {
-        if ( ((memory_type_bits & (1 << i)) != 0) && (vk.devMemProperties.memoryTypes[i].propertyFlags & properties) == properties)
+        if ( ((memory_type_bits & (1 << i)) != 0) && 
+                (vk.devMemProperties.memoryTypes[i].propertyFlags & properties) == properties)
         {
             return i;
         }
@@ -720,7 +720,7 @@ image_t* R_CreateImage( const char *name, unsigned char* pic, const uint32_t wid
 }
 
 
-static void vk_destroySingleImage( image_t* pImg )
+static void vk_destroySingleImage( struct image_s * const pImg )
 {
    	// ri.Printf(PRINT_ALL, " Destroy Image: %s \n", pImg->imgName); 
     if(pImg->descriptor_set != VK_NULL_HANDLE)
@@ -730,6 +730,7 @@ static void vk_destroySingleImage( image_t* pImg )
         pImg->descriptor_set = VK_NULL_HANDLE;
     }
 
+    
     if (pImg->view != VK_NULL_HANDLE)
     {
         NO_CHECK( qvkDestroyImageView(vk.device, pImg->view, NULL) );
@@ -801,156 +802,6 @@ image_t* R_FindImageFile(const char *name, VkBool32 mipmap, VkBool32 allowPicmip
 }
 
 
-image_t	* tr_scratchImage[16];
-struct shader_s * tr_cinematicShader;
-
-void RE_UploadCinematic (int w, int h, int cols, int rows, const unsigned char *data, int client, VkBool32 dirty)
-{
-
-    image_t* const prtImage = tr_scratchImage[client];
-    
-    // if the scratchImage isn't in the format we want, specify it as a new texture
-    if ( (cols != prtImage->uploadWidth) || (rows != prtImage->uploadHeight) )
-    {
-        ri.Printf(PRINT_ALL, "w=%d, h=%d, cols=%d, rows=%d, client=%d, prtImage->width=%d, prtImage->height=%d\n", 
-           w, h, cols, rows, client, prtImage->uploadWidth, prtImage->uploadHeight);
-
-        // VULKAN
-
-        vk_destroySingleImage(prtImage);
-
-        prtImage->uploadWidth = cols;
-        prtImage->uploadHeight = rows;
-        prtImage->mipLevels = 1;
-
-        // vk_createImageAndBindWithMemory(prtImage);
-        vk_create2DImageHandle( VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT, prtImage);
-        vk_bindImageHandleWithDeviceMemory(prtImage->handle, &devMemImg.Index, devMemImg.Chunks);
-        vk_createViewForImageHandle(prtImage->handle, VK_FORMAT_R8G8B8A8_UNORM, &prtImage->view);
-        vk_createDescriptorSet(prtImage);
-
-
-        VkBufferImageCopy region;
-        region.bufferOffset = 0;
-        region.bufferRowLength = 0;
-        region.bufferImageHeight = 0;
-        region.imageSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-        region.imageSubresource.mipLevel = 0;
-        region.imageSubresource.baseArrayLayer = 0;
-        region.imageSubresource.layerCount = 1;
-        region.imageOffset.x = 0;
-        region.imageOffset.y = 0;
-        region.imageOffset.z = 0;
-        region.imageExtent.width = cols;
-        region.imageExtent.height = rows;
-        region.imageExtent.depth = 1;
-
-        const uint32_t buffer_size = cols * rows * 4;
-
-        void* pDat;
-        VK_CHECK( qvkMapMemory(vk.device, StagBuf.mappableMem, 0, VK_WHOLE_SIZE, 0, &pDat) );
-        memcpy(pDat, data, buffer_size);
-        vk_stagBufferToDeviceLocalMem(tr_scratchImage[client]->handle, &region, 1);
-        
-        NO_CHECK( qvkUnmapMemory(vk.device, StagBuf.mappableMem) );
-    }
-    else if (dirty)
-    {
-        // otherwise, just subimage upload it so that
-        // drivers can tell we are going to be changing
-        // it and don't try and do a texture compression       
-        // vk_uploadSingleImage(prtImage->handle, cols, rows, data);
-
-        VkBufferImageCopy region;
-        region.bufferOffset = 0;
-        region.bufferRowLength = 0;
-        region.bufferImageHeight = 0;
-        region.imageSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-        region.imageSubresource.mipLevel = 0;
-        region.imageSubresource.baseArrayLayer = 0;
-        region.imageSubresource.layerCount = 1;
-        region.imageOffset.x = 0;
-        region.imageOffset.y = 0;
-        region.imageOffset.z = 0;
-        region.imageExtent.width = cols;
-        region.imageExtent.height = rows;
-        region.imageExtent.depth = 1;
-
-        const uint32_t buffer_size = cols * rows * 4;
-
-        void* pDat;
-        VK_CHECK( qvkMapMemory(vk.device, StagBuf.mappableMem, 0, VK_WHOLE_SIZE, 0, &pDat));
-        memcpy(pDat, data, buffer_size);
-        vk_stagBufferToDeviceLocalMem(tr_scratchImage[client]->handle, &region, 1);
-        NO_CHECK( qvkUnmapMemory(vk.device, StagBuf.mappableMem) );
-    }
-}
-
-
-/*
-=============
-FIXME: not exactly backend
-Stretches a raw 32 bit power of 2 bitmap image over the given screen rectangle.
-Used for cinematics.
-=============
-*/
-void RE_StretchRaw (int x, int y, int w, int h, int cols, int rows, const unsigned char *data, int client, qboolean dirty)
-{
-	int	i, j;
-
-	if ( !tr.registered ) {
-		return;
-	}
-	
-    // SCR_AdjustFrom640( &x, &y, &w, &h );
-/*
-    float xscale = vk.renderArea.extent.width / 640.0f;
-    float yscale = vk.renderArea.extent.height / 480.0f;
-
-    x *= xscale;
-    y *= yscale;
-    w *= xscale;
-    h *= yscale;
-*/
-
-    // make sure rows and cols are powers of 2
-	for ( i = 1 ; ( 1 << i ) < cols ; ++i )
-    {
-        ;
-	}
-	for ( j = 1 ; ( 1 << j ) < rows ; ++j )
-    {
-        ;
-	}
-    
-	if ( ( 1 << i ) != cols || ( 1 << j ) != rows) {
-		ri.Error (ERR_DROP, "Draw_StretchRaw: size not a power of 2: %i by %i", cols, rows);
-	}
-
-    RE_UploadCinematic(w, h, cols, rows, data, client, dirty);
-
-    tr_cinematicShader->stages[0]->bundle[0].image[0] = tr_scratchImage[client];
-    
-    
-    RE_StretchPic(x, y, w, h,  0.5f / cols, 0.5f / rows,  1.0f - 0.5f / cols, 1.0f - 0.5 / rows, tr_cinematicShader->index);
-}
-
-
-
-image_t * R_GetScratchImageHandle(int idx)
-{
-	ri.Printf (PRINT_ALL, " R_GetScratchImageHandle: %i\n", idx);
-
-    return tr_scratchImage[idx];
-}
-
-void R_SetCinematicShader( struct shader_s * pShader)
-{
-    ri.Printf (PRINT_ALL, " R_SetCinematicShader \n");
-
-    tr_cinematicShader = pShader;
-}
-
 
 static void R_CreateDefaultImage( void )
 {
@@ -1001,6 +852,7 @@ static void R_CreateWhiteImage(void)
 }
 
 
+/*
 static void R_CreateIdentityLightImage(void)
 {
     #define	DEFAULT_SIZE 64
@@ -1023,7 +875,7 @@ static void R_CreateIdentityLightImage(void)
             qfalse, qfalse, GL_REPEAT);
     #undef DEFAULT_SIZE
 }
-
+*/
 
 static void R_CreateDlightImage( void )
 {
@@ -1091,127 +943,9 @@ static void R_CreateFogImage( void )
 
 
 
-image_t* R_CreateImageForCinematic( const char *name, unsigned char* pic, const uint32_t width, const uint32_t height)
-{
-    // ri.Printf( PRINT_ALL, " Create Image: %s\n", name);
-    
-    image_t* pImage = (image_t*) ri.Hunk_Alloc( sizeof( image_t ), h_low );
-
-    strncpy (pImage->imgName, name, sizeof(pImage->imgName));
-    pImage->index = tr.numImages;
-    pImage->mipmap = 0; 
-    pImage->mipLevels = 1; 
-    pImage->allowPicmip = 1; //
-    pImage->wrapClampMode = GL_CLAMP; //
-    pImage->width = width;
-    pImage->height = height;
-    pImage->isLightmap = 0; //
-
-  
-    const unsigned int max_texture_size = 2048;
-    
-    unsigned int scaled_width, scaled_height;
-
-    for(scaled_width = max_texture_size; scaled_width > width; scaled_width>>=1)
-        ;
-    
-    for (scaled_height = max_texture_size; scaled_height > height; scaled_height>>=1)
-        ;
-    
-    pImage->uploadWidth = scaled_width;
-    pImage->uploadHeight = scaled_height;
-    
-    uint32_t buffer_size = 4 * scaled_width * scaled_height;
-    unsigned char * const pUploadBuffer = (unsigned char*) malloc ( 2 * buffer_size);
-
-    if ((scaled_width != width) || (scaled_height != height) )
-    {
-        // just info
-        // ri.Printf( PRINT_WARNING, "ResampleTexture: inwidth: %d, inheight: %d, outwidth: %d, outheight: %d\n",
-        //        width, height, scaled_width, scaled_height );
-        
-        //go down from [width, height] to [scaled_width, scaled_height]
-        ResampleTexture (pUploadBuffer, width, height, pic, scaled_width, scaled_height);
-    }
-    else
-    {
-        memcpy(pUploadBuffer, pic, buffer_size);
-    }
-
-
-    // perform optional picmip operation
-
-
-    ////////////////////////////////////////////////////////////////////
-    // 2^12 = 4096
-    // The set of all bytes bound to all the source regions must not overlap
-    // the set of all bytes bound to the destination regions.
-    //
-    // The set of all bytes bound to each destination region must not overlap
-    // the set of all bytes bound to another destination region.
-
-    VkBufferImageCopy regions[1];
-
-    regions[0].bufferOffset = 0;
-    regions[0].bufferRowLength = 0;
-    regions[0].bufferImageHeight = 0;
-    regions[0].imageSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-    regions[0].imageSubresource.mipLevel = 0;
-    regions[0].imageSubresource.baseArrayLayer = 0;
-    regions[0].imageSubresource.layerCount = 1;
-    regions[0].imageOffset.x = 0;
-    regions[0].imageOffset.y = 0;
-    regions[0].imageOffset.z = 0;
-    regions[0].imageExtent.width = pImage->uploadWidth;
-    regions[0].imageExtent.height = pImage->uploadHeight;
-    regions[0].imageExtent.depth = 1;
-
-    
-    vk_create2DImageHandle( VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT, pImage);
-    
-    vk_bindImageHandleWithDeviceMemory(pImage->handle, &devMemImg.Index, devMemImg.Chunks);
-
-    vk_createViewForImageHandle(pImage->handle, VK_FORMAT_R8G8B8A8_UNORM, &pImage->view);
-    vk_createDescriptorSet(pImage);
-
-
-    void* data;
-    VK_CHECK( qvkMapMemory(vk.device, StagBuf.mappableMem, 0, VK_WHOLE_SIZE, 0, &data) );
-    memcpy(data, pUploadBuffer, buffer_size);
-    NO_CHECK( qvkUnmapMemory(vk.device, StagBuf.mappableMem) );
-    vk_stagBufferToDeviceLocalMem(pImage->handle, regions, pImage->mipLevels);
-    
-    free(pUploadBuffer);
-
-    return pImage;
-}
-
-
-static void R_CreateScratchImage(void)
-{
-    #define DEFAULT_SIZE 512
-
-    uint32_t x;
-    
-    unsigned char data[DEFAULT_SIZE][DEFAULT_SIZE][4];
-
-    for(x=0; x<16; ++x)
-    {
-        // scratchimage is usually used for cinematic drawing
-        tr_scratchImage[x] = R_CreateImageForCinematic("*scratch", (unsigned char *)data, 
-                DEFAULT_SIZE, DEFAULT_SIZE);
-    }
-    #undef DEFAULT_SIZE
-}
-
-
-
 void R_InitImages( void )
 {
     memset(hashTable, 0, sizeof(hashTable));
-
-    memset( tr_scratchImage, 0, sizeof( tr_scratchImage ) );
-    tr_cinematicShader = NULL;
 
     ri.Printf(PRINT_ALL, " Create staging buffer (8 MB) \n");
 
@@ -1230,23 +964,14 @@ void R_InitImages( void )
     R_SetColorMappings(r_brightness->value, r_gamma->value);
 
     // create default texture and white texture
-    // R_CreateBuiltinImages();
-
     R_CreateDefaultImage();
 
     R_CreateWhiteImage();
 
-    // R_CreateIdentityLightImage();
-
-    R_CreateScratchImage();
-    
     R_CreateDlightImage();
     
     R_CreateFogImage();
 }
-
-
-
 
 
 void vk_destroyImageRes(void)
@@ -1261,13 +986,7 @@ void vk_destroyImageRes(void)
         vk_destroySingleImage(tr.images[i]);
 	}
 
-	for (i = 0; i < 16; ++i)
-	{
-        vk_destroySingleImage(tr_scratchImage[i]);
-	}
-    memset( tr_scratchImage, 0, sizeof( tr_scratchImage ) );
-    tr_cinematicShader = NULL;
-
+    
     for (i = 0; i < devMemImg.Index; ++i)
     {
         NO_CHECK( qvkFreeMemory(vk.device, devMemImg.Chunks[i].block, NULL) );

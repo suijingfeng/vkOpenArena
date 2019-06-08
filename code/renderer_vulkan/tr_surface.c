@@ -936,17 +936,21 @@ static void RB_SurfaceGrid( srfGridMesh_t *cv )
 
 	used = 0;
 	rows = 0;
-	while ( used < lodHeight - 1 ) {
+	while ( used < lodHeight - 1 )
+    {
 		// see how many rows of both verts and indexes we can add without overflowing
 		do {
 			vrows = ( SHADER_MAX_VERTEXES - tess.numVertexes ) / lodWidth;
 			irows = ( SHADER_MAX_INDEXES - tess.numIndexes ) / ( lodWidth * 6 );
 
 			// if we don't have enough space for at least one strip, flush the buffer
-			if ( vrows < 2 || irows < 1 ) {
+			if ( vrows < 2 || irows < 1 )
+            {
 				RB_EndSurface(&tess);
 				RB_BeginSurface(tess.shader, tess.fogNum, &tess );
-			} else {
+			}
+            else
+            {
 				break;
 			}
 		} while ( 1 );
@@ -1143,11 +1147,6 @@ void RB_BeginSurface( shader_t * const pShader, int fogNum, shaderCommands_t * c
 
 void RB_EndSurface( shaderCommands_t * const pTess )
 {
-
-//	if ((pTess->numIndexes == 0) || (pTess->numVertexes == 0)) {
-//		return;
-//	}
-
 
 	if ( pTess->shader == tr.shadowShader ) {
 		RB_ShadowTessEnd();

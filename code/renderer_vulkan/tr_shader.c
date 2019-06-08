@@ -21,6 +21,8 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 */
 #include "tr_globals.h"
 #include "vk_image.h"
+#include "vk_cinematic.h"
+
 #include "vk_pipelines.h"
 #include "vk_shaders.h"
 #include "tr_cvar.h"
@@ -675,10 +677,12 @@ static qboolean ParseStage( shaderStage_t *stage, char **text )
 			token = R_ParseExt( text, qfalse );
 			if ( !token[0] )
 			{
-				ri.Printf( PRINT_WARNING, "WARNING: missing parameter for 'videoMmap' keyword in shader '%s'\n", shader.name );
+				ri.Printf( PRINT_WARNING, "WARNING: missing parameter for 'videoMmap' keyword in shader '%s'\n",
+                        shader.name );
 				return qfalse;
 			}
-			stage->bundle[0].videoMapHandle = ri.CIN_PlayCinematic( token, 0, 0, 256, 256, (CIN_loop | CIN_silent | CIN_shader));
+			stage->bundle[0].videoMapHandle = ri.CIN_PlayCinematic( token, 0, 0, 256, 256,
+                    (CIN_loop | CIN_silent | CIN_shader));
 			if (stage->bundle[0].videoMapHandle != -1)
             {
 				stage->bundle[0].isVideoMap = qtrue;
@@ -2182,7 +2186,7 @@ shader_t *R_GetShaderByHandle( qhandle_t hShader )
 CreateInternalShaders
 ====================
 */
-extern void R_SetCinematicShader( shader_t * pShader);
+
 
 static void CreateCinematicShader( void )
 {

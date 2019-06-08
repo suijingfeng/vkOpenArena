@@ -67,7 +67,7 @@ typedef struct trGlobals_s
 	struct image_s * fogImage;
 	struct image_s * dlightImage;	// inverse-quare highlight for projective adding
 	struct image_s * whiteImage;			// full of 0xff
-	struct image_s * identityLightImage;	// full of tr.identityLightByte
+//	struct image_s * identityLightImage;	// full of tr.identityLightByte
 	struct image_s * images[MAX_DRAWIMAGES];
     struct image_s * lightmaps[MAX_LIGHTMAPS];
 	int				 numImages;

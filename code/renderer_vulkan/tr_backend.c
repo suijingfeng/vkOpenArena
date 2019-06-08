@@ -29,6 +29,18 @@ uint32_t R_GetRefRdTime(void)
     return backEnd.refdef.time;
 }
 
+float R_GetRefFloatTime(void)
+{
+    return backEnd.refdef.floatTime;
+}
+
+void R_SetRefFloatTime(float t)
+{
+    backEnd.refdef.floatTime = t;
+}
+
+
+
 void R_UpdatePerformanceCounters(uint32_t nVerts, uint32_t nIdxes, uint32_t nPasses)
 {
 	++backEnd.pc.c_shaders;

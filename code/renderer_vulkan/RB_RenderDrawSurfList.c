@@ -22,7 +22,7 @@ void RB_RenderDrawSurfList(const struct drawSurf_s * const pSurf, const uint32_t
 	backEnd.projection2D = qfalse;
 
 	// save original time for entity shader offsets
-	float originalTime = backEnd.refdef.floatTime;
+	float originalTime = R_GetRefFloatTime();
 
     // Any mirrored or portaled views have already been drawn, 
     // so prepare to actually render the visible surfaces for this view
@@ -90,7 +90,7 @@ void RB_RenderDrawSurfList(const struct drawSurf_s * const pSurf, const uint32_t
              (dlighted != oldDlighted) || 
              (entityNum != oldEntityNum && !shader->entityMergable) )
         {
-			if (oldShader != NULL)
+			if ( (oldShader != NULL) && (tess.numVertexes != 0))
             {
 				RB_EndSurface(&tess);
 			}
@@ -110,10 +110,14 @@ void RB_RenderDrawSurfList(const struct drawSurf_s * const pSurf, const uint32_t
             if ( entityNum != REFENTITYNUM_WORLD )
             {
 				backEnd.currentEntity = &backEnd.refdef.entities[entityNum];
-				backEnd.refdef.floatTime = originalTime - backEnd.currentEntity->e.shaderTime;
+                // avoid a read after write 
+                float temp = originalTime - backEnd.currentEntity->e.shaderTime;
+                R_SetRefFloatTime( temp );
+
 				// we have to reset the shaderTime as well otherwise image animations start
 				// from the wrong frame
-				tess.shaderTime = backEnd.refdef.floatTime - tess.shader->timeOffset;
+				
+                tess.shaderTime = temp - tess.shader->timeOffset;
 
 				// set up the transformation matrix
 				R_RotateForEntity( backEnd.currentEntity, &backEnd.viewParms, &backEnd.or );
@@ -131,11 +135,13 @@ void RB_RenderDrawSurfList(const struct drawSurf_s * const pSurf, const uint32_t
             else
             {
 				backEnd.currentEntity = &tr.worldEntity;
-				backEnd.refdef.floatTime = originalTime;
-				backEnd.or = backEnd.viewParms.world;
+				
+                R_SetRefFloatTime( originalTime );
+				
+                backEnd.or = backEnd.viewParms.world;
 				// we have to reset the shaderTime as well otherwise image animations on
 				// the world (like water) continue with the wrong frame
-				tess.shaderTime = backEnd.refdef.floatTime - tess.shader->timeOffset;
+				tess.shaderTime = originalTime - tess.shader->timeOffset;
 				R_TransformDlights( backEnd.refdef.num_dlights, backEnd.refdef.dlights, &backEnd.or );
 			}
 
@@ -150,10 +156,11 @@ void RB_RenderDrawSurfList(const struct drawSurf_s * const pSurf, const uint32_t
 		rb_surfaceTable[ *pSurf[i].surType ]( pSurf[i].surType );
 	}
 
-	backEnd.refdef.floatTime = originalTime;
-
-	// draw the contents of the last shader batch
-	if (oldShader != NULL)
+	// backEnd.refdef.floatTime = originalTime;
+    R_SetRefFloatTime( originalTime );
+	
+    // draw the contents of the last shader batch
+	if ( (oldShader != NULL) && (tess.numVertexes != 0))
     {
 		RB_EndSurface(&tess);
 	}

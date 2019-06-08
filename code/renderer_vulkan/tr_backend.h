@@ -32,6 +32,9 @@ typedef struct {
 
 extern backEndState_t backEnd;
 
+void R_SetRefFloatTime(float t);
+float R_GetRefFloatTime(void);
+
 void R_ClearBackendState(void);
 void R_PrintBackEnd_OR_f(void);
 void R_UpdatePerformanceCounters(uint32_t nVerts, uint32_t nIdxes, uint32_t nPasses);
