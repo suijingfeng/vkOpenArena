@@ -2186,8 +2186,6 @@ shader_t *R_GetShaderByHandle( qhandle_t hShader )
 CreateInternalShaders
 ====================
 */
-
-
 static void CreateCinematicShader( void )
 {
     memset( &shader, 0, sizeof( shader ) );

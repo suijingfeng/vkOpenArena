@@ -256,8 +256,9 @@ void RB_StretchPic(float x, float y, float w, float h,
         // set time for 2D shaders
 	    int t = ri.Milliseconds();
         
-        backEnd.refdef.time = t;
-	    backEnd.refdef.floatTime = t * 0.001f;
+        R_SetRefTime(t);
+
+        R_SetRefFloatTime(t * 0.001f);
 	}
 
     // nearly true all the time, dont know why do this judgement

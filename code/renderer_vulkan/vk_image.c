@@ -4,7 +4,6 @@
 #include "tr_globals.h"
 #include "tr_shader.h"
 #include "tr_cvar.h"
-#include "tr_fog.h"
 #include "vk_image_sampler.h"
 #include "vk_image.h"
 #include "R_ImageProcess.h"
@@ -167,8 +166,6 @@ void vk_destroyBufferResource(VkBuffer hBuf, VkDeviceMemory hDevMem)
         hBuf = VK_NULL_HANDLE;
     }
 }
-
-
 
 
 static void record_image_layout_transition( 
@@ -544,7 +541,6 @@ image_t* R_CreateImage( const char *name, unsigned char* pic, const uint32_t wid
     // Textures can be an actual image, a lightmap, or even normal maps for advanced 
     // surface lighting effects. 
 
-
     // convert to exact power of 2 sizes
   
     const unsigned int max_texture_size = 2048;
@@ -557,7 +553,7 @@ image_t* R_CreateImage( const char *name, unsigned char* pic, const uint32_t wid
     for (scaled_height = max_texture_size; scaled_height > height; scaled_height>>=1)
         ;
 
-
+    // perform optional picmip operation
     if ( allowPicmip )
     {
         scaled_width >>= r_picmip->integer;
@@ -583,11 +579,7 @@ image_t* R_CreateImage( const char *name, unsigned char* pic, const uint32_t wid
     {
         memcpy(pUploadBuffer, pic, buffer_size);
     }
-
-
-    // perform optional picmip operation
-
-
+    
     ////////////////////////////////////////////////////////////////////
     // 2^12 = 4096
     // The set of all bytes bound to all the source regions must not overlap
@@ -749,7 +741,6 @@ static void vk_destroySingleImage( struct image_s * const pImg )
 
 image_t* R_FindImageFile(const char *name, VkBool32 mipmap, VkBool32 allowPicmip, int glWrapClampMode)
 {
-   	image_t* image;
 
 	if (name == NULL)
     {
@@ -760,7 +751,7 @@ image_t* R_FindImageFile(const char *name, VkBool32 mipmap, VkBool32 allowPicmip
 	int hash = generateHashValue(name);
 
 	// see if the image is already loaded
-
+   	image_t* image;
 	for (image=hashTable[hash]; image; image=image->next)
 	{
 		if ( !strcmp( name, image->imgName ) )
@@ -835,7 +826,8 @@ static void R_CreateDefaultImage( void )
 			data[x][DEFAULT_SIZE-1][2] =
 			data[x][DEFAULT_SIZE-1][3] = 255;
 	}
-	tr.defaultImage = R_CreateImage("*default", (unsigned char *)data, DEFAULT_SIZE, DEFAULT_SIZE, qtrue, qfalse, GL_REPEAT);
+	tr.defaultImage = R_CreateImage("*default", (unsigned char *)data, 
+            DEFAULT_SIZE, DEFAULT_SIZE, qtrue, qfalse, GL_REPEAT);
     #undef DEFAULT_SIZE
 }
 
@@ -847,35 +839,12 @@ static void R_CreateWhiteImage(void)
 	// we use a solid white image instead of disabling texturing
 	unsigned char data[DEFAULT_SIZE][DEFAULT_SIZE][4];
 	memset( data, 255, sizeof( data ) );
-	tr.whiteImage = R_CreateImage("*white", (unsigned char *)data, DEFAULT_SIZE, DEFAULT_SIZE, qfalse, qfalse, GL_REPEAT);
+	tr.whiteImage = R_CreateImage("*white", (unsigned char *)data, 
+            DEFAULT_SIZE, DEFAULT_SIZE, qfalse, qfalse, GL_REPEAT);
     #undef DEFAULT_SIZE
 }
 
 
-/*
-static void R_CreateIdentityLightImage(void)
-{
-    #define	DEFAULT_SIZE 64
-    uint32_t x,y;
-	unsigned char data[DEFAULT_SIZE][DEFAULT_SIZE][4];
-
-	// with overbright bits active, we need an image which is some fraction of full color,
-	// for default lightmaps, etc
-	for (x=0 ; x<DEFAULT_SIZE ; ++x)
-    {
-		for (y=0; y<DEFAULT_SIZE; ++y)
-        {
-			data[y][x][0] = 
-			data[y][x][1] = 
-			data[y][x][2] = 255;
-			data[y][x][3] = 255;
-		}
-	}
-	tr.identityLightImage = R_CreateImage("*identityLight", (unsigned char *)data, DEFAULT_SIZE, DEFAULT_SIZE,
-            qfalse, qfalse, GL_REPEAT);
-    #undef DEFAULT_SIZE
-}
-*/
 
 static void R_CreateDlightImage( void )
 {
@@ -920,9 +889,9 @@ static void R_CreateFogImage( void )
 	unsigned char* const data = (unsigned char*) malloc( FOG_S * FOG_T * 4 );
 
 	// S is distance, T is depth
-	for (x=0 ; x<FOG_S ; x++)
+	for (x=0 ; x<FOG_S; ++x)
     {
-		for (y=0 ; y<FOG_T ; y++)
+		for (y=0 ; y<FOG_T; ++y)
         {
 			float d = R_FogFactor( ( x + 0.5f ) / FOG_S, ( y + 0.5f ) / FOG_T );
 
@@ -939,6 +908,9 @@ static void R_CreateFogImage( void )
 	tr.fogImage = R_CreateImage("*fog", (unsigned char *)data, FOG_S, FOG_T, qfalse, qfalse, GL_CLAMP);
 	
     free( data );
+
+    #undef FOG_S
+    #undef FOG_T
 }
 
 

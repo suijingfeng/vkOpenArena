@@ -287,6 +287,14 @@ void RE_UploadCinematic(int w, int h, int cols, int rows, const unsigned char * 
 }
 
 
+inline static int isPowerOfTwo(int number)
+{
+    return ((number & (number - 1)) == 0);
+}
+
+
+extern void RB_StretchPic(float x, float y, float w, float h, 
+				  float s1, float t1, float s2, float t2, shader_t * pShader );
 
 /*
 =============
@@ -298,7 +306,6 @@ Used for cinematics.
 void RE_StretchRaw (int x, int y, int w, int h, int cols, int rows, 
         const unsigned char *data, int client, qboolean dirty )
 {
-	int	i, j;
 
     // SCR_AdjustFrom640( &x, &y, &w, &h );
 /*
@@ -312,24 +319,18 @@ void RE_StretchRaw (int x, int y, int w, int h, int cols, int rows,
 */
 
     // make sure rows and cols are powers of 2
-	for ( i = 1 ; ( 1 << i ) < cols ; ++i )
+	if ( isPowerOfTwo( cols ) && isPowerOfTwo( rows ))
     {
-        ;
+        RE_UploadCinematic(w, h, cols, rows, data, client, dirty);
+
+        tr_cinematicShader->stages[0]->bundle[0].image[0] = &tr_scratchImage[client];
+    
+        RB_StretchPic(x, y, w, h, 
+				  0.5f / cols, 0.5f / rows, 1.0f - 0.5f / cols, 1.0f - 0.5 / rows, tr_cinematicShader );
 	}
-	for ( j = 1 ; ( 1 << j ) < rows ; ++j )
+    else
     {
-        ;
-	}
-    
-	if ( ( 1 << i ) != cols || ( 1 << j ) != rows) {
-		ri.Error (ERR_DROP, "Draw_StretchRaw: size not a power of 2: %i by %i", cols, rows);
-	}
-
-    RE_UploadCinematic(w, h, cols, rows, data, client, dirty);
-
-    tr_cinematicShader->stages[0]->bundle[0].image[0] = &tr_scratchImage[client];
-    
-    
-    RE_StretchPic(x, y, w, h,  0.5f / cols, 0.5f / rows,
-            1.0f - 0.5f / cols, 1.0f - 0.5 / rows, tr_cinematicShader->index);
+        ri.Printf(PRINT_WARNING, "Draw_StretchRaw: size not a power of 2: %i by %i",
+                cols, rows);
+    }
 }

@@ -24,6 +24,13 @@ void R_PrintBackEnd_OR_f(void)
     printMat4x4f("backEnd.or.modelMatrix", backEnd.or.modelMatrix);	
 }
 
+
+void R_SetRefTime(int t)
+{
+    backEnd.refdef.time = t;
+}
+
+
 uint32_t R_GetRefRdTime(void)
 {
     return backEnd.refdef.time;
