@@ -232,10 +232,12 @@ static void R_SetupEntityLightingGrid( trRefEntity_t *ent ) {
 		normal[1] = tr.sinTable[lat] * tr.sinTable[lng];
 		normal[2] = tr.sinTable[(lng+(FUNCTABLE_SIZE/4))&FUNCTABLE_MASK];
 
+
 		VectorMA( direction, factor, normal, direction );
 	}
 
-	if ( totalFactor > 0 && totalFactor < 0.99 ) {
+	if ( (totalFactor > 0.0f) && (totalFactor < 0.99f) )
+    {
 		totalFactor = 1.0f / totalFactor;
 		VectorScale( ent->ambientLight, totalFactor, ent->ambientLight );
 		VectorScale( ent->directedLight, totalFactor, ent->directedLight );
@@ -285,12 +287,12 @@ Calculates all the lighting values that will be used
 by the Calc_* functions
 =================
 */
-void R_SetupEntityLighting( const trRefdef_t *refdef, trRefEntity_t *ent ) {
+void R_SetupEntityLighting( const trRefdef_t *refdef, trRefEntity_t *ent )
+{
 	int				i;
 	dlight_t		*dl;
 	float			power;
 	vec3_t			dir;
-	float			d;
 	vec3_t			lightDir;
 	vec3_t			lightOrigin;
 
@@ -314,9 +316,12 @@ void R_SetupEntityLighting( const trRefdef_t *refdef, trRefEntity_t *ent ) {
 
 	// if NOWORLDMODEL, only use dynamic lights (menu system, etc)
 	if ( !(refdef->rdflags & RDF_NOWORLDMODEL ) 
-		&& tr.world->lightGridData ) {
+		&& tr.world->lightGridData )
+    {
 		R_SetupEntityLightingGrid( ent );
-	} else {
+	}
+    else
+    {
 		ent->ambientLight[0] = ent->ambientLight[1] = 
 			ent->ambientLight[2] = tr.identityLight * 150;
 		ent->directedLight[0] = ent->directedLight[1] = 
@@ -335,10 +340,11 @@ void R_SetupEntityLighting( const trRefdef_t *refdef, trRefEntity_t *ent ) {
 	//
 	// modify the light by dynamic lights
 	//
-	d = VectorLen( ent->directedLight );
+	float d = VectorLength( ent->directedLight );
 	VectorScale( ent->lightDir, d, lightDir );
 
-	for ( i = 0 ; i < refdef->num_dlights ; i++ ) {
+	for ( i = 0 ; i < refdef->num_dlights ; ++i )
+    {
 		dl = &refdef->dlights[i];
 		VectorSubtract( dl->origin, lightOrigin, dir );
 		d = VectorNormalize( dir );
@@ -354,8 +360,10 @@ void R_SetupEntityLighting( const trRefdef_t *refdef, trRefEntity_t *ent ) {
 	}
 
 	// clamp ambient
-	for ( i = 0 ; i < 3 ; i++ ) {
-		if ( ent->ambientLight[i] > tr.identityLightByte ) {
+	for ( i = 0 ; i < 3 ; ++i )
+    {
+		if ( ent->ambientLight[i] > tr.identityLightByte )
+        {
 			ent->ambientLight[i] = tr.identityLightByte;
 		}
 	}

@@ -35,6 +35,7 @@ extern backEndState_t backEnd;
 void R_SetRefFloatTime(float t);
 float R_GetRefFloatTime(void);
 void R_SetRefTime(int t);
+uint32_t R_GetRefRdTime(void);
 
 void R_ClearBackendState(void);
 void R_PrintBackEnd_OR_f(void);

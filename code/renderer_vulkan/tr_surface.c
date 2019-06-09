@@ -36,8 +36,6 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #include "srfPoly_type.h"
 #include "srfSurfaceFace_type.h"
 
-
-
 /*
 
   THIS ENTIRE FILE IS BACK END
@@ -1053,7 +1051,7 @@ void RB_SurfaceAxis( int val )
 Entities that have a single procedurally generated surface
 ====================
 */
-void RB_SurfaceEntity( surfaceType_t * surfType )
+void RB_SurfaceEntity( void * useless )
 {
 	switch( backEnd.currentEntity->e.reType )
     {

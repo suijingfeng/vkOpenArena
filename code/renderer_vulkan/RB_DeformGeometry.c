@@ -80,14 +80,6 @@ float RB_WaveValue(enum GenFunc_T func, const float base,
 }
 
 
-/*
-static float EvalWaveForm( const waveForm_t *wf ) 
-{
-	return RB_WaveValue( wf->func, wf->base, wf->amplitude, wf->phase, wf->frequency );
-}
-*/
-
-
 static void RB_CalcDeformVertexes( deformStage_t *ds, const uint32_t nVert, 
         float (* const pXYZ)[4], float (* const pNorm)[4] )
 {
@@ -138,7 +130,8 @@ static void RB_CalcBulgeVertexes( deformStage_t * const ds, const uint32_t nVert
 {
 	// ri.Printf(PRINT_WARNING, "%d vert\n", nVert);
     uint32_t i;
-	float now = backEnd.refdef.time * ds->bulgeSpeed * 0.001f;
+    // original backEnd.refdef.time * 0.001f
+	float now = R_GetRefFloatTime() * ds->bulgeSpeed ;
 
 	for ( i = 0; i < nVert; ++i)
     {

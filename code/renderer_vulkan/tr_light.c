@@ -15,7 +15,7 @@ MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 GNU General Public License for more details.
 
 You should have received a copy of the GNU General Public License
-along with Foobar; if not, write to the Free Software
+along with Quake III Arena source code; if not, write to the Free Software
 Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 ===========================================================================
 */
@@ -150,7 +150,7 @@ static void R_SetupEntityLightingGrid( trRefEntity_t * const ent )
         {
 			pos[i] = 0;
 		}
-        else if ( pos[i] >= tr.world->lightGridBounds[i] - 1 )
+        else if ( pos[i] > tr.world->lightGridBounds[i] - 1 )
         {
 			pos[i] = tr.world->lightGridBounds[i] - 1;
 		}
@@ -222,6 +222,7 @@ static void R_SetupEntityLightingGrid( trRefEntity_t * const ent )
 		normal[0] = tr.sinTable[(lat+(FUNCTABLE_SIZE/4))&FUNCTABLE_MASK] * tr.sinTable[lng];
 		normal[1] = tr.sinTable[lat] * tr.sinTable[lng];
 		normal[2] = tr.sinTable[(lng+(FUNCTABLE_SIZE/4))&FUNCTABLE_MASK];
+
 
 		VectorMA( direction, factor, normal, direction );
 	}
@@ -363,10 +364,10 @@ void R_SetupEntityLighting( const trRefdef_t *refdef, trRefEntity_t *ent )
 	}
 
 	// save out the byte packet version
-	ent->ambientLightRGBA[0] = (unsigned char)( ent->ambientLight[0] );
-	ent->ambientLightRGBA[1] = (unsigned char)( ent->ambientLight[1] );
-	ent->ambientLightRGBA[2] = (unsigned char)( ent->ambientLight[2] );
-	ent->ambientLightRGBA[3] = 0xff;
+    ent->ambientLightRGBA[0] = (unsigned char)ent->ambientLight[0];
+    ent->ambientLightRGBA[1] = (unsigned char)ent->ambientLight[1];
+    ent->ambientLightRGBA[2] = (unsigned char)ent->ambientLight[2];
+    ent->ambientLightRGBA[3] = 255;
 	
 	// transform the direction to local space
 	VectorNormalize( lightDir );
