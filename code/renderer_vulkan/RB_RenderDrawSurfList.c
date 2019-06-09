@@ -59,7 +59,8 @@ void RB_RenderDrawSurfList(const struct drawSurf_s * const pSurf, const uint32_t
     shader_t* oldShader = NULL;
 
 	backEnd.currentEntity = &tr.worldEntity;
-	backEnd.pc.c_surfaces += numDrawSurfs;
+
+    Bepc_UpdateNumDrawSurfs(numDrawSurfs);
 
 
     uint32_t i;
@@ -145,10 +146,8 @@ void RB_RenderDrawSurfList(const struct drawSurf_s * const pSurf, const uint32_t
 				R_TransformDlights( backEnd.refdef.num_dlights, backEnd.refdef.dlights, &backEnd.or );
 			}
 
-
 			// VULKAN
             set_modelview_matrix(backEnd.or.modelMatrix);
-
         }
 
 		// add the triangles for this surface

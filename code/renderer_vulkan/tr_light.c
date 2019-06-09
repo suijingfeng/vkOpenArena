@@ -127,8 +127,6 @@ static void R_SetupEntityLightingGrid( trRefEntity_t * const ent )
 	int		i, j;
 	float	frac[3];
 
-
-
 	if ( ent->e.renderfx & RF_LIGHTING_ORIGIN )
     {
 		// seperate lightOrigins are needed so an object that is

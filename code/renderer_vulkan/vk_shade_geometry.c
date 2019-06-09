@@ -402,7 +402,7 @@ void vk_shade_geometry(VkPipeline pipeline, struct shaderCommands_s * const pTes
     const uint32_t Size_Color = pTess->numVertexes * 4; // 4 = sizeof(color4ub_t)
     const uint32_t Size_ST =  pTess->numVertexes * sizeof(vec2_t);
 
-    shadingDat.colorElemCount +=  pTess->numVertexes;
+    shadingDat.colorElemCount += pTess->numVertexes;
     
     if ( shadingDat.colorElemCount * 4 > COLOR_SIZE)
     {
@@ -583,12 +583,12 @@ Perform dynamic lighting with another rendering pass
 */
 static void RB_ProjectDlightTexture( struct shaderCommands_s * const pTess, 
         float (* const pTexcoords)[2], uint8_t (* const pColors)[4],
-        uint32_t num_dlights, struct dlight_s* const pDlights)
+        const uint32_t nDlights, struct dlight_s* const pDlights)
 {
 	unsigned char clipBits[SHADER_MAX_VERTEXES];
 
     uint32_t l;
-	for (l = 0; l < num_dlights; ++l)
+	for (l = 0; l < nDlights; ++l)
     {
 		//dlight_t	*dl;
 
@@ -610,7 +610,8 @@ static void RB_ProjectDlightTexture( struct shaderCommands_s * const pTess,
 
 
         float radius = pDlights[l].radius;
-		float scale = 1.0f / radius;
+		
+        float scale = 1.0f / radius;
     	float modulate = 0.0f;
 
         float floatColor[3] = {
@@ -682,7 +683,7 @@ static void RB_ProjectDlightTexture( struct shaderCommands_s * const pTess,
       
 		// build a list of triangles that need light
 		uint32_t numIndexes = 0;
-		for ( i = 0 ; i < pTess->numIndexes ; i += 3 )
+		for ( i = 0 ; i < pTess->numIndexes; i += 3 )
         {
 			if ( clipBits[pTess->indexes[i]] & clipBits[pTess->indexes[i+1]] & clipBits[pTess->indexes[i+2]] )
             {

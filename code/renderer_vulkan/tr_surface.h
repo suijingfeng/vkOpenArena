@@ -53,7 +53,7 @@ typedef struct srfGridMesh_s {
 void RB_BeginSurface(struct shader_s *shader, int fogNum, struct shaderCommands_s * const pTess);
 void RB_EndSurface( struct shaderCommands_s * const pTess );
 void RB_CheckOverflow( uint32_t verts, uint32_t indexes, struct shaderCommands_s * const pTess);
-void RB_AddQuadStampExt( vec3_t origin, vec3_t left, vec3_t up, uint8_t * const color,
+void RB_AddQuadStampExt(const float origin[3], vec3_t left, vec3_t up, const uint8_t * const color,
         float s1, float t1, float s2, float t2 );
 
 void R_AddDrawSurf( surfaceType_t *surface, struct shader_s *shader, int fogIndex, int dlightMap );

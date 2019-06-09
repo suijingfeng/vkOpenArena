@@ -19,15 +19,15 @@ typedef struct {
 // all state modified by the back end is seperated
 // from the front end state
 typedef struct {
-	trRefdef_t	refdef;
+	trRefdef_t refdef;
 	viewParms_t	viewParms;
-	orientationr_t	or;
-	backEndCounters_t	pc;
-	trRefEntity_t   entity2D;	// currentEntity will point at this when doing 2D rendering
+	orientationr_t or;
+	backEndCounters_t pc;
+	trRefEntity_t entity2D;	// currentEntity will point at this when doing 2D rendering
 	trRefEntity_t*  currentEntity;
 
-    unsigned char	Color2D[4];
-    qboolean	projection2D;	// if qtrue, drawstretchpic doesn't need to change modes
+    unsigned char Color2D[4];
+    qboolean projection2D;	// if qtrue, drawstretchpic doesn't need to change modes
 } backEndState_t;
 
 extern backEndState_t backEnd;
@@ -39,4 +39,6 @@ void R_SetRefTime(int t);
 void R_ClearBackendState(void);
 void R_PrintBackEnd_OR_f(void);
 void R_UpdatePerformanceCounters(uint32_t nVerts, uint32_t nIdxes, uint32_t nPasses);
+void Bepc_UpdateNumDrawSurfs(uint32_t val);
+
 #endif

@@ -55,3 +55,8 @@ void R_UpdatePerformanceCounters(uint32_t nVerts, uint32_t nIdxes, uint32_t nPas
 	backEnd.pc.c_indexes += nIdxes;
 	backEnd.pc.c_totalIndexes += nIdxes * nPasses;
 }
+
+void Bepc_UpdateNumDrawSurfs(uint32_t val)
+{
+    backEnd.pc.c_surfaces += val;
+}

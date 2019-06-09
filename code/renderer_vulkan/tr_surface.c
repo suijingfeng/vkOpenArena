@@ -79,7 +79,7 @@ void RB_CheckOverflow(uint32_t verts, uint32_t indexes, struct shaderCommands_s*
 
 
 
-void RB_AddQuadStampExt( vec3_t origin, vec3_t left, vec3_t up, uint8_t * const color,
+void RB_AddQuadStampExt(const float origin[3], vec3_t left, vec3_t up, const uint8_t * const color,
         float s1, float t1, float s2, float t2 )
 {
 
@@ -197,16 +197,17 @@ void RB_AddQuadStampExt( vec3_t origin, vec3_t left, vec3_t up, uint8_t * const 
 }
 
 
-static void RB_SurfaceSprite(refEntity_t* const pEnt, VkBool32 isMirror )
+static void RB_SurfaceSprite(const refEntity_t* const pEnt, const viewParms_t * const pViewPar)
 {
+
 	vec3_t left, up;
 
 	// calculate the xyz locations for the four corners
 	float radius = pEnt->radius;
 	if ( pEnt->rotation == 0 )
     {
-		VectorScale( backEnd.viewParms.or.axis[1], radius, left );
-		VectorScale( backEnd.viewParms.or.axis[2], radius, up );
+		VectorScale( pViewPar->or.axis[1], radius, left );
+		VectorScale( pViewPar->or.axis[2], radius, up );
 	}
     else
     {
@@ -219,23 +220,21 @@ static void RB_SurfaceSprite(refEntity_t* const pEnt, VkBool32 isMirror )
 
         float tmpLeft[3];
         float tmpUp[3];
-        float tmp1[3];
-        float tmp2[3];
         
-		VectorScale( backEnd.viewParms.or.axis[1], c_r, tmpLeft );
-        VectorScale( backEnd.viewParms.or.axis[2], c_r, tmpUp );
-
-		VectorScale( backEnd.viewParms.or.axis[1], s_r, tmp1 );
-        VectorScale( backEnd.viewParms.or.axis[2], s_r, tmp2 );
-                
-        VectorAdd(tmpUp, tmp1, up);
+		VectorScale( pViewPar->or.axis[1], c_r, tmpLeft );        
+        VectorScale( pViewPar->or.axis[2], c_r, tmpUp );
         
-        VectorSubtract( tmpLeft, tmp2, left);
-        // VectorMA( tmpLeft, -s_r, backEnd.viewParms.or.axis[2], left );
-        // VectorMA( tmpUp, s_r, backEnd.viewParms.or.axis[1], up );
+        // float tmp1[3];
+        // float tmp2[3];
+        // VectorScale( pViewPar->or.axis[1], s_r, tmp1 );
+        // VectorScale( pViewPar->or.axis[2], s_r, tmp2 );   
+        // VectorAdd(tmpUp, tmp1, up);
+        // VectorSubtract( tmpLeft, tmp2, left);
+        VectorMA( tmpLeft, -s_r, pViewPar->or.axis[2], left );
+        VectorMA( tmpUp, s_r, pViewPar->or.axis[1], up );
 	}
 
-	if ( isMirror )
+	if ( pViewPar->isMirror )
     {
 		// VectorSubtract( vec3_origin, left, left );
         left[0] = -left[0];
@@ -243,8 +242,8 @@ static void RB_SurfaceSprite(refEntity_t* const pEnt, VkBool32 isMirror )
         left[2] = -left[2];
 	}
 
-	RB_AddQuadStampExt( backEnd.currentEntity->e.origin, left, up, 
-            backEnd.currentEntity->e.shaderRGBA, 0.0f, 0.0f, 1.0f, 1.0f );
+	RB_AddQuadStampExt( pEnt->origin, left, up, 
+            pEnt->shaderRGBA, 0.0f, 0.0f, 1.0f, 1.0f );
 }
 
 
@@ -355,12 +354,11 @@ static void RB_SurfaceBeam( refEntity_t * const e )
 	normalized_direction[0] = direction[0] = oldorigin[0] - origin[0];
 	normalized_direction[1] = direction[1] = oldorigin[1] - origin[1];
 	normalized_direction[2] = direction[2] = oldorigin[2] - origin[2];
+    
+    ri.Printf(PRINT_ALL, "RB_SurfaceBeam() get called! ");
 
 	if ( VectorNormalize( normalized_direction ) == 0 )
 		return;
-
-
-    ri.Printf(PRINT_ALL, "RB_SurfaceBeam()? ");
 }
 
 //================================================================================
@@ -433,35 +431,49 @@ static void DoRailCore( const vec3_t start, const vec3_t end, const vec3_t up, f
 	tess.vertexColors[n3][0] = pRGBA[0];
 	tess.vertexColors[n3][1] = pRGBA[1];
 	tess.vertexColors[n3][2] = pRGBA[2];
-
-
 }
 
 
-static void DoRailDiscs( int numSegs, const vec3_t start, const vec3_t dir, const vec3_t right, const vec3_t up )
+
+static void RB_SurfaceRailRings(const refEntity_t * const e)
 {
-	int i;
+	vec3_t		dir;
+	vec3_t		right, up;
+
+	// compute variables
+	VectorSubtract( e->origin, e->oldorigin, dir );
+	int len = VectorNormalize( dir );
+	MakeTwoPerpVectors( dir, right, up );
+	
+    int numSegs = ( len ) / r_railSegmentLength->value;
+	if ( numSegs <= 0 ) {
+		numSegs = 1;
+	}
+
+	VectorScale( dir, r_railSegmentLength->value, dir );
+
+    //
+	// DoRailDiscs( numSegs, e->oldorigin, vec, right, up );
+    // DoRailDiscs( int numSegs, const vec3_t start, const vec3_t dir, const vec3_t right, const vec3_t up )
+	
 	vec3_t	pos[4];
 	vec3_t	v;
 	int		spanWidth = r_railWidth->integer;
-	float c, s;
-	float		scale;
+	float		scale = 0.25;
 
 	if ( numSegs > 1 )
-		numSegs--;
-	if ( !numSegs )
-		return;
+		--numSegs;
 
-	scale = 0.25;
+    int i;
 
-	for ( i = 0; i < 4; i++ )
+	for ( i = 0; i < 4; ++i )
 	{
-		c = cos( DEG2RAD( 45 + i * 90 ) );
-		s = sin( DEG2RAD( 45 + i * 90 ) );
+		float c = cos( DEG2RAD( 45 + i * 90 ) );
+		float s = sin( DEG2RAD( 45 + i * 90 ) );
 		v[0] = ( right[0] * c + up[0] * s ) * scale * spanWidth;
 		v[1] = ( right[1] * c + up[1] * s ) * scale * spanWidth;
 		v[2] = ( right[2] * c + up[2] * s ) * scale * spanWidth;
-		VectorAdd( start, v, pos[i] );
+		VectorAdd( e->oldorigin, v, pos[i] );
 
 		if ( numSegs > 1 )
 		{
@@ -470,62 +482,42 @@ static void DoRailDiscs( int numSegs, const vec3_t start, const vec3_t dir, cons
 		}
 	}
 
-	for ( i = 0; i < numSegs; i++ )
+	for ( i = 0; i < numSegs; ++i )
 	{
 		int j;
 
 		RB_CheckOverflow( 4, 6, &tess );
 
+        uint32_t nVert = tess.numVertexes;
+        uint32_t nIdx = tess.numIndexes;
+        tess.numVertexes += 4;
+        tess.numIndexes += 6;
+
+		tess.indexes[nIdx++] = nVert + 0;
+		tess.indexes[nIdx++] = nVert + 1;
+		tess.indexes[nIdx++] = nVert + 3;
+		tess.indexes[nIdx++] = nVert + 3;
+		tess.indexes[nIdx++] = nVert + 1;
+		tess.indexes[nIdx++] = nVert + 2;
+
+
 		for ( j = 0; j < 4; ++j )
 		{
-			VectorCopy( pos[j], tess.xyz[tess.numVertexes] );
-			tess.texCoords[tess.numVertexes][0][0] = ( j < 2 );
-			tess.texCoords[tess.numVertexes][0][1] = ( j && j != 3 );
-			tess.vertexColors[tess.numVertexes][0] = backEnd.currentEntity->e.shaderRGBA[0];
-			tess.vertexColors[tess.numVertexes][1] = backEnd.currentEntity->e.shaderRGBA[1];
-			tess.vertexColors[tess.numVertexes][2] = backEnd.currentEntity->e.shaderRGBA[2];
-			tess.numVertexes++;
-
+			VectorCopy( pos[j], tess.xyz[nVert] );
+			tess.texCoords[nVert][0][0] = ( j < 2 );
+			tess.texCoords[nVert][0][1] = ( j && j != 3 );
+			tess.vertexColors[nVert][0] = e->shaderRGBA[0];
+			tess.vertexColors[nVert][1] = e->shaderRGBA[1];
+			tess.vertexColors[nVert][2] = e->shaderRGBA[2];
+			++nVert;
 			VectorAdd( pos[j], dir, pos[j] );
 		}
-
-		tess.indexes[tess.numIndexes++] = tess.numVertexes - 4 + 0;
-		tess.indexes[tess.numIndexes++] = tess.numVertexes - 4 + 1;
-		tess.indexes[tess.numIndexes++] = tess.numVertexes - 4 + 3;
-		tess.indexes[tess.numIndexes++] = tess.numVertexes - 4 + 3;
-		tess.indexes[tess.numIndexes++] = tess.numVertexes - 4 + 1;
-		tess.indexes[tess.numIndexes++] = tess.numVertexes - 4 + 2;
 	}
+
 }
 
 
-static void RB_SurfaceRailRings( refEntity_t * const e )
-{
-	int			numSegs;
-	int			len;
-	vec3_t		vec;
-	vec3_t		right, up;
-	vec3_t		start, end;
-
-	VectorCopy( e->oldorigin, start );
-	VectorCopy( e->origin, end );
-
-	// compute variables
-	VectorSubtract( end, start, vec );
-	len = VectorNormalize( vec );
-	MakeTwoPerpVectors( vec, right, up );
-	numSegs = ( len ) / r_railSegmentLength->value;
-	if ( numSegs <= 0 ) {
-		numSegs = 1;
-	}
-
-	VectorScale( vec, r_railSegmentLength->value, vec );
-
-	DoRailDiscs( numSegs, start, vec, right, up );
-}
-
-
-static void RB_SurfaceRailCore( refEntity_t * const e )
+static void RB_SurfaceRailCore(const refEntity_t * const e, const viewParms_t * const pViewPar)
 {
 	vec3_t		right;
 	vec3_t		vec;
@@ -537,8 +529,8 @@ static void RB_SurfaceRailCore( refEntity_t * const e )
 
 
 	// compute side vector
-	VectorSubtract( e->oldorigin, backEnd.viewParms.or.origin, v1 );
-	VectorSubtract( e->origin, backEnd.viewParms.or.origin, v2 );
+	VectorSubtract( e->oldorigin, pViewPar->or.origin, v1 );
+	VectorSubtract( e->origin, pViewPar->or.origin, v2 );
 
     // VectorSubtract( e->origin, e->oldorigin, vec );
     // =>
@@ -547,42 +539,37 @@ static void RB_SurfaceRailCore( refEntity_t * const e )
     VectorNormalize( v1 );
 	VectorNormalize( v2 );
 	CrossProduct( v1, v2, right );
-	// VectorNormalize( right );
+	VectorNormalize( right );
 
 	DoRailCore( e->oldorigin, e->origin, right, VectorNormalize( vec ), r_railCoreWidth->integer,
-            backEnd.currentEntity->e.shaderRGBA);
+            e->shaderRGBA);
 }
 
 
 
-static void RB_SurfaceLightningBolt( refEntity_t * const e )
+static void RB_SurfaceLightningBolt( const refEntity_t * const e, const viewParms_t * const pViewPar)
 {
 	vec3_t		right;
 	vec3_t		vec;
-	vec3_t		start, end;
 	vec3_t		v1, v2;
-	int			i;
-
-	VectorCopy( e->oldorigin, end );
-	VectorCopy( e->origin, start );
 
 	// compute variables
-	VectorSubtract( end, start, vec );
+	VectorSubtract( e->oldorigin, e->origin, vec );
 	int len = VectorNormalize( vec );
 
 	// compute side vector
-	VectorSubtract( start, backEnd.viewParms.or.origin, v1 );
+	VectorSubtract( e->origin, pViewPar->or.origin, v1 );
 	VectorNormalize( v1 );
-	VectorSubtract( end, backEnd.viewParms.or.origin, v2 );
+	VectorSubtract( e->oldorigin, pViewPar->or.origin, v2 );
 	VectorNormalize( v2 );
 	CrossProduct( v1, v2, right );
 	VectorNormalize( right );
-
-	for ( i = 0 ; i < 4 ; i++ )
+	uint32_t i;
+	for ( i = 0 ; i < 4 ; ++i )
     {
 		vec3_t	temp;
 
-		DoRailCore( start, end, right, len, 16, backEnd.currentEntity->e.shaderRGBA);
+		DoRailCore( e->origin, e->oldorigin, right, len, 16, e->shaderRGBA);
 		RotatePointAroundVector( temp, vec, right, 45 );
 		VectorCopy( temp, right );
 	}
@@ -1052,11 +1039,11 @@ RB_SurfaceAxis
 Draws x/y/z lines from the origin for orientation debugging
 ===================
 */
-void RB_SurfaceAxis( void )
+void RB_SurfaceAxis( int val )
 {
     // FIXME: implement this
     //	VK_Bind( tr.whiteImage );
-	ri.Printf( PRINT_ALL, "RB_SurfaceAxis() haven't been implemented. \n" );
+	ri.Printf( PRINT_ALL, "SurfaceAxis:%d \n", val);
 
 }
 
@@ -1072,25 +1059,35 @@ void RB_SurfaceEntity( surfaceType_t * surfType )
 	switch( backEnd.currentEntity->e.reType )
     {
 	case RT_SPRITE:
-		RB_SurfaceSprite(&backEnd.currentEntity->e, backEnd.viewParms.isMirror);
+		RB_SurfaceSprite(&backEnd.currentEntity->e, &backEnd.viewParms);
 		break;
 	case RT_BEAM:
 		RB_SurfaceBeam(&backEnd.currentEntity->e);
 		break;
 	case RT_RAIL_CORE:
-		RB_SurfaceRailCore(&backEnd.currentEntity->e);
+		RB_SurfaceRailCore(&backEnd.currentEntity->e, &backEnd.viewParms);
 		break;
 	case RT_RAIL_RINGS:
+        // its dont dependent on view parameter
 		RB_SurfaceRailRings(&backEnd.currentEntity->e);
 		break;
 	case RT_LIGHTNING:
-		RB_SurfaceLightningBolt(&backEnd.currentEntity->e);
+		RB_SurfaceLightningBolt(&backEnd.currentEntity->e, &backEnd.viewParms);
 		break;
+    case RT_PORTALSURFACE:
+        ri.Printf(PRINT_ALL, "RT_PORTALSURFACE: just info for portals.\n");
+        break;
+    case RT_MODEL:
+        RB_SurfaceAxis(RT_MODEL);
+        break;
+    case RT_POLY:
+        RB_SurfaceAxis(RT_POLY);
+        break;
 	default:
-		RB_SurfaceAxis();
 		break;
 	}
 }
+
 
 
 void RB_SurfaceBad( surfaceType_t *surfType )
@@ -1137,7 +1134,7 @@ void RB_BeginSurface( shader_t * const pShader, int fogNum, shaderCommands_t * c
 	pTess->xstages = pState->stages;
 	pTess->numPasses = pState->numUnfoggedPasses;
 
-	pTess->shaderTime = backEnd.refdef.floatTime - pTess->shader->timeOffset;
+	pTess->shaderTime = R_GetRefFloatTime() - pTess->shader->timeOffset;
 	if (pTess->shader->clampTime && pTess->shaderTime >= pTess->shader->clampTime)
     {
 		pTess->shaderTime = pTess->shader->clampTime;
