@@ -10,7 +10,7 @@ typedef struct {
 	float		viewOrigin[3];		// viewParms->or.origin in local coordinates
 } orientationr_t;
 
-typedef struct {
+typedef struct viewParms_s{
 	orientationr_t	or;
 	orientationr_t	world;
 	float		pvsOrigin[3];			// may be different than or.origin for portals

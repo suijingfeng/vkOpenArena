@@ -5,8 +5,6 @@
 #include "../qcommon/qfiles.h"
 #include "tr_common.h"
 
-//#include "tr_shader.h"
-// #include "tr_image.h"
 #include "viewParms.h"
 #include "trRefDef.h"
 
@@ -18,8 +16,6 @@
 
 #define	MAX_DRAWSURFS			0x10000
 #define	DRAWSURF_MASK			(MAX_DRAWSURFS-1)
-
-
 
 
 // 12 bits, see QSORT_SHADERNUM_SHIFT

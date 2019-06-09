@@ -1044,7 +1044,6 @@ void RB_SurfaceAxis( int val )
     // FIXME: implement this
     //	VK_Bind( tr.whiteImage );
 	ri.Printf( PRINT_ALL, "SurfaceAxis:%d \n", val);
-
 }
 
 //===========================================================================

@@ -137,7 +137,7 @@ static void R_RadixSort( drawSurf_t *source, int size )
 
 
 
-void R_SortDrawSurfs( drawSurf_t *drawSurfs, int numDrawSurfs )
+void R_SortDrawSurfs( drawSurf_t * const drawSurfs, const int numDrawSurfs )
 {
 	shader_t		*shader;
 	int				fogNum;
@@ -146,7 +146,7 @@ void R_SortDrawSurfs( drawSurf_t *drawSurfs, int numDrawSurfs )
 	int				i;
 
 	// it is possible for some views to not have any surfaces
-	if ( numDrawSurfs < 1 ) {
+	if ( numDrawSurfs < 2 ) {
 		// we still need to add it for hyperspace cases
 		R_AddDrawSurfCmd( drawSurfs, numDrawSurfs );
 		return;
@@ -155,10 +155,11 @@ void R_SortDrawSurfs( drawSurf_t *drawSurfs, int numDrawSurfs )
 	// if we overflowed MAX_DRAWSURFS, the drawsurfs
 	// wrapped around in the buffer and we will be missing
 	// the first surfaces, not the last ones
-	if ( numDrawSurfs > MAX_DRAWSURFS ) {
-		numDrawSurfs = MAX_DRAWSURFS;
-        ri.Printf(PRINT_WARNING, " numDrawSurfs overflowed. \n");
-	}
+	//
+    // if ( numDrawSurfs > MAX_DRAWSURFS ) {
+	//	numDrawSurfs = MAX_DRAWSURFS;
+    //    ri.Printf(PRINT_WARNING, " numDrawSurfs overflowed. \n");
+	// }
     
     // ri.Printf(PRINT_WARNING, " numDrawSurfs:%d \n", numDrawSurfs);
 	
@@ -172,6 +173,9 @@ void R_SortDrawSurfs( drawSurf_t *drawSurfs, int numDrawSurfs )
     // qsortFast (drawSurfs, numDrawSurfs, sizeof(drawSurf_t) );
     //
     // fastest 20-30
+    
+    // ri.Printf(PRINT_WARNING, " numDrawSurfs: %d \n", numDrawSurfs);
+
     R_RadixSort (drawSurfs, numDrawSurfs);
 
 
@@ -182,7 +186,7 @@ void R_SortDrawSurfs( drawSurf_t *drawSurfs, int numDrawSurfs )
 
 	// check for any pass through drawing, which
 	// may cause another view to be rendered first
-	for ( i = 0 ; i < numDrawSurfs ; i++ )
+	for ( i = 0 ; i < numDrawSurfs ; ++i )
     {
 		R_DecomposeSort( (drawSurfs+i)->sort, &entityNum, &shader, &fogNum, &dlighted );
 

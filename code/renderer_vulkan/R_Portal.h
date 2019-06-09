@@ -4,6 +4,6 @@
 
 #include "surface_type.h"
 
-qboolean R_MirrorViewBySurface (drawSurf_t * drawSurf, int entityNum);
+qboolean R_MirrorViewBySurface (drawSurf_t * const drawSurf, const int entityNum);
 
 #endif

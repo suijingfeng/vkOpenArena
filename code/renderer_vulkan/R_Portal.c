@@ -134,7 +134,7 @@ static qboolean IsMirror( const drawSurf_t * const drawSurf, int entityNum )
 	// locate the portal entity closest to this plane.
 	// origin will be the origin of the portal, origin2 will be
 	// the origin of the camera
-	for ( i = 0 ; i < tr.refdef.num_entities ; i++ ) 
+	for ( i = 0 ; i < tr.refdef.num_entities ; ++i ) 
 	{
 		trRefEntity_t* e = &tr.refdef.entities[i];
 		if ( e->e.reType != RT_PORTALSURFACE ) {
@@ -205,7 +205,7 @@ static qboolean R_GetPortalOrientations( drawSurf_t *drawSurf, int entityNum,
 	// locate the portal entity closest to this plane.
 	// origin will be the origin of the portal, origin2 will be
 	// the origin of the camera
-	for ( i = 0 ; i < tr.refdef.num_entities ; i++ )
+	for ( i = 0 ; i < tr.refdef.num_entities ; ++i )
     {
 		trRefEntity_t* e = &tr.refdef.entities[i];
 		if ( e->e.reType != RT_PORTALSURFACE ) {
@@ -292,7 +292,7 @@ static qboolean R_GetPortalOrientations( drawSurf_t *drawSurf, int entityNum,
 **
 ** Determines if a surface is completely offscreen.
 */
-static qboolean SurfIsOffscreen( const drawSurf_t *drawSurf, vec4_t clipDest[128] )
+static qboolean SurfIsOffscreen( const drawSurf_t * const drawSurf, vec4_t clipDest[128] )
 {
 	float shortest = 100000000;
 	int entityNum;
@@ -315,13 +315,13 @@ static qboolean SurfIsOffscreen( const drawSurf_t *drawSurf, vec4_t clipDest[128
 
 	assert( tess.numVertexes < 128 );
 
-	for ( i = 0; i < tess.numVertexes; i++ )
+	for ( i = 0; i < tess.numVertexes; ++i )
 	{
 		int j;
 		unsigned int pointFlags = 0;
 
         TransformModelToClip_SSE(tess.xyz[i], tr.or.modelMatrix, tr.viewParms.projectionMatrix, clip);
-		for ( j = 0; j < 3; j++ )
+		for ( j = 0; j < 3; ++j )
 		{
 			if ( clip[j] >= clip[3] )
 			{
@@ -397,7 +397,7 @@ R_MirrorViewBySurface
 Returns qtrue if another view has been rendered
 ========================
 */
-qboolean R_MirrorViewBySurface (drawSurf_t *drawSurf, int entityNum)
+qboolean R_MirrorViewBySurface (drawSurf_t * const drawSurf, const int entityNum)
 {
 	vec4_t			clipDest[128];
 	orientation_t	surface, camera;

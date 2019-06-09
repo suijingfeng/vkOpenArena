@@ -26,6 +26,6 @@ the bits are allocated as follows:
 #define	QSORT_REFENTITYNUM_SHIFT 7
 #define	QSORT_SHADERNUM_SHIFT   17
 
-void R_SortDrawSurfs( drawSurf_t *drawSurfs, int numDrawSurfs );
+void R_SortDrawSurfs( drawSurf_t * const drawSurfs, const int numDrawSurfs );
 
 #endif

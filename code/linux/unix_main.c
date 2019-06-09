@@ -941,21 +941,7 @@ void Sys_ConfigureFPU( void )  // bk001213 - divide by zero
 }
 
 
-void Sys_PrintBinVersion( const char* name )
-{
-	const char *date = __DATE__;
-	const char *time = __TIME__;
-	const char *sep = "==============================================================";
 
-	fprintf( stdout, "\n\n%s\n", sep );
-#ifdef DEDICATED
-	fprintf( stdout, "Linux Quake3 Dedicated Server [%s %s]\n", date, time );
-#else
-	fprintf( stdout, "Linux Quake3 Full Executable  [%s %s]\n", date, time );
-#endif
-	fprintf( stdout, " local install: %s\n", name );
-	fprintf( stdout, "%s\n\n", sep );
-}
 
 
 /*
@@ -993,19 +979,6 @@ const char *Sys_BinName( const char *arg0 )
 }
 
 
-int Sys_ParseArgs( int argc, const char* argv[] )
-{
-	if ( argc == 2 )
-	{
-		if ( ( !strcmp( argv[1], "--version" ) ) || ( !strcmp( argv[1], "-v" ) ) )
-		{
-			Sys_PrintBinVersion( Sys_BinName( argv[0] ) );
-			return 1;
-		}
-	}
-
-	return 0;
-}
 
 
 int main( int argc, const char* argv[] )
@@ -1043,7 +1016,8 @@ int main( int argc, const char* argv[] )
 	Sys_Milliseconds();
 
 	Com_Init( cmdline );
-	NET_Init();
+	
+    NET_Init();
 
 	Com_Printf( "Working directory: %s\n", Sys_Pwd() );
 
@@ -1071,21 +1045,23 @@ int main( int argc, const char* argv[] )
 	InitSig();
 #endif
 
-	while (1)
-	{
 #ifdef __linux__
 		Sys_ConfigureFPU();
-#endif
+#endif    
 
-#ifdef DEDICATED
+	while (1)
+	{
+
+// #ifdef DEDICATED
 		// run the game
 		Com_Frame( qfalse );
-#else
+// #else
 		// check for other input devices
-		IN_Frame();
+		// IN_Frame();
 		// run the game
-		Com_Frame( CL_NoDelay() );
-#endif
+        // CL_NoDelay() 
+		Com_Frame( );
+// #endif
 	}
 	// never gets here
 	return 0;

@@ -168,26 +168,30 @@ void R_AddDrawSurf( surfaceType_t *surface, shader_t *shader, int fogIndex, int 
 	// the sort data is packed into a single 32 bit value so it can be
 	// compared quickly during the qsorting process
 	tr.refdef.drawSurfs[index].sort = (shader->sortedIndex << QSORT_SHADERNUM_SHIFT) 
-		| tr.shiftedEntityNum | ( fogIndex << QSORT_FOGNUM_SHIFT ) | (int)dlightMap;
+		| tr.shiftedEntityNum | ( fogIndex << QSORT_FOGNUM_SHIFT ) | dlightMap;
 	tr.refdef.drawSurfs[index].surType = surface;
-	tr.refdef.numDrawSurfs++;
+    ++tr.refdef.numDrawSurfs;
 }
 
 
-static void R_AddEntitySurfaces(viewParms_t * const pViewParam)
+static void R_AddEntitySurfaces(viewParms_t * const pViewParam, const uint32_t numEntity, 
+        trRefEntity_t * const pEntity)
 {
     // entities that will have procedurally generated surfaces will just
     // point at this for their sorting surface
     static surfaceType_t entitySurface = SF_ENTITY;
 
-
+    uint32_t i;
+    
 	for ( tr.currentEntityNum = 0; 
-	      tr.currentEntityNum < tr.refdef.num_entities; 
-		  ++tr.currentEntityNum )
+	      tr.currentEntityNum < numEntity; //tr.refdef.num_entities; 
+		  ++tr.currentEntityNum)
     {
+        // ++tr.currentEntityNum;
+
 		shader_t* shader;
 
-        trRefEntity_t* ent = tr.currentEntity = &tr.refdef.entities[tr.currentEntityNum];
+        trRefEntity_t* ent = tr.currentEntity = &pEntity[tr.currentEntityNum];
 
 		ent->needDlights = qfalse;
 
@@ -350,7 +354,7 @@ static void R_SetupProjection( viewParms_t * const pViewParams, VkBool32 noWorld
 Adds all the scene's polys into this view's drawsurf list
 =====================
 */
-static void R_AddPolygonSurfaces(const srfPoly_t* pPoly, uint32_t numPolys )
+static void R_AddPolygonSurfaces(const srfPoly_t* pPoly, const uint32_t numPolys )
 {
 	tr.currentEntityNum = REFENTITYNUM_WORLD;
 	tr.shiftedEntityNum = tr.currentEntityNum << QSORT_REFENTITYNUM_SHIFT;
@@ -401,7 +405,7 @@ void R_RenderView (viewParms_t *parms)
 	R_SetupProjection (&tr.viewParms, tr.refdef.rdflags & RDF_NOWORLDMODEL);
 
     if ( r_drawentities->integer ) {
-	    R_AddEntitySurfaces (&tr.viewParms);
+	    R_AddEntitySurfaces (&tr.viewParms, tr.refdef.num_entities, tr.refdef.entities);
 	}
 
 
@@ -462,7 +466,7 @@ void RE_RenderScene( const refdef_t *fd )
 		int		i;
 
 		// compare the area bits
-		for (i = 0 ; i < MAX_MAP_AREA_BYTES; i++)
+		for (i = 0 ; i < MAX_MAP_AREA_BYTES; ++i)
 		{
 			areaDiff |= tr.refdef.areamask[i] ^ fd->areamask[i];
 			tr.refdef.areamask[i] = fd->areamask[i];
@@ -470,7 +474,7 @@ void RE_RenderScene( const refdef_t *fd )
 
 		if ( areaDiff ) {
             
-            ri.Printf(PRINT_ALL, "%d\n", i);
+            // ri.Printf(PRINT_ALL, "%d\n", i);
 
 			// a door just opened or something
 			tr.refdef.AreamaskModified = qtrue;
@@ -491,9 +495,9 @@ void RE_RenderScene( const refdef_t *fd )
     //   |
     //   |
     //   y
-    viewParms_t	parms;
+    struct viewParms_s parms;
 	memset( &parms, 0, sizeof( parms ) );
-
+	// parms.isPortal = qfalse;
 
     parms.viewportX = fd->x;
 	parms.viewportY =  fd->y;
@@ -505,13 +509,12 @@ void RE_RenderScene( const refdef_t *fd )
 	parms.fovY = fd->fov_y;
 
 	VectorCopy( fd->vieworg, parms.or.origin );
-	//VectorCopy( fd->viewaxis[0], parms.or.axis[0] );
-	//VectorCopy( fd->viewaxis[1], parms.or.axis[1] );
-	//VectorCopy( fd->viewaxis[2], parms.or.axis[2] );
+	VectorCopy( fd->viewaxis[0], parms.or.axis[0] );
+	VectorCopy( fd->viewaxis[1], parms.or.axis[1] );
+	VectorCopy( fd->viewaxis[2], parms.or.axis[2] );
 	VectorCopy( fd->vieworg, parms.pvsOrigin );
 
-    Mat3x3Copy(parms.or.axis, fd->viewaxis);
-	parms.isPortal = qfalse;
+    // Mat3x3Copy(parms.or.axis, fd->viewaxis);
 
 	if ( (parms.viewportWidth > 0) && (parms.viewportHeight > 0) ) 
     {

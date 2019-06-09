@@ -194,6 +194,8 @@ void Sys_ParseArgs( int argc, char **argv )
 	}
 }
 
+
+
 #ifndef DEFAULT_BASEDIR
 #	ifdef MACOS_X
 #		define DEFAULT_BASEDIR Sys_StripAppBundle(Sys_GetBinaryPath())
