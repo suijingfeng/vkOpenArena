@@ -4,12 +4,13 @@
 #include "matrix_multiplication.h"
 
 
-static void R_WorldVectorToLocal (const vec3_t world, const float R[3][3], vec3_t local)
+static void R_WorldVectorToLocal (const float world[3], const float R[3][3], float local[3])
 {
 	local[0] = DotProduct(world, R[0]);
 	local[1] = DotProduct(world, R[1]);
 	local[2] = DotProduct(world, R[2]);
 }
+
 
 static void R_WorldPointToLocal (const vec3_t world, const orientationr_t * const pRT, vec3_t local)
 {

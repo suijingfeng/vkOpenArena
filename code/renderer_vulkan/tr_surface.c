@@ -246,35 +246,51 @@ static void RB_SurfaceSprite(const refEntity_t* const pEnt, const viewParms_t * 
 
 
 
-static void RB_SurfacePolychain( srfPoly_t *p )
+static void RB_SurfacePolychain( const srfPoly_t * const p )
 {
 	int	i;
 
-	RB_CheckOverflow( p->numVerts, 3*(p->numVerts - 2), &tess );
+    const uint32_t NV = p->numVerts;
+    const uint32_t NI = p->numVerts - 2;
 
+	RB_CheckOverflow( NV, 3*NI, &tess );
+	
 	// fan triangles into the tess array
-	uint32_t numv = tess.numVertexes;
-	for ( i = 0; i < p->numVerts; ++i )
-    {
-		VectorCopy( p->verts[i].xyz, tess.xyz[numv] );
-		tess.texCoords[numv][0][0] = p->verts[i].st[0];
-		tess.texCoords[numv][0][1] = p->verts[i].st[1];
-		// *(int *)&tess.vertexColors[numv] = *(int *)p->verts[ i ].modulate;
-        memcpy(tess.vertexColors[numv], p->verts[ i ].modulate, 4);
+	uint32_t vCount = tess.numVertexes;
+    uint32_t vBase = tess.numVertexes;
+	uint32_t iCount = tess.numIndexes;
+    tess.numIndexes  += 3*NI;
+	tess.numVertexes += NV;
 
-		++numv;
+
+	for( i = 0; i < NV; ++i )
+    {
+		// VectorCopy( p->verts[i].xyz, tess.xyz[numv] );
+		tess.xyz[vCount][0] = p->verts[i].xyz[0];
+		tess.xyz[vCount][1] = p->verts[i].xyz[1];
+		tess.xyz[vCount][2] = p->verts[i].xyz[2];
+
+        tess.texCoords[vCount][0][0] = p->verts[i].st[0];
+		tess.texCoords[vCount][0][1] = p->verts[i].st[1];
+		
+        // *(int *)&tess.vertexColors[numv] = *(int *)p->verts[ i ].modulate;
+        tess.vertexColors[vCount][0] = p->verts[i].modulate[0];
+		tess.vertexColors[vCount][1] = p->verts[i].modulate[1];
+		tess.vertexColors[vCount][2] = p->verts[i].modulate[2];
+		tess.vertexColors[vCount][3] = p->verts[i].modulate[3];
+  
+        //memcpy(tess.vertexColors[numv], p->verts[ i ].modulate, 4);
+		++vCount;
 	}
 
 	// generate fan indexes into the tess array
-	for ( i = 0; i < p->numVerts-2; i++ )
-    {
-		tess.indexes[tess.numIndexes + 0] = tess.numVertexes;
-		tess.indexes[tess.numIndexes + 1] = tess.numVertexes + i + 1;
-		tess.indexes[tess.numIndexes + 2] = tess.numVertexes + i + 2;
-		tess.numIndexes += 3;
-	}
 
-	tess.numVertexes = numv;
+	for ( i = 0; i < NI; ++i )
+    {
+		tess.indexes[iCount++] = vBase;
+		tess.indexes[iCount++] = vBase + i + 1;
+		tess.indexes[iCount++] = vBase + i + 2;
+	}
 }
 
 
