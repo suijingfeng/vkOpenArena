@@ -168,76 +168,100 @@ void vk_destroyBufferResource(VkBuffer hBuf, VkDeviceMemory hDevMem)
 }
 
 
-static void record_image_layout_transition( 
-        VkCommandBuffer cmdBuf,
-        VkImage image,
-        VkImageAspectFlags image_aspect_flags,
-        VkAccessFlags src_access_flags,
-        VkImageLayout old_layout,
-        VkAccessFlags dst_access_flags,
-        VkImageLayout new_layout )
+static void vk_stagBufferToDeviceLocalMem(VkImage hImage, VkBuffer hBuffer, 
+        VkBufferImageCopy* const pRegion, const uint32_t nRegion)
 {
+//  One thing that is fundamental to the operation of vulkan is that
+//  the commands are not executed as soon as they are called. Rather,
+//  they are simply added to the end of the specified command buffer.
+//  If you are copying data to or from a region of memory that is 
+//  visible to the host(i.e., it's mapped), then you need to be sure
+//  of several things:
+//
+//  1) Ensure that the data is in the source region before the command
+//  is executed by the device.
+//
+//  2) Ensure that the data in the source region is valid until after
+//  the commmand has been executed on the device.
+//
+//  3) Ensure that you don't read the destination data until after
+//  the command has been executed on the device.
+//  
+    vk_beginRecordCmds( vk.tmpRecordBuffer );
 
-	VkImageMemoryBarrier barrier = {0};
-	barrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
-	barrier.pNext = NULL;
-	barrier.srcAccessMask = src_access_flags;
-	barrier.dstAccessMask = dst_access_flags;
-	barrier.oldLayout = old_layout;
-	barrier.newLayout = new_layout;
-	barrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
-	barrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
-	barrier.image = image;
-	barrier.subresourceRange.aspectMask = image_aspect_flags;
-	barrier.subresourceRange.baseMipLevel = 0;
-	barrier.subresourceRange.levelCount = VK_REMAINING_MIP_LEVELS;
-	barrier.subresourceRange.baseArrayLayer = 0;
-	barrier.subresourceRange.layerCount = VK_REMAINING_ARRAY_LAYERS;
-
+    // VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL : The image is the
+    // destination of copy operations. 
+    //
+    // A barrier is a synchronization mechanism for memory access manangement
+    // and resource state movement within the stages of vulkan pipeline.
+    // The primary command for synchronizing access to resources and moving
+    // them from state to state.
+    // 
     // vkCmdPipelineBarrier is a synchronization command that inserts
     // a dependency between commands submitted to the same queue, or 
     // between commands in the same subpass. When vkCmdPipelineBarrier
     // is submitted to a queue, it defines a memory dependency between
     // commands that were submitted before it, and those submitted 
     // after it.
-    
+    //
+    // srcStageMask and dstStageMask specify which pipeline stages wrote
+    // to the resource last and which stages will read from the resource
+    // next, respectively. That is, they specify the source and destination
+    // for data flow represented by the barrier.
+
+    // VK_PIPELINE_STAGE_ALL_COMMANDS_BIT: This stage is the big hammer.
+    // whenever you just don't know what;s is going on, use this; it will
+    // synchronize everything with everything. Just use it wisely.
     // cmdBuf is the command buffer into which the command is recorded.
-	NO_CHECK( qvkCmdPipelineBarrier(cmdBuf, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT,
+	
+    VkImageMemoryBarrier barrier ;
+	barrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
+	barrier.pNext = NULL;
+	barrier.srcAccessMask = 0;
+	barrier.dstAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
+	barrier.oldLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+	barrier.newLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
+	barrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+	barrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+	barrier.image = hImage;
+	barrier.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+	barrier.subresourceRange.baseMipLevel = 0;
+	barrier.subresourceRange.levelCount = VK_REMAINING_MIP_LEVELS;
+	barrier.subresourceRange.baseArrayLayer = 0;
+	barrier.subresourceRange.layerCount = VK_REMAINING_ARRAY_LAYERS;
+	
+    NO_CHECK( qvkCmdPipelineBarrier(vk.tmpRecordBuffer, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT,
         VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, 0,	0, NULL, 0, NULL, 1, &barrier) );
-}
-
-
-static void vk_stagBufferToDeviceLocalMem(VkImage image, VkBufferImageCopy* pRegion, uint32_t num_region)
-{
-
-    vk_beginRecordCmds( vk.tmpRecordBuffer );
-
-    // VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL : The image is the
-    // destination of copy operations. 
-    record_image_layout_transition( vk.tmpRecordBuffer, image, 
-            VK_IMAGE_ASPECT_COLOR_BIT,
-            0,
-            VK_IMAGE_LAYOUT_UNDEFINED, 
-            VK_ACCESS_TRANSFER_WRITE_BIT,
-            VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
 
 
     // To copy data from a buffer object to an image object
-    // StagBuf.buff is the source buffer.
-    // image is the destination image.
+    // hBuffer is the source buffer, hImage is the destination image.
     // dstImageLayout is the layout of the destination image subresources.
     // curLevel is the number of regions to copy.
     // pRegions is a pointer to an array of VkBufferImageCopy structures
     // specifying the regions to copy.
-    NO_CHECK( qvkCmdCopyBufferToImage( vk.tmpRecordBuffer, StagBuf.buff, image,
-                VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, num_region, pRegion) );
+    NO_CHECK( qvkCmdCopyBufferToImage( vk.tmpRecordBuffer, hBuffer, hImage,
+                VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, nRegion, pRegion) );
 
-    record_image_layout_transition(vk.tmpRecordBuffer, image,
-            VK_IMAGE_ASPECT_COLOR_BIT, 
-            VK_ACCESS_TRANSFER_WRITE_BIT,
-            VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 
-            VK_ACCESS_SHADER_READ_BIT,
-            VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
+    VkImageMemoryBarrier barrier2 ;
+	barrier2.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
+	barrier2.pNext = NULL;
+	barrier2.srcAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
+	barrier2.dstAccessMask = VK_ACCESS_SHADER_READ_BIT;
+	barrier2.oldLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
+	barrier2.newLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+	barrier2.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+	barrier2.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+	barrier2.image = hImage;
+	barrier2.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+	barrier2.subresourceRange.baseMipLevel = 0;
+	barrier2.subresourceRange.levelCount = VK_REMAINING_MIP_LEVELS;
+	barrier2.subresourceRange.baseArrayLayer = 0;
+	barrier2.subresourceRange.layerCount = VK_REMAINING_ARRAY_LAYERS;
+	
+    NO_CHECK( qvkCmdPipelineBarrier(vk.tmpRecordBuffer, VK_PIPELINE_STAGE_TRANSFER_BIT,
+                VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT, 0, 0, NULL, 0, NULL, 1, &barrier2) );
+
 
     vk_commitRecordedCmds(vk.tmpRecordBuffer);
 }
@@ -692,7 +716,7 @@ image_t* R_CreateImage( const char *name, unsigned char* pic, const uint32_t wid
     void* data;
     VK_CHECK( qvkMapMemory(vk.device, StagBuf.mappableMem, 0, VK_WHOLE_SIZE, 0, &data) );
     memcpy(data, pUploadBuffer, buffer_size);
-    vk_stagBufferToDeviceLocalMem(pImage->handle, regions, pImage->mipLevels);
+    vk_stagBufferToDeviceLocalMem(pImage->handle, StagBuf.buff, regions, pImage->mipLevels);
     NO_CHECK( qvkUnmapMemory(vk.device, StagBuf.mappableMem) );
 
     free(pUploadBuffer);

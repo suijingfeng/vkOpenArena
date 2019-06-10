@@ -804,11 +804,24 @@ void vk_insertLoadingVertexBarrier(VkCommandBuffer HCmdBuffer)
     // commands that were submitted before it, and those submitted
     // after it.
 
+    // VK_PIPELINE_STAGE_HOST_BIT: This pipeline stage corresponds to 
+    // access from the host.
+    //
+    // VK_PIPELINE_STAGE_TRANSFER_BIT: Any pending transfors triggered
+    // as a result of calls to vkCmdCopyImage() or vkCmdCopyBuffer(),
+    //
+    // VK_PIPELINE_STAGE_VERTEX_INPUT_BI: This is the stage where vertex
+    // attributes are fetched from their respective buffers. After this
+    // content of vertex buffers can be overwritten, even if the resulting
+    // vertex shaders have not yet completed execution.
+    // 
     NO_CHECK( qvkCmdPipelineBarrier(HCmdBuffer, VK_PIPELINE_STAGE_HOST_BIT,
         VK_PIPELINE_STAGE_VERTEX_INPUT_BIT, 0, 0, NULL, 1, &barrier1, 0, NULL) );
 
     NO_CHECK( qvkCmdPipelineBarrier(HCmdBuffer, VK_PIPELINE_STAGE_HOST_BIT,
         VK_PIPELINE_STAGE_VERTEX_INPUT_BIT, 0, 0, NULL, 1, &barrier2, 0, NULL) );
+
+    // 
 }
 
 
