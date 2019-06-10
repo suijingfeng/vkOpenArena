@@ -201,7 +201,7 @@ void RE_UploadCinematic(int w, int h, int cols, int rows, const unsigned char * 
         alloc_info.allocationSize = memory_reqs.size;
         alloc_info.memoryTypeIndex = find_memory_type( 
                 memory_reqs.memoryTypeBits, 
-                VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
+                VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT );
 
         // Allocate 4MB mappable coherent memory for the cinematic images
         VK_CHECK( qvkAllocateMemory(vk.device, &alloc_info, NULL, &s_mappableMemory) );

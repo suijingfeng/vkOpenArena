@@ -920,6 +920,7 @@ void vk_begin_frame(void)
 
     // vk_beginRecordCmds(vk.command_buffer);
     //  commandBuffer must not be in the recording or pending state.
+    
     vk_insertLoadingVertexBarrier(vk.command_buffer);
 
     // An application can acquire use of a presentable image with 

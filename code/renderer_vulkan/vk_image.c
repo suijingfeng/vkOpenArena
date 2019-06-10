@@ -716,9 +716,10 @@ image_t* R_CreateImage( const char *name, unsigned char* pic, const uint32_t wid
     void* data;
     VK_CHECK( qvkMapMemory(vk.device, StagBuf.mappableMem, 0, VK_WHOLE_SIZE, 0, &data) );
     memcpy(data, pUploadBuffer, buffer_size);
-    vk_stagBufferToDeviceLocalMem(pImage->handle, StagBuf.buff, regions, pImage->mipLevels);
     NO_CHECK( qvkUnmapMemory(vk.device, StagBuf.mappableMem) );
-
+    
+    vk_stagBufferToDeviceLocalMem(pImage->handle, StagBuf.buff, regions, pImage->mipLevels);
+    
     free(pUploadBuffer);
 
 

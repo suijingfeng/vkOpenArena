@@ -239,6 +239,53 @@ void updateCurDescriptor( VkDescriptorSet curDesSet, uint32_t tmu)
 //  associates components of a vertex shader input variable with components of
 //  a vertex input attribute.
 
+
+void vk_cmdInsertLoadingVertexBarrier(VkCommandBuffer HCmdBuffer)
+{
+    // Ensur/e visibility of geometry buffers writes.
+    VkBufferMemoryBarrier barrier1;
+    barrier1.sType = VK_STRUCTURE_TYPE_BUFFER_MEMORY_BARRIER;
+    barrier1.pNext = NULL;
+    barrier1.srcAccessMask = VK_ACCESS_HOST_WRITE_BIT;
+    // VK_ACCESS_VERTEX_ATTRIBUTE_READ_BIT specifies read access 
+    // to a vertex buffer as part of a drawing command, bound by
+    // vkCmdBindVertexBuffers.
+    barrier1.dstAccessMask = VK_ACCESS_VERTEX_ATTRIBUTE_READ_BIT;
+    barrier1.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+    barrier1.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+    barrier1.offset = 0;
+    barrier1.size = VK_WHOLE_SIZE;
+    barrier1.buffer = vk_getVertexBuffer();
+    // 
+    NO_CHECK( qvkCmdPipelineBarrier(HCmdBuffer, VK_PIPELINE_STAGE_HOST_BIT,
+        VK_PIPELINE_STAGE_VERTEX_INPUT_BIT, 0, 0, NULL, 1, &barrier1, 0, NULL) );
+}
+
+
+void vk_cmdInsertLoadingIndexBarrier(VkCommandBuffer HCmdBuffer)
+{
+    // Ensur/e visibility of geometry buffers writes.
+    VkBufferMemoryBarrier barrier2;
+
+    barrier2.sType = VK_STRUCTURE_TYPE_BUFFER_MEMORY_BARRIER;
+    barrier2.pNext = NULL;
+    barrier2.srcAccessMask = VK_ACCESS_HOST_WRITE_BIT;
+        // VK_ACCESS_INDEX_READ_BIT specifies read access to an index buffer 
+    // as part of an indexed drawing command, bound by vkCmdBindIndexBuffer.
+    barrier2.dstAccessMask = VK_ACCESS_INDEX_READ_BIT;
+    barrier2.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+    barrier2.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+    barrier2.offset = 0;
+    barrier2.size = VK_WHOLE_SIZE;
+    barrier2.buffer = vk_getIndexBuffer();
+
+    NO_CHECK( qvkCmdPipelineBarrier(HCmdBuffer, VK_PIPELINE_STAGE_HOST_BIT,
+        VK_PIPELINE_STAGE_VERTEX_INPUT_BIT, 0, 0, NULL, 1, &barrier2, 0, NULL) );
+
+}
+
+
+
 void vk_UploadXYZI(const float (* const pXYZ)[4], uint32_t nVertex, 
         const uint32_t * const pIdx, uint32_t nIndex)
 {
