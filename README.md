@@ -417,6 +417,20 @@ frame:24121 all: 11 sv:  0 ev:  0 cl:  1 gm:  0 rf:  0 bk: 10
 ```
 # Testing on ubuntu 18.04 gnome, nvidia vulkan driver 1.0.65 
 render_vulkan: 3398 frames 15.0 seconds 225.9 fps 2.0/4.4/9.0/0.7 ms
+# old
+vulkan: 3398 frames 13.1 seconds 260.2 fps 2.0/3.8/7.0/0.7 ms
+opengl1: 3398 frames 7.9 seconds 429.2 fps 1.0/2.3/6.0/0.6 ms
+opengl2: 3398 frames 18.1 seconds 188.1 fps 3.0/5.3/23.0/1.0 ms
+mydev: 3398 frames 7.5 seconds 450.5 fps 1.0/2.2/5.0/0.6 ms
+openarena: 3398 frames 7.7 seconds 444.2 fps 1.0/2.3/5.0/0.6 ms
+
+# framerate dropped due to non-professional modify
+# I am also frustrated that the vulkan renderer not faster than
+# opengl1/openarena backend on this conputer
+# new
+vulkan: 3398 frames 15.7 seconds 216.4 fps 2.0/4.6/8.0/0.8 ms
+
+
 ```
 
 ### GT72VR 6RD, i7-6700HQ, GTX 1060, ubuntu 18.04 GNOME 3.28.2
