@@ -4,6 +4,7 @@
 #include "tr_globals.h"
 #include "tr_shader.h"
 #include "tr_cvar.h"
+#include "vk_buffers.h"
 #include "vk_image_sampler.h"
 #include "vk_image.h"
 #include "R_ImageProcess.h"
@@ -85,86 +86,6 @@ uint32_t find_memory_type(uint32_t memory_type_bits, VkMemoryPropertyFlags prope
 
     ri.Error(ERR_FATAL, "Vulkan: failed to find matching memory type with requested properties");
     return -1;
-}
-
-
-void vk_createBufferResource(uint32_t Size, VkBufferUsageFlags Usage, 
-        VkBuffer * const pBuf, VkDeviceMemory * const pDevMem )
-{
-    memset(&StagBuf, 0, sizeof(StagBuf));
-
-    VkBufferCreateInfo buffer_desc;
-    buffer_desc.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
-    buffer_desc.pNext = NULL;
-    // flags is a bitmask of VkBufferCreateFlagBits specifying additional parameters of the buffer.
-    buffer_desc.flags = 0;
-    buffer_desc.size = Size;
-    // VK_BUFFER_USAGE_TRANSFER_SRC_BIT specifies that the buffer
-    // can be used as the source of a transfer command
-    buffer_desc.usage = Usage;
-
-    // sharingMode is a VkSharingMode value specifying the sharing mode of the buffer 
-    // when it will be accessed by multiple queue families.
-    // queueFamilyIndexCount is the number of entries in the pQueueFamilyIndices array.
-    // pQueueFamilyIndices is a list of queue families that will access this buffer,
-    // (ignored if sharingMode is not VK_SHARING_MODE_CONCURRENT).
-    buffer_desc.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
-    buffer_desc.queueFamilyIndexCount = 0;
-    buffer_desc.pQueueFamilyIndices = NULL;
-
-    VK_CHECK( qvkCreateBuffer(vk.device, &buffer_desc, NULL, pBuf) );
-
-
-    // To determine the memory requirements for a buffer resource
-    //
-    //  typedef struct VkMemoryRequirements {
-    //  VkDeviceSize size;
-    //  VkDeviceSize alignment;
-    //  uint32_t memoryTypeBits;
-    //  } VkMemoryRequirements;
-
-    VkMemoryRequirements memory_requirements;
-    NO_CHECK( qvkGetBufferMemoryRequirements(vk.device, *pBuf, &memory_requirements) );
-
-    VkMemoryAllocateInfo alloc_info;
-    alloc_info.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
-    alloc_info.pNext = NULL;
-    alloc_info.allocationSize = memory_requirements.size;
-    
-    // VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT bit specifies that memory allocated with
-    // this type can be mapped for host access using vkMapMemory.
-    //
-    // VK_MEMORY_PROPERTY_HOST_COHERENT_BIT bit specifies that the host cache
-    // management commands vkFlushMappedMemoryRanges and vkInvalidateMappedMemoryRanges
-    // are not needed to flush host writes to the device or make device writes visible
-    // to the host, respectively.
-    
-    alloc_info.memoryTypeIndex = find_memory_type( 
-        memory_requirements.memoryTypeBits, 
-        VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT );
-
-    VK_CHECK( qvkAllocateMemory(vk.device, &alloc_info, NULL, pDevMem) );
-
-    VK_CHECK( qvkBindBufferMemory(vk.device, *pBuf, *pDevMem, 0) );
-
-    ri.Printf(PRINT_ALL, " Create Buffer: alignment: %ld, memoryTypeBits: 0x%x, Type Index: %d. \n",
-            memory_requirements.alignment, memory_requirements.memoryTypeBits, alloc_info.memoryTypeIndex);
-}
-
-
-void vk_destroyBufferResource(VkBuffer hBuf, VkDeviceMemory hDevMem)
-{
-    if (hDevMem != VK_NULL_HANDLE)
-    {
-        NO_CHECK( qvkFreeMemory(vk.device, hDevMem, NULL) );
-		hDevMem = VK_NULL_HANDLE;
-    }
-
-    if (hBuf != VK_NULL_HANDLE)
-    {
-        NO_CHECK( qvkDestroyBuffer(vk.device, hBuf, NULL) );
-        hBuf = VK_NULL_HANDLE;
-    }
 }
 
 
@@ -949,7 +870,7 @@ void R_InitImages( void )
     // StagBuf.buff must have been created with VK_BUFFER_USAGE_TRANSFER_SRC_BIT
     // usage flag for vkCmdCopyBufferToImage.
     vk_createBufferResource( 8 * 1024 * 1024, VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
-             &StagBuf.buff, &StagBuf.mappableMem );
+           VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT,  &StagBuf.buff, &StagBuf.mappableMem );
 
 	// setup the overbright lighting
 

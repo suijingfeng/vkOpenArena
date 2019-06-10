@@ -24,9 +24,6 @@ image_t* R_FindImageFile(const char *name, VkBool32 mipmap,	VkBool32 allowPicmip
 image_t* R_CreateImage( const char *name, unsigned char* pic, uint32_t width, uint32_t height,
 						VkBool32 mipmap, VkBool32 allowPicmip, int glWrapClampMode);
 
-void vk_createBufferResource(uint32_t Size, VkBufferUsageFlags Usage,
-        VkBuffer * const pBuf, VkDeviceMemory * const pDevMem);
-void vk_destroyBufferResource(VkBuffer hBuf, VkDeviceMemory hDevMem);
 
 void R_LoadImage(const char *name, unsigned char **pic, uint32_t* width, uint32_t* height );
 

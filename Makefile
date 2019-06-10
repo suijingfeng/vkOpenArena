@@ -1663,6 +1663,7 @@ Q3VKOBJ = \
   $(B)/renderer_vulkan/render_export.o \
   \
   $(B)/renderer_vulkan/vk_image.o \
+  $(B)/renderer_vulkan/vk_buffers.o \
   $(B)/renderer_vulkan/vk_cinematic.o \
   $(B)/renderer_vulkan/vk_image_sampler2.o \
   $(B)/renderer_vulkan/R_ImageProcess.o \

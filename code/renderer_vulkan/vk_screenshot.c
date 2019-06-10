@@ -1,6 +1,6 @@
 #include "tr_globals.h"
 #include "vk_instance.h"
-#include "vk_image.h"
+#include "vk_buffers.h"
 #include "vk_cmd.h"
 #include "vk_screenshot.h"
 
@@ -50,6 +50,7 @@ void vk_createScreenShotBuffer(uint32_t howMuch)
     ri.Printf(PRINT_ALL, " Create buffer resources for reading the pixels. \n");
     
     vk_createBufferResource( howMuch, VK_BUFFER_USAGE_TRANSFER_DST_BIT,
+            VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT, 
              &screenShotBuffer, &screenShotMemory );
     
     // Memory objects created with VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT

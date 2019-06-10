@@ -6,7 +6,7 @@
 #include "tr_shader.h"
 #include "tr_shade.h"
 
-#include "vk_image.h"
+#include "vk_buffers.h"
 #include "vk_pipelines.h"
 
 #include "ref_import.h" 
@@ -155,7 +155,8 @@ void vk_createVertexBuffer(void)
     ri.Printf(PRINT_ALL, " Create vertex buffer: shadingDat.vertex_buffer \n");
 
     vk_createBufferResource( XYZ_SIZE + COLOR_SIZE + ST0_SIZE + ST1_SIZE, 
-            VK_BUFFER_USAGE_VERTEX_BUFFER_BIT,
+            VK_BUFFER_USAGE_VERTEX_BUFFER_BIT, 
+            VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT,
             &shadingDat.vertex_buffer,
             &shadingDat.vertex_buffer_memory );
 
@@ -173,6 +174,7 @@ void vk_createIndexBuffer(void)
 
     vk_createBufferResource( INDEX_BUFFER_SIZE, 
             VK_BUFFER_USAGE_INDEX_BUFFER_BIT,
+            VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT, 
             &shadingDat.index_buffer, &shadingDat.index_buffer_memory);
 
     void* data;
