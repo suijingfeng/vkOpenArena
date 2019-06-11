@@ -505,8 +505,17 @@ void RE_RenderScene( const refdef_t *fd )
     parms.viewportWidth = fd->width;
 	parms.viewportHeight = fd->height;
 
-	parms.fovX = fd->fov_x;
-	parms.fovY = fd->fov_y;
+	//parms.fovX = fd->fov_x;
+	//parms.fovY = fd->fov_y;
+
+
+    parms.fovX = tr.refdef.fov_x;
+	parms.fovY = tr.refdef.fov_y;
+	if (!( fd->rdflags & RDF_NOWORLDMODEL ) ){
+		parms.fovY = (360.0 / M_PI) * atan( tan( (M_PI/360.0) * parms.fovX ) * 0.75f );
+   		parms.fovX = (360.0 / M_PI) * atan( tan( (M_PI/360.0) * parms.fovY ) * tr.refdef.width / tr.refdef.height ) ;
+	}
+
 
 	VectorCopy( fd->vieworg, parms.or.origin );
 	VectorCopy( fd->viewaxis[0], parms.or.axis[0] );
