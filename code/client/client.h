@@ -113,7 +113,7 @@ typedef struct {
 	// cgame communicates a few values to the client system
 	int			cgameUserCmdValue;	// current weapon to add to usercmd_t
 	float		cgameSensitivity;
-
+	float		cgameFovX;
 	// cmds[cmdNumber] is the predicted command, [cmdNumber-1] is the last
 	// properly generated command
 	usercmd_t	cmds[CMD_BACKUP];	// each mesage will send several old cmds
@@ -374,6 +374,7 @@ extern	cvar_t	*cl_yawspeed;
 extern	cvar_t	*cl_pitchspeed;
 extern	cvar_t	*cl_run;
 extern	cvar_t	*cl_anglespeedkey;
+extern	cvar_t	*cl_scaleSensWithFov;
 
 extern	cvar_t	*cl_sensitivity;
 extern	cvar_t	*cl_freelook;

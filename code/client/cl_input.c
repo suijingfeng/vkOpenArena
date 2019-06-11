@@ -476,8 +476,27 @@ void CL_MouseMove(usercmd_t *cmd)
 	}
 
 	// ingame FOV
-	mx *= cl.cgameSensitivity;
-	my *= cl.cgameSensitivity;
+	if (cl_scaleSensWithFov->integer) {
+		// Scale the mouse sensitivity value according FOV
+		//
+		// The sensitivity value in `cl_sensitivity` is the sensitivity
+		// the user would have if playing on 90 degree FOV. This
+		// sensitivity value gets scaled when the user is playing at a
+		// different FOV so the mouse feels the same.
+		// Com_Printf("cl.cgameFovX() = %f\n", cl.cgameFovX);
+		float scale = tan(DEG2RAD(cl.cgameFovX) / 2.0f);
+		mx *= scale;
+		my *= scale;
+	} else {
+		// Use the zoom sensitivity scaling value from cgame
+		//
+		// The formula in cgame which is used to calculate this value is
+		// broken because it assumes that the vertical FOV is 75
+		// degrees, and because it uses a slightly incorrect scaling
+		// formula (assuming that hasn't been fixed).
+		mx *= cl.cgameSensitivity;
+		my *= cl.cgameSensitivity;
+	}
 
 	// add mouse X/Y movement to cmd
 	if(in_strafe.active)

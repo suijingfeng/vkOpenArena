@@ -82,6 +82,8 @@ cvar_t	*cl_forceavidemo;
 
 cvar_t	*cl_freelook;
 cvar_t	*cl_sensitivity;
+cvar_t	*cl_scaleSensWithFov;
+
 
 cvar_t	*cl_mouseAccel;
 cvar_t	*cl_mouseAccelOffset;
@@ -3525,6 +3527,8 @@ void CL_Init( void )
 
 	cl_run = Cvar_Get ("cl_run", "1", CVAR_ARCHIVE);
 	cl_sensitivity = Cvar_Get ("sensitivity", "5", CVAR_ARCHIVE);
+    cl_scaleSensWithFov = Cvar_Get ("cl_scaleSensWithFov", "0", CVAR_ARCHIVE);
+
 	cl_mouseAccel = Cvar_Get ("cl_mouseAccel", "0", CVAR_ARCHIVE);
 	cl_freelook = Cvar_Get( "cl_freelook", "1", CVAR_ARCHIVE );
 

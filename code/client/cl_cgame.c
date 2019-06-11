@@ -384,6 +384,48 @@ static int	FloatAsInt( float f ) {
 	return fi.i;
 }
 
+
+
+/*
+==================
+VfovToHfov
+Convert from vertical FOV to horizontal FOV when playing on a specific aspect
+ratio. FOV input and output are in degrees.
+==================
+*/
+static float VfovToHfov( float vfov, float aspect ) {
+	return 2.0 * RAD2DEG( atan( tan( DEG2RAD( vfov ) / 2.0 ) * aspect ) );
+}
+
+/*
+==================
+VfovToHfov
+Convert from horizontal FOV to vertical FOV when playing on a specific aspect
+ratio. FOV input and output are in degrees.
+==================
+*/
+static float HfovToVfov( float hfov, float aspect ) {
+	return 2.0 * RAD2DEG( atan( tan( DEG2RAD( hfov ) / 2.0 ) / aspect ) );
+}
+
+/*
+==================
+VertmToHorpFov
+Convert Vert- FOV to Hor+ FOV
+==================
+*/
+static void VertmToHorpFov( float *fov_x, float *fov_y, float aspect ) {
+	// In Vert- FOV the horizontal FOV is unchanged, so we use it to
+	// calculate the vertical FOV that would be used if playing on
+	// 4:3 to get the Hor+ vertical FOV
+	*fov_y = HfovToVfov( *fov_x, 4.0 / 3.0 );
+
+	// Then we use the Hor+ vertical FOV to calculate our new
+	// expanded horizontal FOV
+	*fov_x = VfovToHfov( *fov_y, aspect );
+}
+
+
 /*
 ====================
 CL_CgameSystemCalls
@@ -547,7 +589,21 @@ intptr_t CL_CgameSystemCalls( intptr_t *args ) {
 		re.AddAdditiveLightToScene( VMA(1), VMF(2), VMF(3), VMF(4), VMF(5) );
 		return 0;
 	case CG_R_RENDERSCENE:
-		re.RenderScene( VMA(1) );
+    {
+        refdef_t *fd = (refdef_t *)VMA(1);
+
+        // only do the following when rendering the world (not UI or HUD)
+        if ( ((fd->rdflags & RDF_NOWORLDMODEL) == 0) )
+        {
+			// save the horizontal FOV
+			cl.cgameFovX = fd->fov_x;
+
+            // convert Vert- to Hor+ FOV
+            VertmToHorpFov( &fd->fov_x, &fd->fov_y, (float)fd->width/(float)fd->height);
+        }
+        re.RenderScene( fd );
+		// re.RenderScene( VMA(1) );
+    }    
 		return 0;
 	case CG_R_SETCOLOR:
 		re.SetColor( VMA(1) );
