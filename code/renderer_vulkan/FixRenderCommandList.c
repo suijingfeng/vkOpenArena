@@ -66,26 +66,29 @@ static void FixRenderCommandList( int nShader )
             case RC_DRAW_SURFS:
             {
                 int i;
-                drawSurf_t	*drawSurf;
-                shader_t	*shader;
-                int			fogNum;
-                int			entityNum;
-                int			dlightMap;
-                
-                const drawSurfsCommand_t *ds_cmd = (const drawSurfsCommand_t *)pCmdTable;
 
-                for( i = 0, drawSurf = ds_cmd->drawSurfs; i < ds_cmd->numDrawSurfs; ++i, drawSurf++ )
+                const drawSurfsCommand_t *ds_cmd = (const drawSurfsCommand_t *)pCmdTable;
+                const uint32_t nSurf = ds_cmd->numDrawSurfs;
+                struct drawSurf_s * const pDrawSurf = ds_cmd->drawSurfs;
+                for( i = 0; i < nSurf; ++i)
                 {
-                    R_DecomposeSort( drawSurf->sort, &entityNum, &shader, &fogNum, &dlightMap );
-                    int	sortedIndex = (( drawSurf->sort >> QSORT_SHADERNUM_SHIFT ) & (MAX_SHADERS-1));
+                    int	fogNum;
+                    int	entityNum;
+                    int	dlightMap;
+                    shader_t * shader;
+
+                    R_DecomposeSort( pDrawSurf[i].sort, &entityNum, &shader, &fogNum, &dlightMap );
+                    
+                    int	sortedIndex = (( pDrawSurf[i].sort >> QSORT_SHADERNUM_SHIFT ) & (MAX_SHADERS-1));
                     if( sortedIndex >= nShader )
                     {
-                        sortedIndex++;
+                        ++sortedIndex;
                         // why this entity not left shifted ???
-                        drawSurf->sort = (sortedIndex << QSORT_SHADERNUM_SHIFT) | entityNum | 
-                            ( fogNum << QSORT_FOGNUM_SHIFT ) | dlightMap;
+                        //
+                        // pDrawSurf[i].sort = (sortedIndex << QSORT_SHADERNUM_SHIFT) | entityNum | 
+                        //    ( fogNum << QSORT_FOGNUM_SHIFT ) | dlightMap;
                         
-                        // drawSurf->sort = R_ComposeSort(sortedIndex, entityNum, fogNum, dlightMap);
+                        pDrawSurf[i].sort = R_ComposeSort(sortedIndex, entityNum, fogNum, dlightMap);
                     }
                 }
 
