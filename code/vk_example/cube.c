@@ -226,7 +226,7 @@ static void prepare_descriptor_set(struct demo *demo)
 
     memset(&tex_descs, 0, sizeof(tex_descs));
     
-    for (unsigned int i = 0; i < DEMO_TEXTURE_COUNT; i++)
+    for (unsigned int i = 0; i < DEMO_TEXTURE_COUNT; ++i)
     {
         tex_descs[i].sampler = demo->textures[i].sampler;
         tex_descs[i].imageView = demo->textures[i].view;
@@ -246,9 +246,10 @@ static void prepare_descriptor_set(struct demo *demo)
     writes[1].descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
     writes[1].pImageInfo = tex_descs;
 
-    for (unsigned int i = 0; i < demo->swapchainImageCount; i++)
+    for (unsigned int i = 0; i < demo->swapchainImageCount; ++i)
     {
-        VK_CHECK( vkAllocateDescriptorSets(demo->device, &alloc_info, &demo->swapchain_image_resources[i].descriptor_set) );
+        VK_CHECK( vkAllocateDescriptorSets(demo->device, &alloc_info,
+                    &demo->swapchain_image_resources[i].descriptor_set) );
 
         buffer_info.buffer = demo->swapchain_image_resources[i].uniform_buffer;
         writes[0].dstSet = demo->swapchain_image_resources[i].descriptor_set;
@@ -277,10 +278,11 @@ static void prepare_framebuffers(struct demo *demo)
 
     uint32_t i;
 
-    for (i = 0; i < demo->swapchainImageCount; i++)
+    for (i = 0; i < demo->swapchainImageCount; ++i)
     {
         attachments[0] = demo->swapchain_image_resources[i].view;
-        VK_CHECK( vkCreateFramebuffer(demo->device, &fb_info, NULL, &demo->swapchain_image_resources[i].framebuffer) );
+        VK_CHECK( vkCreateFramebuffer(demo->device, &fb_info, NULL,
+                    &demo->swapchain_image_resources[i].framebuffer) );
     }
 }
 
@@ -330,7 +332,7 @@ void demo_prepare(struct demo *demo)
     vk_prepare_depth(demo);
     vk_prepare_textures(demo);
     
-    prepare_cube_data_buffers(demo);
+    vk_prepare_cube_data_buffers(demo);
 
     vk_prepare_descriptor_layout(demo);
     vk_prepare_render_pass(demo);
@@ -370,10 +372,9 @@ void demo_prepare(struct demo *demo)
 
     prepare_descriptor_pool(demo);
     prepare_descriptor_set(demo);
-
     prepare_framebuffers(demo);
 
-    for (uint32_t i = 0; i < demo->swapchainImageCount; i++)
+    for (uint32_t i = 0; i < demo->swapchainImageCount; ++i)
     {
         demo->current_buffer = i;
         vk_draw_build_cmd(demo, demo->swapchain_image_resources[i].cmd);
@@ -418,7 +419,8 @@ static void vk_cleanup(struct demo *demo)
     // If the window is currently minimized, demo_resize has already done some cleanup for us.
     if (!demo->is_minimized)
     {
-        for (i = 0; i < demo->swapchainImageCount; i++) {
+        for (i = 0; i < demo->swapchainImageCount; ++i)
+        {
             vkDestroyFramebuffer(demo->device, demo->swapchain_image_resources[i].framebuffer, NULL);
         }
         vkDestroyDescriptorPool(demo->device, demo->desc_pool, NULL);

@@ -156,7 +156,7 @@ void vk_createUniformBufferAndBindItWithMemory(struct demo * pDemo, VkBufferCrea
 }
 
 
-void prepare_cube_data_buffers(struct demo *demo)
+void vk_prepare_cube_data_buffers(struct demo *demo)
 {
 
     struct texcube_vs_uniform data;
@@ -169,19 +169,19 @@ void prepare_cube_data_buffers(struct demo *demo)
     buf_info.usage = VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT;
     buf_info.size = sizeof(data);
 
-
- 
-    for (unsigned int i = 0; i < demo->swapchainImageCount; i++)
+    for (unsigned int i = 0; i < demo->swapchainImageCount; ++i)
     {
-        vk_createUniformBufferAndBindItWithMemory(demo, &buf_info, &demo->swapchain_image_resources[i].uniform_buffer, &demo->swapchain_image_resources[i].uniform_memory);
+        vk_createUniformBufferAndBindItWithMemory(demo, &buf_info, 
+                &demo->swapchain_image_resources[i].uniform_buffer, 
+                &demo->swapchain_image_resources[i].uniform_memory);
 
         uint8_t *pData = NULL;
 
-        VK_CHECK( vkMapMemory(demo->device, demo->swapchain_image_resources[i].uniform_memory, 0, VK_WHOLE_SIZE, 0, (void **)&pData) );
+        VK_CHECK( vkMapMemory(demo->device, demo->swapchain_image_resources[i].uniform_memory,
+                    0, VK_WHOLE_SIZE, 0, (void **)&pData) );
 
         memcpy(pData, &data, sizeof(data) );
 
         vkUnmapMemory(demo->device, demo->swapchain_image_resources[i].uniform_memory);
-
     }
 }
