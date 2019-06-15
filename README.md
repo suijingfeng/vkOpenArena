@@ -105,7 +105,6 @@ First, download the map packages from http://openarena.ws/download.php
 Second, extract the data files at ~/.OpenArena/ (on linux) 
 C:\Users\youname\AppData\Roaming\OpenArena\ (on windows)
 
-
 ```sh
 $ cd ./build/release-linux-x86_64/
 $ ./openarena.x86_64
@@ -132,7 +131,6 @@ both value can be float. You must restart the game after change it.
 $ \r_gamma 1.2
 $ \r_brightness 1.5 
 $ \vid_restart
-
 ```
 
 * Use r\_intensity to turn the intensity/brightness of the lightmap. this value
@@ -288,9 +286,11 @@ $ \monitorInfo
  Display Mode Propertie 33: 3840x2160 30.0 hz. 
  Display Mode Propertie 34: 3840x2160 25.0 hz. 
  Display Mode Propertie 35: 3840x2160 24.0 hz. 
+```
 
+software provided resolution
 
-# software provided resolution
+```
 $ \displayResoList 
 
 Mode  0: 320x240
@@ -327,7 +327,6 @@ $ \r_mode 12
 $ \vid_restart
 ```
 
-
 Q: How to use check FPS or using it as a benchmarking tool?
 
 ```
@@ -363,7 +362,6 @@ render_oa:     3398 frames 5.3 seconds 646.9 fps 1.0/1.5/4.0/0.5 ms
 vulkan : 3398 frames 21.0 seconds 162.2 fps 3.0/6.2/11.0/1.1 ms
 opengl2: 3398 frames 25.1 seconds 135.5 fps 4.0/7.4/14.0/1.5 ms
 opengl1: 3398 frames 10.1 seconds 337.0 fps 1.0/3.0/6.0/0.8 ms
-
 
 # Testing on WIN10 Pro 64-bit, Driver version 397.31 
 vulkan : 3398 frames 14.5 seconds 233.6 fps 1.0/4.3/14.0/1.6 ms
@@ -413,7 +411,8 @@ frame:24120 all: 12 sv:  0 ev:  0 cl:  1 gm:  0 rf:  0 bk: 11
 frame:24121 all: 11 sv:  0 ev:  0 cl:  1 gm:  0 rf:  0 bk: 10
 ```
 
-### Aspire v3-772G i7-4702MQ GeForce GTX 760M 1920x1080 refresh_rate: 60Hz###
+### Aspire v3-772G i7-4702MQ GeForce GTX 760M 1920x1080 refresh_rate: 60Hz
+
 ```
 # Testing on ubuntu 18.04 gnome, nvidia vulkan driver 1.0.65 
 render_vulkan: 3398 frames 15.0 seconds 225.9 fps 2.0/4.4/9.0/0.7 ms
@@ -424,22 +423,14 @@ opengl2: 3398 frames 18.1 seconds 188.1 fps 3.0/5.3/23.0/1.0 ms
 mydev: 3398 frames 7.5 seconds 450.5 fps 1.0/2.2/5.0/0.6 ms
 openarena: 3398 frames 7.7 seconds 444.2 fps 1.0/2.3/5.0/0.6 ms
 
-
 # Testing on win7, Vk api version: 1.1.70
 Vk driver version: 1669513216
 
 vulkan: 3398 frames 17.4 seconds 195.1 fps 1.0/5.1/24.0/1.8 ms
 opengl1: 3398 frames 21.1 seconds 160.9 fps 2.0/6.2/23.0/1.8 ms
 opengl2: 3398 frames 47.6 seconds 71.4 fps 5.0/14.0/81.0/2.4 ms
-
 ```
 
-# framerate dropped due to non-professional modify
-# I am also frustrated that the vulkan renderer not faster than
-# opengl1/openarena backend on this notebook ...
-
-
-```
 
 ### GT72VR 6RD, i7-6700HQ, GTX 1060, ubuntu 18.04 GNOME 3.28.2
 
@@ -448,7 +439,6 @@ vulkan:  3398 frames 4.6 seconds 731.2 fps 1.0/1.4/3.0/0.5 ms
 opengl1: 3398 frames 5.8 seconds 589.2 fps 1.0/1.7/6.0/0.6 ms
 opengl2: 3398 frames 7.2 seconds 469.7 fps 1.0/2.1/21.0/0.7 ms
 ```
-
 
 
 You can also get the information from the UI: SETUP >> SYSTEM >> DRIVER INFO
