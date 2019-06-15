@@ -15,7 +15,7 @@ MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 GNU General Public License for more details.
 
 You should have received a copy of the GNU General Public License
-along with Foobar; if not, write to the Free Software
+along with Quake III Arena source code; if not, write to the Free Software
 Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 ===========================================================================
 */
@@ -44,17 +44,17 @@ extern struct shaderCommands_s tess;
 void R_GetFogArray(fog_t **ppFogs, uint32_t* pNum);
 
 
-static void RB_CalcTransformTexCoords( const texModInfo_t *tmi, float *st  )
+static void RB_CalcTransformTexCoords( const texModInfo_t * const pTmi, float *st  )
 {
-	int i;
-
-	for ( i = 0; i < tess.numVertexes; i++, st += 2 )
+	uint32_t i;
+	uint32_t const nVert = tess.numVertexes;
+	for ( i = 0; i < nVert; ++i, st += 2 )
 	{
 		float s = st[0];
 		float t = st[1];
 
-		st[0] = s * tmi->matrix[0][0] + t * tmi->matrix[1][0] + tmi->translate[0];
-		st[1] = s * tmi->matrix[0][1] + t * tmi->matrix[1][1] + tmi->translate[1];
+		st[0] = s * pTmi->matrix[0][0] + t * pTmi->matrix[1][0] + pTmi->translate[0];
+		st[1] = s * pTmi->matrix[0][1] + t * pTmi->matrix[1][1] + pTmi->translate[1];
 	}
 }
 
@@ -62,34 +62,6 @@ static void RB_CalcStretchTexCoords( const waveForm_t *wf, float *st )
 {
 	float p = 1.0f / RB_WaveValue( wf->func, wf->base, wf->amplitude, wf->phase, wf->frequency );
 	texModInfo_t tmi;
-
-	tmi.matrix[0][0] = p;
-	tmi.matrix[1][0] = 0;
-	tmi.translate[0] = 0.5f - 0.5f * p;
-
-	tmi.matrix[0][1] = 0;
-	tmi.matrix[1][1] = p;
-	tmi.translate[1] = 0.5f - 0.5f * p;
-
-	RB_CalcTransformTexCoords( &tmi, st );
-}
-
-
-// leilei - this is for celshading
-void RB_CalcLightscaleTexCoords(float *st )
-{
-	float p;
-	texModInfo_t tmi;
-	float light = 1.0f;
-
-	vec3_t		directedLight;
-	VectorCopy( backEnd.currentEntity->directedLight, directedLight );
-	//light = DotProduct (directedLight, lightDir);
-	light = ((directedLight[0] + directedLight[1] + directedLight[2]) * 0.333) / 255;
-	if (light > 1)
-		light = 1.0f;
-
-	p = 1.0f - (light * 0.7f);
 
 	tmi.matrix[0][0] = p;
 	tmi.matrix[1][0] = 0;
@@ -505,16 +477,13 @@ void RB_CalcScrollTexCoords( const float scrollSpeed[2], float *st )
 static void RB_CalcRotateTexCoords( float degsPerSecond, float *st )
 {
 	float timeScale = tess.shaderTime;
-	float degs;
-	int index;
-	float sinValue, cosValue;
 	texModInfo_t tmi;
 
-	degs = -degsPerSecond * timeScale;
-	index = degs * ( FUNCTABLE_SIZE / 360.0f );
+	float degs = -degsPerSecond * timeScale;
+	int index = degs * ( FUNCTABLE_SIZE / 360.0f );
 
-	sinValue = tr.sinTable[ index & FUNCTABLE_MASK ];
-	cosValue = tr.sinTable[ ( index + FUNCTABLE_SIZE / 4 ) & FUNCTABLE_MASK ];
+	float sinValue = tr.sinTable[ index & FUNCTABLE_MASK ];
+	float cosValue = tr.sinTable[ ( index + FUNCTABLE_SIZE / 4 ) & FUNCTABLE_MASK ];
 
 	tmi.matrix[0][0] = cosValue;
 	tmi.matrix[1][0] = -sinValue;
@@ -1076,9 +1045,10 @@ void RB_SetTessFogColor(unsigned char (*pcolor)[4], uint32_t fnum, uint32_t nVer
     
 }
 
-void RB_ComputeColors( shaderStage_t * const pStage )
+
+void RB_ComputeColors( struct shaderStage_s * const pStage )
 {
-	int		i;
+	int	i;
 	//
 	// rgbGen
 	//
@@ -1111,13 +1081,13 @@ void RB_ComputeColors( shaderStage_t * const pStage )
 			}
         } break;
 		case CGEN_VERTEX:
-			if ( tr.identityLight == 1 )
+			if ( tr.identityLight == 1.0f )
 			{
 				memcpy( tess.svars.colors, tess.vertexColors, tess.numVertexes * sizeof( tess.vertexColors[0] ) );
 			}
 			else
 			{
-				for ( i = 0; i < tess.numVertexes; i++ )
+				for ( i = 0; i < tess.numVertexes; ++i )
 				{
 					tess.svars.colors[i][0] = tess.vertexColors[i][0] * tr.identityLight;
 					tess.svars.colors[i][1] = tess.vertexColors[i][1] * tr.identityLight;
@@ -1127,9 +1097,9 @@ void RB_ComputeColors( shaderStage_t * const pStage )
 			}
 			break;
 		case CGEN_ONE_MINUS_VERTEX:
-			if ( tr.identityLight == 1 )
+			if ( tr.identityLight == 1.0f )
 			{
-				for ( i = 0; i < tess.numVertexes; i++ )
+				for ( i = 0; i < tess.numVertexes; ++i )
 				{
 					tess.svars.colors[i][0] = 255 - tess.vertexColors[i][0];
 					tess.svars.colors[i][1] = 255 - tess.vertexColors[i][1];
@@ -1138,7 +1108,7 @@ void RB_ComputeColors( shaderStage_t * const pStage )
 			}
 			else
 			{
-				for ( i = 0; i < tess.numVertexes; i++ )
+				for ( i = 0; i < tess.numVertexes; ++i )
 				{
 					tess.svars.colors[i][0] = ( 255 - tess.vertexColors[i][0] ) * tr.identityLight;
 					tess.svars.colors[i][1] = ( 255 - tess.vertexColors[i][1] ) * tr.identityLight;
@@ -1169,18 +1139,23 @@ void RB_ComputeColors( shaderStage_t * const pStage )
 	case AGEN_SKIP:
 		break;
 	case AGEN_IDENTITY:
-		if ( pStage->rgbGen != CGEN_IDENTITY ) {
+		if ( pStage->rgbGen != CGEN_IDENTITY )
+        {
 			if ( ( pStage->rgbGen == CGEN_VERTEX && tr.identityLight != 1 ) ||
-				 pStage->rgbGen != CGEN_VERTEX ) {
-				for ( i = 0; i < tess.numVertexes; i++ ) {
+				 pStage->rgbGen != CGEN_VERTEX )
+            {
+				for ( i = 0; i < tess.numVertexes; ++i )
+                {
 					tess.svars.colors[i][3] = 0xff;
 				}
 			}
 		}
 		break;
 	case AGEN_CONST:
-		if ( pStage->rgbGen != CGEN_CONST ) {
-			for ( i = 0; i < tess.numVertexes; i++ ) {
+		if ( pStage->rgbGen != CGEN_CONST )
+        {
+			for ( i = 0; i < tess.numVertexes; ++i )
+            {
 				tess.svars.colors[i][3] = pStage->constantColor[3];
 			}
 		}
@@ -1199,42 +1174,38 @@ void RB_ComputeColors( shaderStage_t * const pStage )
 		RB_CalcAlphaFromOneMinusEntity( tess.numVertexes, tess.svars.colors );
 		break;
     case AGEN_VERTEX:
-		if ( pStage->rgbGen != CGEN_VERTEX ) {
-			for ( i = 0; i < tess.numVertexes; i++ ) {
+		if ( pStage->rgbGen != CGEN_VERTEX )
+        {
+			for ( i = 0; i < tess.numVertexes; ++i )
+            {
 				tess.svars.colors[i][3] = tess.vertexColors[i][3];
 			}
 		}
         break;
     case AGEN_ONE_MINUS_VERTEX:
-        for ( i = 0; i < tess.numVertexes; i++ )
+        for ( i = 0; i < tess.numVertexes; ++i )
         {
 			tess.svars.colors[i][3] = 255 - tess.vertexColors[i][3];
         }
         break;
 	case AGEN_PORTAL:
 		{
-			unsigned char alpha;
 
-			for ( i = 0; i < tess.numVertexes; i++ )
+			for ( i = 0; i < tess.numVertexes; ++i )
 			{
 				vec3_t v;
 
 				VectorSubtract( tess.xyz[i], backEnd.viewParms.or.origin, v );
-				float len = VectorLength( v );
+				int alpha = VectorLength( v ) / tess.shader->portalRange * 255;
 
-				len /= tess.shader->portalRange;
 
-				if ( len < 0 )
+				if ( alpha < 0 )
 				{
 					alpha = 0;
 				}
-				else if ( len > 1 )
+				else if ( alpha > 255 )
 				{
-					alpha = 0xff;
-				}
-				else
-				{
-					alpha = len * 0xff;
+					alpha = 255;
 				}
 
 				tess.svars.colors[i][3] = alpha;
@@ -1271,9 +1242,7 @@ void RB_CalcFogTexCoords( float (* const pST)[2], uint32_t nVerts )
 {
 	int			i;
 	float		*v;
-	float		s, t;
 	float		eyeT;
-	qboolean	eyeOutside;
 	vec3_t		local;
 	vec4_t		fogDistanceVector, fogDepthVector = {0, 0, 0, 0};
 
@@ -1315,20 +1284,16 @@ void RB_CalcFogTexCoords( float (* const pST)[2], uint32_t nVerts )
 	// see if the viewpoint is outside
 	// this is needed for clipping distance even for constant fog
 
-	if ( eyeT < 0 ) {
-		eyeOutside = qtrue;
-	} else {
-		eyeOutside = qfalse;
-	}
+	qboolean eyeOutside = ( eyeT < 0 ) ? qtrue : qfalse;
 
-	fogDistanceVector[3] += 1.0/512;
+    fogDistanceVector[3] += 1.0/512;
 
 	// calculate density for each point
 	for (i = 0, v = tess.xyz[0] ; i < tess.numVertexes ; ++i, v += 4)
     {
 		// calculate the length in fog
-		s = DotProduct( v, fogDistanceVector ) + fogDistanceVector[3];
-		t = DotProduct( v, fogDepthVector ) + fogDepthVector[3];
+		float s = DotProduct( v, fogDistanceVector ) + fogDistanceVector[3];
+		float t = DotProduct( v, fogDepthVector ) + fogDepthVector[3];
 
 		// partially clipped fogs use the T axis		
 		if ( eyeOutside ) {
@@ -1412,7 +1377,7 @@ void RB_ComputeTexCoords( shaderStage_t * const pStage )
 		//
 		// alter texture coordinates
 		//
-		for ( tm = 0; tm < pStage->bundle[b].numTexMods ; tm++ )
+		for ( tm = 0; tm < pStage->bundle[b].numTexMods ; ++tm )
         {
 			switch ( pStage->bundle[b].texMods[tm].type )
 			{

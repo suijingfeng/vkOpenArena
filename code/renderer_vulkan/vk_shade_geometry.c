@@ -174,7 +174,7 @@ void vk_createIndexBuffer(void)
 
     vk_createBufferResource( INDEX_BUFFER_SIZE, 
             VK_BUFFER_USAGE_INDEX_BUFFER_BIT,
-            VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT, 
+            VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, 
             &shadingDat.index_buffer, &shadingDat.index_buffer_memory);
 
     void* data;

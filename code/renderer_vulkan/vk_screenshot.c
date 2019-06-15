@@ -42,8 +42,6 @@ Implementations may support additional limits and capabilities beyond those list
 */
 
 
-static VkBuffer screenShotBuffer;
-static VkDeviceMemory screenShotMemory;
 
 
 extern void R_GetWorldBaseName(char* checkname);
@@ -79,6 +77,8 @@ static void imgFlipY(unsigned char * pBuf, const uint32_t w, const uint32_t h)
 static void vk_read_pixels(unsigned char* const pBuf, uint32_t W, uint32_t H)
 {
 	// NO_CHECK( qvkDeviceWaitIdle(vk.device) );
+    VkBuffer screenShotBuffer;
+    VkDeviceMemory screenShotMemory;
 
 	// Create image in host visible memory to serve as a destination
     // for framebuffer pixels.
