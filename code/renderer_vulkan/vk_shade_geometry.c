@@ -156,7 +156,7 @@ void vk_createVertexBuffer(void)
 
     vk_createBufferResource( XYZ_SIZE + COLOR_SIZE + ST0_SIZE + ST1_SIZE, 
             VK_BUFFER_USAGE_VERTEX_BUFFER_BIT, 
-            VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT,
+            VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
             &shadingDat.vertex_buffer,
             &shadingDat.vertex_buffer_memory );
 

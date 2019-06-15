@@ -45,26 +45,6 @@ Implementations may support additional limits and capabilities beyond those list
 static VkBuffer screenShotBuffer;
 static VkDeviceMemory screenShotMemory;
 
-void vk_createScreenShotBuffer(uint32_t howMuch)
-{
-    ri.Printf(PRINT_ALL, " Create buffer resources for reading the pixels. \n");
-    
-    vk_createBufferResource( howMuch, VK_BUFFER_USAGE_TRANSFER_DST_BIT,
-            VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT, 
-             &screenShotBuffer, &screenShotMemory );
-    
-    // Memory objects created with VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT
-    // are considered mappable. Memory objects must be mappable in order
-    // to be successfully mapped on the host. 
-}
-
-void vk_destroyScreenShotBuffer(void)
-{
-    ri.Printf(PRINT_ALL, " Destroy screen buffer resources. \n");
-    vk_destroyBufferResource(screenShotBuffer, screenShotMemory);
-}
-
-
 
 extern void R_GetWorldBaseName(char* checkname);
 extern void RE_SaveJPG(char * filename, int quality, int image_width, int image_height,
@@ -98,13 +78,31 @@ static void imgFlipY(unsigned char * pBuf, const uint32_t w, const uint32_t h)
 // Just reading the pixels for the GPU MEM, don't care about swizzling
 static void vk_read_pixels(unsigned char* const pBuf, uint32_t W, uint32_t H)
 {
-	NO_CHECK( qvkDeviceWaitIdle(vk.device) );
+	// NO_CHECK( qvkDeviceWaitIdle(vk.device) );
 
 	// Create image in host visible memory to serve as a destination
     // for framebuffer pixels.
   
     const uint32_t sizeFB = W * H * 4;
+
+    // GPU-to-CPU Data Flow
+
+    // Memory objects created with VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT
+    // are considered mappable. Memory objects must be mappable in order
+    // to be successfully mapped on the host.  
+    //
+    // Use HOST_VISIBLE with HOST_COHERENT and HOST_CACHED. This is the
+    // only Memory Type which supports cached reads by the CPU. Great
+    // for cases like recording screen-captures, feeding back
+    // Hierarchical Z-Buffer occlusion tests, etc. ---from AMD webset.
     
+    vk_createBufferResource( sizeFB,
+            VK_BUFFER_USAGE_TRANSFER_DST_BIT,
+            VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | 
+            VK_MEMORY_PROPERTY_HOST_COHERENT_BIT | 
+            VK_MEMORY_PROPERTY_HOST_CACHED_BIT, 
+             &screenShotBuffer, &screenShotMemory );
+
     //////////////////////////////////////////////////////////
     vk_beginRecordCmds(vk.tmpRecordBuffer);
 
@@ -153,7 +151,7 @@ static void vk_read_pixels(unsigned char* const pBuf, uint32_t W, uint32_t H)
 
     NO_CHECK( qvkCmdPipelineBarrier(vk.tmpRecordBuffer, 
         VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT,
-        0, 0, NULL, 0, NULL, 1, &image_barrier) ); 
+        0, 0, NULL, 0, NULL, 1, &image_barrier) );
     
     NO_CHECK( qvkCmdCopyImageToBuffer(vk.tmpRecordBuffer, 
         vk.swapchain_images_array[vk.idx_swapchain_image], 
@@ -163,6 +161,9 @@ static void vk_read_pixels(unsigned char* const pBuf, uint32_t W, uint32_t H)
 
     VK_CHECK( qvkQueueWaitIdle(vk.queue) );
     
+
+
+
     // If the memory mapping was made using a memory object allocated from
     // a memory type that exposes the VK_MEMORY_PROPERTY_HOST_COHERENT_BIT
     // property then the mapping between the host and device is always coherent.
@@ -191,6 +192,9 @@ static void vk_read_pixels(unsigned char* const pBuf, uint32_t W, uint32_t H)
     memcpy(pBuf, data, sizeFB);
     
     NO_CHECK( qvkUnmapMemory(vk.device, screenShotMemory) );
+
+    vk_destroyBufferResource(screenShotBuffer, screenShotMemory);
+    ri.Printf(PRINT_ALL, " Destroy screenshot buffer resources. \n");
 }
 
 
