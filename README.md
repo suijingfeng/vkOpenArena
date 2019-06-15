@@ -424,11 +424,28 @@ opengl2: 3398 frames 18.1 seconds 188.1 fps 3.0/5.3/23.0/1.0 ms
 mydev: 3398 frames 7.5 seconds 450.5 fps 1.0/2.2/5.0/0.6 ms
 openarena: 3398 frames 7.7 seconds 444.2 fps 1.0/2.3/5.0/0.6 ms
 
+
+# Testing on win7, Vk api version: 1.1.70, 
+```
+Vk api version: 1.1.70
+Vk driver version: 1669513216
+Vk vendor id: 0x10DE (NVIDIA)
+Vk device id: 0x11E3
+Vk device type: DISCRETE_GPU
+Vk device name: GeForce GTX 760M
+
+1920 x 1080, refresh_rate: 60Hz
+
+vulkan: 3398 frames 17.4 seconds 195.1 fps 1.0/5.1/24.0/1.8 ms
+opengl1: 3398 frames 21.1 seconds 160.9 fps 2.0/6.2/23.0/1.8 ms
+opengl2: 3398 frames 47.6 seconds 71.4 fps 5.0/14.0/81.0/2.4 ms
+
+```
+
 # framerate dropped due to non-professional modify
 # I am also frustrated that the vulkan renderer not faster than
-# opengl1/openarena backend on this conputer
+# opengl1/openarena backend on this computer
 # new
-vulkan: 3398 frames 15.7 seconds 216.4 fps 2.0/4.6/8.0/0.8 ms
 
 
 ```
