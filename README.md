@@ -242,8 +242,8 @@ besides, the following new cmd only exist in vulkan renderer.
     notebook(in this casem it will not print anything), maybe the driver side bug (nvidia vulkan driver 1.0.65).
 * printDeviceExtensions: list the device extensions supported on you GPU
 * printInstanceExtensions: list the instance extensions supported on you GPU
-* printImgHashTable: print the image hash table usage, which also list the image creaeted and is size info etc.
-* printShaderTextHashTable: I am curious about the q3 handle out the shader collision problem of two different shader.
+* printImgHashTable: print the image hash table usage, which also list the image created and its size info etc.
+* printShaderTextHashTable: I am curious about the q3 handle out the shader name clash problem.
 
 For example:
 
@@ -413,7 +413,7 @@ frame:24120 all: 12 sv:  0 ev:  0 cl:  1 gm:  0 rf:  0 bk: 11
 frame:24121 all: 11 sv:  0 ev:  0 cl:  1 gm:  0 rf:  0 bk: 10
 ```
 
-### Aspire v3-772G i7-4702MQ GTX760M 1920x1080 ###
+### Aspire v3-772G i7-4702MQ GeForce GTX 760M 1920x1080 refresh_rate: 60Hz###
 ```
 # Testing on ubuntu 18.04 gnome, nvidia vulkan driver 1.0.65 
 render_vulkan: 3398 frames 15.0 seconds 225.9 fps 2.0/4.4/9.0/0.7 ms
@@ -425,16 +425,8 @@ mydev: 3398 frames 7.5 seconds 450.5 fps 1.0/2.2/5.0/0.6 ms
 openarena: 3398 frames 7.7 seconds 444.2 fps 1.0/2.3/5.0/0.6 ms
 
 
-# Testing on win7, Vk api version: 1.1.70, 
-```
-Vk api version: 1.1.70
+# Testing on win7, Vk api version: 1.1.70
 Vk driver version: 1669513216
-Vk vendor id: 0x10DE (NVIDIA)
-Vk device id: 0x11E3
-Vk device type: DISCRETE_GPU
-Vk device name: GeForce GTX 760M
-
-1920 x 1080, refresh_rate: 60Hz
 
 vulkan: 3398 frames 17.4 seconds 195.1 fps 1.0/5.1/24.0/1.8 ms
 opengl1: 3398 frames 21.1 seconds 160.9 fps 2.0/6.2/23.0/1.8 ms
@@ -444,8 +436,7 @@ opengl2: 3398 frames 47.6 seconds 71.4 fps 5.0/14.0/81.0/2.4 ms
 
 # framerate dropped due to non-professional modify
 # I am also frustrated that the vulkan renderer not faster than
-# opengl1/openarena backend on this computer
-# new
+# opengl1/openarena backend on this notebook ...
 
 
 ```
