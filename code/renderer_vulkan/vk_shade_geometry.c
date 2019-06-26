@@ -744,12 +744,14 @@ static void RB_ProjectDlightTexture( struct shaderCommands_s * const pTess,
 		if ( numIndexes == 0 ) {
 			continue;
 		}
-
-		updateCurDescriptor( tr.dlightImage->descriptor_set, 0 );
+        
+        R_UpdatePerformanceCounters( pTess->numVertexes, numIndexes, 0);
+		
+        updateCurDescriptor( tr.dlightImage->descriptor_set, 0 );
 		
         // include GLS_DEPTHFUNC_EQUAL so alpha tested surfaces
         // don't add light where they aren't rendered
-        R_UpdatePerformanceCounters( pTess->numVertexes, numIndexes, 0);
+
 		// VULKAN
 
 		vk_shade_geometry( g_globalPipelines.dlight_pipelines[isAdditive][cullType][polyOffset], 
