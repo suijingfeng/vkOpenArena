@@ -833,7 +833,10 @@ static vec2 CalculateDepthRange(VisibilityId visId, vec3 position)
 static void RenderCamera(const RenderCameraArgs &args)
 {
 	const float polygonDepthOffset = -0.001f;
-	const uint32_t stencilTest = BGFX_STENCIL_TEST_EQUAL | BGFX_STENCIL_FUNC_REF(1) | BGFX_STENCIL_FUNC_RMASK(1) | BGFX_STENCIL_OP_FAIL_S_KEEP | BGFX_STENCIL_OP_FAIL_Z_KEEP | BGFX_STENCIL_OP_PASS_Z_KEEP;
+	const uint32_t stencilTest = 
+        BGFX_STENCIL_TEST_EQUAL | BGFX_STENCIL_FUNC_REF(1) | 
+        BGFX_STENCIL_FUNC_RMASK(1) | BGFX_STENCIL_OP_FAIL_S_KEEP | 
+        BGFX_STENCIL_OP_FAIL_Z_KEEP | BGFX_STENCIL_OP_PASS_Z_KEEP;
 
 	s_main->isWorldCamera = args.visId != VisibilityId::None;
 	const bool isProbe = args.visId == VisibilityId::Probe;
@@ -1311,22 +1314,34 @@ static void RenderCamera(const RenderCameraArgs &args)
 			}
 			else if (s_main->isWorldCamera && s_main->softSpritesEnabled && dc.softSpriteDepth > 0)
 			{
-				shaderVariant |= GenericShaderProgramVariant::SoftSprite;
-				bgfx::setTexture(TextureUnit::Depth, s_main->matStageUniforms->depthSampler.handle, bgfx::getTexture(s_main->depthFb.handle));
+//				shaderVariant |= GenericShaderProgramVariant::SoftSprite;
+//				bgfx::setTexture(TextureUnit::Depth, s_main->matStageUniforms->depthSampler.handle,
+//				bgfx::getTexture(s_main->depthFb.handle));
 				
-				// Change additive blend from (1, 1) to (src alpha, 1) so the soft sprite shader can control alpha.
-				float useAlpha = 1;
-
-				if ((state & BGFX_STATE_BLEND_MASK) == BGFX_STATE_BLEND_ADD)
+                // Soft sprites aren't possible with some blend modes.
+				if ((state & BGFX_STATE_BLEND_MASK) != 
+                        BGFX_STATE_BLEND_FUNC( BGFX_STATE_BLEND_ONE, BGFX_STATE_BLEND_SRC_ALPHA))
 				{
-					useAlpha = 0; // Ignore existing alpha values in the shader. This preserves the behavior of a (1, 1) additive blend.
-					state &= ~BGFX_STATE_BLEND_MASK;
-					state |= BGFX_STATE_BLEND_FUNC(BGFX_STATE_BLEND_SRC_ALPHA, BGFX_STATE_BLEND_ONE);
-				}
+					shaderVariant |= GenericShaderProgramVariant::SoftSprite;
+					bgfx::setTexture(TextureUnit::Depth, s_main->matStageUniforms->depthSampler.handle,
+                            bgfx::getTexture(s_main->depthFb.handle));
 
-				s_main->uniforms->softSprite_Depth_UseAlpha.set(vec4(dc.softSpriteDepth, useAlpha, 0, 0));
-			}
+				    // Change additive blend from (1, 1) to (src alpha, 1) 
+                    // so the soft sprite shader can control alpha.
+				    float useAlpha = 1;
 
+				    if ((state & BGFX_STATE_BLEND_MASK) == BGFX_STATE_BLEND_ADD)
+				    {
+					    useAlpha = 0; 
+                        // Ignore existing alpha values in the shader. 
+                        // This preserves the behavior of a (1, 1) additive blend.
+					    state &= ~BGFX_STATE_BLEND_MASK;
+					    state |= BGFX_STATE_BLEND_FUNC(BGFX_STATE_BLEND_SRC_ALPHA, BGFX_STATE_BLEND_ONE);
+				    }
+
+				    s_main->uniforms->softSprite_Depth_UseAlpha.set(vec4(dc.softSpriteDepth, useAlpha, 0, 0));
+			    }
+            }
 			if (s_main->isWorldCamera && dc.dynamicLighting && !(dc.flags & DrawCallFlags::Sky))
 			{
 				shaderVariant |= GenericShaderProgramVariant::DynamicLights;
