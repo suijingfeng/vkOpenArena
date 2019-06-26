@@ -139,7 +139,7 @@ PFN_vkGetSwapchainImagesKHR						qvkGetSwapchainImagesKHR;
 PFN_vkQueuePresentKHR							qvkQueuePresentKHR;
 
 
-
+#ifndef NDEBUG
 static VkBool32 vk_assertStandValidationLayer(void)
 {
     // Look For Standard Validation Layer
@@ -185,6 +185,8 @@ static VkBool32 vk_assertStandValidationLayer(void)
     }
 	return found;
 }
+#endif
+
 
 void printInstanceExtensionsSupported_f(void)
 {
@@ -652,12 +654,8 @@ static void vk_selectPhysicalDevice(void)
     // Initial call to query gpu_count, then second call for gpu info.
 	qvkEnumeratePhysicalDevices(vk.instance, &gpu_count, NULL);
 
-	if (gpu_count <= 0)
+	if (gpu_count <= 0) {
 		ri.Error(ERR_FATAL, "Vulkan: no physical device found");
-
-    if (r_gpuIndex->integer > gpu_count -1) {
-        ri.Error(ERR_FATAL, "Vulkan: r_gpuIndex out of bound (r_gpuIndex: %d - gpu_count: %d)",
-                r_gpuIndex->integer, gpu_count);
     }
 
     VkPhysicalDevice * const pPhyDev = (VkPhysicalDevice *) malloc (sizeof(VkPhysicalDevice) * gpu_count);
@@ -665,8 +663,28 @@ static void vk_selectPhysicalDevice(void)
 
     VK_CHECK( qvkEnumeratePhysicalDevices(vk.instance, &gpu_count, pPhyDev) );
     // Select the right gpu from r_gpuIndex
-    vk.physical_device = pPhyDev[r_gpuIndex->integer];
-	
+    
+    if (gpu_count == 1)
+    {
+        // we have only one GPU, no choice
+        vk.physical_device = pPhyDev[0];
+        r_gpuIndex->integer = 1;
+    }
+    else
+    {
+        // out of range check ...
+        if(r_gpuIndex->integer < 0) 
+        {
+            r_gpuIndex->integer = 0;
+        }
+        else if(r_gpuIndex->integer >= gpu_count)
+        {
+            r_gpuIndex->integer = gpu_count - 1;
+        }
+        // let the user decide.
+        vk.physical_device = pPhyDev[r_gpuIndex->integer];
+    }
+
     free(pPhyDev);
 
     ri.Printf(PRINT_ALL, " Total %d graphics card, selected card index: [%d]. \n",
@@ -720,7 +738,6 @@ const char * ColorSpaceEnum2str(enum VkColorSpaceKHR cs)
 
 static void vk_assertSurfaceCapabilities(VkSurfaceKHR HSurface)
 {
-    
     // To query supported format features which are properties of the physical device
 	ri.Printf(PRINT_ALL, "\n --------  Query supported format features --------\n");
     
@@ -1228,23 +1245,23 @@ static VkPresentModeKHR vk_selectPresentationMode(VkSurfaceKHR HSurface)
 
     free(pPresentModes);
 
-
+    ri.Printf(PRINT_ALL, "\n");
     if (mailbox_supported)
     {
         ri.Printf(PRINT_ALL, " Presentation with VK_PRESENT_MODE_MAILBOX_KHR mode. \n");
+        ri.Printf(PRINT_ALL, "-------- ----------------------------- --------\n");
         return VK_PRESENT_MODE_MAILBOX_KHR;
     }
     else if(immediate_supported)
     {
         ri.Printf(PRINT_ALL, " Presentation with VK_PRESENT_MODE_IMMEDIATE_KHR mode. \n");
+        ri.Printf(PRINT_ALL, "-------- ----------------------------- --------\n");
         return VK_PRESENT_MODE_IMMEDIATE_KHR;
     }
 
-    // VK_PRESENT_MODE_FIFO_KHR mode is guaranteed to
-    // be available according to the spec.
-    ri.Printf(PRINT_ALL, "\n Presentation with VK_PRESENT_MODE_FIFO_KHR mode. \n");
+    // FIFO_KHR mode is guaranteed to be available according to the spec.
+    ri.Printf(PRINT_ALL, " Presentation with VK_PRESENT_MODE_FIFO_KHR mode. \n");
     ri.Printf(PRINT_ALL, "-------- ----------------------------- --------\n");
-
     return VK_PRESENT_MODE_FIFO_KHR;
 }
 
@@ -1252,8 +1269,6 @@ static VkPresentModeKHR vk_selectPresentationMode(VkSurfaceKHR HSurface)
 void vk_getProcAddress(void)
 {
     vk_loadGlobalLevelFunctions();
-
-    // vk_assertStandValidationLayer();
 
     vk_createInstance( &vk.instance );
     // We have created a Vulkan Instance object, then 

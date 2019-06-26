@@ -147,29 +147,6 @@ void RE_StretchPic ( float x, float y, float w, float h,
 }
 
 
-void R_TakeScreenshotCmd( int x, int y, int width, int height, char *name, qboolean jpeg )
-{
-	static char	fileName[MAX_OSPATH] = {0}; // bad things if two screenshots per frame?
-	
-    screenshotCommand_t	*cmd = (screenshotCommand_t*) R_GetCommandBuffer(sizeof(*cmd));
-	if ( !cmd ) {
-		return;
-	}
-	cmd->commandId = RC_SCREENSHOT;
-
-	cmd->x = x;
-	cmd->y = y;
-	cmd->width = width;
-	cmd->height = height;
-	
-    //Q_strncpyz( fileName, name, sizeof(fileName) );
-
-    strncpy(fileName, name, sizeof(fileName));
-
-	cmd->fileName = fileName;
-	cmd->jpeg = jpeg;
-}
-
 
 void RE_TakeVideoFrame( int width, int height, 
         unsigned char *captureBuffer, unsigned char *encodeBuffer, qboolean motionJpeg )
@@ -393,7 +370,7 @@ void R_IssueRenderCommands( qboolean runPerformanceCounters )
     // actually start the commands going
     // let it start on the new batch
     // RB_ExecuteRenderCommands( cmdList->cmds );
-    int	t1 = ri.Milliseconds ();
+    int	t1 = ri.Milliseconds();
 
     // add an end-of-list command
     *(int *)(BE_Commands.cmds + BE_Commands.used) = RC_END_OF_LIST;
@@ -476,18 +453,6 @@ void R_IssueRenderCommands( qboolean runPerformanceCounters )
                 vk_end_frame();
 
                 data += sizeof(swapBuffersCommand_t);
-            } break;
-
-            // verify that if vulkan can use this stucture ?
-            // feeling that get data back should happen after the
-            // compileshment of rendering but before presentation.
-            case RC_SCREENSHOT:
-            {   
-                const screenshotCommand_t * const cmd = data;
-
-                RB_TakeScreenshot( cmd->width, cmd->height, cmd->fileName, cmd->jpeg);
-
-                data += sizeof(screenshotCommand_t);
             } break;
 
 

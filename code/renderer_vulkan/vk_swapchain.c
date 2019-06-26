@@ -68,13 +68,14 @@ void vk_createSwapChain(VkDevice device, VkSurfaceKHR HSurface,
 	VK_CHECK( qvkGetPhysicalDeviceSurfaceCapabilitiesKHR(vk.physical_device, HSurface, &surfCaps) );
 
     // VK_IMAGE_USAGE_TRANSFER_DST_BIT is required by image clear operations.
-	if( (surfCaps.supportedUsageFlags & VK_IMAGE_USAGE_TRANSFER_DST_BIT) == 0 )
+	if( (surfCaps.supportedUsageFlags & VK_IMAGE_USAGE_TRANSFER_DST_BIT) == 0 ) {
 		ri.Error(ERR_FATAL, "VK_IMAGE_USAGE_TRANSFER_DST_BIT is not supported by you GPU.\n");
+    }
 
 	// VK_IMAGE_USAGE_TRANSFER_SRC_BIT is required in order to take screenshots.
-	if( (surfCaps.supportedUsageFlags & VK_IMAGE_USAGE_TRANSFER_SRC_BIT) == 0 )
+	if( (surfCaps.supportedUsageFlags & VK_IMAGE_USAGE_TRANSFER_SRC_BIT) == 0 ) {
 		ri.Error(ERR_FATAL, "VK_IMAGE_USAGE_TRANSFER_SRC_BIT is not supported by you GPU.\n");
-
+    }
     // vk.surface_caps = surCaps;
     
     // The swap extent is the resolution of the swap chain images and its almost 
@@ -120,12 +121,14 @@ void vk_createSwapChain(VkDevice device, VkSurfaceKHR HSurface,
         switch (presentMode)
         {
             case VK_PRESENT_MODE_MAILBOX_KHR:
-                image_count = MAX(3u, surfCaps.minImageCount); break;
+                image_count = MAX(3u, surfCaps.minImageCount);
+                break;
 
             case VK_PRESENT_MODE_FIFO_KHR:
             case VK_PRESENT_MODE_IMMEDIATE_KHR:
             default:
-                image_count = MAX(2u, surfCaps.minImageCount); break;
+                image_count = MAX(2u, surfCaps.minImageCount); 
+                break;
         }
 
         // minImageCount must be less than or equal to the value returned in

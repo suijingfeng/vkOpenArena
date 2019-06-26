@@ -214,11 +214,12 @@ static void prepare_descriptor_set(struct demo *demo)
     VkDescriptorImageInfo tex_descs[DEMO_TEXTURE_COUNT];
     VkWriteDescriptorSet writes[2];
 
-    VkDescriptorSetAllocateInfo alloc_info = {.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO,
-                                              .pNext = NULL,
-                                              .descriptorPool = demo->desc_pool,
-                                              .descriptorSetCount = 1,
-                                              .pSetLayouts = &demo->desc_layout};
+    VkDescriptorSetAllocateInfo alloc_info = {
+        .sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO,
+        .pNext = NULL,
+        .descriptorPool = demo->desc_pool,
+        .descriptorSetCount = 1,
+        .pSetLayouts = &demo->desc_layout};
 
     VkDescriptorBufferInfo buffer_info;
     buffer_info.offset = 0;
@@ -361,7 +362,8 @@ void demo_prepare(struct demo *demo)
             .level = VK_COMMAND_BUFFER_LEVEL_PRIMARY,
             .commandBufferCount = 1,
         };
-        for (uint32_t i = 0; i < demo->swapchainImageCount; i++)
+
+        for (uint32_t i = 0; i < demo->swapchainImageCount; ++i)
         {
             VK_CHECK( vkAllocateCommandBuffers(demo->device, &present_cmd_info,
                                            &demo->swapchain_image_resources[i].graphics_to_present_cmd) );
@@ -405,7 +407,7 @@ static void vk_cleanup(struct demo *demo)
     vkDeviceWaitIdle(demo->device);
 
     // Wait for fences from present operations
-    for (i = 0; i < FRAME_LAG; i++)
+    for (i = 0; i < FRAME_LAG; ++i)
     {
         vkWaitForFences(demo->device, 1, &demo->fences[i], VK_TRUE, UINT64_MAX);
         vkDestroyFence(demo->device, demo->fences[i], NULL);
@@ -443,7 +445,8 @@ static void vk_cleanup(struct demo *demo)
         vkDestroyImage(demo->device, demo->depth.image, NULL);
         vkFreeMemory(demo->device, demo->depth.mem, NULL);
 
-        for (i = 0; i < demo->swapchainImageCount; i++) {
+        for (i = 0; i < demo->swapchainImageCount; ++i)
+        {
             vkDestroyImageView(demo->device, demo->swapchain_image_resources[i].view, NULL);
             vkFreeCommandBuffers(demo->device, demo->cmd_pool, 1, &demo->swapchain_image_resources[i].cmd);
             vkDestroyBuffer(demo->device, demo->swapchain_image_resources[i].uniform_buffer, NULL);

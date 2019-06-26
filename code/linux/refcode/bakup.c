@@ -1702,3 +1702,27 @@ static unsigned int NameToAFunc( const char *funcname )
 }
 */
 
+/*
+void R_TakeScreenshotCmd( int x, int y, int width, int height, char *name, qboolean jpeg )
+{
+	static char	fileName[MAX_OSPATH] = {0}; // bad things if two screenshots per frame?
+	
+    screenshotCommand_t	*cmd = (screenshotCommand_t*) R_GetCommandBuffer(sizeof(*cmd));
+	if ( !cmd ) {
+		return;
+	}
+	cmd->commandId = RC_SCREENSHOT;
+
+	cmd->x = x;
+	cmd->y = y;
+	cmd->width = width;
+	cmd->height = height;
+	
+    //Q_strncpyz( fileName, name, sizeof(fileName) );
+
+    strncpy(fileName, name, sizeof(fileName));
+
+	cmd->fileName = fileName;
+	cmd->jpeg = jpeg;
+}
+*/
