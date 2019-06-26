@@ -164,18 +164,14 @@ static VkBool32 vk_assertStandValidationLayer(void)
         for (j = 0; j < instance_layer_count; ++j)
         {
             ri.Printf(PRINT_ALL, " %s\n", instance_layers[j].layerName);
-        }
-
-        for (j = 0; j < instance_layer_count; ++j)
-        {
-            if (!strcmp("VK_LAYER_LUNARG_standard_validation", instance_layers[j].layerName))
+			
+			if (!strcmp("VK_LAYER_LUNARG_standard_validation", instance_layers[j].layerName))
             {
                 found = VK_TRUE;
-                ri.Printf(PRINT_ALL, " Standard validation found. \n");
-                break;
             }
         }
-        ri.Printf(PRINT_ALL, " ------- ---------------------------- -------- \n");
+
+         ri.Printf(PRINT_ALL, " ------- ---------------------------- -------- \n");
         
         free(instance_layers);
         
@@ -187,7 +183,6 @@ static VkBool32 vk_assertStandValidationLayer(void)
     {
         ri.Printf(PRINT_WARNING, "No standard validation layer available! \n");
     }
-
 	return found;
 }
 
@@ -491,8 +486,7 @@ static void vk_createInstance(VkInstance* const pInstance)
 #ifndef NDEBUG
 	if( vk_assertStandValidationLayer() )
 	{
-
-		ri.Printf(PRINT_ALL, "Using VK_LAYER_LUNARG_standard_validation\n");
+		ri.Printf(PRINT_ALL, "Using VK_LAYER_LUNARG_standard_validation. \n");
 
 		const char* const validation_layer_name = "VK_LAYER_LUNARG_standard_validation";    
 		instanceCreateInfo.enabledLayerCount = 1;

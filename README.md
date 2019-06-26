@@ -50,8 +50,19 @@ followed by `vid_restart`.
 Install the build dependencies.
 
 ```sh
-$ sudo apt-get install libcurl4-openssl-dev libsdl2-dev libopenal-dev libvulkan-dev libgl1-mesa-dev
+$ sudo apt-get install libcurl4-openssl-dev libopenal-dev libgl1-mesa-dev
 $ sudo apt-get install clang gcc make git
+
+# SDL2 may required to compile from the source.
+sudo apt-get install libsdl2-dev
+
+# libvulkan-dev provide validation layer, optimal if dont need it debug.
+sudo apt-get install libvulkan-dev
+
+# If you have a AMD GPU
+$ sudo apt-get install mesa-vulkan-drivers
+
+
 $ git clone https://github.com/suijingfeng/vkOpenArena.git
 $ cd vkOpenArena
 $ make -j4
