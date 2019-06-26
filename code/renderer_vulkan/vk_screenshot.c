@@ -517,22 +517,20 @@ void R_ScreenShotJPEG_f(void)
 }
 
 
-
-
-void RB_TakeVideoFrame( uint32_t Width, uint32_t Height, unsigned char* const buffer_ptr, int32_t Jpeg)
+void RE_TakeVideoFrame( int Width, int Height, 
+        unsigned char *captureBuffer, unsigned char *encodeBuffer, qboolean motionJpeg )
 {
 
-	size_t memcount;
-	int	padwidth, avipadwidth, padlen;
-	
+    unsigned char* const buffer_ptr = encodeBuffer;
+
 
 	size_t linelen = Width * 3;
 
 	// Alignment stuff for glReadPixels
-	padwidth = PAD(linelen, 4);
-	padlen = padwidth - linelen;
+	int padwidth = PAD(linelen, 4);
+	int padlen = padwidth - linelen;
 	// AVI line padding
-	avipadwidth = PAD(linelen, 4);
+	int avipadwidth = PAD(linelen, 4);
 
 		
     unsigned char* const pImg = (unsigned char*) malloc ( Width * Height * 4);
@@ -541,10 +539,10 @@ void RB_TakeVideoFrame( uint32_t Width, uint32_t Height, unsigned char* const bu
 
     imgFlipY(pImg, Width, Height);
 
-	memcount = padwidth * Height;
+	size_t memcount = padwidth * Height;
 
 
-	if(Jpeg)
+	if(motionJpeg)
 	{
 
         const uint32_t cnPixels = Width * Height;
@@ -568,16 +566,15 @@ void RB_TakeVideoFrame( uint32_t Width, uint32_t Height, unsigned char* const bu
 	}
 	else
 	{
-        const unsigned char* buffer2_ptr = pImg;
+        const uint32_t cnPixels = Width * Height;
 
         uint32_t i;
-        for (i = 0; i < Width * Height; ++i)
+        for (i = 0; i < cnPixels; ++i)
         {
-            buffer_ptr[i*3+0] = buffer2_ptr[0];
-            buffer_ptr[i*3+1] = buffer2_ptr[1];
-            buffer_ptr[i+3+2] = buffer2_ptr[2];
+            buffer_ptr[i*3+0] = pImg[i*3+0];
+            buffer_ptr[i*3+1] = pImg[i*3+1];
+            buffer_ptr[i+3+2] = pImg[i*3+2];
             //buffer_ptr += 3;
-            buffer2_ptr += 4;
         }
 
 		ri.CL_WriteAVIVideoFrame(buffer_ptr, avipadwidth * Height);

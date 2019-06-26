@@ -61,7 +61,6 @@ typedef enum {
 	RC_DRAW_SURFS,
 	RC_DRAW_BUFFER,
 	RC_SWAP_BUFFERS,
-    RC_VIDEOFRAME
 } renderCommand_t;
 
 typedef struct {
@@ -74,14 +73,7 @@ typedef struct {
 	qboolean jpeg;
 } screenshotCommand_t;
 
-typedef struct {
-	int				commandId;
-	int				width;
-	int				height;
-	unsigned char*  captureBuffer;
-	unsigned char*  encodeBuffer;
-	VkBool32        motionJpeg;
-} videoFrameCommand_t;
+
 /*
 =============================================================
 

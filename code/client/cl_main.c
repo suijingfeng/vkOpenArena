@@ -2965,7 +2965,8 @@ void CL_Frame ( int msec )
 		}
 	}
 	
-	if( cl_autoRecordDemo->integer ) {
+	if( cl_autoRecordDemo->integer )
+    {
 		if( clc.state == CA_ACTIVE && !clc.demorecording && !clc.demoplaying ) {
 			// If not recording a demo, and we should be, start one
 			qtime_t	now;

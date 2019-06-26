@@ -1533,6 +1533,7 @@ const void *RB_TakeVideoFrameCmd( const void *data )
 
 	qglGetIntegerv(GL_PACK_ALIGNMENT, &packAlign);
 
+
 	linelen = cmd->width * 3;
 
 	// Alignment stuff for glReadPixels

@@ -148,27 +148,6 @@ void RE_StretchPic ( float x, float y, float w, float h,
 
 
 
-void RE_TakeVideoFrame( int width, int height, 
-        unsigned char *captureBuffer, unsigned char *encodeBuffer, qboolean motionJpeg )
-{
-	if( !tr.registered ) {
-		return;
-	}
-
-	videoFrameCommand_t	* cmd = R_GetCommandBuffer( sizeof( *cmd ) );
-	if( !cmd ) {
-		return;
-	}
-
-	cmd->commandId = RC_VIDEOFRAME;
-
-	cmd->width = width;
-	cmd->height = height;
-	cmd->captureBuffer = captureBuffer;
-	cmd->encodeBuffer = encodeBuffer;
-	cmd->motionJpeg = motionJpeg;
-}
-
 void RE_BeginFrame( stereoFrame_t notUsed )
 {
 	if ( !tr.registered ) {
@@ -455,15 +434,6 @@ void R_IssueRenderCommands( qboolean runPerformanceCounters )
                 data += sizeof(swapBuffersCommand_t);
             } break;
 
-
-            case RC_VIDEOFRAME:
-            {
-                const videoFrameCommand_t * const cmd = data;
-
-                RB_TakeVideoFrame( cmd->width, cmd->height, cmd->encodeBuffer, cmd->motionJpeg );
-
-                data += sizeof(videoFrameCommand_t);
-            } break;
 
             case RC_END_OF_LIST:
                 // stop rendering on this thread
