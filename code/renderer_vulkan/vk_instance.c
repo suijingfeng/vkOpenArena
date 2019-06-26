@@ -140,12 +140,12 @@ PFN_vkQueuePresentKHR							qvkQueuePresentKHR;
 
 
 
-static void vk_assertStandValidationLayer(void)
+static VkBool32 vk_assertStandValidationLayer(void)
 {
     // Look For Standard Validation Layer
     VkBool32 found = VK_FALSE;
     
-    static const char instance_validation_layers_name[] = {"VK_LAYER_LUNARG_standard_validation"};
+    // static const char instance_validation_layers_name[] = {"VK_LAYER_LUNARG_standard_validation"};
 
     uint32_t instance_layer_count = 0;
 
@@ -168,7 +168,7 @@ static void vk_assertStandValidationLayer(void)
 
         for (j = 0; j < instance_layer_count; ++j)
         {
-            if (!strcmp(instance_validation_layers_name, instance_layers[j].layerName))
+            if (!strcmp("VK_LAYER_LUNARG_standard_validation", instance_layers[j].layerName))
             {
                 found = VK_TRUE;
                 ri.Printf(PRINT_ALL, " Standard validation found. \n");
@@ -179,14 +179,16 @@ static void vk_assertStandValidationLayer(void)
         
         free(instance_layers);
         
-        if(found == 0) {
+        if(found == VK_FALSE) {
             ri.Printf(PRINT_WARNING, " Failed to find required validation layer.\n\n");
         }
     }
     else
     {
-        ri.Printf(PRINT_WARNING, "No instance layer available! \n");
+        ri.Printf(PRINT_WARNING, "No standard validation layer available! \n");
     }
+
+	return found;
 }
 
 void printInstanceExtensionsSupported_f(void)
@@ -483,16 +485,19 @@ static void vk_createInstance(VkInstance* const pInstance)
 
     instanceCreateInfo.enabledExtensionCount = EnableInsExtCount;
 	instanceCreateInfo.ppEnabledExtensionNames = ppInstanceExtEnabled;
-
-#ifndef NDEBUG
-    ri.Printf(PRINT_ALL, "Using VK_LAYER_LUNARG_standard_validation\n");
-
-    const char* const validation_layer_name = "VK_LAYER_LUNARG_standard_validation";    
-    instanceCreateInfo.enabledLayerCount = 1;
-	instanceCreateInfo.ppEnabledLayerNames = &validation_layer_name;
-#else
     instanceCreateInfo.enabledLayerCount = 0;
 	instanceCreateInfo.ppEnabledLayerNames = NULL;
+
+#ifndef NDEBUG
+	if( vk_assertStandValidationLayer() )
+	{
+
+		ri.Printf(PRINT_ALL, "Using VK_LAYER_LUNARG_standard_validation\n");
+
+		const char* const validation_layer_name = "VK_LAYER_LUNARG_standard_validation";    
+		instanceCreateInfo.enabledLayerCount = 1;
+		instanceCreateInfo.ppEnabledLayerNames = &validation_layer_name;
+	}
 #endif
 
 
@@ -1254,7 +1259,7 @@ void vk_getProcAddress(void)
 {
     vk_loadGlobalLevelFunctions();
 
-    vk_assertStandValidationLayer();
+    // vk_assertStandValidationLayer();
 
     vk_createInstance( &vk.instance );
     // We have created a Vulkan Instance object, then 
