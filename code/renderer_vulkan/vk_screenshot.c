@@ -136,6 +136,12 @@ static void vk_read_pixels(unsigned char* const pBuf, uint32_t W, uint32_t H)
     image_barrier.srcAccessMask = VK_ACCESS_COLOR_ATTACHMENT_READ_BIT;
     image_barrier.dstAccessMask = VK_ACCESS_TRANSFER_READ_BIT;
     image_barrier.oldLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
+
+    // VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL must only be used as a
+    // source image of a transfer command (see the definition of 
+    // VK_PIPELINE_STAGE_TRANSFER_BIT). This layout is valid only 
+    // for image subresources of images created with the 
+    // VK_IMAGE_USAGE_TRANSFER_SRC_BIT usage bit enabled.
     image_barrier.newLayout = VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL;
     image_barrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
     image_barrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
@@ -145,7 +151,6 @@ static void vk_read_pixels(unsigned char* const pBuf, uint32_t W, uint32_t H)
     image_barrier.subresourceRange.levelCount = 1;
     image_barrier.subresourceRange.baseArrayLayer = 0;
     image_barrier.subresourceRange.layerCount = 1;
-
 
     // read pixel with command buffer
 
@@ -519,66 +524,43 @@ void R_ScreenShotJPEG_f(void)
 
 void RE_TakeVideoFrame( int Width, int Height, 
         unsigned char *captureBuffer, unsigned char *encodeBuffer, qboolean motionJpeg )
-{
-
-    unsigned char* const buffer_ptr = encodeBuffer;
-
-
-	size_t linelen = Width * 3;
-
-	// Alignment stuff for glReadPixels
-	int padwidth = PAD(linelen, 4);
-	int padlen = padwidth - linelen;
-	// AVI line padding
-	int avipadwidth = PAD(linelen, 4);
-
-		
+{		
     unsigned char* const pImg = (unsigned char*) malloc ( Width * Height * 4);
     
     vk_read_pixels(pImg, Width, Height);
 
     imgFlipY(pImg, Width, Height);
 
-	size_t memcount = padwidth * Height;
+
+	size_t linelen = Width * 3;
 
 
-	if(motionJpeg)
-	{
+	// AVI line padding
+	int avipadwidth = PAD(linelen, 4);
+	int padlen = avipadwidth - linelen;
 
-        const uint32_t cnPixels = Width * Height;
-        unsigned char* pSrc = pImg;
-        const unsigned char* pDst = pImg;
+	size_t memcount = avipadwidth * Height;
 
+
+    // const uint32_t cnPixels = Width * Height;
+    uint32_t j;
+    for(j = 0; j < Height; ++j)
+    {
         uint32_t i;
-        for (i = 0; i < cnPixels; i++)
+        unsigned char* pSrc = captureBuffer + avipadwidth * j;
+        unsigned char* pDst = pImg + Width * j * 4; 
+        for (i = 0; i < Width; ++i)
         {
-            pSrc[0] = pDst[2];
-            pSrc[1] = pDst[1];
-            pSrc[2] = pDst[0];
-            pSrc += 3;
-            pDst += 4;
+            pSrc[i*3+0] = pDst[i*4+2];
+            pSrc[i*3+1] = pDst[i*4+1];
+            pSrc[i*3+2] = pDst[i*4+0];
         }
+    }
 
-		memcount = RE_SaveJPGToBuffer(buffer_ptr, linelen * Height,
-			90,	Width, Height, pImg, padlen);
-        
-		ri.CL_WriteAVIVideoFrame(buffer_ptr, memcount);
-	}
-	else
-	{
-        const uint32_t cnPixels = Width * Height;
+    memcount = RE_SaveJPGToBuffer(encodeBuffer, linelen * Height,
+            75,	Width, Height, captureBuffer, padlen);
 
-        uint32_t i;
-        for (i = 0; i < cnPixels; ++i)
-        {
-            buffer_ptr[i*3+0] = pImg[i*3+0];
-            buffer_ptr[i*3+1] = pImg[i*3+1];
-            buffer_ptr[i+3+2] = pImg[i*3+2];
-            //buffer_ptr += 3;
-        }
-
-		ri.CL_WriteAVIVideoFrame(buffer_ptr, avipadwidth * Height);
-	}
+    ri.CL_WriteAVIVideoFrame(encodeBuffer, memcount);
 
     free(pImg);
 }
