@@ -684,7 +684,6 @@ void vk_createFrameBuffers(uint32_t w, uint32_t h, VkRenderPass h_rpass,
     // references all of the VkImageView objects that represent the attachments
     
 
-
     // Render passes operate in conjunction with framebuffers. 
     // Framebuffers represent a collection of specific memory
     // attachments that a render pass instance uses.
@@ -782,7 +781,6 @@ void vk_insertLoadingVertexBarrier(VkCommandBuffer HCmdBuffer)
     barrier1.size = VK_WHOLE_SIZE;
     barrier1.buffer = vk_getVertexBuffer();
 
-
     barrier2.sType = VK_STRUCTURE_TYPE_BUFFER_MEMORY_BARRIER;
     barrier2.pNext = NULL;
     barrier2.srcAccessMask = VK_ACCESS_HOST_WRITE_BIT;
@@ -868,7 +866,6 @@ void vk_clearColorAttachments(const float* color)
 
 	NO_CHECK( qvkCmdClearAttachments(vk.command_buffer, 1, attachments, 1, clear_rect) );
 
-    
 }
 
 

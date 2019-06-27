@@ -8,7 +8,7 @@
 #include "R_ImageJPG.h"
 #include "ref_import.h"
 
-#include "tr_cmds.h"
+
 /* 
 ============================================================================== 
  
@@ -164,10 +164,8 @@ static void vk_read_pixels(unsigned char* const pBuf, uint32_t W, uint32_t H)
 
     vk_commitRecordedCmds(vk.tmpRecordBuffer);
 
-    VK_CHECK( qvkQueueWaitIdle(vk.queue) );
+//    VK_CHECK( qvkQueueWaitIdle(vk.queue) );
     
-
-
 
     // If the memory mapping was made using a memory object allocated from
     // a memory type that exposes the VK_MEMORY_PROPERTY_HOST_COHERENT_BIT
@@ -272,7 +270,7 @@ void RB_TakeScreenshot( uint32_t width, uint32_t height, char * const fileName, 
             {
                 buffer_ptr[i*3]   = *(pImg + i*4 + 2);
                 buffer_ptr[i*3+1] = *(pImg + i*4 + 1);
-                buffer_ptr[i*3+2] = *(pImg + i*4 );;
+                buffer_ptr[i*3+2] = *(pImg + i*4 );
             }
         }
         else
@@ -522,7 +520,7 @@ void R_ScreenShotJPEG_f(void)
 }
 
 
-void RE_TakeVideoFrame( int Width, int Height, 
+void RE_TakeVideoFrame( const int Width, const int Height, 
         unsigned char *captureBuffer, unsigned char *encodeBuffer, qboolean motionJpeg )
 {		
     unsigned char* const pImg = (unsigned char*) malloc ( Width * Height * 4);
@@ -532,33 +530,33 @@ void RE_TakeVideoFrame( int Width, int Height,
     imgFlipY(pImg, Width, Height);
 
 
-	size_t linelen = Width * 3;
-
 
 	// AVI line padding
-	int avipadwidth = PAD(linelen, 4);
-	int padlen = avipadwidth - linelen;
+	int avipadwidth = PAD( (Width * 3), 4);
+	
+	// size_t memcount = avipadwidth * Height;
 
-	size_t memcount = avipadwidth * Height;
-
-
+    unsigned char* pSrc = captureBuffer;
+    unsigned char* pDst = pImg;
     // const uint32_t cnPixels = Width * Height;
     uint32_t j;
     for(j = 0; j < Height; ++j)
     {
         uint32_t i;
-        unsigned char* pSrc = captureBuffer + avipadwidth * j;
-        unsigned char* pDst = pImg + Width * j * 4; 
+        //unsigned char* pSrc = captureBuffer + avipadwidth * j;
+        //unsigned char* pDst = pImg + Width * j * 4; 
         for (i = 0; i < Width; ++i)
         {
-            pSrc[i*3+0] = pDst[i*4+2];
-            pSrc[i*3+1] = pDst[i*4+1];
-            pSrc[i*3+2] = pDst[i*4+0];
+            *(pSrc + i*3 + 0) = *( pDst + i*4 + 2 );
+            *(pSrc + i*3 + 1) = *( pDst + i*4 + 1 );
+            *(pSrc + i*3 + 2) = *( pDst + i*4 + 0 );
         }
+        pSrc += avipadwidth;
+        pDst += Width * 4;
     }
 
-    memcount = RE_SaveJPGToBuffer(encodeBuffer, linelen * Height,
-            75,	Width, Height, captureBuffer, padlen);
+    int memcount = RE_SaveJPGToBuffer(encodeBuffer, Width * Height * 3,
+            75,	Width, Height, captureBuffer, (avipadwidth - Width * 3) );
 
     ri.CL_WriteAVIVideoFrame(encodeBuffer, memcount);
 

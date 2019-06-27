@@ -7,7 +7,6 @@
 #include "vk_shaders.h"
 #include "vk_descriptor_sets.h"
 #include "vk_swapchain.h"
-//#include "vk_screenshot.h"
 #include "ref_import.h" 
 
 

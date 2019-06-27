@@ -109,6 +109,8 @@ void R_Init( void )
 
     ri.Cmd_AddCommand( "printShaderTextHashTable", printShaderTextHashTable_f);
 
+    ri.Cmd_AddCommand( "printPresentModes", printPresentModesSupported_f);
+
     R_InitScene();
 
     glConfig_Init();
@@ -172,6 +174,8 @@ void RE_Shutdown( qboolean destroyWindow )
     ri.Cmd_RemoveCommand("listSortedShader");
 
     ri.Cmd_RemoveCommand("printShaderTextHashTable");
+    
+    ri.Cmd_RemoveCommand("printPresentModes");
 
 
 	R_DoneFreeType();

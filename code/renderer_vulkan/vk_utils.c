@@ -96,3 +96,43 @@ void printVulkanInfo_f( void )
     
 }
 
+void printPresentModesSupported_f(void)
+{
+
+    uint32_t nPM = 0;
+
+    qvkGetPhysicalDeviceSurfacePresentModesKHR(vk.physical_device, vk.surface, &nPM, NULL);
+
+    assert(nPM > 0);
+
+    VkPresentModeKHR * pPresentModes = (VkPresentModeKHR *) malloc( nPM * sizeof(VkPresentModeKHR) );
+
+    qvkGetPhysicalDeviceSurfacePresentModesKHR(vk.physical_device, vk.surface, &nPM, pPresentModes);
+
+    ri.Printf(PRINT_ALL, "-------- Total %d present mode supported. -------- \n", nPM);
+    uint32_t i;
+    for (i = 0; i < nPM; ++i)
+    {
+        switch( pPresentModes[i] )
+        {
+            case VK_PRESENT_MODE_IMMEDIATE_KHR:
+                ri.Printf(PRINT_ALL, " [%d] VK_PRESENT_MODE_IMMEDIATE_KHR \n", i);
+                break;
+            case VK_PRESENT_MODE_MAILBOX_KHR:
+                ri.Printf(PRINT_ALL, " [%d] VK_PRESENT_MODE_MAILBOX_KHR \n", i);
+                break;
+            case VK_PRESENT_MODE_FIFO_KHR:
+                ri.Printf(PRINT_ALL, " [%d] VK_PRESENT_MODE_FIFO_KHR \n", i);
+                break;
+            case VK_PRESENT_MODE_FIFO_RELAXED_KHR:
+                ri.Printf(PRINT_ALL, " [%d] VK_PRESENT_MODE_FIFO_RELAXED_KHR \n", i);
+                break;
+            default:
+                ri.Printf(PRINT_WARNING, "Unknown presentation mode: %d. \n",
+                        pPresentModes[i]);
+                break;
+        }
+    }
+
+    free(pPresentModes);
+}

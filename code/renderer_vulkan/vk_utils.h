@@ -3,5 +3,6 @@
 
 void printDeviceExtensionsSupported_f(void);
 void printVulkanInfo_f( void );
+void printPresentModesSupported_f(void);
 
 #endif
