@@ -12,7 +12,7 @@ so always check the lastest build.
 The opengl2 render module ported from ioq3 is more beatiful and powerful, 
 you can play with the cvars(r\_pbr, r\_cubemapping, r\_hdr, r\_ssao ...) to enable
 corresponding feature. It also consume more compute power and need more memory,
-set com\_hunkMegs to 256 instand 128, otherwise it will quit and inform you hunk  
+set com\_hunkMegs to 256 instead of 128, otherwise it will quit and inform you hunk  
 allocate failed when there are more player playing or in the case of some large map.
 See ioq3 rendergl2 readme.
 
