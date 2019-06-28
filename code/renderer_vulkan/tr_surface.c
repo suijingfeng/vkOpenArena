@@ -25,7 +25,6 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #include "vk_image.h"
 #include "tr_cvar.h"
 #include "tr_backend.h"
-#include "tr_shadows.h"
 #include "ref_import.h"
 #include "RB_SurfaceAnim.h"
 #include "RB_DrawTris.h"
@@ -1157,12 +1156,6 @@ void RB_BeginSurface( shader_t * const pShader, int fogNum, shaderCommands_t * c
 
 void RB_EndSurface( shaderCommands_t * const pTess )
 {
-
-	if ( pTess->shader == tr.shadowShader ) {
-		RB_ShadowTessEnd();
-		return;
-	}
-
 	// for debugging of sort order issues, stop rendering after a given sort value
 	if ( r_debugSort->integer && r_debugSort->integer < pTess->shader->sort ) {
 		return;

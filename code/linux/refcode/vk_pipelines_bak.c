@@ -45,7 +45,6 @@ struct PipelineParameter_t {
 	
     enum CullType_t face_culling;
     enum Vk_Shader_Type shader_type;
-	enum Vk_Shadow_Phase shadow_phase;
 
     VkBool32 polygon_offset;
 	VkBool32 clipping_plane;
@@ -80,14 +79,12 @@ static int32_t ComparepPplPar(const struct pipeline_tree_s * const pTree,
 
     int32_t i1 = (pTree->par.face_culling << 8) |
         (pTree->par.shader_type << 6) |
-        (pTree->par.shadow_phase << 4) | 
         (pTree->par.polygon_offset << 3) |
         (pTree->par.clipping_plane << 2) |
         (pTree->par.mirror << 1) | pTree->par.line_primitives ;
 
     int32_t i2 = (par2->face_culling << 8) |
         (par2->shader_type << 6) |
-        (par2->shadow_phase << 4) | 
         (par2->polygon_offset << 3) |
         (par2->clipping_plane << 2) |
         (par2->mirror << 1) | par2->line_primitives;
@@ -254,7 +251,6 @@ void vk_create_pipeline(
         uint32_t state_bits,
         enum Vk_Shader_Type shader_type,
         enum CullType_t face_culling,
-        enum Vk_Shadow_Phase shadow_phase,
         VkBool32 clipping_plane,
         VkBool32 mirror,
         VkBool32 polygon_offset,
@@ -478,46 +474,10 @@ void vk_create_pipeline(
 	depth_stencil_state.depthWriteEnable = (state_bits & GLS_DEPTHMASK_TRUE) ? VK_TRUE : VK_FALSE;
 	depth_stencil_state.depthCompareOp = (state_bits & GLS_DEPTHFUNC_EQUAL) ? VK_COMPARE_OP_EQUAL : VK_COMPARE_OP_LESS_OR_EQUAL;
 	depth_stencil_state.depthBoundsTestEnable = VK_FALSE;
-	
-    switch (shadow_phase) 
-    {
-        case SHADOWS_RENDERING_DISABLED:
-        {
-            depth_stencil_state.stencilTestEnable = VK_FALSE;
-	    	memset(&depth_stencil_state.front, 0, sizeof(depth_stencil_state.front));
-		    memset(&depth_stencil_state.back, 0, sizeof(depth_stencil_state.back));
-        }break;
-        case SHADOWS_RENDERING_EDGES:
-        {
-            depth_stencil_state.stencilTestEnable = VK_TRUE;
 
-        	depth_stencil_state.front.failOp = VK_STENCIL_OP_KEEP;
-            depth_stencil_state.front.passOp = ( face_culling == CT_FRONT_SIDED ? 
-              VK_STENCIL_OP_INCREMENT_AND_CLAMP : VK_STENCIL_OP_DECREMENT_AND_CLAMP );
-            depth_stencil_state.front.depthFailOp = VK_STENCIL_OP_KEEP;
-            depth_stencil_state.front.compareOp = VK_COMPARE_OP_ALWAYS;
-            depth_stencil_state.front.compareMask = 255;
-            depth_stencil_state.front.writeMask = 255;
-            depth_stencil_state.front.reference = 0;
-
-            depth_stencil_state.back = depth_stencil_state.front;
-        }break;
-        
-        case SHADOWS_RENDERING_FULLSCREEN_QUAD:
-        {
-            depth_stencil_state.stencilTestEnable = VK_TRUE;
-
-            depth_stencil_state.front.failOp = VK_STENCIL_OP_KEEP;
-            depth_stencil_state.front.passOp = VK_STENCIL_OP_KEEP;
-            depth_stencil_state.front.depthFailOp = VK_STENCIL_OP_KEEP;
-            depth_stencil_state.front.compareOp = VK_COMPARE_OP_NOT_EQUAL;
-            depth_stencil_state.front.compareMask = 255;
-            depth_stencil_state.front.writeMask = 255;
-            depth_stencil_state.front.reference = 0;
-
-            depth_stencil_state.back = depth_stencil_state.front;
-        }break;
-    }
+	depth_stencil_state.stencilTestEnable = VK_FALSE;
+	memset(&depth_stencil_state.front, 0, sizeof(depth_stencil_state.front));
+	memset(&depth_stencil_state.back, 0, sizeof(depth_stencil_state.back));
 
 	depth_stencil_state.minDepthBounds = 0.0;
 	depth_stencil_state.maxDepthBounds = 0.0;
@@ -534,11 +494,9 @@ void vk_create_pipeline(
     
 	VkPipelineColorBlendAttachmentState attachment_blend_state = {};
 	attachment_blend_state.blendEnable = (state_bits & (GLS_SRCBLEND_BITS | GLS_DSTBLEND_BITS)) ? VK_TRUE : VK_FALSE;
-
-	if (shadow_phase == SHADOWS_RENDERING_EDGES)
-		attachment_blend_state.colorWriteMask = 0;
-	else
-		attachment_blend_state.colorWriteMask = VK_COLOR_COMPONENT_R_BIT | VK_COLOR_COMPONENT_G_BIT | VK_COLOR_COMPONENT_B_BIT | VK_COLOR_COMPONENT_A_BIT;
+	attachment_blend_state.colorWriteMask = 
+		VK_COLOR_COMPONENT_R_BIT | VK_COLOR_COMPONENT_G_BIT | 
+		VK_COLOR_COMPONENT_B_BIT | VK_COLOR_COMPONENT_A_BIT;
 	
 	if (attachment_blend_state.blendEnable)
     {
@@ -752,7 +710,6 @@ void vk_create_shader_stage_pipelines(shaderStage_t *pStage, shader_t* pShader)
     plPar.state_bits = pStage->stateBits; 
     plPar.face_culling = pShader->cullType;
     plPar.shader_type = def_shader_type; 
-    plPar.shadow_phase = SHADOWS_RENDERING_DISABLED;
     plPar.line_primitives = VK_FALSE;
     plPar.polygon_offset = pShader->polygonOffset;
 
@@ -768,9 +725,8 @@ void vk_create_shader_stage_pipelines(shaderStage_t *pStage, shader_t* pShader)
     if(plTr == NULL)
     {
         vk_create_pipeline( 
-         plPar.state_bits, plPar.shader_type, plPar.face_culling, plPar.shadow_phase,
-         plPar.clipping_plane, plPar.mirror, plPar.polygon_offset, plPar.line_primitives, 
-         &plPar.pipeline );
+         plPar.state_bits, plPar.shader_type, plPar.face_culling, plPar.clipping_plane,
+		 plPar.mirror, plPar.polygon_offset, plPar.line_primitives, &plPar.pipeline );
 
         InsertPipelineToTree(pPlRoot, &plPar);
 
@@ -791,9 +747,8 @@ void vk_create_shader_stage_pipelines(shaderStage_t *pStage, shader_t* pShader)
     if(plTr == NULL)
     {
         vk_create_pipeline( 
-         plPar.state_bits, plPar.shader_type, plPar.face_culling, plPar.shadow_phase,
-         plPar.clipping_plane, plPar.mirror, plPar.polygon_offset, plPar.line_primitives, 
-         &plPar.pipeline );
+         plPar.state_bits, plPar.shader_type, plPar.face_culling, plPar.clipping_plane,
+		 plPar.mirror, plPar.polygon_offset, plPar.line_primitives,  &plPar.pipeline );
 
         InsertPipelineToTree(pPlRoot, &plPar);
 
@@ -814,9 +769,8 @@ void vk_create_shader_stage_pipelines(shaderStage_t *pStage, shader_t* pShader)
     if(plTr == NULL)
     {
         vk_create_pipeline( 
-         plPar.state_bits, plPar.shader_type, plPar.face_culling, plPar.shadow_phase,
-         plPar.clipping_plane, plPar.mirror, plPar.polygon_offset, plPar.line_primitives, 
-         &plPar.pipeline );
+         plPar.state_bits, plPar.shader_type, plPar.face_culling, plPar.clipping_plane,
+		 plPar.mirror, plPar.polygon_offset, plPar.line_primitives, &plPar.pipeline );
 
         InsertPipelineToTree(pPlRoot, &plPar);
 
@@ -876,16 +830,14 @@ void vk_InitShaderStagePipeline(void)
     plPar.state_bits = 256; 
     plPar.face_culling = CT_FRONT_SIDED;
     plPar.shader_type = ST_SINGLE_TEXTURE; 
-    plPar.shadow_phase = SHADOWS_RENDERING_DISABLED;
     plPar.line_primitives = VK_FALSE;
     plPar.polygon_offset = VK_FALSE;
     plPar.clipping_plane = VK_FALSE;
     plPar.mirror = VK_FALSE;
 
     vk_create_pipeline( 
-            plPar.state_bits, plPar.shader_type, plPar.face_culling, plPar.shadow_phase,
-            plPar.clipping_plane, plPar.mirror, plPar.polygon_offset, plPar.line_primitives, 
-            &plPar.pipeline );
+            plPar.state_bits, plPar.shader_type, plPar.face_culling, plPar.clipping_plane,
+		   	plPar.mirror, plPar.polygon_offset, plPar.line_primitives, &plPar.pipeline );
 
     pPlRoot = InsertPipelineToTree(NULL, &plPar);
 }

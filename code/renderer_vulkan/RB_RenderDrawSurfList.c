@@ -3,7 +3,6 @@
 #include "tr_surface.h"
 #include "tr_light.h"
 #include "R_ShaderCommands.h"   //tess
-#include "tr_shadows.h"
 #include "R_RotateForViewer.h"
 #include "vk_shade_geometry.h"
 #include "vk_frame.h"
@@ -166,9 +165,5 @@ void RB_RenderDrawSurfList(const struct drawSurf_s * const pSurf, const uint32_t
 
 	// go back to the world modelview matrix
     set_modelview_matrix(backEnd.viewParms.world.modelMatrix);
-
-
-	// darken down any stencil shadows
-	RB_ShadowFinish();
 }
 

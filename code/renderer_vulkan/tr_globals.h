@@ -70,8 +70,8 @@ typedef struct trGlobals_s
 	int				 numLightmaps;
 
 	struct shader_s	* defaultShader;
-	struct shader_s	* shadowShader;
-	struct shader_s	* projectionShadowShader;
+//	struct shader_s	* shadowShader;
+//	struct shader_s	* projectionShadowShader;
 	struct shader_s	* shaders[MAX_SHADERS];
 
 

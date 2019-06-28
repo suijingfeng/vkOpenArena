@@ -4,14 +4,6 @@
 #include "tr_shader.h"
 #include "vk_shaders.h"
 
-// used with cg_shadows == 2
-enum Vk_Shadow_Phase {
-    SHADOWS_RENDERING_DISABLED = 0,
-	SHADOWS_RENDERING_EDGES = 1,
-    SHADOWS_RENDERING_FULLSCREEN_QUAD = 2
-};
-
-
 
 struct GlobalPipelinesManager_t
 {
@@ -19,11 +11,6 @@ struct GlobalPipelinesManager_t
 	// Standard pipelines.
 	//
 	VkPipeline skybox_pipeline;
-
-	// dim 0: 0 - front side, 1 - back size
-	// dim 1: 0 - normal view, 1 - mirror view
-	VkPipeline shadow_volume_pipelines[2][2];
-	VkPipeline shadow_finish_pipeline;
 
 	// dim 0 is based on fogPass_t: 0 - corresponds to FP_EQUAL, 1 - corresponds to FP_LE.
 	// dim 1 is directly a cullType_t enum value.
@@ -51,7 +38,6 @@ void vk_create_pipeline(
         uint32_t state_bits,
         enum Vk_Shader_Type shader_type,
         enum CullType_t face_culling,
-        enum Vk_Shadow_Phase shadow_phase,
         VkBool32 clipping_plane,
         VkBool32 mirror,
         VkBool32 polygon_offset,

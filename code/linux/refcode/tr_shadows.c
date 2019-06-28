@@ -29,6 +29,8 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
 #include "R_ShaderCommands.h"
 
+#include "ref_import.h"
+
 extern struct shaderCommands_s tess;
 
 
@@ -69,7 +71,8 @@ static void R_AddEdgeDef( int i1, int i2, int facing ) {
 }
 
 
-static void R_ExtrudeShadowEdges( void ) {
+static void R_ExtrudeShadowEdges( void )
+{
 	int		i;
 	int		c, c2;
 	int		j, k;
@@ -81,7 +84,8 @@ static void R_ExtrudeShadowEdges( void ) {
 	// or if it has a reverse paired edge that also faces the light.
 	// A well behaved polyhedron would have exactly two faces for each edge,
 	// but lots of models have dangling edges or overfanned edges
-	for ( i = 0 ; i < tess.numVertexes ; i++ ) {
+	for ( i = 0 ; i < tess.numVertexes ; i++ )
+	{
 		c = numEdgeDefs[ i ];
 		for ( j = 0 ; j < c ; j++ ) {
 			if ( !edgeDefs[ i ][ j ].facing ) {
@@ -100,12 +104,13 @@ static void R_ExtrudeShadowEdges( void ) {
 
 			// if it doesn't share the edge with another front facing
 			// triangle, it is a sil edge
-			if ( sil_edge ) {
+			if ( sil_edge )
+			{
 				VectorCopy(tess.xyz[ i ],						extrudedEdges[numExtrudedEdges * 4 + 0]);
 				VectorCopy(tess.xyz[ i + tess.numVertexes ],	extrudedEdges[numExtrudedEdges * 4 + 1]);
 				VectorCopy(tess.xyz[ i2 ],						extrudedEdges[numExtrudedEdges * 4 + 2]);
 				VectorCopy(tess.xyz[ i2 + tess.numVertexes ],	extrudedEdges[numExtrudedEdges * 4 + 3]);
-				numExtrudedEdges++;
+				++numExtrudedEdges;
 			}
 		}
 	}
@@ -118,7 +123,8 @@ static void vk_renderShadowEdges(VkPipeline vk_pipeline)
 {
 
 	int i = 0;
-	while (i < numExtrudedEdges) {
+	while (i < numExtrudedEdges)
+	{
 		int count = numExtrudedEdges - i;
 		if (count > (SHADER_MAX_VERTEXES - 1) / 4)
 			count = (SHADER_MAX_VERTEXES - 1) / 4;
@@ -146,9 +152,12 @@ static void vk_renderShadowEdges(VkPipeline vk_pipeline)
 			tess.svars.colors[k][2] = 50;
 			tess.svars.colors[k][3] = 255;
 		}
-        
-        vk_UploadXYZI(tess.xyz, tess.numVertexes, tess.indexes, tess.numIndexes);
+       
         updateMVP(backEnd.viewParms.isPortal, backEnd.projection2D, getptr_modelview_matrix());
+
+		ri.Printf(PRINT_ALL, "nvert: %d\n", tess.numVertexes);
+	
+        vk_UploadXYZI(tess.xyz, tess.numVertexes, tess.indexes, tess.numIndexes);
         
         // vk_rcdUpdateViewport(backEnd.projection2D, DEPTH_RANGE_NORMAL);
         
@@ -173,28 +182,30 @@ triangleFromEdge[ v1 ][ v2 ]
 */
 void RB_ShadowTessEnd( void )
 {
-	int		i;
-	int		numTris;
-	vec3_t	lightDir;
+	int	i;
 
 	// we can only do this if we have enough space in the vertex buffers
 	if ( tess.numVertexes >= SHADER_MAX_VERTEXES / 2 ) {
 		return;
 	}
 
+	vec3_t	lightDir;
 
 	VectorCopy( backEnd.currentEntity->lightDir, lightDir );
 
 	// project vertexes away from light direction
-	for ( i = 0 ; i < tess.numVertexes ; i++ ) {
+	for ( i = 0; i < tess.numVertexes; ++i )
+	{
 		VectorMA( tess.xyz[i], -512, lightDir, tess.xyz[i+tess.numVertexes] );
 	}
+
+	ri.Printf(PRINT_ALL, "nvert: %d\n", tess.numVertexes);
 
 	// decide which triangles face the light
 	memset( numEdgeDefs, 0, 4 * tess.numVertexes );
 
-	numTris = tess.numIndexes / 3;
-	for ( i = 0 ; i < numTris ; i++ )
+	int numTris = tess.numIndexes / 3;
+	for ( i = 0 ; i < numTris ; ++i )
     {
 		int		i1, i2, i3;
 		vec3_t	d1, d2, normal;

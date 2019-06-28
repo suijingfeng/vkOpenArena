@@ -823,6 +823,8 @@ static void RB_DrawSkyBox( shader_t * const shader, float matMV[16] )
         updateMVP(backEnd.viewParms.isPortal, backEnd.projection2D, matMV);	
         updateCurDescriptor(tess.shader->sky.outerbox[sky_texorder[i]]->descriptor_set, 0);
 
+		// ri.Printf(PRINT_ALL, "nvert: %d\n", tess.numIndexes);
+
         vk_UploadXYZI(tess.xyz, tess.numVertexes, tess.indexes, tess.numIndexes);
         
         vk_shade_geometry(g_globalPipelines.skybox_pipeline, &tess, VK_FALSE, VK_TRUE);

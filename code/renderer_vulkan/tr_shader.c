@@ -2221,26 +2221,8 @@ static void CreateInternalShaders( void )
 
 	tr.defaultShader = FinishShader();
 
-    ri.Printf( PRINT_ALL, "Create stencil shadow Shader. \n" );
 
-	// shadow shader is just a marker
-	strncpy( shader.name, "<stencil shadow>", sizeof( shader.name ) );
-	shader.sort = SS_STENCIL_SHADOW;
-
-	tr.shadowShader = FinishShader();
-
-    // cinematic shader
     CreateCinematicShader();
-}
-
-
-
-
-static void CreateExternalShaders( void )
-{
-    ri.Printf( PRINT_ALL, " CreateExternalShaders... \n" );
-
-	tr.projectionShadowShader = R_FindShader( "projectionShadow", LIGHTMAP_NONE, qtrue );
 }
 
 
@@ -2257,6 +2239,4 @@ void R_InitShaders( void )
 	CreateInternalShaders();
 
 	ScanAndLoadShaderFiles();
-
-	CreateExternalShaders();
 }

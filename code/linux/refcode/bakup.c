@@ -1725,4 +1725,46 @@ void R_TakeScreenshotCmd( int x, int y, int width, int height, char *name, qbool
 	cmd->fileName = fileName;
 	cmd->jpeg = jpeg;
 }
+
 */
+
+
+    ////
+    ri.Printf(PRINT_ALL, " Create Q3 stencil shadows volume pipelines. \n");
+    
+    vk_create_pipeline( 0, 
+            ST_SINGLE_TEXTURE, CT_FRONT_SIDED, SHADOWS_RENDERING_EDGES, 
+            VK_FALSE, VK_FALSE, VK_FALSE, VK_FALSE,
+            &g_globalPipelines.shadow_volume_pipelines[0][0] );
+
+    vk_create_pipeline( 0, 
+            ST_SINGLE_TEXTURE, CT_FRONT_SIDED, SHADOWS_RENDERING_EDGES, 
+            VK_FALSE, VK_TRUE, VK_FALSE, VK_FALSE,
+            &g_globalPipelines.shadow_volume_pipelines[0][1] );
+
+    vk_create_pipeline( 0, 
+            ST_SINGLE_TEXTURE, CT_BACK_SIDED, SHADOWS_RENDERING_EDGES, 
+            VK_FALSE, VK_FALSE, VK_FALSE, VK_FALSE,
+            &g_globalPipelines.shadow_volume_pipelines[1][0] );
+
+    vk_create_pipeline( 0, 
+            ST_SINGLE_TEXTURE, CT_BACK_SIDED, SHADOWS_RENDERING_EDGES, 
+            VK_FALSE, VK_TRUE, VK_FALSE, VK_FALSE,
+            &g_globalPipelines.shadow_volume_pipelines[1][1] );
+
+
+    ////
+    ri.Printf(PRINT_ALL, " Create Q3 stencil shadows finish pipeline. \n");
+
+    vk_create_pipeline( 
+            GLS_DEPTHMASK_TRUE | GLS_SRCBLEND_DST_COLOR | GLS_DSTBLEND_ZERO, 
+            ST_SINGLE_TEXTURE, 
+            CT_FRONT_SIDED,
+            SHADOWS_RENDERING_FULLSCREEN_QUAD, 
+            VK_FALSE, 
+            VK_FALSE, 
+            VK_FALSE,
+            VK_FALSE,
+            &g_globalPipelines.shadow_finish_pipeline );
+
+

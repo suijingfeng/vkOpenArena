@@ -241,8 +241,8 @@ void updateCurDescriptor( VkDescriptorSet curDesSet, uint32_t tmu)
 //  associates components of a vertex shader input variable with components of
 //  a vertex input attribute.
 
-
-void vk_cmdInsertLoadingVertexBarrier(VkCommandBuffer HCmdBuffer)
+/*
+static void vk_cmdInsertLoadingVertexBarrier(VkCommandBuffer HCmdBuffer)
 {
     // Ensur/e visibility of geometry buffers writes.
     VkBufferMemoryBarrier barrier1;
@@ -264,7 +264,7 @@ void vk_cmdInsertLoadingVertexBarrier(VkCommandBuffer HCmdBuffer)
 }
 
 
-void vk_cmdInsertLoadingIndexBarrier(VkCommandBuffer HCmdBuffer)
+static void vk_cmdInsertLoadingIndexBarrier(VkCommandBuffer HCmdBuffer)
 {
     // Ensur/e visibility of geometry buffers writes.
     VkBufferMemoryBarrier barrier2;
@@ -285,7 +285,7 @@ void vk_cmdInsertLoadingIndexBarrier(VkCommandBuffer HCmdBuffer)
         VK_PIPELINE_STAGE_VERTEX_INPUT_BIT, 0, 0, NULL, 1, &barrier2, 0, NULL) );
 
 }
-
+*/
 
 
 void vk_UploadXYZI(const float (* const pXYZ)[4], uint32_t nVertex, 
@@ -302,6 +302,8 @@ void vk_UploadXYZI(const float (* const pXYZ)[4], uint32_t nVertex,
     shadingDat.xyz_elements += nVertex;
 
     assert (shadingDat.xyz_elements * sizeof(vec4_t) < XYZ_SIZE);
+
+	// ri.Printf(PRINT_ALL, "nvert: %d\n", nVertex);
 
 	// indexes stream
     if(nIndex != 0)
@@ -818,10 +820,11 @@ void RB_StageIteratorGeneric(struct shaderCommands_s * const pTess, VkBool32 isP
 	// call shader function
 	//
 	// VULKAN
-   
-    vk_UploadXYZI(pTess->xyz, pTess->numVertexes, pTess->indexes, pTess->numIndexes);
+    updateMVP(isPortal, is2D, getptr_modelview_matrix() ); 
+    
+	
+	vk_UploadXYZI(pTess->xyz, pTess->numVertexes, pTess->indexes, pTess->numIndexes);
 
-    updateMVP(isPortal, is2D, getptr_modelview_matrix() );
     
     // r_showsky will let all the sky blocks be drawn in
 	// front of everything to allow developers to see how

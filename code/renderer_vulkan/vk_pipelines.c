@@ -127,12 +127,11 @@ static VkPipeline FindPipeline(const struct ParmsKey * const par)
     pTmp = (struct PipelineParameter_t *) 
         ri.Hunk_Alloc( sizeof(struct PipelineParameter_t ), h_low );
 
-    // plPar.shadow_phase = SHADOWS_RENDERING_DISABLED;
     // plPar.line_primitives = VK_FALSE;
     VkPipeline newPipeline;
 
     vk_create_pipeline( 
-            par->state_bits, par->shader_type, par->face_culling, SHADOWS_RENDERING_DISABLED,
+            par->state_bits, par->shader_type, par->face_culling, 
             par->clipping_plane, par->mirror, par->polygon_offset, VK_FALSE, 
             &newPipeline );
 
@@ -304,7 +303,6 @@ void vk_create_pipeline(
         uint32_t state_bits,
         enum Vk_Shader_Type shader_type,
         enum CullType_t face_culling,
-        enum Vk_Shadow_Phase shadow_phase,
         VkBool32 clipping_plane,
         VkBool32 mirror,
         VkBool32 polygon_offset,
@@ -564,46 +562,10 @@ void vk_create_pipeline(
     depth_stencil_state.depthWriteEnable = (state_bits & GLS_DEPTHMASK_TRUE) ? VK_TRUE : VK_FALSE;
     depth_stencil_state.depthCompareOp = (state_bits & GLS_DEPTHFUNC_EQUAL) ? VK_COMPARE_OP_EQUAL : VK_COMPARE_OP_LESS_OR_EQUAL;
     depth_stencil_state.depthBoundsTestEnable = VK_FALSE;
-
-    switch (shadow_phase) 
-    {
-        case SHADOWS_RENDERING_DISABLED:
-        {
-            depth_stencil_state.stencilTestEnable = VK_FALSE;
-            memset(&depth_stencil_state.front, 0, sizeof(depth_stencil_state.front));
-            memset(&depth_stencil_state.back, 0, sizeof(depth_stencil_state.back));
-        } break;
-        case SHADOWS_RENDERING_EDGES:
-        {
-            depth_stencil_state.stencilTestEnable = VK_TRUE;
-
-            depth_stencil_state.front.failOp = VK_STENCIL_OP_KEEP;
-            depth_stencil_state.front.passOp = ( face_culling == CT_FRONT_SIDED ? 
-                        VK_STENCIL_OP_INCREMENT_AND_CLAMP : VK_STENCIL_OP_DECREMENT_AND_CLAMP );
-            depth_stencil_state.front.depthFailOp = VK_STENCIL_OP_KEEP;
-            depth_stencil_state.front.compareOp = VK_COMPARE_OP_ALWAYS;
-            depth_stencil_state.front.compareMask = 255;
-            depth_stencil_state.front.writeMask = 255;
-            depth_stencil_state.front.reference = 0;
-            depth_stencil_state.back = depth_stencil_state.front;
-        } break;
-
-        case SHADOWS_RENDERING_FULLSCREEN_QUAD:
-        {
-            depth_stencil_state.stencilTestEnable = VK_TRUE;
-
-            depth_stencil_state.front.failOp = VK_STENCIL_OP_KEEP;
-            depth_stencil_state.front.passOp = VK_STENCIL_OP_KEEP;
-            depth_stencil_state.front.depthFailOp = VK_STENCIL_OP_KEEP;
-            depth_stencil_state.front.compareOp = VK_COMPARE_OP_NOT_EQUAL;
-            depth_stencil_state.front.compareMask = 255;
-            depth_stencil_state.front.writeMask = 255;
-            depth_stencil_state.front.reference = 0;
-
-            depth_stencil_state.back = depth_stencil_state.front;
-        } break;
-    }
-
+	depth_stencil_state.stencilTestEnable = VK_FALSE;
+	memset(&depth_stencil_state.front, 0, sizeof(depth_stencil_state.front));
+	memset(&depth_stencil_state.back, 0, sizeof(depth_stencil_state.back));
+  
     depth_stencil_state.minDepthBounds = 0.0;
     depth_stencil_state.maxDepthBounds = 0.0;
 
@@ -697,8 +659,8 @@ void vk_create_pipeline(
         attachment_blend_state.alphaBlendOp = VK_BLEND_OP_ADD;
     }
 
-    attachment_blend_state.colorWriteMask = (shadow_phase == SHADOWS_RENDERING_EDGES) ? 
-         0: VK_COLOR_COMPONENT_R_BIT | VK_COLOR_COMPONENT_G_BIT | VK_COLOR_COMPONENT_B_BIT | VK_COLOR_COMPONENT_A_BIT;
+    attachment_blend_state.colorWriteMask =
+		VK_COLOR_COMPONENT_R_BIT | VK_COLOR_COMPONENT_G_BIT | VK_COLOR_COMPONENT_B_BIT | VK_COLOR_COMPONENT_A_BIT;
 
 
     // Contains the global color blending settings
