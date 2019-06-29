@@ -253,6 +253,7 @@ besides, the following new cmd only exist in vulkan renderer.
 * printInstanceExtensions: list the instance extensions supported on you GPU
 * printImgHashTable: print the image hash table usage, which also list the image created and its size info etc.
 * printShaderTextHashTable: I am curious about the q3 handle out the shader name clash problem.
+* printPresentModes: print the present mode the GPU and/or the vulkan driver supported.
 
 For example:
 
