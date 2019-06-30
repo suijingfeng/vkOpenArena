@@ -763,7 +763,6 @@ static void RB_ProjectDlightTexture( struct shaderCommands_s * const pTess,
 
 
 
-
 static void RB_FogPass( struct shaderCommands_s * const pTess )
 {
 

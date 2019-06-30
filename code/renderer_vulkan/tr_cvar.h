@@ -35,7 +35,8 @@ extern cvar_t	*r_showcluster;
 extern cvar_t	*r_mode;				// video mode
 extern cvar_t	*r_fullscreen;
 extern cvar_t	*r_gamma;
-
+extern cvar_t	*r_allowResize;			// make window resizable
+extern cvar_t	*r_displayRefresh;		// refresh rate
 extern cvar_t   *r_gpuIndex;            // Your GPU card number
 
 extern cvar_t	*r_singleShader;				// make most world faces use default shader
@@ -71,7 +72,6 @@ extern	cvar_t	*r_debugSort;
 extern	cvar_t	*r_printShaders;
 extern	cvar_t	*r_saveFontData;
 
-
 extern cvar_t	*r_maxpolys;
 extern cvar_t	*r_maxpolyverts;
 
@@ -80,10 +80,6 @@ extern cvar_t	*r_ambientScale;
 extern cvar_t	*r_directedScale;
 extern cvar_t	*r_debugLight;
 
-extern cvar_t* r_allowResize; // make window resizable
-extern cvar_t* r_mode;
-extern cvar_t* r_fullscreen;
-extern cvar_t* r_displayRefresh;
 
 void R_Register( void );
 

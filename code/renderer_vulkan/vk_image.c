@@ -623,7 +623,8 @@ image_t* R_CreateImage( const char *name, unsigned char* pic, const uint32_t wid
             dst_ptr += curLevelSize; 
         }
         pImage->mipLevels = curMipMapLevel; 
-        // ri.Printf( PRINT_WARNING, "curMipMapLevel: %d, base_width: %d, base_height: %d, buffer_size: %d, name: %s\n",
+        // ri.Printf( PRINT_WARNING, "curMipMapLevel: %d, base_width: %d, base_height:
+		//  %d, buffer_size: %d, name: %s\n",
         //    curMipMapLevel, scaled_width, scaled_height, buffer_size, name);
     }
 
