@@ -51,7 +51,6 @@ extern cvar_t	*r_uiFullScreen;				// ui is running fullscreen
 extern cvar_t	*r_showtris;					// enables wireframe rendering of the world
 extern cvar_t	*r_showsky;						// forces sky in front of all surfaces
 extern cvar_t	*r_shownormals;					// draws wireframe normals
-extern cvar_t	*r_clear;						// force screen clear every frame
 
 extern cvar_t	*r_lockpvs;
 extern cvar_t	*r_noportals;
