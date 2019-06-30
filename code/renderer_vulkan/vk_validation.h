@@ -1,7 +1,7 @@
 #ifndef VK_VALIDATION_H_
 #define VK_VALIDATION_H_
 
-void vk_createDebugCallback( uint32_t needLog );
+void vk_createDebugCallback( void );
 
 void vk_destroyDebugReportHandle( void );
 

@@ -47,7 +47,7 @@ VKAPI_ATTR VkBool32 VKAPI_CALL vk_DebugCallback(
 #endif
 
 
-void vk_createDebugCallback( uint32_t needLog )
+void vk_createDebugCallback( )
 {
 #ifndef NDEBUG
     r_logCalledProc = ri.Cvar_Get( "r_logCalledProc", "0", CVAR_TEMP );
@@ -70,9 +70,8 @@ void vk_createDebugCallback( uint32_t needLog )
     // init
     // r_logCalledProc->integer = needLog;
 
-    if( needLog ) {
-        fpLogProc = fopen( "CalledVulkanApiLog.txt", "wt" );
-    }
+    fpLogProc = fopen( "CalledVulkanApiLog.txt", "wt" );
+
 #endif
 }
 

@@ -108,7 +108,7 @@ static void R_ColorShiftLightingBytes( uint8_t in[4], uint8_t out[4] )
 	// shift the color data based on overbright range
 	//uint32_t shift = r_mapOverBrightBits->integer - tr.overbrightBits;
 
-    float factor = r_intensity->value;
+    float factor = r_brightness->value;
 
 	// shift the data based on overbright range
 	uint32_t r = in[0] * factor;

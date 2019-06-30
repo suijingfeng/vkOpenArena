@@ -58,7 +58,7 @@ void R_SetColorMappings( float brightness, float gamma )
     {
 		inf = 255 * pow ( i/255.0f, 1.0f / gamma ) + 0.5f;
 		
-        inf *= brightness;
+        inf *= 1.6;
         
         if (inf > 255) 
         {    

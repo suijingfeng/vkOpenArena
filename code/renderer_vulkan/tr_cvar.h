@@ -53,9 +53,6 @@ extern cvar_t	*r_showsky;						// forces sky in front of all surfaces
 extern cvar_t	*r_shownormals;					// draws wireframe normals
 extern cvar_t	*r_clear;						// force screen clear every frame
 
-
-extern cvar_t	*r_intensity;
-
 extern cvar_t	*r_lockpvs;
 extern cvar_t	*r_noportals;
 extern cvar_t	*r_portalOnly;

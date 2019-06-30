@@ -1260,6 +1260,7 @@ static VkPresentModeKHR vk_selectPresentationMode(VkSurfaceKHR HSurface)
     }
 
     // FIFO_KHR mode is guaranteed to be available according to the spec.
+	// this is worsest, lag 
     ri.Printf(PRINT_ALL, " Presentation with VK_PRESENT_MODE_FIFO_KHR mode. \n");
     ri.Printf(PRINT_ALL, "-------- ----------------------------- --------\n");
     return VK_PRESENT_MODE_FIFO_KHR;
@@ -1276,7 +1277,7 @@ void vk_getProcAddress(void)
     vk_loadInstanceLevelFunctions();
 
 	// Create debug callback.
-    vk_createDebugCallback( 1 );
+    vk_createDebugCallback( );
 
     // The window surface needs to be created right after the instance creation,
     // because it can actually influence the presentation mode selection.

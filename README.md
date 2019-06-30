@@ -133,37 +133,32 @@ $ \cg_fov 150
 
 ## Too dark ? How to turn the brightness of the drawing window ?
 
-* r\_brightness and r\_gamma, r\_gamma nonlinearly calibrate the image
-before upload it to GPU, r\_brightness do it linearly,
-both value can be float. You must restart the game after change it.
+* r\_brightness and r\_gamma, both value can be float, large number with make the image more brighter.
+You must restart the game after change it.
+
+r\_gamma nonlinearly calibrate the image before it is uploaded to GPU, 
+r\_brightness turn the intensity/brightness of the lightmap, this don't
+ influence UI brightness, as it intended only for lightmap.
+
 
 ```
-# large number with make the image more brighter.
+# l
 $ \r_gamma 1.2
-$ \r_brightness 1.5 
+$ \r_brightness 2.0 
 $ \vid_restart
 ```
 
-* Use r\_intensity to turn the intensity/brightness of the lightmap. this value
-can be float, you must restart the game after change it.
-```
-# this don't influence UI brightness, as it intended only for lightmap.
-# 1.5 ~ 2.5 give acceptable result
-$ \r_intensity 2
-$ \vid_restart
-```
+* r\_mapOverbrightBit, integer, defalut is 2 
+* r\_intensity, r\_overbrightBit get remove in vulkan render, dont influence other renderer module.
 
-* r\_mapOverbrightBit, integer, defalut is 2, r\_overbrightBit get remove in vulkan render, misleading.
 
-* The image/texture is multiply/add(depend on the shader) with the lightmap.
 
 NOTE: original gamma setting program setting the gamma of the entire destop by use SDL's hardware.
 which works on newer computer hardware but not works on some old machine. 
-It is buggy and embarrasing when program abnormal quit or stall accidently, left the desktop entire washing write.
-so i change it,
+It is buggy and embarrasing when program abnormal quit or stall accidently, 
+left the desktop entire washing write. so i change it,
 we use software gamma only, take effects before the image is uploading to GPU.
 One cvar for one thing, don't mess it with r\_overbrightBit and r\_mapOverbrightBit.
-
 
 
 ## Switching renderers ##

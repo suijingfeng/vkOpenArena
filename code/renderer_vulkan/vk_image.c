@@ -879,7 +879,7 @@ void R_InitImages( void )
 
 
     // build brightness translation tables
-    R_SetColorMappings(r_brightness->value, r_gamma->value);
+    R_SetColorMappings(1.6, r_gamma->value);
 
     // create default texture and white texture
     R_CreateDefaultImage();
@@ -903,7 +903,6 @@ void vk_destroyImageRes(void)
 	{
         vk_destroySingleImage(tr.images[i]);
 	}
-
     
     for (i = 0; i < devMemImg.Index; ++i)
     {
@@ -917,7 +916,6 @@ void vk_destroyImageRes(void)
     vk_destroyBufferResource(StagBuf.buff, StagBuf.mappableMem);
     memset(&StagBuf, 0, sizeof(StagBuf));
 
-    
     // Destroying a pool object implicitly frees all objects allocated from that pool. 
     // Specifically, destroying VkCommandPool frees all VkCommandBuffer objects that 
     // were allocated from it, and destroying VkDescriptorPool frees all 

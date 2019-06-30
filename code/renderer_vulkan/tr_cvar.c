@@ -42,7 +42,6 @@ cvar_t	*r_shownormals;
 // cvar_t	*r_offsetFactor;
 // cvar_t	*r_offsetUnits;
 cvar_t	*r_gamma;
-cvar_t	*r_intensity;
 cvar_t	*r_lockpvs;
 cvar_t	*r_noportals;
 cvar_t	*r_portalOnly;
@@ -92,11 +91,8 @@ void R_Register( void )
     r_gamma = ri.Cvar_Get( "r_gamma", "1", CVAR_ARCHIVE | CVAR_LATCH );
     ri.Cvar_CheckRange( r_gamma, 1.0f, 3.0f, qfalse );
 	
-    r_brightness = ri.Cvar_Get ("r_brightness", "1.5", CVAR_ARCHIVE | CVAR_LATCH );
+    r_brightness = ri.Cvar_Get ("r_brightness", "2", CVAR_ARCHIVE | CVAR_LATCH );
     ri.Cvar_CheckRange( r_brightness, 1.0f, 3.0f, qfalse );
-    
-    r_intensity = ri.Cvar_Get ("r_intensity", "2.0", CVAR_LATCH | CVAR_ARCHIVE );
-    ri.Cvar_CheckRange( r_intensity, 1.0f, 3.0f, qfalse );
     
     r_mapOverBrightBits = ri.Cvar_Get ("r_mapOverBrightBits", "2", CVAR_ARCHIVE | CVAR_LATCH );
 	ri.Cvar_CheckRange( r_mapOverBrightBits, 1, 3, qtrue );
