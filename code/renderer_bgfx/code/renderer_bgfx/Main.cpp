@@ -152,7 +152,8 @@ static void ImageWriteCallbackConst(void *context, const void *data, int size)
 	ImageWriteCallback(context, (void *)data, size);
 }
 
-void BgfxCallback::screenShot(const char* _filePath, uint32_t _width, uint32_t _height, uint32_t _pitch, const void* _data, uint32_t _size, bool _yflip)
+void BgfxCallback::screenShot(const char* _filePath, uint32_t _width, uint32_t _height, 
+        uint32_t _pitch, const void* _data, uint32_t _size, bool _yflip)
 {
 	const int nComponents = 4;
 	const bool silent = _filePath[0] == 'y';
@@ -169,9 +170,9 @@ void BgfxCallback::screenShot(const char* _filePath, uint32_t _width, uint32_t _
 		screenShotDataBuffer_.resize(requiredSize);
 	}
 
-	for (uint32_t y = 0; y < _height; y++)
+	for (uint32_t y = 0; y < _height; ++y)
 	{
-		for (uint32_t x = 0; x < _width; x++)
+		for (uint32_t x = 0; x < _width; ++x)
 		{
 			auto colorIn = &((const uint8_t *)_data)[x * nComponents + (_yflip ? _height - 1 - y : y) * _pitch];
 			uint8_t *colorOut = &screenShotDataBuffer_[x * nComponents + y * outputPitch];
@@ -197,15 +198,17 @@ void BgfxCallback::screenShot(const char* _filePath, uint32_t _width, uint32_t _
 
 	if (writeAsPng)
 	{
-		if (!stbi_write_png_to_func(ImageWriteCallback, &buffer, _width, _height, nComponents, screenShotDataBuffer_.data(), (int)outputPitch))
+		if ( !stbi_write_png_to_func(ImageWriteCallback, &buffer, _width, _height,
+                    nComponents, screenShotDataBuffer_.data(), (int)outputPitch) )
 		{
 			interface::Printf("Screenshot: error writing png file\n");
 			return;
 		}
 	}
-	else if (!util::Stricmp(extension, "jpg"))
+	else if ( !util::Stricmp(extension, "jpg") )
 	{
-		if (!stbi_write_jpg_to_func(ImageWriteCallback, &buffer, _width, _height, nComponents, screenShotDataBuffer_.data(), g_cvars.screenshotJpegQuality.getInt()))
+		if ( !stbi_write_jpg_to_func(ImageWriteCallback, &buffer, _width, _height,
+                    nComponents, screenShotDataBuffer_.data(), g_cvars.screenshotJpegQuality.getInt()) )
 		{
 			interface::Printf("Screenshot: error writing jpg file\n");
 			return;
@@ -213,7 +216,8 @@ void BgfxCallback::screenShot(const char* _filePath, uint32_t _width, uint32_t _
 	}
 	else
 	{
-		if (!stbi_write_tga_to_func(ImageWriteCallback, &buffer, _width, _height, nComponents, screenShotDataBuffer_.data()))
+		if ( !stbi_write_tga_to_func(ImageWriteCallback, &buffer, _width, _height,
+                    nComponents, screenShotDataBuffer_.data()) )
 		{
 			interface::Printf("Screenshot: error writing tga file\n");
 			return;

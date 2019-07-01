@@ -62,8 +62,10 @@ void vk_createBufferResource(const uint32_t Size, VkBufferUsageFlags Usage,
 
     VK_CHECK( qvkBindBufferMemory(vk.device, *pBuf, *pDevMem, 0) );
 
+#ifndef NDEBUG  
     ri.Printf(PRINT_ALL, " Create Buffer, Size: %d bytes, Alignment: %ld, Type Index: %d. \n",
        Size, memory_requirements.alignment, alloc_info.memoryTypeIndex);
+#endif
 }
 
 

@@ -103,7 +103,7 @@ void Plane::setupFastBoundsTest()
 
 	signBits_ = 0;
 
-	for (int i = 0; i < 3; i++)
+	for (int i = 0; i < 3; ++i)
 	{
 		if (normal[i] < 0)
 		{
@@ -131,7 +131,7 @@ int Plane::testBounds(Bounds bounds)
 
 	if (signBits_ < 8) // >= 8: default case is original code (dist[0]=dist[1]=0)
 	{
-		for (int i = 0; i < 3; i++)
+		for (int i = 0; i < 3; ++i)
 		{
 			const int b = (signBits_ >> i) & 1;
 			dist[b] += normal[i] * bounds.max[i];

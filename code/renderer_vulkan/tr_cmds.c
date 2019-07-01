@@ -37,7 +37,7 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #include "tr_cmds.h"
 
 #include "RB_RenderDrawSurfList.h"
-#include "vk_screenshot.h"
+// #include "vk_screenshot.h"
 
 static renderCommandList_t	BE_Commands;
 
@@ -205,7 +205,6 @@ void RB_StretchPic(float x, float y, float w, float h,
     // called every frame
 	if ( qfalse == backEnd.projection2D )
     {
-
 		backEnd.projection2D = qtrue;
 
         // set 2D virtual screen size
@@ -392,13 +391,17 @@ void R_IssueRenderCommands( qboolean runPerformanceCounters )
                 // RB_DrawSurfs( cmd );
                 // finish any 2D drawing if needed
                 if ( tess.numIndexes ) {
+
                     RB_EndSurface(&tess);
                 }
-
+                
+                vk_clearDepthStencilAttachments();
 
                 RB_RenderDrawSurfList( cmd->drawSurfs, cmd->numDrawSurfs,
                         &cmd->refdef, &cmd->viewParms );
                 
+                
+
                 data += sizeof(drawSurfsCommand_t);
             } break;
 

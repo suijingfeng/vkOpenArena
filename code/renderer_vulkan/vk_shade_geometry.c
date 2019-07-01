@@ -88,12 +88,11 @@ struct ShadingData_t
     // This flag is used to decide whether framebuffer's depth attachment should be cleared
     // with vmCmdClearAttachment (dirty_depth_attachment == true), or it have just been
     // cleared by render pass instance clear op (dirty_depth_attachment == false).
-
-    VkBool32 s_depth_attachment_dirty;
 };
 
-struct ShadingData_t shadingDat;
+static struct ShadingData_t shadingDat;
 
+static VkBool32 s_depth_attachment_dirty;
 
 VkBuffer vk_getIndexBuffer(void)
 {
@@ -566,7 +565,7 @@ void vk_shade_geometry(VkPipeline pipeline, struct shaderCommands_s * const pTes
         NO_CHECK( qvkCmdDraw(vk.command_buffer,  pTess->numVertexes, 1, 0, 0) );
     }
 
-    shadingDat.s_depth_attachment_dirty = VK_TRUE;
+    s_depth_attachment_dirty = VK_TRUE;
 }
 
 
@@ -576,7 +575,8 @@ void vk_resetGeometryBuffer(void)
 	shadingDat.xyz_elements = 0;
 	shadingDat.colorElemCount = 0;
 	shadingDat.index_buffer_offset = 0;
-    shadingDat.s_depth_attachment_dirty = VK_FALSE;
+    
+    s_depth_attachment_dirty = VK_FALSE;
 
     Mat4Identity(s_modelview_matrix);
 }
@@ -603,19 +603,16 @@ void vk_destroy_shading_data(void)
 
 void vk_clearDepthStencilAttachments(void)
 {
-    if(shadingDat.s_depth_attachment_dirty)
+    if(s_depth_attachment_dirty)
     {
-        VkClearAttachment attachments;
+        VkClearAttachment attachments = {
+            .aspectMask = VK_IMAGE_ASPECT_DEPTH_BIT,
+            .clearValue.depthStencil.depth = 1.0f};
 
-        attachments.aspectMask = VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT;
-        attachments.clearValue.depthStencil.depth = 1.0f;
-        attachments.clearValue.depthStencil.stencil = 0.0f;
-
-
-        VkClearRect clear_rect;
-        clear_rect.rect = vk.renderArea;
-        clear_rect.baseArrayLayer = 0;
-        clear_rect.layerCount = 1;
+        VkClearRect clear_rect = {
+            .rect = vk.renderArea,
+            .baseArrayLayer = 0,
+            .layerCount = 1};
 
         //ri.Printf(PRINT_ALL, "(%d, %d, %d, %d)\n", 
         //        clear_rect.rect.offset.x, clear_rect.rect.offset.y, 
@@ -623,7 +620,7 @@ void vk_clearDepthStencilAttachments(void)
 
         NO_CHECK( qvkCmdClearAttachments(vk.command_buffer, 1, &attachments, 1, &clear_rect) );
         
-        shadingDat.s_depth_attachment_dirty = VK_FALSE;
+        s_depth_attachment_dirty = VK_FALSE;
     }
 }
 

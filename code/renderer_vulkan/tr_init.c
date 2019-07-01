@@ -85,8 +85,6 @@ void R_Init( void )
     ri.Cmd_AddCommand( "monitorInfo", vk_displayInfo_f );
 
     ri.Cmd_AddCommand( "modellist", R_Modellist_f );
-	ri.Cmd_AddCommand( "screenshotJPEG", R_ScreenShotJPEG_f );
-	ri.Cmd_AddCommand( "screenshot", R_ScreenShot_f );
 	ri.Cmd_AddCommand( "shaderlist", R_ShaderList_f );
     ri.Cmd_AddCommand( "listSortedShader", listSortedShader_f );
 
@@ -110,6 +108,11 @@ void R_Init( void )
     ri.Cmd_AddCommand( "printShaderTextHashTable", printShaderTextHashTable_f);
 
     ri.Cmd_AddCommand( "printPresentModes", printPresentModesSupported_f);
+    
+    ri.Cmd_AddCommand( "screenshotBMP", R_ScreenShotBMP_f );
+    ri.Cmd_AddCommand( "screenshotPNG", R_ScreenShotPNG_f );
+    ri.Cmd_AddCommand( "screenshotJPEG", R_ScreenShotJPEG_f );
+	ri.Cmd_AddCommand( "screenshot", R_ScreenShot_f );
 
     R_InitScene();
 
@@ -155,8 +158,7 @@ void RE_Shutdown( qboolean destroyWindow )
     ri.Cmd_RemoveCommand("monitorInfo");
 
 	ri.Cmd_RemoveCommand("modellist");
-	ri.Cmd_RemoveCommand("screenshotJPEG");
-	ri.Cmd_RemoveCommand("screenshot");
+
 	ri.Cmd_RemoveCommand("shaderlist");
 	ri.Cmd_RemoveCommand("skinlist");
 
@@ -177,7 +179,11 @@ void RE_Shutdown( qboolean destroyWindow )
     
     ri.Cmd_RemoveCommand("printPresentModes");
 
-
+	ri.Cmd_RemoveCommand("screenshotPNG");
+	ri.Cmd_RemoveCommand("screenshotBMP");
+    ri.Cmd_RemoveCommand("screenshotJPEG");
+	ri.Cmd_RemoveCommand("screenshot");
+    
 	R_DoneFreeType();
 
     // VULKAN

@@ -28,7 +28,6 @@ void RB_RenderDrawSurfList(const struct drawSurf_s * const pSurf, const uint32_t
 	// clear the z buffer, set the modelview, etc
 	// RB_BeginDrawingView ();
     //
-	// backEnd.projection2D = qtrue;
 
 	// VULKAN
 
@@ -46,7 +45,8 @@ void RB_RenderDrawSurfList(const struct drawSurf_s * const pSurf, const uint32_t
         // so short, do we really need this?
 	    vk_clearColorAttachments(color);
 	}
-    vk_clearDepthStencilAttachments();
+    
+
     
 	// draw everything
 
