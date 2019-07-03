@@ -241,15 +241,19 @@ besides, the following new cmd only exist in vulkan renderer.
 * printOR: print the value of backend.or;
 * pipelineList: list the number of pipelines we have created for the shader stage. (about 80~100, seem too much?)
 * displayResoList: list of the display resolution the render software provided.
-* monitorInfo: you monitor actually supported resolution, need the vulkan driver support VK\_KHR\_display,
-    only supported on newer haveware and linux platform. It actually not work properly as intended on my two old
-    notebook(in this casem it will not print anything), maybe the driver side bug (nvidia vulkan driver 1.0.65).
+
 * printDeviceExtensions: list the device extensions supported on you GPU
 * printInstanceExtensions: list the instance extensions supported on you GPU
 * printImgHashTable: print the image hash table usage, which also list the image created and its size info etc.
 * printShaderTextHashTable: I am curious about the q3 handle out the shader name clash problem.
 * printPresentModes: print the present mode the GPU and/or the vulkan driver supported.
 
+* monitorInfo: you monitor and/or vulkan driver actually supported resolution, need the vulkan driver support 
+  the `VK_KHR_display` instance extension. It only supported on linux platform on my test. what's worse, it 
+  actually not work properly( especially on old graphic/video card ) even though the nvidia vulkan driver 
+  (ubuntu 18.04, 1.0.65 and ubuntu16.04, 1.0.39) admit the surport. In this case `\monitorInfo` will print nothing,
+  maybe the driver side bug?
+    
 For example:
 
 ```
