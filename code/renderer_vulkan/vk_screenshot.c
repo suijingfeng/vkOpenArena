@@ -1,11 +1,9 @@
-//#include "tr_globals.h"
 #include "vk_instance.h"
 #include "vk_buffers.h"
 #include "vk_cmd.h"
 #include "vk_screenshot.h"
 
 #include "R_ImageProcess.h"
-// #include "R_ImageJPG.h"
 #include "ref_import.h"
 
 #define STB_IMAGE_WRITE_STATIC
@@ -42,8 +40,6 @@ Implementations may support additional limits and capabilities beyond those list
 
 ============================================================================== 
 */
-
-
 
 
 extern void R_GetWorldBaseName(char* checkname);
@@ -273,7 +269,7 @@ static void RB_TakeScreenshotJPEG( uint32_t width, uint32_t height, char * const
 
     uint32_t bufSize = cnPixels * 3;
 
-    unsigned char* out = (unsigned char *) malloc(bufSize);
+    unsigned char* const out = (unsigned char *) malloc(bufSize);
 
     bufSize = RE_SaveJPGToBuffer(out, bufSize, 80, width, height, pImg, 0);
 
@@ -287,6 +283,131 @@ static void RB_TakeScreenshotJPEG( uint32_t width, uint32_t height, char * const
     
     free( pImg );
 }
+
+
+
+///////////////
+//
+struct ImageWriteBuffer_s
+{
+	uint8_t * const pData;
+	uint32_t szBytesUsed;
+    const uint32_t szCapacity;
+};
+
+static void fnImageWriteToBufferCallback(void *context, void *data, int size)
+{
+    struct ImageWriteBuffer_s * const pCtx = (struct ImageWriteBuffer_s *) context;
+
+	if (pCtx->szBytesUsed + size > pCtx->szCapacity )
+	{
+		// pBuffer->data->resize(pBuffer->bytesWritten + size);
+        ri.Error(ERR_FATAL, "fnImageWriteToBufferCallback: buffer overflow. ");
+	}
+
+	memcpy(pCtx->pData + pCtx->szBytesUsed, data, size);
+
+    pCtx->szBytesUsed += size;
+}
+
+
+// Yet another impl ...
+static void RB_TakeScreenshotJPG( uint32_t width, uint32_t height, char * const fileName )
+{
+    const uint32_t cnPixels = width * height; 
+
+    unsigned char* const pImg = (unsigned char*) malloc ( cnPixels * 4);
+
+    vk_read_pixels(pImg, width, height);
+
+#ifdef STB_IMAGE_WRITE_IMPLEMENTATION
+    // Remove alpha channel and rbg <-> bgr
+    {
+        unsigned char* pSrc = pImg;
+        unsigned char* pDst = pImg;
+
+        uint32_t i;
+        for (i = 0; i < cnPixels; ++i)
+        {
+            pSrc[0] = pDst[2];
+            pSrc[1] = pDst[1];
+            pSrc[2] = pDst[0];
+            pSrc += 3;
+            pDst += 4;
+        }
+    }
+
+// 	int error = stbi_write_jpg (fileName, width, height, 3, pImg, 90);    
+////////////////////
+    uint32_t bufSize = cnPixels * 3;
+
+    struct ImageWriteBuffer_s ctx = {
+        .pData = (unsigned char *) malloc( bufSize ),
+        .szCapacity = bufSize,
+        .szBytesUsed = 0 };
+    
+
+    // bufSize = RE_SaveJPGToBuffer(out, bufSize, 80, width, height, pImg, 0);
+    //stbi_write_jpg_to_func(stbi_write_func *func, void *context, int x, int y, int comp, const void *data, int quality);
+
+    int error = stbi_write_jpg_to_func( fnImageWriteToBufferCallback, &ctx, width, height, 3, pImg, 90);
+
+
+    ri.FS_WriteFile(fileName, ctx.pData, ctx.szBytesUsed);
+
+////
+    free(ctx.pData);
+////////////////////////
+
+    
+    if(error == 0)
+    {
+        ri.Printf(PRINT_WARNING, "failed writing %s to the disk. \n", fileName);
+    }
+    else
+    {
+        ri.Printf(PRINT_ALL, "write %dx%d to %s success! \n", width, height, fileName);
+    }
+
+#else
+    extern size_t RE_SaveJPGToBuffer(byte *buffer, size_t bufSize, int quality,
+    int image_width, int image_height, byte *image_buffer, int padding);
+
+    imgFlipY(pImg, width, height);
+
+    // Remove alpha channel and rbg <-> bgr
+    {
+        unsigned char* pSrc = pImg;
+        unsigned char* pDst = pImg;
+
+        uint32_t i;
+        for (i = 0; i < cnPixels; ++i)
+        {
+            pSrc[0] = pDst[2];
+            pSrc[1] = pDst[1];
+            pSrc[2] = pDst[0];
+            pSrc += 3;
+            pDst += 4;
+        }
+    }
+
+    uint32_t bufSize = cnPixels * 3;
+
+    unsigned char* const out = (unsigned char *) malloc(bufSize);
+
+    bufSize = RE_SaveJPGToBuffer(out, bufSize, 80, width, height, pImg, 0);
+
+    ri.FS_WriteFile(fileName, out, bufSize);
+    
+    ri.Printf(PRINT_ALL, "write %dx%d to %s success! \n", width, height, fileName);
+
+    free(out);
+
+#endif
+    
+    free( pImg );
+}
+
 
 
 
@@ -689,10 +810,16 @@ void R_ScreenShotJPEG_f(void)
         }
     }
 
-
-	RB_TakeScreenshotJPEG( W, H, checkname );
-
+    if(0)
+	    RB_TakeScreenshotJPEG( W, H, checkname );
+    else
+        RB_TakeScreenshotJPG( W, H, checkname );
 }
+
+
+
+extern size_t RE_SaveJPGToBuffer(byte *buffer, size_t bufSize, int quality,
+    int image_width, int image_height, byte *image_buffer, int padding);
 
 
 void RE_TakeVideoFrame( const int Width, const int Height, 
@@ -708,17 +835,12 @@ void RE_TakeVideoFrame( const int Width, const int Height,
 	// AVI line padding
 	int avipadwidth = PAD( (Width * 3), 4);
 	
-	// size_t memcount = avipadwidth * Height;
-
     unsigned char* pSrc = captureBuffer;
     unsigned char* pDst = pImg;
-    // const uint32_t cnPixels = Width * Height;
     uint32_t j;
     for(j = 0; j < Height; ++j)
     {
         uint32_t i;
-        //unsigned char* pSrc = captureBuffer + avipadwidth * j;
-        //unsigned char* pDst = pImg + Width * j * 4; 
         for (i = 0; i < Width; ++i)
         {
             *(pSrc + i*3 + 0) = *( pDst + i*4 + 2 );
@@ -729,10 +851,31 @@ void RE_TakeVideoFrame( const int Width, const int Height,
         pDst += Width * 4;
     }
 
-//    int memcount = RE_SaveJPGToBuffer(encodeBuffer, Width * Height * 3,
-//            75,	Width, Height, captureBuffer, (avipadwidth - Width * 3) );
+    int memcount = RE_SaveJPGToBuffer(encodeBuffer, Width * Height * 3,
+            75, Width, Height, captureBuffer, (avipadwidth - Width * 3) );
 
-//    ri.CL_WriteAVIVideoFrame(encodeBuffer, memcount);
+    ri.CL_WriteAVIVideoFrame(encodeBuffer, memcount);
+
+
+////////////////////
+// failed replace 
+/*
+    struct ImageWriteBuffer_s ctx = {
+        .pData = (unsigned char *) encodeBuffer,
+        .szCapacity = avipadwidth * Height * 3,
+        .szBytesUsed = 0 };
+    
+    // bufSize = RE_SaveJPGToBuffer(out, bufSize, 80, width, height, pImg, 0);
+    //stbi_write_jpg_to_func(stbi_write_func *func, void *context, int x, int y, int comp, const void *data, int quality);
+
+    stbi_write_jpg_to_func( fnImageWriteToBufferCallback, &ctx, avipadwidth, Height, 3, pImg, 75);
+
+    ri.CL_WriteAVIVideoFrame(ctx.pData, ctx.szBytesUsed);
+*/
+////////////////////////
 
     free(pImg);
 }
+
+
+

@@ -410,13 +410,16 @@ static int stbi_write_tga_core(stbi__write_context *s, int x, int y, int comp, v
    if (!stbi_write_tga_with_rle) {
       return stbiw__outfile(s, -1, -1, x, y, comp, 0, (void *) data, has_alpha, 0,
          "111 221 2222 11", 0, 0, format, 0, 0, 0, 0, 0, x, y, (colorbytes + has_alpha) * 8, has_alpha * 8);
-   } else {
+   }
+   else
+   {
       int i,j,k;
 
       stbiw__writef(s, "111 221 2222 11", 0,0,format+8, 0,0,0, 0,0,x,y, (colorbytes + has_alpha) * 8, has_alpha * 8);
 
-      for (j = y - 1; j >= 0; --j) {
-          unsigned char *row = (unsigned char *) data + j * x * comp;
+      for (j = y - 1; j >= 0; --j)
+      {
+         unsigned char *row = (unsigned char *) data + j * x * comp;
          int len;
 
          for (i = 0; i < x; i += len) {
