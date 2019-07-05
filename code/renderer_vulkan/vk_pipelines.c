@@ -242,7 +242,7 @@ void R_PipelineList_f(void)
 // transformation matrix to the vertex shader, or to create texture samplers
 // in the fragment shader.
 
-void vk_createPipelineLayout(VkPipelineLayout * pPLayout)
+void vk_createPipelineLayout(VkDescriptorSetLayout desc_set_layout, VkPipelineLayout * const pPipelineLayout)
 {
     ri.Printf(PRINT_ALL, " Create pipeline layout. \n");
 
@@ -251,7 +251,7 @@ void vk_createPipelineLayout(VkPipelineLayout * pPLayout)
     push_range.offset = 0;
     push_range.size = 128; // 16 mvp floats + 16
 
-    const VkDescriptorSetLayout setLayoutArray[2] = {vk.set_layout, vk.set_layout};
+    const VkDescriptorSetLayout setLayoutArray[2] = {desc_set_layout, desc_set_layout};
 
     VkPipelineLayoutCreateInfo desc;
     desc.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
@@ -288,7 +288,7 @@ void vk_createPipelineLayout(VkPipelineLayout * pPLayout)
     // shader stages and shader resources. 
     //
     // Each pipeline is created using a pipeline layout.
-    VK_CHECK( qvkCreatePipelineLayout(vk.device, &desc, NULL, pPLayout) );
+    VK_CHECK( qvkCreatePipelineLayout(vk.device, &desc, NULL, pPipelineLayout) );
 }
 
 

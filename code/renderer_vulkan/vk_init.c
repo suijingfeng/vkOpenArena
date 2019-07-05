@@ -67,7 +67,7 @@ void vk_initialize(void)
     // the resources in them.
     vk_createDescriptorSetLayout(&vk.set_layout);
     // These descriptor sets layouts are aggregated into a single pipeline layout.
-    vk_createPipelineLayout(&vk.pipeline_layout);
+    vk_createPipelineLayout(vk.set_layout, &vk.pipeline_layout);
 
 	//
 	vk_createVertexBuffer();

@@ -36,8 +36,117 @@ static void destroy_texture_image(struct demo *demo, struct texture_object *tex_
 
 
 
-static void vk_prepare_descriptor_layout(struct demo * const demo)
+static void vk_create_pipeline_layout(struct demo * const pDemo)
 {
+	// setLayoutCount is the number of descriptor sets included in the pipeline layout.
+	// 
+	// pSetLayouts is a pointer to an array of VkDescriptorSetLayout objects.
+	//
+	// pushConstantRangeCount is the number of push constant ranges included in the pipeline layout.
+	// 
+	// pPushConstantRanges is a pointer to an array of VkPushConstantRange structures defining
+	// a set of push constant ranges for use in a single pipeline layout. In addition to descriptor
+	// set layouts, a pipeline layout also describes how many push constants can be accessed by
+	// each stage of the pipeline.
+	//
+	// Push constants represent a high speed path to modify constant data in pipelines 
+	// that is expected to outperform memory-backed resource updates.
+    const VkPipelineLayoutCreateInfo pPipelineLayoutCreateInfo = {
+        .sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO,
+        .pNext = NULL,
+		.flags = 0,
+        .setLayoutCount = 1,
+        .pSetLayouts = &pDemo->desc_layout,
+		.pushConstantRangeCount = 0,
+		.pPushConstantRanges = NULL
+    };
+
+	// Access to descriptor sets from a pipeline is accomplished through a pipeline layout.
+	// Zero or more descriptor set layouts and zero or more push constant ranges are combined
+	// to form a pipeline layout object which describes the complete set of resources that can
+	// be accessed by a pipeline. 
+	//
+	// The pipeline layout represents a sequence of descriptor sets with each having a specific
+	// layout. This sequence of layouts is used to determine the interface between shader stages
+	// and shader resources. Each pipeline is created using a pipeline layout.
+
+    VK_CHECK( vkCreatePipelineLayout(pDemo->device, &pPipelineLayoutCreateInfo, NULL, 
+				&pDemo->pipeline_layout) );
+    
+	printf( " Pipeline layout created.\n");
+
+	// Once created, pipeline layouts are used as part of pipeline creation (see Pipelines),
+	// as part of binding descriptor sets (see Descriptor Set Binding), and as part of setting
+	// push constants (see Push Constant Updates). Pipeline creation accepts a pipeline layout
+	// as input, and the layout may be used to map (set, binding, arrayElement) tuples to 
+	// implementation resources or memory locations within a descriptor set.
+	//
+	// The assignment of implementation resources depends only on the bindings defined
+	// in the descriptor sets that comprise the pipeline layout, and not on any shader source.
+	//
+	// All resource variables statically used in all shaders in a pipeline must be declared
+	// with a (set,binding,arrayElement) that exists in the corresponding descriptor set layout
+	// and is of an appropriate descriptor type and includes the set of shader stages it is used
+	// by in stageFlags.
+	//
+	// The pipeline layout can include entries that are not used by a particular pipeline,
+	// or that are dead-code eliminated from any of the shaders. The pipeline layout allows
+	// the application to provide a consistent set of bindings across multiple pipeline compiles,
+	// which enables those pipelines to be compiled in a way that the implementation may cheaply
+	// switch pipelines without reprogramming the bindings.
+	//
+	// Similarly, the push constant block declared in each shader (if present) must only place
+	// variables at offsets that are each included in a push constant range with stageFlags
+	// including the bit corresponding to the shader stage that uses it. The pipeline layout
+	// can include ranges or portions of ranges that are not used by a particular pipeline, 
+	// or for which the variables have been dead-code eliminated from any of the shaders.
+}
+
+
+static void vk_create_descriptor_layout(struct demo * const pDemo)
+{
+	// A descriptor set layout object is defined by an array of zero or more descriptor bindings.
+	// Each individual descriptor binding is specified by a descriptor type, a count (array size)
+	// of the number of descriptors in the binding, a set of shader stages that can access the binding,
+	// and (if using immutable samplers) an array of sampler descriptors.
+	// 
+	//
+	// binding is the binding number of this entry and corresponds to 
+	// a resource of the same binding number in the shader stages.
+	//
+	// descriptorType is a VkDescriptorType specifying which 
+	// type of resource descriptors are used for this binding.
+	//
+	// descriptorCount is the number of descriptors contained in the binding,
+	// accessed in a shader as an array. 
+	// If descriptorCount is zero this binding entry is reserved and the resource
+	// must not be accessed from any stage via this binding within any pipeline
+	// using the set layout.
+	//
+	// stageFlags member is a bitmask of VkShaderStageFlagBits specifying
+	// which pipeline shader stages can access a resource for this binding
+	//
+	// If a shader stage is not included in stageFlags, then a resource must
+	// not be accessed from that stage via this binding within any pipeline 
+	// using the set layout. Other than input attachments which are limited to
+	// the fragment shader, there are no limitations on what combinations of
+	// stages can use a descriptor binding, and in particular a binding can be
+	// used by both graphics stages and the compute stage.
+	//
+	// pImmutableSamplers affects initialization of samplers. If descriptorType
+	// specifies a VK_DESCRIPTOR_TYPE_SAMPLER or VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER
+	// type descriptor, then pImmutableSamplers can be used to initialize a set
+	// of immutable samplers. Immutable samplers are permanently bound into the
+	// set layout; later binding a sampler into an immutable sampler slot in a
+	// descriptor set is not allowed.
+	//
+	// If pImmutableSamplers is not NULL, then it is considered to be a pointer
+	// to an array of sampler handles that will be consumed by the set layout and
+	// used for the corresponding binding. 
+	// If pImmutableSamplers is NULL, then the sampler slots are dynamic and
+	// sampler handles must be bound into descriptor sets using this layout. 
+	// If descriptorType is not one of these descriptor types, then pImmutableSamplers
+	// is ignored.
     VkDescriptorSetLayoutBinding layout_bindings[2];
     
     layout_bindings[0].binding = 0;
@@ -52,23 +161,22 @@ static void vk_prepare_descriptor_layout(struct demo * const demo)
     layout_bindings[1].stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
     layout_bindings[1].pImmutableSamplers = NULL;
 
+
+	// specifying the state of the descriptor set layout object.
+	// Information about the descriptor set layout is passed.
+	// bindingCount is the number of elements in pBindings.
+	// pBindings is a pointer to an array of VkDescriptorSetLayoutBinding structures.
     const VkDescriptorSetLayoutCreateInfo descriptor_layout = {
         .sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO,
         .pNext = NULL,
+		.flags = 0,
         .bindingCount = 2,
         .pBindings = layout_bindings,
     };
 
-    VK_CHECK( vkCreateDescriptorSetLayout(demo->device, &descriptor_layout, NULL, &demo->desc_layout) );
+    VK_CHECK( vkCreateDescriptorSetLayout(pDemo->device, &descriptor_layout, NULL, &pDemo->desc_layout) );
 
-    const VkPipelineLayoutCreateInfo pPipelineLayoutCreateInfo = {
-        .sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO,
-        .pNext = NULL,
-        .setLayoutCount = 1,
-        .pSetLayouts = &demo->desc_layout
-    };
-
-    VK_CHECK( vkCreatePipelineLayout(demo->device, &pPipelineLayoutCreateInfo, NULL, &demo->pipeline_layout) );
+	printf( " DescriptorSet layout created.\n");
 }
 
 
@@ -209,81 +317,30 @@ static void prepare_descriptor_pool(struct demo *demo)
 }
 
 
-static void prepare_descriptor_set(struct demo *demo)
-{
-    VkDescriptorImageInfo tex_descs[DEMO_TEXTURE_COUNT];
-    VkWriteDescriptorSet writes[2];
 
-    VkDescriptorSetAllocateInfo alloc_info = {
-        .sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO,
-        .pNext = NULL,
-        .descriptorPool = demo->desc_pool,
-        .descriptorSetCount = 1,
-        .pSetLayouts = &demo->desc_layout};
-
-    VkDescriptorBufferInfo buffer_info;
-    buffer_info.offset = 0;
-    buffer_info.range = sizeof(struct texcube_vs_uniform);
-
-    memset(&tex_descs, 0, sizeof(tex_descs));
-    
-    for (unsigned int i = 0; i < DEMO_TEXTURE_COUNT; ++i)
-    {
-        tex_descs[i].sampler = demo->textures[i].sampler;
-        tex_descs[i].imageView = demo->textures[i].view;
-        tex_descs[i].imageLayout = VK_IMAGE_LAYOUT_GENERAL;
-    }
-
-    memset(&writes, 0, sizeof(writes));
-
-    writes[0].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-    writes[0].descriptorCount = 1;
-    writes[0].descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-    writes[0].pBufferInfo = &buffer_info;
-
-    writes[1].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-    writes[1].dstBinding = 1;
-    writes[1].descriptorCount = DEMO_TEXTURE_COUNT;
-    writes[1].descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-    writes[1].pImageInfo = tex_descs;
-
-    for (unsigned int i = 0; i < demo->swapchainImageCount; ++i)
-    {
-        VK_CHECK( vkAllocateDescriptorSets(demo->device, &alloc_info,
-                    &demo->swapchain_image_resources[i].descriptor_set) );
-
-        buffer_info.buffer = demo->swapchain_image_resources[i].uniform_buffer;
-        writes[0].dstSet = demo->swapchain_image_resources[i].descriptor_set;
-        writes[1].dstSet = demo->swapchain_image_resources[i].descriptor_set;
-        vkUpdateDescriptorSets(demo->device, 2, writes, 0, NULL);
-    }
-}
-
-
-
-static void prepare_framebuffers(struct demo *demo)
+static void prepare_framebuffers(struct demo * const pDemo)
 {
     VkImageView attachments[2];
-    attachments[1] = demo->depth.view;
+    attachments[1] = pDemo->depth.view;
 
     const VkFramebufferCreateInfo fb_info = {
         .sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO,
         .pNext = NULL,
-        .renderPass = demo->render_pass,
+        .renderPass = pDemo->render_pass,
         .attachmentCount = 2,
         .pAttachments = attachments,
-        .width = demo->width,
-        .height = demo->height,
+        .width = pDemo->width,
+        .height = pDemo->height,
         .layers = 1,
     };
 
     uint32_t i;
 
-    for (i = 0; i < demo->swapchainImageCount; ++i)
+    for (i = 0; i < pDemo->swapchainImageCount; ++i)
     {
-        attachments[0] = demo->swapchain_image_resources[i].view;
-        VK_CHECK( vkCreateFramebuffer(demo->device, &fb_info, NULL,
-                    &demo->swapchain_image_resources[i].framebuffer) );
+        attachments[0] = pDemo->swapchain_image_resources[i].view;
+        VK_CHECK( vkCreateFramebuffer(pDemo->device, &fb_info, NULL,
+                    &pDemo->swapchain_image_resources[i].framebuffer) );
     }
 }
 
@@ -335,7 +392,10 @@ void demo_prepare(struct demo *demo)
     
     vk_upload_cube_data_buffers(demo);
 
-    vk_prepare_descriptor_layout(demo);
+    vk_create_descriptor_layout(demo);
+	
+	vk_create_pipeline_layout(demo);
+
     vk_prepare_render_pass(demo);
     vk_prepare_pipeline(demo);
 
@@ -373,7 +433,7 @@ void demo_prepare(struct demo *demo)
     }
 
     prepare_descriptor_pool(demo);
-    prepare_descriptor_set(demo);
+    vk_prepare_descriptor_set(demo);
     prepare_framebuffers(demo);
 
     for (uint32_t i = 0; i < demo->swapchainImageCount; ++i)
@@ -471,9 +531,7 @@ static void vk_cleanup(struct demo *demo)
 
     vk_clearSurfacePresentPFN();
 
-    xcb_destroy_window(demo->connection, demo->xcb_window);
-    xcb_disconnect(demo->connection);
-    free(demo->atom_wm_delete_window);
+	R_DestroWindowSystem(demo);
 
     vkDestroyInstance(demo->inst, NULL);
 }

@@ -42,7 +42,6 @@ struct demo
     xcb_connection_t *connection;
     xcb_screen_t *screen;
     xcb_window_t xcb_window;
-    xcb_intern_atom_reply_t *atom_wm_delete_window;
     
     
     VkSurfaceKHR surface;

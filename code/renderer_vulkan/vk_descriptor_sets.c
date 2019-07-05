@@ -61,7 +61,6 @@ void vk_createDescriptorSetLayout(VkDescriptorSetLayout * const pSetLayout)
     // the command buffer in any point that has an indentical layout.
     // The same descriptor set layouts can be used to craete multiple
     // pipelines. 
-    ri.Printf(PRINT_ALL, " Create descriptor set layout. \n");
 
     VkDescriptorSetLayoutBinding descriptor_binding;
     // Each resource accessible to a shader is given a binding number.
@@ -77,18 +76,20 @@ void vk_createDescriptorSetLayout(VkDescriptorSetLayout * const pSetLayout)
     // stageFlags member is a bitmask of VkShaderStageFlagBits specifying 
     // which pipeline shader stages can access a resource for this binding
     descriptor_binding.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
-    // pImmutableSamplers affects initialization of samplers. If descriptorType
-    // specifies a VK_DESCRIPTOR_TYPE_SAMPLER or 
-    // VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER type descriptor, then 
-    // pImmutableSamplers can be used to initialize a set of immutable samplers.
-    // Immutable samplers are permanently bound into the set layout;
-    // later binding a sampler into an immutable sampler slot in a descriptor
-    // set is not allowed. If pImmutableSamplers is not NULL, then it is
-    // considered to be a pointer to an array of sampler handles that
-    // will be consumed by the set layout and used for the corresponding binding.
+    // pImmutableSamplers affects initialization of samplers. 
+	// If descriptorType specifies a VK_DESCRIPTOR_TYPE_SAMPLER or 
+    // VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER type descriptor,
+	// then pImmutableSamplers can be used to initialize a set of
+	// immutable samplers. Immutable samplers are permanently bound
+	// into the set layout; later binding a sampler into an immutable
+	// sampler slot in a descriptor set is not allowed. 
+	// 
+	// If pImmutableSamplers is not NULL, then it is considered to be
+	// a pointer to an array of sampler handles that will be consumed 
+	// by the set layout and used for the corresponding binding.
     // If pImmutableSamplers is NULL, then the sampler slots are dynamic 
-    // and sampler handles must be bound into descriptor sets using this layout.
-    // If descriptorType is not one of these descriptor types, 
+    // and sampler handles must be bound into descriptor sets using this
+	// layout. If descriptorType is not one of these descriptor types, 
     // then pImmutableSamplers is ignored.
     descriptor_binding.pImmutableSamplers = NULL;
 
@@ -96,6 +97,7 @@ void vk_createDescriptorSetLayout(VkDescriptorSetLayout * const pSetLayout)
     VkDescriptorSetLayoutCreateInfo desc;
     desc.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
     desc.pNext = NULL;
+	// flags must be a valid combination of VkDescriptorSetLayoutCreateFlagBits values
     desc.flags = 0;
     // Resource are bound to binding points in the descriptor set.
     //
@@ -106,6 +108,8 @@ void vk_createDescriptorSetLayout(VkDescriptorSetLayout * const pSetLayout)
 
     // To create descriptor set layout objects
     VK_CHECK( qvkCreateDescriptorSetLayout(vk.device, &desc, NULL, pSetLayout) );
+	
+	ri.Printf(PRINT_ALL, " Descriptor set layout created . \n");
 }
 
 

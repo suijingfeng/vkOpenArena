@@ -6,6 +6,13 @@
 #include "vk_common.h"
 #include "model.h"
 
+struct texcube_vs_uniform {
+    // Must start with MVP
+    float mvp[4][4];
+    float position[12 * 3][4];
+    float attr[12 * 3][4];
+};
+
 //-------------------------------------------------------------------------
 // Mesh and VertexFormat Data
 //-------------------------------------------------------------------------
@@ -101,7 +108,7 @@ static const float g_uv_buffer_data[] =
 };
 
 
-static void uniformBufUpdateMVP(struct texcube_vs_uniform * const pData, const struct demo * const demo)
+static void uniformBufUpdateMVP(struct texcube_vs_uniform * const pData, struct demo * const demo)
 {
     // mat4x4 MVP;
     mat4x4 VP;
@@ -114,13 +121,15 @@ static void uniformBufUpdateMVP(struct texcube_vs_uniform * const pData, const s
 
 static void uniformBufUploadVertexData(struct texcube_vs_uniform * const pData, const struct demo * const demo)
 {
-    for (unsigned int i = 0; i < 12 * 3; i++)
+	uint32_t i;
+    for (i = 0; i < 12 * 3; ++i)
     {
         pData->position[i][0] = g_vertex_buffer_data[i * 3];
         pData->position[i][1] = g_vertex_buffer_data[i * 3 + 1];
         pData->position[i][2] = g_vertex_buffer_data[i * 3 + 2];
         pData->position[i][3] = 1.0f;
-        pData->attr[i][0] = g_uv_buffer_data[2 * i];
+        
+		pData->attr[i][0] = g_uv_buffer_data[2 * i];
         pData->attr[i][1] = g_uv_buffer_data[2 * i + 1];
         pData->attr[i][2] = 0;
         pData->attr[i][3] = 0;
@@ -209,5 +218,62 @@ void vk_upload_cube_data_buffers(struct demo * const demo)
         memcpy(pData, &data, sizeof(data) );
 
         vkUnmapMemory(demo->device, demo->swapchain_image_resources[i].uniform_memory);
+    }
+}
+
+
+void vk_prepare_descriptor_set(struct demo * const demo)
+{
+	uint32_t i;
+
+    VkDescriptorImageInfo tex_descs[DEMO_TEXTURE_COUNT];
+    //memset(&tex_descs, 0, sizeof(tex_descs));
+    for (i = 0; i < DEMO_TEXTURE_COUNT; ++i)
+    {
+        tex_descs[i].sampler = demo->textures[i].sampler;
+        tex_descs[i].imageView = demo->textures[i].view;
+        tex_descs[i].imageLayout = VK_IMAGE_LAYOUT_GENERAL;
+    }
+
+
+
+    VkDescriptorSetAllocateInfo alloc_info = {
+        .sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO,
+        .pNext = NULL,
+        .descriptorPool = demo->desc_pool,
+        .descriptorSetCount = 1,
+        .pSetLayouts = &demo->desc_layout
+	};
+
+	
+    VkDescriptorBufferInfo buffer_info;
+    buffer_info.offset = 0;
+    buffer_info.range = sizeof(struct texcube_vs_uniform);
+
+    
+	VkWriteDescriptorSet writes[2];
+
+    memset(&writes, 0, sizeof(writes));
+
+    writes[0].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+    writes[0].descriptorCount = 1;
+    writes[0].descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+    writes[0].pBufferInfo = &buffer_info;
+
+    writes[1].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+    writes[1].dstBinding = 1;
+    writes[1].descriptorCount = DEMO_TEXTURE_COUNT;
+    writes[1].descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+    writes[1].pImageInfo = tex_descs;
+
+    for (i = 0; i < demo->swapchainImageCount; ++i)
+    {
+        VK_CHECK( vkAllocateDescriptorSets(demo->device, &alloc_info,
+                    &demo->swapchain_image_resources[i].descriptor_set) );
+
+        buffer_info.buffer = demo->swapchain_image_resources[i].uniform_buffer;
+        writes[0].dstSet = demo->swapchain_image_resources[i].descriptor_set;
+        writes[1].dstSet = demo->swapchain_image_resources[i].descriptor_set;
+        vkUpdateDescriptorSets(demo->device, 2, writes, 0, NULL);
     }
 }

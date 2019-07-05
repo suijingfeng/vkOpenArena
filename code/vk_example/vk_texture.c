@@ -26,29 +26,9 @@ static const char *tex_files[] = {
 #define STB_IMAGE_IMPLEMENTATION
 #include "stb_image.h"
 
-
+/*
 static void R_SaveToJPEG(unsigned char* const pImg, uint32_t width, uint32_t height, char * const fileName )
 {
-/*  
-    const uint32_t cnPixels = width * height; 
-
-  
-    // Remove alpha channel and rbg <-> bgr
-    {
-        unsigned char* pSrc = pImg;
-        unsigned char* pDst = pImg;
-
-        uint32_t i;
-        for (i = 0; i < cnPixels; ++i)
-        {
-            pSrc[0] = pDst[0];
-            pSrc[1] = pDst[1];
-            pSrc[2] = pDst[2];
-            pSrc += 3;
-            pDst += 4;
-        }
-    }
-*/
 	int error = stbi_write_jpg (fileName, width, height, 3, pImg, 90);    
     //int error = stbi_write_jpg_to_func
     
@@ -61,7 +41,7 @@ static void R_SaveToJPEG(unsigned char* const pImg, uint32_t width, uint32_t hei
         printf("write %dx%d to %s success! \n", width, height, fileName);
     }
 }
-
+*/
 
 
 static bool memory_type_from_properties(struct demo *demo, uint32_t typeBits, 

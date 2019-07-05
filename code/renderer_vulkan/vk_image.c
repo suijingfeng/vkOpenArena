@@ -396,7 +396,7 @@ void vk_createViewForImageHandle(VkImage Handle, VkFormat Fmt, VkImageView* cons
 }
 
 
-static void vk_createDescriptorSet(image_t * const pImage)
+static void vk_createDescriptorSet(struct image_s * const pImage)
 {
     // Allocate a descriptor set from the pool. 
     // Note that we have to provide the descriptor set layout that 
@@ -405,27 +405,29 @@ static void vk_createDescriptorSet(image_t * const pImage)
     vk_allocOneDescptrSet(&pImage->descriptor_set);
 
     //ri.Printf(PRINT_ALL, " Allocate Descriptor Sets \n");
-    VkWriteDescriptorSet descriptor_write;
 
-    VkDescriptorImageInfo image_info;
-    image_info.sampler = vk_find_sampler(pImage->mipmap, pImage->wrapClampMode == GL_REPEAT);
-    image_info.imageView = pImage->view;
-    // the image will be bound for reading by shaders.
+	// the image will be bound for reading by shaders.
     // this layout is typically used when an image is going to
     // be used as a texture.
-    image_info.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
 
-    descriptor_write.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-    descriptor_write.dstSet = pImage->descriptor_set;
-    descriptor_write.dstBinding = 0;
-    descriptor_write.dstArrayElement = 0;
-    descriptor_write.descriptorCount = 1;
-    descriptor_write.pNext = NULL;
-    descriptor_write.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-    descriptor_write.pImageInfo = &image_info;
-    descriptor_write.pBufferInfo = NULL;
-    descriptor_write.pTexelBufferView = NULL;
+    VkDescriptorImageInfo image_info = {
+		.sampler = vk_find_sampler(pImage->mipmap, pImage->wrapClampMode == GL_REPEAT),
+		.imageView = pImage->view,
+		.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL
+	};
 
+	VkWriteDescriptorSet descriptor_write = {
+		.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET,
+		.dstSet = pImage->descriptor_set,
+		.dstBinding = 0,
+		.dstArrayElement = 0,
+		.descriptorCount = 1,
+		.pNext = NULL,
+		.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
+		.pImageInfo = &image_info,
+		.pBufferInfo = NULL,
+		.pTexelBufferView = NULL
+	};
 
     NO_CHECK( qvkUpdateDescriptorSets(vk.device, 1, &descriptor_write, 0, NULL) );
 

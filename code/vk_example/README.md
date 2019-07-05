@@ -1,3 +1,20 @@
+### ubuntu18.04 install vulkan-sdk 
+```
+wget -qO - http://packages.lunarg.com/lunarg-signing-key-pub.asc | sudo apt-key add -
+sudo wget -qO /etc/apt/sources.list.d/lunarg-vulkan-1.1.108-bionic.list http://packages.lunarg.com/vulkan/1.1.108/lunarg-vulkan-1.1.108-bionic.list
+sudo apt update
+sudo apt install vulkan-sdk
+```
+### ubuntu16.04 install vulkan-sdk 
+```
+wget -qO - http://packages.lunarg.com/lunarg-signing-key-pub.asc | sudo apt-key add -
+sudo wget -qO /etc/apt/sources.list.d/lunarg-vulkan-1.1.108-xenial.list http://packages.lunarg.com/vulkan/1.1.108/lunarg-vulkan-1.1.108-xenial.list
+sudo apt update
+sudo apt install vulkan-sdk
+```
+
+you need glslangValidator to compile shaders.
+
 ### Vulkan
 Vulkan is an explicit API, enabling direct control over how GPUs actually work.
 The Vulkan API is a low overhead, explicit, cross-platform graphics API that provides applications with direct control over the GPU, maximizing application performance.

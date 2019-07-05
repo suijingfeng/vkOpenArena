@@ -12,6 +12,9 @@
 #include "model.h"
 
 
+static xcb_intern_atom_reply_t * atom_wm_delete_window;
+
+
 static void xcb_initConnection(struct demo * const demo)
 {
 
@@ -64,10 +67,11 @@ void xcb_createWindow(struct demo *demo)
     xcb_intern_atom_reply_t *reply = xcb_intern_atom_reply(demo->connection, cookie, 0);
 
     xcb_intern_atom_cookie_t cookie2 = xcb_intern_atom(demo->connection, 0, 16, "WM_DELETE_WINDOW");
-    demo->atom_wm_delete_window = xcb_intern_atom_reply(demo->connection, cookie2, 0);
+    
+	atom_wm_delete_window = xcb_intern_atom_reply(demo->connection, cookie2, 0);
 
     xcb_change_property(demo->connection, XCB_PROP_MODE_REPLACE, demo->xcb_window, (*reply).atom, 4, 32, 1,
-                        &(*demo->atom_wm_delete_window).atom);
+                        &atom_wm_delete_window->atom );
     free(reply);
 
     xcb_map_window(demo->connection, demo->xcb_window);
@@ -151,7 +155,8 @@ static void handle_xcb_event(struct demo *demo, const xcb_generic_event_t *event
             // TODO: Resize window
             break;
         case XCB_CLIENT_MESSAGE:
-            if ((*(xcb_client_message_event_t *)event).data.data32[0] == (*demo->atom_wm_delete_window).atom) {
+            if ((*(xcb_client_message_event_t *)event).data.data32[0] == atom_wm_delete_window->atom)
+			{
                 demo->quit = true;
             }
             break;
@@ -344,6 +349,17 @@ void run_xcb(struct demo *demo)
         }
 
         xcb_draw(demo);
-        demo->curFrame++;
+		
+        ++demo->curFrame;
     }
+}
+
+
+void R_DestroWindowSystem( struct demo * pDemo )
+{
+    
+	xcb_destroy_window(pDemo->connection, pDemo->xcb_window);
+    xcb_disconnect(pDemo->connection);
+    
+	free(atom_wm_delete_window);
 }

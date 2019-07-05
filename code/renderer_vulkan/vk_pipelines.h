@@ -52,7 +52,7 @@ void vk_create_shader_stage_pipelines(shaderStage_t *pStage, shader_t* pShader);
 void vk_destroyShaderStagePipeline(void);
 
 
-void vk_createPipelineLayout(VkPipelineLayout * pPLayout);
+void vk_createPipelineLayout(VkDescriptorSetLayout desc_layout, VkPipelineLayout * const pPLayout);
 void vk_destroy_pipeline_layout(void);
 
 
