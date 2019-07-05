@@ -339,7 +339,7 @@ void demo_prepare(struct demo *demo)
     vk_prepare_render_pass(demo);
     vk_prepare_pipeline(demo);
 
-    for (uint32_t i = 0; i < demo->swapchainImageCount; i++)
+    for (uint32_t i = 0; i < demo->swapchainImageCount; ++i)
     {
         VK_CHECK( vkAllocateCommandBuffers(demo->device, &cmd, &demo->swapchain_image_resources[i].cmd) );
     }
@@ -387,7 +387,8 @@ void demo_prepare(struct demo *demo)
      * that need to be flushed before beginning the render loop.
      */
     flush_init_cmd(demo);
-    if (demo->staging_texture.image)
+    
+	if (demo->staging_texture.image)
     {
         destroy_texture_image(demo, &demo->staging_texture);
     }
@@ -413,7 +414,8 @@ static void vk_cleanup(struct demo *demo)
         vkDestroyFence(demo->device, demo->fences[i], NULL);
         vkDestroySemaphore(demo->device, demo->image_acquired_semaphores[i], NULL);
         vkDestroySemaphore(demo->device, demo->draw_complete_semaphores[i], NULL);
-        if (demo->separate_present_queue) {
+        if (demo->separate_present_queue)
+		{
             vkDestroySemaphore(demo->device, demo->image_ownership_semaphores[i], NULL);
         }
     }

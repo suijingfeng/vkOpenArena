@@ -44,7 +44,7 @@ extern struct shaderCommands_s tess;
 void R_GetFogArray(fog_t **ppFogs, uint32_t* pNum);
 
 
-static void RB_CalcTransformTexCoords( const texModInfo_t * const pTmi, float *st  )
+static void RB_CalcTransformTexCoords( const texModInfo_t * const pTmi, float * st )
 {
 	uint32_t i;
 	uint32_t const nVert = tess.numVertexes;

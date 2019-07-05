@@ -278,7 +278,20 @@ void vk_destroyGlobalStagePipeline(void)
 
     ri.Printf(PRINT_ALL, " Skybox pipeline destroyed. \n");
 
+
+
+    for (i = 0; i < 2; ++i)
+    {
+		for (j = 0; j < 3; ++j)
+        { 
+			for (k = 0; k < 2; ++k)
+            {
+				NO_CHECK( qvkDestroyPipeline(vk.device, g_globalPipelines.fog_pipelines[i][j][k], NULL) );
+			}
+        }
+    }
     ri.Printf(PRINT_ALL, " Fog pipeline destroyed. \n");
+
 
     for (i = 0; i < 2; ++i)
     {
@@ -290,7 +303,6 @@ void vk_destroyGlobalStagePipeline(void)
 			}
         }
     }
-
     ri.Printf(PRINT_ALL, " Dlights pipeline destroyed. \n");
 
     memset(&g_globalPipelines, 0, sizeof(g_globalPipelines));

@@ -9,13 +9,59 @@
 #include "vk_texture.h"
 #include "vk_common.h"
 
+
+
+
 static char *tex_files[] = {"lunarg.ppm"};
 
 
 /* Convert ppm image data from header file into RGBA texture image */
 #include "lunarg_ppm.h"
 
-bool loadTexture(const char *filename, uint8_t *rgba_data, VkSubresourceLayout *layout, int32_t * pWidth, int32_t * pHeight)
+
+#define STB_IMAGE_WRITE_STATIC
+#define STB_IMAGE_WRITE_IMPLEMENTATION
+#include "stb_image_write.h"
+
+
+static void R_SaveToJPEG(unsigned char* const pImg, uint32_t width, uint32_t height, char * const fileName )
+{
+    const uint32_t cnPixels = width * height; 
+
+/*    
+    // Remove alpha channel and rbg <-> bgr
+    {
+        unsigned char* pSrc = pImg;
+        unsigned char* pDst = pImg;
+
+        uint32_t i;
+        for (i = 0; i < cnPixels; ++i)
+        {
+            pSrc[0] = pDst[0];
+            pSrc[1] = pDst[1];
+            pSrc[2] = pDst[2];
+            pSrc += 3;
+            pDst += 4;
+        }
+    }
+*/
+	int error = stbi_write_jpg (fileName, width, height, 3, pImg, 90);    
+    //int error = stbi_write_jpg_to_func
+    
+    if(error == 0)
+    {
+        printf("failed writing %s to the disk. \n", fileName);
+    }
+    else
+    {
+        printf("write %dx%d to %s success! \n", width, height, fileName);
+    }
+}
+
+
+
+static bool loadTexture(const char *filename, uint8_t *rgba_data, VkSubresourceLayout *layout, 
+		int32_t * pWidth, int32_t * pHeight)
 {
     (void)filename;
     
@@ -51,10 +97,12 @@ bool loadTexture(const char *filename, uint8_t *rgba_data, VkSubresourceLayout *
     while (strncmp(cPtr++, "\n", 1))
         ;
     
+	R_SaveToJPEG(cPtr, width, height, "img_lunarg.jpg");
+
     for (int y = 0; y < height; ++y)
     {
         uint8_t *rowPtr = rgba_data;
-        for (int x = 0; x < width; x++)
+        for (int x = 0; x < width; ++x)
         {
             rowPtr[0] = cPtr[0];
             rowPtr[1] = cPtr[1];
@@ -89,18 +137,19 @@ bool memory_type_from_properties(struct demo *demo, uint32_t typeBits, VkFlags r
 
 
 static void prepare_texture_image(struct demo *demo, const char *filename, struct texture_object *tex_obj,
-                                       VkImageTiling tiling, VkImageUsageFlags usage, VkFlags required_props) {
+                                       VkImageTiling tiling, VkImageUsageFlags usage, VkFlags required_props)
+{
     const VkFormat tex_format = VK_FORMAT_R8G8B8A8_UNORM;
     int32_t tex_width;
     int32_t tex_height;
     bool  pass;
 
-    printf(" loading texture: %s\n", filename);
-
     if (!loadTexture(filename, NULL, NULL, &tex_width, &tex_height))
     {
         ERR_EXIT("Failed to load textures", "Load Texture Failure");
     }
+
+    printf(" Texture: %s, %dx%d loaded. \n", filename, tex_width, tex_height);
 
     tex_obj->tex_width = tex_width;
     tex_obj->tex_height = tex_height;
@@ -228,19 +277,20 @@ void vk_prepare_textures(struct demo *demo)
 
     vkGetPhysicalDeviceFormatProperties(demo->gpu, tex_format, &props);
 
-    for (i = 0; i < DEMO_TEXTURE_COUNT; i++)
+    for (i = 0; i < DEMO_TEXTURE_COUNT; ++i)
     {
 
         if ((props.linearTilingFeatures & VK_FORMAT_FEATURE_SAMPLED_IMAGE_BIT) && !demo->use_staging_buffer)
         {
             /* Device can texture using linear textures */
-            prepare_texture_image(demo, tex_files[i], &demo->textures[i], VK_IMAGE_TILING_LINEAR, VK_IMAGE_USAGE_SAMPLED_BIT,
-                                       VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
+            prepare_texture_image(demo, tex_files[i], &demo->textures[i], 
+					VK_IMAGE_TILING_LINEAR, VK_IMAGE_USAGE_SAMPLED_BIT,
+                        VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
             // Nothing in the pipeline needs to be complete to start, and don't allow fragment
             // shader to run until layout transition completes
-            demo_set_image_layout(demo, demo->textures[i].image, VK_IMAGE_ASPECT_COLOR_BIT, VK_IMAGE_LAYOUT_PREINITIALIZED,
-                                  demo->textures[i].imageLayout, 0, VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT,
-                                  VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT);
+            demo_set_image_layout(demo, demo->textures[i].image, VK_IMAGE_ASPECT_COLOR_BIT, 
+					VK_IMAGE_LAYOUT_PREINITIALIZED, demo->textures[i].imageLayout, 0,
+				   	VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT, VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT);
             demo->staging_texture.image = 0;
         }
         else if (props.optimalTilingFeatures & VK_FORMAT_FEATURE_SAMPLED_IMAGE_BIT)
@@ -256,13 +306,13 @@ void vk_prepare_textures(struct demo *demo)
                                        (VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT),
                                        VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
 
-            demo_set_image_layout(demo, demo->staging_texture.image, VK_IMAGE_ASPECT_COLOR_BIT, VK_IMAGE_LAYOUT_PREINITIALIZED,
-                                  VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, 0, VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT,
-                                  VK_PIPELINE_STAGE_TRANSFER_BIT);
+            demo_set_image_layout(demo, demo->staging_texture.image, VK_IMAGE_ASPECT_COLOR_BIT,
+				   	VK_IMAGE_LAYOUT_PREINITIALIZED, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, 0, 
+					VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT);
 
-            demo_set_image_layout(demo, demo->textures[i].image, VK_IMAGE_ASPECT_COLOR_BIT, VK_IMAGE_LAYOUT_PREINITIALIZED,
-                                  VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 0, VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT,
-                                  VK_PIPELINE_STAGE_TRANSFER_BIT);
+            demo_set_image_layout(demo, demo->textures[i].image, VK_IMAGE_ASPECT_COLOR_BIT, 
+					VK_IMAGE_LAYOUT_PREINITIALIZED, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 0,
+				   	VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT);
 
             VkImageCopy copy_region = {
                 .srcSubresource = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, 1},

@@ -315,20 +315,24 @@ void vk_prepare_buffers(struct demo *demo)
     }
 
    
-
-
-    uint32_t presentModeCount;
-    VK_CHECK( pFn_vkhr.fpGetPhysicalDeviceSurfacePresentModesKHR(demo->gpu, demo->surface, &presentModeCount, NULL) );
-    VkPresentModeKHR* presentModes = (VkPresentModeKHR *) malloc( presentModeCount * sizeof(VkPresentModeKHR) );
-    printf("presentModeCount: %d\n", presentModeCount);
-
-    assert(presentModes);
+    uint32_t presentModeCount = 0;
     
-    VK_CHECK( pFn_vkhr.fpGetPhysicalDeviceSurfacePresentModesKHR(demo->gpu, demo->surface, &presentModeCount, presentModes) );
+	VK_CHECK( pFn_vkhr.fpGetPhysicalDeviceSurfacePresentModesKHR( 
+				demo->gpu, demo->surface, &presentModeCount, NULL) );
+    
+	VkPresentModeKHR* presentModes = (VkPresentModeKHR *) 
+		malloc( presentModeCount * sizeof(VkPresentModeKHR) );
+    
+	printf("presentModeCount: %d\n", presentModeCount);
+
+    assert(presentModes > 0);
+    
+    VK_CHECK( pFn_vkhr.fpGetPhysicalDeviceSurfacePresentModesKHR(
+		demo->gpu, demo->surface, &presentModeCount, presentModes) );
 
 
     // The FIFO present mode is guaranteed by the spec to be supported
-    // and to have no tearing.  It's a great default present mode to use.
+    // and to have no tearing. 
     VkPresentModeKHR swapchainPresentMode = VK_PRESENT_MODE_FIFO_KHR;
 
     //  There are times when you may wish to use another present mode.  The
@@ -394,7 +398,9 @@ void vk_prepare_buffers(struct demo *demo)
     VkSurfaceTransformFlagsKHR preTransform;
     if (surfCapabilities.supportedTransforms & VK_SURFACE_TRANSFORM_IDENTITY_BIT_KHR) {
         preTransform = VK_SURFACE_TRANSFORM_IDENTITY_BIT_KHR;
-    } else {
+    }
+	else
+	{
         preTransform = surfCapabilities.currentTransform;
     }
 
@@ -486,6 +492,7 @@ void vk_prepare_buffers(struct demo *demo)
 
         VK_CHECK( vkCreateImageView(demo->device, &color_image_view, NULL, &demo->swapchain_image_resources[i].view) );
     }
+
 
     if (NULL != presentModes) {
         free(presentModes);

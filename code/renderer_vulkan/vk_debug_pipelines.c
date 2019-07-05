@@ -55,8 +55,6 @@ void vk_createDebugPipelines(void)
 
 void vk_destroyDebugPipelines(void)
 {
-    ri.Printf(PRINT_ALL, " Destroy debug stage pipeline. \n");
-
     NO_CHECK( qvkDeviceWaitIdle(vk.device) );
 
 	qvkDestroyPipeline(vk.device, g_debugPipelines.tris, NULL);
@@ -65,6 +63,8 @@ void vk_destroyDebugPipelines(void)
 	qvkDestroyPipeline(vk.device, g_debugPipelines.surface_solid, NULL);
 	qvkDestroyPipeline(vk.device, g_debugPipelines.surface_outline, NULL);
 	qvkDestroyPipeline(vk.device, g_debugPipelines.images, NULL);
-
+	
+	ri.Printf(PRINT_ALL, " Destroy debug stage pipeline. \n");
     memset(&g_debugPipelines, 0, sizeof(g_debugPipelines));
+
 }
