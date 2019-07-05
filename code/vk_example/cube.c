@@ -36,7 +36,7 @@ static void destroy_texture_image(struct demo *demo, struct texture_object *tex_
 
 
 
-static void vk_prepare_descriptor_layout(struct demo *demo)
+static void vk_prepare_descriptor_layout(struct demo * const demo)
 {
     VkDescriptorSetLayoutBinding layout_bindings[2];
     
@@ -333,7 +333,7 @@ void demo_prepare(struct demo *demo)
     vk_prepare_depth(demo);
     vk_prepare_textures(demo);
     
-    vk_prepare_cube_data_buffers(demo);
+    vk_upload_cube_data_buffers(demo);
 
     vk_prepare_descriptor_layout(demo);
     vk_prepare_render_pass(demo);
@@ -484,7 +484,7 @@ int main(int argc, char **argv)
 {
     struct demo demo;
 
-    vec3 eye = {0.0f, 3.0f, 5.0f};
+    vec3 eye = {0.0f, 3.0f, 7.0f};
     vec3 origin = {0, 0, 0};
     vec3 up = {0.0f, 1.0f, 0.0};
 
@@ -532,24 +532,25 @@ int main(int argc, char **argv)
         exit(1);
     }
 
-    xcb_initConnection(&demo);
+
 
     vk_init(&demo);
 
     demo.width = 500;
     demo.height = 500;
 
-    demo.spin_angle = 4.0f;
-    demo.spin_increment = 0.2f;
+    demo.spin_angle = 0.1;
+    demo.spin_increment = 0.02;
     demo.pause = false;
 
-    mat4x4_perspective(demo.projection_matrix, (float)degreesToRadians(45.0f), 1.0f, 0.1f, 100.0f);
+    mat4x4_perspective(demo.projection_matrix, degreesToRadians(45.0f), 1.0f, 0.1f, 100.0f);
     mat4x4_look_at(demo.view_matrix, eye, origin, up);
     mat4x4_identity(demo.model_matrix);
     
     // Flip projection matrix from GL to Vulkan orientation.
     demo.projection_matrix[1][1] = -demo.projection_matrix[1][1];
-
+    
+//    xcb_initConnection(&demo);
     xcb_createWindow(&demo);
 
     init_vk_swapchain(&demo);

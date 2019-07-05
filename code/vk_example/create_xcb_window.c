@@ -12,8 +12,41 @@
 #include "model.h"
 
 
+static void xcb_initConnection(struct demo * const demo)
+{
+
+    printf(" xcb init connection.\n");
+
+    int scr;
+
+    const char *display_envar = getenv("DISPLAY");
+    
+    if (display_envar == NULL || display_envar[0] == '\0')
+    {
+        ERR_EXIT("Environment variable DISPLAY requires a valid value.\nExiting ...\n", 0);
+    }
+
+    demo->connection = xcb_connect(NULL, &scr);
+    
+    if (xcb_connection_has_error(demo->connection) > 0)
+    {
+        ERR_EXIT("Cannot find a compatible Vulkan installable client driver (ICD).\nExiting ...\n", 0);
+    }
+
+    const xcb_setup_t * setup = xcb_get_setup(demo->connection);
+    xcb_screen_iterator_t iter = xcb_setup_roots_iterator(setup);
+    
+    while (scr-- > 0)
+        xcb_screen_next(&iter);
+
+    demo->screen = iter.data;
+}
+
+
+
 void xcb_createWindow(struct demo *demo)
 {
+    xcb_initConnection( demo );
 
     uint32_t value_mask, value_list[32];
 
@@ -48,35 +81,6 @@ void xcb_createWindow(struct demo *demo)
 }
 
 
-void xcb_initConnection(struct demo *demo)
-{
-
-    printf(" xcb init connection.\n");
-
-    int scr;
-
-    const char *display_envar = getenv("DISPLAY");
-    
-    if (display_envar == NULL || display_envar[0] == '\0')
-    {
-        ERR_EXIT("Environment variable DISPLAY requires a valid value.\nExiting ...\n", 0);
-    }
-
-    demo->connection = xcb_connect(NULL, &scr);
-    
-    if (xcb_connection_has_error(demo->connection) > 0)
-    {
-        ERR_EXIT("Cannot find a compatible Vulkan installable client driver (ICD).\nExiting ...\n", 0);
-    }
-
-    const xcb_setup_t * setup = xcb_get_setup(demo->connection);
-    xcb_screen_iterator_t iter = xcb_setup_roots_iterator(setup);
-    
-    while (scr-- > 0)
-        xcb_screen_next(&iter);
-
-    demo->screen = iter.data;
-}
 
 
 static void demo_resize(struct demo *demo)

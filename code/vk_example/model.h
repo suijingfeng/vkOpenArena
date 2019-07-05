@@ -11,8 +11,6 @@ struct texcube_vs_uniform {
 };
 
 
-bool memory_type_from_properties(struct demo *demo, uint32_t typeBits, 
-        VkFlags requirements_mask, uint32_t *typeIndex);
-void vk_prepare_cube_data_buffers(struct demo *demo);
+void vk_upload_cube_data_buffers(struct demo * const demo);
 
 #endif

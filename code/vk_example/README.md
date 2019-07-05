@@ -35,3 +35,12 @@ When the processor detects the event, it will trap into the kernel, and the kern
 With processors that don't support breakpoints or watchpoints, the entire debugging environment is probably done through code interpretation and memory emulation, which is immensely slower. (I imagine clever tricks could be done by setting pagetable flags to forbid reading or writing, whichever needs to be trapped, and letting the kernel fix up the pagetables, signaling the debugger, and then restricting the page flags again. This could probably support near-arbitrary number of watchpoints and breakpoints, and run only marginally slower for cases when the watchpoint or breakpoint aren't frequently accessed.)
 
 The question I placed into the comment field looks apropos here, only because Windows isn't actually sending a SIGTRAP, but rather signaling a breakpoint in its own native way. I assume when you're debugging programs, that debug versions of system libraries are used, and ensure that memory accesses appear to make sense. You might have a bug in your program that is papered-over at runtime, but may in fact be causing further problems elsewhere.
+
+
+### Rules
+
+One of the basic rules concerning programming is that no routine should ever exceeed a page.
+This is accomplished by breaking the program down into modules. Each module is a logical
+unit and does a specific job. Its size is keep small by calling other modules.
+
+* A well-written modular program places certain dependencies in only one routine, make changes easier.

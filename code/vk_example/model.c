@@ -100,7 +100,8 @@ static const float g_uv_buffer_data[] =
     1.0f, 0.0f,
 };
 
-static void updateMVP(struct texcube_vs_uniform * pData, struct demo *demo)
+
+static void uniformBufUpdateMVP(struct texcube_vs_uniform * const pData, const struct demo * const demo)
 {
     // mat4x4 MVP;
     mat4x4 VP;
@@ -111,11 +112,8 @@ static void updateMVP(struct texcube_vs_uniform * pData, struct demo *demo)
 }
 
 
-void uploadDataToUniformBuffer(struct texcube_vs_uniform * const pData, struct demo * const demo)
+static void uniformBufUploadVertexData(struct texcube_vs_uniform * const pData, const struct demo * const demo)
 {
-    
-    updateMVP(pData, demo);
-
     for (unsigned int i = 0; i < 12 * 3; i++)
     {
         pData->position[i][0] = g_vertex_buffer_data[i * 3];
@@ -129,39 +127,67 @@ void uploadDataToUniformBuffer(struct texcube_vs_uniform * const pData, struct d
     }
 }
 
+// bool memory_type_from_properties(struct demo *demo, uint32_t typeBits, 
+//         VkFlags requirements_mask, uint32_t *typeIndex);
+//  
 
-void vk_createUniformBufferAndBindItWithMemory(struct demo * pDemo, VkBufferCreateInfo * pBufInfo, VkBuffer * pUniBuf, VkDeviceMemory* pDevMem )
+static uint32_t FindMemoryTypeIndex(const VkPhysicalDeviceMemoryProperties * const pMemProp,
+        uint32_t typeBits, VkFlags requirements_mask)
 {
+   // Search memtypes to find first index with those properties
+    for (uint32_t i = 0; i < VK_MAX_MEMORY_TYPES; ++i)
+    {
+        if ((typeBits & 1) == 1)
+        {
+            // Type is available, does it match user properties?
+            if ((pMemProp->memoryTypes[i].propertyFlags & requirements_mask) == requirements_mask)
+            {
+                return i;
+            }
+        }
+        typeBits >>= 1;
+    }
+
+    fprintf(stderr, " can not find suitable memmeory. \n");
+
+    return 0;
+}
+
+static void vk_createUniformBufferAndBindItWithMemory(const struct demo * const pDemo, 
+        VkBufferCreateInfo * pBufInfo, VkBuffer * const pUniBuf, VkDeviceMemory * const pDevMem )
+{
+
     VK_CHECK( vkCreateBuffer(pDemo->device, pBufInfo, NULL, pUniBuf) );
+    
+    printf( " Uniform Buffer Created. \n");
 
     VkMemoryRequirements mem_reqs;
 
     vkGetBufferMemoryRequirements(pDemo->device, *pUniBuf, &mem_reqs);
 
-    VkMemoryAllocateInfo mem_alloc;
+    VkMemoryAllocateInfo mem_alloc_info;
+    mem_alloc_info.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
+    mem_alloc_info.pNext = NULL;
+    mem_alloc_info.allocationSize = mem_reqs.size;
+    mem_alloc_info.memoryTypeIndex = FindMemoryTypeIndex(  
+            &pDemo->memory_properties, mem_reqs.memoryTypeBits,
+            VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT );
 
-    mem_alloc.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
-    mem_alloc.pNext = NULL;
-    mem_alloc.allocationSize = mem_reqs.size;
-    mem_alloc.memoryTypeIndex = 0;
-
-    bool pass = memory_type_from_properties(pDemo, mem_reqs.memoryTypeBits,
-            VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
-            &mem_alloc.memoryTypeIndex);
-    assert(pass);
-
-    VK_CHECK( vkAllocateMemory(pDemo->device, &mem_alloc, NULL, pDevMem) );
+    VK_CHECK( vkAllocateMemory(pDemo->device, &mem_alloc_info, NULL, pDevMem) );
+    
+    printf( " Uniform Buffer Memory Allocated. \n");
 
     VK_CHECK( vkBindBufferMemory(pDemo->device, *pUniBuf, *pDevMem, 0) );
 }
 
 
-void vk_prepare_cube_data_buffers(struct demo *demo)
+void vk_upload_cube_data_buffers(struct demo * const demo)
 {
 
     struct texcube_vs_uniform data;
-   
-    uploadDataToUniformBuffer(&data, demo);
+    
+    uniformBufUpdateMVP(&data, demo);
+    uniformBufUploadVertexData(&data, demo);
 
     VkBufferCreateInfo buf_info;
     memset(&buf_info, 0, sizeof(buf_info));

@@ -8,7 +8,7 @@
 
 // Allow a maximum of two outstanding presentation operations.
 #define FRAME_LAG 2
-#define DEMO_TEXTURE_COUNT 1
+#define DEMO_TEXTURE_COUNT 6
 
 typedef struct {
     VkImage image;
