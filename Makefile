@@ -478,56 +478,58 @@ else # ifeq darwin
 ifdef MINGW
 
   ifeq ($(CROSS_COMPILING),1)
-	# If CC is already set to something generic, we probably want to use
-	# something more specific
-	ifneq ($(findstring $(strip $(CC)),cc gcc),)
-	  CC=
-	endif
+    # If CC is already set to something generic, we probably want to use
+    # something more specific
+    ifneq ($(findstring $(strip $(CC)),cc gcc),)
+      CC=
+    endif
 
-	# We need to figure out the correct gcc and windres
-	ifeq ($(ARCH),x86_64)
-	  MINGW_PREFIXES= x86_64-w64-mingw32 amd64-mingw32msvc
-	endif
-	ifeq ($(ARCH),x86)
-	  MINGW_PREFIXES=i686-w64-mingw32 i586-mingw32msvc i686-pc-mingw32 
-	endif
+    # We need to figure out the correct gcc and windres
+    ifeq ($(ARCH),x86_64)
+      MINGW_PREFIXES=x86_64-w64-mingw32 amd64-mingw32msvc
+    endif
+    ifeq ($(ARCH),x86)
+      MINGW_PREFIXES=i686-w64-mingw32 i586-mingw32msvc i686-pc-mingw32
+    endif
 
-	ifndef CC
-	  CC=$(firstword $(strip $(foreach MINGW_PREFIX, $(MINGW_PREFIXES), \
-		 $(call bin_path, $(MINGW_PREFIX)-gcc))))
-	endif
+    ifndef CC
+      CC=$(firstword $(strip $(foreach MINGW_PREFIX, $(MINGW_PREFIXES), \
+         $(call bin_path, $(MINGW_PREFIX)-gcc))))
+    endif
 
-	ifndef WINDRES
-	  WINDRES=$(firstword $(strip $(foreach MINGW_PREFIX, $(MINGW_PREFIXES), \
-		 $(call bin_path, $(MINGW_PREFIX)-windres))))
-	endif
+    ifndef WINDRES
+      WINDRES=$(firstword $(strip $(foreach MINGW_PREFIX, $(MINGW_PREFIXES), \
+         $(call bin_path, $(MINGW_PREFIX)-windres))))
+    endif
   else
-	# Some MinGW installations define CC to cc, but don't actually provide cc,
-	# so check that CC points to a real binary and use gcc if it doesn't
-	ifeq ($(call bin_path, $(CC)),)
-	  CC=gcc
-	endif
+    # Some MinGW installations define CC to cc, but don't actually provide cc,
+    # so check that CC points to a real binary and use gcc if it doesn't
+    ifeq ($(call bin_path, $(CC)),)
+      CC=gcc
+    endif
 
-	ifndef WINDRES
-	  WINDRES=windres
-	endif
+  endif
+
+  # using generic windres if specific one is not present
+  ifndef WINDRES
+    WINDRES=windres
   endif
 
   ifeq ($(CC),)
-	$(error Cannot find a suitable cross compiler for $(PLATFORM))
+    $(error Cannot find a suitable cross compiler for $(PLATFORM))
   endif
 
-  BASE_CFLAGS = -Wall -fno-strict-aliasing -Wimplicit -Wstrict-prototypes -DUSE_ICON
+  BASE_CFLAGS = -Wall -Wimplicit -Wstrict-prototypes -DUSE_ICON
 
   # In the absence of wspiapi.h, require Windows XP or later
   ifeq ($(shell test -e $(CMDIR)/wspiapi.h; echo $$?),1)
-	BASE_CFLAGS += -DWINVER=0x501
+    BASE_CFLAGS += -DWINVER=0x501
   endif
 
 
   ifeq ($(ARCH),x86_64)
-	OPTIMIZEVM = -O2 -funroll-loops -msse2
-	OPTIMIZE = $(OPTIMIZEVM) -ffast-math
+	OPTIMIZEVM = -O2
+	OPTIMIZE = $(OPTIMIZEVM) -ffast-math -funroll-loops
 	HAVE_VM_COMPILED = true
   endif
   ifeq ($(ARCH),x86)
@@ -541,7 +543,7 @@ ifdef MINGW
   SHLIBLDFLAGS=-shared $(LDFLAGS)
 
   BINEXT=.exe
-  
+
   ifeq ($(CROSS_COMPILING),0)
     TOOLS_BINEXT=.exe
   endif
@@ -551,16 +553,18 @@ ifdef MINGW
     TOOLS_CC=$(CC)
   endif
 
+  LIBS= -lws2_32 -lwinmm -lpsapi
+  AUTOUPDATER_LIBS += -lwininet
 
-  CLIENT_LIBS+ = -lgdi32 -lole32
-  RENDERER_LIBS+ = -lgdi32 -lole32 -lopengl32
-
-  CLIENT_LIBS += -lcomdlg32 -lcomctl32
-  LIBS += -lcomdlg32 -lcomctl32 -lws2_32 -lwinmm -lpsapi
-  LIBS += -lgdi32 -lole32 -lcomctl32 -lcomdlg32 #leilei - for console. if it works. :/
+  # clang 3.4 doesn't support this
+  ifneq ("$(CC)", $(findstring "$(CC)", "clang" "clang++"))
+    CLIENT_LDFLAGS += -mwindows
+  endif
+  CLIENT_LIBS = -lgdi32 -lole32
+  RENDERER_LIBS = -lgdi32 -lole32 -static-libgcc
 
   ifeq ($(USE_FREETYPE),1)
-	FREETYPE_CFLAGS = -Ifreetype2
+    FREETYPE_CFLAGS = -Ifreetype2
   endif
 
   CLIENT_CFLAGS += -DCURL_STATICLIB
@@ -572,10 +576,10 @@ ifdef MINGW
   endif
 
   ifeq ($(ARCH),x86)
-	# build 32bit
-	BASE_CFLAGS += -m32
+    # build 32bit
+    BASE_CFLAGS += -m32
   else
-	BASE_CFLAGS += -m64
+    BASE_CFLAGS += -m64
   endif
 
   # libmingw32 must be linked before libSDLmain
