@@ -35,14 +35,14 @@ const char * vk_assertStandValidationLayer(void)
     VK_CHECK( vkEnumerateInstanceLayerProperties(&instance_layer_count, instance_layers) );
 
     printf(" ------- instance_layer_count: %d --------\n", instance_layer_count);
-    for (uint32_t j = 0; j < instance_layer_count; j++)
+    for (uint32_t j = 0; j < instance_layer_count; ++j)
     {
         printf(" %s\n", instance_layers[j].layerName);
     }
     printf(" ------- ----------------------- --------\n");
 
 
-    for (uint32_t j = 0; j < instance_layer_count; j++)
+    for (uint32_t j = 0; j < instance_layer_count; ++j)
     {
         if (!strcmp(instance_validation_layers_name, instance_layers[j].layerName))
         {

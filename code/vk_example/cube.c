@@ -180,7 +180,7 @@ static void vk_create_descriptor_layout(struct demo * const pDemo)
 }
 
 
-static void vk_prepare_pipeline(struct demo *demo)
+static void vk_create_pipeline(struct demo * const demo)
 {
     VkGraphicsPipelineCreateInfo pipeline;
     VkPipelineCacheCreateInfo pipelineCache;
@@ -296,29 +296,53 @@ static void vk_prepare_pipeline(struct demo *demo)
 }
 
 
-static void prepare_descriptor_pool(struct demo *demo)
+static void vk_create_descriptor_pool(struct demo * const pDemo)
 {
-    VkDescriptorPoolSize type_counts[2];
+    // A descriptor pool maintains a pool of descriptors, from which descriptor sets are allocated.
+    // Descriptor pools are externally synchronized, meaning that the application must not allocate 
+    // and/or free descriptor sets from the same pool in multiple threads simultaneously.
+    VkDescriptorPoolSize infoPoolSizeArray[2];
     
-    type_counts[0].type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-    type_counts[0].descriptorCount = demo->swapchainImageCount;
-    type_counts[1].type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-    type_counts[1].descriptorCount = demo->swapchainImageCount * DEMO_TEXTURE_COUNT;
+    infoPoolSizeArray[0].type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+    infoPoolSizeArray[0].descriptorCount = pDemo->swapchainImageCount;
+    infoPoolSizeArray[1].type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+    infoPoolSizeArray[1].descriptorCount = pDemo->swapchainImageCount * DEMO_TEXTURE_COUNT;
+
+    
+    // flags is a bitmask of VkDescriptorPoolCreateFlagBits 
+    // specifying certain supported operations on the pool.
+    //
+    // maxSets is the maximum number of descriptor sets that can be allocated from the pool.
+    // poolSizeCount is the number of elements in pPoolSizes.
 
     const VkDescriptorPoolCreateInfo descriptor_pool = {
         .sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO,
         .pNext = NULL,
-        .maxSets = demo->swapchainImageCount,
+        .flags = 0,
+        .maxSets = pDemo->swapchainImageCount,
         .poolSizeCount = 2,
-        .pPoolSizes = type_counts,
+        .pPoolSizes = infoPoolSizeArray,
     };
 
-    VK_CHECK( vkCreateDescriptorPool(demo->device, &descriptor_pool, NULL, &demo->desc_pool) );
+
+    VK_CHECK( vkCreateDescriptorPool(pDemo->device, &descriptor_pool, NULL, &pDemo->desc_pool) );
+    // If multiple VkDescriptorPoolSize structures appear in the pPoolSizes array
+    // then the pool will be created with enough storage for the total number of
+    // descriptors of each type.
+    //
+    // Fragmentation of a descriptor pool is possible and may lead to descriptor set allocation failures.
+    // A failure due to fragmentation is defined as failing a descriptor set allocation despite the
+    // sum of all outstanding descriptor set allocations from the pool plus the requested allocation
+    // requiring no more than the total number of descriptors requested at pool creation. 
+    // Implementations provide certain guarantees of when fragmentation must not cause allocation failure,
+    // as described below.
+    printf( " Descriptor pool created.\n");
+
 }
 
 
 
-static void prepare_framebuffers(struct demo * const pDemo)
+static void vk_create_framebuffers(struct demo * const pDemo)
 {
     VkImageView attachments[2];
     attachments[1] = pDemo->depth.view;
@@ -342,10 +366,12 @@ static void prepare_framebuffers(struct demo * const pDemo)
         VK_CHECK( vkCreateFramebuffer(pDemo->device, &fb_info, NULL,
                     &pDemo->swapchain_image_resources[i].framebuffer) );
     }
+    
+    printf( " %d framebuffers created. \n", pDemo->swapchainImageCount);
 }
 
 
-void demo_prepare(struct demo *demo)
+void demo_prepare(struct demo * const demo)
 {
     
     if (demo->cmd_pool == VK_NULL_HANDLE)
@@ -396,8 +422,9 @@ void demo_prepare(struct demo *demo)
 	
 	vk_create_pipeline_layout(demo);
 
-    vk_prepare_render_pass(demo);
-    vk_prepare_pipeline(demo);
+    vk_create_render_pass(demo);
+    
+    vk_create_pipeline(demo);
 
     for (uint32_t i = 0; i < demo->swapchainImageCount; ++i)
     {
@@ -432,9 +459,9 @@ void demo_prepare(struct demo *demo)
         }
     }
 
-    prepare_descriptor_pool(demo);
+    vk_create_descriptor_pool(demo);
     vk_prepare_descriptor_set(demo);
-    prepare_framebuffers(demo);
+    vk_create_framebuffers(demo);
 
     for (uint32_t i = 0; i < demo->swapchainImageCount; ++i)
     {

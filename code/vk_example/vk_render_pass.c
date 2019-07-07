@@ -2,7 +2,7 @@
 #include "vk_common.h"
 #include "vk_render_pass.h"
 
-void vk_prepare_render_pass(struct demo *demo)
+void vk_create_render_pass(struct demo * const pDemo)
 {
     // The initial layout for the color and depth attachments will be LAYOUT_UNDEFINED
     // because at the start of the renderpass, we don't care about their contents.
@@ -15,7 +15,7 @@ void vk_prepare_render_pass(struct demo *demo)
     const VkAttachmentDescription attachments[2] = {
         [0] =
             {
-                .format = demo->format,
+                .format = pDemo->format,
                 .flags = 0,
                 .samples = VK_SAMPLE_COUNT_1_BIT,
                 .loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR,
@@ -27,7 +27,7 @@ void vk_prepare_render_pass(struct demo *demo)
             },
         [1] =
             {
-                .format = demo->depth.format,
+                .format = pDemo->depth.format,
                 .flags = 0,
                 .samples = VK_SAMPLE_COUNT_1_BIT,
                 .loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR,
@@ -38,14 +38,17 @@ void vk_prepare_render_pass(struct demo *demo)
                 .finalLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL,
             },
     };
+
     const VkAttachmentReference color_reference = {
         .attachment = 0,
         .layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
     };
+
     const VkAttachmentReference depth_reference = {
         .attachment = 1,
         .layout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL,
     };
+    
     const VkSubpassDescription subpass = {
         .pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS,
         .flags = 0,
@@ -58,6 +61,7 @@ void vk_prepare_render_pass(struct demo *demo)
         .preserveAttachmentCount = 0,
         .pPreserveAttachments = NULL,
     };
+
     const VkRenderPassCreateInfo rp_info = {
         .sType = VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO,
         .pNext = NULL,
@@ -70,5 +74,5 @@ void vk_prepare_render_pass(struct demo *demo)
         .pDependencies = NULL,
     };
 
-    VK_CHECK( vkCreateRenderPass(demo->device, &rp_info, NULL, &demo->render_pass) );
+    VK_CHECK( vkCreateRenderPass(pDemo->device, &rp_info, NULL, &pDemo->render_pass) );
 }

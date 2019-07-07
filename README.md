@@ -56,7 +56,8 @@ $ sudo apt-get install clang gcc make git
 # SDL2 may required to compile from the source.
 sudo apt-get install libsdl2-dev
 
-# libvulkan-dev provide validation layer, optimal if dont need it debug.
+# libvulkan-dev is optional, it provide validation layer for debug bulid, 
+# release build dont need it.
 sudo apt-get install libvulkan-dev
 
 # If you have a AMD GPU
@@ -133,16 +134,16 @@ $ \cg_fov 150
 
 ## Too dark ? How to turn the brightness of the drawing window ?
 
-* r\_brightness and r\_gamma, both value can be float, large number with make the image more brighter.
-You must restart the game after change it.
+r\_brightness and r\_gamma, both value can be float, larger number 
+make the image more brighter. You must restart the game after change it.
 
-r\_gamma nonlinearly calibrate the image before it is uploaded to GPU, 
+r\_gamma nonlinearly calibrate the image before it is uploaded to GPU.
+
 r\_brightness turn the intensity/brightness of the lightmap, this don't
  influence UI brightness, as it intended only for lightmap.
 
 
 ```
-# l
 $ \r_gamma 1.2
 $ \r_brightness 2.0 
 $ \vid_restart
@@ -251,7 +252,7 @@ besides, the following new cmd only exist in vulkan renderer.
 * monitorInfo: you monitor and/or vulkan driver actually supported resolution, need the vulkan driver support 
   the `VK_KHR_display` instance extension. It only supported on linux platform on my test. what's worse, it 
   actually not work properly( especially on old graphic/video card ) even though the nvidia vulkan driver 
-  (ubuntu 18.04, 1.0.65 and ubuntu16.04, 1.0.39) admit the surport. In this case `\monitorInfo` will print nothing,
+  (ubuntu 18.04, 1.0.65 and ubuntu16.04, 1.0.49) admit the surport. In this case `\monitorInfo` will print nothing,
   maybe the driver side bug?
     
 For example:
@@ -370,9 +371,10 @@ render_oa:     3398 frames 5.3 seconds 646.9 fps 1.0/1.5/4.0/0.5 ms
 \demo demo088-test1
 
 # Testing on UBUNTU 16.04, driver: 384.130, vulkan 1.0.49, tested on 2019.05.29,
+opengl1: 3398 frames 10.1 seconds 337.0 fps 1.0/3.0/6.0/0.8 ms
 vulkan : 3398 frames 21.0 seconds 162.2 fps 3.0/6.2/11.0/1.1 ms
 opengl2: 3398 frames 25.1 seconds 135.5 fps 4.0/7.4/14.0/1.5 ms
-opengl1: 3398 frames 10.1 seconds 337.0 fps 1.0/3.0/6.0/0.8 ms
+
 
 # Testing on WIN10 Pro 64-bit, Driver version 397.31 
 vulkan : 3398 frames 14.5 seconds 233.6 fps 1.0/4.3/14.0/1.6 ms
@@ -522,7 +524,9 @@ ri.Printf( PRINT_WARNING, "s_worldData.lightGridBounds[i]=%d\n", s_worldData.lig
 * have issues with \minimize when use vulkan renderer in fullscreen. recreate the swapchain ?
 * flare support
 * Implement RB\_SurfaceAxis();
+
 * Split the program with the data.
+
 * Use gprof to examine the performance of the program
 ```
 gprof openarena.x86_64 gmon.out > report.txt

@@ -5,6 +5,6 @@
 #include "vk_common.h"
 
 
-void vk_prepare_render_pass(struct demo *demo);
+void vk_create_render_pass(struct demo * const pDemo);
 
 #endif

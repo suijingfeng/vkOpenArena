@@ -324,7 +324,7 @@ void vk_prepare_textures(struct demo *demo)
 //  depth image
 // =========================================
 
-void vk_prepare_depth(struct demo *demo)
+void vk_prepare_depth(struct demo * const pDemo)
 {
     const VkFormat depth_format = VK_FORMAT_D16_UNORM;
     const VkImageCreateInfo image = {
@@ -332,7 +332,7 @@ void vk_prepare_depth(struct demo *demo)
         .pNext = NULL,
         .imageType = VK_IMAGE_TYPE_2D,
         .format = depth_format,
-        .extent = {demo->width, demo->height, 1},
+        .extent = {pDemo->width, pDemo->height, 1},
         .mipLevels = 1,
         .arrayLayers = 1,
         .samples = VK_SAMPLE_COUNT_1_BIT,
@@ -347,8 +347,12 @@ void vk_prepare_depth(struct demo *demo)
         .pNext = NULL,
         .image = VK_NULL_HANDLE,
         .format = depth_format,
-        .subresourceRange =
-            {.aspectMask = VK_IMAGE_ASPECT_DEPTH_BIT, .baseMipLevel = 0, .levelCount = 1, .baseArrayLayer = 0, .layerCount = 1},
+        .subresourceRange = {
+            .aspectMask = VK_IMAGE_ASPECT_DEPTH_BIT, 
+            .baseMipLevel = 0, 
+            .levelCount = 1, 
+            .baseArrayLayer = 0,
+            .layerCount = 1 },
         .flags = 0,
         .viewType = VK_IMAGE_VIEW_TYPE_2D,
     };
@@ -356,30 +360,30 @@ void vk_prepare_depth(struct demo *demo)
     
     VkMemoryRequirements mem_reqs;
 
-    demo->depth.format = depth_format;
+    pDemo->depth.format = depth_format;
 
     /* create image */
-    VK_CHECK ( vkCreateImage(demo->device, &image, NULL, &demo->depth.image) );
+    VK_CHECK ( vkCreateImage(pDemo->device, &image, NULL, &pDemo->depth.image) );
 
 
-    vkGetImageMemoryRequirements(demo->device, demo->depth.image, &mem_reqs);
+    vkGetImageMemoryRequirements(pDemo->device, pDemo->depth.image, &mem_reqs);
 
-    demo->depth.mem_alloc.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
-    demo->depth.mem_alloc.pNext = NULL;
-    demo->depth.mem_alloc.allocationSize = mem_reqs.size;
-    demo->depth.mem_alloc.memoryTypeIndex = 0;
+    pDemo->depth.mem_alloc.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
+    pDemo->depth.mem_alloc.pNext = NULL;
+    pDemo->depth.mem_alloc.allocationSize = mem_reqs.size;
+    pDemo->depth.mem_alloc.memoryTypeIndex = 0;
 
-    bool pass = memory_type_from_properties(demo, mem_reqs.memoryTypeBits, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
-                                       &demo->depth.mem_alloc.memoryTypeIndex);
+    bool pass = memory_type_from_properties(pDemo, mem_reqs.memoryTypeBits, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
+                                       &pDemo->depth.mem_alloc.memoryTypeIndex);
     assert(pass);
 
     /* allocate memory */
-    VK_CHECK( vkAllocateMemory(demo->device, &demo->depth.mem_alloc, NULL, &demo->depth.mem) );
+    VK_CHECK( vkAllocateMemory(pDemo->device, &pDemo->depth.mem_alloc, NULL, &pDemo->depth.mem) );
 
     /* bind memory */
-    VK_CHECK( vkBindImageMemory(demo->device, demo->depth.image, demo->depth.mem, 0) );
+    VK_CHECK( vkBindImageMemory(pDemo->device, pDemo->depth.image, pDemo->depth.mem, 0) );
 
     /* create image view */
-    view.image = demo->depth.image;
-    VK_CHECK( vkCreateImageView(demo->device, &view, NULL, &demo->depth.view) );
+    view.image = pDemo->depth.image;
+    VK_CHECK( vkCreateImageView(pDemo->device, &view, NULL, &pDemo->depth.view) );
 }

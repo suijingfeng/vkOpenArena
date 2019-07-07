@@ -20,13 +20,21 @@ void vk_createDescriptorPool(uint32_t numDes, VkDescriptorPool* const pPool)
     pool_size.descriptorCount = numDes;
 
     VkDescriptorPoolCreateInfo desc;
+
+
     desc.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
     desc.pNext = NULL;
     // ... CREATE_FREE_DESCRIPTOR ... indicates the application may free
     // individual descriptors allocated from the poor, so that should
     // be prepared for that.
     // used by the cinematic images ???
-    desc.flags = VK_DESCRIPTOR_POOL_CREATE_FREE_DESCRIPTOR_SET_BIT; 
+    // VK_DESCRIPTOR_POOL_CREATE_FREE_DESCRIPTOR_SET_BIT specifies that descriptor sets
+    // can return their individual allocations to the pool, all of vkAllocateDescriptorSets,
+    // vkFreeDescriptorSets, and vkResetDescriptorPool are allowed. Otherwise, descriptor
+    // sets allocated from the pool must not be individually freed back to the pool,
+    // i.e. only vkAllocateDescriptorSets and vkResetDescriptorPool are allowed.
+    desc.flags = 0;
+    // VK_DESCRIPTOR_POOL_CREATE_FREE_DESCRIPTOR_SET_BIT; 
     // The maxSets field specifies the maximum total number of sets
     // that may be allocated from the pool.
     // TODO: make sure this numDes is justed.
