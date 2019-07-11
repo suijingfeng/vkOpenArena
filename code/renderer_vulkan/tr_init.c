@@ -25,6 +25,7 @@
 #include "render_export.h"
 #include "FixRenderCommandList.h"
 #include "vk_utils.h"
+#include "vk_buffers.h"
 
 #include "vk_khr_display.h"
 
@@ -132,6 +133,8 @@ void R_Init( void )
 
     vk_initScratchImage();
 
+//    vk_createStagingBuffer(1024*1024);
+
 	R_InitImages();
 
 	R_InitShaders();
@@ -204,6 +207,9 @@ void RE_Shutdown( qboolean destroyWindow )
     {
         vk_destroyScratchImage();
 		vk_destroyImageRes();
+        
+        vk_destroyStagingBuffer();
+        
         tr.registered = qfalse;
 	}
 

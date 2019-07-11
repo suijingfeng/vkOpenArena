@@ -15,34 +15,6 @@
 #define IMAGE_CHUNK_SIZE        (64 * 1024 * 1024)
 
 
-// An application can copy buffer and image data using several methods
-// depending on the type of data transfer. Data can be copied between
-// buffer objects with vkCmdCopyBuffer and a portion of an image can 
-// be copied to another image with vkCmdCopyImage. 
-//
-// Image data can also be copied to and from buffer memory using
-// vkCmdCopyImageToBuffer and vkCmdCopyBufferToImage.
-//
-// Image data can be blitted (with or without scaling and filtering) 
-// with vkCmdBlitImage. Multisampled images can be resolved to a 
-// non-multisampled image with vkCmdResolveImage.
-
-struct StagingBuffer_t
-{
-    // Vulkan supports two primary resource types: buffers and images. 
-    // Resources are views of memory with associated formatting and dimensionality.
-    // Buffers are essentially unformatted arrays of bytes whereas images contain
-    // format information, can be multidimensional and may have associated metadata.
-    //
-    // Buffers represent linear arrays of data which are used for various purposes
-    // by binding them to a graphics or compute pipeline via descriptor sets or via
-    // certain commands, or by directly specifying them as parameters to certain commands.
-    VkBuffer buff;
-    // Host visible memory used to copy image data to device local memory.
-    VkDeviceMemory mappableMem;
-    //uint32_t Used;
-};
-
 
 struct ImageChunk_t {
     VkDeviceMemory block;
@@ -58,7 +30,6 @@ struct deviceLocalMemory_t {
 };
 
 
-static struct StagingBuffer_t StagBuf;
 static struct deviceLocalMemory_t devMemImg;
 
 
@@ -89,103 +60,6 @@ uint32_t find_memory_type(uint32_t memory_type_bits, VkMemoryPropertyFlags prope
 }
 
 
-static void vk_stagBufferToDeviceLocalMem(VkImage hImage, VkBuffer hBuffer, 
-        VkBufferImageCopy* const pRegion, const uint32_t nRegion)
-{
-//  One thing that is fundamental to the operation of vulkan is that
-//  the commands are not executed as soon as they are called. Rather,
-//  they are simply added to the end of the specified command buffer.
-//  If you are copying data to or from a region of memory that is 
-//  visible to the host(i.e., it's mapped), then you need to be sure
-//  of several things:
-//
-//  1) Ensure that the data is in the source region before the command
-//  is executed by the device.
-//
-//  2) Ensure that the data in the source region is valid until after
-//  the commmand has been executed on the device.
-//
-//  3) Ensure that you don't read the destination data until after
-//  the command has been executed on the device.
-//  
-    vk_beginRecordCmds( vk.tmpRecordBuffer );
-
-    // VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL : The image is the
-    // destination of copy operations. 
-    //
-    // A barrier is a synchronization mechanism for memory access manangement
-    // and resource state movement within the stages of vulkan pipeline.
-    // The primary command for synchronizing access to resources and moving
-    // them from state to state.
-    // 
-    // vkCmdPipelineBarrier is a synchronization command that inserts
-    // a dependency between commands submitted to the same queue, or 
-    // between commands in the same subpass. When vkCmdPipelineBarrier
-    // is submitted to a queue, it defines a memory dependency between
-    // commands that were submitted before it, and those submitted 
-    // after it.
-    //
-    // srcStageMask and dstStageMask specify which pipeline stages wrote
-    // to the resource last and which stages will read from the resource
-    // next, respectively. That is, they specify the source and destination
-    // for data flow represented by the barrier.
-
-    // VK_PIPELINE_STAGE_ALL_COMMANDS_BIT: This stage is the big hammer.
-    // whenever you just don't know what;s is going on, use this; it will
-    // synchronize everything with everything. Just use it wisely.
-    // cmdBuf is the command buffer into which the command is recorded.
-	
-    VkImageMemoryBarrier barrier ;
-	barrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
-	barrier.pNext = NULL;
-	barrier.srcAccessMask = 0;
-	barrier.dstAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
-	barrier.oldLayout = VK_IMAGE_LAYOUT_UNDEFINED;
-	barrier.newLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
-	barrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
-	barrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
-	barrier.image = hImage;
-	barrier.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-	barrier.subresourceRange.baseMipLevel = 0;
-	barrier.subresourceRange.levelCount = VK_REMAINING_MIP_LEVELS;
-	barrier.subresourceRange.baseArrayLayer = 0;
-	barrier.subresourceRange.layerCount = VK_REMAINING_ARRAY_LAYERS;
-	
-    NO_CHECK( qvkCmdPipelineBarrier(vk.tmpRecordBuffer, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT,
-        VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, 0,	0, NULL, 0, NULL, 1, &barrier) );
-
-
-    // To copy data from a buffer object to an image object
-    // hBuffer is the source buffer, hImage is the destination image.
-    // dstImageLayout is the layout of the destination image subresources.
-    // curLevel is the number of regions to copy.
-    // pRegions is a pointer to an array of VkBufferImageCopy structures
-    // specifying the regions to copy.
-    NO_CHECK( qvkCmdCopyBufferToImage( vk.tmpRecordBuffer, hBuffer, hImage,
-                VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, nRegion, pRegion) );
-
-    VkImageMemoryBarrier barrier2 ;
-	barrier2.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
-	barrier2.pNext = NULL;
-	barrier2.srcAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
-	barrier2.dstAccessMask = VK_ACCESS_SHADER_READ_BIT;
-	barrier2.oldLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
-	barrier2.newLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-	barrier2.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
-	barrier2.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
-	barrier2.image = hImage;
-	barrier2.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-	barrier2.subresourceRange.baseMipLevel = 0;
-	barrier2.subresourceRange.levelCount = VK_REMAINING_MIP_LEVELS;
-	barrier2.subresourceRange.baseArrayLayer = 0;
-	barrier2.subresourceRange.layerCount = VK_REMAINING_ARRAY_LAYERS;
-	
-    NO_CHECK( qvkCmdPipelineBarrier(vk.tmpRecordBuffer, VK_PIPELINE_STAGE_TRANSFER_BIT,
-                VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT, 0, 0, NULL, 0, NULL, 1, &barrier2) );
-
-
-    vk_commitRecordedCmds(vk.tmpRecordBuffer);
-}
 
 
 #define FILE_HASH_SIZE	1024
@@ -636,13 +510,10 @@ image_t* R_CreateImage( const char *name, unsigned char* pic, const uint32_t wid
     vk_createViewForImageHandle(pImage->handle, VK_FORMAT_R8G8B8A8_UNORM, &pImage->view);
     vk_createDescriptorSet(pImage);
 
+   
+    vk_imgUploadToStagBuffer(pUploadBuffer, buffer_size);
 
-    void* data;
-    VK_CHECK( qvkMapMemory(vk.device, StagBuf.mappableMem, 0, VK_WHOLE_SIZE, 0, &data) );
-    memcpy(data, pUploadBuffer, buffer_size);
-    NO_CHECK( qvkUnmapMemory(vk.device, StagBuf.mappableMem) );
-    
-    vk_stagBufferToDeviceLocalMem(pImage->handle, StagBuf.buff, regions, pImage->mipLevels);
+    vk_stagBufToDevLocal(pImage->handle, regions, pImage->mipLevels);
     
     free(pUploadBuffer);
 
@@ -868,13 +739,6 @@ void R_InitImages( void )
 {
     memset(hashTable, 0, sizeof(hashTable));
 
-    ri.Printf(PRINT_ALL, " Create staging buffer (8 MB) \n");
-
-    // StagBuf.buff must have been created with VK_BUFFER_USAGE_TRANSFER_SRC_BIT
-    // usage flag for vkCmdCopyBufferToImage.
-    vk_createBufferResource( 8 * 1024 * 1024, VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
-           VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT,  &StagBuf.buff, &StagBuf.mappableMem );
-
 	// setup the overbright lighting
 
 	tr.identityLight = 1.0f;
@@ -915,9 +779,6 @@ void vk_destroyImageRes(void)
 
     memset(&devMemImg, 0, sizeof(devMemImg));
 
-    ri.Printf(PRINT_ALL, " Destroy staging buffer res: StagBuf.buff, StagBuf.mappableMem.\n");
-    vk_destroyBufferResource(StagBuf.buff, StagBuf.mappableMem);
-    memset(&StagBuf, 0, sizeof(StagBuf));
 
     // Destroying a pool object implicitly frees all objects allocated from that pool. 
     // Specifically, destroying VkCommandPool frees all VkCommandBuffer objects that 

@@ -2,6 +2,79 @@
 #include "vk_instance.h"
 #include "ref_import.h"
 #include "vk_image.h"
+#include "vk_cmd.h"
+
+struct StagingBuffer_t
+{
+    // Vulkan supports two primary resource types: buffers and images. 
+    // Resources are views of memory with associated formatting and dimensionality.
+    // Buffers are essentially unformatted arrays of bytes whereas images contain
+    // format information, can be multidimensional and may have associated metadata.
+    //
+    // Buffers represent linear arrays of data which are used for various purposes
+    // by binding them to a graphics or compute pipeline via descriptor sets or via
+    // certain commands, or by directly specifying them as parameters to certain commands.
+    VkBuffer buff;
+    // Host visible memory used to copy image data to device local memory.
+    VkDeviceMemory mappableMem;
+    uint32_t capacity;
+};
+
+
+static struct StagingBuffer_t StagBuf;
+
+
+
+void vk_stagBufToDevLocal(VkImage hImage, VkBufferImageCopy* const pRegion, const uint32_t nRegion)
+{
+    vk_beginRecordCmds( vk.tmpRecordBuffer );
+	
+    VkImageMemoryBarrier barrier ;
+	barrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
+	barrier.pNext = NULL;
+	barrier.srcAccessMask = 0;
+	barrier.dstAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
+	barrier.oldLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+	barrier.newLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
+	barrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+	barrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+	barrier.image = hImage;
+	barrier.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+	barrier.subresourceRange.baseMipLevel = 0;
+	barrier.subresourceRange.levelCount = VK_REMAINING_MIP_LEVELS;
+	barrier.subresourceRange.baseArrayLayer = 0;
+	barrier.subresourceRange.layerCount = VK_REMAINING_ARRAY_LAYERS;
+	
+    NO_CHECK( qvkCmdPipelineBarrier(vk.tmpRecordBuffer, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT,
+        VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, 0,	0, NULL, 0, NULL, 1, &barrier) );
+
+
+    NO_CHECK( qvkCmdCopyBufferToImage( vk.tmpRecordBuffer, StagBuf.buff, hImage,
+                VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, nRegion, pRegion) );
+
+    VkImageMemoryBarrier barrier2 ;
+	barrier2.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
+	barrier2.pNext = NULL;
+	barrier2.srcAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
+	barrier2.dstAccessMask = VK_ACCESS_SHADER_READ_BIT;
+	barrier2.oldLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
+	barrier2.newLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+	barrier2.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+	barrier2.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+	barrier2.image = hImage;
+	barrier2.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+	barrier2.subresourceRange.baseMipLevel = 0;
+	barrier2.subresourceRange.levelCount = VK_REMAINING_MIP_LEVELS;
+	barrier2.subresourceRange.baseArrayLayer = 0;
+	barrier2.subresourceRange.layerCount = VK_REMAINING_ARRAY_LAYERS;
+	
+    NO_CHECK( qvkCmdPipelineBarrier(vk.tmpRecordBuffer, VK_PIPELINE_STAGE_TRANSFER_BIT,
+                VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT, 0, 0, NULL, 0, NULL, 1, &barrier2) );
+
+    vk_commitRecordedCmds(vk.tmpRecordBuffer);
+}
+
+
 
 void vk_createBufferResource(const uint32_t Size, VkBufferUsageFlags Usage,
         VkMemoryPropertyFlagBits MemTypePrefered,
@@ -74,12 +147,44 @@ void vk_destroyBufferResource(VkBuffer hBuf, VkDeviceMemory hDevMem)
     if (hDevMem != VK_NULL_HANDLE)
     {
         NO_CHECK( qvkFreeMemory(vk.device, hDevMem, NULL) );
-		hDevMem = VK_NULL_HANDLE;
     }
 
     if (hBuf != VK_NULL_HANDLE)
     {
         NO_CHECK( qvkDestroyBuffer(vk.device, hBuf, NULL) );
-        hBuf = VK_NULL_HANDLE;
     }
 }
+
+void vk_createStagingBuffer(uint32_t size)
+{
+    // ri.Printf(PRINT_ALL, " Create Staging Buffer, Size: %d KB. \n", size / 1024);
+    StagBuf.capacity = size;
+    vk_createBufferResource( size, VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
+           VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT,  &StagBuf.buff, &StagBuf.mappableMem );
+}
+
+void vk_destroyStagingBuffer(void)
+{
+    ri.Printf(PRINT_ALL, " Destroy staging buffer res: StagBuf.buff, StagBuf.mappableMem.\n");
+    vk_destroyBufferResource(StagBuf.buff, StagBuf.mappableMem);
+    memset(&StagBuf, 0, sizeof(StagBuf));
+}
+
+
+void vk_imgUploadToStagBuffer(const unsigned char * const pUploadBuffer, uint32_t buffer_size)
+{
+    void* data;
+    
+    if( StagBuf.capacity < buffer_size)
+    {
+        // reallocate memory
+        ri.Printf(PRINT_ALL, " Create Staging Buffer, Size: %d KB. \n", buffer_size / 1024);
+        vk_destroyStagingBuffer();
+        vk_createStagingBuffer(buffer_size);
+    }
+
+    VK_CHECK( qvkMapMemory(vk.device, StagBuf.mappableMem, 0, buffer_size, 0, &data) );
+    memcpy(data, pUploadBuffer, buffer_size);
+    NO_CHECK( qvkUnmapMemory(vk.device, StagBuf.mappableMem) );
+}
+

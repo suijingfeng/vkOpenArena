@@ -33,7 +33,7 @@ void vk_createDescriptorPool(uint32_t numDes, VkDescriptorPool* const pPool)
     // vkFreeDescriptorSets, and vkResetDescriptorPool are allowed. Otherwise, descriptor
     // sets allocated from the pool must not be individually freed back to the pool,
     // i.e. only vkAllocateDescriptorSets and vkResetDescriptorPool are allowed.
-    desc.flags = 0;
+    desc.flags = VK_DESCRIPTOR_POOL_CREATE_FREE_DESCRIPTOR_SET_BIT;
     // VK_DESCRIPTOR_POOL_CREATE_FREE_DESCRIPTOR_SET_BIT; 
     // The maxSets field specifies the maximum total number of sets
     // that may be allocated from the pool.

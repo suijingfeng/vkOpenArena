@@ -5,7 +5,7 @@
 #include "ref_import.h" 
 #include "render_export.h"
 #include "vk_image_sampler.h"
-// #include "tr_globals.h"
+#include "vk_buffers.h"
 
 #define NUM_CINEMATIC   1
 
@@ -106,16 +106,32 @@ void vk_destroyScratchImage(void)
     tr_cinematicShader = NULL;
 }
 
-
-static void vk_uploadImageDataReal(VkImage imgHandle, const unsigned char * const pData, uint32_t size)
+/*
+static void vk_uploadImageDataReal(VkImage imgHandle, unsigned char * const pData,  uint32_t size)
 {
-    void* pDst;
-    VK_CHECK( qvkMapMemory(vk.device, s_mappableMemory, 0, VK_WHOLE_SIZE, 0, &pDst) );
-    
-    memcpy(pDst, pData, size);
 
-    NO_CHECK( qvkUnmapMemory(vk.device, s_mappableMemory) );
+    vk_imgUploadToStagBuffer(pData, size);
+   
+    VkBufferImageCopy regions[1];
+
+    regions[0].bufferOffset = 0;
+    regions[0].bufferRowLength = 0;
+    regions[0].bufferImageHeight = 0;
+    regions[0].imageSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+    regions[0].imageSubresource.mipLevel = 0;
+    regions[0].imageSubresource.baseArrayLayer = 0;
+    regions[0].imageSubresource.layerCount = 1;
+    regions[0].imageOffset.x = 0;
+    regions[0].imageOffset.y = 0;
+    regions[0].imageOffset.z = 0;
+    regions[0].imageExtent.width = 512;
+    regions[0].imageExtent.height = 512;
+    regions[0].imageExtent.depth = 1;
+
+    vk_stagBufToDevLocal(imgHandle , regions, 1);
 }
+*/
+
 
 
 void RE_UploadCinematic(int w, int h, int cols, int rows, const unsigned char * data, int client, VkBool32 dirty)
@@ -174,16 +190,15 @@ void RE_UploadCinematic(int w, int h, int cols, int rows, const unsigned char * 
         imgDesc.mipLevels = 1;
         imgDesc.arrayLayers = 1;
         imgDesc.samples = VK_SAMPLE_COUNT_1_BIT;
-        imgDesc.tiling = VK_IMAGE_TILING_LINEAR;
-            // VK_IMAGE_TILING_OPTIMAL;
+        imgDesc.tiling = VK_IMAGE_TILING_OPTIMAL;
         ////
-        imgDesc.usage = VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT ;
+        imgDesc.usage = VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT;
         imgDesc.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
         imgDesc.queueFamilyIndexCount = 0;
         imgDesc.pQueueFamilyIndices = NULL;
         // However, images must initially be created in either 
         // VK_IMAGE_LAYOUT_UNDEFINED or 
-        imgDesc.initialLayout = VK_IMAGE_LAYOUT_PREINITIALIZED;
+        imgDesc.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
 
         VK_CHECK( qvkCreateImage(vk.device, &imgDesc, NULL, &pImage->handle) );
 
@@ -202,7 +217,7 @@ void RE_UploadCinematic(int w, int h, int cols, int rows, const unsigned char * 
         alloc_info.allocationSize = memory_reqs.size;
         alloc_info.memoryTypeIndex = find_memory_type( 
                 memory_reqs.memoryTypeBits, 
-                VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT);
+                VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
 
         // Allocate 4MB mappable coherent memory for the cinematic images
         VK_CHECK( qvkAllocateMemory(vk.device, &alloc_info, NULL, &s_mappableMemory) );
@@ -275,15 +290,55 @@ void RE_UploadCinematic(int w, int h, int cols, int rows, const unsigned char * 
         descriptor_write.pTexelBufferView = NULL;
 
         NO_CHECK( qvkUpdateDescriptorSets(vk.device, 1, &descriptor_write, 0, NULL) );
+    
 
-        vk_uploadImageDataReal(pImage->handle, data, cols * rows * 4);
+        // vk_uploadImageDataReal(pImage->handle, data, cols * rows * 4);
+
+            vk_imgUploadToStagBuffer(data, cols * rows * 4);
+   
+            VkBufferImageCopy regions[1];
+
+            regions[0].bufferOffset = 0;
+            regions[0].bufferRowLength = 0;
+            regions[0].bufferImageHeight = 0;
+            regions[0].imageSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+            regions[0].imageSubresource.mipLevel = 0;
+            regions[0].imageSubresource.baseArrayLayer = 0;
+            regions[0].imageSubresource.layerCount = 1;
+            regions[0].imageOffset.x = 0;
+            regions[0].imageOffset.y = 0;
+            regions[0].imageOffset.z = 0;
+            regions[0].imageExtent.width = rows;
+            regions[0].imageExtent.height = cols;
+            regions[0].imageExtent.depth = 1;
+
+            vk_stagBufToDevLocal(pImage->handle , regions, 1);
     }
     else if (dirty)
     {
         // otherwise, just subimage upload it so that
         // drivers can tell we are going to be changing
         // it and don't try and do a texture compression       
-        vk_uploadImageDataReal(pImage->handle, data, cols * rows * 4);
+
+        vk_imgUploadToStagBuffer(data, cols * rows * 4);
+
+        VkBufferImageCopy regions[1];
+
+        regions[0].bufferOffset = 0;
+        regions[0].bufferRowLength = 0;
+        regions[0].bufferImageHeight = 0;
+        regions[0].imageSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+        regions[0].imageSubresource.mipLevel = 0;
+        regions[0].imageSubresource.baseArrayLayer = 0;
+        regions[0].imageSubresource.layerCount = 1;
+        regions[0].imageOffset.x = 0;
+        regions[0].imageOffset.y = 0;
+        regions[0].imageOffset.z = 0;
+        regions[0].imageExtent.width = rows;
+        regions[0].imageExtent.height = cols;
+        regions[0].imageExtent.depth = 1;
+
+        vk_stagBufToDevLocal(pImage->handle, regions, 1);
     }
 }
 
@@ -335,3 +390,186 @@ void RE_StretchRaw (int x, int y, int w, int h, int cols, int rows,
                 cols, rows);
     }
 }
+
+
+//
+// memory barriers are for cache flushing. That's it. Execution dependencies handle the rest.
+//
+// ===================================================================================================
+// 
+// Synchronization of access to resources is primarily the responsibility of the application in Vulkan.
+//
+// The order of execution of commands with respect to the host and 
+// other commands on the device has few implicit guarantees, and 
+// needs to be explicitly specified. 
+// 
+// Memory caches and other optimizations are also explicitly managed, 
+// requiring that the flow of data through the system is largely under
+// application control.
+//
+// Whilst some implicit guarantees exist between commands, 
+// five explicit synchronization mechanisms are exposed by Vulkan:
+//
+//                           Fences
+//
+// Fences can be used to communicate to the host that execution of
+// some task on the device has completed.
+//
+//                         Semaphores
+//
+// Semaphores can be used to control resource access across multiple queues.
+//                          
+//                           Events
+//
+// Events provide a fine-grained synchronization primitive which can
+// be signaled either within a command buffer or by the host, and
+// can be waited upon within a command buffer or queried on the host.
+//
+//                      Pipeline Barriers
+//
+// Pipeline barriers also provide synchronization control within a command buffer,
+// but at a single point, rather than with separate signal and wait operations.
+//
+//
+//                         Render Passes
+//
+// Render passes provide a useful synchronization framework for most rendering tasks,
+// built upon the concepts in this chapter. Many cases that would otherwise need an
+// application to use other synchronization primitives can be expressed more efficiently
+// as part of a render pass.
+//
+//
+// ==================================================== 
+//    Execution and Memory Dependencies
+// ====================================================
+//
+// An operation is an arbitrary amount of work to be executed on the host, a device, 
+// or an external entity such as a presentation engine. Synchronization commands 
+// introduce explicit execution dependencies, and memory dependencies between 
+// two sets of operations defined by the command’s two synchronization scopes.
+//
+// The synchronization scopes define which other operations a synchronization command
+// is able to create execution dependencies with. 
+//
+// Any type of operation that is not in a synchronization command’s synchronization
+// scopes will not be included in the resulting dependency. 
+//
+// For example, for many synchronization commands, the synchronization scopes can be
+// limited to just operations executing in specific pipeline stages, which allows 
+// other pipeline stages to be excluded from a dependency. Other scoping options are
+// possible, depending on the particular command.
+//
+// An "execution dependency" is a guarantee that for two sets of operations, 
+// the first set must happen-before the second set. If an operation happens-before
+// another operation, then the first operation must complete before the second
+// operation is initiated. More precisely:
+// 
+// -> Let A and B be separate sets of operations.
+// -> Let S be a synchronization command.
+// -> Let A_s and B_s be the synchronization scopes of S.
+// -> Let A' be the intersection of sets A and A_s .
+// -> Let B' be the intersection of sets B and B_s .
+// 
+// Submitting A, S and B for execution, in that order, 
+// will result in execution dependency E between A' and B'.
+// Execution dependency E guarantees that A' happens-before B'.
+//
+// An "execution dependency chain" is a sequence of execution dependencies
+// that form a happens-before relation between the first dependency’s A' 
+// and the final dependency’s B'. For each consecutive pair of execution 
+// dependencies, a chain exists if the intersection of B_s in the first dependency
+// and A_s in the second dependency is not an empty set. The formation of a single
+// execution dependency from an execution dependency chain can be described by
+// substituting the following in the description of execution dependencies:
+//
+// Execution dependencies alone are not sufficient to guarantee that 
+// values resulting from writes in one set of operations can be read
+// from another set of operations. Three additional types of operation
+// are used to control memory access.
+// 
+// Availability operations cause the values generated by specified memory
+// write accesses to become available to a memory domain for future access. 
+// Any available value remains available until a subsequent write to the
+// same memory location occurs (whether it is made available or not) or 
+// the memory is freed. Memory domain operations cause writes that are 
+// available to a source memory domain to become available to a destination
+// memory domain (an example of this is making writes available to the host
+// domain available to the device domain). Visibility operations cause values
+// available to a memory domain to become visible to specified memory accesses.
+//
+// A memory dependency is an execution dependency which includes availability
+// and visibility operations such that:
+// 
+// The first set of operations happens-before the availability operation.
+// The availability operation happens-before the visibility operation.
+// The visibility operation happens-before the second set of operations.
+//
+//
+// Once written values are made visible to a particular type of memory access,
+// they can be read or written by that type of memory access. Most synchronization
+// commands in Vulkan define a memory dependency.
+//
+//
+// The specific memory accesses that are made available and visible are defined
+// by the access scopes of a memory dependency. Any type of access that is in a
+// memory dependency’s first access scope and occurs in A' is made available. 
+// Any type of access that is in a memory dependency’s second access scope and
+// occurs in B' has any available writes made visible to it. Any type of operation
+// that is not in a synchronization command’s access scopes will not be included
+// in the resulting dependency.
+//
+// A memory dependency enforces availability and visibility of memory accesses
+// and execution order between two sets of operations.
+// 
+// that read and write operations occur in a well-defined order. Write-after-read
+// hazards can be solved with just an execution dependency, but read-after-write and
+// write-after-write hazards need appropriate memory dependencies to be included
+// between them. If an application does not include dependencies to solve these
+// hazards, the results and execution orders of memory accesses are undefined.
+//
+//
+// Image subresources can be transitioned from one layout to another as part of
+// a memory dependency (e.g. by using an image memory barrier). When a layout 
+// transition is specified in a memory dependency, it happens-after the 
+// availability operations in the memory dependency, and happens-before the
+// visibility operations. Image layout transitions may perform read and write
+// accesses on all memory bound to the image subresource range, so applications
+// must ensure that all memory writes have been made available before a layout
+// transition is executed. Available memory is automatically made visible to a
+// layout transition, and writes performed by a layout transition are automatically
+// made available.
+//
+// Layout transitions always apply to a particular image subresource range, 
+// and specify both an old layout and new layout. If the old layout does not
+// match the new layout, a transition occurs. The old layout must match the 
+// current layout of the image subresource range, with one exception. The old
+// layout can always be specified as VK_IMAGE_LAYOUT_UNDEFINED, 
+// though doing so invalidates the contents of the image subresource range.
+// 
+// Image layout transitions may perform read and write accesses on the memory
+// bound to the image.
+//
+// Setting the old layout to VK_IMAGE_LAYOUT_UNDEFINED implies that the contents
+// of the image subresource need not be preserved. Implementations may use this
+// information to avoid performing expensive data transition operations.
+//
+// Applications must ensure that layout transitions happen after all operations
+// accessing the image with the old layout, and happen before any operations that
+// will access the image with the new layout. Layout transitions are potentially
+// read/write operations, so not defining appropriate memory dependencies to
+// guarantee this will result in a data race.
+//
+// Drawing commands, dispatching commands, copy commands, clear commands, 
+// and synchronization commands all execute in different sets of pipeline stages.
+// Synchronization commands do not execute in a defined pipeline, but do execute
+// VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT and VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT.
+//
+// Operations performed by synchronization commands ( availability and
+// visibility operations) are not executed by a defined pipeline stage. 
+// However other commands can still synchronize VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT
+// and with them via the VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT pipeline stages.
+//
+// Execution of operations across pipeline stages must adhere to implicit ordering
+// guarantees, particularly including pipeline stage order. Otherwise, execution 
+// across pipeline stages may overlap or execute out of order with regards to other
+// stages, unless otherwise enforced by an execution dependency.
