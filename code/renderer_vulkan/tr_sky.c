@@ -851,6 +851,14 @@ void RB_StageIteratorSky( struct shaderCommands_s * const pTess )
 	// r_showsky will let all the sky blocks be drawn in
 	// front of everything to allow developers to see how
 	// much sky is getting sucked in draw the outer skybox
+    if (r_showsky->integer)
+    {
+        vk_rcdUpdateViewport(backEnd.projection2D, DEPTH_RANGE_ZERO);
+    }
+    else
+    {
+        vk_rcdUpdateViewport(backEnd.projection2D, DEPTH_RANGE_ONE);
+    }
 
 
 	// draw the outer skybox
