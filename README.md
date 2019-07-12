@@ -26,7 +26,7 @@ welcome to have test on your pc configuration and report the results.
 
 
 Quake 3 arena released by ID 20 years ago, this code lead me to something deep. 
-It's still too large to understand for a noob programmers likes me. I'm naive, 
+It's still too large to understand for a noob programmer likes me. I'm naive, 
 low level code modifier. I will take more time to learn Vulkan/OpenGL, data structure
 and algorithm, computer network, operate system and compiler technology seriously, 
 reduce aimless changing the code which tend to introduce bugs. There may have bugs
