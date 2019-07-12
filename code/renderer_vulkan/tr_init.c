@@ -91,23 +91,19 @@ void R_Init( void )
 
 	ri.Cmd_AddCommand( "skinlist", R_SkinList_f );
 
-
-    ri.Cmd_AddCommand( "vkinfo", printVulkanInfo_f );
-    ri.Cmd_AddCommand( "printDeviceExtensions", printDeviceExtensionsSupported_f );
-    ri.Cmd_AddCommand( "printInstanceExtensions", printInstanceExtensionsSupported_f );
-
     ri.Cmd_AddCommand( "minimize", vk_minimizeWindowImpl );
 
     ri.Cmd_AddCommand( "pipelineList", R_PipelineList_f );
 
-    ri.Cmd_AddCommand( "gpuMem", gpuMemUsageInfo_f );
+
 
     ri.Cmd_AddCommand( "printOR", R_PrintBackEnd_OR_f );
-
+    ri.Cmd_AddCommand( "vkinfo", printVulkanInfo_f );
+    ri.Cmd_AddCommand( "printMemUsage", printMemUsageInfo_f );
+    ri.Cmd_AddCommand( "printDeviceExtensions", printDeviceExtensionsSupported_f );
+    ri.Cmd_AddCommand( "printInstanceExtensions", printInstanceExtensionsSupported_f );
     ri.Cmd_AddCommand( "printImgHashTable", printImageHashTable_f );
-
     ri.Cmd_AddCommand( "printShaderTextHashTable", printShaderTextHashTable_f);
-
     ri.Cmd_AddCommand( "printPresentModes", printPresentModesSupported_f);
     
     ri.Cmd_AddCommand( "screenshotBMP", R_ScreenShotBMP_f );

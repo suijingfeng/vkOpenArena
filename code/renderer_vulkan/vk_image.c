@@ -15,8 +15,7 @@
 #define IMAGE_CHUNK_SIZE        (64 * 1024 * 1024)
 
 
-
-struct ImageChunk_t {
+struct ImageChunk_s {
     VkDeviceMemory block;
     uint32_t Used;
     // uint32_t typeIndex;
@@ -25,7 +24,7 @@ struct ImageChunk_t {
 
 struct deviceLocalMemory_t {
     // One large device device local memory allocation, assigned to multiple images
-	struct ImageChunk_t Chunks[8];
+	struct ImageChunk_s Chunks[8];
 	uint32_t Index; // number of chunks used
 };
 
@@ -33,11 +32,9 @@ struct deviceLocalMemory_t {
 static struct deviceLocalMemory_t devMemImg;
 
 
-void gpuMemUsageInfo_f(void)
+uint32_t R_GetGpuMemConsumedByImage(void)
 {
-    // approm	 for debug info
-    ri.Printf(PRINT_ALL, "Number of image created: %d, GPU memory used for store those image: %d MB \n", 
-           tr.numImages, devMemImg.Index * (IMAGE_CHUNK_SIZE>>20) );
+    return (devMemImg.Index * IMAGE_CHUNK_SIZE / (1024 * 1024));
 }
 
 
@@ -63,7 +60,7 @@ uint32_t find_memory_type(uint32_t memory_type_bits, VkMemoryPropertyFlags prope
 
 
 #define FILE_HASH_SIZE	1024
-static image_t*	hashTable[FILE_HASH_SIZE];
+static struct image_s *	hashTable[FILE_HASH_SIZE];
 
 static int generateHashValue( const char *fname )
 {
@@ -160,7 +157,7 @@ static void vk_create2DImageHandle(VkImageUsageFlags imgUsage, image_t* const pI
 
 
 static void vk_allocDeviceLocalMemory(uint32_t memType, uint32_t const idx,
-        struct ImageChunk_t* const pChunk)
+        struct ImageChunk_s * const pChunk)
 {
     VkMemoryAllocateInfo alloc_info;
     alloc_info.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
@@ -178,7 +175,7 @@ static void vk_allocDeviceLocalMemory(uint32_t memType, uint32_t const idx,
 
 
 static void vk_bindImageHandleWithDeviceMemory(VkImage hImg, uint32_t * const pIdx_uplimit,
-        struct ImageChunk_t* const pChunk)
+        struct ImageChunk_s * const pChunk)
 {
 
     VkMemoryRequirements memory_requirements;
@@ -273,9 +270,6 @@ void vk_createViewForImageHandle(VkImage Handle, VkFormat Fmt, VkImageView* cons
 static void vk_createDescriptorSet(struct image_s * const pImage)
 {
     // Allocate a descriptor set from the pool. 
-    // Note that we have to provide the descriptor set layout that 
-    // This layout describes how the descriptor set is to be allocated.
-
     vk_allocOneDescptrSet(&pImage->descriptor_set);
 
     //ri.Printf(PRINT_ALL, " Allocate Descriptor Sets \n");
@@ -290,9 +284,11 @@ static void vk_createDescriptorSet(struct image_s * const pImage)
 		.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL
 	};
 
-	VkWriteDescriptorSet descriptor_write = {
+	VkWriteDescriptorSet descriptor_info = {
 		.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET,
+        // dstSet is the destination descriptor set to update
 		.dstSet = pImage->descriptor_set,
+        // dstBinding is the descriptor binding within that set
 		.dstBinding = 0,
 		.dstArrayElement = 0,
 		.descriptorCount = 1,
@@ -303,7 +299,18 @@ static void vk_createDescriptorSet(struct image_s * const pImage)
 		.pTexelBufferView = NULL
 	};
 
-    NO_CHECK( qvkUpdateDescriptorSets(vk.device, 1, &descriptor_write, 0, NULL) );
+    // The operations described by pDescriptorWrites are performed first, 
+    // followed by the operations described by pDescriptorCopies. Within
+    // each array, the operations are performed in the order they appear
+    // in the array.
+    //
+    // Each element in the pDescriptorWrites array describes an operation
+    // updating the descriptor set using descriptors for resources specified
+    // in the structure.
+    //
+    // Each element in the pDescriptorCopies array is a VkCopyDescriptorSet
+    // structure describing an operation copying descriptors between sets.
+    NO_CHECK( qvkUpdateDescriptorSets(vk.device, 1, &descriptor_info, 0, NULL) );
 
     // The above steps essentially copy the VkDescriptorBufferInfo
     // to the descriptor, which is likely in the device memory.

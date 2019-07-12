@@ -18,8 +18,9 @@ const float * getptr_modelview_matrix(void);
 void set_modelview_matrix(const float mv[16]);
 void R_Set2dProjectMatrix(float width, float height);
 
-void vk_shade_geometry(VkPipeline pipeline, struct shaderCommands_s * const pTess, 
-        VkBool32 multitexture, VkBool32 indexed);
+
+void vk_shade(VkPipeline pipeline, struct shaderCommands_s * const pTess,
+        VkDescriptorSet* const pDesSet, VkBool32 multitexture, VkBool32 indexed);
 
 void vk_UploadXYZI(const float (* const pXYZ)[4], uint32_t nVertex, 
         const uint32_t* const pIdx, uint32_t nIndex);
@@ -34,8 +35,6 @@ VkBuffer vk_getIndexBuffer(void);
 VkBuffer vk_getVertexBuffer(void);
 
 void vk_destroy_shading_data(void);
-
-void updateCurDescriptor( VkDescriptorSet curDesSet, uint32_t tmu);
 
 void vk_rcdUpdateViewport(VkBool32 is2D, enum Vk_Depth_Range depRg);
 

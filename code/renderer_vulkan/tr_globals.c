@@ -29,6 +29,12 @@ uint32_t R_GetNumOfLightmaps(void)
 }
 
 
+uint32_t R_GetNumberOfImageCreated(void)
+{
+    return tr.numImages; 
+}
+
+
 void R_ShaderList_f (void)
 {
 	int	i;

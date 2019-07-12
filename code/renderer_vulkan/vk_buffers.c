@@ -17,13 +17,16 @@ struct StagingBuffer_t
     VkBuffer buff;
     // Host visible memory used to copy image data to device local memory.
     VkDeviceMemory mappableMem;
-    uint32_t capacity;
+    uint32_t capacity; // size in bytes
 };
 
 
 static struct StagingBuffer_t StagBuf;
 
-
+uint32_t R_GetStagingBufferSize(void)
+{
+    return StagBuf.capacity;
+}
 
 void vk_stagBufToDevLocal(VkImage hImage, VkBufferImageCopy* const pRegion, const uint32_t nRegion)
 {

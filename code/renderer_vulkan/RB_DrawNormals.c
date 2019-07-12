@@ -18,7 +18,6 @@ void RB_DrawNormals (struct shaderCommands_s * const pTess, VkBool32 isPortal, V
    
     memset(pTess->svars.colors, tr.identityLightByte, SHADER_MAX_VERTEXES * 4);
 
-    // updateCurDescriptor( tr.whiteImage->descriptor_set, 0);
     updateMVP(isPortal, is2D, getptr_modelview_matrix());
     // vk_rcdUpdateViewport(is2D, DEPTH_RANGE_ZERO);
 
@@ -40,7 +39,7 @@ void RB_DrawNormals (struct shaderCommands_s * const pTess, VkBool32 isPortal, V
 
         vk_UploadXYZI(pTess->xyz, pTess->numVertexes, NULL, 0);
         
-        vk_shade_geometry(g_debugPipelines.normals, pTess, VK_FALSE, VK_FALSE);
+        vk_shade(g_debugPipelines.normals, pTess, &tr.whiteImage->descriptor_set, VK_FALSE, VK_FALSE);
 
         i += count;
     }

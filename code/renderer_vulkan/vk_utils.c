@@ -5,6 +5,24 @@
 
 #include "ref_import.h" 
 
+
+extern uint32_t R_GetNumberOfImageCreated(void);
+extern uint32_t R_GetStagingBufferSize(void);
+
+void printMemUsageInfo_f(void)
+{
+    // approm	 for debug info
+    ri.Printf(PRINT_ALL, " %d image created, %d MB GPU memory used for store those image. \n", 
+           R_GetNumberOfImageCreated() , 
+           R_GetGpuMemConsumedByImage() );
+
+    //  up bound, just informational
+    ri.Printf(PRINT_ALL, " %d KB staging buffer( used for upload image to GPU). \n", 
+           R_GetStagingBufferSize() / 1024 + 1);
+
+}
+
+
 void printDeviceExtensionsSupported_f(void)
 {
     uint32_t nDevExts = 0;
@@ -31,7 +49,6 @@ void printDeviceExtensionsSupported_f(void)
 
     free(pDevExt);
 }
-
 
 
 
@@ -77,7 +94,7 @@ void printVulkanInfo_f( void )
 
     printInstanceExtensionsSupported_f();
     printDeviceExtensionsSupported_f();
-    gpuMemUsageInfo_f();
+    printMemUsageInfo_f();
     
     ri.Printf(PRINT_ALL, " Pretentation mode: ");
     switch( vk.present_mode )

@@ -821,13 +821,14 @@ static void RB_DrawSkyBox( shader_t * const shader, float matMV[16] )
         
         // GL_Bind(shader->sky.outerbox[sky_texorder[i]]);
         updateMVP(backEnd.viewParms.isPortal, backEnd.projection2D, matMV);	
-        updateCurDescriptor(tess.shader->sky.outerbox[sky_texorder[i]]->descriptor_set, 0);
 
 		// ri.Printf(PRINT_ALL, "nvert: %d\n", tess.numIndexes);
 
         vk_UploadXYZI(tess.xyz, tess.numVertexes, tess.indexes, tess.numIndexes);
         
-        vk_shade_geometry(g_globalPipelines.skybox_pipeline, &tess, VK_FALSE, VK_TRUE);
+        vk_shade(g_globalPipelines.skybox_pipeline, &tess, 
+                &tess.shader->sky.outerbox[sky_texorder[i]]->descriptor_set,
+                VK_FALSE, VK_TRUE);
 	}
 }
 
@@ -850,15 +851,6 @@ void RB_StageIteratorSky( struct shaderCommands_s * const pTess )
 	// r_showsky will let all the sky blocks be drawn in
 	// front of everything to allow developers to see how
 	// much sky is getting sucked in draw the outer skybox
-
-    if (r_showsky->integer)
-    {
-        vk_rcdUpdateViewport(backEnd.projection2D, DEPTH_RANGE_ZERO);
-    }
-    else
-    {
-        vk_rcdUpdateViewport(backEnd.projection2D, DEPTH_RANGE_ONE);
-    }
 
 
 	// draw the outer skybox
@@ -883,7 +875,6 @@ void RB_StageIteratorSky( struct shaderCommands_s * const pTess )
 	R_BuildCloudData( pTess );
 
     // ri.Printf(PRINT_ALL, "isSky?\n");
-    // vk_rcdUpdateViewport(backEnd.projection2D, DEPTH_RANGE_NORMAL);
 	
     // draw the inner skybox
 }

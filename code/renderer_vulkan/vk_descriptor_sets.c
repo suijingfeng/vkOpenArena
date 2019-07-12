@@ -128,6 +128,8 @@ void vk_allocOneDescptrSet(VkDescriptorSet * const pSetRet)
     descSetAllocInfo.pNext = NULL;
     descSetAllocInfo.descriptorPool = vk.descriptor_pool;
     descSetAllocInfo.descriptorSetCount = 1;
+    // Note that we have to provide the descriptor set layout that 
+    // This layout describes how the descriptor set is to be allocated.
     descSetAllocInfo.pSetLayouts = &vk.set_layout;
 
     VK_CHECK( qvkAllocateDescriptorSets(vk.device, &descSetAllocInfo, pSetRet) );

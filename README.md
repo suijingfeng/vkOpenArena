@@ -140,7 +140,7 @@ make the image more brighter. You must restart the game after change it.
 r\_gamma nonlinearly calibrate the image before it is uploaded to GPU.
 
 r\_brightness turn the intensity/brightness of the lightmap, this don't
- influence UI brightness, as it intended only for lightmap.
+ influence image and ui brightness, as it intended only for lightmap.
 
 
 ```
@@ -236,10 +236,10 @@ Vk instance extensions:
 Image chuck memory(device local) used: 8 M 
 ```
 
-besides, the following new cmd only exist in vulkan renderer.
+Besides, the following new cmd only exist in vulkan renderer.
 
-* gpuMem: image memmory allocated on GPU;
-* printOR: print the value of backend.or;
+* printMemUsage: GPU and/or CPU memory usage(for store image data, staging buffer and vertice buffer etc).
+* printOR: print the value of backend.or.
 * pipelineList: list the number of pipelines we have created for the shader stage. (about 80~100, seem too much?)
 * displayResoList: list of the display resolution the render software provided.
 
