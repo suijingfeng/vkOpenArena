@@ -201,39 +201,34 @@ void vk_createIndexBuffer(void)
 
 // outside of TR since it shouldn't be cleared during ref re-init
 // the renderer front end should never modify glstate_t
-//typedef struct {
 
 
+// During the rendering process, the GPU will write to resources
+// e.g the back buffer, the depth/stencil buffer, and read from
+// resources (textures that describe the appearance of the surfaces,
+// buffers that store the 3D positions of geometry), before we 
+// issue a draw command, we need to bind/link the resources to the 
+// rendering pipeline that are going to be referenced in the draw call.
+// some of the resources may change per draw call, so we need to
+// update the bindings per draw call if necessary. However, a GPU
+// resources are not bound directly, Instand, a resource is referenced
+// through a descriptor object, which can be thought of as a lightweight
+// structure that describes the resource to the GPU. 
+//
+// Why go to this extra level of indirection with descriptor ?
+// The reason is that resources are essentially generic chunks of
+// memory. Resources are kept generic so they can be used in different
+// stages of the rendering pipeline; a common example is to use 
+// texture as a render target, draws into texture and letter as
+// a shader resource which will be simpled and served as input data
+// for a shader. A resource itself does not say if it is being used
+// as a render taget, depth/stencil buffer or shader resource.
+// moreover a resource can be created with a typeless format, so
+// GPU may not even know the format of the GPU resource, This is
+// where descripor come in. In addition to identifying the resource
+// data, they also describes how the resource is going to be use
+//
 
-static void updateCurDescriptor( VkDescriptorSet curDesSet, uint32_t tmu)
-{
-    // During the rendering process, the GPU will write to resources
-    // e.g the back buffer, the depth/stencil buffer, and read from
-    // resources (textures that describe the appearance of the surfaces,
-    // buffers that store the 3D positions of geometry), before we 
-    // issue a draw command, we need to bind/link the resources to the 
-    // rendering pipeline that are going to be referenced in the draw call.
-    // some of the resources may change per draw call, so we need to
-    // update the bindings per draw call if necessary. However, a GPU
-    // resources are not bound directly, Instand, a resource is referenced
-    // through a descriptor object, which can be thought of as a lightweight
-    // structure that describes the resource to the GPU. 
-    //
-    // Why go to this extra level of indirection with descriptor ?
-    // The reason is that resources are essentially generic chunks of
-    // memory. Resources are kept generic so they can be used in different
-    // stages of the rendering pipeline; a common example is to use 
-    // texture as a render target, draws into texture and letter as
-    // a shader resource which will be simpled and served as input data
-    // for a shader. A resource itself does not say if it is being used
-    // as a render taget, depth/stencil buffer or shader resource.
-    // moreover a resource can be created with a typeless format, so
-    // GPU may not even know the format of the GPU resource, This is
-    // where descripor come in. In addition to identifying the resource
-    // data, they also describes how the resource is going to be use
-    //
-    shadingDat.curDescriptorSets[tmu] = curDesSet;
-}
 
 // =========================================================
 // Vertex fetching is controlled via configurable state, 
@@ -757,8 +752,9 @@ static void R_BindAnimatedImage( textureBundle_t *bundle, int tmu, float time)
 		return;
 	}
 
-	if ( bundle->numImageAnimations <= 1 ) {
-		updateCurDescriptor( bundle->image[0]->descriptor_set, tmu );
+	if ( bundle->numImageAnimations <= 1 )
+    {
+        shadingDat.curDescriptorSets[tmu] = bundle->image[0]->descriptor_set;
 		return;
 	}
 
@@ -772,7 +768,7 @@ static void R_BindAnimatedImage( textureBundle_t *bundle, int tmu, float time)
 	}
 	index %= bundle->numImageAnimations;
 
-	updateCurDescriptor( bundle->image[ index ]->descriptor_set, tmu );
+    shadingDat.curDescriptorSets[tmu] = bundle->image[index]->descriptor_set;
 }
 
 /////////////////////////////////////////////////////////////////////////////////
@@ -799,10 +795,10 @@ void RB_StageIteratorGeneric(struct shaderCommands_s * const pTess, VkBool32 isP
     {
         vk_rcdUpdateViewport(is2D, DEPTH_RANGE_ONE);
     }
-//    else if (backEnd.currentEntity->e.renderfx & RF_DEPTHHACK)
-//    {
-//        vk_rcdUpdateViewport(is2D, DEPTH_RANGE_WEAPON);
-//    }
+    else if (backEnd.currentEntity->e.renderfx & RF_DEPTHHACK)
+    {
+        vk_rcdUpdateViewport(is2D, DEPTH_RANGE_WEAPON);
+    }
     else
     {
         vk_rcdUpdateViewport(is2D, DEPTH_RANGE_NORMAL);
@@ -846,7 +842,7 @@ void RB_StageIteratorGeneric(struct shaderCommands_s * const pTess, VkBool32 isP
         {
             if( pCurShader->bundle[0].isLightmap || pCurShader->bundle[1].isLightmap )
 		    {
-			    updateCurDescriptor( tr.whiteImage->descriptor_set, 0 );
+                shadingDat.curDescriptorSets[0] = tr.whiteImage->descriptor_set;
             }
 		}
 
@@ -872,7 +868,7 @@ void RB_StageIteratorGeneric(struct shaderCommands_s * const pTess, VkBool32 isP
 	if ( pTess->dlightBits && pTess->shader->sort <= SS_OPAQUE && 
             !(pTess->shader->surfaceFlags & (SURF_NODLIGHT | SURF_SKY) ) )
     {
-	    	RB_ProjectDlightTexture( pTess, pTess->svars.texcoords[0], pTess->svars.colors,
+	    RB_ProjectDlightTexture( pTess, pTess->svars.texcoords[0], pTess->svars.colors,
                     backEnd.refdef.num_dlights, backEnd.refdef.dlights);
 	}
 
