@@ -43,11 +43,13 @@ Implementations may support additional limits and capabilities beyond those list
 
 
 extern void R_GetWorldBaseName(char* checkname);
+extern size_t RE_SaveJPGToBuffer(byte *buffer, size_t bufSize, int quality,
+    int image_width, int image_height, byte *image_buffer, int padding);
+
 
 static uint32_t s_lastNumber = 0;
 
-
-static int getLastnumber(void)
+static uint32_t getLastnumber(void)
 {
     return s_lastNumber++;
 }
@@ -346,12 +348,10 @@ static void RB_TakeScreenshotJPG( uint32_t width, uint32_t height, char * const 
         .szCapacity = bufSize,
         .szBytesUsed = 0 };
     
-
     // bufSize = RE_SaveJPGToBuffer(out, bufSize, 80, width, height, pImg, 0);
     //stbi_write_jpg_to_func(stbi_write_func *func, void *context, int x, int y, int comp, const void *data, int quality);
 
     int error = stbi_write_jpg_to_func( fnImageWriteToBufferCallback, &ctx, width, height, 3, pImg, 90);
-
 
     ri.FS_WriteFile(fileName, ctx.pData, ctx.szBytesUsed);
 
@@ -407,7 +407,6 @@ static void RB_TakeScreenshotJPG( uint32_t width, uint32_t height, char * const 
     
     free( pImg );
 }
-
 
 
 
@@ -501,7 +500,6 @@ void R_ScreenShotPNG_f( void )
     const uint32_t cnPixels = width * height;
     unsigned char* const pImg = (unsigned char*) malloc ( cnPixels * 4 );
     vk_read_pixels(pImg, width, height);
-
 
     uint32_t i;
 
@@ -818,10 +816,6 @@ void R_ScreenShotJPEG_f(void)
 
 
 
-extern size_t RE_SaveJPGToBuffer(byte *buffer, size_t bufSize, int quality,
-    int image_width, int image_height, byte *image_buffer, int padding);
-
-
 void RE_TakeVideoFrame( const int Width, const int Height, 
         unsigned char *captureBuffer, unsigned char *encodeBuffer, qboolean motionJpeg )
 {		
@@ -876,6 +870,3 @@ void RE_TakeVideoFrame( const int Width, const int Height,
 
     free(pImg);
 }
-
-
-

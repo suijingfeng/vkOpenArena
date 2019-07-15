@@ -201,13 +201,14 @@ void RE_Shutdown( qboolean destroyWindow )
 
 	if ( tr.registered )
     {
-        vk_destroyScratchImage();
 		vk_destroyImageRes();
         
         vk_destroyStagingBuffer();
         
         tr.registered = qfalse;
 	}
+        
+    vk_destroyScratchImage();
 
     vk_destroyShaderStagePipeline();
 

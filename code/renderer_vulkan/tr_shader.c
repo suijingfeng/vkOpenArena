@@ -2046,7 +2046,7 @@ shader_t* FinishShader( void )
 	
     // VULKAN: create pipelines for each shader stage
     int i = 0;
-    for (i=0; i < iStage; i++)
+    for (i=0; i < iStage; ++i)
     {
         vk_create_shader_stage_pipelines(&stages[i], &shader); 
     }
