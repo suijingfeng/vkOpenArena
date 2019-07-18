@@ -196,6 +196,8 @@ void RE_Shutdown( qboolean destroyWindow )
 
     vk_resetGeometryBuffer();
 
+    vk_clearScreenShotManager();
+
     NO_CHECK( qvkDeviceWaitIdle(vk.device) );
 
 

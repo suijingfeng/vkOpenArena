@@ -8,6 +8,8 @@
 
 extern uint32_t R_GetNumberOfImageCreated(void);
 extern uint32_t R_GetStagingBufferSize(void);
+extern uint32_t R_GetScreenShotBufferSizeKB(void)
+;
 
 void printMemUsageInfo_f(void)
 {
@@ -19,6 +21,8 @@ void printMemUsageInfo_f(void)
     //  up bound, just informational
     ri.Printf(PRINT_ALL, " %d KB staging buffer( used for upload image to GPU). \n", 
            R_GetStagingBufferSize() / 1024 + 1);
+
+    ri.Printf(PRINT_ALL, " %d KB screenshut buffer. \n", R_GetScreenShotBufferSizeKB());
 
 }
 

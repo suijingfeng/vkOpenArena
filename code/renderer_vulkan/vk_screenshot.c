@@ -54,15 +54,101 @@ static uint32_t getLastnumber(void)
     return s_lastNumber++;
 }
 
+// channal = 4 components default, RGBA
+struct vkScreenShotManager_s {
+    uint32_t width;
+    uint32_t height;
+    void * pData;
+    VkBuffer hBuffer;
+    VkDeviceMemory hMemory;
+    VkBool32 initialized;
+};
+
+static struct vkScreenShotManager_s scnShotMgr;
+
+uint32_t R_GetScreenShotBufferSizeKB(void)
+{
+    return 4 * scnShotMgr.width * scnShotMgr.height / 1024;
+}
+
+void vk_clearScreenShotManager(void)
+{
+    
+    if(scnShotMgr.initialized)
+    {
+        NO_CHECK( qvkUnmapMemory(vk.device, scnShotMgr.hMemory) );
+        vk_destroyBufferResource(scnShotMgr.hBuffer, scnShotMgr.hMemory);
+        memset(&scnShotMgr, 0, sizeof(scnShotMgr)); 
+    }
+
+    ri.Printf(PRINT_ALL, " Destroy screenshot buffer resources. \n");
+}
+
+
+static uint32_t vk_createScreenShotManager(const uint32_t w, const uint32_t h)
+{
+    const uint32_t szBytes = w * h * 4;
+    if((w == 0) || (h == 0) || (w > vk_getWinWidth()) || (h > vk_getWinHeight()))
+    {
+        // trivial error check ...
+        ri.Printf(PRINT_WARNING, "error screen shot parameter size. \n");
+        return 0;
+    }
+    else if((w == scnShotMgr.width) && (h == scnShotMgr.height) && scnShotMgr.initialized)
+    {
+        // already created, and size match, just return 
+        return szBytes;
+    }
+    else
+    {
+        // recreate ...
+        vk_clearScreenShotManager();
+    }
+    
+    scnShotMgr.width = w;
+    scnShotMgr.height = h;
+    // scnShotMgr->pData = (unsigned char * ) malloc( w * h * 4 );
+
+    // Memory objects created with VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT
+    // are considered mappable. Memory objects must be mappable in order
+    // to be successfully mapped on the host.  
+    //
+    // Use HOST_VISIBLE with HOST_COHERENT and HOST_CACHED. This is the
+    // only Memory Type which supports cached reads by the CPU. Great
+    // for cases like recording screen-captures, feeding back
+    // Hierarchical Z-Buffer occlusion tests, etc. --- from AMD webset.
+
+    vk_createBufferResource( szBytes,
+            VK_BUFFER_USAGE_TRANSFER_DST_BIT,
+            VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | 
+            VK_MEMORY_PROPERTY_HOST_COHERENT_BIT | 
+            VK_MEMORY_PROPERTY_HOST_CACHED_BIT, 
+             &scnShotMgr.hBuffer, &scnShotMgr.hMemory );
+
+    // If the memory mapping was made using a memory object allocated from a memory type
+    // that exposes the VK_MEMORY_PROPERTY_HOST_COHERENT_BIT property then the mapping 
+    // between the host and device is always coherent. That is, the host and device 
+    // communicate in order to ensure that their respective caches are synchronized 
+    // and that any reads or writes to shared memory are seen by the other peer.
+
+    VK_CHECK( qvkMapMemory(vk.device, scnShotMgr.hMemory, 0, VK_WHOLE_SIZE, 0, &scnShotMgr.pData) );
+
+    scnShotMgr.initialized = VK_TRUE;
+
+    ri.Printf(PRINT_ALL, " Create a buffer for screenshot, Size: %d bytes. \n", szBytes);
+    return szBytes;
+}
+
+
 
 static void imgFlipY(unsigned char * pBuf, const uint32_t w, const uint32_t h)
 {
     const uint32_t a_row = w * 4;
     const uint32_t nLines = h / 2;
 
-    unsigned char* pTmp = (unsigned char*) malloc( a_row );
-    unsigned char *pSrc = pBuf;
-    unsigned char *pDst = pBuf + w * (h - 1) * 4;
+    unsigned char* const pTmp = (unsigned char*) malloc( a_row );
+    unsigned char* pSrc = pBuf;
+    unsigned char* pDst = pBuf + w * (h - 1) * 4;
 
     uint32_t j = 0;
     for (j = 0; j < nLines; ++j)
@@ -83,41 +169,21 @@ static void imgFlipY(unsigned char * pBuf, const uint32_t w, const uint32_t h)
 static void vk_read_pixels(unsigned char* const pBuf, uint32_t W, uint32_t H)
 {
 	// NO_CHECK( qvkDeviceWaitIdle(vk.device) );
-    VkBuffer screenShotBuffer;
-    VkDeviceMemory screenShotMemory;
 
 	// Create image in host visible memory to serve as a destination
     // for framebuffer pixels.
   
-    const uint32_t sizeFB = W * H * 4;
+    vk_createScreenShotManager(W, H);
 
     // GPU-to-CPU Data Flow
-
-    // Memory objects created with VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT
-    // are considered mappable. Memory objects must be mappable in order
-    // to be successfully mapped on the host.  
-    //
-    // Use HOST_VISIBLE with HOST_COHERENT and HOST_CACHED. This is the
-    // only Memory Type which supports cached reads by the CPU. Great
-    // for cases like recording screen-captures, feeding back
-    // Hierarchical Z-Buffer occlusion tests, etc. ---from AMD webset.
-    
-    vk_createBufferResource( sizeFB,
-            VK_BUFFER_USAGE_TRANSFER_DST_BIT,
-            VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | 
-            VK_MEMORY_PROPERTY_HOST_COHERENT_BIT | 
-            VK_MEMORY_PROPERTY_HOST_CACHED_BIT, 
-             &screenShotBuffer, &screenShotMemory );
 
     //////////////////////////////////////////////////////////
     vk_beginRecordCmds(vk.tmpRecordBuffer);
 
     VkBufferImageCopy image_copy;
-
     image_copy.bufferOffset = 0;
     image_copy.bufferRowLength = W;
     image_copy.bufferImageHeight = H;
-
     image_copy.imageSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
     image_copy.imageSubresource.layerCount = 1;
     image_copy.imageSubresource.mipLevel = 0;
@@ -135,8 +201,8 @@ static void vk_read_pixels(unsigned char* const pBuf, uint32_t W, uint32_t H)
     // image layout transitions or a queue family ownership transfer for the specified image 
     // subresource range.
 
+    // Memory barriers are used to change image layouts here ...
     VkImageMemoryBarrier image_barrier;
-    
     image_barrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
     image_barrier.pNext = NULL;
     image_barrier.srcAccessMask = VK_ACCESS_COLOR_ATTACHMENT_READ_BIT;
@@ -158,53 +224,20 @@ static void vk_read_pixels(unsigned char* const pBuf, uint32_t W, uint32_t H)
     image_barrier.subresourceRange.baseArrayLayer = 0;
     image_barrier.subresourceRange.layerCount = 1;
 
-    // read pixel with command buffer
-
     NO_CHECK( qvkCmdPipelineBarrier(vk.tmpRecordBuffer, 
         VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT,
         0, 0, NULL, 0, NULL, 1, &image_barrier) );
     
     NO_CHECK( qvkCmdCopyImageToBuffer(vk.tmpRecordBuffer, 
         vk.swapchain_images_array[vk.idx_swapchain_image], 
-        VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, screenShotBuffer, 1, &image_copy) );
+        VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, scnShotMgr.hBuffer, 1, &image_copy) );
 
     vk_commitRecordedCmds(vk.tmpRecordBuffer);
 
     // VK_CHECK( qvkQueueWaitIdle(vk.queue) );
    	// NO_CHECK( qvkDeviceWaitIdle(vk.device) ); 
 
-    // If the memory mapping was made using a memory object allocated from
-    // a memory type that exposes the VK_MEMORY_PROPERTY_HOST_COHERENT_BIT
-    // property then the mapping between the host and device is always coherent.
-    // That is, the host and device communicate in order to ensure that 
-    // their respective caches are synchronized and that any reads or writes
-    // to shared memory are seen by the other peer.
-    //
-    // If memory is NOT allocated from a memory type exposing the 
-    // VK_MEMORY_PROPERTY_HOST_COHERENT_BIT porperty, then you must execute 
-    // a pipeline barrier to move the resource into a host-readable state. 
-    // To do this, make sure that the destination access mask includes
-    // VK_ACCESS_HOST_READ_BIT.
-    //
-    // Memory barriers are used to explicitly control access to buffer and
-    // image subresource ranges. Memory barriers are used to transfer ownership
-    // between queue families, change image layouts, and define availability 
-    // and visibility operations. They explicitly define the access types and
-    // buffer and image subresource ranges that are included in the access 
-    // scopes of a memory dependency that is created by a synchronization 
-    // command that includes them. 
-    void * data;    
-    // we use VK_MEMORY_PROPERTY_HOST_COHERENT_BIT
-
-    VK_CHECK( qvkMapMemory(vk.device, screenShotMemory, 0, VK_WHOLE_SIZE, 0, &data) );
-    // To retrieve a host virtual address pointer to a region of a mappable memory object
-    memcpy(pBuf, data, sizeFB);
-    
-    NO_CHECK( qvkUnmapMemory(vk.device, screenShotMemory) );
-
-    vk_destroyBufferResource(screenShotBuffer, screenShotMemory);
-    
-//    ri.Printf(PRINT_ALL, " Destroy screenshot buffer resources. \n");
+    memcpy(pBuf, scnShotMgr.pData, W * H * 4);
 }
 
 
@@ -727,7 +760,6 @@ Doesn't print the pacifier message if there is a second arg
 void R_ScreenShot_f (void)
 {
 	char	checkname[MAX_OSPATH];
-	static	int	lastNumber = -1;
 
     int W = vk.renderArea.extent.width;
     int H = vk.renderArea.extent.height;
@@ -740,13 +772,8 @@ void R_ScreenShot_f (void)
 	}
     else
     {
-		// scan for a free filename
-
-		// if we have saved a previous screenshot, don't scan again, 
-        // because recording demo avis can involve thousands of shots
-		if ( lastNumber == -1 ) {
-			lastNumber = 0;
-		}
+		// find a free filename
+        int lastNumber = getLastnumber();
 		// scan for a free number
 		for ( ; lastNumber <= 9999; ++lastNumber )
         {
