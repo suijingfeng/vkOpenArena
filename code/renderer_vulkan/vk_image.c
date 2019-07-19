@@ -542,13 +542,14 @@ image_t* R_CreateImage( const char *name, unsigned char* pic, const uint32_t wid
 static void vk_destroySingleImage( struct image_s * const pImg )
 {
    	// ri.Printf(PRINT_ALL, " Destroy Image: %s \n", pImg->imgName); 
-    if(pImg->descriptor_set != VK_NULL_HANDLE)
+/*
+	if(pImg->descriptor_set != VK_NULL_HANDLE)
     {   
         //To free allocated descriptor sets
         NO_CHECK( qvkFreeDescriptorSets(vk.device, vk.descriptor_pool, 1, &pImg->descriptor_set) );
         pImg->descriptor_set = VK_NULL_HANDLE;
     }
-
+*/
     
     if (pImg->view != VK_NULL_HANDLE)
     {
@@ -769,6 +770,7 @@ void R_InitImages( void )
 void vk_destroyImageRes(void)
 {
     ri.Printf(PRINT_ALL, " vk_destroyImageRes. \n");
+
 	vk_free_sampler();
 
     uint32_t i = 0;
@@ -785,13 +787,6 @@ void vk_destroyImageRes(void)
     }
 
     memset(&devMemImg, 0, sizeof(devMemImg));
-
-
-    // Destroying a pool object implicitly frees all objects allocated from that pool. 
-    // Specifically, destroying VkCommandPool frees all VkCommandBuffer objects that 
-    // were allocated from it, and destroying VkDescriptorPool frees all 
-    // VkDescriptorSet objects that were allocated from it.
-    VK_CHECK( qvkResetDescriptorPool(vk.device, vk.descriptor_pool, 0) );
 
     memset( tr.images, 0, sizeof( tr.images ) );
     

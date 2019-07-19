@@ -28,6 +28,7 @@
 #include "vk_buffers.h"
 
 #include "vk_khr_display.h"
+#include "vk_descriptor_sets.h"
 
 void R_Init( void )
 {	
@@ -129,7 +130,7 @@ void R_Init( void )
 
     vk_initScratchImage();
 
-//    vk_createStagingBuffer(1024*1024);
+	//vk_createStagingBuffer(1024*1024);
 
 	R_InitImages();
 
@@ -203,16 +204,22 @@ void RE_Shutdown( qboolean destroyWindow )
 
 	if ( tr.registered )
     {
-		vk_destroyImageRes();
-        
+		vk_destroyScratchImage();
+			
+		vk_destroyImageRes(); 
+		
+		// need ?
+		vk_reset_descriptor_pool();
+		
         vk_destroyStagingBuffer();
         
         tr.registered = qfalse;
 	}
-        
-    vk_destroyScratchImage();
 
-    vk_destroyShaderStagePipeline();
+
+	vk_destroyShaderStagePipeline();
+
+
 
     if (destroyWindow)
     {

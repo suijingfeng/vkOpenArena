@@ -33,7 +33,8 @@ void vk_createDescriptorPool(uint32_t numDes, VkDescriptorPool* const pPool)
     // vkFreeDescriptorSets, and vkResetDescriptorPool are allowed. Otherwise, descriptor
     // sets allocated from the pool must not be individually freed back to the pool,
     // i.e. only vkAllocateDescriptorSets and vkResetDescriptorPool are allowed.
-    desc.flags = VK_DESCRIPTOR_POOL_CREATE_FREE_DESCRIPTOR_SET_BIT;
+    desc.flags = 0;
+		// VK_DESCRIPTOR_POOL_CREATE_FREE_DESCRIPTOR_SET_BIT;
     // VK_DESCRIPTOR_POOL_CREATE_FREE_DESCRIPTOR_SET_BIT; 
     // The maxSets field specifies the maximum total number of sets
     // that may be allocated from the pool.
@@ -56,6 +57,35 @@ void vk_createDescriptorPool(uint32_t numDes, VkDescriptorPool* const pPool)
     // the allocations used to store descriptors allows drivers to make 
     // efficient use of memory.
     VK_CHECK( qvkCreateDescriptorPool(vk.device, &desc, NULL, pPool) );
+}
+
+
+void vk_reset_descriptor_pool(void)
+{
+	// To return all descriptor sets allocated from a given pool to the pool,
+	// rather than freeing individual descriptor sets
+	// Resetting a descriptor pool recycles all of the resources from all of
+	// the descriptor sets allocated from the descriptor pool back to the 
+	// descriptor pool, and the descriptor sets are implicitly freed.
+	VK_CHECK( qvkResetDescriptorPool(vk.device, vk.descriptor_pool, 0) );
+}
+
+
+
+void vk_destroy_descriptor_pool(void)
+{
+	// Destroying a pool object implicitly frees all objects allocated from that pool. 
+	// Specifically, destroying VkCommandPool frees all VkCommandBuffer objects that 
+	// were allocated from it, and destroying VkDescriptorPool frees all 
+	// VkDescriptorSet objects that were allocated from it.
+
+    ri.Printf(PRINT_ALL, " Destroy vk.set_layout, vk.descriptor_pool. \n");
+
+    NO_CHECK( qvkDestroyDescriptorSetLayout(vk.device, vk.set_layout, NULL) ); 
+    // You don't need to explicitly clean up descriptor sets,
+    // because they will be automaticall freed when the descripter pool
+    // is destroyed.
+   	NO_CHECK( qvkDestroyDescriptorPool(vk.device, vk.descriptor_pool, NULL) );  
 }
 
 
@@ -133,16 +163,4 @@ void vk_allocOneDescptrSet(VkDescriptorSet * const pSetRet)
     descSetAllocInfo.pSetLayouts = &vk.set_layout;
 
     VK_CHECK( qvkAllocateDescriptorSets(vk.device, &descSetAllocInfo, pSetRet) );
-}
-
-
-void vk_destroy_descriptor_pool(void)
-{
-    ri.Printf(PRINT_ALL, " Destroy vk.set_layout, vk.descriptor_pool. \n");
-
-    NO_CHECK( qvkDestroyDescriptorSetLayout(vk.device, vk.set_layout, NULL) ); 
-    // You don't need to explicitly clean up descriptor sets,
-    // because they will be automaticall freed when the descripter pool
-    // is destroyed.
-   	NO_CHECK( qvkDestroyDescriptorPool(vk.device, vk.descriptor_pool, NULL) );  
 }

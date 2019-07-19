@@ -40,14 +40,15 @@ void vk_initScratchImage(void)
 
 void vk_destroyScratchImage(void)
 {
-
+/*
     if(tr_scratchImage.descriptor_set != VK_NULL_HANDLE)
     {   
         //To free allocated descriptor sets
+		ri.Printf (PRINT_ALL, " To free tr_scratchImage descriptor sets. \n");
         NO_CHECK( qvkFreeDescriptorSets(vk.device, vk.descriptor_pool, 1, &tr_scratchImage.descriptor_set) );
         tr_scratchImage.descriptor_set = VK_NULL_HANDLE;
     }
-
+*/
     if (tr_scratchImage.view != VK_NULL_HANDLE)
     {
         NO_CHECK( qvkDestroyImageView(vk.device, tr_scratchImage.view, NULL) );
@@ -85,7 +86,8 @@ void RE_UploadCinematic(int w, int h, int cols, int rows, const unsigned char * 
 
         // VULKAN
         // if already created, we will destroy it.
-        vk_destroyScratchImage();
+        
+		vk_destroyScratchImage();
 
         strncpy (tr_scratchImage.imgName, "*scratch", 10);
         tr_scratchImage.uploadWidth = cols;
