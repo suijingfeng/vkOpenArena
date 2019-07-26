@@ -21,15 +21,21 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 */
 
 
+#include "VKimpl.h"
+
 // Use local header for easier build
 #include "../SDL2/include/SDL.h"
 #include "../SDL2/include/SDL_vulkan.h"
 
-#include "VKimpl.h"
+#include "glConfig.h"
 #include "tr_cvar.h"
 #include "icon_oa.h"
-#include "glConfig.h"
 #include "ref_import.h"
+
+
+extern uint32_t vk_getWinWidth(void);
+extern uint32_t vk_getWinHeight(void);
+
 
 static SDL_Window* window_sdl = NULL;
 

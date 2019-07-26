@@ -201,14 +201,34 @@ void vk_createIndexBuffer(void)
 
 // outside of TR since it shouldn't be cleared during ref re-init
 // the renderer front end should never modify glstate_t
-//typedef struct {
 
 
+// During the rendering process, the GPU will write to resources
+// e.g the back buffer, the depth/stencil buffer, and read from
+// resources (textures that describe the appearance of the surfaces,
+// buffers that store the 3D positions of geometry), before we 
+// issue a draw command, we need to bind/link the resources to the 
+// rendering pipeline that are going to be referenced in the draw call.
+// some of the resources may change per draw call, so we need to
+// update the bindings per draw call if necessary. However, a GPU
+// resources are not bound directly, Instand, a resource is referenced
+// through a descriptor object, which can be thought of as a lightweight
+// structure that describes the resource to the GPU. 
+//
+// Why go to this extra level of indirection with descriptor ?
+// The reason is that resources are essentially generic chunks of
+// memory. Resources are kept generic so they can be used in different
+// stages of the rendering pipeline; a common example is to use 
+// texture as a render target, draws into texture and letter as
+// a shader resource which will be simpled and served as input data
+// for a shader. A resource itself does not say if it is being used
+// as a render taget, depth/stencil buffer or shader resource.
+// moreover a resource can be created with a typeless format, so
+// GPU may not even know the format of the GPU resource, This is
+// where descripor come in. In addition to identifying the resource
+// data, they also describes how the resource is going to be use
+//
 
-void updateCurDescriptor( VkDescriptorSet curDesSet, uint32_t tmu)
-{
-    shadingDat.curDescriptorSets[tmu] = curDesSet;
-}
 
 // =========================================================
 // Vertex fetching is controlled via configurable state, 
@@ -434,8 +454,8 @@ void updateMVP(VkBool32 isPortal, VkBool32 is2D, const float mvMat4x4[16])
 }
 
 
-void vk_shade_geometry(VkPipeline pipeline, struct shaderCommands_s * const pTess,
-        VkBool32 multitexture, VkBool32 indexed)
+void vk_shade(VkPipeline pipeline, struct shaderCommands_s * const pTess,
+        VkDescriptorSet* const pDesSet, VkBool32 multitexture, VkBool32 indexed)
 {
     // configure vertex data stream
     const VkBuffer bufHandleArray[3] = {
@@ -474,6 +494,15 @@ void vk_shade_geometry(VkPipeline pipeline, struct shaderCommands_s * const pTes
                  pTess->svars.texcoords[1], Size_ST);
     }
 
+    // Once bound, a pipeline binding affects subsequent graphics
+    // or compute commands in the command buffer until a different
+    // pipeline is bound to the bind point. When a pipeline object
+    // is bound, any pipeline object state that is not specified 
+    // as dynamic is applied to the command buffer state
+
+    NO_CHECK( qvkCmdBindPipeline(vk.command_buffer, 
+                VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline) );
+    
     // It is perfectly reasonable to bind the same buffer object with 
     // different offsets to a command buffer, simply include the same
     // VkBuffer handle multiple times in the pBuffers array. cache ?
@@ -487,74 +516,13 @@ void vk_shade_geometry(VkPipeline pipeline, struct shaderCommands_s * const pTes
     // according to the pipelineBindPoint). Any bindings that were 
     // previously applied via these sets are no longer valid.
     
-    if ( multitexture ) {
-
-        NO_CHECK( qvkCmdBindDescriptorSets( vk.command_buffer,
+    NO_CHECK( qvkCmdBindDescriptorSets( vk.command_buffer,
                 VK_PIPELINE_BIND_POINT_GRAPHICS, 
-                vk.pipeline_layout, 0, 2, 
-                shadingDat.curDescriptorSets, 0, NULL) );
-
-    }
-    else {
-        NO_CHECK( qvkCmdBindDescriptorSets( vk.command_buffer,
-                VK_PIPELINE_BIND_POINT_GRAPHICS, 
-                vk.pipeline_layout, 0, 1, 
-                shadingDat.curDescriptorSets, 0, NULL) );
-    }
-    // Once bound, a pipeline binding affects subsequent graphics
-    // or compute commands in the command buffer until a different
-    // pipeline is bound to the bind point. When a pipeline object
-    // is bound, any pipeline object state that is not specified 
-    // as dynamic is applied to the command buffer state
-    NO_CHECK( qvkCmdBindPipeline(vk.command_buffer, 
-                VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline) );
+                vk.pipeline_layout, 0, 1 + multitexture, 
+                pDesSet, 0, NULL) );
 
 
-    // configure pipeline's dynamic state
-    // Pipeline object state that is specified as dynamic is
-    // not applied to the command buffer state at this time. 
-    // Instead, dynamic state can be modified at any time and
-    // persists for the lifetime of the command buffer, or 
-    // until modified by another dynamic state setting command
-    // or another pipeline bind.
-//    
-//    vk_rcdUpdateViewport(is2D, depthRange);
-//
-    // Original dynamic, set it when the pipeline is created. 
-    // can change pipeline be understand dynamic feature ?
-    // qvkCmdSetScissor(vk.command_buffer, 0, 1, &scissor);
-
-    // if (tess.shader->polygonOffset)
-    // {
-    //  void vkCmdSetDepthBias( VkCommandBuffer commandBuffer, 
-    //  float depthBiasConstantFactor, 
-    //  float depthBiasClamp,
-    //  float depthBiasSlopeFactor);
-    //  
-    //  depthBiasConstantFactor is a scalar factor controlling the constant
-    //  depth value added to each fragment. depthBiasClamp is the maximum 
-    //  (or minimum) depth bias of a fragment.depthBiasSlopeFactor is a 
-    //  scalar factor applied to a fragment¡¯s slope in depth bias calculations.
-    //  depthBiasSlopeFactor, depthBiasConstantFactor, and depthBiasClamp can 
-    //  each be positive, negative, or zero.
-    //  
-    //  depthBiasSlopeFactor scales the maximum depth slope of the polygon,
-    //  and depthBiasConstantFactor scales an implementation-dependent constant
-    //  that relates to the usable resolution of the depth buffer. The resulting
-    //  values are summed to produce the depth bias value which is then clamped
-    //  to a minimum or maximum value specified by depthBiasClamp.
-    //
-    //  The minimum resolvable difference r is an implementation-dependent
-    //  parameter that depends on the depth buffer representation. It is the
-    //  smallest difference in framebuffer coordinate z values that is guaranteed
-    //  to remain distinct throughout polygon rasterization and in the depth buffer.
-    //  All pairs of fragments generated by the rasterization of two polygons
-    //  with otherwise identical vertices, but zf values that differ by r,
-    //  will have distinct depth values.
-    //  
-    //  NO_CHECK( qvkCmdSetDepthBias(vk.command_buffer, r_offsetUnits->value, 0.0f, r_offsetFactor->value) );
-    // }
-
+    
     // issue draw call
     if (indexed)
     {
@@ -567,6 +535,7 @@ void vk_shade_geometry(VkPipeline pipeline, struct shaderCommands_s * const pTes
 
     s_depth_attachment_dirty = VK_TRUE;
 }
+
 
 
 void vk_resetGeometryBuffer(void)
@@ -746,35 +715,30 @@ static void RB_ProjectDlightTexture( struct shaderCommands_s * const pTess,
         
         R_UpdatePerformanceCounters( pTess->numVertexes, numIndexes, 0);
 		
-        updateCurDescriptor( tr.dlightImage->descriptor_set, 0 );
-		
+        		
         // include GLS_DEPTHFUNC_EQUAL so alpha tested surfaces
         // don't add light where they aren't rendered
 
-		// VULKAN
 
-		vk_shade_geometry( g_globalPipelines.dlight_pipelines[isAdditive][cullType][polyOffset], 
-            pTess, VK_FALSE, VK_TRUE);
+        vk_shade( g_globalPipelines.dlight_pipelines[isAdditive][cullType][polyOffset], 
+             pTess, &tr.dlightImage->descriptor_set, VK_FALSE, VK_TRUE);
 	}
 }
 
 
 
-static void RB_FogPass( struct shaderCommands_s * const pTess )
+static void RB_FogPass( struct shaderCommands_s * const pTess, struct shader_s * const pShader)
 {
 
     RB_SetTessFogColor(pTess->svars.colors, pTess->fogNum, pTess->numVertexes);
 
 	RB_CalcFogTexCoords( pTess->svars.texcoords[0], pTess->numVertexes);
 
-	updateCurDescriptor( tr.fogImage->descriptor_set, 0);
-
-	// VULKAN
-    
     // ri.Printf(PRINT_ALL, "isFog: %d. \n", pTess->shader->fogPass);
+    
+    vk_shade(g_globalPipelines.fog_pipelines[pShader->fogPass - 1][pShader->cullType][pShader->polygonOffset], 
+            pTess, &tr.fogImage->descriptor_set, VK_FALSE, VK_TRUE);
 
-    VkPipeline pipeline = g_globalPipelines.fog_pipelines[pTess->shader->fogPass - 1][pTess->shader->cullType][pTess->shader->polygonOffset];
-    vk_shade_geometry(pipeline, pTess, VK_FALSE, VK_TRUE);
 }
 
 ///////////////////////////////////////////////////////////////////////////////////
@@ -788,8 +752,9 @@ static void R_BindAnimatedImage( textureBundle_t *bundle, int tmu, float time)
 		return;
 	}
 
-	if ( bundle->numImageAnimations <= 1 ) {
-		updateCurDescriptor( bundle->image[0]->descriptor_set, tmu );
+	if ( bundle->numImageAnimations <= 1 )
+    {
+        shadingDat.curDescriptorSets[tmu] = bundle->image[0]->descriptor_set;
 		return;
 	}
 
@@ -803,7 +768,7 @@ static void R_BindAnimatedImage( textureBundle_t *bundle, int tmu, float time)
 	}
 	index %= bundle->numImageAnimations;
 
-	updateCurDescriptor( bundle->image[ index ]->descriptor_set, tmu );
+    shadingDat.curDescriptorSets[tmu] = bundle->image[index]->descriptor_set;
 }
 
 /////////////////////////////////////////////////////////////////////////////////
@@ -815,27 +780,20 @@ void RB_StageIteratorGeneric(struct shaderCommands_s * const pTess, VkBool32 isP
 
 	// call shader function
 	//
-	// VULKAN
-    updateMVP(isPortal, is2D, getptr_modelview_matrix() ); 
-    
-	
-	vk_UploadXYZI(pTess->xyz, pTess->numVertexes, pTess->indexes, pTess->numIndexes);
 
+	vk_UploadXYZI(pTess->xyz, pTess->numVertexes, pTess->indexes, pTess->numIndexes);
     
+    updateMVP(isPortal, is2D, getptr_modelview_matrix() );
+
+
     // r_showsky will let all the sky blocks be drawn in
 	// front of everything to allow developers to see how
 	// much sky is getting sucked in.
-    
+   	// VULKAN
+
     if(pTess->shader->isSky)
     {
-        if (r_showsky->integer)
-        {
-            vk_rcdUpdateViewport(is2D, DEPTH_RANGE_ZERO);
-        }
-        else
-        {
-            vk_rcdUpdateViewport(is2D, DEPTH_RANGE_ONE);
-        }
+        vk_rcdUpdateViewport(is2D, DEPTH_RANGE_ONE);
     }
     else if (backEnd.currentEntity->e.renderfx & RF_DEPTHHACK)
     {
@@ -845,22 +803,22 @@ void RB_StageIteratorGeneric(struct shaderCommands_s * const pTess, VkBool32 isP
     {
         vk_rcdUpdateViewport(is2D, DEPTH_RANGE_NORMAL);
     }
+    
+    uint32_t i = 0;
 
 
-    uint32_t stage = 0;
-
-	for ( stage = 0; stage < MAX_SHADER_STAGES && pTess->xstages[stage]; ++stage )
+	for (  i = 0; pTess->xstages[i] && (i < MAX_SHADER_STAGES); ++i )
 	{
-
-		RB_ComputeColors( pTess->xstages[stage] );
-		RB_ComputeTexCoords( pTess->xstages[stage] );
+        struct shaderStage_s * const pCurShader = pTess->xstages[i];
+		RB_ComputeColors( pCurShader );
+		RB_ComputeTexCoords( pCurShader );
 
         // base, set state
-		R_BindAnimatedImage( &pTess->xstages[stage]->bundle[0], 0, pTess->shaderTime );
+		R_BindAnimatedImage( &pCurShader->bundle[0], 0, pTess->shaderTime );
 		//
 		// do multitexture
 		//
-        qboolean multitexture = (pTess->xstages[stage]->bundle[1].image[0] != NULL);
+        qboolean multitexture = (pCurShader->bundle[1].image[0] != NULL);
 
 		if ( multitexture )
 		{
@@ -875,30 +833,31 @@ void RB_StageIteratorGeneric(struct shaderCommands_s * const pTess, VkBool32 isP
 
             // lightmap/secondary pass
 
-            R_BindAnimatedImage( &pTess->xstages[stage]->bundle[1], 1, pTess->shaderTime );
+            R_BindAnimatedImage( &pCurShader->bundle[1], 1, pTess->shaderTime );
             // disable texturing on TEXTURE1, then select TEXTURE0
 		}
 
 		// allow skipping out to show just lightmaps during development
 		if ( r_lightmap->integer )
         {
-            if( pTess->xstages[stage]->bundle[0].isLightmap || pTess->xstages[stage]->bundle[1].isLightmap )
+            if( pCurShader->bundle[0].isLightmap || pCurShader->bundle[1].isLightmap )
 		    {
-			    updateCurDescriptor( tr.whiteImage->descriptor_set, 0 );
+                shadingDat.curDescriptorSets[0] = tr.whiteImage->descriptor_set;
             }
 		}
 
+
         if (backEnd.viewParms.isMirror)
         {
-            vk_shade_geometry(pTess->xstages[stage]->vk_mirror_pipeline, pTess, multitexture, VK_TRUE);
+            vk_shade(pCurShader->vk_mirror_pipeline, pTess, shadingDat.curDescriptorSets, multitexture, VK_TRUE);
         }
         else if (isPortal)
         {
-            vk_shade_geometry(pTess->xstages[stage]->vk_portal_pipeline, pTess, multitexture, VK_TRUE);
+            vk_shade(pCurShader->vk_portal_pipeline, pTess, shadingDat.curDescriptorSets, multitexture, VK_TRUE);
         }
         else
         {
-            vk_shade_geometry(pTess->xstages[stage]->vk_pipeline, pTess, multitexture, VK_TRUE);
+            vk_shade(pCurShader->vk_pipeline, pTess, shadingDat.curDescriptorSets, multitexture, VK_TRUE);
         }                 
 	}
 
@@ -909,7 +868,7 @@ void RB_StageIteratorGeneric(struct shaderCommands_s * const pTess, VkBool32 isP
 	if ( pTess->dlightBits && pTess->shader->sort <= SS_OPAQUE && 
             !(pTess->shader->surfaceFlags & (SURF_NODLIGHT | SURF_SKY) ) )
     {
-	    	RB_ProjectDlightTexture( pTess, pTess->svars.texcoords[0], pTess->svars.colors,
+	    RB_ProjectDlightTexture( pTess, pTess->svars.texcoords[0], pTess->svars.colors,
                     backEnd.refdef.num_dlights, backEnd.refdef.dlights);
 	}
 
@@ -918,6 +877,6 @@ void RB_StageIteratorGeneric(struct shaderCommands_s * const pTess, VkBool32 isP
 	//
 	if ( pTess->fogNum && pTess->shader->fogPass )
     {
-		RB_FogPass(pTess);
+		RB_FogPass(pTess, pTess->shader);
 	}
 }

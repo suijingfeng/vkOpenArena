@@ -1169,7 +1169,7 @@ void RB_EndSurface( shaderCommands_t * const pTess )
 	//
 	// call off to shader specific tess end function
 	//
-	if (pTess->shader->isSky) {
+    if (pTess->shader->isSky) {
 		RB_StageIteratorSky(pTess);
     }
 

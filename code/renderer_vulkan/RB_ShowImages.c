@@ -69,7 +69,7 @@ void RB_ShowImages(image_t ** const pImg, unsigned int N, int width, int height)
 
 		memset( tess.svars.colors, 255, tess.numVertexes * 4 );
         
-        updateCurDescriptor( pImg[i]->descriptor_set, 0);
+
 
         vk_UploadXYZI(tess.xyz, 4, tess.indexes, 6);
         // backEnd.projection2D = qtrue;
@@ -77,7 +77,7 @@ void RB_ShowImages(image_t ** const pImg, unsigned int N, int width, int height)
         updateMVP( 0 , VK_TRUE, getptr_modelview_matrix());
 
         // VK_TRUE, 
-        vk_shade_geometry(g_debugPipelines.images, &tess, VK_FALSE, VK_TRUE);
+        vk_shade(g_debugPipelines.images, &tess, &pImg[i]->descriptor_set ,VK_FALSE, VK_TRUE);
 	}
 	tess.numIndexes = 0;
 	tess.numVertexes = 0;

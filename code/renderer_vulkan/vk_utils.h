@@ -4,5 +4,7 @@
 void printDeviceExtensionsSupported_f(void);
 void printVulkanInfo_f( void );
 void printPresentModesSupported_f(void);
+void printMemUsageInfo_f(void);
+
 
 #endif

@@ -45,7 +45,7 @@ void flush_init_cmd(struct demo *demo)
 }
 
 
-void vk_draw_build_cmd(struct demo *demo, VkCommandBuffer cmd_buf)
+void vk_draw_build_cmd(struct demo * const demo, VkCommandBuffer cmd_buf)
 {
     VkDebugUtilsLabelEXT label;
     memset(&label, 0, sizeof(label));

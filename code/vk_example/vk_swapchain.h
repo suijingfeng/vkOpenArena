@@ -3,8 +3,8 @@
 
 #include "demo.h"
 
-void init_vk_swapchain(struct demo *demo);
-void vk_prepare_buffers(struct demo *demo);
+void init_vk_swapchain(struct demo * const demo);
+void vk_prepare_buffers(struct demo * const demo);
 
 
 struct PFN_KHR_SurfacePresent_t

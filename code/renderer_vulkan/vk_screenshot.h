@@ -9,4 +9,6 @@ void R_ScreenShotBMP_f( void );
 void R_ScreenShot_f( void );
 
 
+void vk_clearScreenShotManager( void );
+
 #endif

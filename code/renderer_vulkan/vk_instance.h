@@ -235,6 +235,8 @@ struct Vk_Instance {
 
 extern struct Vk_Instance vk;
 
+uint32_t vk_getWinWidth(void);
+uint32_t vk_getWinHeight(void);
 
 
 #endif

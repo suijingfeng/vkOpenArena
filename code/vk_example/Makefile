@@ -4,8 +4,7 @@ target = cube
 SRC = cube.c model.c \
 	vk_init.c vk_swapchain.c vk_common.c vk_render_pass.c vk_cmd.c \
 	create_xcb_window.c \
-	vk_texture.c lunarg_ppm.c \
-	cube_vert.c cube_frag.c vk_shader.c \
+	vk_texture.c cube_vert.c cube_frag.c vk_shader.c \
 	vk_debug.c
 
 

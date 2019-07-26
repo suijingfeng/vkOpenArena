@@ -30,7 +30,9 @@ void R_LoadImage(const char *name, unsigned char **pic, uint32_t* width, uint32_
 
 void R_InitImages( void );
 
-void gpuMemUsageInfo_f(void);
+
+uint32_t R_GetGpuMemConsumedByImage(void);
+
 
 image_t * R_GetScratchImageHandle(int idx);
 

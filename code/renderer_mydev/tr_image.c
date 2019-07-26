@@ -1091,7 +1091,8 @@ void R_SetColorMappings( void ) {
 R_InitImages
 ===============
 */
-void	R_InitImages( void ) {
+void R_InitImages( void )
+{
 	memset(hashTable, 0, sizeof(hashTable));
 	// build brightness translation tables
 	R_SetColorMappings();
