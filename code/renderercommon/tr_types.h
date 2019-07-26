@@ -112,7 +112,7 @@ typedef struct {
 	qhandle_t	customShader;		// use one image for the entire thing
 
 	// misc
-	unsigned char shaderRGBA[4];		// colors used by rgbgen entity shaders
+	unsigned char   shaderRGBA[4];		// colors used by rgbgen entity shaders
 	float		shaderTexCoord[2];	// texture coordinates used by tcMod entity modifiers
 	float		shaderTime;			// subtracted from refdef time to control effect start times
 
@@ -136,7 +136,7 @@ typedef struct {
 	int			rdflags;			// RDF_NOWORLDMODEL, etc
 
 	// 1 bits will prevent the associated area from rendering at all
-	unsigned char areamask[MAX_MAP_AREA_BYTES];
+	unsigned char	areamask[MAX_MAP_AREA_BYTES];
 
 	// text messages for deform text shaders
 	char		text[MAX_RENDER_STRINGS][MAX_RENDER_STRING_LENGTH];

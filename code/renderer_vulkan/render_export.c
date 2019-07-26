@@ -48,7 +48,7 @@ refexport_t* R_Export(void)
 	re.DrawStretchPic = RE_StretchPic;
 	re.DrawStretchRaw = RE_StretchRaw;
 	re.UploadCinematic = RE_UploadCinematic;
-    
+
 	re.BeginFrame = RE_BeginFrame;
 	re.EndFrame = RE_EndFrame;
 	re.MarkFragments = RE_MarkFragments;
@@ -60,6 +60,5 @@ refexport_t* R_Export(void)
 	re.inPVS = RE_inPVS;
 
 	re.TakeVideoFrame = RE_TakeVideoFrame;
-
-    return &re;
+	return &re;
 }

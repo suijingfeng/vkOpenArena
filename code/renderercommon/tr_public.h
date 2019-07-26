@@ -139,8 +139,8 @@ typedef struct {
 
 	// a -1 return means the file does not exist
 	// NULL can be passed for buf to just determine existance
-	int		(*FS_FileIsInPAK)( const char *name, int *pCheckSum );
-	long	(*FS_ReadFile)( const char *name, void **buf );
+	int     (*FS_FileIsInPAK)( const char *name, int *pCheckSum );
+	long    (*FS_ReadFile)( const char *name, void **buf );
 	void	(*FS_FreeFile)( void *buf );
 	char **	(*FS_ListFiles)( const char *name, const char *extension, int *numfilesfound );
 	void	(*FS_FreeFileList)( char **filelist );
@@ -160,11 +160,11 @@ typedef struct {
 	void (* IN_Restart)( void );
 
 
-	// math
+	// math, i really want ot remove this, but to keep the API/API consistant with ioq3
 	long (* ftol)(float f);
 
 	// system stuff
-	void (* Sys_SetEnv)(const char *name, const char *value);
+	void (* Sys_SetEnv)( const char *name, const char *value );
 //	void (* Sys_GLimpSafeInit)(void);
 //	void (* Sys_GLimpInit)(void);
 	qboolean (* Sys_LowPhysicalMemory)(void);
