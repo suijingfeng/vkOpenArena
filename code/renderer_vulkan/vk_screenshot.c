@@ -172,11 +172,41 @@ static void vk_read_pixels(unsigned char* const pBuf, uint32_t W, uint32_t H)
 
 	// Create image in host visible memory to serve as a destination
     // for framebuffer pixels.
-  
     vk_createScreenShotManager(W, H);
 
     // GPU-to-CPU Data Flow
-
+    // Access Types doc
+    // 
+    // Memory in Vulkan can be accessed from within shader invocations 
+    // and via some fixed-function stages of the pipeline. The access 
+    // type is a function of the descriptor type used, or how a fixed-
+    // function stage accesses memory. Each access type corresponds to
+    // a bit flag in VkAccessFlagBits.
+    //
+    // Some synchronization commands take sets of access types as 
+    // parameters to define the access scopes of a memory dependency. 
+    // If a synchronization command includes a source access mask, 
+    // its first access scope only includes accesses via the access 
+    // types specified in that mask. Similarly, if a synchronization 
+    // command includes a destination access mask, its second access 
+    // scope only includes accesses via the access types specified 
+    // in that mask.
+    // 
+    // Certain access types are only performed by a subset of pipeline stages.
+    // Any synchronization command that takes both stage masks and access masks
+    // uses both to define the access scopes - only the specified access types 
+    // performed by the specified stages are included in the access scope. 
+    //
+    // An application must not specify an access flag in a synchronization command
+    // if it does not include a pipeline stage in the corresponding stage mask that
+    // is able to perform accesses of that type. 
+    //
+    // VK_ACCESS_TRANSFER_READ_BIT              VK_PIPELINE_STAGE_TRANSFER_BIT
+    // VK_ACCESS_TRANSFER_WRITE_BIT             VK_PIPELINE_STAGE_TRANSFER_BIT
+    // VK_ACCESS_COLOR_ATTACHMENT_READ_BIT      VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT
+    // VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT     VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT
+    // VK_ACCESS_TRANSFER_READ_BIT specifies read access to an image
+    // or buffer in a copy operation.
     //////////////////////////////////////////////////////////
     vk_beginRecordCmds(vk.tmpRecordBuffer);
 
@@ -195,18 +225,24 @@ static void vk_read_pixels(unsigned char* const pBuf, uint32_t W, uint32_t H)
     image_copy.imageExtent.height = H;
     image_copy.imageExtent.depth = 1;
 
-    // Image memory barriers only apply to memory accesses involving a specific image subresource
-    // range. That is, a memory dependency formed from an image memory barrier is scoped to access
-    // via the specified image subresource range. Image memory barriers can also be used to define
-    // image layout transitions or a queue family ownership transfer for the specified image 
-    // subresource range.
+    // Image memory barriers only apply to memory accesses 
+    // involving a specific image subresource range. That is,
+    // a memory dependency formed from an image memory barrier
+    // is scoped to access via the specified image subresource range. 
+    // 
+    // Image memory barriers can also be used to define image
+    // layout transitions or a queue family ownership transfer
+    // for the specified image  subresource range.
 
     // Memory barriers are used to change image layouts here ...
     VkImageMemoryBarrier image_barrier;
     image_barrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
     image_barrier.pNext = NULL;
+    // srcAccessMask is a bitmask of VkAccessFlagBits specifying a source access mask.
     image_barrier.srcAccessMask = VK_ACCESS_COLOR_ATTACHMENT_READ_BIT;
-    image_barrier.dstAccessMask = VK_ACCESS_TRANSFER_READ_BIT;
+    // VK_ACCESS_TRANSFER_READ_BIT ?
+    // dstAccessMask is a bitmask of VkAccessFlagBits specifying a destination access mask.
+    image_barrier.dstAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
     image_barrier.oldLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
 
     // VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL must only be used as a
