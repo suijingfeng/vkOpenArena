@@ -278,47 +278,14 @@ static void vk_read_pixels(unsigned char* const pBuf, uint32_t W, uint32_t H)
 
 
 
+extern size_t RE_SaveJPGToBuffer(byte *buffer, size_t bufSize, int quality,
+    int image_width, int image_height, byte *image_buffer, int padding);
 
-static void RB_TakeScreenshotJPEG( uint32_t width, uint32_t height, char * const fileName )
+
+static void RB_TakeScreenshotJPEG(unsigned char * const pImg, uint32_t width, uint32_t height, char * const fileName,
+        const char * const path )
 {
     const uint32_t cnPixels = width * height; 
-
-    unsigned char* const pImg = (unsigned char*) malloc ( cnPixels * 4);
-
-    vk_read_pixels(pImg, width, height);
-
-#ifdef STB_IMAGE_WRITE_IMPLEMENTATION
-    // Remove alpha channel and rbg <-> bgr
-    {
-        unsigned char* pSrc = pImg;
-        unsigned char* pDst = pImg;
-
-        uint32_t i;
-        for (i = 0; i < cnPixels; ++i)
-        {
-            pSrc[0] = pDst[2];
-            pSrc[1] = pDst[1];
-            pSrc[2] = pDst[0];
-            pSrc += 3;
-            pDst += 4;
-        }
-    }
-
-	int error = stbi_write_jpg (fileName, width, height, 3, pImg, 90);    
-    //int error = stbi_write_jpg_to_func
-    
-    if(error == 0)
-    {
-        ri.Printf(PRINT_WARNING, "failed writing %s to the disk. \n", fileName);
-    }
-    else
-    {
-        ri.Printf(PRINT_ALL, "write %dx%d to %s success! \n", width, height, fileName);
-    }
-
-#else
-    extern size_t RE_SaveJPGToBuffer(byte *buffer, size_t bufSize, int quality,
-    int image_width, int image_height, byte *image_buffer, int padding);
 
     imgFlipY(pImg, width, height);
 
@@ -344,15 +311,18 @@ static void RB_TakeScreenshotJPEG( uint32_t width, uint32_t height, char * const
 
     bufSize = RE_SaveJPGToBuffer(out, bufSize, 80, width, height, pImg, 0);
 
-    ri.FS_WriteFile(fileName, out, bufSize);
+    char pathname[128] = {0}; 
+
+    snprintf( pathname, 128, "%s/%s", path, fileName );
+   
+    if( ri.FS_FileExists( pathname ) )
+        ri.Printf(PRINT_WARNING, " %s already exist, overwrite \n", pathname);
+
+    ri.FS_WriteFile(pathname, out, bufSize);
     
-    ri.Printf(PRINT_ALL, "write %dx%d to %s success! \n", width, height, fileName);
+    ri.Printf(PRINT_ALL, "write %s success! \n", pathname);
 
     free(out);
-
-#endif
-    
-    free( pImg );
 }
 
 
@@ -382,34 +352,41 @@ static void fnImageWriteToBufferCallback(void *context, void *data, int size)
 }
 
 
-// Yet another impl ...
-static void RB_TakeScreenshotJPG( uint32_t width, uint32_t height, char * const fileName )
+// Yet another impl using stbi ...
+static void RB_TakeScreenshotJPG(unsigned char* const pImg, uint32_t width, uint32_t height, char * const fileName )
 {
     const uint32_t cnPixels = width * height; 
 
-    unsigned char* const pImg = (unsigned char*) malloc ( cnPixels * 4);
 
-    vk_read_pixels(pImg, width, height);
+    //  bgr to rgb, split merely because the first pixel ... 
+    unsigned char* pSrc = pImg;
 
-#ifdef STB_IMAGE_WRITE_IMPLEMENTATION
-    // Remove alpha channel and rbg <-> bgr
+    for (uint32_t i = 0; i < cnPixels; ++i, pSrc += 4)
     {
-        unsigned char* pSrc = pImg;
-        unsigned char* pDst = pImg;
-
-        uint32_t i;
-        for (i = 0; i < cnPixels; ++i)
-        {
-            pSrc[0] = pDst[2];
-            pSrc[1] = pDst[1];
-            pSrc[2] = pDst[0];
-            pSrc += 3;
-            pDst += 4;
-        }
+        unsigned char b0 = pSrc[0];
+        unsigned char b2 = pSrc[2];
+        pSrc[0] = b2;
+        pSrc[2] = b0;
     }
 
-// 	int error = stbi_write_jpg (fileName, width, height, 3, pImg, 90);    
-////////////////////
+    // Remove alpha channel ...
+    {
+        const unsigned char* pSrc = pImg;
+        unsigned char* pDst = pImg;
+
+        for (uint32_t i = 0; i < cnPixels; ++i, pSrc += 4, pDst += 3)
+        {
+            pDst[0] = pSrc[0];
+            pDst[1] = pSrc[1];
+            pDst[2] = pSrc[2];
+        }
+    }
+    int error = 0;
+
+#ifndef STBI_WRITE_NO_STDIO
+	error = stbi_write_jpg (fileName, width, height, 3, pImg, 90);    
+#else
+
     uint32_t bufSize = cnPixels * 3;
 
     struct ImageWriteBuffer_s ctx = {
@@ -424,104 +401,26 @@ static void RB_TakeScreenshotJPG( uint32_t width, uint32_t height, char * const 
 
     ri.FS_WriteFile(fileName, ctx.pData, ctx.szBytesUsed);
 
-////
     free(ctx.pData);
-////////////////////////
+#endif
 
-    
     if(error == 0)
     {
         ri.Printf(PRINT_WARNING, "failed writing %s to the disk. \n", fileName);
     }
     else
     {
-        ri.Printf(PRINT_ALL, "write %dx%d to %s success! \n", width, height, fileName);
-    }
-
-#else
-    extern size_t RE_SaveJPGToBuffer(byte *buffer, size_t bufSize, int quality,
-    int image_width, int image_height, byte *image_buffer, int padding);
-
-    imgFlipY(pImg, width, height);
-
-    // Remove alpha channel and rbg <-> bgr
-    {
-        unsigned char* pSrc = pImg;
-        unsigned char* pDst = pImg;
-
-        uint32_t i;
-        for (i = 0; i < cnPixels; ++i)
-        {
-            pSrc[0] = pDst[2];
-            pSrc[1] = pDst[1];
-            pSrc[2] = pDst[0];
-            pSrc += 3;
-            pDst += 4;
-        }
-    }
-
-    uint32_t bufSize = cnPixels * 3;
-
-    unsigned char* const out = (unsigned char *) malloc(bufSize);
-
-    bufSize = RE_SaveJPGToBuffer(out, bufSize, 80, width, height, pImg, 0);
-
-    ri.FS_WriteFile(fileName, out, bufSize);
-    
-    ri.Printf(PRINT_ALL, "write %dx%d to %s success! \n", width, height, fileName);
-
-    free(out);
-
-#endif
-    
-    free( pImg );
+        ri.Printf(PRINT_ALL, "write to %s success! \n", fileName);
+    }  
 }
 
 
 
-static void RB_TakeScreenshotTGA( uint32_t width, uint32_t height, char * const fileName)
+static void RB_TakeScreenshotTGA(unsigned char * const pImg, uint32_t width, uint32_t height, 
+        const char * const fileName, const char * const path )
 {
 
     const uint32_t cnPixels = width * height;
-    unsigned char* const pImg = (unsigned char*) malloc ( cnPixels * 4 );
-    vk_read_pixels(pImg, width, height);
-
-
-#ifdef STB_IMAGE_WRITE_IMPLEMENTATION
-
-/*    
-    // rbg <-> bgr
-    {
-        unsigned char* pSrc = pImg;
-
-        uint32_t i;
-        for (i = 0; i < cnPixels; ++i)
-        {
-            unsigned char tmp = pSrc[0];
-            pSrc[0] = pSrc[2];
-            pSrc[2] = tmp;
-            pSrc += 4;
-        }
-    }
-*/
-
-    // Remove alpha channel and rbg <-> bgr
-    uint32_t i;
-    for (i = 0; i < cnPixels; ++i)
-    {
-        pImg[i*3+2] = *(pImg+i*4);
-        pImg[i*3+1] = *(pImg+i*4+1);
-        pImg[i*3+0] = *(pImg+i*4+2);
-    }
-
-    if( stbi_write_tga(fileName, width, height, 3, pImg) ) {
-        ri.Printf(PRINT_ALL, "write %dx%d to %s success! \n", width, height, fileName);
-    }
-    else {
-        ri.Printf(PRINT_WARNING, 
-                "Failed write to %s \n", fileName);
-    }
-#else
 
     const uint32_t imgSize = 18 + cnPixels * 3;
 
@@ -538,36 +437,55 @@ static void RB_TakeScreenshotTGA( uint32_t width, uint32_t height, char * const 
     // why the readed image got fliped about Y ???
     imgFlipY(pImg, width, height);
 
-    unsigned char* const buffer_ptr = pBuffer + 18;
 
-    // Remove alpha channel
-    uint32_t i;
-    for (i = 0; i < cnPixels; ++i)
+    // Remove alpha channel ...
     {
-        buffer_ptr[i*3]   = *(pImg+i*4);
-        buffer_ptr[i*3+1] = *(pImg+i*4+1);
-        buffer_ptr[i*3+2] = *(pImg+i*4+2);
+        const unsigned char* pSrc = pImg;
+        unsigned char* pDst = pBuffer + 18;
+
+        for (uint32_t i = 0; i < cnPixels; ++i, pSrc += 4, pDst += 3)
+        {
+            pDst[0] = pSrc[0];
+            pDst[1] = pSrc[1];
+            pDst[2] = pSrc[2];
+        }
     }
 
-    ri.FS_WriteFile( fileName, pBuffer, imgSize);
-    
-    ri.Printf(PRINT_ALL, "write %dx%d to %s success! \n", width, height, fileName);
+    char pathname[128] = {0}; 
+
+    snprintf( pathname, 128, "%s/%s", path, fileName );
+
+    ri.FS_WriteFile( pathname, pBuffer, imgSize);
+   
+
+    ri.Printf( PRINT_ALL, "%s to %s success! \n",
+            (ri.FS_FileExists( pathname ) ? "write" : "overwrite"), pathname );
 
     free( pBuffer );
+}
 
-#endif
 
-    free( pImg );
+static void R_NameTheImage(char * const pName, uint32_t max_name_len, uint32_t w, uint32_t h, const char * const ext)
+{
+    // scan for a free number
+    uint32_t lastNumber = getLastnumber();
+    uint32_t b = lastNumber / 100;
+    uint32_t remain = lastNumber - b*100;
+    uint32_t c = remain / 10;
+    uint32_t d = remain - c*10;
+
+    snprintf( pName, max_name_len, "shot%ix%i_%i%i%i.%s", w, h, b, c, d, ext );
 }
 
 
 void R_ScreenShotPNG_f( void )
 {
-    uint32_t width = vk.renderArea.extent.width;
-    uint32_t height = vk.renderArea.extent.height;
-    
+    const uint32_t width = vk_getWinWidth();
+    const uint32_t height = vk_getWinHeight();
+
     const uint32_t cnPixels = width * height;
     unsigned char* const pImg = (unsigned char*) malloc ( cnPixels * 4 );
+    
     vk_read_pixels(pImg, width, height);
 
     uint32_t i;
@@ -584,53 +502,39 @@ void R_ScreenShotPNG_f( void )
         }
     }
     
-    // Remove alpha channel
-    for (i = 0; i < cnPixels; ++i)
+    // Remove alpha channel ...
     {
-        pImg[i*3]   = *(pImg+i*4);
-        pImg[i*3+1] = *(pImg+i*4+1);
-        pImg[i*3+2] = *(pImg+i*4+2);
+        const unsigned char* pSrc = pImg;
+        unsigned char* pDst = pImg;
+
+        for (uint32_t i = 0; i < cnPixels; ++i, pSrc += 4, pDst += 3)
+        {
+            pDst[0] = pSrc[0];
+            pDst[1] = pSrc[1];
+            pDst[2] = pSrc[2];
+        }
     }
 
 	char checkname[MAX_OSPATH];
 
-    int lastNumber = getLastnumber();
-
-    // scan for a free number
-    for ( ; lastNumber <= 9999; ++lastNumber )
-    {
-        uint32_t a = lastNumber / 1000;
-        lastNumber -= a*1000;
-        uint32_t b = lastNumber / 100;
-        lastNumber -= b*100;
-        uint32_t c = lastNumber / 10;
-        lastNumber -= c*10;
-        uint32_t d = lastNumber;
-
-        snprintf( checkname, sizeof(checkname), "screenshot%i%i%i%i.png", a, b, c, d );
-
-        if (!ri.FS_FileExists( checkname ))
-        {
-            break; // file doesn't exist
-        }
-    }
+    R_NameTheImage(checkname, sizeof(checkname), width, height, "png");
 
     // For PNG, "stride_in_bytes" is the distance in bytes from the first byte of
     // a row of pixels to the first byte of the next row of pixels.
     stbi_write_png(checkname, width, height, 3, pImg, width*3);
 
-    ri.Printf(PRINT_ALL, "write %dx%d to %s success! \n", width, height, checkname);
+    ri.Printf(PRINT_ALL, "write to %s success! \n", checkname);
 
     free( pImg );
 }
 
 
-
 void R_ScreenShotBMP_f( void )
 {
-    uint32_t width = vk.renderArea.extent.width;
-    uint32_t height = vk.renderArea.extent.height;
-    
+
+    uint32_t width = vk_getWinWidth();
+    uint32_t height = vk_getWinHeight();
+
     const uint32_t cnPixels = width * height;
     unsigned char* const pImg = (unsigned char*) malloc ( cnPixels * 4 );
     vk_read_pixels(pImg, width, height);
@@ -650,42 +554,28 @@ void R_ScreenShotBMP_f( void )
         }
     }
     
-    // Remove alpha channel
-    for (i = 0; i < cnPixels; ++i)
+    // Remove alpha channel ...
     {
-        pImg[i*3]   = *(pImg+i*4);
-        pImg[i*3+1] = *(pImg+i*4+1);
-        pImg[i*3+2] = *(pImg+i*4+2);
-    }
+        const unsigned char* pSrc = pImg;
+        unsigned char* pDst = pImg;
 
-	char checkname[MAX_OSPATH];
-
-    int lastNumber = getLastnumber();
-
-    // scan for a free number
-    for ( ; lastNumber <= 9999; ++lastNumber )
-    {
-        uint32_t a = lastNumber / 1000;
-        lastNumber -= a*1000;
-        uint32_t b = lastNumber / 100;
-        lastNumber -= b*100;
-        uint32_t c = lastNumber / 10;
-        lastNumber -= c*10;
-        uint32_t d = lastNumber;
-
-        snprintf( checkname, sizeof(checkname), "screenshot%i%i%i%i.bmp", a, b, c, d );
-
-        if (!ri.FS_FileExists( checkname ))
+        for (uint32_t i = 0; i < cnPixels; ++i, pSrc += 4, pDst += 3)
         {
-            break; // file doesn't exist
+            pDst[0] = pSrc[0];
+            pDst[1] = pSrc[1];
+            pDst[2] = pSrc[2];
         }
     }
 
     // For PNG, "stride_in_bytes" is the distance in bytes from the first byte of
     // a row of pixels to the first byte of the next row of pixels.
-    stbi_write_bmp(checkname, width, height, 3, pImg);
-
-    ri.Printf(PRINT_ALL, "write %dx%d to %s success! \n", width, height, checkname);
+	char checkname[MAX_OSPATH];
+    // scan for a free number
+    // we dont care about overwrite, does it matter ? 
+    R_NameTheImage(checkname, sizeof(checkname), width, height, "bmp");
+    
+    if( stbi_write_bmp(checkname, width, height, 3, pImg) )
+        ri.Printf(PRINT_ALL, "write to %s success! \n", checkname);
 
     free( pImg );
 }
@@ -776,11 +666,13 @@ static void R_LevelShot( int W, int H )
 void R_LevelShot_f (void)
 {
 
-    int W = vk.renderArea.extent.width;
-    int H = vk.renderArea.extent.height;
+    uint32_t width = vk_getWinWidth();
+    uint32_t height = vk_getWinHeight();
 
-	R_LevelShot(W, H);
+	R_LevelShot(width, height);
 }
+
+
 
 
 /* 
@@ -793,13 +685,16 @@ screenshot [filename]
 Doesn't print the pacifier message if there is a second arg
 ================== 
 */  
-void R_ScreenShot_f (void)
+void R_ScreenShotTGA_f( void )
 {
-	char	checkname[MAX_OSPATH];
+	char checkname[MAX_OSPATH];
 
-    int W = vk.renderArea.extent.width;
-    int H = vk.renderArea.extent.height;
+    uint32_t W = vk_getWinWidth();
+    uint32_t H = vk_getWinHeight();
 
+    unsigned char* const pImg = (unsigned char*) malloc ( W * H * 4);
+
+    vk_read_pixels(pImg, W, H);
 
 	if ( ri.Cmd_Argc() == 2 )
     {
@@ -808,76 +703,62 @@ void R_ScreenShot_f (void)
 	}
     else
     {
-		// find a free filename
-        int lastNumber = getLastnumber();
-		// scan for a free number
-		for ( ; lastNumber <= 9999; ++lastNumber )
-        {
-			//R_ScreenshotFilename( lastNumber, checkname );
-            
-            int	a,b,c,d;
-
-            a = lastNumber / 1000;
-            b = lastNumber % 1000 / 100;
-            c = lastNumber % 100  / 10;
-            d = lastNumber % 10;
-
-            snprintf( checkname, sizeof(checkname), "screenshot%i%i%i%i.tga", a, b, c, d );
-
-            if (!ri.FS_FileExists( checkname ))
-            {
-                break; // file doesn't exist
-            }
-		}
-
-		if ( lastNumber >= 9999 )
-        {
-			ri.Printf (PRINT_ALL, "ScreenShot: Couldn't create a file\n"); 
-			return;
- 		}
-
-		lastNumber++;
+        R_NameTheImage(checkname, sizeof(checkname), W, H, "tga");
 	}
 
-	RB_TakeScreenshotTGA( W, H, checkname );
+	RB_TakeScreenshotTGA(pImg, W, H, checkname, "screenshots");
+
+
+    free(pImg);
+
 } 
+
+
 
 
 void R_ScreenShotJPEG_f(void)
 {
 	char checkname[MAX_OSPATH];
 
-    int W = vk.renderArea.extent.width;
-    int H = vk.renderArea.extent.height;
+    const uint32_t W = vk_getWinWidth();
+    const uint32_t H = vk_getWinHeight();
 
-    int lastNumber = getLastnumber();
+    unsigned char* const pImg = (unsigned char*) malloc ( W * H * 4);
 
-    // scan for a free number
-    for ( ; lastNumber <= 9999; ++lastNumber )
-    {
-        uint32_t a = lastNumber / 1000;
-        lastNumber -= a*1000;
-        uint32_t b = lastNumber / 100;
-        lastNumber -= b*100;
-        uint32_t c = lastNumber / 10;
-        lastNumber -= c*10;
-        uint32_t d = lastNumber;
+    vk_read_pixels(pImg, W, H);
 
-        snprintf( checkname, sizeof(checkname), "shot%i%i%i%i.jpg", a, b, c, d );
+    // we dont care about overwrite, does it matter ? 
+    R_NameTheImage(checkname, sizeof(checkname), W, H, "jpg");
+    
+    RB_TakeScreenshotJPEG(pImg, W, H, checkname, "screenshots" );
 
-        if (!ri.FS_FileExists( checkname ))
-        {
-            break; // file doesn't exist
-        }
-    }
-
-    if(0)
-	    RB_TakeScreenshotJPEG( W, H, checkname );
-    else
-        RB_TakeScreenshotJPG( W, H, checkname );
+    free(pImg);
 }
 
 
+void R_ScreenShotJPG_f(void)
+{
+    char imgname[MAX_OSPATH];
+
+    const uint32_t W = vk_getWinWidth();
+    const uint32_t H = vk_getWinHeight();
+
+    unsigned char* const pImg = (unsigned char*) malloc ( W * H * 4);
+
+    vk_read_pixels(pImg, W, H);
+
+    // we dont care about overwrite, does it matter ?
+    // it just write to where the execute locate 
+    R_NameTheImage(imgname, sizeof(imgname), W, H, "jpg");
+    RB_TakeScreenshotJPG(pImg, W, H, imgname );
+
+    free(pImg);
+}
+
+void R_ScreenShot_f()
+{
+    return R_ScreenShotJPG_f( );
+}
 
 void RE_TakeVideoFrame( const int Width, const int Height, 
         unsigned char *captureBuffer, unsigned char *encodeBuffer, qboolean motionJpeg )

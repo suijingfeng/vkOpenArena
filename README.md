@@ -339,6 +339,22 @@ $ \r_mode 12
 $ \vid_restart
 ```
 
+Q: save a screenshot ?
+
+```
+# OA and IOQ3 originally save to hidden dir which not easy to find
+# typically appdata\roaming (windows) and ./local
+screenshotJPEG
+screenshotTGA
+
+# those just save to where the current executable locate 
+screenshotPNG
+screenshotBMP
+screenshotJPG
+screenshot(same with screenshotJPG, press F11 on UI or F12 on gamming)
+```
+
+
 Q: How to use check FPS or using it as a benchmarking tool?
 
 ```

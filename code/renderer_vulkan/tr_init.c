@@ -110,6 +110,9 @@ void R_Init( void )
     ri.Cmd_AddCommand( "screenshotBMP", R_ScreenShotBMP_f );
     ri.Cmd_AddCommand( "screenshotPNG", R_ScreenShotPNG_f );
     ri.Cmd_AddCommand( "screenshotJPEG", R_ScreenShotJPEG_f );
+    ri.Cmd_AddCommand( "screenshotJPG", R_ScreenShotJPG_f );
+    ri.Cmd_AddCommand( "screenshotTGA", R_ScreenShotTGA_f );
+
 	ri.Cmd_AddCommand( "screenshot", R_ScreenShot_f );
 
     R_InitScene();
@@ -182,6 +185,8 @@ void RE_Shutdown( qboolean destroyWindow )
 	ri.Cmd_RemoveCommand("screenshotPNG");
 	ri.Cmd_RemoveCommand("screenshotBMP");
     ri.Cmd_RemoveCommand("screenshotJPEG");
+    ri.Cmd_RemoveCommand("screenshotJPG");
+    ri.Cmd_RemoveCommand("screenshotTGA");
 	ri.Cmd_RemoveCommand("screenshot");
     
 	R_DoneFreeType();
