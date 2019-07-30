@@ -104,13 +104,4 @@ void S_OggOpus_CodecCloseStream(snd_stream_t *stream);
 int S_OggOpus_CodecReadStream(snd_stream_t *stream, int bytes, void *buffer);
 #endif // USE_CODEC_OPUS
 
-// XMP (tracker music) codec
-#ifdef USE_CODEC_XMP
-extern snd_codec_t xmp_codec;
-extern snd_codec_t xmp_mod_codec;
-extern snd_codec_t xmp_xm_codec;
-extern snd_codec_t xmp_it_codec;
-extern snd_codec_t xmp_s3m_codec;
-#endif // USE_CODEC_XMP
-
 #endif // !_SND_CODEC_H_

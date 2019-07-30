@@ -351,7 +351,7 @@ screenshotTGA
 screenshotPNG
 screenshotBMP
 screenshotJPG
-screenshot(same with screenshotJPG, press F11 on UI or F12 on gamming)
+screenshot(same with screenshotJPG, press F12 on UI or F11 on gamming)
 ```
 
 

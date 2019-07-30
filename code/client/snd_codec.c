@@ -115,7 +115,11 @@ static void *S_CodecGetSound(const char *filename, snd_info_t *info)
 	return NULL;
 }
 
-
+/*
+=================
+S_CodecInit
+=================
+*/
 void S_CodecInit()
 {
 	codecs = NULL;
@@ -130,17 +134,13 @@ void S_CodecInit()
 
 // Register wav codec last so that it is always tried first when a file extension was not found
 	S_CodecRegister(&wav_codec);
-
-#ifdef USE_CODEC_XMP
-	S_CodecRegister(&xmp_codec);
-	S_CodecRegister(&xmp_mod_codec);
-	S_CodecRegister(&xmp_s3m_codec);
-	S_CodecRegister(&xmp_xm_codec);
-	S_CodecRegister(&xmp_it_codec);
-#endif
 }
 
-
+/*
+=================
+S_CodecShutdown
+=================
+*/
 void S_CodecShutdown()
 {
 	codecs = NULL;

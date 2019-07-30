@@ -164,13 +164,20 @@ ifndef USE_OPENAL_DLOPEN
 USE_OPENAL_DLOPEN=1
 endif
 
+ifndef USE_CURL
+USE_CURL=1
+endif
+
+ifndef USE_CURL_DLOPEN
+  ifdef MINGW
+    USE_CURL_DLOPEN=0
+  else
+    USE_CURL_DLOPEN=1
+  endif
+endif
 
 ifndef USE_CODEC_VORBIS
 USE_CODEC_VORBIS=1
-endif
-
-ifndef USE_CODEC_XMP
-USE_CODEC_XMP=0
 endif
 
 ifndef USE_CODEC_OPUS
@@ -214,9 +221,16 @@ USE_INTERNAL_JPEG=$(USE_INTERNAL_LIBS)
 endif
 
 ifndef USE_LOCAL_HEADERS
-USE_LOCAL_HEADERS=0
+USE_LOCAL_HEADERS=$(USE_INTERNAL_LIBS)
 endif
 
+ifndef USE_RENDERER_DLOPEN
+USE_RENDERER_DLOPEN=1
+endif
+
+ifndef USE_YACC
+USE_YACC=0
+endif
 
 ifndef DEBUG_CFLAGS
 DEBUG_CFLAGS=-ggdb -O0
@@ -250,10 +264,10 @@ NDIR=$(MOUNT_DIR)/null
 UIDIR=$(MOUNT_DIR)/ui
 Q3UIDIR=$(MOUNT_DIR)/q3_ui
 JPDIR=$(MOUNT_DIR)/jpeg-8c
-OGGDIR=$(MOUNT_DIR)/libogg-1.3.1
-VORBISDIR=$(MOUNT_DIR)/libvorbis-1.3.4
-OPUSDIR=$(MOUNT_DIR)/opus-1.1
-OPUSFILEDIR=$(MOUNT_DIR)/opusfile-0.5
+OGGDIR=$(MOUNT_DIR)/libogg-1.3.3
+VORBISDIR=$(MOUNT_DIR)/libvorbis-1.3.6
+OPUSDIR=$(MOUNT_DIR)/opus-1.2.1
+OPUSFILEDIR=$(MOUNT_DIR)/opusfile-0.9
 ZDIR=$(MOUNT_DIR)/zlib
 Q3ASMDIR=$(MOUNT_DIR)/tools/asm
 LBURGDIR=$(MOUNT_DIR)/tools/lcc/lburg
@@ -360,11 +374,17 @@ endif
 
 
   ifeq ($(USE_OPENAL),1)
-	ifneq ($(USE_OPENAL_DLOPEN),1)
-	  CLIENT_LIBS += $(THREAD_LIBS) $(OPENAL_LIBS)
-	endif
+    ifneq ($(USE_OPENAL_DLOPEN),1)
+      CLIENT_LIBS += $(THREAD_LIBS) $(OPENAL_LIBS)
+    endif
   endif
 
+  ifeq ($(USE_CURL),1)
+    CLIENT_CFLAGS += $(CURL_CFLAGS)
+    ifneq ($(USE_CURL_DLOPEN),1)
+      CLIENT_LIBS += $(CURL_LIBS)
+    endif
+  endif
 
   ifeq ($(USE_MUMBLE),1)
     CLIENT_LIBS += -lrt
@@ -389,7 +409,7 @@ ifeq ($(PLATFORM),darwin)
   LIBS = -framework Cocoa
   CLIENT_LIBS=
   RENDERER_LIBS=
-  OPTIMIZEVM=
+  OPTIMIZEVM= -O2
 
   BASE_CFLAGS = -Wall -Wimplicit -Wstrict-prototypes -mmacosx-version-min=10.5 \
 	-DMAC_OS_X_VERSION_MIN_REQUIRED=1050
@@ -437,28 +457,46 @@ ifeq ($(PLATFORM),darwin)
   BASE_CFLAGS += -DMACOS_X -fno-common -pipe
 
   ifeq ($(USE_OPENAL),1)
-	ifneq ($(USE_OPENAL_DLOPEN),1)
-	  CLIENT_LIBS += -framework OpenAL
-	endif
+    ifneq ($(USE_LOCAL_HEADERS),1)
+      CLIENT_CFLAGS += -I/System/Library/Frameworks/OpenAL.framework/Headers
+    endif
+    ifneq ($(USE_OPENAL_DLOPEN),1)
+      CLIENT_LIBS += -framework OpenAL
+    endif
   endif
 
+  ifeq ($(USE_CURL),1)
     CLIENT_CFLAGS += $(CURL_CFLAGS)
-    CLIENT_LIBS += $(CURL_LIBS)
+    ifneq ($(USE_CURL_DLOPEN),1)
+      CLIENT_LIBS += $(CURL_LIBS)
+    endif
+  endif
 
   BASE_CFLAGS += -D_THREAD_SAFE=1
 
-  ifeq ($(USE_LOCAL_HEADERS),1)
-	BASE_CFLAGS += -I$(SDLHDIR)/include
-  endif
+  CLIENT_LIBS += -framework IOKit
+  RENDERER_LIBS += -framework OpenGL
 
-  # We copy sdlmain before ranlib'ing it so that subversion doesn't think
-  #  the file has been modified by each build.
-  LIBSDLMAIN=$(B)/libSDL2main.a
-  LIBSDLMAINSRC=$(LIBSDIR)/macosx/libSDL2main.a
-  CLIENT_LIBS += -framework IOKit \
-	$(LIBSDIR)/macosx/libSDL2-2.0.0.dylib
-  RENDERER_LIBS += -framework OpenGL $(LIBSDIR)/macosx/libSDL2-2.0.0.dylib
-  CLIENT_EXTRA_FILES += $(LIBSDIR)/macosx/libSDL2-2.0.0.dylib
+  ifeq ($(USE_LOCAL_HEADERS),1)
+    # libSDL2-2.0.0.dylib for PPC is SDL 2.0.1 + changes to compile
+    ifneq ($(findstring $(ARCH),ppc ppc64),)
+      BASE_CFLAGS += -I$(SDLHDIR)/include-macppc
+    else
+      BASE_CFLAGS += -I$(SDLHDIR)/include
+    endif
+
+    # We copy sdlmain before ranlib'ing it so that subversion doesn't think
+    #  the file has been modified by each build.
+    LIBSDLMAIN=$(B)/libSDL2main.a
+    LIBSDLMAINSRC=$(LIBSDIR)/macosx/libSDL2main.a
+    CLIENT_LIBS += $(LIBSDIR)/macosx/libSDL2-2.0.0.dylib
+    RENDERER_LIBS += $(LIBSDIR)/macosx/libSDL2-2.0.0.dylib
+    CLIENT_EXTRA_FILES += $(LIBSDIR)/macosx/libSDL2-2.0.0.dylib
+  else
+    BASE_CFLAGS += -I/Library/Frameworks/SDL2.framework/Headers
+    CLIENT_LIBS += -framework SDL2
+    RENDERER_LIBS += -framework SDL2
+  endif
 
   OPTIMIZE = $(OPTIMIZEVM) -ffast-math
 
@@ -567,12 +605,20 @@ ifdef MINGW
     FREETYPE_CFLAGS = -Ifreetype2
   endif
 
-  CLIENT_CFLAGS += -DCURL_STATICLIB
-
-  ifeq ($(ARCH),x86_64)
-	CLIENT_LIBS += $(LIBSDIR)/win64/libcurl.a -lcrypt32
-  else
-	CLIENT_LIBS += $(LIBSDIR)/win32/libcurl.a -lcrypt32
+  ifeq ($(USE_CURL),1)
+    CLIENT_CFLAGS += $(CURL_CFLAGS)
+    ifneq ($(USE_CURL_DLOPEN),1)
+      ifeq ($(USE_LOCAL_HEADERS),1)
+        CLIENT_CFLAGS += -DCURL_STATICLIB
+        ifeq ($(ARCH),x86_64)
+          CLIENT_LIBS += $(LIBSDIR)/win64/libcurl.a -lcrypt32
+        else
+          CLIENT_LIBS += $(LIBSDIR)/win32/libcurl.a -lcrypt32
+        endif
+      else
+        CLIENT_LIBS += $(CURL_LIBS)
+      endif
+    endif
   endif
 
   ifeq ($(ARCH),x86)
@@ -585,7 +631,6 @@ ifdef MINGW
   # libmingw32 must be linked before libSDLmain
   CLIENT_LIBS += -lmingw32
   RENDERER_LIBS += -lmingw32
-
 
 	CLIENT_CFLAGS += -I$(SDLHDIR)/include
 
@@ -699,24 +744,21 @@ endif
 ifeq ($(USE_OPENAL),1)
   CLIENT_CFLAGS += -DUSE_OPENAL
   ifeq ($(USE_OPENAL_DLOPEN),1)
-	CLIENT_CFLAGS += -DUSE_OPENAL_DLOPEN
+    CLIENT_CFLAGS += -DUSE_OPENAL_DLOPEN
   endif
 endif
 
 ifeq ($(USE_CURL),1)
   CLIENT_CFLAGS += -DUSE_CURL
+  ifeq ($(USE_CURL_DLOPEN),1)
+    CLIENT_CFLAGS += -DUSE_CURL_DLOPEN
+  endif
 endif
 
 ifeq ($(USE_VOIP),1)
   CLIENT_CFLAGS += -DUSE_VOIP
   SERVER_CFLAGS += -DUSE_VOIP
   NEED_OPUS=1
-endif
-
-ifeq ($(USE_CODEC_XMP),1)
-  CLIENT_CFLAGS += -DUSE_CODEC_XMP
-  CLIENT_LIBS += -lxmp
-  NEED_OGG=1
 endif
 
 ifeq ($(USE_CODEC_OPUS),1)
@@ -804,6 +846,9 @@ ifdef DEFAULT_BASEDIR
   BASE_CFLAGS += -DDEFAULT_BASEDIR=\\\"$(DEFAULT_BASEDIR)\\\"
 endif
 
+ifeq ($(USE_LOCAL_HEADERS),1)
+  BASE_CFLAGS += -DUSE_LOCAL_HEADERS
+endif
 
 ifeq ($(BUILD_STANDALONE),1)
   BASE_CFLAGS += -DSTANDALONE
@@ -868,7 +913,6 @@ $(echo_cmd) "SHLIB_CC $<"
 $(Q)$(CC) $(BASEGAME_CFLAGS) $(SHLIBCFLAGS) $(CFLAGS) $(OPTIMIZEVM) -o $@ -c $<
 $(Q)$(DO_QVM_DEP)
 endef
-
 
 define DO_GAME_CC
 $(echo_cmd) "GAME_CC $<"
@@ -1314,7 +1358,6 @@ Q3OBJ = \
   $(B)/client/snd_codec_wav.o \
   $(B)/client/snd_codec_ogg.o \
   $(B)/client/snd_codec_opus.o \
-  $(B)/client/snd_codec_xmp.o \
   \
   $(B)/client/qal.o \
   $(B)/client/snd_openal.o \
@@ -1859,6 +1902,7 @@ Q3OBJ += \
   $(B)/client/opus/lin2log.o \
   $(B)/client/opus/log2lin.o \
   $(B)/client/opus/LPC_analysis_filter.o \
+  $(B)/client/opus/LPC_fit.o \
   $(B)/client/opus/LPC_inv_pred_gain.o \
   $(B)/client/opus/table_LSF_cos.o \
   $(B)/client/opus/NLSF2A.o \
@@ -1892,11 +1936,9 @@ Q3OBJ += \
   $(B)/client/opus/LTP_analysis_filter_FLP.o \
   $(B)/client/opus/LTP_scale_ctrl_FLP.o \
   $(B)/client/opus/noise_shape_analysis_FLP.o \
-  $(B)/client/opus/prefilter_FLP.o \
   $(B)/client/opus/process_gains_FLP.o \
   $(B)/client/opus/regularize_correlations_FLP.o \
   $(B)/client/opus/residual_energy_FLP.o \
-  $(B)/client/opus/solve_LS_FLP.o \
   $(B)/client/opus/warped_autocorrelation_FLP.o \
   $(B)/client/opus/wrappers_FLP.o \
   $(B)/client/opus/autocorrelation_FLP.o \
@@ -1905,7 +1947,6 @@ Q3OBJ += \
   $(B)/client/opus/energy_FLP.o \
   $(B)/client/opus/inner_product_FLP.o \
   $(B)/client/opus/k2a_FLP.o \
-  $(B)/client/opus/levinsondurbin_FLP.o \
   $(B)/client/opus/LPC_inv_pred_gain_FLP.o \
   $(B)/client/opus/pitch_analysis_core_FLP.o \
   $(B)/client/opus/scale_copy_vector_FLP.o \
@@ -2885,7 +2926,6 @@ toolsclean2:
 	@rm -f $(TOOLSOBJ_D_FILES)
 	@rm -f $(LBURG) $(DAGCHECK_C) $(Q3RCC) $(Q3CPP) $(Q3LCC) $(Q3ASM)
 
-
 distclean: clean toolsclean
 	@rm -rf $(BUILD_DIR)
 
@@ -2895,6 +2935,7 @@ ifdef MINGW
 		SDLDLL=$(SDLDLL) \
 		USE_RENDERER_DLOPEN=$(USE_RENDERER_DLOPEN) \
 		USE_OPENAL_DLOPEN=$(USE_OPENAL_DLOPEN) \
+		USE_CURL_DLOPEN=$(USE_CURL_DLOPEN) \
 		USE_INTERNAL_OPUS=$(USE_INTERNAL_OPUS) \
 		USE_INTERNAL_ZLIB=$(USE_INTERNAL_ZLIB) \
 		USE_INTERNAL_JPEG=$(USE_INTERNAL_JPEG)
