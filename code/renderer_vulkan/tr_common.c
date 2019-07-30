@@ -89,7 +89,7 @@ void VectorCross( const vec3_t v1, const vec3_t v2, vec3_t cross )
 
 // fast vector normalize routine that does not check to make sure
 // that length != 0, nor does it return length, uses rsqrt approximation
-void FastNormalize1f(float v[3])
+void R_FastNormalize1f(float v[3])
 {
 	// writing it this way allows gcc to recognize that rsqrt can be used
     float invLen = 1.0f / sqrtf(v[0]*v[0] + v[1]*v[1] + v[2]*v[2]);

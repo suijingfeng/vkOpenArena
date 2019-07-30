@@ -65,7 +65,7 @@ int isNonCaseStringEqual(const char * s1, const char * s2);
 
 void PointRotateAroundVector(float* dst, const float* dir, const float* p, const float degrees);
 
-void FastNormalize1f(float v[3]);
+void R_FastNormalize1f(float v[3]);
 // char *getExtension( const char *name );
 char* R_SkipPath(char *pathname);
 void R_StripExtension(const char *in, char *out, int destsize);
