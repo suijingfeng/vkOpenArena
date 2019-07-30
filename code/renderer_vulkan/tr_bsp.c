@@ -103,6 +103,7 @@ static void HSVtoRGB( float h, float s, float v, float rgb[3] )
 }
 
 
+// Does lightmap need gamma calibration ???
 static void R_ColorShiftLightingBytes( uint8_t in[4], uint8_t out[4] )
 {
 	// shift the color data based on overbright range
@@ -111,18 +112,18 @@ static void R_ColorShiftLightingBytes( uint8_t in[4], uint8_t out[4] )
     float factor = r_brightness->value;
 
 	// shift the data based on overbright range
-	uint32_t r = in[0] * factor;
-	uint32_t g = in[1] * factor;
-	uint32_t b = in[2] * factor;
+	float r = in[0] * factor;
+	float g = in[1] * factor;
+	float b = in[2] * factor;
 	
 	// normalize by color instead of saturating to white
-    uint32_t max = r > g ? r : g;
+    float max = r > g ? r : g;
     if(b > max)
     {
         max = b;
     }
 
-    if(( r | g | b ) > 255)
+    if( max > 255.0f )
     {
         float factor2 = 255.0f / max;
     	r *= factor2;
@@ -149,12 +150,50 @@ static void R_ColorShiftLightingBytes( uint8_t in[4], uint8_t out[4] )
 }
 
 
+static void R_LightUpLightMap( const uint8_t * pIn, uint32_t width, uint32_t height, uint8_t * pOut)
+{
+    const uint32_t szPixels = width * height ;
+    const float factor = r_brightness->value;
+
+    // 128 * 128 = 1024 * 16 = 16k
+    for (uint32_t j = 0 ; j < szPixels; ++j )
+    {
+
+        float r = pIn[0] * factor;
+	    float g = pIn[1] * factor;
+	    float b = pIn[2] * factor;
+	    
+        // normalize by color instead of saturating to white
+        float max = r > g ? r : g;
+        if(b > max)
+        {
+            max = b;
+        }
+
+        if( max > 255.0f )
+        {
+            float factor2 = 255.0f / max;
+    	    r *= factor2;
+		    g *= factor2;
+		    b *= factor2;
+        }
+
+    	pOut[0] = r;
+	    pOut[1] = g;
+	    pOut[2] = b;
+	    pOut[3] = 255;
+    
+        pOut += 4;
+        pIn += 3;
+    }
+}
+
+
+
 #define	LIGHTMAP_SIZE	128
 static void R_LoadLightmaps(const lump_t * const l )
 {
-	byte *buf_p;
 	unsigned char image[LIGHTMAP_SIZE*LIGHTMAP_SIZE*4];
-	int			i, j;
 	float maxIntensity = 0;
 	double sumIntensity = 0;
 
@@ -165,37 +204,48 @@ static void R_LoadLightmaps(const lump_t * const l )
 	uint8_t* buf = fileBase + l->fileofs;
 
 	// create all the lightmaps
-    uint32_t numLightmaps = len / (LIGHTMAP_SIZE * LIGHTMAP_SIZE * 3);
-	if ( numLightmaps == 1 )
+    const uint32_t szLmPixels = LIGHTMAP_SIZE*LIGHTMAP_SIZE;
+    const uint32_t szLmBytes = LIGHTMAP_SIZE*LIGHTMAP_SIZE*3;
+
+    const uint32_t numLightmaps = len / szLmBytes;
+
+    if(len - numLightmaps * szLmBytes)
+    {
+        ri.Printf(PRINT_WARNING, "len: %d != numLightmaps(%d) * szLmbytes(%d). \n",
+                len, numLightmaps, szLmBytes);
+    }
+    else
+    {
+        ri.Printf(PRINT_ALL, "numLightmaps: %d\n", numLightmaps);
+    }
+/*    
+    if ( numLightmaps == 1 )
     {
 		//FIXME: HACK: maps with only one lightmap turn up fullbright for some reason.
 		//this avoids this, but isn't the correct solution.
 		++numLightmaps;
 	}
-    ri.Printf(PRINT_ALL, "numLightmaps: %d\n", numLightmaps);
+*/
+
     tr.numLightmaps = numLightmaps;
+	const unsigned char* buf_p = buf;
 
-	// if we are in r_vertexLight mode, we don't need the lightmaps at all
-	if ( r_vertexLight->integer ) {
-		return;
-	}
-
-	for ( i = 0 ; i < numLightmaps; ++i )
+    uint32_t i;
+	for ( i = 0; i < numLightmaps; ++i)
     {
 		// expand the 24 bit on-disk to 32 bit
-		buf_p = buf + i * LIGHTMAP_SIZE*LIGHTMAP_SIZE * 3;
 
 		if ( r_lightmap->integer == 2 )
 		{	// color code by intensity as development tool	(FIXME: check range)
-			for ( j = 0; j < LIGHTMAP_SIZE * LIGHTMAP_SIZE; j++ )
+			for (uint32_t j = 0; j < szLmPixels; ++j )
 			{
 				float r = buf_p[j*3+0];
 				float g = buf_p[j*3+1];
 				float b = buf_p[j*3+2];
-				float intensity;
+		
 				float out[3] = {0.0, 0.0, 0.0};
 
-				intensity = 0.33f * r + 0.685f * g + 0.063f * b;
+				float intensity = 0.33f * r + 0.685f * g + 0.063f * b;
 
 				if ( intensity > 255 )
 					intensity = 1.0f;
@@ -217,14 +267,15 @@ static void R_LoadLightmaps(const lump_t * const l )
 		}
         else
         {
-			for ( j = 0 ; j < LIGHTMAP_SIZE * LIGHTMAP_SIZE; ++j )
-            {
-				R_ColorShiftLightingBytes( &buf_p[j*3], &image[j*4] );
-				image[j*4+3] = 255;
-			}
+            R_LightUpLightMap(buf_p, LIGHTMAP_SIZE, LIGHTMAP_SIZE, image);
 		}
-		
-        tr.lightmaps[i] = R_CreateImage( va("*lightmap%d",i), image, 
+	
+        buf_p += szLmBytes; 
+
+        char lmName[32] = {0};
+        snprintf(lmName, 32, "*lightmap%d", i);
+        // va("*lightmap%d",i);
+        tr.lightmaps[i] = R_CreateImage( lmName, image, 
 			LIGHTMAP_SIZE, LIGHTMAP_SIZE, qfalse, qfalse, GL_CLAMP);
 	}
 

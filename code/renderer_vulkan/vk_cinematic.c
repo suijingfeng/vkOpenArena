@@ -218,7 +218,7 @@ void RE_UploadCinematic(int w, int h, int cols, int rows, const unsigned char * 
         // drivers can tell we are going to be changing
         // it and don't try and do a texture compression       
 
-        vk_imgUploadToStagBuffer(data, cols * rows * 4);
+        VK_UploadImageToStagBuffer(data, cols * rows * 4);
 
         VkBufferImageCopy regions[1];
 

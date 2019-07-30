@@ -318,6 +318,16 @@ static void vk_createDescriptorSet(struct image_s * const pImage)
 
 
 
+void vk_createImageResourceImpl(struct image_s * const pImage)
+{
+    vk_create2DImageHandle( VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT, pImage);
+    vk_bindImageHandleWithDeviceMemory(pImage->handle, &devMemImg.Index, devMemImg.Chunks);
+    vk_createViewForImageHandle(pImage->handle, VK_FORMAT_R8G8B8A8_UNORM, &pImage->view);
+    vk_createDescriptorSet(pImage);
+}
+
+
+// how can i make sure the incomming image dosen't have a alpha channel ?
 image_t* R_CreateImage( const char *name, unsigned char* pic, const uint32_t width, const uint32_t height,
 						VkBool32 isMipMap, VkBool32 allowPicmip, int glWrapClampMode)
 {
@@ -511,14 +521,15 @@ image_t* R_CreateImage( const char *name, unsigned char* pic, const uint32_t wid
         //    curMipMapLevel, scaled_width, scaled_height, buffer_size, name);
     }
 
-    
+    /*
     vk_create2DImageHandle( VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT, pImage);
     vk_bindImageHandleWithDeviceMemory(pImage->handle, &devMemImg.Index, devMemImg.Chunks);
     vk_createViewForImageHandle(pImage->handle, VK_FORMAT_R8G8B8A8_UNORM, &pImage->view);
     vk_createDescriptorSet(pImage);
+    */
+    vk_createImageResourceImpl(pImage);
 
-   
-    vk_imgUploadToStagBuffer(pUploadBuffer, buffer_size);
+    VK_UploadImageToStagBuffer(pUploadBuffer, buffer_size);
 
     vk_stagBufToDevLocal(pImage->handle, regions, pImage->mipLevels);
     
@@ -631,8 +642,7 @@ static void R_CreateDefaultImage( void )
 	// the default image will be a box, to allow you to see the mapping coordinates
 	memset( data, 32, sizeof( data ) );
 
-	uint32_t x;
-	for ( x = 0; x < DEFAULT_SIZE; ++x )
+	for (uint32_t x = 0; x < DEFAULT_SIZE; ++x )
 	{
 		data[0][x][0] =
 			data[0][x][1] =
@@ -654,6 +664,7 @@ static void R_CreateDefaultImage( void )
 			data[x][DEFAULT_SIZE-1][2] =
 			data[x][DEFAULT_SIZE-1][3] = 255;
 	}
+    
 	tr.defaultImage = R_CreateImage("*default", (unsigned char *)data, 
             DEFAULT_SIZE, DEFAULT_SIZE, qtrue, qfalse, GL_REPEAT);
     #undef DEFAULT_SIZE
