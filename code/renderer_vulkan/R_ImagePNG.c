@@ -19,10 +19,9 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 ===========================================================================
 */
 
-#include "../qcommon/puff.h"
-
 #include "ref_import.h"
 #include "R_LoadImage.h"
+#include "R_Puff.h"
 
 // we could limit the png size to a lower value here
 #ifndef INT_MAX

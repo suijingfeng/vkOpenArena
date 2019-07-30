@@ -34,7 +34,7 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #include "tr_model.h"
 #include "srfTriangles_type.h"
 #include "srfSurfaceFace_type.h"
-
+#include "tr_common.h"
 
 /*
 
@@ -450,7 +450,7 @@ static void ParseMesh ( dsurface_t *ds, drawVert_t *verts, msurface_t *surf ) {
 	VectorAdd( bounds[0], bounds[1], bounds[1] );
 	VectorScale( bounds[1], 0.5f, grid->lodOrigin );
 	VectorSubtract( bounds[0], grid->lodOrigin, tmpVec );
-	grid->lodRadius = VectorLength( tmpVec );
+	grid->lodRadius = sqrtf( tmpVec[0]*tmpVec[0]+tmpVec[1]*tmpVec[1]+tmpVec[2]*tmpVec[2]);
 }
 
 /*
@@ -1665,10 +1665,12 @@ static	void R_LoadFogs( lump_t *l, lump_t *brushesLump, lump_t *sidesLump ) {
 
 		if ( sideNum == -1 ) {
 			out->hasSurface = qfalse;
-		} else {
+		} 
+        else
+        {
 			out->hasSurface = qtrue;
 			planeNum = LittleLong( sides[ firstSide + sideNum ].planeNum );
-			VectorSubtract( vec3_origin, s_worldData.planes[ planeNum ].normal, out->surface );
+			VectorSubtract( ORIGIN, s_worldData.planes[ planeNum ].normal, out->surface );
 			out->surface[3] = -s_worldData.planes[ planeNum ].dist;
 		}
 

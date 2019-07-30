@@ -143,22 +143,21 @@ static uint32_t vk_createScreenShotManager(const uint32_t w, const uint32_t h)
 
 static void imgFlipY(unsigned char * pBuf, const uint32_t w, const uint32_t h)
 {
-    const uint32_t a_row = w * 4;
+    const uint32_t bytesInOneRow = w * 4;
     const uint32_t nLines = h / 2;
 
-    unsigned char* const pTmp = (unsigned char*) malloc( a_row );
+    unsigned char* const pTmp = (unsigned char*) malloc( bytesInOneRow );
     unsigned char* pSrc = pBuf;
     unsigned char* pDst = pBuf + w * (h - 1) * 4;
 
-    uint32_t j = 0;
-    for (j = 0; j < nLines; ++j)
+    for (uint32_t j = 0; j < nLines; ++j)
     {
-        memcpy(pTmp, pSrc, a_row );
-        memcpy(pSrc, pDst, a_row );
-        memcpy(pDst, pTmp, a_row );
+        memcpy(pTmp, pSrc, bytesInOneRow );
+        memcpy(pSrc, pDst, bytesInOneRow );
+        memcpy(pDst, pTmp, bytesInOneRow );
 
-        pSrc += a_row;
-        pDst -= a_row;
+        pSrc += bytesInOneRow;
+        pDst -= bytesInOneRow;
 	}
 
     free(pTmp);
@@ -710,7 +709,6 @@ void R_ScreenShotTGA_f( void )
 
 
     free(pImg);
-
 } 
 
 
@@ -771,22 +769,22 @@ void RE_TakeVideoFrame( const int Width, const int Height,
 
 
 	// AVI line padding
-	int avipadwidth = PAD( (Width * 3), 4);
+	const int avipadwidth = PAD( (Width * 3), 4);
 	
-    unsigned char* pSrc = captureBuffer;
-    unsigned char* pDst = pImg;
-    uint32_t j;
-    for(j = 0; j < Height; ++j)
-    {
-        uint32_t i;
-        for (i = 0; i < Width; ++i)
+    const unsigned char* pSrc = pImg;
+    unsigned char* pDstRow = captureBuffer;
+
+    for(uint32_t j = 0; j < Height; ++j, pDstRow += avipadwidth )
+    {   
+        unsigned char* pDst = pDstRow;
+        for (uint32_t i = 0; i < Width; ++i)
         {
-            *(pSrc + i*3 + 0) = *( pDst + i*4 + 2 );
-            *(pSrc + i*3 + 1) = *( pDst + i*4 + 1 );
-            *(pSrc + i*3 + 2) = *( pDst + i*4 + 0 );
+            *(pDst + 0) = *( pSrc + 2 );
+            *(pDst + 1) = *( pSrc + 1 );
+            *(pDst + 2) = *( pSrc + 0 );
+            pDst += 3;
+            pSrc += 4; 
         }
-        pSrc += avipadwidth;
-        pDst += Width * 4;
     }
 
     int memcount = RE_SaveJPGToBuffer(encodeBuffer, Width * Height * 3,

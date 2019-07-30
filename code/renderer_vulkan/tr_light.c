@@ -331,7 +331,8 @@ void R_SetupEntityLighting( const trRefdef_t *refdef, trRefEntity_t *ent )
 	//
 	// modify the light by dynamic lights
 	//
-	float d = VectorLength( ent->directedLight );
+    const float * const v = ent->directedLight;
+	float d = sqrtf( v[0]*v[0] + v[1]*v[1] + v[2]*v[2] );
 	VectorScale( ent->lightDir, d, lightDir );
 
 	for ( i = 0 ; i < refdef->num_dlights ; ++i )

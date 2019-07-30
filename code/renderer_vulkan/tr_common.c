@@ -109,6 +109,53 @@ void FastNormalize2f( const float* v, float* out)
 	out[2] = v[2] * invLen;
 }
 
+
+#ifdef USE_RENDERER_DLOPEN
+
+
+float VectorNormalize( float v[3] )
+{
+	// NOTE: TTimo - Apple G4 source uses double?
+	float length = v[0]*v[0] + v[1]*v[1] + v[2]*v[2];
+
+	if ( length )
+    {
+		/* writing it this way allows gcc to recognize that rsqrt can be used */
+		float ilength = 1.0f / sqrtf (length);
+		/* sqrt(length) = length * (1 / sqrt(length)) */
+		length *= ilength;
+		v[0] *= ilength;
+		v[1] *= ilength;
+		v[2] *= ilength;
+	}
+	return length;
+}
+
+
+float VectorNormalize2( const float v[3], float out[3] )
+{
+	float length = v[0]*v[0] + v[1]*v[1] + v[2]*v[2];
+
+	if (length)
+	{
+		/* writing it this way allows gcc to recognize that rsqrt can be used */
+		float ilength = 1.0f/(float)sqrt(length);
+		/* sqrt(length) = length * (1 / sqrt(length)) */
+		length *= ilength;
+		out[0] = v[0]*ilength;
+		out[1] = v[1]*ilength;
+		out[2] = v[2]*ilength;
+	}
+    else
+    {
+		VectorClear( out );
+	}
+		
+	return length;
+}
+
+#endif
+
 // use Rodrigue's rotation formula
 // dir are not assumed to be unit vector
 void PointRotateAroundVector(float* res, const float* vec, const float* p, const float degrees)
@@ -135,29 +182,15 @@ void PointRotateAroundVector(float* res, const float* vec, const float* p, const
     res[2] += cos_th * p[2] + d * k[2]; 
 }
 
-// vector k are assumed to be unit
-void RotateAroundUnitVector(float* res, const float* k, const float* p, const float degrees)
-{
-    float rad = DEG2RAD( degrees );
-    float cos_th = cos( rad );
-    float sin_th = sin( rad );
- 
-    float d = (1 - cos_th) * (p[0] * k[0] + p[1] * k[1] + p[2] * k[2]);
 
-	res[0] = sin_th * (k[1]*p[2] - k[2]*p[1]);
-	res[1] = sin_th * (k[2]*p[0] - k[0]*p[2]);
-	res[2] = sin_th * (k[0]*p[1] - k[1]*p[0]);
 
-    res[0] += cos_th * p[0] + d * k[0]; 
-    res[1] += cos_th * p[1] + d * k[1]; 
-    res[2] += cos_th * p[2] + d * k[2]; 
-}
+
 
 
 // note: vector forward are NOT assumed to be nornalized,
 // unit: nornalized of forward,
 // dst: unit vector which perpendicular of forward(src) 
-void VectorPerp( const vec3_t src, vec3_t dst )
+void VectorPerp( const float src[3], float dst[3] )
 {
     float unit[3];
     
@@ -391,7 +424,7 @@ void BoundingSphereOfSpheres(vec3_t origin1, float radius1, vec3_t origin2, floa
 	*radius3 = VectorLen(diff) * 0.5f + MAX(radius1, radius2);
 }
 
-VkBool32 isNonCaseStringEqual(const char * s1, const char * s2)
+int isNonCaseStringEqual(const char * s1, const char * s2)
 {
     if( (s1 != NULL) && (s2 != NULL) )
     {
@@ -417,15 +450,15 @@ VkBool32 isNonCaseStringEqual(const char * s1, const char * s2)
             if( c1 != c2 )
             {
                 // string are not equal
-                return VK_FALSE;
+                return 0;
             }
         } while(c1 || c2);
 
-        return VK_TRUE;
+        return 1;
     }
 
     // should not compare null, this is not meaningful ...
     ri.Printf( PRINT_WARNING, "WARNING: compare NULL string. %p == %p ? \n", s1, s2 );
-    return VK_FALSE;
+    return 0;
 }
 

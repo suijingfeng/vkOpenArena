@@ -1673,10 +1673,10 @@ Q3VKOBJ = \
   $(B)/renderer_vulkan/R_LoadImage.o \
   $(B)/renderer_vulkan/R_ImageJPG.o \
   $(B)/renderer_vulkan/R_ImageTGA.o \
+  $(B)/renderer_vulkan/R_Puff.o \
   $(B)/renderer_vulkan/R_ImagePNG.o \
   $(B)/renderer_vulkan/R_ImageBMP.o \
   $(B)/renderer_vulkan/R_ImagePCX.o \
-
 
   Q3VKOBJ += $(B)/renderer_vulkan/vk_create_window_SDL.o
 
@@ -1699,9 +1699,9 @@ ifneq ($(USE_RENDERER_DLOPEN), 0)
 	$(B)/renderergl2/q_math.o
 
   Q3VKOBJ += \
-	$(B)/renderer_vulkan/q_shared.o \
-	$(B)/renderer_vulkan/puff.o \
-	$(B)/renderer_vulkan/q_math.o
+	$(B)/renderer_vulkan/q_shared.o
+
+# 	$(B)/renderer_vulkan/q_math.o
 
   Q3MYDEVOBJ += \
 	$(B)/renderer_mydev/q_shared.o \

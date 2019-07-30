@@ -115,7 +115,6 @@ void RB_AddQuadStampExt(const float origin[3], vec3_t left, vec3_t up, const uin
 
 
 	// constant normal all the way around
-	// VectorSubtract( vec3_origin, backEnd.viewParms.or.axis[0], normal );
     float normal[3] = { -backEnd.viewParms.or.axis[0][0],
                         -backEnd.viewParms.or.axis[0][1],
                         -backEnd.viewParms.or.axis[0][2]};
@@ -233,7 +232,6 @@ static void RB_SurfaceSprite(const refEntity_t* const pEnt, const viewParms_t * 
 
 	if ( pViewPar->isMirror )
     {
-		// VectorSubtract( vec3_origin, left, left );
         left[0] = -left[0];
         left[1] = -left[1];
         left[2] = -left[2];
@@ -551,7 +549,7 @@ static void RB_SurfaceRailCore(const refEntity_t * const e, const viewParms_t * 
 	
     VectorNormalize( v1 );
 	VectorNormalize( v2 );
-	CrossProduct( v1, v2, right );
+	VectorCross( v1, v2, right );
 	VectorNormalize( right );
 
 	DoRailCore( e->oldorigin, e->origin, right, VectorNormalize( vec ), r_railCoreWidth->integer,
@@ -575,7 +573,7 @@ static void RB_SurfaceLightningBolt( const refEntity_t * const e, const viewParm
 	VectorNormalize( v1 );
 	VectorSubtract( e->oldorigin, pViewPar->or.origin, v2 );
 	VectorNormalize( v2 );
-	CrossProduct( v1, v2, right );
+	VectorCross( v1, v2, right );
 	VectorNormalize( right );
 	uint32_t i;
 	for ( i = 0 ; i < 4 ; ++i )
@@ -583,7 +581,7 @@ static void RB_SurfaceLightningBolt( const refEntity_t * const e, const viewParm
 		vec3_t	temp;
 
 		DoRailCore( e->origin, e->oldorigin, right, len, 16, e->shaderRGBA);
-		RotatePointAroundVector( temp, vec, right, 45 );
+		PointRotateAroundVector( temp, vec, right, 45 );
 		VectorCopy( temp, right );
 	}
 }

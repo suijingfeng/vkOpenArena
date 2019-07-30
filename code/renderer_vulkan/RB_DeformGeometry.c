@@ -462,7 +462,7 @@ static void Autosprite2Deform( shaderCommands_t * const pTess )
 		VectorSubtract( mid[1], mid[0], major );
 
 		// cross this with the view direction to get minor axis
-		CrossProduct( major, forward, minor );
+		VectorCross( major, forward, minor );
 		VectorNormalize( minor );
 		
 		// re-project the points
@@ -509,7 +509,7 @@ static void RB_DeformText( const char * const text, shaderCommands_t * const pTe
 	height[0] = 0;
 	height[1] = 0;
 	height[2] = -1;
-	CrossProduct( pTess->normal[0], height, width );
+	VectorCross( pTess->normal[0], height, width );
 
 	// find the midpoint of the box
 	VectorClear( mid );

@@ -1196,7 +1196,7 @@ void RB_ComputeColors( struct shaderStage_s * const pStage )
 				vec3_t v;
 
 				VectorSubtract( tess.xyz[i], backEnd.viewParms.or.origin, v );
-				int alpha = VectorLength( v ) / tess.shader->portalRange * 255;
+				int alpha = sqrtf( v[0]*v[0]+v[1]*v[1]+v[2]*v[2] ) / tess.shader->portalRange * 255;
 
 
 				if ( alpha < 0 )

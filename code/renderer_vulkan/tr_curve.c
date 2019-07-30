@@ -130,10 +130,11 @@ static	int	neighbors[8][2] = {
 	};
 
 	wrapWidth = qfalse;
-	for ( i = 0 ; i < height ; i++ ) {
+	for ( i = 0 ; i < height ; ++i )
+    {
 		VectorSubtract( ctrl[i][0].xyz, ctrl[i][width-1].xyz, delta );
-		len = VectorLengthSquared( delta );
-		if ( len > 1.0 ) {
+		// len = VectorLengthSquared( delta );
+		if ( delta[0]*delta[0]+delta[1]*delta[1]+delta[2]*delta[2] > 1.0 ) {
 			break;
 		}
 	}
@@ -142,10 +143,11 @@ static	int	neighbors[8][2] = {
 	}
 
 	wrapHeight = qfalse;
-	for ( i = 0 ; i < width ; i++ ) {
+	for ( i = 0 ; i < width ; ++i )
+    {
 		VectorSubtract( ctrl[0][i].xyz, ctrl[height-1][i].xyz, delta );
-		len = VectorLengthSquared( delta );
-		if ( len > 1.0 ) {
+		// len = VectorLengthSquared( delta );
+		if ( delta[0]*delta[0]+delta[1]*delta[1]+delta[2]*delta[2] > 1.0 ) {
 			break;
 		}
 	}
@@ -196,16 +198,18 @@ static	int	neighbors[8][2] = {
 			}
 
 			VectorClear( sum );
-			for ( k = 0 ; k < 8 ; k++ ) {
+			for ( k = 0 ; k < 8 ; ++k )
+            {
 				if ( !good[k] || !good[(k+1)&7] ) {
 					continue;	// didn't get two points
 				}
-				CrossProduct( around[(k+1)&7], around[k], normal );
+				VectorCross( around[(k+1)&7], around[k], normal );
 				if ( VectorNormalize2( normal, normal ) == 0 ) {
 					continue;
 				}
 				VectorAdd( normal, sum, sum );
-				count++;
+				
+                ++count;
 			}
 			if ( count == 0 ) {
 //printf("bad normal\n");
@@ -336,7 +340,7 @@ srfGridMesh_t *R_CreateSurfaceGridMesh(int width, int height,
 	VectorAdd( grid->meshBounds[0], grid->meshBounds[1], grid->localOrigin );
 	VectorScale( grid->localOrigin, 0.5f, grid->localOrigin );
 	VectorSubtract( grid->meshBounds[0], grid->localOrigin, tmpVec );
-	grid->meshRadius = VectorLength( tmpVec );
+	grid->meshRadius = sqrtf( tmpVec[0]*tmpVec[0] + tmpVec[1]*tmpVec[1] + tmpVec[2]*tmpVec[2] );
 
 	VectorCopy( grid->localOrigin, grid->lodOrigin );
 	grid->lodRadius = grid->meshRadius;
@@ -414,7 +418,8 @@ srfGridMesh_t *R_SubdividePatchToGrid( int width, int height,
 				d = DotProduct( midxyz, dir );
 				VectorScale( dir, d, projected );
 				VectorSubtract( midxyz, projected, midxyz2);
-				len = VectorLengthSquared( midxyz2 );			// we will do the sqrt later
+				len = midxyz2[0] * midxyz2[0] + midxyz2[1] * midxyz2[1] + midxyz2[2] * midxyz2[2];
+                // we will do the sqrt later
 				if ( len > maxLen ) {
 					maxLen = len;
 				}

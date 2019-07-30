@@ -25,7 +25,7 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #include "../qcommon/q_shared.h"
 #include "../renderercommon/tr_public.h"
 
-#include "VKimpl.h"
+
 
 static const float ORIGIN[3] = {0,0,0};
 // outside of TR since it shouldn't be cleared during ref re-init
@@ -50,8 +50,8 @@ static const float ORIGIN[3] = {0,0,0};
 #define FUNCTABLE_MASK		(FUNCTABLE_SIZE-1)
 
 
-
-VkBool32 isNonCaseStringEqual(const char * s1, const char * s2);
+// Equal return 1, otherwise return 0
+int isNonCaseStringEqual(const char * s1, const char * s2);
 
 
 /*
@@ -64,7 +64,6 @@ VkBool32 isNonCaseStringEqual(const char * s1, const char * s2);
 
 
 void PointRotateAroundVector(float* dst, const float* dir, const float* p, const float degrees);
-void RotateAroundUnitVector(float* res, const float* k, const float* p, const float degrees);
 
 void FastNormalize1f(float v[3]);
 // char *getExtension( const char *name );
@@ -75,7 +74,7 @@ void R_StripExtension(const char *in, char *out, int destsize);
 int BoxOnPlaneSide (vec3_t emins, vec3_t emaxs, struct cplane_s *plane);
 void AddPointToBounds( const vec3_t v, vec3_t mins, vec3_t maxs );
 
-
+void VectorCross( const vec3_t v1, const vec3_t v2, vec3_t cross );
 void VectorPerp( const vec3_t src, vec3_t dst );
 float MakeTwoPerpVectors(const float forward[3], float right[3], float up[3]);
 
