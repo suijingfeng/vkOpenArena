@@ -52,6 +52,7 @@ static const float ORIGIN[3] = {0,0,0};
 
 // Equal return 1, otherwise return 0
 int isNonCaseStringEqual(const char * s1, const char * s2);
+int isNonCaseNStringEqual(const char *s1, const char *s2, int n);
 
 
 /*
@@ -68,6 +69,9 @@ void PointRotateAroundVector(float* dst, const float* dir, const float* p, const
 void R_FastNormalize1f(float v[3]);
 // char *getExtension( const char *name );
 char* R_SkipPath(char *pathname);
+
+char * R_Strlwr( char * const s1 );
+
 void R_StripExtension(const char *in, char *out, int destsize);
 
 

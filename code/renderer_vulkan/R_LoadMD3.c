@@ -1,6 +1,7 @@
 #include "tr_model.h"
 #include "ref_import.h"
 #include "R_FindShader.h"
+#include "tr_common.h"
 
 #define	LL(x) x=LittleLong(x)
 
@@ -294,7 +295,7 @@ qboolean R_LoadMD3 (model_t *mod, int lod, void *buffer, const char *mod_name )
 		surf->ident = SF_MD3;
 
 		// lowercase the surface name so skin compares are faster
-		Q_strlwr( surf->name );
+		R_Strlwr( surf->name );
 
 		// strip off a trailing _1 or _2
 		// this is a crutch for q3data being a mess

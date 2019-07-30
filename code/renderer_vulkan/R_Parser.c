@@ -16,6 +16,29 @@ static char	r_parsename[512];
 static int	r_lines;
 static int	r_tokenline;
 
+void R_SkipRestOfLine ( char **data )
+{
+	int	c;
+
+	char* p = *data;
+
+	if ( !*p )
+		return;
+
+	while ( (c = *p++) != 0 )
+    {
+		if ( c == '\n' ) {
+			r_lines++;
+			break;
+		}
+	}
+
+	*data = p;
+}
+
+
+
+
 void R_BeginParseSession(const char* const name)
 {
 	r_lines = 1;

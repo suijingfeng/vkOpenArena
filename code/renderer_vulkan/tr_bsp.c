@@ -274,7 +274,6 @@ static void R_LoadLightmaps(const lump_t * const l )
 
         char lmName[32] = {0};
         snprintf(lmName, 32, "*lightmap%d", i);
-        // va("*lightmap%d",i);
         tr.lightmaps[i] = R_CreateImage( lmName, image, 
 			LIGHTMAP_SIZE, LIGHTMAP_SIZE, qfalse, qfalse, GL_CLAMP);
 	}
@@ -1838,7 +1837,7 @@ static void R_LoadEntities(const lump_t * const l, world_t* const w )
 
 		// check for remapping of shaders for vertex lighting
 		s = "vertexremapshader";
-		if (!Q_strncmp(keyname, s, strlen(s)) )
+		if (!isNonCaseNStringEqual(keyname, s, strlen(s)) )
         {
 			s = strchr(value, ';');
 			if (!s) {
@@ -1853,7 +1852,7 @@ static void R_LoadEntities(const lump_t * const l, world_t* const w )
 		}
 		// check for remapping of shaders
 		s = "remapshader";
-		if (!Q_strncmp(keyname, s, (int)strlen(s)) ) {
+		if (!isNonCaseNStringEqual(keyname, s, (int)strlen(s)) ) {
 			s = strchr(value, ';');
 			if (!s) {
 				ri.Printf( PRINT_WARNING, "WARNING: no semi colon in shaderremap '%s'\n", value );

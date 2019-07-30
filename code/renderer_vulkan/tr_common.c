@@ -138,6 +138,7 @@ void QDECL Com_Error( int level, const char *error, ... )
 
 	ri.Error(level, "%s", text);
 }
+#endif
 
 
 float VectorNormalize( float v[3] )
@@ -181,10 +182,93 @@ float VectorNormalize2( const float v[3], float out[3] )
 	return length;
 }
 
+int isNonCaseStringEqual(const char * s1, const char * s2)
+{
+    if( (s1 != NULL) && (s2 != NULL) )
+    {
+        int	c1;
+        int c2;
+        do
+        {
+            c1 = *s1++; 
+            c2 = *s2++;
+
+            // consider that most shader is little a - z, 
+            if( (c1 >= 'A') && (c1 <= 'Z') )
+            {
+                c1 += 'a' - 'A';
+            }
+            
+            // to a - z
+            if( (c2 >= 'A') && (c2 <= 'Z') )
+            {
+                c2 +=  'a' - 'A';
+            }
+
+            if( c1 != c2 )
+            {
+                // string are not equal
+                return 0;
+            }
+        } while(c1 || c2);
+
+        return 1;
+    }
+
+    // should not compare null, this is not meaningful ...
+    ri.Printf( PRINT_WARNING, "WARNING: compare NULL string. %p == %p ? \n", s1, s2 );
+    return 0;
+}
 
 
+int isNonCaseNStringEqual(const char *s1, const char *s2, int n)
+{
+	int	c1, c2;
 
-#endif
+    if( s1 == NULL )
+    {
+        if( s2 == NULL )
+             return 0;
+        else
+             return -1;
+    }
+    else if ( s2 == NULL )
+    {
+	    return 1;
+    }
+
+    do
+	{
+		c1 = *s1++;
+		c2 = *s2++;
+
+		if (!n--)
+			return 0;		// strings are equal until end point
+		
+		if(c1 >= 'a' && c1 <= 'z')
+			c1 -= ('a' - 'A');
+			
+		if(c2 >= 'a' && c2 <= 'z')
+			c2 -= ('a' - 'A');
+		
+		if(c1 != c2) 
+			return c1 < c2 ? -1 : 1;
+
+   } while (c1);
+
+    return 0;		// strings are equal
+}
+
+
+char * R_Strlwr( char * const s1 )
+{
+    char *s = s1;
+	while ( *s ) {
+		*s = tolower(*s);
+		s++;
+	}
+    return s1;
+}
 
 // use Rodrigue's rotation formula
 // dir are not assumed to be unit vector
@@ -407,27 +491,6 @@ void ClearBounds(vec3_t mins, vec3_t maxs)
 
 
 
-
-/*
-=================
-SkipBracedSection
-
-The next token should be an open brace or set depth to 1 if already parsed it.
-Skips until a matching close brace is found.
-Internal brace depths are properly skipped.
-=================
-*/
-
-
-
-
-// tr_extramath.c - extra math needed by the renderer not in qmath.c
-// Some matrix helper functions
-// FIXME: do these already exist in ioq3 and I don't know about them?
-
-
-
-
 qboolean SpheresIntersect(vec3_t origin1, float radius1, vec3_t origin2, float radius2)
 {
 	float radiusSum = radius1 + radius2;
@@ -453,42 +516,3 @@ void BoundingSphereOfSpheres(vec3_t origin1, float radius1, vec3_t origin2, floa
 	VectorSubtract(origin1, origin2, diff);
 	*radius3 = VectorLen(diff) * 0.5f + MAX(radius1, radius2);
 }
-
-int isNonCaseStringEqual(const char * s1, const char * s2)
-{
-    if( (s1 != NULL) && (s2 != NULL) )
-    {
-        int	c1;
-        int c2;
-        do
-        {
-            c1 = *s1++; 
-            c2 = *s2++;
-
-            // consider that most shader is little a - z, 
-            if( (c1 >= 'A') && (c1 <= 'Z') )
-            {
-                c1 += 'a' - 'A';
-            }
-            
-            // to a - z
-            if( (c2 >= 'A') && (c2 <= 'Z') )
-            {
-                c2 +=  'a' - 'A';
-            }
-
-            if( c1 != c2 )
-            {
-                // string are not equal
-                return 0;
-            }
-        } while(c1 || c2);
-
-        return 1;
-    }
-
-    // should not compare null, this is not meaningful ...
-    ri.Printf( PRINT_WARNING, "WARNING: compare NULL string. %p == %p ? \n", s1, s2 );
-    return 0;
-}
-

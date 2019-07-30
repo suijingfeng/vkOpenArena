@@ -168,7 +168,7 @@ qboolean R_LoadIQM( model_t *mod, void *buffer, int filesize, const char *mod_na
 	}
 
 	header = (iqmHeader_t *)buffer;
-	if( Q_strncmp( header->magic, IQM_MAGIC, sizeof(header->magic) ) ) {
+	if( isNonCaseNStringEqual( header->magic, IQM_MAGIC, sizeof(header->magic) ) ) {
 		return qfalse;
 	}
 
@@ -631,8 +631,8 @@ qboolean R_LoadIQM( model_t *mod, void *buffer, int filesize, const char *mod_na
 	str = (char *)header + header->ofs_text;
 	for( i = 0; i < header->num_meshes; i++, mesh++, surface++ ) {
 		surface->surfaceType = SF_IQM;
-		Q_strncpyz(surface->name, str + mesh->name, sizeof (surface->name));
-		Q_strlwr(surface->name); // lowercase the surface name so skin compares are faster
+		strncpy(surface->name, str + mesh->name, sizeof (surface->name));
+		R_Strlwr(surface->name); // lowercase the surface name so skin compares are faster
 		surface->shader = R_FindShader( str + mesh->material, LIGHTMAP_NONE, qtrue );
 		if( surface->shader->defaultShader )
 			surface->shader = tr.defaultShader;
