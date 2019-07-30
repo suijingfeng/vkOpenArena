@@ -354,7 +354,7 @@ void R_IssueRenderCommands( qboolean runPerformanceCounters )
     *(int *)(BE_Commands.cmds + BE_Commands.used) = RC_END_OF_LIST;
 
 
-    const void * data = BE_Commands.cmds;
+    const unsigned char * data = BE_Commands.cmds;
 
 
     while(1)
@@ -364,7 +364,7 @@ void R_IssueRenderCommands( qboolean runPerformanceCounters )
         {
             case RC_SET_COLOR:
             {
-                const setColorCommand_t * const cmd = data;
+                const setColorCommand_t * const cmd = (const setColorCommand_t *)data;
 
                 backEnd.Color2D[0] = cmd->color[0] * 255;
                 backEnd.Color2D[1] = cmd->color[1] * 255;
@@ -376,7 +376,7 @@ void R_IssueRenderCommands( qboolean runPerformanceCounters )
 
             case RC_STRETCH_PIC:
             {
-                const stretchPicCommand_t * const cmd = data;
+                const stretchPicCommand_t * const cmd = (const stretchPicCommand_t *)data;
 
                 RB_StretchPic( cmd->x, cmd->y, cmd->w, cmd->h,
                         cmd->s1, cmd->t1, cmd->s2, cmd->t2, cmd->shader);

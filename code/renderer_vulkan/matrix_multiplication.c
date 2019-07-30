@@ -211,7 +211,7 @@ void TransformModelToClip_SSE( const float src[3], const float pMatModel[16], co
 }
 
 
-
+/*
 
 void TransformModelToClip_SSE2( const float x[3], const float pMatModel[16], const float pMatProj[16], float dst[4] )
 {
@@ -239,6 +239,7 @@ void TransformModelToClip_SSE2( const float x[3], const float pMatModel[16], con
 //    Mat4x1Transform_SSE(pMatProj, eye, dst);
 }
 
+*/
 
 
 void TransformModelToClip( const float src[3], const float* pMatModel, const float* pMatProj, float eye[4], float dst[4])

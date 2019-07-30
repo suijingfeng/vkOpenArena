@@ -27,11 +27,9 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #include "../qcommon/q_shared.h"
 #include "../qcommon/qcommon.h"
 
-#ifdef WIN32
-  #include "../curl-7.54.0/include/curl/curl.h"
-#else
-  #include <curl/curl.h>
-#endif
+
+#include "../curl-7.54.0/include/curl/curl.h"
+
 
 
 #define qcurl_version curl_version
