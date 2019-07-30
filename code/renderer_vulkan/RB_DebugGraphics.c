@@ -39,8 +39,8 @@ void R_DebugPolygon( int color, int numPoints, float *points )
 		Vec3Transform(&points[3*i], m, pb);
 		float q[3];
 		VectorSubtract(pb, pa, q);
-		CrossProduct(q, p, n);
-		if (VectorLength(n) > 1e-5)
+		VectorCross(q, p, n);
+		if ( sqrt(n[0]*n[0] + n[1]*n[1] + n[2]*n[2]) > 1e-5)
 			break;
 	}
 	if (DotProduct(n, pa) >= 0)

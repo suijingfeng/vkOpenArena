@@ -1145,7 +1145,6 @@ static void ParseDeform( char **text )
 		return;
 	}
 
-	// if ( !Q_stricmpn( token, "text", 4 ) )
     if(  ( (token[0] == 't') && (token[1] == 'e') && (token[2] == 'x') && (token[3] == 't') ) ||
         ( (token[0] == 'T') && (token[1] == 'E') && (token[2] == 'X') && (token[3] == 'T') ) )
     {
@@ -1483,8 +1482,8 @@ qboolean ParseShader( char ** text )
 			continue;
 		}
 		// skip stuff that only the QuakeEdRadient needs
-		else if ( !Q_stricmpn( token, "qer", 3 ) ) {
-			SkipRestOfLine( text );
+		else if ( !isNonCaseNStringEqual( token, "qer", 3 ) ) {
+			R_SkipRestOfLine( text );
 			continue;
 		}
 		// sun parms
@@ -1521,7 +1520,7 @@ qboolean ParseShader( char ** text )
 			continue;
 		}
 		else if ( isNonCaseStringEqual( token, "tesssize" ) ) {
-			SkipRestOfLine( text );
+			R_SkipRestOfLine( text );
 			continue;
 		}
 		else if ( isNonCaseStringEqual( token, "clampTime" ) )
@@ -1532,8 +1531,8 @@ qboolean ParseShader( char ** text )
             }
         }
 		// skip stuff that only the q3map needs
-		else if ( !Q_stricmpn( token, "q3map", 5 ) ) {
-			SkipRestOfLine( text );
+		else if ( !isNonCaseNStringEqual( token, "q3map", 5 ) ) {
+			R_SkipRestOfLine( text );
 			continue;
 		}
 		// skip stuff that only q3map or the server needs
@@ -1585,7 +1584,7 @@ qboolean ParseShader( char ** text )
 			shader.fogParms.depthForOpaque = atof( token );
 
 			// skip any old gradient directions
-			SkipRestOfLine( text );
+			R_SkipRestOfLine( text );
 			continue;
 		}
 		// portal

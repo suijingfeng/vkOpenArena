@@ -14,6 +14,7 @@
 #include "srfSurfaceFace_type.h"
 #include "srfSurfaceFace_type.h"
 #include "tr_surface.h"
+#include "tr_common.h"
 
 extern struct shaderCommands_s tess;
 
@@ -200,7 +201,7 @@ static qboolean R_GetPortalOrientations( drawSurf_t *drawSurf, int entityNum,
 
 	VectorCopy( plane.normal, surface->axis[0] );
 	VectorPerp( plane.normal, surface->axis[1] );
-	CrossProduct( surface->axis[0], surface->axis[1], surface->axis[2] );
+	VectorCross( surface->axis[0], surface->axis[1], surface->axis[2] );
 
 	// locate the portal entity closest to this plane.
 	// origin will be the origin of the portal, origin2 will be
@@ -226,7 +227,7 @@ static qboolean R_GetPortalOrientations( drawSurf_t *drawSurf, int entityNum,
 			e->e.oldorigin[2] == e->e.origin[2] ) {
 			VectorScale( plane.normal, plane.dist, surface->origin );
 			VectorCopy( surface->origin, camera->origin );
-			VectorSubtract( vec3_origin, surface->axis[0], camera->axis[0] );
+			VectorSubtract( ORIGIN, surface->axis[0], camera->axis[0] );
 			VectorCopy( surface->axis[1], camera->axis[1] );
 			VectorCopy( surface->axis[2], camera->axis[2] );
 
@@ -242,8 +243,8 @@ static qboolean R_GetPortalOrientations( drawSurf_t *drawSurf, int entityNum,
 		// now get the camera origin and orientation
 		VectorCopy( e->e.oldorigin, camera->origin );
 		memcpy(camera->axis, e->e.axis, 36);
-		VectorSubtract( vec3_origin, camera->axis[0], camera->axis[0] );
-		VectorSubtract( vec3_origin, camera->axis[1], camera->axis[1] );
+		VectorSubtract( ORIGIN, camera->axis[0], camera->axis[0] );
+		VectorSubtract( ORIGIN, camera->axis[1], camera->axis[1] );
 
 		// optionally rotate
 		if ( e->e.oldframe ) {
@@ -252,22 +253,22 @@ static qboolean R_GetPortalOrientations( drawSurf_t *drawSurf, int entityNum,
 				// continuous rotate
 				d = (tr.refdef.time/1000.0f) * e->e.frame;
 				VectorCopy( camera->axis[1], transformed );
-				RotatePointAroundVector( camera->axis[1], camera->axis[0], transformed, d );
-				CrossProduct( camera->axis[0], camera->axis[1], camera->axis[2] );
+				PointRotateAroundVector( camera->axis[1], camera->axis[0], transformed, d );
+				VectorCross( camera->axis[0], camera->axis[1], camera->axis[2] );
 			} else {
 				// bobbing rotate, with skinNum being the rotation offset
 				d = sin( tr.refdef.time * 0.003f );
 				d = e->e.skinNum + d * 4;
 				VectorCopy( camera->axis[1], transformed );
-				RotatePointAroundVector( camera->axis[1], camera->axis[0], transformed, d );
-				CrossProduct( camera->axis[0], camera->axis[1], camera->axis[2] );
+				PointRotateAroundVector( camera->axis[1], camera->axis[0], transformed, d );
+				VectorCross( camera->axis[0], camera->axis[1], camera->axis[2] );
 			}
 		}
 		else if ( e->e.skinNum ) {
 			d = e->e.skinNum;
 			VectorCopy( camera->axis[1], transformed );
-			RotatePointAroundVector( camera->axis[1], camera->axis[0], transformed, d );
-			CrossProduct( camera->axis[0], camera->axis[1], camera->axis[2] );
+			PointRotateAroundVector( camera->axis[1], camera->axis[0], transformed, d );
+			VectorCross( camera->axis[0], camera->axis[1], camera->axis[2] );
 		}
 		*mirror = qfalse;
 		return qtrue;
@@ -353,11 +354,11 @@ static qboolean SurfIsOffscreen( const drawSurf_t * const drawSurf, vec4_t clipD
 	for ( i = 0; i < tess.numIndexes; i += 3 )
 	{
 		vec3_t normal;
-		float len;
+		
 
 		VectorSubtract( tess.xyz[tess.indexes[i]], tr.viewParms.or.origin, normal );
 
-		len = VectorLengthSquared( normal );			// lose the sqrt
+		float len =  normal[0]*normal[0] + normal[1]*normal[1] + normal[2]*normal[2];			// lose the sqrt
 		if ( len < shortest )
 		{
 			shortest = len;
@@ -433,7 +434,7 @@ qboolean R_MirrorViewBySurface (drawSurf_t * const drawSurf, const int entityNum
 
 	R_MirrorPoint (oldParms.or.origin, &surface, &camera, newParms.or.origin );
 
-	// VectorSubtract( vec3_origin, camera.axis[0], newParms.portalPlane.normal );
+	// VectorSubtract( ORIGIN, camera.axis[0], newParms.portalPlane.normal );
 	// newParms.portalPlane.dist = DotProduct( camera.origin, newParms.portalPlane.normal );
     R_SetupPortalPlane(camera.axis, camera.origin);
 

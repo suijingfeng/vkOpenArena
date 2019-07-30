@@ -186,7 +186,7 @@ void vk_destroyStagingBuffer(void)
 }
 
 
-void vk_imgUploadToStagBuffer(const unsigned char * const pUploadBuffer, uint32_t buffer_size)
+void VK_UploadImageToStagBuffer(const unsigned char * const pUploadBuffer, uint32_t buffer_size)
 {
     void* data;
     

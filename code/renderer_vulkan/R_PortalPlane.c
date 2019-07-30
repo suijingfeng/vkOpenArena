@@ -1,6 +1,6 @@
 #include "R_PortalPlane.h"
 #include "tr_backend.h"
-
+#include "tr_common.h"
 // void R_TransformPlane(const float R[3][3], const float T[3], struct rplane_s* pDstPlane);
 
 
@@ -20,7 +20,7 @@ inline static float DotProduct( const float v1[3], const float v2[3] )
 
 void R_SetupPortalPlane(const float axis[3][3], const float origin[3])
 {
-	// VectorSubtract( vec3_origin, pCamera->axis[0], g_portalPlane.normal );
+	// VectorSubtract( ORIGIN, pCamera->axis[0], g_portalPlane.normal );
     // g_portalPlane.dist = DotProduct( pCamera->origin, g_portalPlane.normal );
 
     g_portalPlane.normal[0] = - axis[0][0];

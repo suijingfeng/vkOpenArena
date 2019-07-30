@@ -224,7 +224,7 @@ qhandle_t RE_RegisterSkin( const char *name )
 			break;
 		}
 		// lowercase the surface name so skin compares are faster
-		Q_strlwr( surfName );
+		R_Strlwr( surfName );
 
 		if ( *text_p == ',' ) {
 			text_p++;

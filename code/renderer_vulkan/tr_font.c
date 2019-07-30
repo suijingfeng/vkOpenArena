@@ -533,8 +533,11 @@ void RE_RegisterFont(const char *fontName, int pointSize, fontInfo_t *font)
 	font->glyphScale = glyphScale;
 	memcpy(&registeredFont[registeredFontCount++], font, sizeof(fontInfo_t));
 
-	if (r_saveFontData->integer) {
-		ri.FS_WriteFile(va("fonts/fontImage_%i.dat", pointSize), font, sizeof(fontInfo_t));
+	if (r_saveFontData->integer)
+    {
+        char tmpBuffer = {0};
+        snprintf(tmpBuffer, "fonts/fontImage_%i.dat", pointSize);
+		ri.FS_WriteFile(tmpBuffer, font, sizeof(fontInfo_t));
 	}
 
 	ri.Free(out);

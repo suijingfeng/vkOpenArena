@@ -1,13 +1,13 @@
 # OpenArena Engine 
 
 This project is a fork of OpenArena with specific changes to its renderer module.
-It is mainly for myself to study Vulkan/OpenGL API and Quake3's engine. 
-I add a vulkan-based render module to this game, the vulkan-based render have
-the nearly same visual effects with the default opengl1 render. ( Informing you in case
-of you are disapointed, vulkan is just a 2D/3D render API, whether the rendered
-image is beautiful or not depend more on the textures，shaders，material provided). 
-Of course I will try to add some new features to it，so the project is under developing, 
-so always check the lastest build.
+It is mainly for myself to study Vulkan/OpenGL API and Quake3's engine, 
+I add a vulkan-based renderer to this game, the vulkan-based render have
+the nearly same visual effects with the default opengl1 render, but its not a very good implement.
+just fast protype and get a feeling of vulkan API. ( Informing you in case of you are disappointed, 
+vulkan is just a 2D/3D render API, whether the rendered image is beautiful or not depend more 
+on the textures，shaders，material provided). If you want learn Vulkan, you'd better go to other place.
+The project is under developing, so always check the lastest build.
 
 The opengl2 render module ported from ioq3 is more beatiful and powerful, 
 you can play with the cvars(r\_pbr, r\_cubemapping, r\_hdr, r\_ssao ...) to enable
@@ -339,6 +339,22 @@ $ \r_mode 12
 $ \vid_restart
 ```
 
+Q: save a screenshot ?
+
+```
+# OA and IOQ3 originally save to hidden dir which not easy to find
+# typically appdata\roaming (windows) and ./local
+screenshotJPEG
+screenshotTGA
+
+# those just save to where the current executable locate 
+screenshotPNG
+screenshotBMP
+screenshotJPG
+screenshot(same with screenshotJPG, press F11 on UI or F12 on gamming)
+```
+
+
 Q: How to use check FPS or using it as a benchmarking tool?
 
 ```
@@ -400,28 +416,7 @@ frame:24085 all:  9 sv:  0 ev:  0 cl:  1 gm:  0 rf:  0 bk:  8
 frame:24086 all: 10 sv:  0 ev:  0 cl:  1 gm:  0 rf:  0 bk:  9
 frame:24090 all:  9 sv:  1 ev:  0 cl:  0 gm:  0 rf:  0 bk:  8
 frame:24092 all:  8 sv:  0 ev:  0 cl:  1 gm:  0 rf:  0 bk:  7
-frame:24093 all:  9 sv:  0 ev:  0 cl:  1 gm:  0 rf:  0 bk:  8
-frame:24094 all:  8 sv:  0 ev:  0 cl:  1 gm:  0 rf:  0 bk:  7
-frame:24095 all: 10 sv:  0 ev:  0 cl:  1 gm:  0 rf:  0 bk:  9
-frame:24096 all:  9 sv:  0 ev:  0 cl:  1 gm:  0 rf:  0 bk:  8
-frame:24101 all: 10 sv:  0 ev:  0 cl:  1 gm:  0 rf:  0 bk:  9
-frame:24102 all: 10 sv:  0 ev:  0 cl:  2 gm:  0 rf:  0 bk:  8
-frame:24104 all: 11 sv:  0 ev:  0 cl:  0 gm:  1 rf:  0 bk: 10
-frame:24105 all: 11 sv:  0 ev:  1 cl:  1 gm:  0 rf:  0 bk:  9
-frame:24106 all: 20 sv:  0 ev:  0 cl:  0 gm:  0 rf:  1 bk: 19
-frame:24107 all: 13 sv:  0 ev:  0 cl:  1 gm:  0 rf:  0 bk: 12
-frame:24108 all: 15 sv:  0 ev:  1 cl:  1 gm:  0 rf:  0 bk: 14
-frame:24109 all: 10 sv:  1 ev:  0 cl:  0 gm:  0 rf:  0 bk:  9
-frame:24110 all: 12 sv:  1 ev:  0 cl:  1 gm:  0 rf:  0 bk: 10
-frame:24111 all: 10 sv:  0 ev:  0 cl:  1 gm:  0 rf:  0 bk:  9
-frame:24113 all: 11 sv:  0 ev:  0 cl:  1 gm:  0 rf:  0 bk: 10
-frame:24114 all: 10 sv:  0 ev:  0 cl:  0 gm:  1 rf:  0 bk:  9
-frame:24116 all: 11 sv:  0 ev:  1 cl:  0 gm:  0 rf:  0 bk: 11
-frame:24117 all: 11 sv:  0 ev:  0 cl:  0 gm:  1 rf:  0 bk: 10
-frame:24118 all: 10 sv:  0 ev:  0 cl:  1 gm:  0 rf:  0 bk:  9
-frame:24119 all: 14 sv:  0 ev:  1 cl:  0 gm:  0 rf:  0 bk: 14
-frame:24120 all: 12 sv:  0 ev:  0 cl:  1 gm:  0 rf:  0 bk: 11
-frame:24121 all: 11 sv:  0 ev:  0 cl:  1 gm:  0 rf:  0 bk: 10
+
 ```
 
 ### Aspire v3-772G i7-4702MQ GeForce GTX 760M 1920x1080 refresh_rate: 60Hz

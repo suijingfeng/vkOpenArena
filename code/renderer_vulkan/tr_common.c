@@ -89,7 +89,7 @@ void VectorCross( const vec3_t v1, const vec3_t v2, vec3_t cross )
 
 // fast vector normalize routine that does not check to make sure
 // that length != 0, nor does it return length, uses rsqrt approximation
-void FastNormalize1f(float v[3])
+void R_FastNormalize1f(float v[3])
 {
 	// writing it this way allows gcc to recognize that rsqrt can be used
     float invLen = 1.0f / sqrtf(v[0]*v[0] + v[1]*v[1] + v[2]*v[2]);
@@ -107,6 +107,167 @@ void FastNormalize2f( const float* v, float* out)
  	out[0] = v[0] * invLen;
 	out[1] = v[1] * invLen;
 	out[2] = v[2] * invLen;
+}
+
+
+//
+// common function replacements for modular renderer
+// 
+#ifdef USE_RENDERER_DLOPEN
+
+void QDECL Com_Printf( const char *msg, ... )
+{
+	va_list         argptr;
+	char            text[1024];
+
+	va_start(argptr, msg);
+	Q_vsnprintf(text, sizeof(text), msg, argptr);
+	va_end(argptr);
+
+	ri.Printf(PRINT_ALL, "%s", text);
+}
+
+void QDECL Com_Error( int level, const char *error, ... )
+{
+	va_list         argptr;
+	char            text[1024];
+
+	va_start(argptr, error);
+	Q_vsnprintf(text, sizeof(text), error, argptr);
+	va_end(argptr);
+
+	ri.Error(level, "%s", text);
+}
+#endif
+
+
+float VectorNormalize( float v[3] )
+{
+	// NOTE: TTimo - Apple G4 source uses double?
+	float length = v[0]*v[0] + v[1]*v[1] + v[2]*v[2];
+
+	if ( length )
+    {
+		/* writing it this way allows gcc to recognize that rsqrt can be used */
+		float ilength = 1.0f / sqrtf (length);
+		/* sqrt(length) = length * (1 / sqrt(length)) */
+		length *= ilength;
+		v[0] *= ilength;
+		v[1] *= ilength;
+		v[2] *= ilength;
+	}
+	return length;
+}
+
+
+float VectorNormalize2( const float v[3], float out[3] )
+{
+	float length = v[0]*v[0] + v[1]*v[1] + v[2]*v[2];
+
+	if (length)
+	{
+		/* writing it this way allows gcc to recognize that rsqrt can be used */
+		float ilength = 1.0f/(float)sqrt(length);
+		/* sqrt(length) = length * (1 / sqrt(length)) */
+		length *= ilength;
+		out[0] = v[0]*ilength;
+		out[1] = v[1]*ilength;
+		out[2] = v[2]*ilength;
+	}
+    else
+    {
+		VectorClear( out );
+	}
+		
+	return length;
+}
+
+int isNonCaseStringEqual(const char * s1, const char * s2)
+{
+    if( (s1 != NULL) && (s2 != NULL) )
+    {
+        int	c1;
+        int c2;
+        do
+        {
+            c1 = *s1++; 
+            c2 = *s2++;
+
+            // consider that most shader is little a - z, 
+            if( (c1 >= 'A') && (c1 <= 'Z') )
+            {
+                c1 += 'a' - 'A';
+            }
+            
+            // to a - z
+            if( (c2 >= 'A') && (c2 <= 'Z') )
+            {
+                c2 +=  'a' - 'A';
+            }
+
+            if( c1 != c2 )
+            {
+                // string are not equal
+                return 0;
+            }
+        } while(c1 || c2);
+
+        return 1;
+    }
+
+    // should not compare null, this is not meaningful ...
+    ri.Printf( PRINT_WARNING, "WARNING: compare NULL string. %p == %p ? \n", s1, s2 );
+    return 0;
+}
+
+
+int isNonCaseNStringEqual(const char *s1, const char *s2, int n)
+{
+	int	c1, c2;
+
+    if( s1 == NULL )
+    {
+        if( s2 == NULL )
+             return 0;
+        else
+             return -1;
+    }
+    else if ( s2 == NULL )
+    {
+	    return 1;
+    }
+
+    do
+	{
+		c1 = *s1++;
+		c2 = *s2++;
+
+		if (!n--)
+			return 0;		// strings are equal until end point
+		
+		if(c1 >= 'a' && c1 <= 'z')
+			c1 -= ('a' - 'A');
+			
+		if(c2 >= 'a' && c2 <= 'z')
+			c2 -= ('a' - 'A');
+		
+		if(c1 != c2) 
+			return c1 < c2 ? -1 : 1;
+
+   } while (c1);
+
+    return 0;		// strings are equal
+}
+
+
+char * R_Strlwr( char * const s1 )
+{
+    char *s = s1;
+	while ( *s ) {
+		*s = tolower(*s);
+		s++;
+	}
+    return s1;
 }
 
 // use Rodrigue's rotation formula
@@ -135,29 +296,15 @@ void PointRotateAroundVector(float* res, const float* vec, const float* p, const
     res[2] += cos_th * p[2] + d * k[2]; 
 }
 
-// vector k are assumed to be unit
-void RotateAroundUnitVector(float* res, const float* k, const float* p, const float degrees)
-{
-    float rad = DEG2RAD( degrees );
-    float cos_th = cos( rad );
-    float sin_th = sin( rad );
- 
-    float d = (1 - cos_th) * (p[0] * k[0] + p[1] * k[1] + p[2] * k[2]);
 
-	res[0] = sin_th * (k[1]*p[2] - k[2]*p[1]);
-	res[1] = sin_th * (k[2]*p[0] - k[0]*p[2]);
-	res[2] = sin_th * (k[0]*p[1] - k[1]*p[0]);
 
-    res[0] += cos_th * p[0] + d * k[0]; 
-    res[1] += cos_th * p[1] + d * k[1]; 
-    res[2] += cos_th * p[2] + d * k[2]; 
-}
+
 
 
 // note: vector forward are NOT assumed to be nornalized,
 // unit: nornalized of forward,
 // dst: unit vector which perpendicular of forward(src) 
-void VectorPerp( const vec3_t src, vec3_t dst )
+void VectorPerp( const float src[3], float dst[3] )
 {
     float unit[3];
     
@@ -344,27 +491,6 @@ void ClearBounds(vec3_t mins, vec3_t maxs)
 
 
 
-
-/*
-=================
-SkipBracedSection
-
-The next token should be an open brace or set depth to 1 if already parsed it.
-Skips until a matching close brace is found.
-Internal brace depths are properly skipped.
-=================
-*/
-
-
-
-
-// tr_extramath.c - extra math needed by the renderer not in qmath.c
-// Some matrix helper functions
-// FIXME: do these already exist in ioq3 and I don't know about them?
-
-
-
-
 qboolean SpheresIntersect(vec3_t origin1, float radius1, vec3_t origin2, float radius2)
 {
 	float radiusSum = radius1 + radius2;
@@ -390,42 +516,3 @@ void BoundingSphereOfSpheres(vec3_t origin1, float radius1, vec3_t origin2, floa
 	VectorSubtract(origin1, origin2, diff);
 	*radius3 = VectorLen(diff) * 0.5f + MAX(radius1, radius2);
 }
-
-VkBool32 isNonCaseStringEqual(const char * s1, const char * s2)
-{
-    if( (s1 != NULL) && (s2 != NULL) )
-    {
-        int	c1;
-        int c2;
-        do
-        {
-            c1 = *s1++; 
-            c2 = *s2++;
-
-            // consider that most shader is little a - z, 
-            if( (c1 >= 'A') && (c1 <= 'Z') )
-            {
-                c1 += 'a' - 'A';
-            }
-            
-            // to a - z
-            if( (c2 >= 'A') && (c2 <= 'Z') )
-            {
-                c2 +=  'a' - 'A';
-            }
-
-            if( c1 != c2 )
-            {
-                // string are not equal
-                return VK_FALSE;
-            }
-        } while(c1 || c2);
-
-        return VK_TRUE;
-    }
-
-    // should not compare null, this is not meaningful ...
-    ri.Printf( PRINT_WARNING, "WARNING: compare NULL string. %p == %p ? \n", s1, s2 );
-    return VK_FALSE;
-}
-

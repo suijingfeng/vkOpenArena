@@ -1,6 +1,7 @@
 #include "tr_model.h"
 #include "ref_import.h"
 #include "R_FindShader.h"
+#include "tr_common.h"
 
 #define	LL(x) x=LittleLong(x)
 
@@ -366,7 +367,7 @@ qboolean R_LoadMDR( model_t *mod, void *buffer, int filesize, const char *mod_na
 				return qfalse;
 			}
 			// lowercase the surface name so skin compares are faster
-			Q_strlwr( surf->name );
+			R_Strlwr( surf->name );
 
 			// register the shaders
 			sh = R_FindShader(surf->shader, LIGHTMAP_NONE, qtrue);

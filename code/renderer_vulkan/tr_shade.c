@@ -296,7 +296,7 @@ static void RB_CalcEnvironmentTexCoordsJO( float *st )
 		for (i = 0 ; i < tess.numVertexes ; i++, v += 4, normal += 4, st += 2 ) 
 		{
 			VectorSubtract (backEnd.or.viewOrigin, v, viewer);
-			FastNormalize1f(viewer);
+			R_FastNormalize1f(viewer);
 
 			d = DotProduct (normal, viewer);
 			st[0] = normal[0]*d - 0.5*viewer[0];
@@ -357,7 +357,7 @@ static void RB_CalcCelTexCoords( float *st )
 	for (i = 0 ; i < tess.numVertexes ; i++, v += 4, normal += 4, st += 2 ) 
 	{
 		VectorSubtract (backEnd.or.viewOrigin, v, viewer);
-		FastNormalize1f(viewer);
+		R_FastNormalize1f(viewer);
 
 		d = DotProduct (normal, viewer);
 
@@ -404,7 +404,7 @@ static void RB_CalcEnvironmentCelShadeTexCoords( float *st )
 //	else
 	
     VectorCopy( backEnd.currentEntity->lightDir, lightDir );
-	FastNormalize1f( lightDir );
+	R_FastNormalize1f( lightDir );
 
     for (i = 0 ; i < tess.numVertexes ; i++, v += 4, normal += 4, st += 2 )
     {
@@ -1196,7 +1196,7 @@ void RB_ComputeColors( struct shaderStage_s * const pStage )
 				vec3_t v;
 
 				VectorSubtract( tess.xyz[i], backEnd.viewParms.or.origin, v );
-				int alpha = VectorLength( v ) / tess.shader->portalRange * 255;
+				int alpha = sqrtf( v[0]*v[0]+v[1]*v[1]+v[2]*v[2] ) / tess.shader->portalRange * 255;
 
 
 				if ( alpha < 0 )

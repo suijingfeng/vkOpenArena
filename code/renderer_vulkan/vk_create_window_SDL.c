@@ -115,10 +115,12 @@ static void VKimp_DetectAvailableModes(void)
 
 	for( i = 0; i < numModes; ++i )
 	{
-		const char *newModeString = va( "%ux%u ", pModesArray[ i ].w, pModesArray[ i ].h );
+        char newModeString[64] = {0};
+        snprintf(newModeString, 64, "%ux%u ", pModesArray[ i ].w, pModesArray[ i ].h );
+		// const char *newModeString = va( "%ux%u ", pModesArray[ i ].w, pModesArray[ i ].h );
 
 		if( strlen( newModeString ) < (int)sizeof( buf ) - strlen( buf ) )
-			Q_strcat( buf, sizeof( buf ), newModeString );
+			strcat( buf,  newModeString );
 		else {
 			ri.Printf(PRINT_ALL,  "Skipping mode %ux%u, buffer too small\n",
                     pModesArray[ i ].w, pModesArray[ i ].h );

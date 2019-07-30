@@ -292,11 +292,12 @@ int RE_MarkFragments( int numPoints, const vec3_t *points, const vec3_t projecti
 
 	if (numPoints > MAX_VERTS_ON_POLY) numPoints = MAX_VERTS_ON_POLY;
 	// create the bounding planes for the to be projected polygon
-	for ( i = 0 ; i < numPoints ; i++ ) {
+	for ( i = 0 ; i < numPoints ; ++i )
+    {
 		VectorSubtract(points[(i+1)%numPoints], points[i], v1);
 		VectorAdd(points[i], projection, v2);
 		VectorSubtract(points[i], v2, v2);
-		CrossProduct(v1, v2, normals[i]);
+		VectorCross(v1, v2, normals[i]);
 		VectorNorm(normals[i]);
 		dists[i] = DotProduct(normals[i], points[i]);
 	}
@@ -304,8 +305,13 @@ int RE_MarkFragments( int numPoints, const vec3_t *points, const vec3_t projecti
 	VectorCopy(projectionDir, normals[numPoints]);
 	dists[numPoints] = DotProduct(normals[numPoints], points[0]) - 32;
 	VectorCopy(projectionDir, normals[numPoints+1]);
-	VectorInverse(normals[numPoints+1]);
-	dists[numPoints+1] = DotProduct(normals[numPoints+1], points[0]) - 20;
+	
+    uint32_t tmpNextPnt = numPoints+1;
+    normals[tmpNextPnt][0] = -normals[tmpNextPnt][0];
+    normals[tmpNextPnt][1] = -normals[tmpNextPnt][1];
+    normals[tmpNextPnt][2] = -normals[tmpNextPnt][2];
+
+    dists[tmpNextPnt] = DotProduct(normals[tmpNextPnt], points[0]) - 20;
 	numPlanes = numPoints + 2;
 
 	numsurfaces = 0;
@@ -316,7 +322,8 @@ int RE_MarkFragments( int numPoints, const vec3_t *points, const vec3_t projecti
 	returnedPoints = 0;
 	returnedFragments = 0;
 
-	for ( i = 0 ; i < numsurfaces ; i++ ) {
+	for ( i = 0 ; i < numsurfaces ; i++ )
+    {
 
 		if (*surfaces[i] == SF_GRID) {
 
@@ -357,7 +364,7 @@ int RE_MarkFragments( int numPoints, const vec3_t *points, const vec3_t projecti
 					// check the normal of this triangle
 					VectorSubtract(clipPoints[0][0], clipPoints[0][1], v1);
 					VectorSubtract(clipPoints[0][2], clipPoints[0][1], v2);
-					CrossProduct(v1, v2, normal);
+					VectorCross(v1, v2, normal);
 					VectorNorm(normal);
 					if (DotProduct(normal, projectionDir) < -0.1) {
 						// add the fragments of this triangle
@@ -381,7 +388,7 @@ int RE_MarkFragments( int numPoints, const vec3_t *points, const vec3_t projecti
 					// check the normal of this triangle
 					VectorSubtract(clipPoints[0][0], clipPoints[0][1], v1);
 					VectorSubtract(clipPoints[0][2], clipPoints[0][1], v2);
-					CrossProduct(v1, v2, normal);
+					VectorCross(v1, v2, normal);
 					VectorNorm(normal);
 					if (DotProduct(normal, projectionDir) < -0.05) {
 						// add the fragments of this triangle
@@ -409,7 +416,7 @@ int RE_MarkFragments( int numPoints, const vec3_t *points, const vec3_t projecti
 			/*
 			VectorSubtract(clipPoints[0][0], clipPoints[0][1], v1);
 			VectorSubtract(clipPoints[0][2], clipPoints[0][1], v2);
-			CrossProduct(v1, v2, normal);
+			VectorCross(v1, v2, normal);
 			VectorNormalize(normal);
 			if (DotProduct(normal, projectionDir) > -0.5) continue;
 			*/
