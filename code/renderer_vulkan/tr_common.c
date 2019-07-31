@@ -86,7 +86,6 @@ void VectorCross( const vec3_t v1, const vec3_t v2, vec3_t cross )
 
 
 
-
 // fast vector normalize routine that does not check to make sure
 // that length != 0, nor does it return length, uses rsqrt approximation
 void R_FastNormalize1f(float v[3])
@@ -327,10 +326,6 @@ void PointRotateAroundVector(float* res, const float* vec, const float* p, const
     res[1] += cos_th * p[1] + d * k[1]; 
     res[2] += cos_th * p[2] + d * k[2]; 
 }
-
-
-
-
 
 
 // note: vector forward are NOT assumed to be nornalized,

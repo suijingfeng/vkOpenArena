@@ -244,9 +244,9 @@ void TransformModelToClip_SSE2( const float x[3], const float pMatModel[16], con
 
 void TransformModelToClip( const float src[3], const float* pMatModel, const float* pMatProj, float eye[4], float dst[4])
 {
-	int i;
 
-	for ( i = 0 ; i < 4 ; i++ )
+    // 4 * ( 4 float mul + 3 float add )
+	for (unsigned int i = 0 ; i < 4 ; ++i )
     {
 		eye[i] = 
 			src[0] * pMatModel[ i + 0 * 4 ] +
@@ -255,7 +255,8 @@ void TransformModelToClip( const float src[3], const float* pMatModel, const flo
                  1 * pMatModel[ i + 3 * 4 ];
 	}
 
-	for ( i = 0 ; i < 4 ; i++ )
+    // 4 * ( 4 float mul + 3 float add )
+	for (unsigned int i = 0 ; i < 4 ; ++i )
     {
 		dst[i] = 
 			eye[0] * pMatProj[ i + 0 * 4 ] +
@@ -263,10 +264,9 @@ void TransformModelToClip( const float src[3], const float* pMatModel, const flo
 			eye[2] * pMatProj[ i + 2 * 4 ] +
 			eye[3] * pMatProj[ i + 3 * 4 ];
 	}
+
+    // total 32 float mul + 24 float add 
 }
-
-
-
 
 
 
