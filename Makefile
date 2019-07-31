@@ -1741,10 +1741,6 @@ ifneq ($(USE_RENDERER_DLOPEN), 0)
 	$(B)/renderergl2/puff.o \
 	$(B)/renderergl2/q_math.o
 
-  Q3VKOBJ += \
-	$(B)/renderer_vulkan/q_shared.o
-
-# 	$(B)/renderer_vulkan/q_math.o
 
   Q3MYDEVOBJ += \
 	$(B)/renderer_mydev/q_shared.o \

@@ -197,9 +197,17 @@ qint64 Long64NoSwap (qint64 ll)
 float FloatSwap (const float *f)
 {
 	floatint_t out;
+    unsigned char b1, b2, b3, b4;
 
 	out.f = *f;
-	out.ui = LongSwap(out.ui);
+	// out.ui = LongSwap(out.ui);
+
+	b1 =  out.ui & 0xff;
+	b2 = (out.ui>>8) & 0xff;
+	b3 = (out.ui>>16) & 0xff;
+	b4 = (out.ui>>24) & 0xff;
+
+	out.ui = (b1<<24) | (b2<<16) | (b3<<8) | b4 ;
 
 	return out.f;
 }

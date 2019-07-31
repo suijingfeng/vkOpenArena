@@ -138,6 +138,38 @@ void QDECL Com_Error( int level, const char *error, ... )
 
 	ri.Error(level, "%s", text);
 }
+
+inline int LongSwap(int l)
+{
+	unsigned char b1,b2,b3,b4;
+
+	b1 = l & 0xff;
+	b2 = (l>>8) & 0xff;
+	b3 = (l>>16) & 0xff;
+	b4 = (l>>24) & 0xff;
+
+	return ((b1<<24) | (b2<<16) | (b3<<8) | b4 );
+}
+
+/*
+ * Safe strncpy that ensures a trailing zero
+ */
+ID_INLINE void Q_strncpyz( char *dest, const char *src, int destsize )
+{
+/*    
+    if( !dest )
+        Com_Error( ERR_FATAL, "Q_strncpyz: NULL dest" );
+
+	if( !src )
+		Com_Error( ERR_FATAL, "Q_strncpyz: NULL src" );
+
+	if ( destsize < 1 )
+		Com_Error(ERR_FATAL,"Q_strncpyz: destsize < 1" ); 
+*/
+	strncpy(dest, src, destsize-1);
+    dest[destsize-1] = 0;
+}
+
 #endif
 
 

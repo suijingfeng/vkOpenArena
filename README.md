@@ -134,13 +134,13 @@ $ \cg_fov 150
 
 ## Too dark ? How to turn the brightness of the drawing window ?
 
-r\_brightness and r\_gamma, both value can be float, larger number 
+r\_brightness and r\_gamma, both value can be float, large number 
 make the image more brighter. You must restart the game after change it.
 
-r\_gamma nonlinearly calibrate the image before it is uploaded to GPU.
+* r\_gamma nonlinearly calibrate the image before it is uploaded to GPU.
 
-r\_brightness turn the intensity/brightness of the lightmap, this don't
- influence image and ui brightness, as it intended only for lightmap.
+* r\_brightness turn the intensity of the lightmap, it doesn't influence
+image brightness, as it intended only for lightmap. 
 
 
 ```
@@ -154,12 +154,12 @@ $ \vid_restart
 
 
 
-NOTE: original gamma setting program setting the gamma of the entire destop by use SDL's hardware.
-which works on newer computer hardware but not works on some old machine. 
-It is buggy and embarrasing when program abnormal quit or stall accidently, 
-left the desktop entire washing write. so i change it,
-we use software gamma only, take effects before the image is uploading to GPU.
-One cvar for one thing, don't mess it with r\_overbrightBit and r\_mapOverbrightBit.
+NOTE: Original gamma setting program set the gamma of the entire destop
+which works on graphic card support hardware gamma. Newer computer hardware 
+works but not on old machine base on my test. It is buggy and embarrasing 
+when program abnormal quit or stall accidently, leaving the desktop entire
+washing write. So we use software gamma only, take effects before the image
+is uploaded to GPU.  Does lightmap need gamma correction ? I have no idea.
 
 
 ## Switching renderers ##
