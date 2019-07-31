@@ -3,10 +3,9 @@
 
 #include "tr_shader.h"
 
-void RB_ComputeColors( shaderStage_t * const pStage );
+void RB_ComputeColors(struct shaderStage_s * const pStage );
+void RB_SetTessFogColor(unsigned char(* const pcolor)[4], uint32_t fnum, uint32_t nVerts);
 void RB_ComputeTexCoords( shaderStage_t * const pStage );
-void RB_SetTessFogColor( unsigned char (* const pcolor)[4], 
-        uint32_t fnum, uint32_t nVerts);
 void RB_CalcFogTexCoords( float (* const pST)[2], uint32_t );
 
 //void	RB_CalcEnvironmentTexCoords( float *dstTexCoords );

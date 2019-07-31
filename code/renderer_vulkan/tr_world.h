@@ -1,6 +1,7 @@
 #ifndef TR_WORLD_H_
 #define TR_WORLD_H_
 
+#include  <stdint.h>
 #include "viewParms.h"
 #include "trRefDef.h"
 
@@ -35,7 +36,7 @@ typedef struct mnode_s {
 
 
 
-typedef struct world_s{
+typedef struct world_s {
 	char		name[MAX_QPATH];		// ie: maps/tim_dm2.bsp
 	char		baseName[MAX_QPATH];	// ie: tim_dm2
 
@@ -92,6 +93,6 @@ WORLD MAP
 void R_AddBrushModelSurfaces( trRefEntity_t *e );
 void R_AddWorldSurfaces(viewParms_t * const pViewParams);
 void R_GetWorldBaseName(char* checkname);
-void R_GetFogArray(struct fog_s ** ppFogs, uint32_t* pNum);
+void R_GetFogArray(struct fog_s ** const ppFogs, uint32_t* const pNum);
 
 #endif

@@ -157,7 +157,7 @@ void R_LoadImage(const char * pName, unsigned char **pic, int *width, int *heigh
 
     // Loading failed, the image just dont exist;
     // Try all ext supported, this means we have to try all 5 loader fun
-    return R_LoadNSE(pName, pic, width, height);
+    R_LoadNSE(pName, pic, width, height);
 }
 
 

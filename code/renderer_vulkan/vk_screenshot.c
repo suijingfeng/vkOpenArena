@@ -753,9 +753,9 @@ void R_ScreenShotJPG_f(void)
     free(pImg);
 }
 
-void R_ScreenShot_f()
+void R_ScreenShot_f(void)
 {
-    return R_ScreenShotJPG_f( );
+    R_ScreenShotJPG_f();
 }
 
 void RE_TakeVideoFrame( const int Width, const int Height, 

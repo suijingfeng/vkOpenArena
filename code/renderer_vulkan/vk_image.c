@@ -765,7 +765,7 @@ void R_InitImages( void )
 
 
     // build brightness translation tables
-    R_SetColorMappings(1.6, r_gamma->value);
+    R_SetColorMappings(1.6f, r_gamma->value);
 
     // create default texture and white texture
     R_CreateDefaultImage();

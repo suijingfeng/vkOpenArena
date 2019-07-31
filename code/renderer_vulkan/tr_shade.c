@@ -38,10 +38,9 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #include "tr_shade.h"
 #include "tr_noise.h"
 #include "RB_DeformGeometry.h"  // RB_WaveValue
+
 extern struct shaderCommands_s tess;
-
-
-void R_GetFogArray(fog_t **ppFogs, uint32_t* pNum);
+extern void R_GetFogArray(struct fog_s * *const ppFogs, uint32_t* const pNum);
 
 
 static void RB_CalcTransformTexCoords( const texModInfo_t * const pTmi, float * st )
@@ -73,7 +72,6 @@ static void RB_CalcStretchTexCoords( const waveForm_t *wf, float *st )
 
 	RB_CalcTransformTexCoords( &tmi, st );
 }
-
 
 
 
@@ -1020,7 +1018,7 @@ RB_FogPass
 Blends a fog texture on top of everything else
 ===================
 */
-void RB_SetTessFogColor(unsigned char (*pcolor)[4], uint32_t fnum, uint32_t nVerts)
+void RB_SetTessFogColor(unsigned char (* const pcolor)[4], uint32_t fnum, uint32_t nVerts)
 {
 
     fog_t* pFogs = NULL;

@@ -1,7 +1,7 @@
 #include "vk_instance.h"
 #include "ref_import.h" 
 
-VkDisplayKHR DisplayArray[4];
+static VkDisplayKHR DisplayArray[4];
 
 void vk_get_DisplayModeProps(VkDisplayKHR hDis)
 {
