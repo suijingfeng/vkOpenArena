@@ -153,7 +153,7 @@ inline int LongSwap(int l)
 /*
  * Safe strncpy that ensures a trailing zero
  */
-ID_INLINE void Q_strncpyz( char *dest, const char *src, int destsize )
+void Q_strncpyz( char *dest, const char *src, int destsize )
 {
 /*    
     if( !dest )

@@ -40,6 +40,21 @@ PNG LOADING
 
 #define Q3IMAGE_BYTESPERPIXEL (4)
 
+extern refimport_t ri;
+
+
+static inline int R_LongSwap(int l)
+{
+	unsigned char b1, b2, b3, b4;
+
+	b1 = l & 0xff;
+	b2 = (l >> 8) & 0xff;
+	b3 = (l >> 16) & 0xff;
+	b4 = (l >> 24) & 0xff;
+
+	return ((b1 << 24) | (b2 << 16) | (b3 << 8) | b4);
+}
+
 /*
  *  PNG specifications
  */
@@ -462,8 +477,8 @@ static qboolean FindChunk(struct BufferedFile *BF, uint32_t ChunkType)
 		 *  they might be needed later.
 		 */
 
-		Length = BigLong(CH->Length);
-		Type   = BigLong(CH->Type);
+		Length = R_LongSwap(CH->Length);
+		Type   = R_LongSwap(CH->Type);
 
 		/*
 		 *  We found it!
@@ -581,8 +596,8 @@ static uint32_t DecompressIDATs(struct BufferedFile *BF, uint8_t **Buffer)
 		 *  Length and Type of chunk
 		 */
 
-		Length = BigLong(CH->Length);
-		Type   = BigLong(CH->Type);
+		Length = R_LongSwap(CH->Length);
+		Type   = R_LongSwap(CH->Type);
 
 		/*
 		 *  We have reached the end of the IDAT chunks
@@ -651,8 +666,8 @@ static uint32_t DecompressIDATs(struct BufferedFile *BF, uint8_t **Buffer)
 		 *  Length and Type of chunk
 		 */
 
-		Length = BigLong(CH->Length);
-		Type   = BigLong(CH->Type);
+		Length = R_LongSwap(CH->Length);
+		Type   = R_LongSwap(CH->Type);
 
 		/*
 		 *  We have reached the end of the IDAT chunks
@@ -1278,8 +1293,8 @@ static qboolean DecodeImageNonInterlaced(struct PNG_Chunk_IHDR *IHDR,
 	 *  byte swapping
 	 */
 
-	IHDR_Width  = BigLong(IHDR->Width);
-	IHDR_Height = BigLong(IHDR->Height);
+	IHDR_Width  = R_LongSwap(IHDR->Width);
+	IHDR_Height = R_LongSwap(IHDR->Height);
 
 	/*
 	 *  information for un-filtering
@@ -1558,8 +1573,8 @@ static qboolean DecodeImageInterlaced(struct PNG_Chunk_IHDR *IHDR,
 	 *  byte swapping
 	 */
 
-	IHDR_Width  = BigLong(IHDR->Width);
-	IHDR_Height = BigLong(IHDR->Height);
+	IHDR_Width  = R_LongSwap(IHDR->Width);
+	IHDR_Height = R_LongSwap(IHDR->Height);
 
 	/*
 	 *  Skip and Offset for the passes.
@@ -2002,8 +2017,8 @@ void R_LoadPNG(const char *name, byte **pic, int *width, int *height)
 	 *  PNG multi-byte types are in Big Endian
 	 */
 
-	ChunkHeaderLength = BigLong(CH->Length);
-	ChunkHeaderType   = BigLong(CH->Type);
+	ChunkHeaderLength = R_LongSwap(CH->Length);
+	ChunkHeaderType   = R_LongSwap(CH->Type);
 
 	/*
 	 *  Check if the first chunk is an IHDR.
@@ -2048,8 +2063,8 @@ void R_LoadPNG(const char *name, byte **pic, int *width, int *height)
 	 *  multi-byte type swapping
 	 */
 
-	IHDR_Width  = BigLong(IHDR->Width);
-	IHDR_Height = BigLong(IHDR->Height);
+	IHDR_Width  = R_LongSwap(IHDR->Width);
+	IHDR_Height = R_LongSwap(IHDR->Height);
 
 	/*
 	 *  Check if Width and Height are valid.
@@ -2124,8 +2139,8 @@ void R_LoadPNG(const char *name, byte **pic, int *width, int *height)
 		 *  PNG multi-byte types are in Big Endian
 		 */
 
-		ChunkHeaderLength = BigLong(CH->Length);
-		ChunkHeaderType   = BigLong(CH->Type);
+		ChunkHeaderLength = R_LongSwap(CH->Length);
+		ChunkHeaderType   = R_LongSwap(CH->Type);
 
 		/*
 		 *  Check if the chunk is a PLTE.
@@ -2226,8 +2241,8 @@ void R_LoadPNG(const char *name, byte **pic, int *width, int *height)
 		 *  PNG multi-byte types are in Big Endian
 		 */
 
-		ChunkHeaderLength = BigLong(CH->Length);
-		ChunkHeaderType   = BigLong(CH->Type);
+		ChunkHeaderLength = R_LongSwap(CH->Length);
+		ChunkHeaderType   = R_LongSwap(CH->Type);
 
 		/*
 		 *  Check if the chunk is a tRNS.

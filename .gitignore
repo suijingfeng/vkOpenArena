@@ -32,3 +32,18 @@ profile
 !default.mode1v3
 !default.mode2v3
 !default.perspectivev3
+
+# vs studio
+*.opendb
+*.opensdf
+*.sdf
+*.suo
+*.user
+bin/
+x64/
+misc/msvc17/.vs/*
+misc/msvc17/OpenArena/.vs/*
+misc/msvc17/vk_report
+misc/msvc17/*.log
+misc/msvc17/*.psess
+misc/msvc17/*.vspx

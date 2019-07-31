@@ -39,7 +39,7 @@
     <CharacterSet>MultiByte</CharacterSet>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
-    <ConfigurationType>Application</ConfigurationType>
+    <ConfigurationType>DynamicLibrary</ConfigurationType>
     <UseDebugLibraries>true</UseDebugLibraries>
     <PlatformToolset>v141</PlatformToolset>
     <CharacterSet>MultiByte</CharacterSet>
@@ -75,6 +75,9 @@
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <TargetExt>.dll</TargetExt>
   </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <TargetExt>.dll</TargetExt>
+  </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
       <WarningLevel>Level3</WarningLevel>
@@ -90,7 +93,7 @@
       <Optimization>Disabled</Optimization>
       <SDLCheck>true</SDLCheck>
       <ConformanceMode>true</ConformanceMode>
-      <PreprocessorDefinitions>idx64;STANDALONE;_MSC_VER;WIN32;_DEBUG;_MBCS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>STANDALONE;USE_RENDERER_DLOPEN;_MSC_VER;_DEBUG;_MBCS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <CompileAs>CompileAsC</CompileAs>
     </ClCompile>
   </ItemDefinitionGroup>
@@ -142,6 +145,7 @@
     <ClCompile Include="..\..\..\code\renderer_vulkan\R_FindShader.c" />
     <ClCompile Include="..\..\..\code\renderer_vulkan\R_GetMicroSeconds.c" />
     <ClCompile Include="..\..\..\code\renderer_vulkan\R_ImageBMP.c" />
+    <ClCompile Include="..\..\..\code\renderer_vulkan\R_ImageJPG.c" />
     <ClCompile Include="..\..\..\code\renderer_vulkan\R_ImagePCX.c" />
     <ClCompile Include="..\..\..\code\renderer_vulkan\R_ImagePNG.c" />
     <ClCompile Include="..\..\..\code\renderer_vulkan\R_ImageProcess.c" />
@@ -220,7 +224,6 @@
   <ItemGroup>
     <ClInclude Include="..\..\..\code\renderer_vulkan\FixRenderCommandList.h" />
     <ClInclude Include="..\..\..\code\renderer_vulkan\glConfig.h" />
-    <ClInclude Include="..\..\..\code\renderer_vulkan\icon_oa.h" />
     <ClInclude Include="..\..\..\code\renderer_vulkan\matrix_multiplication.h" />
     <ClInclude Include="..\..\..\code\renderer_vulkan\RB_DebugGraphics.h" />
     <ClInclude Include="..\..\..\code\renderer_vulkan\RB_DeformGeometry.h" />
@@ -240,7 +243,6 @@
     <ClInclude Include="..\..\..\code\renderer_vulkan\R_Portal.h" />
     <ClInclude Include="..\..\..\code\renderer_vulkan\R_PortalPlane.h" />
     <ClInclude Include="..\..\..\code\renderer_vulkan\R_PrintMat.h" />
-    <ClInclude Include="..\..\..\code\renderer_vulkan\R_Puff.h" />
     <ClInclude Include="..\..\..\code\renderer_vulkan\R_RotateForViewer.h" />
     <ClInclude Include="..\..\..\code\renderer_vulkan\R_ShaderCommands.h" />
     <ClInclude Include="..\..\..\code\renderer_vulkan\R_ShaderCommonDef.h" />
@@ -297,6 +299,11 @@
     <ClInclude Include="..\..\..\code\renderer_vulkan\vk_swapchain.h" />
     <ClInclude Include="..\..\..\code\renderer_vulkan\vk_utils.h" />
     <ClInclude Include="..\..\..\code\renderer_vulkan\vk_validation.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\libjpeg\libjpeg.vcxproj">
+      <Project>{1db8884c-1494-4bdc-993c-b46ef1e91791}</Project>
+    </ProjectReference>
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

@@ -1,10 +1,12 @@
 #include <windows.h>
 #include "VKimpl.h"
+#include "../vulkan/vulkan_win32.h"
+#include "vk_instance.h"
 #include "tr_cvar.h"
 #include "icon_oa.h"
 #include "glConfig.h"
 #include "ref_import.h"
-#include "../vulkan/vulkan_win32.h"
+
 #define	MAIN_WINDOW_CLASS_NAME	"OpenArena"
 
 struct WindowSystem_s
@@ -100,3 +102,8 @@ void vk_destroyWindowImpl(void)
 		g_win.hWindow = NULL;
 	}
 } 
+
+void vk_minimizeWindowImpl(void)
+{
+	;
+}

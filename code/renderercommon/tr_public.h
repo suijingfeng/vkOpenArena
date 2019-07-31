@@ -160,7 +160,7 @@ typedef struct {
 	void (* IN_Restart)( void );
 
 
-	// math, i really want ot remove this, but to keep the API/API consistant with ioq3
+	// math, i really want ot remove this, but to keep the API/ABI consistant with ioq3
 	long (* ftol)(float f);
 
 	// system stuff
