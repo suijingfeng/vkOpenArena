@@ -865,8 +865,8 @@ void RB_StageIteratorSky( struct shaderCommands_s * const pTess )
     // why != tr.defaultImage ?
 	if ( pTess->shader->sky.outerbox[0] && pTess->shader->sky.outerbox[0] != tr.defaultImage  )
     {
-        float modelview_transform[16] QALIGN(16);
-        float skybox_translate[16] QALIGN(16) = {
+		QALIGN(16) float modelview_transform[16] ;
+		QALIGN(16) float skybox_translate[16]  = {
             1, 0, 0, 0,
             0, 1, 0, 0,
             0, 0, 1, 0,

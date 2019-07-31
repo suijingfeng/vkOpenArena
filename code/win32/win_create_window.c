@@ -191,7 +191,7 @@ static void win_destroyWindowImpl(void)
 
 
 
-void GLimp_Init(struct glconfig_s * const pConfig, void **pContext)
+void GLimp_Init(glconfig_t * const pConfig, void **pContext)
 {
 
 	win_createWindowImpl();
@@ -206,7 +206,7 @@ void GLimp_Init(struct glconfig_s * const pConfig, void **pContext)
 	pConfig->isFullscreen = g_wv.isFullScreen ? qtrue : qfalse;
 	pConfig->stereoEnabled = qfalse;
 	pConfig->smpActive = qfalse;
-	pConfig->UNUSED_displayFrequency = 60;
+	pConfig->displayFrequency = 60;
 
 
 	// allways enable stencil

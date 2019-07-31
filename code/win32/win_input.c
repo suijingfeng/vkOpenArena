@@ -236,7 +236,7 @@ void IN_Frame (void)
 		return;
 	}
 
-	if ( cls.keyCatchers & KEYCATCH_CONSOLE )
+	if ( Key_GetCatcher() & KEYCATCH_CONSOLE )
 	{
 		// temporarily deactivate if not in the game and
 		// running on the desktop

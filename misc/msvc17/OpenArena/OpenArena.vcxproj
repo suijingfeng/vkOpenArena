@@ -41,6 +41,20 @@
   <ItemGroup>
     <ResourceCompile Include="..\..\..\code\win32\winquake.rc" />
   </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="..\..\..\code\win32\resource.h" />
+    <ClInclude Include="..\..\..\code\win32\win_dll.h" />
+    <ClInclude Include="..\..\..\code\win32\win_event.h" />
+    <ClInclude Include="..\..\..\code\win32\win_gamma.h" />
+    <ClInclude Include="..\..\..\code\win32\win_get_clipboard.h" />
+    <ClInclude Include="..\..\..\code\win32\win_input.h" />
+    <ClInclude Include="..\..\..\code\win32\win_log.h" />
+    <ClInclude Include="..\..\..\code\win32\win_mode.h" />
+    <ClInclude Include="..\..\..\code\win32\win_net.h" />
+    <ClInclude Include="..\..\..\code\win32\win_public.h" />
+    <ClInclude Include="..\..\..\code\win32\win_snd.h" />
+    <ClInclude Include="..\..\..\code\win32\win_sysconsole.h" />
+  </ItemGroup>
   <PropertyGroup Label="Globals">
     <VCProjectVersion>15.0</VCProjectVersion>
     <ProjectGuid>{B2CD0B66-6F33-42D4-8FF7-AD2F2A431C35}</ProjectGuid>

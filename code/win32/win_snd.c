@@ -22,6 +22,7 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #include <float.h>
 
 #define CINTERFACE
+
 #include "win_public.h"
 #include "../client/snd_local.h"
 
@@ -118,22 +119,24 @@ void SNDDMA_Shutdown( void ) {
 
 int SNDDMA_InitDS ()
 {
-	HRESULT			hresult;
+
 	DSBUFFERDESC	dsbuf;
 	DSBCAPS			dsbcaps;
 	WAVEFORMATEX	format;
-	int				use8;
+	int				use8 = 1;
 
 	Com_Printf( "Initializing DirectSound\n");
 
-    const GUID CLSID_DirectSound = {0x47d4d946, 0x62e8, 0x11cf, 0x93, 0xbc, 0x44, 0x45, 0x53, 0x54, 0x0, 0x0};
-    const GUID CLSID_DirectSound8 = {0x3901cc3f, 0x84b5, 0x4fa4, 0xba, 0x35, 0xaa, 0x81, 0x72, 0xb8, 0xa0, 0x9b};
-    const GUID IID_IDirectSound8 = {0xC50A7E93, 0xF395, 0x4834, 0x9E, 0xF6, 0x7F, 0xA9, 0x9D, 0xE5, 0x09, 0x66};
-    const GUID IID_IDirectSound = {0x279AFA83, 0x4981, 0x11CE, 0xA5, 0x21, 0x00, 0x20, 0xAF, 0x0B, 0xE5, 0x60};
+    const GUID CLSID_DirectSound[] = {0x47d4d946, 0x62e8, 0x11cf, 0x93, 0xbc, 0x44, 0x45, 0x53, 0x54, 0x0, 0x0};
+    const GUID CLSID_DirectSound8[] = {0x3901cc3f, 0x84b5, 0x4fa4, 0xba, 0x35, 0xaa, 0x81, 0x72, 0xb8, 0xa0, 0x9b};
+    const GUID IID_IDirectSound8[] = {0xC50A7E93, 0xF395, 0x4834, 0x9E, 0xF6, 0x7F, 0xA9, 0x9D, 0xE5, 0x09, 0x66};
+    const GUID IID_IDirectSound[] = {0x279AFA83, 0x4981, 0x11CE, 0xA5, 0x21, 0x00, 0x20, 0xAF, 0x0B, 0xE5, 0x60};
 
-	use8 = 1;
+
+	HRESULT	hresult = CoCreateInstance(CLSID_DirectSound8, NULL, CLSCTX_INPROC_SERVER, IID_IDirectSound8, (void **)&pDS);
     // Create IDirectSound using the primary sound device
-    if( FAILED( hresult = CoCreateInstance(CLSID_DirectSound8, NULL, CLSCTX_INPROC_SERVER, IID_IDirectSound8, (void **)&pDS))) {
+    if( FAILED( hresult ))
+	{
 		use8 = 0;
 	    if( FAILED( hresult = CoCreateInstance(CLSID_DirectSound, NULL, CLSCTX_INPROC_SERVER, IID_IDirectSound, (void **)&pDS))) {
 			Com_Printf ("failed\n");

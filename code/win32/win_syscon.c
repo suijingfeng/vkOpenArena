@@ -39,6 +39,7 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
 
 extern WinVars_t g_wv;
+extern cvar_t* com_viewlog;
 
 #define COPY_ID			1
 #define QUIT_ID			2
@@ -619,7 +620,7 @@ static LRESULT WINAPI InputLineWndProc( HWND hWnd, UINT uMsg, WPARAM wParam, LPA
 			SendMessage( hWnd, EM_GETSEL, (WPARAM) &pos, (LPARAM) 0 );
 			console.cursor = pos;
 			
-			Field_CompleteCommand( &console );
+			Field_CompleteCommand( &console, 1, 1 );
 
 			SetWindowText( hWnd, AtoW( console.buffer ) );
 			SendMessage( hWnd, EM_SETSEL, console.cursor, console.cursor );

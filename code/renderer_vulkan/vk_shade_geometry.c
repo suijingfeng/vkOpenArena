@@ -49,8 +49,8 @@
 // specific point source or direction. Ambient light illuminates
 // all surfaces evenly and on all side.
 // 
-static float s_modelview_matrix[16] QALIGN(16);
-static float s_ProjectMat2d[16] QALIGN(16);
+static QALIGN(16) float s_modelview_matrix[16];
+static QALIGN(16) float s_ProjectMat2d[16];
 
 #define VERTEX_CHUNK_SIZE   (768 * 1024)
 #define INDEX_BUFFER_SIZE   (2 * 1024 * 1024)
@@ -424,7 +424,7 @@ void updateMVP(VkBool32 isPortal, VkBool32 is2D, const float mvMat4x4[16])
     else
     {
         // 3D, mvp transform + eye transform + clipping plane in eye space
-        float push_constants[32] QALIGN(16); 
+        float QALIGN(16) push_constants[32];
         // update q3's proj matrix (opengl) to vulkan conventions:
         // z - [0, 1] instead of [-1, 1] and invert y direction
         // Eye space transform.

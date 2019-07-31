@@ -188,6 +188,9 @@ static VkBool32 vk_assertStandValidationLayer(void)
 #endif
 
 
+// this function not be placed in vk_utils.c because 
+// I dont want to qvkEnumerateInstanceExtensionProperties
+// available to other files ...
 void printInstanceExtensionsSupported_f(void)
 {
     uint32_t i = 0;
@@ -224,7 +227,8 @@ static void vk_fillRequiredInstanceExtention(
 {
     uint32_t enExtCnt = 0;
     uint32_t i = 0;
-#if defined(_WIN32)
+
+#if defined(_WIN32) || defined(_WIN64)
 
     #ifndef VK_KHR_WIN32_SURFACE_EXTENSION_NAME
     #define VK_KHR_WIN32_SURFACE_EXTENSION_NAME "VK_KHR_win32_surface"
@@ -561,6 +565,7 @@ static void vk_loadGlobalLevelFunctions(void)
     if( q##func == NULL ) {                                         \
         ri.Error(ERR_FATAL, "Failed to find entrypoint %s", #func); \
 }
+
 	INIT_GLOBAL_LEVEL_FUNCTION(vkCreateInstance)
 	INIT_GLOBAL_LEVEL_FUNCTION(vkEnumerateInstanceExtensionProperties)
     // This embarrassing, i get NULL if loding this fun after create instance
@@ -586,7 +591,7 @@ static void vk_loadInstanceLevelFunctions(void)
     // physical devices. There are multiple instance-level functions.
     
 #define INIT_INSTANCE_FUNCTION(func)                                    \
-    q##func = (PFN_##func)qvkGetInstanceProcAddr(vk.instance, #func);   \
+    q##func = (PFN_##func) qvkGetInstanceProcAddr(vk.instance, #func);  \
     if (q##func == NULL) {                                              \
         ri.Error(ERR_FATAL, "Failed to find entrypoint %s", #func);     \
     }
@@ -1336,6 +1341,17 @@ void vk_getProcAddress(void)
     // a source and destination queue family index is specified to allow the 
     // ownership of a buffer or image to be transferred from one queue family
     // to another.
+}
+
+
+uint32_t vk_getWinWidth(void)
+{
+	return vk.renderArea.extent.width;
+}
+
+uint32_t vk_getWinHeight(void)
+{
+	return vk.renderArea.extent.height;
 }
 
 

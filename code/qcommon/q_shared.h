@@ -127,8 +127,10 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
 #ifdef __GNUC__
 #define QALIGN(x) __attribute__((aligned(x)))
+#elif (defined _MSC_VER)
+#define QALIGN(x) __declspec(align(x))
 #else
-#define QALIGN(x)
+#define QALIGN(x) 
 #endif
 
 #if (defined _MSC_VER)

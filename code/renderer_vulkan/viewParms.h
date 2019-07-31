@@ -4,7 +4,7 @@
 #include "../qcommon/q_shared.h"
 
 typedef struct {
-	float		modelMatrix[16] QALIGN(16);
+	QALIGN(16) float modelMatrix[16];
 	float		axis[3][3];		// orientation in world
     float		origin[3];			// in world coordinates
 	float		viewOrigin[3];		// viewParms->or.origin in local coordinates
@@ -19,7 +19,7 @@ typedef struct viewParms_s{
 //	cplane_t	portalPlane;		// clip anything behind this if mirroring
 	int			viewportX, viewportY, viewportWidth, viewportHeight;
 	float		fovX, fovY;
-	float		projectionMatrix[16] QALIGN(16);
+	QALIGN(16) float projectionMatrix[16];
 	cplane_t	frustum[4];
 	float		visBounds[2][3];
 	float		zFar;

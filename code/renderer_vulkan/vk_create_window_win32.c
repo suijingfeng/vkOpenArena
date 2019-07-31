@@ -7,36 +7,43 @@
 #include "glConfig.h"
 #include "ref_import.h"
 
+#include "../win32/win_public.h"
+
 #define	MAIN_WINDOW_CLASS_NAME	"OpenArena"
 
-struct WindowSystem_s
-{
-	HINSTANCE		vk_library_handle;		// Handle to refresh DLL 
 
+extern PFN_vkGetInstanceProcAddr qvkGetInstanceProcAddr;
 
-    HWND            hWindow;
+#if defined(_WIN32) || defined(_WIN64)
 
-	HINSTANCE		hInstance;
-	qboolean		activeApp;
-	qboolean		isMinimized;
-	OSVERSIONINFO	osversion;
+PFN_vkCreateWin32SurfaceKHR	qvkCreateWin32SurfaceKHR;
 
-	// when we get a windows message, we store the time off so keyboard processing
-	// can know the exact time of an event
-	unsigned		sysMsgTime;
-};
+HINSTANCE vk_library_handle = NULL;		// Handle to refresh DLL 
 
+WinVars_t * pWinCtx = NULL;
 
-struct WindowSystem_s g_win;
+#elif defined(__unix__) || defined(__linux) || defined(__linux__)
+
+PFN_vkCreateXcbSurfaceKHR qvkCreateXcbSurfaceKHR;
+
+WinVars_t * pXcbCtx = NULL;
+
+void * vk_library_handle = NULL; // instance of Vulkan library
+
+#else
+
+// macos ?
+
+#endif
 
 
 void* vk_getInstanceProcAddrImpl(void)
 {
 	ri.Printf(PRINT_ALL, " Initializing Vulkan subsystem \n");
     
-	g_win.vk_library_handle = LoadLibrary("vulkan-1.dll");
+	vk_library_handle = LoadLibrary("vulkan-1.dll");
 
-	if (g_win.vk_library_handle == NULL)
+	if (vk_library_handle == NULL)
 	{
 		ri.Printf(PRINT_ALL, " Loading Vulkan DLL Failed. \n");
 		ri.Error(ERR_FATAL, " Could not loading %s\n", "vulkan-1.dll");
@@ -44,9 +51,17 @@ void* vk_getInstanceProcAddrImpl(void)
 
 	ri.Printf( PRINT_ALL, "Loading vulkan DLL succeeded. \n" );
 
-	return GetProcAddress(g_win.vk_library_handle, "vkGetInstanceProcAddr");
-}    
+	return GetProcAddress(vk_library_handle, "vkGetInstanceProcAddr");
+}
 
+void vk_cleanInstanceProcAddrImpl(void)
+{
+	FreeLibrary(vk_library_handle);
+
+	vk_library_handle = NULL;
+
+	ri.Printf(PRINT_ALL, " vulkan DLL freed. \n");
+}
 
 // With Win32, minImageExtent, maxImageExtent, and currentExtent must always equal the window size.
 // The currentExtent of a Win32 surface must have both width and height greater than 0, or both of
@@ -58,6 +73,12 @@ void* vk_getInstanceProcAddrImpl(void)
 // minimized), and so a swapchain cannot be created until the size changes.
 void vk_createSurfaceImpl(VkInstance hInstance, VkSurfaceKHR* const pSurface)
 {
+
+	// WinVars_t * pWinCtx = (WinVars_t*)pContext;
+
+	qvkCreateWin32SurfaceKHR = (PFN_vkCreateWin32SurfaceKHR) 
+		qvkGetInstanceProcAddr( hInstance, "vkCreateWin32SurfaceKHR");
+
 	VkWin32SurfaceCreateInfoKHR desc;
 	desc.sType = VK_STRUCTURE_TYPE_WIN32_SURFACE_CREATE_INFO_KHR;
 	desc.pNext = NULL;
@@ -68,40 +89,31 @@ void vk_createSurfaceImpl(VkInstance hInstance, VkSurfaceKHR* const pSurface)
 	// This function returns a module handle for the specified module 
 	// if the file is mapped into the address space of the calling process.
     //
-	desc.hinstance = GetModuleHandle(NULL);
-	desc.hwnd = g_win.hWindow;
-	VK_CHECK( vkCreateWin32SurfaceKHR(hInstance, &desc, NULL, pSurface) );
+	desc.hinstance = pWinCtx->hInstance;
+	desc.hwnd = pWinCtx->hWnd;
+	VK_CHECK( qvkCreateWin32SurfaceKHR(hInstance, &desc, NULL, pSurface) );
 }
 
 
 
 void vk_createWindowImpl(void)
 {
-    // This function set the render window's height and width.
-    R_SetWinMode( r_mode->integer, GetDesktopWidth(), GetDesktopHeight() , 60 );
+	ri.Printf(PRINT_ALL, " Create window fot vulkan . \n");
+    
+	// This function set the render window's height and width.
+    // R_SetWinMode( r_mode->integer, GetDesktopWidth(), GetDesktopHeight() , 60 );
 
 	// Create window.
-
-	g_win.hWindow = create_main_window( vk_getWinWidth(), vk_getWinHeight(), r_fullscreen->integer);
-	
-    SetForegroundWindow(g_win.hWindow);
-	SetFocus(g_win.hWindow);
-
-    // WG_CheckHardwareGamma();
+	ri.GLimpInit(glConfig_getAddressOf(), &pWinCtx);
 }
 
 
 void vk_destroyWindowImpl(void)
 {
-	if (g_win.hWindow)
-	{
-		ri.Printf(PRINT_ALL, " Destroying Vulkan window. \n");
-		
-        DestroyWindow(g_win.hWindow);
+	ri.GLimpShutdown();
+	ri.Printf(PRINT_ALL, " Destroying Vulkan window. \n");	
+}
 
-		g_win.hWindow = NULL;
-	}
-} 
 
 void vk_minimizeWindowImpl(void)
 {

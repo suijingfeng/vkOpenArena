@@ -786,7 +786,8 @@ typedef enum {
 	SE_KEY,			// evValue is a key code, evValue2 is the down flag
 	SE_CHAR,		// evValue is an ascii char
 	SE_MOUSE,		// evValue and evValue2 are relative signed x / y moves
-	SE_CONSOLE		// evPtr is a char*
+	SE_CONSOLE,		// evPtr is a char*
+	SE_PACKET	// suijingfeng, win workaround, evPtr is a netadr_t followed by data bytes to evPtrLength
 } sysEventType_t;
 
 typedef struct {

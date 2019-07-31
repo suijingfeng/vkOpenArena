@@ -133,16 +133,6 @@ void R_SetWinMode(int mode, unsigned int width, unsigned int height, unsigned in
         mode, glConfig.vidWidth, glConfig.vidHeight, glConfig.displayFrequency);
 }
 
-uint32_t vk_getWinWidth(void)
-{
-    return vk.renderArea.extent.width;
-}
-
-uint32_t vk_getWinHeight(void)
-{
-    return vk.renderArea.extent.height;
-}
-
 
 void R_InitDisplayResolution( void )
 {
@@ -165,6 +155,10 @@ void glConfig_Get(glconfig_t * const pCfg)
 	*pCfg = glConfig;
 }
 
+glconfig_t * glConfig_getAddressOf(void)
+{
+	return &glConfig;
+}
 
 void glConfig_Init(void)
 {

@@ -1,5 +1,5 @@
-#ifndef VKIMPL_H_
-#define VKIMPL_H_
+#ifndef VK_IMPL_H_
+#define VK_IMPL_H_
 
 /*
 ==========================================================
@@ -14,6 +14,7 @@ consistant.
 
 #define VK_NO_PROTOTYPES
 #include "../vulkan/vulkan.h"
+#include "../vulkan/vk_platform.h"
 
 void vk_createWindowImpl(void);
 void vk_destroyWindowImpl(void);

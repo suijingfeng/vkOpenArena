@@ -27,14 +27,6 @@ extern PFN_vkGetPhysicalDeviceSurfacePresentModesKHR	qvkGetPhysicalDeviceSurface
 extern PFN_vkGetPhysicalDeviceSurfaceSupportKHR		    qvkGetPhysicalDeviceSurfaceSupportKHR;
 
 
-// VK_KHR_display
-extern PFN_vkGetPhysicalDeviceDisplayPropertiesKHR         qvkGetPhysicalDeviceDisplayPropertiesKHR;
-extern PFN_vkGetPhysicalDeviceDisplayPlanePropertiesKHR    qvkGetPhysicalDeviceDisplayPlanePropertiesKHR;
-extern PFN_vkGetDisplayPlaneSupportedDisplaysKHR           qvkGetDisplayPlaneSupportedDisplaysKHR;
-extern PFN_vkGetDisplayModePropertiesKHR                   qvkGetDisplayModePropertiesKHR;
-extern PFN_vkCreateDisplayModeKHR                          qvkCreateDisplayModeKHR;
-extern PFN_vkGetDisplayPlaneCapabilitiesKHR                qvkGetDisplayPlaneCapabilitiesKHR;
-extern PFN_vkCreateDisplayPlaneSurfaceKHR                  qvkCreateDisplayPlaneSurfaceKHR;
 
 #ifndef NDEBUG
 extern PFN_vkCreateDebugReportCallbackEXT				qvkCreateDebugReportCallbackEXT;
@@ -123,11 +115,11 @@ extern PFN_vkQueuePresentKHR							qvkQueuePresentKHR;
 // Initializes VK_Instance structure.
 void vk_getProcAddress(void);
 void vk_clearProcAddress(void);
-
-
+void printInstanceExtensionsSupported_f(void);
 void vk_destroy_instance(void);
 
-void printInstanceExtensionsSupported_f(void);
+uint32_t vk_getWinWidth(void);
+uint32_t vk_getWinHeight(void);
 
 #ifndef NDEDBG
 
@@ -235,8 +227,7 @@ struct Vk_Instance {
 
 extern struct Vk_Instance vk;
 
-uint32_t vk_getWinWidth(void);
-uint32_t vk_getWinHeight(void);
+
 
 
 #endif

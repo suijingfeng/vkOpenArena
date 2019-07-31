@@ -45,7 +45,7 @@ void R_RotateForViewer ( viewParms_t * const pViewParams, orientationr_t * const
     // for current entity
     // orientationr_t * const pEntityPose = &tr.or;
     
-    const static float s_flipMatrix[16] QALIGN(16) = {
+	QALIGN(16) const static float s_flipMatrix[16]  = {
         // convert from our coordinate system (looking down X)
         // to OpenGL's coordinate system (looking down -Z)
         0, 0, -1, 0,
@@ -70,7 +70,7 @@ void R_RotateForViewer ( viewParms_t * const pViewParams, orientationr_t * const
     pEntityPose->viewOrigin[2] = o2 = pViewParams->or.origin[2];
 
     
-    float viewerMatrix[16] QALIGN(16);
+	QALIGN(16) float viewerMatrix[16] ;
 	viewerMatrix[0] = pViewParams->or.axis[0][0];
 	viewerMatrix[1] = pViewParams->or.axis[1][0];
 	viewerMatrix[2] = pViewParams->or.axis[2][0];
@@ -132,7 +132,7 @@ void R_RotateForEntity(const trRefEntity_t* const ent, const viewParms_t* const 
     memcpy(or->origin, ent->e.origin, 12);
     memcpy(or->axis, ent->e.axis, 36);
 
-	float glMatrix[16] QALIGN(16);
+	QALIGN(16) float glMatrix[16];
 
 	glMatrix[0] = or->axis[0][0];
 	glMatrix[1] = or->axis[0][1];

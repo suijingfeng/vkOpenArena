@@ -2,7 +2,7 @@
 #include "win_public.h"
 
 #include "../client/client.h"
-
+#include "../qcommon/qcommon.h"
 // sys_consoleInput
 #include "win_sysconsole.h"
 #include "win_net.h"

@@ -40,50 +40,7 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
 extern WinVars_t g_wv;
 
-// define this to use alternate spanking method
-// I found out that the regular way doesn't work on my box for some reason
-// see the associated spank.sh script
-// #define ALT_SPANK
-/*
-#ifdef ALT_SPANK
-#include <stdio.h>
-#include <sys\stat.h>
-
-int fh = 0;
-
-void Spk_Open(char *name)
-{
-  fh = open( name, O_TRUNC | O_CREAT | O_WRONLY, S_IREAD | S_IWRITE );
-};
-
-void Spk_Close()
-{
-  if (!fh)
-    return;
-
-  close( fh );
-  fh = 0;
-}
-
-void Spk_Printf (const char *text, ...)
-{
-  va_list argptr;
-  char buf[32768];
-
-  if (!fh)
-    return;
-
-  va_start (argptr,text);
-  vsprintf (buf, text, argptr);
-  write(fh, buf, (int)strlen(buf));
-  _commit(fh);
-  va_end (argptr);
-
-};
-#endif
-*/
-
-
+cvar_t * com_viewlog;
 /*
 ==================
  Retrieves information about the system's current
@@ -193,10 +150,12 @@ void Sys_Quit( void )
 ==============
 Sys_Mkdir
 ==============
-*/
+
 void Sys_Mkdir( const char *path ) {
 	_mkdir (path);
 }
+*/
+
 
 /*
 ==============
@@ -481,8 +440,6 @@ void Sys_Init( void )
 	
 	*/
 
-	int cpuid;
-
 	// make sure the timer is high precision, otherwise
 	// NT gets 18ms resolution
 	// timeBeginPeriod function requests a minimum resolution for periodic timers.
@@ -532,37 +489,9 @@ void Sys_Init( void )
 	//
 	// figure out our CPU
 	//
-	Cvar_Get( "sys_cpustring", "detect", 0 );
-	if ( !Q_stricmp( Cvar_VariableString( "sys_cpustring"), "detect" ) )
-	{
-		Com_Printf( "...detecting CPU, found " );
 
-		cpuid = Sys_GetProcessorId();
-
-		switch ( cpuid )
-		{
-		case CPUID_GENERIC:
-			Cvar_Set( "sys_cpustring", "generic" );
-			break;
-		default:
-			Com_Error( ERR_FATAL, "Unknown cpu type %d\n", cpuid );
-			break;
-		}
-	}
-	else
-	{
-		Com_Printf( "...forcing CPU type to " );
-		if ( !Q_stricmp( Cvar_VariableString( "sys_cpustring" ), "generic" ) )
-		{
-			cpuid = CPUID_GENERIC;
-		}
-		else
-		{
-			Com_Printf( "WARNING: unknown sys_cpustring '%s'\n", Cvar_VariableString( "sys_cpustring" ) );
-			cpuid = CPUID_GENERIC;
-		}
-	}
-	Cvar_SetValue( "sys_cpuid", cpuid );
+	Cvar_SetValue( "sys_cpuid", 0 );
+	Cvar_Set("sys_cpustring", "generic");
 	
 	Com_Printf( "%s\n", Cvar_VariableString( "sys_cpustring" ) );
 
@@ -610,6 +539,8 @@ int WinMain (HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int 
 	// get the initial time base
 	Sys_Milliseconds();
 
+	
+	com_viewlog = Cvar_Get("viewlog", "0", CVAR_CHEAT);
 
 	Com_Init( sys_cmdline );
 	NET_Init();

@@ -30,7 +30,7 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #include <conio.h>
 
 
-#include "../../game/q_shared.h"
+#include "../qcommon/q_shared.h"
 #include "../qcommon/qcommon.h"
 
 
@@ -50,11 +50,6 @@ int Sys_Milliseconds (void)
 	return (timeGetTime() - sys_timeBase);
 }
 
-
-int Sys_GetProcessorId( void )
-{
-	return CPUID_GENERIC;
-}
 
 
 char* Sys_GetCurrentUser( void )

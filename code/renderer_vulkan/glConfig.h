@@ -12,6 +12,8 @@ void R_InitDisplayResolution( void );
 void glConfig_Init(void);
 void glConfig_FillString( void );
 void glConfig_Get(glconfig_t * const pOut);
+// temporary ...
+glconfig_t * glConfig_getAddressOf(void);
 void glConfig_Clear(void);
 
 

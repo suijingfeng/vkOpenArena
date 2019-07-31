@@ -27,7 +27,7 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #include <wsipx.h>
 
 
-#include "../../game/q_shared.h"
+#include "../qcommon/q_shared.h"
 #include "../qcommon/qcommon.h"
 
 
@@ -128,6 +128,7 @@ void NetadrToSockadr( netadr_t *a, struct sockaddr *s ) {
 		((struct sockaddr_in *)s)->sin_addr.s_addr = *(int *)&a->ip;
 		((struct sockaddr_in *)s)->sin_port = a->port;
 	}
+/* suijingfeng
 	else if( a->type == NA_IPX ) {
 		((struct sockaddr_ipx *)s)->sa_family = AF_IPX;
 		memcpy( ((struct sockaddr_ipx *)s)->sa_netnum, &a->ipx[0], 4 );
@@ -140,6 +141,7 @@ void NetadrToSockadr( netadr_t *a, struct sockaddr *s ) {
 		memset( ((struct sockaddr_ipx *)s)->sa_nodenum, 0xff, 6 );
 		((struct sockaddr_ipx *)s)->sa_socket = a->port;
 	}
+*/
 }
 
 
@@ -149,12 +151,14 @@ void SockadrToNetadr( struct sockaddr *s, netadr_t *a ) {
 		*(int *)&a->ip = ((struct sockaddr_in *)s)->sin_addr.s_addr;
 		a->port = ((struct sockaddr_in *)s)->sin_port;
 	}
+/* suijingfeng
 	else if( s->sa_family == AF_IPX ) {
 		a->type = NA_IPX;
 		memcpy( &a->ipx[0], ((struct sockaddr_ipx *)s)->sa_netnum, 4 );
 		memcpy( &a->ipx[4], ((struct sockaddr_ipx *)s)->sa_nodenum, 6 );
 		a->port = ((struct sockaddr_ipx *)s)->sa_socket;
 	}
+*/
 }
 
 
@@ -334,12 +338,14 @@ void Sys_SendPacket( int length, const void *data, netadr_t to ) {
 	else if( to.type == NA_IP ) {
 		net_socket = ip_socket;
 	}
+	/* suijingfeng
 	else if( to.type == NA_IPX ) {
 		net_socket = ipx_socket;
 	}
 	else if( to.type == NA_BROADCAST_IPX ) {
 		net_socket = ipx_socket;
 	}
+	*/
 	else {
 		Com_Error( ERR_FATAL, "Sys_SendPacket: bad address type" );
 		return;
@@ -373,7 +379,8 @@ void Sys_SendPacket( int length, const void *data, netadr_t to ) {
 		}
 
 		// some PPP links do not allow broadcasts and return an error
-		if( ( err == WSAEADDRNOTAVAIL ) && ( ( to.type == NA_BROADCAST ) || ( to.type == NA_BROADCAST_IPX ) ) ) {
+		// || ( to.type == NA_BROADCAST_IPX ) suijingfeng
+		if( ( err == WSAEADDRNOTAVAIL ) && ( ( to.type == NA_BROADCAST )  ) ) {
 			return;
 		}
 
@@ -397,7 +404,7 @@ qboolean Sys_IsLANAddress( netadr_t adr ) {
 	if( adr.type == NA_LOOPBACK ) {
 		return qtrue;
 	}
-
+	/* suijingfeng
 	if( adr.type == NA_IPX ) {
 		return qtrue;
 	}
@@ -405,7 +412,7 @@ qboolean Sys_IsLANAddress( netadr_t adr ) {
 	if( adr.type != NA_IP ) {
 		return qfalse;
 	}
-
+	*/
 	// choose which comparison to use based on the class of the address being tested
 	// any local adresses of a different class than the address being tested will fail based on the first byte
 
@@ -473,7 +480,8 @@ void Sys_ShowIP(void) {
 NET_IPSocket
 ====================
 */
-int NET_IPSocket( char *net_interface, int port ) {
+int NET_IPSocket( char *net_interface, int port )
+{
 	SOCKET				newsocket;
 	struct sockaddr_in	address;
 	u_long			_true = qtrue;
@@ -496,7 +504,8 @@ int NET_IPSocket( char *net_interface, int port ) {
 	}
 
 	// make it non-blocking
-	if( ioctlsocket( newsocket, FIONBIO, &(u_long&)_true ) == SOCKET_ERROR ) {
+	if( ioctlsocket( newsocket, FIONBIO, &_true ) == SOCKET_ERROR )
+	{
 		Com_Printf( "WARNING: UDP_OpenSocket: ioctl FIONBIO: %s\n", NET_ErrorString() );
 		return 0;
 	}
@@ -523,7 +532,8 @@ int NET_IPSocket( char *net_interface, int port ) {
 
 	address.sin_family = AF_INET;
 
-	if( bind( newsocket, (const sockaddr*) (void *)&address, sizeof(address) ) == SOCKET_ERROR ) {
+	if( bind( newsocket, (const struct sockaddr*) (void *)&address, sizeof(address) ) == SOCKET_ERROR )
+	{
 		Com_Printf( "WARNING: UDP_OpenSocket: bind: %s\n", NET_ErrorString() );
 		closesocket( newsocket );
 		return 0;
@@ -795,7 +805,7 @@ NET_IPXSocket
 int NET_IPXSocket( int port ) {
 	SOCKET				newsocket;
 	struct sockaddr_ipx	address;
-	int					_true = 1;
+	int	_true = 1;
 	int					err;
 
 	if( ( newsocket = socket( AF_IPX, SOCK_DGRAM, NSPROTO_IPX ) ) == INVALID_SOCKET ) {
@@ -807,7 +817,7 @@ int NET_IPXSocket( int port ) {
 	}
 
 	// make it non-blocking
-	if( ioctlsocket( newsocket, FIONBIO, &(u_long&)_true ) == SOCKET_ERROR ) {
+	if( ioctlsocket( newsocket, FIONBIO, &_true ) == SOCKET_ERROR ) {
 		Com_Printf( "WARNING: IPX_Socket: ioctl FIONBIO: %s\n", NET_ErrorString() );
 		return 0;
 	}
@@ -828,7 +838,8 @@ int NET_IPXSocket( int port ) {
 		address.sa_socket = htons( (short)port );
 	}
 
-	if( bind( newsocket, (const sockaddr*) (void *)&address, sizeof(address) ) == SOCKET_ERROR ) {
+	if( bind( newsocket, (const struct sockaddr*) (void *)&address, sizeof(address) ) == SOCKET_ERROR )
+	{
 		Com_Printf( "WARNING: IPX_Socket: bind: %s\n", NET_ErrorString() );
 		closesocket( newsocket );
 		return 0;
