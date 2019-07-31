@@ -485,7 +485,7 @@ This program is free software; you can redistribute it and/or modify it under th
 
 * About com\_hunkmegs
 
-When i playing CTF on :F for stupid server with default com\_hunkmegs = 128 setting, the following errors occurs:
+The following errors occurs:
 ```
 ERROR: Hunk_Alloc failed on 739360: code/renderergl2/tr_model.c, line: 535 (sizeof(*v) * (md3Surf->numVerts * md3Surf->numFrames)).
 ```
@@ -526,3 +526,7 @@ ri.Printf( PRINT_WARNING, "s_worldData.lightGridBounds[i]=%d\n", s_worldData.lig
 ```
 gprof openarena.x86_64 gmon.out > report.txt
 ```
+* Use git cancel a commit
+```
+ git reset --soft HEAD^
+``` 

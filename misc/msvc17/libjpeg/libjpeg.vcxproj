@@ -72,6 +72,8 @@
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <TargetExt>.lib</TargetExt>
+    <OutDir>$(ProjectDir)..\bin\$(PlatformName)\$(Configuration)\</OutDir>
+    <IntDir>$(ProjectDir)..\bin\$(PlatformName)\$(Configuration)\intermediate\$(ProjectName)\</IntDir>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <ClCompile>
