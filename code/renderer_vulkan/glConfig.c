@@ -121,7 +121,7 @@ void R_SetWinMode(int mode, unsigned int width, unsigned int height, unsigned in
         glConfig.vidWidth = 640;
         glConfig.vidHeight = 480;
         glConfig.displayFrequency = 60;
-        glConfig.windowAspect = 1.333333;
+        glConfig.windowAspect = 1.333333f;
 
         vk.renderArea.offset.x = 0;
         vk.renderArea.offset.y = 0;

@@ -9,7 +9,7 @@
 // Total 30 exported function
 
 void RE_Shutdown( qboolean destroyWindow );
-void RE_BeginRegistration( glconfig_t *glconfig );
+void RE_BeginRegistration( glconfig_t *const glconfig );
 
 qhandle_t RE_RegisterModel( const char *name );
 qhandle_t RE_RegisterSkin( const char *name );

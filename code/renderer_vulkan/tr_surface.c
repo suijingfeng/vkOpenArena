@@ -1132,9 +1132,9 @@ because a surface may be forced to perform a RB_End due
 to overflow.
 ==============
 */
-void RB_BeginSurface( shader_t * const pShader, int fogNum, shaderCommands_t * const pTess )
+void RB_BeginSurface(struct shader_s * const pShader, int fogNum, struct shaderCommands_s * const pTess )
 {
-	shader_t * pState = (pShader->remappedShader) ? pShader->remappedShader : pShader;
+	struct shader_s * pState = (pShader->remappedShader) ? pShader->remappedShader : pShader;
 
 	pTess->numIndexes = 0;
 	pTess->numVertexes = 0;

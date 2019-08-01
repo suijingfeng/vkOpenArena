@@ -130,7 +130,7 @@ void R_Set2dProjectMatrix(float width, float height)
 }
 
 
-void set_modelview_matrix(const float* const mv)
+void set_modelview_matrix(const float mv[16])
 {
     memcpy(s_modelview_matrix, mv, 64);
 }

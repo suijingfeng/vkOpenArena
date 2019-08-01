@@ -223,7 +223,7 @@ void printInstanceExtensionsSupported_f(void)
 // not knowing if it is necessary.
 static void vk_fillRequiredInstanceExtention( 
         const VkExtensionProperties * const pInsExt, const uint32_t nInsExt, 
-        const char ** const ppInsExt, uint32_t * nExt )
+        const char * * const ppInsExt, uint32_t * nExt )
 {
     uint32_t enExtCnt = 0;
     uint32_t i = 0;
@@ -462,8 +462,8 @@ static void vk_createInstance(VkInstance* const pInstance)
     VkExtensionProperties * pInsExt = (VkExtensionProperties *) malloc(sizeof(VkExtensionProperties) * nInsExt);
     VK_CHECK(qvkEnumerateInstanceExtensionProperties( NULL, &nInsExt, pInsExt));
 
-
-    const char** ppInstanceExtEnabled = malloc( sizeof(char *) * (nInsExt) );
+	char * pTmem = malloc(sizeof(char *) * (nInsExt));
+	const char* * const ppInstanceExtEnabled = &pTmem;
 
     // Each platform-specific extension is an instance extension.
     // The application must enable instance extensions with vkCreateInstance
@@ -522,7 +522,7 @@ static void vk_createInstance(VkInstance* const pInstance)
         ri.Error(ERR_FATAL, "%d, returned by qvkCreateInstance.\n", e);
     }
    
-    free(ppInstanceExtEnabled);
+    free(pTmem);
 
     free(pInsExt);
 }
@@ -623,7 +623,7 @@ static void vk_loadInstanceLevelFunctions(void)
     // it is more often efficient to render directly to a display instead.
     if(vk.isKhrDisplaySupported)
     {
-        ri.Printf(PRINT_ALL, " VK_KHR_Display Supported, Loading associate functions for this instance extention. \n");
+        ri.Printf(PRINT_ALL, " VK_KHR_Display Supported, Loading functions for this instance extention. \n");
 
         INIT_INSTANCE_FUNCTION(vkGetPhysicalDeviceDisplayPropertiesKHR);
         INIT_INSTANCE_FUNCTION(vkGetPhysicalDeviceDisplayPlanePropertiesKHR);
@@ -663,7 +663,7 @@ static void vk_selectPhysicalDevice(void)
 		ri.Error(ERR_FATAL, "Vulkan: no physical device found");
     }
 
-    VkPhysicalDevice * const pPhyDev = (VkPhysicalDevice *) malloc (sizeof(VkPhysicalDevice) * gpu_count);
+    VkPhysicalDevice * pPhyDev = (VkPhysicalDevice *) malloc (sizeof(VkPhysicalDevice) * gpu_count);
     
 
     VK_CHECK( qvkEnumeratePhysicalDevices(vk.instance, &gpu_count, pPhyDev) );
@@ -871,7 +871,7 @@ static void vk_selectSurfaceFormat(VkSurfaceKHR HSurface)
 // The number of queue families, the capabilities of each family,
 // and the number of queues belonging to each family are all
 // properties of the physical device.
-static void vk_selectQueueFamilyForPresentation(VkSurfaceKHR HSurface)
+static uint32_t vk_selectQueueFamilyForPresentation(VkSurfaceKHR HSurface)
 {
     // Almosty every operation in Vulkan, anything from drawing textures,
     // requires commands to be submitted to a queue. There are different
@@ -945,7 +945,7 @@ static void vk_selectQueueFamilyForPresentation(VkSurfaceKHR HSurface)
 
     // Select queue family with presentation and graphics support
     // Iterate over each queue to learn whether it supports presenting:
-    vk.queue_family_index = -1;
+
     
     for (i = 0; i < nQueueFamily; ++i)
     {
@@ -959,19 +959,22 @@ static void vk_selectQueueFamilyForPresentation(VkSurfaceKHR HSurface)
         if (presentation_supported && 
                 (pQueueFamilies[i].queueFlags & VK_QUEUE_GRAPHICS_BIT) != 0)
         {
-            vk.queue_family_index = i;
             
+          
             ri.Printf(PRINT_ALL, " Queue family index %d selected for presentation.\n", i);
-            break;
+            return i ;
         }
     }
 
-    if (vk.queue_family_index == -1) {
+    if (i == nQueueFamily) {
         ri.Error(ERR_FATAL, "Vulkan: failed to find a queue family for presentation. ");
     }
+
     ri.Printf(PRINT_ALL, " -------- ---------------------------- -------- \n\n");
 
     free(pQueueFamilies);
+
+	return i;
 }
 
 
@@ -1035,7 +1038,7 @@ static void vk_checkSwapChainExtention(const char * const pName)
 
 
 static void vk_createLogicalDevice(const char* const* ppExtNamesEnabled, uint32_t nExtEnabled,
-        VkDevice * const pLogicalDev)
+        uint32_t idxQueueFamily, VkDevice * const pLogicalDev)
 {
 ////////////////////////
 
@@ -1044,7 +1047,7 @@ static void vk_createLogicalDevice(const char* const* ppExtNamesEnabled, uint32_
     queue_desc.sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO;
     queue_desc.pNext = NULL;
     queue_desc.flags = 0;
-    queue_desc.queueFamilyIndex = vk.queue_family_index;
+    queue_desc.queueFamilyIndex = idxQueueFamily;
     queue_desc.queueCount = 1;
     queue_desc.pQueuePriorities = &priority;
 
@@ -1298,7 +1301,7 @@ void vk_getProcAddress(void)
     
     vk.present_mode = vk_selectPresentationMode(vk.surface);
 
-    vk_selectQueueFamilyForPresentation(vk.surface);
+	vk.queue_family_index = vk_selectQueueFamilyForPresentation(vk.surface);
 
     
     //////////
@@ -1308,7 +1311,7 @@ void vk_getProcAddress(void)
 
     vk_checkSwapChainExtention(enable_features_name_array[0]);
     
-    vk_createLogicalDevice(enable_features_name_array, 1, &vk.device);
+    vk_createLogicalDevice(enable_features_name_array, 1, vk.queue_family_index, &vk.device);
 
     // Get device level functions. depended on the created logical device
     // thus must be called AFTER vk_createLogicalDevice.

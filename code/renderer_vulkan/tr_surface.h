@@ -50,7 +50,7 @@ typedef struct srfGridMesh_s {
 #define	SIDE_ON		2
 
 
-void RB_BeginSurface(struct shader_s *shader, int fogNum, struct shaderCommands_s * const pTess);
+void RB_BeginSurface(struct shader_s * const shader, int fogNum, struct shaderCommands_s * const pTess);
 void RB_EndSurface( struct shaderCommands_s * const pTess );
 void RB_CheckOverflow( uint32_t verts, uint32_t indexes, struct shaderCommands_s * const pTess);
 void RB_AddQuadStampExt(const float origin[3], vec3_t left, vec3_t up, const uint8_t * const color,

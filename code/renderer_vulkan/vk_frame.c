@@ -825,7 +825,7 @@ void vk_insertLoadingVertexBarrier(VkCommandBuffer HCmdBuffer)
 
 // =====================================
 
-void vk_clearColorAttachments(const float* color)
+void vk_clearColorAttachments(const float* const color)
 {
     // NOTE: we don't use LOAD_OP_CLEAR for color attachment
     // when we begin renderpass since at that point we don't

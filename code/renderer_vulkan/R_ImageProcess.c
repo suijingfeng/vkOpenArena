@@ -91,7 +91,7 @@ R_BlendOverTexture
 Apply a color blend over a set of pixels
 ==================
 */
-void R_BlendOverTexture(unsigned char* data, const uint32_t pixelCount, uint32_t l)
+void R_BlendOverTexture(unsigned char* data, const uint32_t pixelCount, const uint32_t l)
 {
 	uint32_t i;
 
@@ -354,7 +354,7 @@ void fsWriteFile( const char *qpath, const void *buffer, int size )
     while (remaining)
     {
 		block = remaining;
-		written = fwrite (buf, 1, block, f);
+		written = (int)fwrite (buf, 1, block, f);
 		if (written == 0)
         {
 			if (!tries)

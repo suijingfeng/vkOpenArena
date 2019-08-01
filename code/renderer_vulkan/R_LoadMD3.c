@@ -242,9 +242,11 @@ qboolean R_LoadMD3 (model_t *mod, int lod, void *buffer, const char *mod_name )
     
 	// swap all the frames
     frame = (md3Frame_t *) ( (byte *)mod->md3[lod] + mod->md3[lod]->ofsFrames );
-    for ( i = 0 ; i < mod->md3[lod]->numFrames ; i++, frame++) {
+    for ( i = 0 ; i < mod->md3[lod]->numFrames ; i++, frame++)
+	{
     	frame->radius = LittleFloat( frame->radius );
-        for ( j = 0 ; j < 3 ; j++ ) {
+        for ( j = 0 ; j < 3 ; ++j )
+		{
             frame->bounds[0][j] = LittleFloat( frame->bounds[0][j] );
             frame->bounds[1][j] = LittleFloat( frame->bounds[1][j] );
 	    	frame->localOrigin[j] = LittleFloat( frame->localOrigin[j] );
@@ -253,8 +255,10 @@ qboolean R_LoadMD3 (model_t *mod, int lod, void *buffer, const char *mod_name )
 
 	// swap all the tags
     tag = (md3Tag_t *) ( (byte *)mod->md3[lod] + mod->md3[lod]->ofsTags );
-    for ( i = 0 ; i < mod->md3[lod]->numTags * mod->md3[lod]->numFrames ; i++, tag++) {
-        for ( j = 0 ; j < 3 ; j++ ) {
+    for ( i = 0 ; i < mod->md3[lod]->numTags * mod->md3[lod]->numFrames ; ++i, ++tag)
+	{
+        for ( j = 0 ; j < 3 ; ++j )
+		{
 			tag->origin[j] = LittleFloat( tag->origin[j] );
 			tag->axis[0][j] = LittleFloat( tag->axis[0][j] );
 			tag->axis[1][j] = LittleFloat( tag->axis[1][j] );
@@ -299,7 +303,7 @@ qboolean R_LoadMD3 (model_t *mod, int lod, void *buffer, const char *mod_name )
 
 		// strip off a trailing _1 or _2
 		// this is a crutch for q3data being a mess
-		j = strlen( surf->name );
+		j = (int)strlen( surf->name );
 		if ( j > 2 && surf->name[j-2] == '_' ) {
 			surf->name[j-2] = 0;
 		}

@@ -181,7 +181,6 @@ static void R_AddEntitySurfaces(viewParms_t * const pViewParam, const uint32_t n
     // point at this for their sorting surface
     static surfaceType_t entitySurface = SF_ENTITY;
 
-    uint32_t i;
     
 	for ( tr.currentEntityNum = 0; 
 	      tr.currentEntityNum < numEntity; //tr.refdef.num_entities; 
