@@ -205,13 +205,13 @@
     <ClCompile Include="..\..\..\code\renderer_vulkan\vk_buffers.c" />
     <ClCompile Include="..\..\..\code\renderer_vulkan\vk_cinematic.c" />
     <ClCompile Include="..\..\..\code\renderer_vulkan\vk_cmd.c" />
-    <ClCompile Include="..\..\..\code\renderer_vulkan\vk_create_window_win32.c" />
     <ClCompile Include="..\..\..\code\renderer_vulkan\vk_debug_pipelines.c" />
     <ClCompile Include="..\..\..\code\renderer_vulkan\vk_descriptor_sets.c" />
     <ClCompile Include="..\..\..\code\renderer_vulkan\vk_frame.c" />
     <ClCompile Include="..\..\..\code\renderer_vulkan\vk_global_stage_pipelines.c" />
     <ClCompile Include="..\..\..\code\renderer_vulkan\vk_image.c" />
     <ClCompile Include="..\..\..\code\renderer_vulkan\vk_image_sampler2.c" />
+    <ClCompile Include="..\..\..\code\renderer_vulkan\vk_impl.c" />
     <ClCompile Include="..\..\..\code\renderer_vulkan\vk_init.c" />
     <ClCompile Include="..\..\..\code\renderer_vulkan\vk_instance.c" />
     <ClCompile Include="..\..\..\code\renderer_vulkan\vk_khr_display.c" />

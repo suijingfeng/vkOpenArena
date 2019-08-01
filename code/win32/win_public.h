@@ -24,8 +24,11 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #ifndef WIN_PUBLIC_H_
 #define WIN_PUBLIC_H_
 
+#if defined(_WIN32) || defined(_WIN64)
+
 #include <windows.h>
-#include <stdbool.h>
+
+#include "../renderercommon/tr_types.h"
 
 typedef struct WinVars_s {
 	
@@ -39,10 +42,10 @@ typedef struct WinVars_s {
 	int				desktopWidth;
 	int				desktopHeight;
 
-	bool			isFullScreen;
+	int			isFullScreen;
 
-	bool			activeApp;
-	bool			isMinimized;
+	int			activeApp;
+	int			isMinimized;
 	OSVERSIONINFO	osversion;
 
 	// when we get a windows message, we store the time off so keyboard processing
@@ -50,6 +53,9 @@ typedef struct WinVars_s {
 	unsigned		sysMsgTime;
 } WinVars_t;
 
+#else
+
+#endif
 
 /*
 ====================================================================
@@ -59,13 +65,12 @@ IMPLEMENTATION SPECIFIC FUNCTIONS
 ====================================================================
 */
 
-struct glconfig_s;
 
-void GLimp_Init(struct glconfig_s * const pConfig, void ** pContext);
-void GLimp_Shutdown(void);
-void GLimp_EndFrame(void);
-void GLimp_SetGamma(unsigned char red[256], unsigned char green[256], unsigned char blue[256]);
-void Impl_Logging(char * const pComment);
+void WinSys_Init(glconfig_t * const pConfig, void ** pContext);
+void WinSys_Shutdown(void);
+void WinSys_EndFrame(void);
+void WinSys_SetGamma(unsigned char red[256], unsigned char green[256], unsigned char blue[256]);
+void FileSys_Logging(char * const pComment);
 
 // NOTE TTimo linux works with float gamma value, not the gamma table
 // the params won't be used, getting the r_gamma cvar directly

@@ -20,10 +20,15 @@
 
 */
 
-#ifdef WIN32
+#if defined( _WIN32 ) || defined( _WIN64 )
+
+#pragma warning(disable : 4996) // the function or variable may be unsafe
 #include <windows.h>
 #define uint32_t UINT32
+
+
 #else
+
 #include <unistd.h>
 #ifdef __sun
 #define _POSIX_C_SOURCE 199309L
@@ -32,6 +37,7 @@
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <sys/time.h>
+
 #endif
 
 #include <fcntl.h>

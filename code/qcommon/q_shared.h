@@ -193,7 +193,7 @@ typedef int intptr_t;
   #include <stdint.h>
 #endif
 
-#ifdef _WIN32
+#if defined( _WIN32 ) || defined( _WIN64 )
   // vsnprintf is ISO/IEC 9899:1999
   // abstracting this to make it portable
   #define Q_vsnprintf vsnprintf

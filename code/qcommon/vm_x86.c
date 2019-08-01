@@ -1091,21 +1091,31 @@ qboolean ConstOptimize(vm_t *vm, int callProcOfsSyscall)
   #define EDI "%%edi"
 #endif
 
+#if defined(_MSC_VER)
+
+//work around with MSVC compiler, suijingfeng
+
+#else
+
+
 static inline int Q_VMftol(void)
 {
-    int retval;
+	int retval;
 
-    __asm__ volatile
-        (
-         "movss (" EDI ", " EBX ", 4), %%xmm0\n"
-         "cvttss2si %%xmm0, %0\n"
-         : "=r" (retval)
-         :
-         : "%xmm0"
-        );
+	__asm__ volatile
+		(
+			"movss (" EDI ", " EBX ", 4), %%xmm0\n"
+			"cvttss2si %%xmm0, %0\n"
+			: "=r" (retval)
+			:
+			: "%xmm0"
+			);
 
-    return retval;
+	return retval;
 }
+
+#endif
+
 
 void VM_Compile(vm_t *vm, vmHeader_t *header)
 {
@@ -1636,11 +1646,22 @@ void VM_Compile(vm_t *vm, vmHeader_t *header)
 			EmitString("D9 04 9F");				// fld dword ptr [edi + ebx * 4]
 			EmitString("DB 1C 9F");				// fistp dword ptr [edi + ebx * 4]
 #else // FTOL_PTR
-			// call the library conversion function
+
+#if defined(_MSC_VER)
+		
+			EmitString("F3 0F 10 07"); // movss xmm0, dword ptr [edi]
+			EmitString("F3 0F 2C C0"); // cvttss2si eax, xmm0
+			EmitCommand(LAST_COMMAND_MOV_STACK_EAX);// mov dword ptr [edi], eax
+
+#else
+// GCC
+// call the library conversion function
 			EmitRexString(0x48, "BA");			// mov edx, Q_VMftol
 			EmitPtr(Q_VMftol);
 			EmitRexString(0x48, "FF D2");			// call edx
 			EmitCommand(LAST_COMMAND_MOV_STACK_EAX);	// mov dword ptr [edi + ebx * 4], eax
+#endif
+
 #endif
 			break;
 		case OP_SEX8:

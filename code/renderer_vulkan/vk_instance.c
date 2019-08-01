@@ -223,7 +223,7 @@ void printInstanceExtensionsSupported_f(void)
 // not knowing if it is necessary.
 static void vk_fillRequiredInstanceExtention( 
         const VkExtensionProperties * const pInsExt, const uint32_t nInsExt, 
-        const char * * const ppInsExt, uint32_t * nExt )
+        char * * const ppInsExt, uint32_t * nExt )
 {
     uint32_t enExtCnt = 0;
     uint32_t i = 0;
@@ -462,8 +462,7 @@ static void vk_createInstance(VkInstance* const pInstance)
     VkExtensionProperties * pInsExt = (VkExtensionProperties *) malloc(sizeof(VkExtensionProperties) * nInsExt);
     VK_CHECK(qvkEnumerateInstanceExtensionProperties( NULL, &nInsExt, pInsExt));
 
-	char * pTmem = malloc(sizeof(char *) * (nInsExt));
-	const char* * const ppInstanceExtEnabled = &pTmem;
+	char* * const ppInstanceExtEnabled = malloc(sizeof(char *) * (nInsExt));
 
     // Each platform-specific extension is an instance extension.
     // The application must enable instance extensions with vkCreateInstance
@@ -522,7 +521,7 @@ static void vk_createInstance(VkInstance* const pInstance)
         ri.Error(ERR_FATAL, "%d, returned by qvkCreateInstance.\n", e);
     }
    
-    free(pTmem);
+    free(ppInstanceExtEnabled);
 
     free(pInsExt);
 }

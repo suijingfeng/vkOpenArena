@@ -75,7 +75,7 @@ static void win_createWindowImpl( void )
 		g_wv.winWidth = g_wv.desktopWidth;
 		g_wv.winHeight = g_wv.desktopHeight;
 
-		g_wv.isFullScreen = true;
+		g_wv.isFullScreen = 1;
 		Cvar_Set("r_fullscreen", "1");
 		Com_Printf(" Fullscreen mode. \n");
 	}
@@ -88,7 +88,7 @@ static void win_createWindowImpl( void )
 
 		g_wv.winWidth = width;
 		g_wv.winHeight = height;
-		g_wv.isFullScreen = false;
+		g_wv.isFullScreen = 0;
 		
 		Cvar_Set("r_fullscreen", "0");
 		Com_Printf(" windowed mode: %d. \n", mode);
@@ -102,9 +102,9 @@ static void win_createWindowImpl( void )
 	// register the window class if necessary
 	//
 
-	static bool isWinRegistered = false;
+	static int isWinRegistered = 0;
 
-	if (isWinRegistered != true)
+	if (isWinRegistered != 1)
 	{
 		WNDCLASS wc;
 
@@ -126,7 +126,7 @@ static void win_createWindowImpl( void )
 			Com_Error(ERR_FATAL, "create main window: could not register window class");
 		}
 
-		isWinRegistered = true;
+		isWinRegistered = 1;
 
 		Com_Printf(" Window class registered. \n");
 	}
@@ -191,7 +191,7 @@ static void win_destroyWindowImpl(void)
 
 
 
-void GLimp_Init(glconfig_t * const pConfig, void **pContext)
+void WinSys_Init(glconfig_t * const pConfig, void **pContext)
 {
 
 	win_createWindowImpl();
@@ -220,7 +220,7 @@ void GLimp_Init(glconfig_t * const pConfig, void **pContext)
 }
 
 
-void GLimp_Shutdown(void)
+void WinSys_Shutdown(void)
 {
 	win_destroyWindowImpl();
 
@@ -235,7 +235,7 @@ void GLimp_Shutdown(void)
 }
 
 
-void GLimp_EndFrame(void)
+void WinSys_EndFrame(void)
 {
 	;
 }

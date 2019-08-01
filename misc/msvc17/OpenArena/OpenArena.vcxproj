@@ -19,6 +19,57 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="..\..\..\code\client\cl_avi.c" />
+    <ClCompile Include="..\..\..\code\client\cl_cgame.c" />
+    <ClCompile Include="..\..\..\code\client\cl_cin.c" />
+    <ClCompile Include="..\..\..\code\client\cl_console.c" />
+    <ClCompile Include="..\..\..\code\client\cl_curl.c" />
+    <ClCompile Include="..\..\..\code\client\cl_input.c" />
+    <ClCompile Include="..\..\..\code\client\cl_keys.c" />
+    <ClCompile Include="..\..\..\code\client\cl_main.c" />
+    <ClCompile Include="..\..\..\code\client\cl_net_chan.c" />
+    <ClCompile Include="..\..\..\code\client\cl_parse.c" />
+    <ClCompile Include="..\..\..\code\client\cl_scrn.c" />
+    <ClCompile Include="..\..\..\code\client\cl_ui.c" />
+    <ClCompile Include="..\..\..\code\client\libmumblelink.c" />
+    <ClCompile Include="..\..\..\code\client\qal.c" />
+    <ClCompile Include="..\..\..\code\client\snd_adpcm.c" />
+    <ClCompile Include="..\..\..\code\client\snd_codec.c" />
+    <ClCompile Include="..\..\..\code\client\snd_codec_ogg.c" />
+    <ClCompile Include="..\..\..\code\client\snd_codec_opus.c" />
+    <ClCompile Include="..\..\..\code\client\snd_codec_wav.c" />
+    <ClCompile Include="..\..\..\code\client\snd_dma.c" />
+    <ClCompile Include="..\..\..\code\client\snd_main.c" />
+    <ClCompile Include="..\..\..\code\client\snd_mem.c" />
+    <ClCompile Include="..\..\..\code\client\snd_mix.c" />
+    <ClCompile Include="..\..\..\code\client\snd_openal.c" />
+    <ClCompile Include="..\..\..\code\client\snd_wavelet.c" />
+    <ClCompile Include="..\..\..\code\qcommon\cmd.c" />
+    <ClCompile Include="..\..\..\code\qcommon\cm_load.c" />
+    <ClCompile Include="..\..\..\code\qcommon\cm_patch.c" />
+    <ClCompile Include="..\..\..\code\qcommon\cm_polylib.c" />
+    <ClCompile Include="..\..\..\code\qcommon\cm_test.c" />
+    <ClCompile Include="..\..\..\code\qcommon\cm_trace.c" />
+    <ClCompile Include="..\..\..\code\qcommon\common.c" />
+    <ClCompile Include="..\..\..\code\qcommon\con_log.c" />
+    <ClCompile Include="..\..\..\code\qcommon\cvar.c" />
+    <ClCompile Include="..\..\..\code\qcommon\files.c" />
+    <ClCompile Include="..\..\..\code\qcommon\huffman.c" />
+    <ClCompile Include="..\..\..\code\qcommon\ioapi.c" />
+    <ClCompile Include="..\..\..\code\qcommon\md4.c" />
+    <ClCompile Include="..\..\..\code\qcommon\md5.c" />
+    <ClCompile Include="..\..\..\code\qcommon\msg.c" />
+    <ClCompile Include="..\..\..\code\qcommon\net_chan.c" />
+    <ClCompile Include="..\..\..\code\qcommon\net_ip.c" />
+    <ClCompile Include="..\..\..\code\qcommon\puff.c" />
+    <ClCompile Include="..\..\..\code\qcommon\q_math.c" />
+    <ClCompile Include="..\..\..\code\qcommon\q_shared.c" />
+    <ClCompile Include="..\..\..\code\qcommon\snapvector.c" />
+    <ClCompile Include="..\..\..\code\qcommon\sys_loadlib.c" />
+    <ClCompile Include="..\..\..\code\qcommon\unzip.c" />
+    <ClCompile Include="..\..\..\code\qcommon\vm.c" />
+    <ClCompile Include="..\..\..\code\qcommon\vm_interpreted.c" />
+    <ClCompile Include="..\..\..\code\qcommon\vm_x86.c" />
     <ClCompile Include="..\..\..\code\win32\win_create_window.c" />
     <ClCompile Include="..\..\..\code\win32\win_dll.c" />
     <ClCompile Include="..\..\..\code\win32\win_event.c" />
@@ -54,6 +105,11 @@
     <ClInclude Include="..\..\..\code\win32\win_public.h" />
     <ClInclude Include="..\..\..\code\win32\win_snd.h" />
     <ClInclude Include="..\..\..\code\win32\win_sysconsole.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\botlib\botlib.vcxproj">
+      <Project>{53020065-2e52-4ffa-8b15-94d4be0e674f}</Project>
+    </ProjectReference>
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <VCProjectVersion>15.0</VCProjectVersion>
@@ -124,6 +180,7 @@
       <Optimization>Disabled</Optimization>
       <SDLCheck>true</SDLCheck>
       <ConformanceMode>true</ConformanceMode>
+      <PreprocessorDefinitions>STANDALONE;USE_RENDERER_DLOPEN;_MSC_VER;_MBCS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">

@@ -28,6 +28,8 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #include "../qcommon/sys_loadlib.h"
 #include "../sdl/input.h"
 
+#include "../win32/win_public.h"
+
 #ifdef USE_MUMBLE
 #include "libmumblelink.h"
 #endif
@@ -84,7 +86,6 @@ cvar_t	*cl_freelook;
 cvar_t	*cl_sensitivity;
 cvar_t	*cl_scaleSensWithFov;
 
-
 cvar_t	*cl_mouseAccel;
 cvar_t	*cl_mouseAccelOffset;
 cvar_t	*cl_mouseAccelStyle;
@@ -95,7 +96,6 @@ cvar_t	*m_yaw;
 cvar_t	*m_forward;
 cvar_t	*m_side;
 cvar_t	*m_filter;
-
 
 cvar_t	*cl_activeAction;
 
@@ -608,7 +608,6 @@ CL_WriteDemoMessage
 Dumps the current net message, prefixed by the length
 ====================
 */
-
 void CL_WriteDemoMessage ( msg_t *msg, int headerBytes ) {
 	int		len, swlen;
 
@@ -616,6 +615,7 @@ void CL_WriteDemoMessage ( msg_t *msg, int headerBytes ) {
 	len = clc.serverMessageSequence;
 	swlen = LittleLong( len );
 	FS_Write (&swlen, 4, clc.demofile);
+
 	// skip the packet sequencing information
 	len = msg->cursize - headerBytes;
 	swlen = LittleLong(len);
@@ -756,6 +756,7 @@ void CL_Record_f( void ) {
 	} else {
 	  clc.spDemoRecording = qfalse;
 	}
+
 
 	Q_strncpyz( clc.demoName, demoName, sizeof( clc.demoName ) );
 
@@ -3277,6 +3278,12 @@ void CL_InitRef(void)
 	ri.IN_Restart = IN_Restart;
 
 	ri.ftol = Q_ftol;
+
+	ri.GLimpInit = WinSys_Init;
+	ri.GLimpShutdown = WinSys_Shutdown;
+	ri.GLimpEndFrame = WinSys_EndFrame;
+	ri.GLimpSetGamma = WinSys_SetGamma;
+	ri.pfnLog = FileSys_Logging;
 
 	ri.Sys_SetEnv = Sys_SetEnv;
 	ri.Sys_LowPhysicalMemory = Sys_LowPhysicalMemory;

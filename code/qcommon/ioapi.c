@@ -16,7 +16,9 @@
 
 #include "ioapi.h"
 
-
+#if defined(_MSC_VER)
+#pragma warning(disable : 4996) // the function or variable may be unsafe
+#endif
 
 /* I've found an old Unix (a SunOS 4.1.3_U1) without all SEEK_* defined.... */
 

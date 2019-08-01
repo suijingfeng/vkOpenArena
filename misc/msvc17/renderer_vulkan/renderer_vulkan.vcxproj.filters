@@ -285,10 +285,10 @@
     <ClCompile Include="..\..\..\code\renderer_vulkan\shaders\Compiled\single_texture_vert.c">
       <Filter>Source Files\shaders</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\code\renderer_vulkan\vk_create_window_win32.c">
+    <ClCompile Include="..\..\..\code\renderer_vulkan\R_ImageJPG.c">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\code\renderer_vulkan\R_ImageJPG.c">
+    <ClCompile Include="..\..\..\code\renderer_vulkan\vk_impl.c">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

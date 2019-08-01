@@ -156,11 +156,7 @@ int R_SpriteFogNum( trRefEntity_t *ent )
 
 
 //==========================================================================================
-/*
-=================
-R_AddDrawSurf
-=================
-*/
+
 void R_AddDrawSurf( surfaceType_t *surface, shader_t *shader, int fogIndex, int dlightMap )
 {
 	// instead of checking for overflow, we just mask the index so it wraps around
