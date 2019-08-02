@@ -1240,6 +1240,7 @@ void Cvar_InfoStringBuffer( int bit, char* buff, int buffsize ) {
 	Q_strncpyz(buff,Cvar_InfoString(bit),buffsize);
 }
 
+
 /*
 =====================
 Cvar_CheckRange
@@ -1255,6 +1256,7 @@ void Cvar_CheckRange( cvar_t *var, float min, float max, qboolean integral )
 	// Force an initial range check
 	Cvar_Set( var->name, var->string );
 }
+
 
 /*
 =====================
