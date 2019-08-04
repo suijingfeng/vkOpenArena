@@ -108,6 +108,8 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #pragma warning(disable : 4220)		// varargs matches remaining parameters
 //#pragma intrinsic( memset, memcpy )
 
+
+#pragma warning(disable : 4703)	// potentially uninitialized local pointer variable
 #pragma warning(disable : 4996) // the function or variable may be unsafe
 
 #endif

@@ -705,15 +705,6 @@ static VkPhysicalDevice vk_selectPhysicalDevice(void)
 }
 
 
-
-static void vk_checkColorSurfaceCapabilities(VkPhysicalDevice hGPU, VkFormat color_fmt)
-{
-
-
-}
-
-
-
 static VkFormat vk_setDepthStencilFormat(VkPhysicalDevice hGPU, VkFormat preferDsFmt)
 {
 	// To query supported format features which are properties of the physical device

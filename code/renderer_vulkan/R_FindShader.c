@@ -376,7 +376,7 @@ static void Shader_DoSimpleCheck(char* name, char* p)
             break;
         }
 
-        if(!SkipBracedSection(&p, 1))
+        if(!R_SkipBracedSection(&p, 1))
         {
             ri.Printf(PRINT_WARNING, "WARNING: Ignoring shader file %s. Shader \"%s\" on line %d missing closing brace.\n",
                     name, shaderName, shaderLine);
