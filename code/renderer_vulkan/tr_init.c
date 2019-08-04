@@ -106,7 +106,9 @@ void R_Init( void )
     ri.Cmd_AddCommand( "printImgHashTable", printImageHashTable_f );
     ri.Cmd_AddCommand( "printShaderTextHashTable", printShaderTextHashTable_f);
     ri.Cmd_AddCommand( "printPresentModes", printPresentModesSupported_f);
-    
+	ri.Cmd_AddCommand( "printSurfaceFormatSupported", printSurfaceFormatSupported_f);
+
+
     ri.Cmd_AddCommand( "screenshotBMP", R_ScreenShotBMP_f );
     ri.Cmd_AddCommand( "screenshotPNG", R_ScreenShotPNG_f );
     ri.Cmd_AddCommand( "screenshotJPEG", R_ScreenShotJPEG_f );
@@ -179,8 +181,8 @@ void RE_Shutdown( qboolean destroyWindow )
     ri.Cmd_RemoveCommand("listSortedShader");
 
     ri.Cmd_RemoveCommand("printShaderTextHashTable");
-    
     ri.Cmd_RemoveCommand("printPresentModes");
+	ri.Cmd_RemoveCommand("printSurfaceFormatSupported");
 
 	ri.Cmd_RemoveCommand("screenshotPNG");
 	ri.Cmd_RemoveCommand("screenshotBMP");

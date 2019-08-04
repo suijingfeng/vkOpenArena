@@ -42,11 +42,17 @@ uint32_t R_GetGpuMemConsumedByImage(void)
 
 uint32_t find_memory_type(uint32_t memory_type_bits, VkMemoryPropertyFlags properties)
 {
-    uint32_t i;
-    for (i = 0; i < vk.devMemProperties.memoryTypeCount; ++i)
+	// we dont rarely need devMemProperties at runtime, 
+	// so we dont save a cache of it in strcut vk,
+	// query it when need .
+	VkPhysicalDeviceMemoryProperties devMemProperties;
+
+	NO_CHECK( qvkGetPhysicalDeviceMemoryProperties(vk.physical_device, &devMemProperties) );
+
+    for (uint32_t i = 0; i < devMemProperties.memoryTypeCount; ++i)
     {
         if ( ((memory_type_bits & (1 << i)) != 0) && 
-                (vk.devMemProperties.memoryTypes[i].propertyFlags & properties) == properties)
+                (devMemProperties.memoryTypes[i].propertyFlags & properties) == properties)
         {
             return i;
         }

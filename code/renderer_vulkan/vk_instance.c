@@ -11,7 +11,10 @@
 #include "vk_frame.h"
 #include "vk_shaders.h"
 #include "vk_validation.h"
+#include "vk_utils.h"
 #include "ref_import.h" 
+
+
 
 struct Vk_Instance vk;
 
@@ -647,7 +650,7 @@ static void vk_loadInstanceLevelFunctions(void)
 ////////////////////////////////
 
 
-static void vk_selectPhysicalDevice(void)
+static VkPhysicalDevice vk_selectPhysicalDevice(void)
 {
     // After initializing the Vulkan library through a VkInstance
     // we need to look for and select a graphics card in the system
@@ -664,6 +667,7 @@ static void vk_selectPhysicalDevice(void)
 
     VkPhysicalDevice * pPhyDev = (VkPhysicalDevice *) malloc (sizeof(VkPhysicalDevice) * gpu_count);
     
+	VkPhysicalDevice gpuRet = 0;
 
     VK_CHECK( qvkEnumeratePhysicalDevices(vk.instance, &gpu_count, pPhyDev) );
     // Select the right gpu from r_gpuIndex
@@ -671,8 +675,8 @@ static void vk_selectPhysicalDevice(void)
     if (gpu_count == 1)
     {
         // we have only one GPU, no choice
-        vk.physical_device = pPhyDev[0];
-        r_gpuIndex->integer = 1;
+		gpuRet = pPhyDev[0];
+        r_gpuIndex->integer = 0;
     }
     else
     {
@@ -685,8 +689,9 @@ static void vk_selectPhysicalDevice(void)
         {
             r_gpuIndex->integer = gpu_count - 1;
         }
-        // let the user decide.
-        vk.physical_device = pPhyDev[r_gpuIndex->integer];
+        // let the user choose.
+   
+		gpuRet = pPhyDev[r_gpuIndex->integer];
     }
 
     free(pPhyDev);
@@ -695,131 +700,79 @@ static void vk_selectPhysicalDevice(void)
             gpu_count, r_gpuIndex->integer);
 
     ri.Printf(PRINT_ALL, " Get physical device memory properties: vk.devMemProperties \n");
-    
-    NO_CHECK( qvkGetPhysicalDeviceMemoryProperties(vk.physical_device, &vk.devMemProperties) );
+
+	return gpuRet;
 }
 
 
-const char * ColorSpaceEnum2str(enum VkColorSpaceKHR cs)
+
+static void vk_checkColorSurfaceCapabilities(VkPhysicalDevice hGPU, VkFormat color_fmt)
 {
-    switch(cs)
-    {
-        case VK_COLOR_SPACE_SRGB_NONLINEAR_KHR:
-            return "VK_COLOR_SPACE_SRGB_NONLINEAR_KHR";
-        case VK_COLOR_SPACE_DISPLAY_P3_NONLINEAR_EXT:
-            return "VK_COLOR_SPACE_DISPLAY_P3_NONLINEAR_EXT";
-        case VK_COLOR_SPACE_EXTENDED_SRGB_LINEAR_EXT:
-            return "VK_COLOR_SPACE_EXTENDED_SRGB_LINEAR_EXT";
-        case VK_COLOR_SPACE_DCI_P3_LINEAR_EXT:
-            return "VK_COLOR_SPACE_DCI_P3_LINEAR_EXT";
-        case VK_COLOR_SPACE_DCI_P3_NONLINEAR_EXT:
-            return "VK_COLOR_SPACE_DCI_P3_NONLINEAR_EXT";
-        case VK_COLOR_SPACE_BT709_LINEAR_EXT:
-            return "VK_COLOR_SPACE_BT709_LINEAR_EXT";
-        case VK_COLOR_SPACE_BT709_NONLINEAR_EXT:
-            return "VK_COLOR_SPACE_BT709_NONLINEAR_EXT";
-        case VK_COLOR_SPACE_BT2020_LINEAR_EXT:
-            return "VK_COLOR_SPACE_BT2020_LINEAR_EXT";
-        case VK_COLOR_SPACE_HDR10_ST2084_EXT:
-            return "VK_COLOR_SPACE_HDR10_ST2084_EXT";
-        case VK_COLOR_SPACE_DOLBYVISION_EXT:
-            return "VK_COLOR_SPACE_DOLBYVISION_EXT";
-        case VK_COLOR_SPACE_HDR10_HLG_EXT:
-            return "VK_COLOR_SPACE_HDR10_HLG_EXT";
-        case VK_COLOR_SPACE_ADOBERGB_LINEAR_EXT:
-            return "VK_COLOR_SPACE_ADOBERGB_LINEAR_EXT";
-        case VK_COLOR_SPACE_ADOBERGB_NONLINEAR_EXT:
-            return "VK_COLOR_SPACE_ADOBERGB_NONLINEAR_EXT";
-        case VK_COLOR_SPACE_PASS_THROUGH_EXT:
-            return "VK_COLOR_SPACE_PASS_THROUGH_EXT";
-        case VK_COLOR_SPACE_EXTENDED_SRGB_NONLINEAR_EXT:
-            return "VK_COLOR_SPACE_EXTENDED_SRGB_NONLINEAR_EXT";
-        default:
-            return "Not_Known";
-    }
+
+
 }
 
 
-static void vk_assertSurfaceCapabilities(VkSurfaceKHR HSurface)
+
+static VkFormat vk_setDepthStencilFormat(VkPhysicalDevice hGPU, VkFormat preferDsFmt)
 {
-    // To query supported format features which are properties of the physical device
-	ri.Printf(PRINT_ALL, "\n --------  Query supported format features --------\n");
-    
-    VkFormatProperties props;
+	// To query supported format features which are properties of the physical device
+	ri.Printf(PRINT_ALL, "\n  Query supported Depth Stencil format. \n");
 
+	VkFormatProperties props;
+	// 
+	//=========================== depth =====================================
+	NO_CHECK( qvkGetPhysicalDeviceFormatProperties(hGPU, preferDsFmt, &props) );
+	if (props.optimalTilingFeatures & VK_FORMAT_FEATURE_DEPTH_STENCIL_ATTACHMENT_BIT)
+	{
+		ri.Printf(PRINT_ALL, " VK_FORMAT_D24_UNORM_S8_UINT optimal Tiling feature supported.\n");
+		return preferDsFmt;
+	}
+	else
+	{
+		NO_CHECK( qvkGetPhysicalDeviceFormatProperties(hGPU, VK_FORMAT_D32_SFLOAT_S8_UINT, &props));
 
-    // To determine the set of valid usage bits for a given format,
-    // ========================= color ================
-    qvkGetPhysicalDeviceFormatProperties(vk.physical_device, vk.surface_format.format, &props);
-    
-    // Check if the device supports blitting to linear images 
-    if ( props.linearTilingFeatures & VK_FORMAT_FEATURE_SAMPLED_IMAGE_BIT )
-        ri.Printf(PRINT_ALL, " Linear Tiling Features supported. \n");
+		if (props.optimalTilingFeatures & VK_FORMAT_FEATURE_DEPTH_STENCIL_ATTACHMENT_BIT)
+		{
+			ri.Printf(PRINT_ALL, " VK_FORMAT_D32_SFLOAT_S8_UINT optimal Tiling feature supported.\n");
+			return VK_FORMAT_D32_SFLOAT_S8_UINT;
+		}
+		else
+		{
+			// never get here.
+			ri.Error(ERR_FATAL, " Failed to find depth attachment format.\n");
+		}
+	}
 
-    if ( props.linearTilingFeatures & VK_FORMAT_FEATURE_BLIT_DST_BIT ) 
-    {
-        ri.Printf(PRINT_ALL, " Blitting from linear tiled images supported.\n");
-    }
-
-    if ( props.optimalTilingFeatures & VK_FORMAT_FEATURE_BLIT_SRC_BIT )
-    {
-        ri.Printf(PRINT_ALL, " Blitting from optimal tiled images supported.\n");
-        vk.isBlitSupported = VK_TRUE;
-    }
-
-
-    //=========================== depth =====================================
-    qvkGetPhysicalDeviceFormatProperties(vk.physical_device, VK_FORMAT_D24_UNORM_S8_UINT, &props);
-    if ( props.optimalTilingFeatures & VK_FORMAT_FEATURE_DEPTH_STENCIL_ATTACHMENT_BIT )
-    {
-        ri.Printf(PRINT_ALL, " VK_FORMAT_D24_UNORM_S8_UINT optimal Tiling feature supported.\n");
-        vk.fmt_DepthStencil = VK_FORMAT_D24_UNORM_S8_UINT;
-    }
-    else
-    {
-        qvkGetPhysicalDeviceFormatProperties(vk.physical_device, VK_FORMAT_D32_SFLOAT_S8_UINT, &props);
-
-        if ( props.optimalTilingFeatures & VK_FORMAT_FEATURE_DEPTH_STENCIL_ATTACHMENT_BIT )
-        {
-            ri.Printf(PRINT_ALL, " VK_FORMAT_D32_SFLOAT_S8_UINT optimal Tiling feature supported.\n");
-            vk.fmt_DepthStencil = VK_FORMAT_D32_SFLOAT_S8_UINT;
-        }
-        else
-        {
-            //formats[0] = VK_FORMAT_X8_D24_UNORM_PACK32;
-		    //formats[1] = VK_FORMAT_D32_SFLOAT;
-            // never get here.
-	        ri.Error(ERR_FATAL, " Failed to find depth attachment format.\n");
-        }
-    }
-
-    ri.Printf(PRINT_ALL, " -------- --------------------------- --------\n\n");
+	// prevent warning, default
+	return VK_FORMAT_D24_UNORM_S8_UINT;
 }
 
 
-static void vk_selectSurfaceFormat(VkSurfaceKHR HSurface)
+static void vk_selectColorSurfaceFormat(VkPhysicalDevice hGPU, VkSurfaceKHR HSurface, VkSurfaceFormatKHR* const pSurfmt)
 {
     uint32_t nSurfmt;
     uint32_t i;
-
+	
     // Get the numbers of VkFormat's that are supported
     // "vk.surface" is the surface that will be associated with the swapchain.
     // "vk.surface" must be a valid VkSurfaceKHR handle
-    VK_CHECK( qvkGetPhysicalDeviceSurfaceFormatsKHR(vk.physical_device, HSurface, &nSurfmt, NULL) );
+    VK_CHECK( qvkGetPhysicalDeviceSurfaceFormatsKHR(hGPU, HSurface, &nSurfmt, NULL) );
     assert(nSurfmt > 0);
 
     VkSurfaceFormatKHR * pSurfFmts = 
         (VkSurfaceFormatKHR *) malloc( nSurfmt * sizeof(VkSurfaceFormatKHR) );
 
     // To query the supported swapchain format-color space pairs for a surface
-    VK_CHECK( qvkGetPhysicalDeviceSurfaceFormatsKHR(vk.physical_device, HSurface, &nSurfmt, pSurfFmts) );
+    VK_CHECK( qvkGetPhysicalDeviceSurfaceFormatsKHR(hGPU, HSurface, &nSurfmt, pSurfFmts) );
 
     ri.Printf(PRINT_ALL, " -------- Total %d surface formats supported. -------- \n", nSurfmt);
     
     for( i = 0; i < nSurfmt; ++i)
     {
-        ri.Printf(PRINT_ALL, " [%d] format: %d, color space: %s \n",
-            i, pSurfFmts[i].format, ColorSpaceEnum2str(pSurfFmts[i].colorSpace));
+        ri.Printf(PRINT_ALL, " [%d] format: %s, color space: %s \n", i, 
+			VkFormatEnum2str(pSurfFmts[i].format), 
+			ColorSpaceEnum2str(pSurfFmts[i].colorSpace));
     }
 
 
@@ -828,32 +781,64 @@ static void vk_selectSurfaceFormat(VkSurfaceKHR HSurface)
     if ( (nSurfmt == 1) && (pSurfFmts[0].format == VK_FORMAT_UNDEFINED) )
     {
         // special case that means we can choose any format
-        vk.surface_format.format = VK_FORMAT_B8G8R8A8_UNORM;
-        vk.surface_format.colorSpace = VK_COLORSPACE_SRGB_NONLINEAR_KHR;
+		pSurfmt->format = VK_FORMAT_B8G8R8A8_UNORM;
+		pSurfmt->colorSpace = VK_COLORSPACE_SRGB_NONLINEAR_KHR;
         ri.Printf(PRINT_ALL, "VK_FORMAT_R8G8B8A8_UNORM\n");
         ri.Printf(PRINT_ALL, "VK_COLORSPACE_SRGB_NONLINEAR_KHR\n");
     }
-    else
-    {
-        ri.Printf(PRINT_ALL, " we choose: \n" );
+	else
+	{
+		ri.Printf(PRINT_ALL, " we choose: \n");
 
-        for( i = 0; i < nSurfmt; ++i)
-        {
-            if( ( pSurfFmts[i].format == VK_FORMAT_B8G8R8A8_UNORM) &&
-                ( pSurfFmts[i].colorSpace == VK_COLORSPACE_SRGB_NONLINEAR_KHR) )
-            {
+		for (i = 0; i < nSurfmt; ++i)
+		{
+			if ((pSurfFmts[i].format == VK_FORMAT_B8G8R8A8_UNORM) &&
+				(pSurfFmts[i].colorSpace == VK_COLORSPACE_SRGB_NONLINEAR_KHR))
+			{
+				// VK_FORMAT_B8G8R8A8_UNORM
+				ri.Printf(PRINT_ALL, " format = VK_FORMAT_B8G8R8A8_UNORM \n");
+				ri.Printf(PRINT_ALL, " colorSpace = VK_COLORSPACE_SRGB_NONLINEAR_KHR \n");
 
-                ri.Printf(PRINT_ALL, " format = VK_FORMAT_B8G8R8A8_UNORM \n");
-                ri.Printf(PRINT_ALL, " colorSpace = VK_COLORSPACE_SRGB_NONLINEAR_KHR \n");
-                
-                vk.surface_format = pSurfFmts[i];
-                break;
-            }
-        }
+				pSurfmt->format = VK_FORMAT_B8G8R8A8_UNORM;
+				pSurfmt->colorSpace = VK_COLORSPACE_SRGB_NONLINEAR_KHR;
+				break;
+			}
+		}
 
-        if (i == nSurfmt)
-            vk.surface_format = pSurfFmts[0];
-    }
+
+		// set to the first
+		if (i == nSurfmt)
+		{
+			pSurfmt->format = pSurfFmts[0].format;
+			pSurfmt->colorSpace = pSurfFmts[0].colorSpace;
+		}
+	}
+   
+
+	// To query supported format features which are properties of the physical device
+
+	VkFormatProperties props;
+
+
+	// To determine the set of valid usage bits for a given format,
+	// ========================= color ================
+	NO_CHECK( qvkGetPhysicalDeviceFormatProperties(hGPU, pSurfmt->format, &props) );
+
+	// Check if the device supports blitting to linear images 
+	if (props.linearTilingFeatures & VK_FORMAT_FEATURE_SAMPLED_IMAGE_BIT)
+		ri.Printf(PRINT_ALL, " Linear Tiling Features supported. \n");
+
+	if (props.linearTilingFeatures & VK_FORMAT_FEATURE_BLIT_DST_BIT)
+	{
+		ri.Printf(PRINT_ALL, " Blitting from linear tiled images supported.\n");
+	}
+
+	if (props.optimalTilingFeatures & VK_FORMAT_FEATURE_BLIT_SRC_BIT)
+	{
+		ri.Printf(PRINT_ALL, " Blitting from optimal tiled images supported.\n");
+		vk.isBlitSupported = VK_TRUE;
+	}
+
 
     ri.Printf(PRINT_ALL, " --- ----------------------------------- --- \n");
 
@@ -870,7 +855,7 @@ static void vk_selectSurfaceFormat(VkSurfaceKHR HSurface)
 // The number of queue families, the capabilities of each family,
 // and the number of queues belonging to each family are all
 // properties of the physical device.
-static uint32_t vk_selectQueueFamilyForPresentation(VkSurfaceKHR HSurface)
+static uint32_t vk_selectQueueFamilyForPresentation(VkPhysicalDevice hGPU, VkSurfaceKHR HSurface)
 {
     // Almosty every operation in Vulkan, anything from drawing textures,
     // requires commands to be submitted to a queue. There are different
@@ -885,7 +870,7 @@ static uint32_t vk_selectQueueFamilyForPresentation(VkSurfaceKHR HSurface)
     uint32_t nQueueFamily;
     uint32_t i;
 
-    qvkGetPhysicalDeviceQueueFamilyProperties(vk.physical_device, &nQueueFamily, NULL);
+    NO_CHECK( qvkGetPhysicalDeviceQueueFamilyProperties(hGPU, &nQueueFamily, NULL) );
     
     assert(nQueueFamily > 0);
 
@@ -893,7 +878,7 @@ static uint32_t vk_selectQueueFamilyForPresentation(VkSurfaceKHR HSurface)
         malloc( nQueueFamily * sizeof(VkQueueFamilyProperties) );
 
     // To query properties of queues available on a physical device
-    qvkGetPhysicalDeviceQueueFamilyProperties(vk.physical_device, &nQueueFamily, pQueueFamilies);
+	NO_CHECK( qvkGetPhysicalDeviceQueueFamilyProperties(hGPU, &nQueueFamily, pQueueFamilies) );
 
     ri.Printf(PRINT_ALL, "\n -------- Total %d Queue families -------- \n", nQueueFamily);
 
@@ -930,7 +915,7 @@ static uint32_t vk_selectQueueFamilyForPresentation(VkSurfaceKHR HSurface)
 
         VkBool32 isPresentSupported = VK_FALSE;
         VK_CHECK( qvkGetPhysicalDeviceSurfaceSupportKHR(
-                    vk.physical_device, i, HSurface, &isPresentSupported));
+			hGPU, i, HSurface, &isPresentSupported));
 
         if (isPresentSupported)
         {
@@ -953,7 +938,7 @@ static uint32_t vk_selectQueueFamilyForPresentation(VkSurfaceKHR HSurface)
         
         VkBool32 presentation_supported = VK_FALSE;
         VK_CHECK( qvkGetPhysicalDeviceSurfaceSupportKHR(
-                    vk.physical_device, i, HSurface, &presentation_supported) );
+			hGPU, i, HSurface, &presentation_supported) );
 
         if (presentation_supported && 
                 (pQueueFamilies[i].queueFlags & VK_QUEUE_GRAPHICS_BIT) != 0)
@@ -1092,7 +1077,6 @@ static void vk_createLogicalDevice(const char* const* ppExtNamesEnabled, uint32_
     // devices from the same physical device if you have varying requirements.
     ri.Printf( PRINT_ALL, " Create logical device: vk.device \n" );
     VK_CHECK( qvkCreateDevice(vk.physical_device, &device_desc, NULL, pLogicalDev) );
-
 }
 
 
@@ -1188,7 +1172,7 @@ static void vk_loadDeviceFunctions(void)
 }
 
 
-static VkPresentModeKHR vk_selectPresentationMode(VkSurfaceKHR HSurface)
+static VkPresentModeKHR vk_selectPresentationMode(VkPhysicalDevice hGPU, VkSurfaceKHR HSurface)
 {
     // The presentation is arguably the most impottant setting for the swap chain
     // because it represents the actual conditions for showing images to the screen
@@ -1216,13 +1200,13 @@ static VkPresentModeKHR vk_selectPresentationMode(VkSurfaceKHR HSurface)
     
     // Look for the best mode available.
 
-    qvkGetPhysicalDeviceSurfacePresentModesKHR(vk.physical_device, HSurface, &nPM, NULL);
+    qvkGetPhysicalDeviceSurfacePresentModesKHR(hGPU, HSurface, &nPM, NULL);
 
     assert(nPM > 0);
 
     VkPresentModeKHR * pPresentModes = (VkPresentModeKHR *) malloc( nPM * sizeof(VkPresentModeKHR) );
 
-    qvkGetPhysicalDeviceSurfacePresentModesKHR(vk.physical_device, HSurface, &nPM, pPresentModes);
+    qvkGetPhysicalDeviceSurfacePresentModesKHR(hGPU, HSurface, &nPM, pPresentModes);
 
     ri.Printf(PRINT_ALL, "-------- Total %d present mode supported. -------- \n", nPM);
     for (i = 0; i < nPM; ++i)
@@ -1292,17 +1276,20 @@ void vk_getProcAddress(void)
     vk_createSurfaceImpl(vk.instance, &vk.surface ); 
 
     // select physical device
-    vk_selectPhysicalDevice();
+	vk.physical_device = vk_selectPhysicalDevice();
 
-    vk_selectSurfaceFormat(vk.surface);
-    
-    vk_assertSurfaceCapabilities(vk.surface);
-    
-    vk.present_mode = vk_selectPresentationMode(vk.surface);
 
-	vk.queue_family_index = vk_selectQueueFamilyForPresentation(vk.surface);
-
+	vk_selectColorSurfaceFormat( vk.physical_device, vk.surface, &vk.surface_format);
     
+	vk.fmt_DepthStencil = vk_setDepthStencilFormat( vk.physical_device, VK_FORMAT_D24_UNORM_S8_UINT);
+
+    vk.present_mode = vk_selectPresentationMode( vk.physical_device, vk.surface);
+
+
+
+	vk.queue_family_index = vk_selectQueueFamilyForPresentation(vk.physical_device, vk.surface);
+
+
     //////////
     const char* enable_features_name_array[1] = {
         VK_KHR_SWAPCHAIN_EXTENSION_NAME

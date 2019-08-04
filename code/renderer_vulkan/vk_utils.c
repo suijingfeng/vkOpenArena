@@ -8,8 +8,102 @@
 
 extern uint32_t R_GetNumberOfImageCreated(void);
 extern uint32_t R_GetStagingBufferSize(void);
-extern uint32_t R_GetScreenShotBufferSizeKB(void)
-;
+extern uint32_t R_GetScreenShotBufferSizeKB(void);
+
+const char * ColorSpaceEnum2str(enum VkColorSpaceKHR cs)
+{
+	switch (cs)
+	{
+	case VK_COLOR_SPACE_SRGB_NONLINEAR_KHR:
+		return "VK_COLOR_SPACE_SRGB_NONLINEAR_KHR";
+	case VK_COLOR_SPACE_DISPLAY_P3_NONLINEAR_EXT:
+		return "VK_COLOR_SPACE_DISPLAY_P3_NONLINEAR_EXT";
+	case VK_COLOR_SPACE_EXTENDED_SRGB_LINEAR_EXT:
+		return "VK_COLOR_SPACE_EXTENDED_SRGB_LINEAR_EXT";
+	case VK_COLOR_SPACE_DCI_P3_LINEAR_EXT:
+		return "VK_COLOR_SPACE_DCI_P3_LINEAR_EXT";
+	case VK_COLOR_SPACE_DCI_P3_NONLINEAR_EXT:
+		return "VK_COLOR_SPACE_DCI_P3_NONLINEAR_EXT";
+	case VK_COLOR_SPACE_BT709_LINEAR_EXT:
+		return "VK_COLOR_SPACE_BT709_LINEAR_EXT";
+	case VK_COLOR_SPACE_BT709_NONLINEAR_EXT:
+		return "VK_COLOR_SPACE_BT709_NONLINEAR_EXT";
+	case VK_COLOR_SPACE_BT2020_LINEAR_EXT:
+		return "VK_COLOR_SPACE_BT2020_LINEAR_EXT";
+	case VK_COLOR_SPACE_HDR10_ST2084_EXT:
+		return "VK_COLOR_SPACE_HDR10_ST2084_EXT";
+	case VK_COLOR_SPACE_DOLBYVISION_EXT:
+		return "VK_COLOR_SPACE_DOLBYVISION_EXT";
+	case VK_COLOR_SPACE_HDR10_HLG_EXT:
+		return "VK_COLOR_SPACE_HDR10_HLG_EXT";
+	case VK_COLOR_SPACE_ADOBERGB_LINEAR_EXT:
+		return "VK_COLOR_SPACE_ADOBERGB_LINEAR_EXT";
+	case VK_COLOR_SPACE_ADOBERGB_NONLINEAR_EXT:
+		return "VK_COLOR_SPACE_ADOBERGB_NONLINEAR_EXT";
+	case VK_COLOR_SPACE_PASS_THROUGH_EXT:
+		return "VK_COLOR_SPACE_PASS_THROUGH_EXT";
+	case VK_COLOR_SPACE_EXTENDED_SRGB_NONLINEAR_EXT:
+		return "VK_COLOR_SPACE_EXTENDED_SRGB_NONLINEAR_EXT";
+	default:
+		return "Not_Known";
+	}
+}
+
+// SNORM: Signed normalized integer;
+// UNORM: Unsigned normalized integer;
+
+// there are too many format ...
+// This is only my rx560 on win10 supported format ...
+
+const char * VkFormatEnum2str(VkFormat fmt)
+{
+	switch(fmt)
+	{
+		case VK_FORMAT_UNDEFINED:
+			return "VK_FORMAT_UNDEFINED";
+		case VK_FORMAT_B8G8R8A8_UNORM:
+			return "VK_FORMAT_B8G8R8A8_UNORM";
+		case VK_FORMAT_B8G8R8A8_SNORM:
+			return "VK_FORMAT_B8G8R8A8_SNORM";
+		case VK_FORMAT_B8G8R8A8_SRGB:
+			return "VK_FORMAT_B8G8R8A8_SRGB";
+		case VK_FORMAT_R16G16B16A16_UNORM:
+			return "VK_FORMAT_R16G16B16A16_UNORM";
+		case VK_FORMAT_R16G16B16A16_SNORM:
+			return "VK_FORMAT_R16G16B16A16_SNORM";
+		case VK_FORMAT_R16G16B16A16_SFLOAT:
+			return "VK_FORMAT_R16G16B16A16_SFLOAT";
+		case VK_FORMAT_A2R10G10B10_UNORM_PACK32:
+			return "VK_FORMAT_A2R10G10B10_UNORM_PACK32";
+		case VK_FORMAT_A2B10G10R10_UNORM_PACK32:
+			return "VK_FORMAT_A2B10G10R10_UNORM_PACK32";
+		case VK_FORMAT_B10G11R11_UFLOAT_PACK32:
+			return "VK_FORMAT_B10G11R11_UFLOAT_PACK32";
+		case VK_FORMAT_R8G8B8A8_UNORM:
+			return "VK_FORMAT_R8G8B8A8_UNORM";
+		case VK_FORMAT_A8B8G8R8_UNORM_PACK32:
+			return "VK_FORMAT_A8B8G8R8_UNORM_PACK32";
+		case VK_FORMAT_R8G8B8A8_SNORM:
+			return "VK_FORMAT_R8G8B8A8_SNORM";
+		case VK_FORMAT_R8G8B8A8_SRGB:
+			return "VK_FORMAT_R8G8B8A8_SRGB";
+		case VK_FORMAT_A8B8G8R8_SNORM_PACK32:
+			return "VK_FORMAT_A8B8G8R8_SNORM_PACK32";
+		case VK_FORMAT_A8B8G8R8_SRGB_PACK32:
+			return "VK_FORMAT_A8B8G8R8_SRGB_PACK32";
+		case VK_FORMAT_R5G6B5_UNORM_PACK16:
+			return "VK_FORMAT_R5G6B5_UNORM_PACK16";
+		case VK_FORMAT_B5G6R5_UNORM_PACK16:
+			return "VK_FORMAT_B5G6R5_UNORM_PACK16";
+		case VK_FORMAT_A1R5G5B5_UNORM_PACK16:
+			return "VK_FORMAT_A1R5G5B5_UNORM_PACK16";
+
+		default :
+			return "SEE vulkan_core.h";
+
+	}
+
+}
 
 void printMemUsageInfo_f(void)
 {
@@ -156,4 +250,36 @@ void printPresentModesSupported_f(void)
     }
 
     free(pPresentModes);
+}
+
+
+void printSurfaceFormatSupported_f(void)
+{
+	uint32_t nSurfmt;
+
+
+	// Get the numbers of VkFormat's that are supported
+	// "vk.surface" is the surface that will be associated with the swapchain.
+	// "vk.surface" must be a valid VkSurfaceKHR handle
+	qvkGetPhysicalDeviceSurfaceFormatsKHR(vk.physical_device, vk.surface, &nSurfmt, NULL);
+	assert(nSurfmt > 0);
+
+	VkSurfaceFormatKHR * pSurfFmts =
+		(VkSurfaceFormatKHR *) malloc( nSurfmt * sizeof(VkSurfaceFormatKHR) );
+
+	// To query the supported swapchain format-color space pairs for a surface
+	qvkGetPhysicalDeviceSurfaceFormatsKHR(vk.physical_device, vk.surface, &nSurfmt, pSurfFmts);
+
+	ri.Printf(PRINT_ALL, " -------- Total %d surface formats supported. -------- \n", nSurfmt);
+
+	for (uint32_t i = 0; i < nSurfmt; ++i)
+	{
+		ri.Printf(PRINT_ALL, " [%d] format: %s, color space: %s \n", i, 
+			VkFormatEnum2str( pSurfFmts[i].format ),
+			ColorSpaceEnum2str( pSurfFmts[i].colorSpace ));
+	}
+
+	ri.Printf(PRINT_ALL, " --- ----------------------------------- --- \n");
+
+	free(pSurfFmts);
 }

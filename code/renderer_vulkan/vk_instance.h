@@ -183,7 +183,7 @@ struct Vk_Instance {
 // depth and stencil aspects of a given image subresource must always be in the same layout.
 
     VkFormat fmt_DepthStencil;
-	VkPhysicalDeviceMemoryProperties devMemProperties;
+	
 	
     uint32_t queue_family_index;
 	VkDevice device;

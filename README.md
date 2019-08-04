@@ -2,10 +2,10 @@
 
 This project is a fork of OpenArena with specific changes to its renderer module.
 It is mainly for myself to study Vulkan/OpenGL API and Quake3's engine, 
-I add a vulkan-based renderer to this game, the vulkan-based render have
-the nearly same visual effects with the default opengl1 render, but its not a very good implement.
-just fast protype and get a feeling of vulkan API. ( Informing you in case of you are disappointed, 
-vulkan is just a 2D/3D render API, whether the rendered image is beautiful or not depend more 
+I add a vulkan-based renderer to this game, its not a very good implement.
+the vulkan-based renderer have the nearly same visual effects with the default opengl1 renderer. 
+It just fast prototype to get a feeling of vulkan API. ( Informing you in case of you are disappointed, 
+vulkan is just a 2D/3D render API, whether the rendered image is beautiful depend more 
 on the textures，shaders，material provided). If you want learn Vulkan, you'd better go to other place.
 The project is under developing, so always check the lastest build.
 
@@ -248,6 +248,7 @@ Besides, the following new cmd only exist in vulkan renderer.
 * printImgHashTable: print the image hash table usage, which also list the image created and its size info etc.
 * printShaderTextHashTable: I am curious about the q3 handle out the shader name clash problem.
 * printPresentModes: print the present mode the GPU and/or the vulkan driver supported.
+* printSurfaceFormatSupported: printf color surface format supported .
 
 * monitorInfo: you monitor and/or vulkan driver actually supported resolution, need the vulkan driver support 
   the `VK_KHR_display` instance extension. It only supported on linux platform on my test. what's worse, it 

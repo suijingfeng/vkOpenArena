@@ -238,10 +238,12 @@ static void vk_read_pixels(unsigned char* const pBuf, uint32_t W, uint32_t H)
     image_barrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
     image_barrier.pNext = NULL;
     // srcAccessMask is a bitmask of VkAccessFlagBits specifying a source access mask.
-    image_barrier.srcAccessMask = VK_ACCESS_COLOR_ATTACHMENT_READ_BIT;
-    // VK_ACCESS_TRANSFER_READ_BIT ?
+	// the source accesss mask specifies how the memory was last written
+	// the destination access mask specifies how the memory will
+	// next be read.
+    image_barrier.srcAccessMask = VK_ACCESS_COLOR_ATTACHMENT_READ_BIT | VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
     // dstAccessMask is a bitmask of VkAccessFlagBits specifying a destination access mask.
-    image_barrier.dstAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
+    image_barrier.dstAccessMask = VK_ACCESS_TRANSFER_READ_BIT;
     image_barrier.oldLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
 
     // VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL must only be used as a
@@ -249,7 +251,8 @@ static void vk_read_pixels(unsigned char* const pBuf, uint32_t W, uint32_t H)
     // VK_PIPELINE_STAGE_TRANSFER_BIT). This layout is valid only 
     // for image subresources of images created with the 
     // VK_IMAGE_USAGE_TRANSFER_SRC_BIT usage bit enabled.
-    image_barrier.newLayout = VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL;
+	// VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL ?
+    image_barrier.newLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
     image_barrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
     image_barrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
     image_barrier.image = vk.swapchain_images_array[vk.idx_swapchain_image];
@@ -259,8 +262,10 @@ static void vk_read_pixels(unsigned char* const pBuf, uint32_t W, uint32_t H)
     image_barrier.subresourceRange.baseArrayLayer = 0;
     image_barrier.subresourceRange.layerCount = 1;
 
+	// VK_PIPELINE_STAGE_TRANSFER_BIT ?
+	// the pipeline stage corresponds to access from the host
     NO_CHECK( qvkCmdPipelineBarrier(vk.tmpRecordBuffer, 
-        VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT,
+        VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT, VK_PIPELINE_STAGE_HOST_BIT,
         0, 0, NULL, 0, NULL, 1, &image_barrier) );
     
     NO_CHECK( qvkCmdCopyImageToBuffer(vk.tmpRecordBuffer, 
