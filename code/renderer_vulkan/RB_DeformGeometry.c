@@ -500,7 +500,6 @@ Change a polygon into a bunch of text polygons
 */
 static void RB_DeformText( const char * const text, shaderCommands_t * const pTess )
 {
-	int		i;
 	vec3_t	origin, width, height;
 	byte	color[4];
 	float	bottom, top;
@@ -515,7 +514,7 @@ static void RB_DeformText( const char * const text, shaderCommands_t * const pTe
 	VectorClear( mid );
 	bottom = 999999;
 	top = -999999;
-	for ( i = 0 ; i < 4 ; ++i )
+	for (int i = 0 ; i < 4 ; ++i )
     {
 		VectorAdd( pTess->xyz[i], mid, mid );
 		if ( pTess->xyz[i][2] < bottom ) {
@@ -535,7 +534,7 @@ static void RB_DeformText( const char * const text, shaderCommands_t * const pTe
 	VectorScale( width, height[2] * -0.75f, width );
 
 	// determine the starting position
-	int len = strlen( text );
+	const unsigned int len = (unsigned int)strlen( text );
 	VectorMA( origin, (len-1), width, origin );
 
 	// clear the shader indexes
@@ -545,7 +544,7 @@ static void RB_DeformText( const char * const text, shaderCommands_t * const pTe
 	color[0] = color[1] = color[2] = color[3] = 255;
 
 	// draw each character
-	for ( i = 0 ; i < len ; ++i )
+	for (unsigned int i = 0 ; i < len ; ++i )
     {
 		int8_t ch = text[i];
 		

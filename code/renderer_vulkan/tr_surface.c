@@ -20,6 +20,7 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 ===========================================================================
 */
 // tr_surf.c
+#include "../qcommon/q_shared.h"
 #include "tr_flares.h"
 #include "tr_globals.h"
 #include "vk_image.h"

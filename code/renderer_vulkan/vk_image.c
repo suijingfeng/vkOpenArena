@@ -433,7 +433,11 @@ image_t* R_CreateImage( const char *name, unsigned char* pic, const uint32_t wid
     // the set of all bytes bound to another destination region.
 
     VkBufferImageCopy regions[12];
-
+	// bufferRowLength and bufferImageHeight specify in texels a subregion of 
+	// a larger two- or three-dimensional image in buffer memory, and control 
+	// the addressing calculations. If either of these values is zero, that 
+	// aspect of the buffer memory is considered to be tightly packed according
+	// to the imageExtent.
     regions[0].bufferOffset = 0;
     regions[0].bufferRowLength = 0;
     regions[0].bufferImageHeight = 0;

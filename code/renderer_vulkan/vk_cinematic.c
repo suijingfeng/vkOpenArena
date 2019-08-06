@@ -90,8 +90,8 @@ void RE_UploadCinematic(int w, int h, int cols, int rows, const unsigned char * 
 		vk_destroyScratchImage();
 
         strncpy (tr_scratchImage.imgName, "*scratch", 10);
-        tr_scratchImage.uploadWidth = cols;
-        tr_scratchImage.uploadHeight = rows;
+		tr_scratchImage.width = tr_scratchImage.uploadWidth = cols;
+		tr_scratchImage.height = tr_scratchImage.uploadHeight = rows;
 
         {
             VkImageCreateInfo imgDesc;

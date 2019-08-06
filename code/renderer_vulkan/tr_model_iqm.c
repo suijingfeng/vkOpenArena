@@ -342,7 +342,7 @@ qboolean R_LoadIQM( model_t *mod, void *buffer, int filesize, const char *mod_na
 		LL( mesh->num_triangles );
 
 		if ( mesh->name < header->num_text ) {
-			Q_strncpyz( meshName, (char*)header + header->ofs_text + mesh->name, sizeof (meshName) );
+			strncpy( meshName, (char*)header + header->ofs_text + mesh->name, sizeof (meshName) );
 		} else {
 			meshName[0] = '\0';
 		}
@@ -494,7 +494,7 @@ qboolean R_LoadIQM( model_t *mod, void *buffer, int filesize, const char *mod_na
 	}
 
 	mod->type = MOD_IQM;
-	iqmData = (iqmData_t *)ri.Hunk_Alloc( size, h_low );
+	iqmData = (iqmData_t *)ri.Hunk_Alloc( (int)size, h_low );
 	mod->modelData = iqmData;
 
 	// fill header
@@ -723,7 +723,7 @@ qboolean R_LoadIQM( model_t *mod, void *buffer, int filesize, const char *mod_na
 	for( i = 0; i < header->num_joints; i++, joint++ ) {
 		char *name = (char *)header + header->ofs_text +
 			joint->name;
-		int len = strlen( name ) + 1;
+		int len = (int)strlen( name ) + 1;
 		memcpy( str, name, len );
 		str += len;
 	}

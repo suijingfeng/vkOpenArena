@@ -48,7 +48,7 @@ void vk_stagBufToDevLocal(VkImage hImage, VkBufferImageCopy* const pRegion, cons
 	barrier.subresourceRange.baseArrayLayer = 0;
 	barrier.subresourceRange.layerCount = VK_REMAINING_ARRAY_LAYERS;
 	
-    NO_CHECK( qvkCmdPipelineBarrier(vk.tmpRecordBuffer, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT,
+    NO_CHECK( qvkCmdPipelineBarrier(vk.tmpRecordBuffer, VK_PIPELINE_STAGE_HOST_BIT,
         VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, 0,	0, NULL, 0, NULL, 1, &barrier) );
 
 

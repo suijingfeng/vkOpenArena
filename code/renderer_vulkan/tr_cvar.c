@@ -165,4 +165,6 @@ void R_Register( void )
 
 
 	r_gpuIndex = ri.Cvar_Get( "r_gpuIndex", "0", CVAR_ARCHIVE );
+
+	ri.Printf(PRINT_ALL, "R_Register finished.\n");
 }

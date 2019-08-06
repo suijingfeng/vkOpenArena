@@ -382,15 +382,14 @@ Encodes JPEG from image in image_buffer and writes to buffer.
 Expects RGB input data
 =================
 */
-size_t RE_SaveJPGToBuffer(byte *buffer, size_t bufSize, int quality,
-    int image_width, int image_height, byte *image_buffer, int padding)
+unsigned int RE_SaveJPGToBuffer(unsigned char *buffer, unsigned int bufSize, int quality,
+    int image_width, int image_height, unsigned char *image_buffer, int padding)
 {
   struct jpeg_compress_struct cinfo;
   q_jpeg_error_mgr_t jerr;
   JSAMPROW row_pointer[1];	/* pointer to JSAMPLE row[s] */
   my_dest_ptr dest;
   int row_stride;		/* physical row width in image buffer */
-  size_t outcount;
 
   /* Step 1: allocate and initialize JPEG compression object */
   cinfo.err = jpeg_std_error(&jerr.pub);
@@ -450,7 +449,7 @@ size_t RE_SaveJPGToBuffer(byte *buffer, size_t bufSize, int quality,
   jpeg_finish_compress(&cinfo);
   
   dest = (my_dest_ptr) cinfo.dest;
-  outcount = dest->size - dest->pub.free_in_buffer;
+  unsigned int outcount = dest->size - (int)dest->pub.free_in_buffer;
  
   /* Step 7: release JPEG compression object */
   jpeg_destroy_compress(&cinfo);
@@ -460,9 +459,9 @@ size_t RE_SaveJPGToBuffer(byte *buffer, size_t bufSize, int quality,
 }
 
 
-void RE_SaveJPG(char * filename, int quality, int image_width, int image_height, byte *image_buffer, int padding)
+void RE_SaveJPG(char * filename, int quality, int image_width, int image_height, unsigned char *image_buffer, int padding)
 {
-  size_t bufSize = image_width * image_height * 3;
+  unsigned int bufSize = image_width * image_height * 3;
   
   unsigned char* out = ri.Hunk_AllocateTempMemory(bufSize);
 

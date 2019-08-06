@@ -30,7 +30,7 @@ void RB_MDRSurfaceAnim( mdrSurface_t *surface )
 
 	mdrHeader_t* header = (mdrHeader_t *)((unsigned char *)surface + surface->ofsHeader);
 
-	int frameSize = (size_t)( &((mdrFrame_t *)0)->bones[ header->numBones ] );
+	int frameSize = (int)( &((mdrFrame_t *)0)->bones[ header->numBones ] );
 
 	mdrFrame_t* frame = (mdrFrame_t *)((byte *)header + header->ofsFrames +	backEnd.currentEntity->e.frame * frameSize );
 	

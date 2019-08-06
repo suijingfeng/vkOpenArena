@@ -26,13 +26,11 @@
 #include "FixRenderCommandList.h"
 #include "vk_utils.h"
 #include "vk_buffers.h"
-
 #include "vk_khr_display.h"
 #include "vk_descriptor_sets.h"
 
 void R_Init( void )
 {	
-	int i;
 
 	ri.Printf( PRINT_ALL, "----- R_Init -----\n" );
 
@@ -45,14 +43,14 @@ void R_Init( void )
 
     R_ClearBackendState();
 
-
+	ri.Printf(PRINT_ALL, "Init function tables. \n");
 	//
 	// init function tables
 	//
-	for ( i = 0; i < FUNCTABLE_SIZE; i++ )
+	for (uint32_t i = 0; i < FUNCTABLE_SIZE; ++i )
 	{
-		tr.sinTable[i]		= sin( i * ( 2.0 * M_PI / (float)(FUNCTABLE_SIZE - 1) ) );
-		tr.squareTable[i]	= ( i < FUNCTABLE_SIZE/2 ) ? 1.0f : -1.0f;
+		tr.sinTable[i] = sinf( i * ( 2.0 * M_PI / (float)(FUNCTABLE_SIZE - 1) ) );
+		tr.squareTable[i] = ( i < FUNCTABLE_SIZE/2 ) ? 1.0f : -1.0f;
 		tr.sawToothTable[i] = (float)i / FUNCTABLE_SIZE;
 		tr.inverseSawToothTable[i] = 1.0f - tr.sawToothTable[i];
 
@@ -73,12 +71,14 @@ void R_Init( void )
 		}
 	}
 
-    R_InitDisplayResolution();
+	ri.Printf(PRINT_ALL, "R_InitDisplayResolution. \n");
+
+	R_InitDisplayResolution();
 
 	R_InitFogTable();
-
+	ri.Printf(PRINT_ALL, "R_InitFogTable. \n");
 	R_NoiseInit();
-
+	ri.Printf(PRINT_ALL, "R_NoiseInit. \n");
 	R_Register();
 
 	// make sure all the commands added here are also
@@ -92,8 +92,6 @@ void R_Init( void )
 
 	ri.Cmd_AddCommand( "skinlist", R_SkinList_f );
 
-    ri.Cmd_AddCommand( "minimize", vk_minimizeWindowImpl );
-
     ri.Cmd_AddCommand( "pipelineList", R_PipelineList_f );
 
 
@@ -106,8 +104,7 @@ void R_Init( void )
     ri.Cmd_AddCommand( "printImgHashTable", printImageHashTable_f );
     ri.Cmd_AddCommand( "printShaderTextHashTable", printShaderTextHashTable_f);
     ri.Cmd_AddCommand( "printPresentModes", printPresentModesSupported_f);
-	ri.Cmd_AddCommand( "printSurfaceFormatSupported", printSurfaceFormatSupported_f);
-
+    ri.Cmd_AddCommand( "printSurfaceFormatSupported", printSurfaceFormatSupported_f);
 
     ri.Cmd_AddCommand( "screenshotBMP", R_ScreenShotBMP_f );
     ri.Cmd_AddCommand( "screenshotPNG", R_ScreenShotPNG_f );
@@ -122,18 +119,28 @@ void R_Init( void )
     glConfig_Init();
 
     // VULKAN
-	if ( !isVKinitialied() )
-	{
-		vk_initialize();
-        
-        glConfig_FillString();
+    if ( !isVKinitialied() )
+    {
+	ri.Printf(PRINT_ALL, " Create window fot vulkan . \n");
+
+	// This function set the render window's height and width.
+	// R_SetWinMode( r_mode->integer, GetDesktopWidth(), GetDesktopHeight() , 60 );
+	void * pWinContext;
+
+	// Create window.
+	ri.GLimpInit(glConfig_getAddressOf(), &pWinContext);
+
+
+	vk_initialize(pWinContext);
+
+	glConfig_FillString();
         // print info
         // vulkanInfo_f();
-	}
+    }
     
-    vk_InitShaderStagePipeline();
-
-    vk_initScratchImage();
+	vk_InitShaderStagePipeline();
+	
+	vk_initScratchImage();
 
 	//vk_createStagingBuffer(1024*1024);
 
@@ -157,19 +164,18 @@ void R_Init( void )
 void RE_Shutdown( qboolean destroyWindow )
 {	
 
-	ri.Printf( PRINT_ALL, "RE_Shutdown( %i )\n", destroyWindow );
+    ri.Printf( PRINT_ALL, "RE_Shutdown( %i )\n", destroyWindow );
     
     ri.Cmd_RemoveCommand("displayResoList");
     ri.Cmd_RemoveCommand("monitorInfo");
 
-	ri.Cmd_RemoveCommand("modellist");
+    ri.Cmd_RemoveCommand("modellist");
 
-	ri.Cmd_RemoveCommand("shaderlist");
-	ri.Cmd_RemoveCommand("skinlist");
+    ri.Cmd_RemoveCommand("shaderlist");
+    ri.Cmd_RemoveCommand("skinlist");
 
-    ri.Cmd_RemoveCommand("minimize");
 	
-	ri.Cmd_RemoveCommand("vkinfo");
+    ri.Cmd_RemoveCommand("vkinfo");
     ri.Cmd_RemoveCommand("printDeviceExtensions");
     ri.Cmd_RemoveCommand("printInstanceExtensions");
 
@@ -181,17 +187,18 @@ void RE_Shutdown( qboolean destroyWindow )
     ri.Cmd_RemoveCommand("listSortedShader");
 
     ri.Cmd_RemoveCommand("printShaderTextHashTable");
+    
     ri.Cmd_RemoveCommand("printPresentModes");
-	ri.Cmd_RemoveCommand("printSurfaceFormatSupported");
+    ri.Cmd_RemoveCommand("printSurfaceFormatSupported");
 
-	ri.Cmd_RemoveCommand("screenshotPNG");
-	ri.Cmd_RemoveCommand("screenshotBMP");
+    ri.Cmd_RemoveCommand("screenshotPNG");
+    ri.Cmd_RemoveCommand("screenshotBMP");
     ri.Cmd_RemoveCommand("screenshotJPEG");
     ri.Cmd_RemoveCommand("screenshotJPG");
     ri.Cmd_RemoveCommand("screenshotTGA");
-	ri.Cmd_RemoveCommand("screenshot");
+    ri.Cmd_RemoveCommand("screenshot");
     
-	R_DoneFreeType();
+    R_DoneFreeType();
 
     // VULKAN
     // Releases vulkan resources allocated during program execution.
@@ -209,29 +216,34 @@ void RE_Shutdown( qboolean destroyWindow )
     NO_CHECK( qvkDeviceWaitIdle(vk.device) );
 
 
-	if ( tr.registered )
+    if ( tr.registered )
     {
-		vk_destroyScratchImage();
-			
-		vk_destroyImageRes(); 
+	vk_destroyScratchImage();
 		
-		// need ?
-		vk_reset_descriptor_pool();
+	vk_destroyImageRes(); 
+		
+	// need ?
+	vk_reset_descriptor_pool();
 		
         vk_destroyStagingBuffer();
         
         tr.registered = qfalse;
-	}
+    }
 
 
-	vk_destroyShaderStagePipeline();
+    vk_destroyShaderStagePipeline();
 
 
 
     if (destroyWindow)
     {
         vk_shutdown();
-        vk_destroyWindowImpl();
+		
+		vk_cleanInstanceProcAddrImpl();
+
+		ri.GLimpShutdown();
+
+		ri.Printf(PRINT_ALL, " Destroying Vulkan window. \n");
         
         // It is cleared not for renderer_vulkan,
         // but fot rendergl1, renderergl2 to create the window

@@ -1,3 +1,4 @@
+#include "../qcommon/q_shared.h"
 #include "tr_model.h"
 #include "ref_import.h"
 #include "R_FindShader.h"
@@ -185,7 +186,7 @@ qboolean R_LoadMDR( model_t *mod, void *buffer, int filesize, const char *mod_na
 	
 	mdr->ident = LittleLong(pinmodel->ident);
 	mdr->version = pinmodel->version;	// Don't need to swap byte order on this one, we already did above.
-	Q_strncpyz(mdr->name, pinmodel->name, sizeof(mdr->name));
+	strncpy(mdr->name, pinmodel->name, sizeof(mdr->name));
 	mdr->numFrames = pinmodel->numFrames;
 	mdr->numBones = pinmodel->numBones;
 	mdr->numLODs = LittleLong(pinmodel->numLODs);
@@ -276,7 +277,7 @@ qboolean R_LoadMDR( model_t *mod, void *buffer, int filesize, const char *mod_na
 			}
 			
 			frame->radius = LittleFloat(curframe->radius);
-			Q_strncpyz(frame->name, curframe->name, sizeof(frame->name));
+			strncpy(frame->name, curframe->name, sizeof(frame->name));
 			
             // suppress GCC strict-aliasing warning 
 #if defined( Q3_BIG_ENDIAN )
@@ -342,8 +343,8 @@ qboolean R_LoadMDR( model_t *mod, void *buffer, int filesize, const char *mod_na
 			// first do some copying stuff
 			
 			surf->ident = SF_MDR;
-			Q_strncpyz(surf->name, cursurf->name, sizeof(surf->name));
-			Q_strncpyz(surf->shader, cursurf->shader, sizeof(surf->shader));
+			strncpy(surf->name, cursurf->name, sizeof(surf->name));
+			strncpy(surf->shader, cursurf->shader, sizeof(surf->shader));
 			
 			surf->ofsHeader = (byte *) mdr - (byte *) surf;
 			
@@ -475,7 +476,7 @@ qboolean R_LoadMDR( model_t *mod, void *buffer, int filesize, const char *mod_na
 	for (i = 0 ; i < mdr->numTags ; i++)
 	{
 		tag->boneIndex = LittleLong(curtag->boneIndex);
-		Q_strncpyz(tag->name, curtag->name, sizeof(tag->name));
+		strncpy(tag->name, curtag->name, sizeof(tag->name));
 		
 		tag++;
 		curtag++;

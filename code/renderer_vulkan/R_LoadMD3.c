@@ -1,3 +1,4 @@
+#include "../qcommon/q_shared.h"
 #include "tr_model.h"
 #include "ref_import.h"
 #include "R_FindShader.h"

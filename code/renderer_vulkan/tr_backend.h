@@ -3,6 +3,7 @@
 
 #include "viewParms.h"
 #include "trRefDef.h"
+#include <stdint.h>
 
 typedef struct {
 	int	c_surfaces;

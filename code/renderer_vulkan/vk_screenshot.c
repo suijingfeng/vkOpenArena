@@ -43,8 +43,8 @@ Implementations may support additional limits and capabilities beyond those list
 
 
 extern void R_GetWorldBaseName(char* checkname);
-extern size_t RE_SaveJPGToBuffer(byte *buffer, size_t bufSize, int quality,
-    int image_width, int image_height, byte *image_buffer, int padding);
+extern uint32_t RE_SaveJPGToBuffer(unsigned char *buffer, unsigned int bufSize, int quality,
+    int image_width, int image_height, unsigned char *image_buffer, int padding);
 
 
 static uint32_t s_lastNumber = 0;
@@ -238,9 +238,9 @@ static void vk_read_pixels(unsigned char* const pBuf, uint32_t W, uint32_t H)
     image_barrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
     image_barrier.pNext = NULL;
     // srcAccessMask is a bitmask of VkAccessFlagBits specifying a source access mask.
-	// the source accesss mask specifies how the memory was last written
-	// the destination access mask specifies how the memory will
-	// next be read.
+    // the source accesss mask specifies how the memory was last written
+    // the destination access mask specifies how the memory will
+    // next be read.
     image_barrier.srcAccessMask = VK_ACCESS_COLOR_ATTACHMENT_READ_BIT | VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
     // dstAccessMask is a bitmask of VkAccessFlagBits specifying a destination access mask.
     image_barrier.dstAccessMask = VK_ACCESS_TRANSFER_READ_BIT;
@@ -282,8 +282,8 @@ static void vk_read_pixels(unsigned char* const pBuf, uint32_t W, uint32_t H)
 
 
 
-extern size_t RE_SaveJPGToBuffer(byte *buffer, size_t bufSize, int quality,
-    int image_width, int image_height, byte *image_buffer, int padding);
+extern uint32_t RE_SaveJPGToBuffer(unsigned char *buffer, unsigned int bufSize, int quality,
+    int image_width, int image_height, unsigned char *image_buffer, int padding);
 
 
 static void RB_TakeScreenshotJPEG(unsigned char * const pImg, uint32_t width, uint32_t height, char * const fileName,

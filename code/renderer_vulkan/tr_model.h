@@ -1,6 +1,7 @@
 #ifndef TR_MODEL_H_
 #define TR_MODEL_H_
 
+#include "../qcommon/q_shared.h" 
 #include "../renderercommon/iqm.h"
 #include "tr_surface.h"
 #include "trRefDef.h"

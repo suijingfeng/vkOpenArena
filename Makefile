@@ -1666,6 +1666,7 @@ Q3VKOBJ = \
   $(B)/renderer_vulkan/tr_backend.o \
   $(B)/renderer_vulkan/tr_Cull.o \
   $(B)/renderer_vulkan/tr_common.o \
+  $(B)/renderer_vulkan/vk_impl.o \
   $(B)/renderer_vulkan/vk_validation.o \
   $(B)/renderer_vulkan/vk_instance.o \
   $(B)/renderer_vulkan/vk_init.o \
@@ -1719,9 +1720,8 @@ Q3VKOBJ = \
   $(B)/renderer_vulkan/R_Puff.o \
   $(B)/renderer_vulkan/R_ImagePNG.o \
   $(B)/renderer_vulkan/R_ImageBMP.o \
-  $(B)/renderer_vulkan/R_ImagePCX.o \
+  $(B)/renderer_vulkan/R_ImagePCX.o
 
-  Q3VKOBJ += $(B)/renderer_vulkan/vk_create_window_SDL.o
 
 ######################################################
 

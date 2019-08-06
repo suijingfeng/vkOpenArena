@@ -137,7 +137,7 @@ void R_SetWinMode(int mode, unsigned int width, unsigned int height, unsigned in
 void R_InitDisplayResolution( void )
 {
     // leilei - -2 is so convenient for modern day PCs
-    r_mode = ri.Cvar_Get( "r_mode", "-2", CVAR_ARCHIVE | CVAR_LATCH );
+
     r_customwidth = ri.Cvar_Get( "r_customwidth", "960", CVAR_ARCHIVE | CVAR_LATCH );
     r_customheight = ri.Cvar_Get( "r_customheight", "540", CVAR_ARCHIVE | CVAR_LATCH );
     r_customaspect = ri.Cvar_Get( "r_customaspect", "1.78", CVAR_ARCHIVE | CVAR_LATCH );
@@ -253,7 +253,7 @@ void glConfig_FillString( void )
     // There much more device extentions, beyound UI driver info can display
     for (i = 0; i < nDevExts; ++i)
     {   
-        uint32_t len = strlen(pDevExt[i].extensionName);
+        uint32_t len = (uint32_t)strlen(pDevExt[i].extensionName);
         memcpy(glConfig.extensions_string + indicator, pDevExt[i].extensionName, len);
         indicator += len;
         glConfig.extensions_string[indicator++] = ' ';
