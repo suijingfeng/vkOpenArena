@@ -24,9 +24,6 @@
     <ClCompile Include="..\..\..\code\win32\win_create_window.c">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\code\win32\win_dll.c">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="..\..\..\code\win32\win_event.c">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -259,9 +256,6 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="..\..\..\code\win32\win_event.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\..\code\win32\win_dll.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="..\..\..\code\win32\resource.h">

@@ -71,7 +71,6 @@
     <ClCompile Include="..\..\..\code\qcommon\vm_interpreted.c" />
     <ClCompile Include="..\..\..\code\qcommon\vm_x86.c" />
     <ClCompile Include="..\..\..\code\win32\win_create_window.c" />
-    <ClCompile Include="..\..\..\code\win32\win_dll.c" />
     <ClCompile Include="..\..\..\code\win32\win_event.c" />
     <ClCompile Include="..\..\..\code\win32\win_fstream.c" />
     <ClCompile Include="..\..\..\code\win32\win_gamma.c" />
@@ -94,7 +93,6 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\..\code\win32\resource.h" />
-    <ClInclude Include="..\..\..\code\win32\win_dll.h" />
     <ClInclude Include="..\..\..\code\win32\win_event.h" />
     <ClInclude Include="..\..\..\code\win32\win_gamma.h" />
     <ClInclude Include="..\..\..\code\win32\win_get_clipboard.h" />
