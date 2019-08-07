@@ -21,41 +21,41 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 */
 // win_local.h: Win32-specific Quake3 header file
 
-#ifndef WIN_PUBLIC_H_
-#define WIN_PUBLIC_H_
 
-#if defined(_WIN32) || defined(_WIN64)
+#ifndef LINUX_PUBLIC_H_
+#define LINUX_PUBLIC_H_
 
-#include <windows.h>
+#if !( defined __linux__ || defined __FreeBSD__ || defined __sun || defined MACOS_X )
+#error You should include this file only on Linux/FreeBSD/Solaris platforms
+#endif
 
-#include "../renderercommon/tr_types.h"
 
-typedef struct WinVars_s {
-	
-	HINSTANCE		reflib_library;		// Handle to refresh DLL 
 
-	HWND			hWnd; // main window
-	HINSTANCE		hInstance;
-	int				winWidth;
-	int				winHeight;
+#if defined(__linux__)
 
-	int				desktopWidth;
-	int				desktopHeight;
+#include <xcb/xcb.h>
 
-	int			isFullScreen;
+typedef struct xcb_windata_s {
 
-	int			activeApp;
-	int			isMinimized;
-	OSVERSIONINFO	osversion;
+    xcb_connection_t *connection;
+    xcb_window_t hWnd;
+    xcb_window_t root;
+    int     screenIdx;
 
-	// when we get a windows message, we store the time off so keyboard processing
-	// can know the exact time of an event
-	unsigned		sysMsgTime;
+	int		winWidth;
+	int		winHeight;
+
+	int		desktopWidth;
+	int		desktopHeight;
+	int		isFullScreen;
+	int		isMinimized;
+	unsigned int sysMsgTime;
+
 } WinVars_t;
 
-#else
+#else 
 
-
+// unix freebsd ... ???
 
 #endif
 

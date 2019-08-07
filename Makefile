@@ -1414,32 +1414,6 @@ Q3OBJ = \
   $(B)/client/con_log.o \
   $(B)/client/sys_main.o
 
-ifeq ($(BUILD_WITH_SDL), 1)
-
-Q3OBJ += \
-  $(B)/client/sdl_input.o \
-  $(B)/client/sdl_snd.o \
-  $(B)/client/sdl_getClipboardData.o \
-  $(B)/client/win_dummy.o
-else
-Q3OBJ += \
-  $(B)/client/input_linux.o \
-  $(B)/client/sound_linux.o \
-  $(B)/client/gamma_linux.o \
-  $(B)/client/glimp_linux.o \
-  $(B)/client/x11_randr.o \
-  $(B)/client/x11_vidmode.o \
-  $(B)/client/getClipboardData_linux.o
-endif
-
-
-ifdef MINGW
-  Q3OBJ += \
-	$(B)/client/con_passive.o
-else
-  Q3OBJ += \
-	$(B)/client/con_tty.o
-endif
 
 Q3R2OBJ = \
   $(B)/renderergl2/tr_animation.o \
@@ -2018,13 +1992,45 @@ Q3OBJ += \
 	$(B)/client/sys_loadlib.o
 
 ifdef MINGW
+
   Q3OBJ += \
 	$(B)/client/win_resource.o \
 	$(B)/client/sys_win32.o
+
+  Q3OBJ += \
+	$(B)/client/con_passive.o
+
 else
+
   Q3OBJ += \
 	$(B)/client/sys_unix.o
+
+  Q3OBJ += \
+	$(B)/client/con_tty.o
+
 endif
+
+
+ifeq ($(BUILD_WITH_SDL), 1)
+
+Q3OBJ += \
+  $(B)/client/sdl_input.o \
+  $(B)/client/sdl_snd.o \
+  $(B)/client/sdl_getClipboardData.o \
+  $(B)/client/xcb_create_window.o
+ 
+# $(B)/client/win_dummy.o
+else
+Q3OBJ += \
+  $(B)/client/input_linux.o \
+  $(B)/client/sound_linux.o \
+  $(B)/client/gamma_linux.o \
+  $(B)/client/glimp_linux.o \
+  $(B)/client/x11_randr.o \
+  $(B)/client/x11_vidmode.o \
+  $(B)/client/getClipboardData_linux.o
+endif
+
 
 ifeq ($(PLATFORM),darwin)
   Q3OBJ += \

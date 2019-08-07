@@ -1,4 +1,3 @@
-
 #include "VKimpl.h"
 
 #include "vk_instance.h"
@@ -6,16 +5,21 @@
 #include "glConfig.h"
 #include "ref_import.h"
 
-#include "../win32/win_public.h"
-
 
 extern PFN_vkGetInstanceProcAddr qvkGetInstanceProcAddr;
 
 #if defined(_WIN32) || defined(_WIN64)
 
+#include "../win32/win_public.h"
+
 HINSTANCE vk_library_handle = NULL;		// Handle to refresh DLL 
 
 #elif defined(__unix__) || defined(__linux) || defined(__linux__)
+
+#include <dlfcn.h>
+
+#include "../linux/linux_public.h"
+
 
 void * vk_library_handle = NULL; // instance of Vulkan library
 
@@ -51,7 +55,7 @@ void* vk_getInstanceProcAddrImpl(void)
 
 	if (vk_library_handle == NULL)
 	{
-		ri.Error(ERR_FATAL, " Load libvulkan.so.1 failed. \n", dll_name);
+		ri.Error(ERR_FATAL, " Load libvulkan.so.1 failed. \n");
 	}
 
 	ri.Printf(PRINT_ALL, "Loading vulkan DLL succeeded. \n");

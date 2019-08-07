@@ -268,7 +268,6 @@ static void vk_selectPhysicalDevice(void)
 	ri.Printf(PRINT_ALL, " Total %d graphics card, selected card index: [%d]. \n",
 		gpu_count, r_gpuIndex->integer);
 
-	ri.Printf(PRINT_ALL, " Get physical device memory properties: vk.devMemProperties \n");
 }
 
 
@@ -618,7 +617,8 @@ void vk_initialize(void * pWinContext)
 	// The window surface needs to be created right after the instance creation,
 	// because it can actually influence the presentation mode selection.
 	ri.Printf(PRINT_ALL, " Create Surface: vk.surface. \n");
-	vk_createSurfaceImpl(vk.instance, pWinContext, &vk.surface);
+	
+    vk_createSurfaceImpl(vk.instance, pWinContext, &vk.surface);
 
 	// select physical device
 	vk_selectPhysicalDevice();
