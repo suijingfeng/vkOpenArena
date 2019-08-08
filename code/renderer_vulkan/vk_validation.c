@@ -47,7 +47,7 @@ VKAPI_ATTR VkBool32 VKAPI_CALL vk_DebugCallback(
 #endif
 
 
-void vk_createDebugCallback( )
+void vk_createDebugCallback(void)
 {
 #ifndef NDEBUG
     r_logCalledProc = ri.Cvar_Get( "r_logCalledProc", "0", CVAR_TEMP );

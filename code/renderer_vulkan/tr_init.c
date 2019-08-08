@@ -116,7 +116,7 @@ void R_Init( void )
 
     R_InitScene();
 
-    glConfig_Init();
+    // glConfig_Init();
 
     // VULKAN
     if ( !isVKinitialied() )

@@ -238,6 +238,7 @@ void RE_UploadCinematic(int w, int h, int cols, int rows, const unsigned char * 
 
         vk_stagBufToDevLocal(tr_scratchImage.handle, regions, 1);
     }
+    
 }
 
 

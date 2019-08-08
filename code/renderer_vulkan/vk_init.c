@@ -616,7 +616,6 @@ void vk_initialize(void * pWinContext)
 
 	// The window surface needs to be created right after the instance creation,
 	// because it can actually influence the presentation mode selection.
-	ri.Printf(PRINT_ALL, " Create Surface: vk.surface. \n");
 	
     vk_createSurfaceImpl(vk.instance, pWinContext, &vk.surface);
 

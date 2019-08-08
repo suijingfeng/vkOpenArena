@@ -2022,11 +2022,16 @@ endif
 ifeq ($(BUILD_WITH_SDL), 1)
 
 Q3OBJ += \
-  $(B)/client/sdl_input.o \
   $(B)/client/sdl_snd.o \
   $(B)/client/sdl_getClipboardData.o \
-  $(B)/client/win_dummy.o
+  $(B)/client/xcb_input.o \
+  $(B)/client/xcb_keysyms.o \
+  $(B)/client/xcb_create_window.o 
+  
+  
+#  $(B)/client/linux_shared.o
 else
+	
 Q3OBJ += \
   $(B)/client/input_linux.o \
   $(B)/client/sound_linux.o \

@@ -32,8 +32,7 @@ extern cvar_t	*r_facePlaneCull;		// enables culling of planar surfaces with back
 extern cvar_t	*r_nocurves;
 extern cvar_t	*r_showcluster;
 
-extern cvar_t	*r_mode;				// video mode
-extern cvar_t	*r_fullscreen;
+
 extern cvar_t	*r_gamma;
 extern cvar_t	*r_allowResize;			// make window resizable
 extern cvar_t	*r_displayRefresh;		// refresh rate

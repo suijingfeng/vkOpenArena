@@ -57,10 +57,12 @@ void* vk_getInstanceProcAddrImpl(void)
 	{
 		ri.Error(ERR_FATAL, " Load libvulkan.so.1 failed. \n");
 	}
+    else
+    {
+	    ri.Printf(PRINT_ALL, " libvulkan.so.1 loaded. \n");
+    }
 
-	ri.Printf(PRINT_ALL, "Loading vulkan DLL succeeded. \n");
-
-	ri.Printf(PRINT_ALL, " Get instance proc address. (using XCB)\n");
+	ri.Printf(PRINT_ALL, " Get instance proc address. \n");
 
 	return dlsym(vk_library_handle, "vkGetInstanceProcAddr");
 
@@ -79,6 +81,7 @@ void vk_cleanInstanceProcAddrImpl(void)
 	vk_library_handle = NULL;
 #elif defined(__unix__) || defined(__linux) || defined(__linux__)
 	dlclose(vk_library_handle);
+	vk_library_handle = NULL;
 #else
 	// macos ?
 	vk_library_handle = NULL;
@@ -139,9 +142,12 @@ void vk_createSurfaceImpl(VkInstance hInstance, void * pCtx, VkSurfaceKHR* const
 	createInfo.flags = 0;
 	createInfo.connection = pWinCtx->connection;
 	createInfo.window = pWinCtx->hWnd;
-	qvkCreateXcbSurfaceKHR(hInstance, &createInfo, NULL, pSurface);
+	
+    VK_CHECK( qvkCreateXcbSurfaceKHR(hInstance, &createInfo, NULL, pSurface) );
+	
+    
+    ri.Printf(PRINT_ALL, " CreateXcbSurface done. \n");
 
 #endif
 
-	R_SetWinMode(r_mode->integer, pWinCtx->desktopWidth, pWinCtx->desktopHeight, 60);
 }
