@@ -1,11 +1,17 @@
-COMPILE_PLATFORM=$(shell uname | sed -e s/_.*//|tr '[:upper:]' '[:lower:]' | sed -e 's/\//_/g')
-COMPILE_ARCH=$(shell uname -m | sed -e s/i.86/x86/ | sed -e 's/^arm.*/arm/')
+COMPILE_PLATFORM=$(shell uname | sed -e s/_.*// | tr '[:upper:]' '[:lower:]' | sed -e 's/\//_/g')
+COMPILE_ARCH=$(shell uname -m | sed -e 's/i.86/x86/' | sed -e 's/^arm.*/arm/')
 
 #CC=clang
 
 ifeq ($(COMPILE_PLATFORM),darwin)
   # Apple does some things a little differently...
-  COMPILE_ARCH=$(shell uname -p | sed -e s/i.86/x86/)
+  COMPILE_ARCH=$(shell uname -p | sed -e 's/i.86/x86/')
+endif
+
+ifeq ($(COMPILE_PLATFORM),mingw32)
+  ifeq ($(COMPILE_ARCH),i386)
+    COMPILE_ARCH=x86
+  endif
 endif
 
 ifndef BUILD_STANDALONE
@@ -360,7 +366,7 @@ endif
 
   CLIENT_LIBS=$(SDL_LIBS)
 
-
+  CLIENT_LIBS += $(XCB_LIBS)
 
 ifeq ($(BUILD_WITH_SDL), 1)
   RENDERER_LIBS = $(SDL_LIBS) 
@@ -368,6 +374,8 @@ else
   RENDERER_LIBS = -lGL
 endif
 
+#  XCB_CFLAGS = $(shell PKG_CONFIG --silence-errors --cflags xcb)
+  XCB_LIBS = $(shell pkg-config --libs xcb)
 
   CLIENT_CFLAGS += $(CURL_CFLAGS)
   CLIENT_LIBS += $(CURL_LIBS)
@@ -2079,7 +2087,7 @@ $(B)/renderer_mydev_$(SHLIBNAME): $(Q3MYDEVOBJ) $(JPGOBJ)
 $(B)/renderer_vulkan_$(SHLIBNAME): $(Q3VKOBJ) $(JPGOBJ)
 	$(echo_cmd) "LD $@"
 	$(Q)$(CC) $(CFLAGS) $(SHLIBLDFLAGS) -o $@ $(Q3VKOBJ) $(JPGOBJ) \
-		$(THREAD_LIBS) $(RENDERER_LIBS) $(SDL_LIBS) $(LIBS)
+		$(THREAD_LIBS) $(RENDERER_LIBS) $(LIBS)
 
 ##############################################################
 

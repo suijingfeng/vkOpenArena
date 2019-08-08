@@ -3368,10 +3368,9 @@ void Field_CompleteFilename( const char *dir, const char *ext, qboolean stripExt
 Field_CompleteCommand
 ===============
 */
-void Field_CompleteCommand( char *cmd,
-		qboolean doCommands, qboolean doCvars )
+void Field_CompleteCommand( char *cmd, qboolean doCommands, qboolean doCvars )
 {
-	int		completionArgument = 0;
+	int	completionArgument = 0;
 
 	// Skip leading whitespace and quotes
 	cmd = Com_SkipCharset( cmd, " \"" );
@@ -3526,12 +3525,10 @@ Field_CompletePlayerName
 */
 static qboolean Field_CompletePlayerNameFinal( qboolean whitespace )
 {
-	int completionOffset;
-
 	if( matchCount == 0 )
 		return qtrue;
 
-	completionOffset = strlen( completionField->buffer ) - strlen( completionString );
+	int completionOffset = strlen( completionField->buffer ) - strlen( completionString );
 
 	Q_strncpyz( &completionField->buffer[ completionOffset ], shortestMatch,
 		sizeof( completionField->buffer ) - completionOffset );
