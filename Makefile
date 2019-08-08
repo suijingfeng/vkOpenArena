@@ -2017,9 +2017,7 @@ Q3OBJ += \
   $(B)/client/sdl_input.o \
   $(B)/client/sdl_snd.o \
   $(B)/client/sdl_getClipboardData.o \
-  $(B)/client/xcb_create_window.o
- 
-# $(B)/client/win_dummy.o
+  $(B)/client/win_dummy.o
 else
 Q3OBJ += \
   $(B)/client/input_linux.o \
@@ -2028,7 +2026,8 @@ Q3OBJ += \
   $(B)/client/glimp_linux.o \
   $(B)/client/x11_randr.o \
   $(B)/client/x11_vidmode.o \
-  $(B)/client/getClipboardData_linux.o
+  $(B)/client/getClipboardData_linux.o \
+  $(B)/client/xcb_create_window.o
 endif
 
 
