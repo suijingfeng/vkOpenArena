@@ -2008,6 +2008,10 @@ ifdef MINGW
   Q3OBJ += \
 	$(B)/client/con_passive.o
 
+  Q3OBJ += \
+    $(B)/client/sdl_snd.o \
+    $(B)/client/sdl_getClipboardData.o
+
 else
 
   Q3OBJ += \
@@ -2016,32 +2020,16 @@ else
   Q3OBJ += \
 	$(B)/client/con_tty.o
 
+  Q3OBJ += \
+    $(B)/client/sdl_snd.o \
+    $(B)/client/sdl_getClipboardData.o \
+    $(B)/client/xcb_input.o \
+    $(B)/client/xcb_keysyms.o \
+    $(B)/client/xcb_create_window.o 
+
 endif
 
 
-ifeq ($(BUILD_WITH_SDL), 1)
-
-Q3OBJ += \
-  $(B)/client/sdl_snd.o \
-  $(B)/client/sdl_getClipboardData.o \
-  $(B)/client/xcb_input.o \
-  $(B)/client/xcb_keysyms.o \
-  $(B)/client/xcb_create_window.o 
-  
-  
-#  $(B)/client/linux_shared.o
-else
-	
-Q3OBJ += \
-  $(B)/client/input_linux.o \
-  $(B)/client/sound_linux.o \
-  $(B)/client/gamma_linux.o \
-  $(B)/client/glimp_linux.o \
-  $(B)/client/x11_randr.o \
-  $(B)/client/x11_vidmode.o \
-  $(B)/client/getClipboardData_linux.o \
-  $(B)/client/xcb_create_window.o
-endif
 
 
 ifeq ($(PLATFORM),darwin)
