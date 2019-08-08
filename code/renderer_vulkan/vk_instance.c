@@ -463,7 +463,7 @@ static void vk_createInstance(VkInstance* const pInstance)
     VkExtensionProperties * pInsExt = (VkExtensionProperties *) malloc(sizeof(VkExtensionProperties) * nInsExt);
     VK_CHECK(qvkEnumerateInstanceExtensionProperties( NULL, &nInsExt, pInsExt));
 
-	char* ppInstanceExtEnabled[16] = { 0 };
+	const char* ppInstanceExtEnabled[16] = { 0 };
 	// malloc(sizeof(char *) * (nInsExt));
 
     // Each platform-specific extension is an instance extension.

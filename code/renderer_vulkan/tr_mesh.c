@@ -144,7 +144,7 @@ int R_ComputeLOD( trRefEntity_t *ent )
     if(tr.currentModel->type == MOD_MDR)
     {
         mdrHeader_t * mdr = (mdrHeader_t *) tr.currentModel->modelData;
-        int frameSize = (int) (&((mdrFrame_t *)0)->bones[mdr->numBones]);
+        size_t frameSize = (size_t) (&((mdrFrame_t *)0)->bones[mdr->numBones]);
 
         mdrFrame_t * mdrframe = (mdrFrame_t *) ((byte *) mdr + mdr->ofsFrames + frameSize * ent->e.frame);
 

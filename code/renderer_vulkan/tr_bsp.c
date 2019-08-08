@@ -1914,7 +1914,7 @@ void RE_LoadWorldMap( const char *name )
 
 	// load it
     ri.Printf(PRINT_ALL, " World Load: %s\n", name);
-    ri.FS_ReadFile( name, &buffer );
+    ri.FS_ReadFile( name, (void**)&buffer );
 	if ( !buffer ) {
 		ri.Error (ERR_DROP, "RE_LoadWorldMap: %s not found", name);
 	}

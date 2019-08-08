@@ -438,7 +438,7 @@ void ScanAndLoadShaderFiles( void )
         // ri.Printf( PRINT_ALL, "...loading '%s'\n", filename );
 		
         // summand is the file length
-        long summand = ri.FS_ReadFile( filename, &pBuffers[i] );
+        long summand = ri.FS_ReadFile( filename, (void **)&pBuffers[i] );
 		
 		if ( NULL == pBuffers[i] )
 			ri.Error( ERR_DROP, "Couldn't load %s", filename );
