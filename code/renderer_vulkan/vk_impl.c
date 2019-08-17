@@ -32,7 +32,7 @@ void * vk_library_handle = NULL; // instance of Vulkan library
 
 
 
-void* vk_getInstanceProcAddrImpl(void)
+void* VK_GetInstanceProcAddrImpl(void)
 {
 	ri.Printf(PRINT_ALL, " Initializing Vulkan subsystem \n");
     
@@ -74,7 +74,7 @@ void* vk_getInstanceProcAddrImpl(void)
 }
 
 
-void vk_cleanInstanceProcAddrImpl(void)
+void VK_CleanInstanceProcAddrImpl(void)
 {
 #if defined(_WIN32) || defined(_WIN64)
 	FreeLibrary(vk_library_handle);
@@ -98,7 +98,7 @@ void vk_cleanInstanceProcAddrImpl(void)
 
 // The window size may become (0, 0) on this platform (e.g. when the window is
 // minimized), and so a swapchain cannot be created until the size changes.
-void vk_createSurfaceImpl(VkInstance hInstance, void * pCtx, VkSurfaceKHR* const pSurface)
+void VK_CreateSurfaceImpl(VkInstance hInstance, void * pCtx, VkSurfaceKHR* const pSurface)
 {
 	WinVars_t * pWinCtx = (WinVars_t*)pCtx;
 
@@ -150,4 +150,132 @@ void vk_createSurfaceImpl(VkInstance hInstance, void * pCtx, VkSurfaceKHR* const
 
 #endif
 
+}
+
+
+// Platform dependent code, not elegant :(
+// doing this to avoid enable every instance extension,
+// not knowing if it is necessary.
+void VK_FillRequiredInstanceExtention(
+	const VkExtensionProperties * const pInsExt,
+	const uint32_t nInsExt,
+	const char* ppInsExt[16],
+    uint32_t * const nExt )
+{
+    uint32_t enExtCnt = 0;
+    uint32_t i = 0;
+
+    
+    for (i = 0; i < nInsExt; ++i)
+    {
+        // Platform dependent stuff,
+        // Enable VK_KHR_win32_surface
+#if defined(VK_USE_PLATFORM_WIN32_KHR)
+        
+        if( 0 == strcmp(VK_KHR_WIN32_SURFACE_EXTENSION_NAME, pInsExt[i].extensionName) )
+        {
+            ppInsExt[enExtCnt] = pInsExt[i].extensionName;
+            enExtCnt += 1;
+            continue;
+        }
+
+#elif defined(VK_USE_PLATFORM_XCB_KHR)    
+    
+        if( 0 == strcmp(VK_KHR_XCB_SURFACE_EXTENSION_NAME, pInsExt[i].extensionName) )
+        {
+            ppInsExt[enExtCnt] = pInsExt[i].extensionName;
+            enExtCnt += 1;
+            continue;
+        }
+    
+#elif defined(VK_USE_PLATFORM_XLIB_KHR) 
+
+        // Enable VK_KHR_xlib_surface
+        // TODO:xlib support
+        if( 0 == strcmp(VK_KHR_XLIB_SURFACE_EXTENSION_NAME, pInsExt[i].extensionName) )
+        {
+            ppInsExt[enExtCnt] = pInsExt[i].extensionName;
+            enExtCnt += 1;
+            continue;
+        }
+
+        // Enable VK_EXT_acquire_xlib_display
+        if( 0 == strcmp(VK_EXT_ACQUIRE_XLIB_DISPLAY_EXTENSION_NAME, pInsExt[i].extensionName) )
+        {
+            ppInsExt[enExtCnt] = pInsExt[i].extensionName;
+            enExtCnt += 1;
+            continue;
+        }
+
+#else
+
+        // TODO: MacOS ???
+        // All of the instance extention enabled, Does this reasonable ?
+        for (i = 0; i < nInsExt; ++i)
+        {    
+            ppInsExt[i] = pInsExt[i].extensionName;
+        }
+
+#endif
+        
+        // must enable part ... 
+        //////////////////  Enable VK_KHR_surface  //////////////////////////
+        if( 0 == strcmp(VK_KHR_SURFACE_EXTENSION_NAME, pInsExt[i].extensionName) )
+        {
+            ppInsExt[enExtCnt] = pInsExt[i].extensionName;
+            enExtCnt += 1;
+            continue;
+        }
+
+    #ifndef NDEBUG
+        //  VK_EXT_debug_report 
+        ppInsExt[enExtCnt] = VK_EXT_DEBUG_REPORT_EXTENSION_NAME;
+        enExtCnt += 1;
+    #endif
+
+        /////////////////////////////////
+        // other useless common part,
+        /////////////////////////////////
+
+        // Enable VK_EXT_direct_mode_display
+        // TODO: add doc why enable it, does it useful ?
+        //
+        if( 0 == strcmp(VK_EXT_DIRECT_MODE_DISPLAY_EXTENSION_NAME, pInsExt[i].extensionName) )
+        {
+            ppInsExt[enExtCnt] = pInsExt[i].extensionName;
+            enExtCnt += 1;
+            continue;
+        }
+
+
+        if( 0 == strcmp(VK_EXT_DIRECT_MODE_DISPLAY_EXTENSION_NAME, pInsExt[i].extensionName) )
+        {
+            ppInsExt[enExtCnt] = pInsExt[i].extensionName;
+            enExtCnt += 1;
+            continue;
+        }
+
+        // Enable VK_EXT_display_surface_counter
+        // TODO: add doc why enable this, what's the useful ?
+        if( 0 == strcmp(VK_EXT_DISPLAY_SURFACE_COUNTER_EXTENSION_NAME, pInsExt[i].extensionName) )
+        {
+            ppInsExt[enExtCnt] = pInsExt[i].extensionName;
+            enExtCnt += 1;
+            continue;
+        }
+
+
+        // Enable VK_KHR_display
+        // TODO: add doc why enable this, what's the useful ?
+        if( 0 == strcmp(VK_KHR_DISPLAY_EXTENSION_NAME, pInsExt[i].extensionName) )
+        {
+            ppInsExt[enExtCnt] = pInsExt[i].extensionName;
+            enExtCnt += 1;
+            vk.isKhrDisplaySupported = VK_TRUE;
+            continue;
+        }
+    }
+
+
+    *nExt = enExtCnt;
 }

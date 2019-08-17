@@ -113,13 +113,13 @@ extern PFN_vkQueuePresentKHR							qvkQueuePresentKHR;
 
 
 // Initializes VK_Instance structure.
-void vk_getProcAddress(void);
-void vk_clearProcAddress(void);
-void printInstanceExtensionsSupported_f(void);
-void vk_destroy_instance(void);
+void VK_CreateInstance(VkInstance* const pInstance);
+void VK_ClearProcAddress(void);
+void VK_DestroyInstance(void);
 
 uint32_t vk_getWinWidth(void);
 uint32_t vk_getWinHeight(void);
+void printInstanceExtensionsSupported_f(void);
 
 #ifndef NDEDBG
 
@@ -155,7 +155,7 @@ extern void debug_vkapi_call(VkResult result, const char * const proc_str);
 // Vk_Instance contains engine-specific vulkan resources that persist entire renderer lifetime.
 // This structure is initialized/deinitialized by vk_initialize/vk_shutdown functions correspondingly.
 struct Vk_Instance {
-	VkInstance instance ;
+	VkInstance instance;
 	VkPhysicalDevice physical_device;
 
     // Native platform surface or window objects are abstracted by surface objects,

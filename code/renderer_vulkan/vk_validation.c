@@ -16,7 +16,8 @@ static FILE* fpLogProc;
 static cvar_t* r_logCalledProc;
 
 
-VKAPI_ATTR VkBool32 VKAPI_CALL vk_DebugCallback(
+
+static VKAPI_ATTR VkBool32 VKAPI_CALL pFnDebugCB(
         VkDebugReportFlagsEXT flags, VkDebugReportObjectTypeEXT object_type,
         uint64_t object, size_t location, int32_t message_code, 
         const char* layer_prefix, const char* message, void* user_data )
@@ -42,29 +43,50 @@ VKAPI_ATTR VkBool32 VKAPI_CALL vk_DebugCallback(
     }
     
 	return VK_FALSE;
-
 }
 #endif
 
 
-void vk_createDebugCallback(void)
+void VK_SettingDebugCallback(VkInstance hInstance)
 {
 #ifndef NDEBUG
     r_logCalledProc = ri.Cvar_Get( "r_logCalledProc", "0", CVAR_TEMP );
     
-    // PFN_vkDebugReportCallbackEXT qvkDebugCB = vk_DebugCallback;
-    ri.Printf( PRINT_ALL, " vk_createDebugCallback() \n" ); 
-    
+    ri.Printf( PRINT_ALL, " Setting Debug Callbacks \n" ); 
+   
+    // VkDebugReportCallbackCreateInfoEXT structure defines the conditions
+    // under which this callback will be called.
     VkDebugReportCallbackCreateInfoEXT desc;
     desc.sType = VK_STRUCTURE_TYPE_DEBUG_REPORT_CALLBACK_CREATE_INFO_EXT;
     desc.pNext = NULL;
+    // VkDebugReportFlagBitsEXT - Bitmask specifying events which cause a debug report callback
+    //
+    // VK_DEBUG_REPORT_ERROR_BIT_EXT specifies that the application 
+    // has violated a valid usage condition of the specification.
+    //
+    // VK_DEBUG_REPORT_WARNING_BIT_EXT specifies use of Vulkan that may expose an app bug. 
+    // Such cases may not be immediately harmful, such as a fragment shader outputting to
+    // a location with no attachment. Other cases may point to behavior that is almost 
+    // certainly bad when unintended such as using an image whose memory has not been filled.
+    // In general if you see a warning but you know that the behavior is intended/desired,
+    // then simply ignore the warning.
+    //
+    // VK_DEBUG_REPORT_INFORMATION_BIT_EXT specifies an informational message 
+    // such as resource details that may be handy when debugging an application.
+    //
+    // VK_DEBUG_REPORT_DEBUG_BIT_EXT specifies diagnostic information
+    // from the implementation and layers.
     desc.flags = VK_DEBUG_REPORT_WARNING_BIT_EXT |
         VK_DEBUG_REPORT_PERFORMANCE_WARNING_BIT_EXT |
-        VK_DEBUG_REPORT_ERROR_BIT_EXT;
-    desc.pfnCallback = vk_DebugCallback;
+        VK_DEBUG_REPORT_ERROR_BIT_EXT |
+        VK_DEBUG_REPORT_INFORMATION_BIT_EXT |
+        VK_DEBUG_REPORT_DEBUG_BIT_EXT;
+    desc.pfnCallback = pFnDebugCB;
     desc.pUserData = NULL;
 
-    VK_CHECK(qvkCreateDebugReportCallbackEXT(vk.instance, &desc, NULL, &h_debugCB));
+    // h_debugCB: Opaque handle to a debug report callback object
+    // why we need provide it?
+    VK_CHECK(qvkCreateDebugReportCallbackEXT(hInstance, &desc, NULL, &h_debugCB));
 
 
     // init
@@ -76,11 +98,11 @@ void vk_createDebugCallback(void)
 }
 
 
-void vk_destroyDebugReportHandle(void)
+void VK_DestroyDebugReportHandle(VkInstance hInstance)
 {
 #ifndef NDEBUG
     ri.Printf( PRINT_ALL, " Destroy callback function handle. \n" );
-	qvkDestroyDebugReportCallbackEXT(vk.instance, h_debugCB, NULL);
+	NO_CHECK( qvkDestroyDebugReportCallbackEXT(hInstance, h_debugCB, NULL) );
     h_debugCB = 0;
 
     if(fpLogProc != NULL)

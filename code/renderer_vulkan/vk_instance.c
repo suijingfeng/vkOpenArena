@@ -3,12 +3,6 @@
 
 #include "VKimpl.h"
 #include "vk_instance.h"
-#include "vk_image.h"
-#include "vk_instance.h"
-#include "vk_shade_geometry.h"
-#include "vk_pipelines.h"
-#include "vk_frame.h"
-#include "vk_shaders.h"
 #include "vk_validation.h"
 #include "ref_import.h" 
 
@@ -139,7 +133,7 @@ PFN_vkQueuePresentKHR							qvkQueuePresentKHR;
 
 
 #ifndef NDEBUG
-static VkBool32 vk_assertStandValidationLayer(void)
+static VkBool32 VK_AssertStandValidationLayer(void)
 {
     // Look For Standard Validation Layer
     VkBool32 found = VK_FALSE;
@@ -187,218 +181,13 @@ static VkBool32 vk_assertStandValidationLayer(void)
 #endif
 
 
-// this function not be placed in vk_utils.c because 
-// I dont want to qvkEnumerateInstanceExtensionProperties
-// available to other files ...
-void printInstanceExtensionsSupported_f(void)
-{
-    uint32_t i = 0;
 
-	uint32_t nInsExt = 0;
-    // To retrieve a list of supported extensions before creating an instance
-	VK_CHECK( qvkEnumerateInstanceExtensionProperties( NULL, &nInsExt, NULL) );
-
-    assert(nInsExt > 0);
-
-    VkExtensionProperties* const pInsExt = (VkExtensionProperties *) malloc(sizeof(VkExtensionProperties) * nInsExt);
-    
-    VK_CHECK( qvkEnumerateInstanceExtensionProperties( NULL, &nInsExt, pInsExt) );
-
-    ri.Printf(PRINT_ALL, "\n");
-
-    ri.Printf(PRINT_ALL, "----- Total %d Instance Extension Supported -----\n", nInsExt);
-    for (i = 0; i < nInsExt; ++i)
-    {            
-        ri.Printf(PRINT_ALL, "%s\n", pInsExt[i].extensionName );
-    }
-    ri.Printf(PRINT_ALL, "----- ------------------------------------- -----\n\n");
-   
-    free(pInsExt);
-}
-
-
-// Platform dependent code, not elegant :(
-// doing this to avoid enable every instance extension,
-// not knowing if it is necessary.
-static void vk_fillRequiredInstanceExtention(
-	const VkExtensionProperties * const pInsExt,
-	const uint32_t nInsExt,
-	const char* ppInsExt[16],
-    uint32_t * nExt )
-{
-    uint32_t enExtCnt = 0;
-    uint32_t i = 0;
-
-#if defined(_WIN32) || defined(_WIN64)
-
-    #ifndef VK_KHR_WIN32_SURFACE_EXTENSION_NAME
-    #define VK_KHR_WIN32_SURFACE_EXTENSION_NAME "VK_KHR_win32_surface"
-    #endif
-    
-    for (i = 0; i < nInsExt; ++i)
-    {
-        // Platform dependent stuff,
-        // Enable VK_KHR_win32_surface
-        if( 0 == strcmp(VK_KHR_WIN32_SURFACE_EXTENSION_NAME, pInsExt[i].extensionName) )
-        {
-            ppInsExt[enExtCnt] = pInsExt[i].extensionName;
-            enExtCnt += 1;
-            continue;
-        }
-
-        // common part
-
-        // Enable VK_EXT_direct_mode_display
-        // TODO: add doc why enable this, what's the useful ?
-        if( 0 == strcmp(VK_EXT_DIRECT_MODE_DISPLAY_EXTENSION_NAME, pInsExt[i].extensionName) )
-        {
-            ppInsExt[enExtCnt] = pInsExt[i].extensionName;
-            enExtCnt += 1;
-            continue;
-        }
-
-        // Enable VK_EXT_display_surface_counter
-        // TODO: add doc why enable this, what's the useful ?
-        if( 0 == strcmp(VK_EXT_DISPLAY_SURFACE_COUNTER_EXTENSION_NAME, pInsExt[i].extensionName) )
-        {
-            ppInsExt[enExtCnt] = pInsExt[i].extensionName;
-            enExtCnt += 1;
-            continue;
-        }
-
-        // Enable VK_KHR_display
-        // TODO: add doc why enable this, what's the useful ?
-        if( 0 == strcmp(VK_KHR_DISPLAY_EXTENSION_NAME, pInsExt[i].extensionName) )
-        {
-            ppInsExt[enExtCnt] = pInsExt[i].extensionName;
-            enExtCnt += 1;
-            vk.isKhrDisplaySupported = VK_TRUE;
-            continue;
-        }
-
-        // Enable VK_KHR_surface
-        if( 0 == strcmp(VK_KHR_SURFACE_EXTENSION_NAME, pInsExt[i].extensionName) )
-        {
-            ppInsExt[enExtCnt] = pInsExt[i].extensionName;
-            enExtCnt += 1;
-            continue;
-        }
-    }
-
-    #ifndef NDEBUG
-    //  VK_EXT_debug_report 
-    ppInsExt[enExtCnt] = VK_EXT_DEBUG_REPORT_EXTENSION_NAME;
-    enExtCnt += 1;
-    #endif
-
-#elif defined(__unix__) || defined(__linux) || defined(__linux__)
-
-    #ifndef VK_KHR_XCB_SURFACE_EXTENSION_NAME
-    #define VK_KHR_XCB_SURFACE_EXTENSION_NAME "VK_KHR_xcb_surface"
-    #endif
-
-    #ifndef VK_KHR_XLIB_SURFACE_EXTENSION_NAME
-    #define VK_KHR_XLIB_SURFACE_EXTENSION_NAME "VK_KHR_xlib_surface"
-    #endif
-
-    #ifndef VK_EXT_ACQUIRE_XLIB_DISPLAY_EXTENSION_NAME
-    #define VK_EXT_ACQUIRE_XLIB_DISPLAY_EXTENSION_NAME "VK_EXT_acquire_xlib_display"
-    #endif 
-
-    for (i = 0; i < nInsExt; ++i)
-    {
-
-        // Platform dependent stuff,
-        // Enable VK_KHR_xcb_surface
-        // TODO: How can i force SDL2 using XCB instead XLIB ???
-        if( 0 == strcmp(VK_KHR_XCB_SURFACE_EXTENSION_NAME, pInsExt[i].extensionName) )
-        {
-            ppInsExt[enExtCnt] = pInsExt[i].extensionName;
-            enExtCnt += 1;
-            continue;
-        }
-
-        // Enable VK_KHR_xlib_surface
-        if( 0 == strcmp(VK_KHR_XLIB_SURFACE_EXTENSION_NAME, pInsExt[i].extensionName) )
-        {
-            ppInsExt[enExtCnt] = pInsExt[i].extensionName;
-            enExtCnt += 1;
-            continue;
-        }
-
-        // Enable VK_EXT_acquire_xlib_display
-        if( 0 == strcmp(VK_EXT_ACQUIRE_XLIB_DISPLAY_EXTENSION_NAME, pInsExt[i].extensionName) )
-        {
-            ppInsExt[enExtCnt] = pInsExt[i].extensionName;
-            enExtCnt += 1;
-            continue;
-        }
-
-
-        // common part
-        // Enable VK_EXT_direct_mode_display
-        // TODO: add doc why enable this, what's the useful ?
-        if( 0 == strcmp(VK_EXT_DIRECT_MODE_DISPLAY_EXTENSION_NAME, pInsExt[i].extensionName) )
-        {
-            ppInsExt[enExtCnt] = pInsExt[i].extensionName;
-            enExtCnt += 1;
-            continue;
-        }
-
-        // Enable VK_EXT_display_surface_counter
-        // TODO: add doc why enable this, what's the useful ?
-        if( 0 == strcmp(VK_EXT_DISPLAY_SURFACE_COUNTER_EXTENSION_NAME, pInsExt[i].extensionName) )
-        {
-            ppInsExt[enExtCnt] = pInsExt[i].extensionName;
-            enExtCnt += 1;
-            continue;
-        }
-
-        // Enable VK_KHR_display
-        // TODO: add doc why enable this, what's the useful ?
-        if( 0 == strcmp(VK_KHR_DISPLAY_EXTENSION_NAME, pInsExt[i].extensionName) )
-        {
-            ppInsExt[enExtCnt] = pInsExt[i].extensionName;
-            enExtCnt += 1;
-            vk.isKhrDisplaySupported = VK_TRUE;
-            continue;
-        }
-
-        // Enable VK_KHR_surface
-        if( 0 == strcmp(VK_KHR_SURFACE_EXTENSION_NAME, pInsExt[i].extensionName) )
-        {
-            ppInsExt[enExtCnt] = pInsExt[i].extensionName;
-            enExtCnt += 1;
-            continue;
-        }
-    }
-
-    #ifndef NDEBUG
-    //  VK_EXT_debug_report 
-    ppInsExt[enExtCnt] = VK_EXT_DEBUG_REPORT_EXTENSION_NAME;
-    enExtCnt += 1;
-    #endif
-
-#else
-    // TODO: CHECK OUT
-    // All of the instance extention enabled, Does this reasonable ?
-    for (i = 0; i < nInsExt; ++i)
-    {    
-        ppInsExt[i] = pInsExt[i].extensionName;
-    }
-#endif
-
-    *nExt = enExtCnt;
-}
-
-
-static void vk_createInstance(VkInstance* const pInstance)
+static void VK_CreateInstanceImpl(VkInstance* const pInstance)
 {
     // There is no global state in Vulkan and all per-application state
     // is stored in a VkInstance object. Creating a VkInstance object 
     // initializes the Vulkan library and allows the application to pass
     // information about itself to the implementation.
-    ri.Printf(PRINT_ALL, " Creating instance: vk.instance\n");
 	
     // The version of Vulkan that is supported by an instance may be 
     // different than the version of Vulkan supported by a device or
@@ -410,6 +199,8 @@ static void vk_createInstance(VkInstance* const pInstance)
     // call vkEnumerateInstanceVersion to determine the version of Vulkan.
 
     VkApplicationInfo appInfo;
+    VkInstanceCreateInfo instanceCreateInfo;
+
 	appInfo.sType = VK_STRUCTURE_TYPE_APPLICATION_INFO;
     appInfo.pNext = NULL;
 	appInfo.pApplicationName = "OpenArena";
@@ -425,7 +216,6 @@ static void vk_createInstance(VkInstance* const pInstance)
 	appInfo.apiVersion = VK_MAKE_VERSION(1, 0, 0);
 
 
-	VkInstanceCreateInfo instanceCreateInfo;
 	
     instanceCreateInfo.sType = VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO;
     // pNext is NULL or a pointer to an extension-specific structure.
@@ -455,14 +245,26 @@ static void vk_createInstance(VkInstance* const pInstance)
 	uint32_t nInsExt = 0;
 
     // To retrieve a list of supported extensions before creating an instance
+    // When pLayerName parameter is NULL, only extensions provided by the 
+    // Vulkan implementation or by implicitly enabled layers are returned. 
+    // When pLayerName is the name of a layer, the instance extensions 
+    // provided by that layer are returned.
 	VK_CHECK( qvkEnumerateInstanceExtensionProperties( NULL, &nInsExt, NULL) );
 
-    assert(nInsExt > 0);
+    assert( nInsExt > 0 );
 
     VkExtensionProperties * pInsExt = (VkExtensionProperties *) malloc(sizeof(VkExtensionProperties) * nInsExt);
-    VK_CHECK(qvkEnumerateInstanceExtensionProperties( NULL, &nInsExt, pInsExt));
-	
     
+    VK_CHECK( qvkEnumerateInstanceExtensionProperties( NULL, &nInsExt, pInsExt) );
+	
+    ri.Printf(PRINT_ALL, "\n -------- Total %d instance extensions. -------- \n", nInsExt);
+    for (uint32_t i = 0; i < nInsExt; ++i)
+    {    
+        ri.Printf(PRINT_ALL, " %s \n", pInsExt[i].extensionName);
+    }
+
+
+
     ////
     uint32_t cntEnabledInsExt = 0;
 	const char* ppInstanceExtEnabled[16] = { 0 };
@@ -470,13 +272,8 @@ static void vk_createInstance(VkInstance* const pInstance)
     // Each platform-specific extension is an instance extension.
     // The application must enable instance extensions with vkCreateInstance
     // before using them.
-    vk_fillRequiredInstanceExtention(pInsExt, nInsExt, ppInstanceExtEnabled, &cntEnabledInsExt);
+    VK_FillRequiredInstanceExtention(pInsExt, nInsExt, ppInstanceExtEnabled, &cntEnabledInsExt);
 
-    ri.Printf(PRINT_ALL, "\n -------- Total %d instance extensions. -------- \n", nInsExt);
-    for (uint32_t i = 0; i < nInsExt; ++i)
-    {    
-        ri.Printf(PRINT_ALL, " %s \n", pInsExt[i].extensionName);
-    }
 
     ri.Printf(PRINT_ALL, "\n -------- %d instance extensions Enable. -------- \n", cntEnabledInsExt);
     for (uint32_t i = 0; i < cntEnabledInsExt; ++i)
@@ -492,7 +289,7 @@ static void vk_createInstance(VkInstance* const pInstance)
 	instanceCreateInfo.ppEnabledLayerNames = NULL;
 
 #ifndef NDEBUG
-	if( vk_assertStandValidationLayer() )
+	if( VK_AssertStandValidationLayer() )
 	{
 		ri.Printf(PRINT_ALL, "Using VK_LAYER_LUNARG_standard_validation. \n");
 
@@ -524,6 +321,7 @@ static void vk_createInstance(VkInstance* const pInstance)
         ri.Error(ERR_FATAL, "%d, returned by qvkCreateInstance.\n", e);
     }
    
+    ri.Printf(PRINT_ALL, " Vulkan instance Created. \n");
 
     free(pInsExt);
 }
@@ -540,7 +338,7 @@ static void vk_createInstance(VkInstance* const pInstance)
 // This operation is performed with global-level functions, 
 // which we need to load first.
 
-static void vk_loadGlobalLevelFunctions(void)
+static void VK_LoadGlobalLevelFunctions(void)
 {
     ri.Printf(PRINT_ALL, " Loading vulkan instance functions \n");
 
@@ -553,7 +351,7 @@ static void vk_loadGlobalLevelFunctions(void)
     // what instance-level extensions and layers are available
     // and to create the Instance itself.
 
-    qvkGetInstanceProcAddr = (PFN_vkGetInstanceProcAddr) vk_getInstanceProcAddrImpl();
+    qvkGetInstanceProcAddr = (PFN_vkGetInstanceProcAddr) VK_GetInstanceProcAddrImpl();
     
     if( qvkGetInstanceProcAddr == NULL)
     {
@@ -579,7 +377,7 @@ static void vk_loadGlobalLevelFunctions(void)
 
 
 
-static void vk_loadInstanceLevelFunctions(void)
+static void VK_LoadInstanceLevelFunctions(VkInstance hInstance)
 {
     ri.Printf(PRINT_ALL, " Loading Instance level functions. \n");
 
@@ -593,7 +391,7 @@ static void vk_loadInstanceLevelFunctions(void)
     // physical devices. There are multiple instance-level functions.
     
 #define INIT_INSTANCE_FUNCTION(func)                                    \
-    q##func = (PFN_##func) qvkGetInstanceProcAddr(vk.instance, #func);  \
+    q##func = (PFN_##func) qvkGetInstanceProcAddr(hInstance, #func);  \
     if (q##func == NULL) {                                              \
         ri.Error(ERR_FATAL, "Failed to find entrypoint %s", #func);     \
     }
@@ -649,14 +447,14 @@ static void vk_loadInstanceLevelFunctions(void)
 ////////////////////////////////
 
 
-void vk_getProcAddress(void)
+void VK_CreateInstance( VkInstance * const pInstance)
 {
-    vk_loadGlobalLevelFunctions();
+    VK_LoadGlobalLevelFunctions();
 
-    vk_createInstance( &vk.instance );
+    VK_CreateInstanceImpl( pInstance );
     // We have created a Vulkan Instance object, then 
     // use that instance to load instance level functions
-    vk_loadInstanceLevelFunctions();
+    VK_LoadInstanceLevelFunctions( vk.instance );
 }
 
 
@@ -672,7 +470,7 @@ uint32_t vk_getWinHeight(void)
 }
 
 
-void vk_clearProcAddress(void)
+void VK_ClearProcAddress(void)
 {
 
     ri.Printf( PRINT_ALL, " clear all proc address \n" );
@@ -794,7 +592,7 @@ void vk_clearProcAddress(void)
 }
 
 
-void vk_destroy_instance(void)
+void VK_DestroyInstance(void)
 {
 
     ri.Printf( PRINT_ALL, " Destroy surface: vk.surface. \n" );
@@ -802,8 +600,42 @@ void vk_destroy_instance(void)
     // make sure that the surface is destroyed before the instance
     NO_CHECK( qvkDestroySurfaceKHR(vk.instance, vk.surface, NULL) );
 
-    vk_destroyDebugReportHandle();
+    VK_DestroyDebugReportHandle(vk.instance);
 
-    ri.Printf( PRINT_ALL, " Destroy instance: vk.instance. \n" );
-	qvkDestroyInstance(vk.instance, NULL);
+	
+    NO_CHECK( qvkDestroyInstance(vk.instance, NULL) );
+
+
+    memset(&vk, 0, sizeof(vk));
+
+
+    ri.Printf( PRINT_ALL, " Vulkan instance Destroyed. \n" );
 }
+
+
+// I dont want to make qvkEnumerateInstanceExtensionProperties 
+// available to other src files, so this function sitting here 
+void printInstanceExtensionsSupported_f(void)
+{
+	uint32_t nInsExt = 0;
+    // To retrieve a list of supported extensions before creating an instance
+	VK_CHECK( qvkEnumerateInstanceExtensionProperties( NULL, &nInsExt, NULL) );
+
+    assert(nInsExt > 0);
+
+    VkExtensionProperties* const pInsExt = (VkExtensionProperties *) malloc(sizeof(VkExtensionProperties) * nInsExt);
+    
+    VK_CHECK( qvkEnumerateInstanceExtensionProperties( NULL, &nInsExt, pInsExt) );
+
+    ri.Printf(PRINT_ALL, "\n");
+
+    ri.Printf(PRINT_ALL, "----- Total %d Instance Extension Supported -----\n", nInsExt);
+    for (uint32_t i = 0; i < nInsExt; ++i)
+    {            
+        ri.Printf(PRINT_ALL, "%s\n", pInsExt[i].extensionName );
+    }
+    ri.Printf(PRINT_ALL, "----- ------------------------------------- -----\n\n");
+   
+    free(pInsExt);
+}
+

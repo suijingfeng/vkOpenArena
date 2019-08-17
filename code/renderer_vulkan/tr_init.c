@@ -239,7 +239,7 @@ void RE_Shutdown( qboolean destroyWindow )
     {
         vk_shutdown();
 		
-		vk_cleanInstanceProcAddrImpl();
+		VK_CleanInstanceProcAddrImpl();
 
 		ri.GLimpShutdown();
 

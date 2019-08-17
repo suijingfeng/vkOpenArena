@@ -411,7 +411,7 @@ static uint32_t VK_SelectQueueFamilyForPresentation(VkPhysicalDevice hGPU, VkSur
 
 
 
-static void vk_checkSwapChainExtention(const char * const pName)
+static void VK_CheckSwapChainExtention(	VkPhysicalDevice hGPU, const char * const pName)
 {
 	/* Look for device extensions */
 
@@ -423,23 +423,34 @@ static void vk_checkSwapChainExtention(const char * const pName)
 	//  window system and the surfaces associated with windows, it is
 	//  not actually part of the vulkan core. You have to enable the
 	//  VK_KHR_swapchain device extension after querying for its support.
-	uint32_t nDevExts = 0;
+	uint32_t cntDevExts = 0;
 
 	VkBool32 swapchainExtFound = 0;
 
 	// To query the numbers of extensions available to a given physical device
 	ri.Printf(PRINT_ALL, " Check for VK_KHR_swapchain extension. \n");
 
-	qvkEnumerateDeviceExtensionProperties(vk.physical_device, NULL, &nDevExts, NULL);
+	VK_CHECK( qvkEnumerateDeviceExtensionProperties(hGPU, NULL, &cntDevExts, NULL) );
 
 	VkExtensionProperties* const pDeviceExt =
-		(VkExtensionProperties *)malloc(sizeof(VkExtensionProperties) * nDevExts);
+		(VkExtensionProperties *) malloc(sizeof(VkExtensionProperties) * cntDevExts);
 
-	qvkEnumerateDeviceExtensionProperties(vk.physical_device, NULL, &nDevExts, pDeviceExt);
+	VK_CHECK( qvkEnumerateDeviceExtensionProperties(hGPU, NULL, &cntDevExts, pDeviceExt) );
+	
+    // info
+	ri.Printf(PRINT_ALL, "-------- Total %d device extensions supported --------\n", cntDevExts);
+	for (uint32_t j = 0; j < cntDevExts; ++j)
+	{
+		ri.Printf(PRINT_ALL, "%s \n", pDeviceExt[j].extensionName);
+	}
+	ri.Printf(PRINT_ALL, "-------- Enabled device extensions on this app --------\n");
+
+	ri.Printf(PRINT_ALL, " %s \n", pName);
+
+	ri.Printf(PRINT_ALL, "-------- --------------------------------------- ------\n\n");
 
 
-	uint32_t j;
-	for (j = 0; j < nDevExts; ++j)
+	for (uint32_t j = 0; j < cntDevExts; ++j)
 	{
 		if (0 == strcmp(pName, pDeviceExt[j].extensionName))
 		{
@@ -447,31 +458,25 @@ static void vk_checkSwapChainExtention(const char * const pName)
 			break;
 		}
 	}
-
-	if (VK_FALSE == swapchainExtFound)
-		ri.Error(ERR_FATAL, "VK_KHR_SWAPCHAIN_EXTENSION_NAME is not available on you GPU driver.");
-
-	// info
-	ri.Printf(PRINT_ALL, "-------- Total %d device extensions supported --------\n", nDevExts);
-	for (j = 0; j < nDevExts; ++j)
-	{
-		ri.Printf(PRINT_ALL, "%s \n", pDeviceExt[j].extensionName);
-	}
-
-	ri.Printf(PRINT_ALL, "-------- Enabled device extensions on this app --------\n");
-
-	ri.Printf(PRINT_ALL, " %s \n", pName);
-
-	ri.Printf(PRINT_ALL, "-------- --------------------------------------- ------\n\n");
-
+    
 	free(pDeviceExt);
+
+	if (VK_FALSE == swapchainExtFound) {
+		ri.Error(ERR_FATAL, "VK_KHR_SWAPCHAIN_EXTENSION_NAME is not available on you GPU driver.");
+    }
+
 }
 
 
 
-static void vk_createLogicalDevice(const char* const* ppExtNamesEnabled, uint32_t nExtEnabled,
+static void vk_createLogicalDevice(const char* const* ppExtNamesEnabled, const uint32_t nExtEnabled,
 	uint32_t idxQueueFamily, VkDevice * const pLogicalDev)
 {
+
+    for(uint32_t j = 0; j < nExtEnabled; ++j)
+    {    
+        VK_CheckSwapChainExtention(vk.physical_device, ppExtNamesEnabled[j]);
+    }
 	////////////////////////
 
 	const float priority = 1.0;
@@ -489,8 +494,10 @@ static void vk_createLogicalDevice(const char* const* ppExtNamesEnabled, uint32_
 	// features based on this query.
 
 	VkPhysicalDeviceFeatures features;
-	qvkGetPhysicalDeviceFeatures(vk.physical_device, &features);
-	if (features.shaderClipDistance == VK_FALSE)
+	
+    NO_CHECK( qvkGetPhysicalDeviceFeatures(vk.physical_device, &features) );
+	
+    if (features.shaderClipDistance == VK_FALSE)
 	{
 		ri.Error(ERR_FATAL,
 			"vk_create_device: shaderClipDistance feature is not supported");
@@ -524,8 +531,7 @@ static void vk_createLogicalDevice(const char* const* ppExtNamesEnabled, uint32_
 	// queue families are available. You can create multiple logical
 	// devices from the same physical device if you have varying requirements.
 	ri.Printf(PRINT_ALL, " Create logical device: vk.device \n");
-	VK_CHECK(qvkCreateDevice(vk.physical_device, &device_desc, NULL, pLogicalDev));
-
+	VK_CHECK( qvkCreateDevice(vk.physical_device, &device_desc, NULL, pLogicalDev) );
 }
 
 
@@ -630,15 +636,15 @@ void vk_initialize(void * pWinContext)
     // This function is responsible for initializing a valid Vulkan subsystem.
 	ri.Printf(PRINT_ALL, " Create window fot vulkan . \n");
 
-	vk_getProcAddress(); 
+	VK_CreateInstance(&vk.instance); 
 
 	// Create debug callback.
-	vk_createDebugCallback();
+	VK_SettingDebugCallback(vk.instance);
 
 	// The window surface needs to be created right after the instance creation,
 	// because it can actually influence the presentation mode selection.
 	
-    vk_createSurfaceImpl(vk.instance, pWinContext, &vk.surface);
+    VK_CreateSurfaceImpl(vk.instance, pWinContext, &vk.surface);
 
 	// select physical device
 	VK_SelectPhysicalDevice(vk.instance, &vk.physical_device);
@@ -658,7 +664,6 @@ void vk_initialize(void * pWinContext)
 		VK_KHR_SWAPCHAIN_EXTENSION_NAME
 	};
 
-	vk_checkSwapChainExtention(enable_features_name_array[0]);
 
 	vk_createLogicalDevice(enable_features_name_array, 1, vk.queue_family_index, &vk.device);
 
@@ -775,7 +780,7 @@ void vk_shutdown(void)
 {
     ri.Printf( PRINT_ALL, "vk_shutdown()\n" );
 
-    NO_CHECK( qvkDeviceWaitIdle(vk.device) );
+    NO_CHECK( qvkDeviceWaitIdle( vk.device ) );
     
     // we should delete the framebuffers before the image views
     // and the render pass that they are based on.
@@ -816,13 +821,12 @@ void vk_shutdown(void)
 	qvkDestroyDevice(vk.device, NULL);
 
     
-    vk_destroy_instance();
+    VK_DestroyInstance();
 
 // ===========================================================
 
-    vk_clearProcAddress();
+    VK_ClearProcAddress();
 
     ri.Printf( PRINT_ALL, " clear vk struct: vk \n" );
-    memset(&vk, 0, sizeof(vk));
 }
 

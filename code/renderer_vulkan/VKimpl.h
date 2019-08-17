@@ -33,7 +33,13 @@ consistant.
 #include "../vulkan/vulkan.h"
 
 
-void* vk_getInstanceProcAddrImpl(void);
-void vk_createSurfaceImpl(VkInstance hInstance, void * pCtx, VkSurfaceKHR* const pSurface);
-void vk_cleanInstanceProcAddrImpl(void);
+void* VK_GetInstanceProcAddrImpl(void);
+void VK_CreateSurfaceImpl(VkInstance hInstance, void * pCtx, VkSurfaceKHR* const pSurface);
+void VK_CleanInstanceProcAddrImpl(void);
+void VK_FillRequiredInstanceExtention(
+	const VkExtensionProperties * const pInsExt,
+	const uint32_t nInsExt,
+	const char* ppInsExt[16],
+    uint32_t * nExt );
+
 #endif
