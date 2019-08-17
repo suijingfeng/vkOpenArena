@@ -216,8 +216,6 @@ struct Vk_Instance {
     // the shader that can be updated at draw time
 	VkPipelineLayout pipeline_layout;
 
-    VkBool32 isBlitSupported;
-    
     VkBool32 isKhrDisplaySupported;
 
     VkBool32 isInitialized;

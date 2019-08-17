@@ -453,8 +453,7 @@ static void vk_createInstance(VkInstance* const pInstance)
     //
     // check extensions availability
 	uint32_t nInsExt = 0;
-    uint32_t i = 0;
-	uint32_t EnableInsExtCount = 0;
+
     // To retrieve a list of supported extensions before creating an instance
 	VK_CHECK( qvkEnumerateInstanceExtensionProperties( NULL, &nInsExt, NULL) );
 
@@ -462,30 +461,32 @@ static void vk_createInstance(VkInstance* const pInstance)
 
     VkExtensionProperties * pInsExt = (VkExtensionProperties *) malloc(sizeof(VkExtensionProperties) * nInsExt);
     VK_CHECK(qvkEnumerateInstanceExtensionProperties( NULL, &nInsExt, pInsExt));
-
+	
+    
+    ////
+    uint32_t cntEnabledInsExt = 0;
 	const char* ppInstanceExtEnabled[16] = { 0 };
-	// malloc(sizeof(char *) * (nInsExt));
 
     // Each platform-specific extension is an instance extension.
     // The application must enable instance extensions with vkCreateInstance
     // before using them.
-    vk_fillRequiredInstanceExtention(pInsExt, nInsExt, ppInstanceExtEnabled, &EnableInsExtCount);
+    vk_fillRequiredInstanceExtention(pInsExt, nInsExt, ppInstanceExtEnabled, &cntEnabledInsExt);
 
     ri.Printf(PRINT_ALL, "\n -------- Total %d instance extensions. -------- \n", nInsExt);
-    for (i = 0; i < nInsExt; ++i)
+    for (uint32_t i = 0; i < nInsExt; ++i)
     {    
         ri.Printf(PRINT_ALL, " %s \n", pInsExt[i].extensionName);
     }
 
-    ri.Printf(PRINT_ALL, "\n -------- %d instance extensions Enable. -------- \n", EnableInsExtCount);
-    for (i = 0; i < EnableInsExtCount; ++i)
+    ri.Printf(PRINT_ALL, "\n -------- %d instance extensions Enable. -------- \n", cntEnabledInsExt);
+    for (uint32_t i = 0; i < cntEnabledInsExt; ++i)
     {    
         ri.Printf(PRINT_ALL, " %s \n", ppInstanceExtEnabled[i]);
     }
     ri.Printf(PRINT_ALL, " -------- ----------------------------- -------- \n\n");
 
 
-    instanceCreateInfo.enabledExtensionCount = EnableInsExtCount;
+    instanceCreateInfo.enabledExtensionCount = cntEnabledInsExt;
 	instanceCreateInfo.ppEnabledExtensionNames = ppInstanceExtEnabled;
     instanceCreateInfo.enabledLayerCount = 0;
 	instanceCreateInfo.ppEnabledLayerNames = NULL;
@@ -523,7 +524,6 @@ static void vk_createInstance(VkInstance* const pInstance)
         ri.Error(ERR_FATAL, "%d, returned by qvkCreateInstance.\n", e);
     }
    
-    // free(ppInstanceExtEnabled);
 
     free(pInsExt);
 }
@@ -565,7 +565,8 @@ static void vk_loadGlobalLevelFunctions(void)
     q##func = (PFN_##func) qvkGetInstanceProcAddr( NULL, #func );   \
     if( q##func == NULL ) {                                         \
         ri.Error(ERR_FATAL, "Failed to find entrypoint %s", #func); \
-}
+    }
+    
 
 	INIT_GLOBAL_LEVEL_FUNCTION(vkCreateInstance)
 	INIT_GLOBAL_LEVEL_FUNCTION(vkEnumerateInstanceExtensionProperties)
@@ -641,7 +642,6 @@ static void vk_loadInstanceLevelFunctions(void)
 #endif
 
 #undef INIT_INSTANCE_FUNCTION
-
 }
 
 
@@ -664,6 +664,7 @@ uint32_t vk_getWinWidth(void)
 {
 	return vk.renderArea.extent.width;
 }
+
 
 uint32_t vk_getWinHeight(void)
 {
@@ -799,7 +800,7 @@ void vk_destroy_instance(void)
     ri.Printf( PRINT_ALL, " Destroy surface: vk.surface. \n" );
     
     // make sure that the surface is destroyed before the instance
-    qvkDestroySurfaceKHR(vk.instance, vk.surface, NULL);
+    NO_CHECK( qvkDestroySurfaceKHR(vk.instance, vk.surface, NULL) );
 
     vk_destroyDebugReportHandle();
 

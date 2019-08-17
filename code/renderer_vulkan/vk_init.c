@@ -13,26 +13,61 @@
 #include "vk_utils.h"
 
 
-static void vk_selectSurfaceFormat(VkSurfaceKHR HSurface)
+
+
+//
+// Just list a few feature the color surface format supported
+//
+static void VK_CheckSurfaceCapabilities(VkPhysicalDevice hGPU, const VkSurfaceFormatKHR * const pSurfFmt)
+{
+	// To query supported format features which are properties of the physical device
+	ri.Printf(PRINT_ALL, "\n --------  Query supported features of the color surfce --------\n");
+
+	VkFormatProperties props;
+
+
+	// To determine the set of valid usage bits for a given format,
+	// ========================= color ================
+	NO_CHECK( qvkGetPhysicalDeviceFormatProperties(hGPU, pSurfFmt->format, &props) );
+
+	// Check if the device supports blitting to linear images 
+	if (props.linearTilingFeatures & VK_FORMAT_FEATURE_SAMPLED_IMAGE_BIT)
+    {
+		ri.Printf(PRINT_ALL, " Linear Tiling Features supported. \n");
+    }
+    
+	if (props.linearTilingFeatures & VK_FORMAT_FEATURE_BLIT_DST_BIT)
+	{
+		ri.Printf(PRINT_ALL, " Blitting from linear tiled images supported.\n");
+	}
+
+
+	ri.Printf(PRINT_ALL, " -------- --------------------------- --------\n\n");
+}
+
+
+// setting the format of the color surface 
+// why BGR not RGB ??? 
+static void VK_SelectColorSurfaceFormat(VkPhysicalDevice hGPU, VkSurfaceKHR hSurface, VkSurfaceFormatKHR * const pSurfmt)
 {
 	uint32_t nSurfmt;
-	uint32_t i;
 
 	// Get the numbers of VkFormat's that are supported
 	// "vk.surface" is the surface that will be associated with the swapchain.
 	// "vk.surface" must be a valid VkSurfaceKHR handle
-	VK_CHECK(qvkGetPhysicalDeviceSurfaceFormatsKHR(vk.physical_device, HSurface, &nSurfmt, NULL));
-	assert(nSurfmt > 0);
+	VK_CHECK( qvkGetPhysicalDeviceSurfaceFormatsKHR(hGPU, hSurface, &nSurfmt, NULL));
+	
+    assert(nSurfmt > 0);
 
 	VkSurfaceFormatKHR * pSurfFmts =
-		(VkSurfaceFormatKHR *)malloc(nSurfmt * sizeof(VkSurfaceFormatKHR));
+		(VkSurfaceFormatKHR *) malloc(nSurfmt * sizeof(VkSurfaceFormatKHR));
 
 	// To query the supported swapchain format-color space pairs for a surface
-	VK_CHECK(qvkGetPhysicalDeviceSurfaceFormatsKHR(vk.physical_device, HSurface, &nSurfmt, pSurfFmts));
+	VK_CHECK( qvkGetPhysicalDeviceSurfaceFormatsKHR(hGPU, hSurface, &nSurfmt, pSurfFmts) );
 
 	ri.Printf(PRINT_ALL, " -------- Total %d surface formats supported. -------- \n", nSurfmt);
 
-	for (i = 0; i < nSurfmt; ++i)
+	for (uint32_t i = 0; i < nSurfmt; ++i)
 	{
 		ri.Printf(PRINT_ALL, " [%d] format: %s, color space: %s \n",
 			i, VkFormatEnum2str(pSurfFmts[i].format), ColorSpaceEnum2str(pSurfFmts[i].colorSpace));
@@ -44,16 +79,18 @@ static void vk_selectSurfaceFormat(VkSurfaceKHR HSurface)
 	if ((nSurfmt == 1) && (pSurfFmts[0].format == VK_FORMAT_UNDEFINED))
 	{
 		// special case that means we can choose any format
-		vk.surface_format.format = VK_FORMAT_B8G8R8A8_UNORM;
-		vk.surface_format.colorSpace = VK_COLORSPACE_SRGB_NONLINEAR_KHR;
+		pSurfmt->format = VK_FORMAT_B8G8R8A8_UNORM;
+		pSurfmt->colorSpace = VK_COLORSPACE_SRGB_NONLINEAR_KHR;
 		ri.Printf(PRINT_ALL, "VK_FORMAT_R8G8B8A8_UNORM\n");
 		ri.Printf(PRINT_ALL, "VK_COLORSPACE_SRGB_NONLINEAR_KHR\n");
 	}
 	else
 	{
+        uint32_t i;
+
 		ri.Printf(PRINT_ALL, " we choose: \n");
 
-		for (i = 0; i < nSurfmt; ++i)
+		for( i = 0; i < nSurfmt; ++i)
 		{
 			if ((pSurfFmts[i].format == VK_FORMAT_B8G8R8A8_UNORM) &&
 				(pSurfFmts[i].colorSpace == VK_COLORSPACE_SRGB_NONLINEAR_KHR))
@@ -62,80 +99,61 @@ static void vk_selectSurfaceFormat(VkSurfaceKHR HSurface)
 				ri.Printf(PRINT_ALL, " format = VK_FORMAT_B8G8R8A8_UNORM \n");
 				ri.Printf(PRINT_ALL, " colorSpace = VK_COLORSPACE_SRGB_NONLINEAR_KHR \n");
 
-				vk.surface_format = pSurfFmts[i];
+				*pSurfmt = pSurfFmts[i];
+
 				break;
 			}
 		}
 
-		if (i == nSurfmt)
-			vk.surface_format = pSurfFmts[0];
+        // if get here, just grab the first ... 
+		if (i == nSurfmt) {
+			*pSurfmt = pSurfFmts[0];
+        }
 	}
 
 	ri.Printf(PRINT_ALL, " --- ----------------------------------- --- \n");
+
+	VK_CheckSurfaceCapabilities( hGPU, pSurfmt );
 
 	free(pSurfFmts);
 }
 
 
-static void vk_assertSurfaceCapabilities(VkSurfaceKHR HSurface)
+// Set the depth format ...
+static void VK_SelectDepthSurfaceFormat(VkPhysicalDevice hGPU, VkFormat* const pDepthStencilFmt)
 {
-	// To query supported format features which are properties of the physical device
-	ri.Printf(PRINT_ALL, "\n --------  Query supported format features --------\n");
-
-	VkFormatProperties props;
-
-
-	// To determine the set of valid usage bits for a given format,
-	// ========================= color ================
-	qvkGetPhysicalDeviceFormatProperties(vk.physical_device, vk.surface_format.format, &props);
-
-	// Check if the device supports blitting to linear images 
-	if (props.linearTilingFeatures & VK_FORMAT_FEATURE_SAMPLED_IMAGE_BIT)
-		ri.Printf(PRINT_ALL, " Linear Tiling Features supported. \n");
-
-	if (props.linearTilingFeatures & VK_FORMAT_FEATURE_BLIT_DST_BIT)
-	{
-		ri.Printf(PRINT_ALL, " Blitting from linear tiled images supported.\n");
-	}
-
-	if (props.optimalTilingFeatures & VK_FORMAT_FEATURE_BLIT_SRC_BIT)
-	{
-		ri.Printf(PRINT_ALL, " Blitting from optimal tiled images supported.\n");
-		vk.isBlitSupported = VK_TRUE;
-	}
-
+    VkFormatProperties props;
 
 	//=========================== depth =====================================
-	qvkGetPhysicalDeviceFormatProperties(vk.physical_device, VK_FORMAT_D24_UNORM_S8_UINT, &props);
-	if (props.optimalTilingFeatures & VK_FORMAT_FEATURE_DEPTH_STENCIL_ATTACHMENT_BIT)
+	NO_CHECK( qvkGetPhysicalDeviceFormatProperties(hGPU, VK_FORMAT_D24_UNORM_S8_UINT, &props) );
+	
+    if (props.optimalTilingFeatures & VK_FORMAT_FEATURE_DEPTH_STENCIL_ATTACHMENT_BIT)
 	{
 		ri.Printf(PRINT_ALL, " VK_FORMAT_D24_UNORM_S8_UINT optimal Tiling feature supported.\n");
-		vk.fmt_DepthStencil = VK_FORMAT_D24_UNORM_S8_UINT;
+		*pDepthStencilFmt = VK_FORMAT_D24_UNORM_S8_UINT;
 	}
 	else
 	{
-		qvkGetPhysicalDeviceFormatProperties(vk.physical_device, VK_FORMAT_D32_SFLOAT_S8_UINT, &props);
+		NO_CHECK( qvkGetPhysicalDeviceFormatProperties(hGPU, VK_FORMAT_D32_SFLOAT_S8_UINT, &props) );
 
 		if (props.optimalTilingFeatures & VK_FORMAT_FEATURE_DEPTH_STENCIL_ATTACHMENT_BIT)
 		{
 			ri.Printf(PRINT_ALL, " VK_FORMAT_D32_SFLOAT_S8_UINT optimal Tiling feature supported.\n");
-			vk.fmt_DepthStencil = VK_FORMAT_D32_SFLOAT_S8_UINT;
+			*pDepthStencilFmt = VK_FORMAT_D32_SFLOAT_S8_UINT;
 		}
 		else
 		{
 			//formats[0] = VK_FORMAT_X8_D24_UNORM_PACK32;
 			//formats[1] = VK_FORMAT_D32_SFLOAT;
 			// never get here.
-			ri.Error(ERR_FATAL, " Failed to find depth attachment format.\n");
+			ri.Error(ERR_FATAL, " Failed to find a depth attachment format.\n");
 		}
 	}
-
-	ri.Printf(PRINT_ALL, " -------- --------------------------- --------\n\n");
 }
 
 
 
-static VkPresentModeKHR vk_selectPresentationMode(VkSurfaceKHR HSurface)
+static VkPresentModeKHR VK_SelectPresentationMode(VkPhysicalDevice hGPU, VkSurfaceKHR HSurface)
 {
 	// The presentation is arguably the most impottant setting for the swap chain
 	// because it represents the actual conditions for showing images to the screen
@@ -156,23 +174,24 @@ static VkPresentModeKHR vk_selectPresentationMode(VkSurfaceKHR HSurface)
 	//    queued are simply replaced with the newer ones. This mode can be used
 	//    to avoid tearing significantly less latency issues than standard vertical
 	//    sync that uses double buffering.
-	uint32_t nPM = 0, i;
+	uint32_t nPM = 0;
 
 	VkBool32 mailbox_supported = VK_FALSE;
 	VkBool32 immediate_supported = VK_FALSE;
 
 	// Look for the best mode available.
-
-	qvkGetPhysicalDeviceSurfacePresentModesKHR(vk.physical_device, HSurface, &nPM, NULL);
+    // suijingfeng: we dont gave the user a choice, because its seems 
+    // that no big difference between mailbox and immediate mode ...
+	VK_CHECK( qvkGetPhysicalDeviceSurfacePresentModesKHR(hGPU, HSurface, &nPM, NULL) );
 
 	assert(nPM > 0);
 
-	VkPresentModeKHR * pPresentModes = (VkPresentModeKHR *)malloc(nPM * sizeof(VkPresentModeKHR));
+	VkPresentModeKHR * pPresentModes = (VkPresentModeKHR *) malloc(nPM * sizeof(VkPresentModeKHR));
 
-	qvkGetPhysicalDeviceSurfacePresentModesKHR(vk.physical_device, HSurface, &nPM, pPresentModes);
+	VK_CHECK( qvkGetPhysicalDeviceSurfacePresentModesKHR(hGPU, HSurface, &nPM, pPresentModes) );
 
 	ri.Printf(PRINT_ALL, "-------- Total %d present mode supported. -------- \n", nPM);
-	for (i = 0; i < nPM; ++i)
+	for (uint32_t i = 0; i < nPM; ++i)
 	{
 		switch (pPresentModes[i])
 		{
@@ -214,75 +233,72 @@ static VkPresentModeKHR vk_selectPresentationMode(VkSurfaceKHR HSurface)
 	}
 
 	// FIFO_KHR mode is guaranteed to be available according to the spec.
-	// this is worsest, lag 
+	// this is worsest, lag... 
 	ri.Printf(PRINT_ALL, " Presentation with VK_PRESENT_MODE_FIFO_KHR mode. \n");
 	ri.Printf(PRINT_ALL, "-------- ----------------------------- --------\n");
 	return VK_PRESENT_MODE_FIFO_KHR;
 }
 
 
-static void vk_selectPhysicalDevice(void)
+static void VK_SelectPhysicalDevice(VkInstance hInstance, VkPhysicalDevice* const pGPU)
 {
 	// After initializing the Vulkan library through a VkInstance
 	// we need to look for and select a graphics card in the system
 	// that supports the features we need. In fact we can select any
 	// number of graphics cards and use them simultaneously.
-	uint32_t gpu_count = 0;
+	uint32_t cntGpu = 0;
 
-	// Initial call to query gpu_count, then second call for gpu info.
-	qvkEnumeratePhysicalDevices(vk.instance, &gpu_count, NULL);
+	// Initial call to query cntGpu, then second call for gpu info.
+	VK_CHECK( qvkEnumeratePhysicalDevices(hInstance, &cntGpu, NULL) );
 
-	if (gpu_count <= 0) {
+	if (cntGpu <= 0) {
 		ri.Error(ERR_FATAL, "Vulkan: no physical device found");
 	}
 
-	VkPhysicalDevice * pPhyDev = (VkPhysicalDevice *)malloc(sizeof(VkPhysicalDevice) * gpu_count);
+	VkPhysicalDevice * pPhyDevArray = (VkPhysicalDevice *) malloc(sizeof(VkPhysicalDevice) * cntGpu);
 
 
-	VK_CHECK(qvkEnumeratePhysicalDevices(vk.instance, &gpu_count, pPhyDev));
+	VK_CHECK( qvkEnumeratePhysicalDevices(hInstance, &cntGpu, pPhyDevArray) );
 	// Select the right gpu from r_gpuIndex
 
-	if (gpu_count == 1)
+	if (cntGpu == 1)
 	{
-		// we have only one GPU, no choice
-		vk.physical_device = pPhyDev[0];
+		// we have only one GPU, no choice ...
+		*pGPU = pPhyDevArray[0];
 		r_gpuIndex->integer = 1;
 	}
 	else
 	{
-		// out of range check ...
+        // let the user make the choice, we simply do a out of range check ...
 		if (r_gpuIndex->integer < 0)
 		{
 			r_gpuIndex->integer = 0;
 		}
-		else if (r_gpuIndex->integer >= gpu_count)
+		else if (r_gpuIndex->integer >= cntGpu)
 		{
-			r_gpuIndex->integer = gpu_count - 1;
+			r_gpuIndex->integer = cntGpu - 1;
 		}
-		// let the user decide.
-		vk.physical_device = pPhyDev[r_gpuIndex->integer];
+
+		*pGPU = pPhyDevArray[r_gpuIndex->integer];
 	}
 
-	free(pPhyDev);
+    // free the memory allocated from the heap 
+	free(pPhyDevArray);
 
 	ri.Printf(PRINT_ALL, " Total %d graphics card, selected card index: [%d]. \n",
-		gpu_count, r_gpuIndex->integer);
+		cntGpu, r_gpuIndex->integer);
 
 }
-
-
 
 
 // Vulkan device execute work that is submitted to queues.
 // each device will have one or more queues, and each of those queues
 // will belong to one of the device's queue families. A queue family
 // is a group of queues that have identical capabilities but are 
-// able to run in parallel.
-//
-// The number of queue families, the capabilities of each family,
-// and the number of queues belonging to each family are all
-// properties of the physical device.
-static uint32_t vk_selectQueueFamilyForPresentation(VkSurfaceKHR HSurface)
+// able to run in parallel. The number of queue families, 
+// the capabilities of each family, and the number of queues 
+// belonging to each family are all properties of the physical device.
+static uint32_t VK_SelectQueueFamilyForPresentation(VkPhysicalDevice hGPU, VkSurfaceKHR HSurface)
 {
 	// Almosty every operation in Vulkan, anything from drawing textures,
 	// requires commands to be submitted to a queue. There are different
@@ -294,20 +310,19 @@ static uint32_t vk_selectQueueFamilyForPresentation(VkSurfaceKHR HSurface)
 	// the device and which one of these supports the commands that we use.
 
 
-	uint32_t nQueueFamily;
-	uint32_t i;
+	uint32_t cntQueueFamily;
 
-	qvkGetPhysicalDeviceQueueFamilyProperties(vk.physical_device, &nQueueFamily, NULL);
+	NO_CHECK( qvkGetPhysicalDeviceQueueFamilyProperties(hGPU, &cntQueueFamily, NULL) );
 
-	assert(nQueueFamily > 0);
+	assert(cntQueueFamily > 0);
 
 	VkQueueFamilyProperties* const pQueueFamilies = (VkQueueFamilyProperties *)
-		malloc(nQueueFamily * sizeof(VkQueueFamilyProperties));
+		malloc(cntQueueFamily * sizeof(VkQueueFamilyProperties));
 
 	// To query properties of queues available on a physical device
-	qvkGetPhysicalDeviceQueueFamilyProperties(vk.physical_device, &nQueueFamily, pQueueFamilies);
+	NO_CHECK( qvkGetPhysicalDeviceQueueFamilyProperties(hGPU, &cntQueueFamily, pQueueFamilies) );
 
-	ri.Printf(PRINT_ALL, "\n -------- Total %d Queue families -------- \n", nQueueFamily);
+	ri.Printf(PRINT_ALL, "\n -------- Total %d Queue families -------- \n", cntQueueFamily);
 
 	// Queues within a family are essentially identical. 
 	// Queues in different families may have different internal capabilities
@@ -321,10 +336,10 @@ static uint32_t vk_selectQueueFamilyForPresentation(VkSurfaceKHR HSurface)
 	// VK_QUEUE_COMPUTE_BIT, then reporting the VK_QUEUE_TRANSFER_BIT capability
 	// separately for that queue family is OPTIONAL.
 	// 
-	for (i = 0; i < nQueueFamily; ++i)
+	for (uint32_t i = 0; i < cntQueueFamily; ++i)
 	{
 		// print every queue family's capability
-		ri.Printf(PRINT_ALL, " Queue family [%d]: %d queues ",
+		ri.Printf(PRINT_ALL, " Queue family [%d] have %d queues, support: ",
 			i, pQueueFamilies[i].queueCount);
 
 		if (pQueueFamilies[i].queueFlags & VK_QUEUE_GRAPHICS_BIT)
@@ -341,8 +356,8 @@ static uint32_t vk_selectQueueFamilyForPresentation(VkSurfaceKHR HSurface)
 
 
 		VkBool32 isPresentSupported = VK_FALSE;
-		VK_CHECK(qvkGetPhysicalDeviceSurfaceSupportKHR(
-			vk.physical_device, i, HSurface, &isPresentSupported));
+		VK_CHECK( qvkGetPhysicalDeviceSurfaceSupportKHR(
+			hGPU, i, HSurface, &isPresentSupported) );
 
 		if (isPresentSupported)
 		{
@@ -357,33 +372,39 @@ static uint32_t vk_selectQueueFamilyForPresentation(VkSurfaceKHR HSurface)
 	// Select queue family with presentation and graphics support
 	// Iterate over each queue to learn whether it supports presenting:
 
-
-	for (i = 0; i < nQueueFamily; ++i)
+    uint32_t i;
+	for (i = 0; i < cntQueueFamily; ++i)
 	{
 		// To look for a queue family that has the capability of presenting
 		// to our window surface
 
 		VkBool32 presentation_supported = VK_FALSE;
-		VK_CHECK(qvkGetPhysicalDeviceSurfaceSupportKHR(
-			vk.physical_device, i, HSurface, &presentation_supported));
+		VK_CHECK( qvkGetPhysicalDeviceSurfaceSupportKHR(
+			hGPU, i, HSurface, &presentation_supported) );
 
 		if (presentation_supported &&
 			(pQueueFamilies[i].queueFlags & VK_QUEUE_GRAPHICS_BIT) != 0)
 		{
-
-
 			ri.Printf(PRINT_ALL, " Queue family index %d selected for presentation.\n", i);
-			return i;
+
+            // free memory before leave, else memory leak !!!
+            
+            break;
 		}
 	}
 
-	if (i == nQueueFamily) {
-		ri.Error(ERR_FATAL, "Vulkan: failed to find a queue family for presentation. ");
+    free( pQueueFamilies );
+
+
+	if (i == cntQueueFamily)
+    {
+        // Intel interated GPU will crash on linux vulkan driver ...
+        // maybe have something to do with system lib stuff ...
+        //
+		ri.Error(ERR_FATAL, "Failed to find a queue family for presentation. ");
 	}
 
 	ri.Printf(PRINT_ALL, " -------- ---------------------------- -------- \n\n");
-
-	free(pQueueFamilies);
 
 	return i;
 }
@@ -620,15 +641,16 @@ void vk_initialize(void * pWinContext)
     vk_createSurfaceImpl(vk.instance, pWinContext, &vk.surface);
 
 	// select physical device
-	vk_selectPhysicalDevice();
+	VK_SelectPhysicalDevice(vk.instance, &vk.physical_device);
 
-	vk_selectSurfaceFormat(vk.surface);
+	VK_SelectColorSurfaceFormat( vk.physical_device, vk.surface, &vk.surface_format);
 
-	vk_assertSurfaceCapabilities(vk.surface);
+    VK_SelectDepthSurfaceFormat( vk.physical_device, &vk.fmt_DepthStencil);
 
-	vk.present_mode = vk_selectPresentationMode(vk.surface);
 
-	vk.queue_family_index = vk_selectQueueFamilyForPresentation(vk.surface);
+	vk.present_mode = VK_SelectPresentationMode(vk.physical_device, vk.surface);
+
+	vk.queue_family_index = VK_SelectQueueFamilyForPresentation(vk.physical_device, vk.surface);
 
 
 	//////////
