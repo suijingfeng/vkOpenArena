@@ -297,7 +297,7 @@ static void VK_CreateInstanceImpl(VkInstance* const pInstance)
     VkResult e = qvkCreateInstance(&instanceCreateInfo, NULL, pInstance);
     if(e == VK_SUCCESS)
     {
-        ri.Printf(PRINT_ALL, " Vulkan create instance success! \n\n");
+        ri.Printf(PRINT_ALL, " Vulkan instance Created. \n\n");
     }
     else if (e == VK_ERROR_INCOMPATIBLE_DRIVER)
 	{
@@ -315,7 +315,6 @@ static void VK_CreateInstanceImpl(VkInstance* const pInstance)
         ri.Error(ERR_FATAL, "%d, returned by qvkCreateInstance.\n", e);
     }
    
-    ri.Printf(PRINT_ALL, " Vulkan instance Created. \n");
 
     free(pInsExt);
 }

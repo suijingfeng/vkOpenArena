@@ -49,10 +49,18 @@ void vk_destroyScratchImage(void)
         tr_scratchImage.descriptor_set = VK_NULL_HANDLE;
     }
 */
+
+
     if (tr_scratchImage.view != VK_NULL_HANDLE)
     {
         NO_CHECK( qvkDestroyImageView(vk.device, tr_scratchImage.view, NULL) );
         tr_scratchImage.view = VK_NULL_HANDLE; 
+    }
+
+    if (tr_scratchImage.handle != VK_NULL_HANDLE)
+    {
+        NO_CHECK( qvkDestroyImage(vk.device, tr_scratchImage.handle, NULL) );
+         tr_scratchImage.handle = VK_NULL_HANDLE;
     }
 
     if (s_mappableMemory != VK_NULL_HANDLE)
@@ -61,11 +69,6 @@ void vk_destroyScratchImage(void)
         s_mappableMemory = VK_NULL_HANDLE;
     }
 
-    if (tr_scratchImage.handle != VK_NULL_HANDLE)
-    {
-        NO_CHECK( qvkDestroyImage(vk.device, tr_scratchImage.handle, NULL) );
-         tr_scratchImage.handle = VK_NULL_HANDLE;
-    }
 
     memset( &tr_scratchImage, 0, sizeof( tr_scratchImage ) );
 

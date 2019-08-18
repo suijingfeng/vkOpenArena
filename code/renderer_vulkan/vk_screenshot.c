@@ -77,7 +77,19 @@ void vk_clearScreenShotManager(void)
     if(scnShotMgr.initialized)
     {
         NO_CHECK( qvkUnmapMemory(vk.device, scnShotMgr.hMemory) );
-        vk_destroyBufferResource(scnShotMgr.hBuffer, scnShotMgr.hMemory);
+
+		if (scnShotMgr.hBuffer != VK_NULL_HANDLE)
+		{
+			NO_CHECK( qvkDestroyBuffer(vk.device, scnShotMgr.hBuffer, NULL) );
+			scnShotMgr.hBuffer = VK_NULL_HANDLE;
+		}
+
+		if (scnShotMgr.hMemory != VK_NULL_HANDLE)
+		{
+			NO_CHECK( qvkFreeMemory(vk.device, scnShotMgr.hMemory, NULL) );
+			scnShotMgr.hMemory = VK_NULL_HANDLE;
+		}
+
         memset(&scnShotMgr, 0, sizeof(scnShotMgr)); 
     }
 

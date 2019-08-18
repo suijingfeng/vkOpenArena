@@ -145,19 +145,6 @@ void vk_createBufferResource(const uint32_t Size, VkBufferUsageFlags Usage,
 }
 
 
-void vk_destroyBufferResource(VkBuffer hBuf, VkDeviceMemory hDevMem)
-{
-    if (hDevMem != VK_NULL_HANDLE)
-    {
-        NO_CHECK( qvkFreeMemory(vk.device, hDevMem, NULL) );
-    }
-
-    if (hBuf != VK_NULL_HANDLE)
-    {
-        NO_CHECK( qvkDestroyBuffer(vk.device, hBuf, NULL) );
-    }
-}
-
 
 void vk_createStagingBuffer(uint32_t size)
 {
@@ -172,14 +159,18 @@ void vk_destroyStagingBuffer(void)
 {
     ri.Printf(PRINT_ALL, " Destroy staging buffer res: StagBuf.buff, StagBuf.mappableMem.\n");
     
-	if (StagBuf.mappableMem != VK_NULL_HANDLE)
-    {
-        NO_CHECK( qvkFreeMemory(vk.device, StagBuf.mappableMem, NULL) );
-    }
 
     if (StagBuf.buff != VK_NULL_HANDLE)
     {
         NO_CHECK( qvkDestroyBuffer(vk.device, StagBuf.buff, NULL) );
+		StagBuf.buff = VK_NULL_HANDLE;
+    }
+
+
+	if (StagBuf.mappableMem != VK_NULL_HANDLE)
+    {
+        NO_CHECK( qvkFreeMemory(vk.device, StagBuf.mappableMem, NULL) );
+		StagBuf.mappableMem = VK_NULL_HANDLE;
     }
 
     memset(&StagBuf, 0, sizeof(StagBuf));

@@ -645,8 +645,8 @@ void vk_destroyDepthAttachment(void)
     ri.Printf(PRINT_ALL, " Destroy vk.depth_image_view vk.depth_image_memory vk.depth_image.\n");
 
     NO_CHECK( qvkDestroyImageView(vk.device, vk.depth_image_view, NULL) );
-	NO_CHECK( qvkFreeMemory(vk.device, vk.depth_image_memory, NULL) );
     NO_CHECK( qvkDestroyImage(vk.device, vk.depth_image, NULL) );
+	NO_CHECK( qvkFreeMemory(vk.device, vk.depth_image_memory, NULL) );
 }
 
 

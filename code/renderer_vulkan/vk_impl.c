@@ -161,7 +161,7 @@ void VK_FillRequiredInstanceExtention(
 	const char* ppInsExt[16],
     uint32_t * const nExt )
 {
-    uint32_t enExtCnt = 0;
+    uint32_t cntEnabledExt = 0;
     uint32_t i = 0;
 
     
@@ -173,8 +173,8 @@ void VK_FillRequiredInstanceExtention(
         
         if( 0 == strcmp(VK_KHR_WIN32_SURFACE_EXTENSION_NAME, pInsExt[i].extensionName) )
         {
-            ppInsExt[enExtCnt] = pInsExt[i].extensionName;
-            enExtCnt += 1;
+            ppInsExt[cntEnabledExt] = pInsExt[i].extensionName;
+            cntEnabledExt += 1;
             continue;
         }
 
@@ -182,8 +182,8 @@ void VK_FillRequiredInstanceExtention(
     
         if( 0 == strcmp(VK_KHR_XCB_SURFACE_EXTENSION_NAME, pInsExt[i].extensionName) )
         {
-            ppInsExt[enExtCnt] = pInsExt[i].extensionName;
-            enExtCnt += 1;
+            ppInsExt[cntEnabledExt] = pInsExt[i].extensionName;
+            cntEnabledExt += 1;
             continue;
         }
     
@@ -193,16 +193,16 @@ void VK_FillRequiredInstanceExtention(
         // TODO:xlib support
         if( 0 == strcmp(VK_KHR_XLIB_SURFACE_EXTENSION_NAME, pInsExt[i].extensionName) )
         {
-            ppInsExt[enExtCnt] = pInsExt[i].extensionName;
-            enExtCnt += 1;
+            ppInsExt[cntEnabledExt] = pInsExt[i].extensionName;
+            cntEnabledExt += 1;
             continue;
         }
 
         // Enable VK_EXT_acquire_xlib_display
         if( 0 == strcmp(VK_EXT_ACQUIRE_XLIB_DISPLAY_EXTENSION_NAME, pInsExt[i].extensionName) )
         {
-            ppInsExt[enExtCnt] = pInsExt[i].extensionName;
-            enExtCnt += 1;
+            ppInsExt[cntEnabledExt] = pInsExt[i].extensionName;
+            cntEnabledExt += 1;
             continue;
         }
 
@@ -221,16 +221,11 @@ void VK_FillRequiredInstanceExtention(
         //////////////////  Enable VK_KHR_surface  //////////////////////////
         if( 0 == strcmp(VK_KHR_SURFACE_EXTENSION_NAME, pInsExt[i].extensionName) )
         {
-            ppInsExt[enExtCnt] = pInsExt[i].extensionName;
-            enExtCnt += 1;
+            ppInsExt[cntEnabledExt] = pInsExt[i].extensionName;
+            cntEnabledExt += 1;
             continue;
         }
 
-    #ifndef NDEBUG
-        //  VK_EXT_debug_report 
-        ppInsExt[enExtCnt] = VK_EXT_DEBUG_REPORT_EXTENSION_NAME;
-        enExtCnt += 1;
-    #endif
 
         /////////////////////////////////
         // other useless common part,
@@ -241,16 +236,8 @@ void VK_FillRequiredInstanceExtention(
         //
         if( 0 == strcmp(VK_EXT_DIRECT_MODE_DISPLAY_EXTENSION_NAME, pInsExt[i].extensionName) )
         {
-            ppInsExt[enExtCnt] = pInsExt[i].extensionName;
-            enExtCnt += 1;
-            continue;
-        }
-
-
-        if( 0 == strcmp(VK_EXT_DIRECT_MODE_DISPLAY_EXTENSION_NAME, pInsExt[i].extensionName) )
-        {
-            ppInsExt[enExtCnt] = pInsExt[i].extensionName;
-            enExtCnt += 1;
+            ppInsExt[cntEnabledExt] = pInsExt[i].extensionName;
+            cntEnabledExt += 1;
             continue;
         }
 
@@ -258,13 +245,18 @@ void VK_FillRequiredInstanceExtention(
         // TODO: add doc why enable this, what's the useful ?
         if( 0 == strcmp(VK_KHR_DISPLAY_EXTENSION_NAME, pInsExt[i].extensionName) )
         {
-            ppInsExt[enExtCnt] = pInsExt[i].extensionName;
-            enExtCnt += 1;
+            ppInsExt[cntEnabledExt] = pInsExt[i].extensionName;
+            cntEnabledExt += 1;
             vk.isKhrDisplaySupported = VK_TRUE;
             continue;
         }
     }
 
+#ifndef NDEBUG
+        //  VK_EXT_debug_report 
+    ppInsExt[cntEnabledExt] = VK_EXT_DEBUG_REPORT_EXTENSION_NAME;
+    cntEnabledExt += 1;
+#endif
 
-    *nExt = enExtCnt;
+    *nExt = cntEnabledExt;
 }

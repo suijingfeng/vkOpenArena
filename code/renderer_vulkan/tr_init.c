@@ -307,16 +307,18 @@ void RE_Shutdown( qboolean destroyWindow )
         
     R_ClearSortedShaders();
 
+
+
     vk_resetGeometryBuffer();
+    
+	NO_CHECK( qvkDeviceWaitIdle(vk.device) );
 
     vk_clearScreenShotManager();
-
-    NO_CHECK( qvkDeviceWaitIdle(vk.device) );
 
 
     if ( tr.registered )
     {
-	vk_destroyScratchImage();
+		vk_destroyScratchImage();
 		
 	vk_destroyImageRes(); 
 		
