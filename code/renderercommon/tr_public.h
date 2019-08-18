@@ -155,7 +155,7 @@ typedef struct {
 	void	(*CL_WriteAVIVideoFrame)( const unsigned char *buffer, int size );
 
 	// input event handling
-	void (* IN_Init)( void* );
+	void (* IN_Init)( void );
 	void (* IN_Shutdown)( void );
 	void (* IN_Restart)( void );
 
@@ -163,12 +163,12 @@ typedef struct {
 	// math, i really want ot remove this, but to keep the API/ABI consistant with ioq3
 	long (* ftol)(float f);
 
-	// GLimp
-	void (* GLimpInit)(glconfig_t * const glConfig, void ** pContext);
-	void (* GLimpShutdown)(void);
-	void (* GLimpEndFrame)(void);
-	void (* GLimpMinimize)(void);
-	void (* GLimpSetGamma)(unsigned char red[256], unsigned char green[256], unsigned char blue[256]);
+	// window systems impl
+	void (* WinSysInit)(void ** pContext);
+	void (* WinSysShutdown)(void);
+	void (* WinSysEndFrame)(void);
+	void (* WinSysMinimize)(void);
+	void (* WinSysSetGamma)(unsigned char red[256], unsigned char green[256], unsigned char blue[256]);
 	void (* pfnLog)(char * const pComment);
 
 	// system stuff

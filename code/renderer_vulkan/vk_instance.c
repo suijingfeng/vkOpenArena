@@ -5,6 +5,7 @@
 #include "vk_instance.h"
 #include "vk_validation.h"
 #include "ref_import.h" 
+#include "vk_khr_display.h"
 
 struct Vk_Instance vk;
 
@@ -38,14 +39,7 @@ PFN_vkGetPhysicalDeviceSurfaceFormatsKHR		qvkGetPhysicalDeviceSurfaceFormatsKHR;
 PFN_vkGetPhysicalDeviceSurfacePresentModesKHR	qvkGetPhysicalDeviceSurfacePresentModesKHR;
 PFN_vkGetPhysicalDeviceSurfaceSupportKHR		qvkGetPhysicalDeviceSurfaceSupportKHR;
 
-// VK_KHR_display
-PFN_vkGetPhysicalDeviceDisplayPropertiesKHR         qvkGetPhysicalDeviceDisplayPropertiesKHR;
-PFN_vkGetPhysicalDeviceDisplayPlanePropertiesKHR    qvkGetPhysicalDeviceDisplayPlanePropertiesKHR;
-PFN_vkGetDisplayPlaneSupportedDisplaysKHR           qvkGetDisplayPlaneSupportedDisplaysKHR;
-PFN_vkGetDisplayModePropertiesKHR                   qvkGetDisplayModePropertiesKHR;
-PFN_vkCreateDisplayModeKHR                          qvkCreateDisplayModeKHR;
-PFN_vkGetDisplayPlaneCapabilitiesKHR                qvkGetDisplayPlaneCapabilitiesKHR;
-PFN_vkCreateDisplayPlaneSurfaceKHR                  qvkCreateDisplayPlaneSurfaceKHR;
+
 
 #ifndef NDEBUG
 PFN_vkCreateDebugReportCallbackEXT				qvkCreateDebugReportCallbackEXT;
@@ -415,25 +409,6 @@ static void VK_LoadInstanceLevelFunctions(VkInstance hInstance)
 	INIT_INSTANCE_FUNCTION(vkGetPhysicalDeviceSurfacePresentModesKHR)
 	INIT_INSTANCE_FUNCTION(vkGetPhysicalDeviceSurfaceSupportKHR)
 
-
-    // The platform-specific extensions allow a VkSurface object to be
-    // created that represents a native window owned by the operating
-    // system or window system. These extensions are typically used to
-    // render into a window with no border that covers an entire display
-    // it is more often efficient to render directly to a display instead.
-    if(vk.isKhrDisplaySupported)
-    {
-        ri.Printf(PRINT_ALL, " VK_KHR_Display Supported, Loading functions for this instance extention. \n");
-
-        INIT_INSTANCE_FUNCTION(vkGetPhysicalDeviceDisplayPropertiesKHR);
-        INIT_INSTANCE_FUNCTION(vkGetPhysicalDeviceDisplayPlanePropertiesKHR);
-        INIT_INSTANCE_FUNCTION(vkGetDisplayPlaneSupportedDisplaysKHR);
-        INIT_INSTANCE_FUNCTION(vkGetDisplayModePropertiesKHR);
-        INIT_INSTANCE_FUNCTION(vkCreateDisplayModeKHR);
-        INIT_INSTANCE_FUNCTION(vkGetDisplayPlaneCapabilitiesKHR);
-        INIT_INSTANCE_FUNCTION(vkCreateDisplayPlaneSurfaceKHR);
-    }
-
 #ifndef NDEBUG
     INIT_INSTANCE_FUNCTION(vkCreateDebugReportCallbackEXT)
 	INIT_INSTANCE_FUNCTION(vkDestroyDebugReportCallbackEXT)	//
@@ -455,6 +430,8 @@ void VK_CreateInstance( VkInstance * const pInstance)
     // We have created a Vulkan Instance object, then 
     // use that instance to load instance level functions
     VK_LoadInstanceLevelFunctions( vk.instance );
+
+    VK_GetExtraProcAddr( vk.instance );
 }
 
 
@@ -492,15 +469,6 @@ void VK_ClearProcAddress(void)
 	qvkGetPhysicalDeviceMemoryProperties		= NULL;
 	qvkGetPhysicalDeviceProperties				= NULL;
 	qvkGetPhysicalDeviceQueueFamilyProperties	= NULL;
-
-
-    qvkGetPhysicalDeviceDisplayPropertiesKHR    = NULL;
-    qvkGetPhysicalDeviceDisplayPlanePropertiesKHR = NULL;
-    qvkGetDisplayPlaneSupportedDisplaysKHR      = NULL;
-    qvkGetDisplayModePropertiesKHR              = NULL;
-    qvkCreateDisplayModeKHR                     = NULL;
-    qvkGetDisplayPlaneCapabilitiesKHR           = NULL;
-    qvkCreateDisplayPlaneSurfaceKHR             = NULL;
 
 
     qvkDestroySurfaceKHR						= NULL;
@@ -605,6 +573,9 @@ void VK_DestroyInstance(void)
 	
     NO_CHECK( qvkDestroyInstance(vk.instance, NULL) );
 
+    VK_ClearProcAddress();
+
+    VK_CleatExtraProcAddr();
 
     memset(&vk, 0, sizeof(vk));
 

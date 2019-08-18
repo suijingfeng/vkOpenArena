@@ -596,11 +596,12 @@ success:
     glCfg->deviceSupportsGamma = qtrue ;
 
 
-	ri.Printf(PRINT_ALL,  "MODE: %s, %d x %d, refresh rate: %dhz\n", fsstrings[r_fullscreen->integer == 1], glCfg->vidWidth, glCfg->vidHeight, glCfg->displayFrequency);
+	ri.Printf(PRINT_ALL,  "MODE: %s, %d x %d, refresh rate: %dhz\n",
+            fsstrings[r_fullscreen->integer == 1], glCfg->vidWidth, glCfg->vidHeight, glCfg->displayFrequency);
 
     
 	// This depends on SDL_INIT_VIDEO, hence having it here
-	ri.IN_Init(SDL_window);
+	ri.IN_Init();
 }
 
 
@@ -629,7 +630,7 @@ void GLimp_EndFrame( void )
 			//if( !sdlToggled )
 			//	ri.Cbuf_ExecuteText(EXEC_APPEND, "vid_restart\n");
 
-			ri.IN_Init(SDL_window);
+			ri.IN_Init();
 		}
 
 		r_fullscreen->modified = qfalse;

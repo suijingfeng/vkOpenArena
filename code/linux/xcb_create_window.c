@@ -11,24 +11,11 @@
 static struct xcb_windata_s s_xcb_win;
 
 
-void WinSys_Init(glconfig_t * const pConfig, void ** pContext)
+void WinSys_Init(void ** pContext)
 {
 	Com_Printf( " Initializing window subsystem. \n" );
    
 
-    pConfig->isFullscreen =  qfalse;
-	pConfig->stereoEnabled = qfalse;
-	pConfig->smpActive = qfalse;
-	pConfig->displayFrequency = 60;
-
-
-	// allways enable stencil
-	pConfig->stencilBits = 8;
-	pConfig->depthBits = 24;
-	pConfig->colorBits = 32;
-	// pConfig->deviceSupportsGamma = win_checkHardwareGamma();
-	pConfig->deviceSupportsGamma = qfalse;
-	////
 	*pContext = &s_xcb_win;
 
 

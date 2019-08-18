@@ -254,16 +254,6 @@ void VK_FillRequiredInstanceExtention(
             continue;
         }
 
-        // Enable VK_EXT_display_surface_counter
-        // TODO: add doc why enable this, what's the useful ?
-        if( 0 == strcmp(VK_EXT_DISPLAY_SURFACE_COUNTER_EXTENSION_NAME, pInsExt[i].extensionName) )
-        {
-            ppInsExt[enExtCnt] = pInsExt[i].extensionName;
-            enExtCnt += 1;
-            continue;
-        }
-
-
         // Enable VK_KHR_display
         // TODO: add doc why enable this, what's the useful ?
         if( 0 == strcmp(VK_KHR_DISPLAY_EXTENSION_NAME, pInsExt[i].extensionName) )

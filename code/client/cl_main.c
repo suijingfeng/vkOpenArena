@@ -3279,10 +3279,10 @@ void CL_InitRef(void)
 
 	ri.ftol = Q_ftol;
 
-	ri.GLimpInit = WinSys_Init;
-	ri.GLimpShutdown = WinSys_Shutdown;
-	ri.GLimpEndFrame = WinSys_EndFrame;
-	ri.GLimpSetGamma = WinSys_SetGamma;
+	ri.WinSysInit = WinSys_Init;
+	ri.WinSysShutdown = WinSys_Shutdown;
+	ri.WinSysEndFrame = WinSys_EndFrame;
+	ri.WinSysSetGamma = WinSys_SetGamma;
 	ri.pfnLog = FileSys_Logging;
 
 	ri.Sys_SetEnv = Sys_SetEnv;

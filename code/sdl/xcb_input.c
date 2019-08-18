@@ -58,7 +58,6 @@ static xcb_key_symbols_t * keysyms_;
 extern xcb_intern_atom_reply_t *atom_wm_delete_window;
 
 
-static int win_width, win_height;
 static int win_center_x, win_center_y;
 
 // mark the current mouse position
@@ -371,8 +370,8 @@ the  offsets (dst_x, dst_y) relative to the current position of the pointer.
 
         mouseResetTime = Sys_Milliseconds();
 		
-	    xcb_warp_pointer( s_xcb_win.connection, s_xcb_win.hWnd, s_xcb_win.hWnd, 
-                0, 0, win_width , win_height, win_center_x, win_center_y);
+	    xcb_warp_pointer( s_xcb_win.connection, XCB_NONE, s_xcb_win.hWnd, 
+                0, 0, s_xcb_win.winWidth , s_xcb_win.winHeight, win_center_x, win_center_y);
 
     	mouseActive = qtrue;
     }
@@ -408,28 +407,6 @@ static void IN_DeactivateMouse(void)
 	}
 }
 
-
-/*
-   If a user clicks a mouse button, the message from the X server can be accessed
-   as a xcb_button_press_event_t, which contains fields related to the mouse event.
-   Its fields include the following:
-
-    detail ！ the button pressed
-    time ！ the timestamp of the mouse click
-    event_x, event_y ！ event coordinates relative to the client window
-    root_x, root_y ！ event coordinates relative to the root window
-    root ！ ID of the root window
-    child ！ ID of the child window
-
-    detail is a value of the xcb_button_index_t enumerated type, which has six values:
-
-    XCB_BUTTON_INDEX_ANY ！ any mouse button
-    XCB_BUTTON_INDEX_1 ！ the left mouse button
-    XCB_BUTTON_INDEX_2 ！ the middle mouse button
-    XCB_BUTTON_INDEX_3 ！ the right mouse button
-    XCB_BUTTON_INDEX_4 ！ mouse scroll up
-    XCB_BUTTON_INDEX_5 ！ mouse scroll down
-*/
 
 static const char s_keytochar[ 128 ] =
 {
@@ -970,17 +947,43 @@ uint16_t 	state
 uint8_t 	same_screen
 uint8_t 	pad0
 */
+                // root_x, root_y: coordinate in destop coordinate system
+                // event_x, event_y: coordinate in renderer arena .
+//                printf ("MOTION_NOTIFY: (%d, %d, %d, %d)\n",
+//                        ev->root_x, ev->root_y, ev->event_x, ev->event_y);
 
-                int dx = ev->event_x - last_pos_x;
-                int dy = ev->event_y - last_pos_y;
+                int dx = ev->event_x - win_center_x;
+                int dy = ev->event_y - win_center_y;
                 last_pos_x = ev->event_x;
                 last_pos_y = ev->event_y;
+
+   
+
+                // accurate the delta
 
                 acc_x += dx;
                 acc_y += dy;
 
+				if ( (acc_x != 0) || (acc_y != 0 ) )
+                {
+                    if (t - mouseResetTime > 20 )
+                    {
+                        Com_QueueEvent( t, SE_MOUSE, acc_x, acc_y, 0, NULL );
+                        acc_x = 0;
+                        acc_y = 0;
+                    }
+                    
 
-   
+                }
+
+                if(dx!=0 || dy!=0) {
+                    xcb_warp_pointer( s_xcb_win.connection, XCB_NONE, s_xcb_win.hWnd, 
+                    0, 0, s_xcb_win.winWidth, s_xcb_win.winHeight, win_center_x, win_center_y); 
+
+                    printf ("MOTION_NOTIFY: (%d, %d, %d, %d), win center,(%d, %d)\n",
+                        ev->root_x, ev->root_y, ev->event_x, ev->event_y);
+                }
+/*                
 				if ( (acc_x != 0) || (acc_y != 0 ) )
                 {
                     // accurate the delta
@@ -989,14 +992,15 @@ uint8_t 	pad0
                     {
                         Com_QueueEvent( t, SE_MOUSE, acc_x, acc_y, 0, NULL );
                         acc_x = 0;
-                        acc_y = 0;                        
+                        acc_y = 0;
                     }
                     // printf("dx: %d, dy:%d \n", dx, dy);
-                }
-                
-                if(dx==0 && dy==0)
+                    last_pos_x = win_center_x;
+                    last_pos_y = win_center_y;
                     dowarp = qtrue;
-
+                }
+*/
+                      
 
 
             
@@ -1033,12 +1037,10 @@ uint8_t 	pad0
                         uint8_t 	pad1
                 }
 */
-                // printf ("CONFIGURE_NOTIFY: (%d, %d, %d, %d)\n", ev->x, ev->y, ev->width, ev->height);
+                printf ("CONFIGURE_NOTIFY: (%d, %d, %d, %d)\n", ev->x, ev->y, ev->width, ev->height);
                 
-                win_width = ev->width;
-                win_height = ev->height;
-                win_center_x = ev->width / 2;
-                win_center_y = ev->height / 2;
+                win_center_x =  ev->width / 2;
+                win_center_y =  ev->height / 2;
             } break;
 
             case XCB_REPARENT_NOTIFY:
@@ -1194,9 +1196,7 @@ uint8_t 	pad1 [3]
         free (e);
     }
     
-	if ( dowarp )
-	    xcb_warp_pointer( s_xcb_win.connection, s_xcb_win.hWnd, s_xcb_win.hWnd, 
-                0, 0, win_width , win_height, win_center_x, win_center_y);
+
 }
 
 
@@ -1239,7 +1239,7 @@ void IN_Frame(void)
 }
 
 
-void IN_Init(void* win)
+void IN_Init()
 {
     Com_Printf(" ...IN_Init... \n");
 
@@ -1263,9 +1263,10 @@ void IN_Init(void* win)
 
 }
 
+
 void IN_Restart( void )
 {
-   IN_Init(NULL); 
+   IN_Init(); 
 }
 
 

@@ -114,7 +114,7 @@ extern PFN_vkQueuePresentKHR							qvkQueuePresentKHR;
 
 // Initializes VK_Instance structure.
 void VK_CreateInstance(VkInstance* const pInstance);
-void VK_ClearProcAddress(void);
+// void VK_ClearProcAddress(void);
 void VK_DestroyInstance(void);
 
 uint32_t vk_getWinWidth(void);
@@ -207,6 +207,8 @@ struct Vk_Instance {
 	VkDeviceMemory depth_image_memory;
 	VkImageView depth_image_view;
 
+    // It the client area dimention, not the entire window
+    // the entire window is bigger than this
     VkRect2D renderArea;
 
 	VkDescriptorPool descriptor_pool;
@@ -222,10 +224,6 @@ struct Vk_Instance {
 };
 
 
-
 extern struct Vk_Instance vk;
-
-
-
 
 #endif

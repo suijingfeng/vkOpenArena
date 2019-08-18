@@ -54,25 +54,6 @@ void glConfig_Init(void)
 }
 
 
-void glConfig_Clear(void)
-{
-    memset(&glConfig, 0, sizeof(glConfig));
-}
-
-
-//IN: a pointer to the glConfig struct
-void glConfig_Get(glconfig_t * const pCfg)
-{
-	*pCfg = glConfig;
-}
-
-glconfig_t * glConfig_getAddressOf(void)
-{
-	return &glConfig;
-}
-
-
-
 static void glConfig_FillString( void )
 {
     ri.Printf( PRINT_ALL, "\nActive 3D API: Vulkan\n" );
@@ -237,7 +218,6 @@ void R_Init( void )
 
     R_InitScene();
 
-    // glConfig_Init();
 
     // VULKAN
     if ( !isVKinitialied() )
@@ -248,11 +228,10 @@ void R_Init( void )
         void * pWinContext;
 
         // Create window.
-        ri.GLimpInit(glConfig_getAddressOf(), &pWinContext);
+        ri.WinSysInit(&pWinContext);
 
         vk_initialize(pWinContext);
 
-        glConfig_FillString();
         // print info
         // vulkanInfo_f();
     }
@@ -274,6 +253,7 @@ void R_Init( void )
 	R_InitFreeType();
 
     R_Set2dProjectMatrix(vk.renderArea.extent.width, vk.renderArea.extent.height);
+
     ri.Printf( PRINT_ALL, "----- R_Init finished -----\n" );
 }
 
@@ -359,22 +339,40 @@ void RE_Shutdown( qboolean destroyWindow )
 		
 		VK_CleanInstanceProcAddrImpl();
 
-		ri.GLimpShutdown();
+		ri.WinSysShutdown();
 
 		ri.Printf(PRINT_ALL, " Destroying Vulkan window. \n");
-        
-        // It is cleared not for renderer_vulkan,
-        // but fot rendergl1, renderergl2 to create the window
-        glConfig_Clear();
     }
 }
 
 
-void RE_BeginRegistration(glconfig_t * const pGlCfg)
+void RE_BeginRegistration(glconfig_t * const pConfig)
 {
 	R_Init();
     
-    glConfig_Get(pGlCfg);
+	// *pGlCfg = glConfig;
+
+    pConfig->isFullscreen =  qfalse;
+	pConfig->stereoEnabled = qfalse;
+	pConfig->smpActive = qfalse;
+	pConfig->displayFrequency = 60;
+	// allways enable stencil
+	pConfig->stencilBits = 8;
+	pConfig->depthBits = 24;
+	pConfig->colorBits = 32;
+	pConfig->deviceSupportsGamma = qfalse;
+
+    pConfig->textureEnvAddAvailable = 0; // not used
+    pConfig->textureCompression = 0; // not used
+
+    // These values force the UI to disable driver selection
+	pConfig->driverType = GLDRV_ICD;
+	pConfig->hardwareType = GLHW_GENERIC;
+
+    pConfig->vidWidth = vk_getWinWidth();
+    pConfig->vidHeight = vk_getWinHeight();
+
+    glConfig_FillString();
 
 	tr.viewCluster = -1; // force markleafs to regenerate
 

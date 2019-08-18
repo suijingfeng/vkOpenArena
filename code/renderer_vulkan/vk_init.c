@@ -469,8 +469,11 @@ static void VK_CheckSwapChainExtention(	VkPhysicalDevice hGPU, const char * cons
 
 
 
-static void vk_createLogicalDevice(const char* const* ppExtNamesEnabled, const uint32_t nExtEnabled,
-	uint32_t idxQueueFamily, VkDevice * const pLogicalDev)
+static void VK_CreateLogicalDevice(
+        const char* const* ppExtNamesEnabled, 
+        const uint32_t nExtEnabled,
+        const uint32_t idxQueueFamily, 
+        VkDevice * const pLogicalDev)
 {
 
     for(uint32_t j = 0; j < nExtEnabled; ++j)
@@ -535,7 +538,7 @@ static void vk_createLogicalDevice(const char* const* ppExtNamesEnabled, const u
 }
 
 
-static void vk_loadDeviceFunctions(void)
+static void VK_LoadDeviceFunctions(void)
 {
 	ri.Printf(PRINT_ALL, " Loading device level function. \n");
 
@@ -660,23 +663,23 @@ void vk_initialize(void * pWinContext)
 
 
 	//////////
-	const char* enable_features_name_array[1] = {
+	const char* enable_features_array[1] = {
 		VK_KHR_SWAPCHAIN_EXTENSION_NAME
 	};
 
 
-	vk_createLogicalDevice(enable_features_name_array, 1, vk.queue_family_index, &vk.device);
+	VK_CreateLogicalDevice(enable_features_array, 1, vk.queue_family_index, &vk.device);
 
 	// Get device level functions. depended on the created logical device
 	// thus must be called AFTER vk_createLogicalDevice.
-	vk_loadDeviceFunctions();
+	VK_LoadDeviceFunctions();
 
 
 	// a call to retrieve queue handle
 	// The queues are constructed when the device is created, For this
 	// reason, we don't create queues, but obtain them from the device.
 	// maybe the queue is abstraction of specific hardware ...
-	NO_CHECK(qvkGetDeviceQueue(vk.device, vk.queue_family_index, 0, &vk.queue));
+	NO_CHECK( qvkGetDeviceQueue(vk.device, vk.queue_family_index, 0, &vk.queue) );
 	//
 	//     Queue Family Index
 	//
@@ -700,7 +703,7 @@ void vk_initialize(void * pWinContext)
 	// to another.; 
 
 	// Swapchain. vk.physical_device required to be init. 
-	vk_createSwapChain(vk.device, vk.surface, vk.surface_format, vk.present_mode,
+	vk_createSwapChain( vk.device, vk.surface, vk.surface_format, vk.present_mode,
             &vk.swapchain );
 
     
@@ -824,8 +827,6 @@ void vk_shutdown(void)
     VK_DestroyInstance();
 
 // ===========================================================
-
-    VK_ClearProcAddress();
 
     ri.Printf( PRINT_ALL, " clear vk struct: vk \n" );
 }

@@ -6,11 +6,11 @@
 #include <xcb/xcb_atom.h>
 #include <dlfcn.h>
 
-
-#include "linux_public.h"
+#include "../qcommon/q_shared.h"
 #include "../qcommon/qcommon.h"
-#include "xcb_input.h"
+#include "linux_public.h"
 
+#include "xcb_input.h"
 
 struct xcb_windata_s s_xcb_win;
 
@@ -81,7 +81,7 @@ static void R_DisplayResolutionList_f( void )
 xcb_intern_atom_reply_t *atom_wm_delete_window;
 
 
-void WinSys_Init(glconfig_t * const pConfig, void ** pContext)
+void WinSys_Init(void ** pContext)
 {
 	Com_Printf( " Initializing window subsystem. \n" );
    
@@ -94,27 +94,6 @@ void WinSys_Init(glconfig_t * const pConfig, void ** pContext)
     r_customaspect = Cvar_Get( "r_customaspect", "1.78", CVAR_ARCHIVE | CVAR_LATCH );
     
     // Cmd_AddCommand( "displayResoList", R_DisplayResolutionList_f );
-
-    pConfig->isFullscreen =  qfalse;
-	pConfig->stereoEnabled = qfalse;
-	pConfig->smpActive = qfalse;
-	pConfig->displayFrequency = 60;
-    pConfig->textureEnvAddAvailable = 0; // not used
-    pConfig->textureCompression = 0; // not used
-
-
-	// allways enable stencil
-	pConfig->stencilBits = 8;
-	pConfig->depthBits = 24;
-	pConfig->colorBits = 32;
-	// pConfig->deviceSupportsGamma = win_checkHardwareGamma();
-	pConfig->deviceSupportsGamma = qfalse;
-	////
-    //
-        // These values force the UI to disable driver selection
-	pConfig->driverType = GLDRV_ICD;
-	pConfig->hardwareType = GLHW_GENERIC;
-
 
     //
 	*pContext = &s_xcb_win;
@@ -221,8 +200,8 @@ void WinSys_Init(glconfig_t * const pConfig, void ** pContext)
     {
        	// r_mode->integer = R_GetModeInfo(&width, &height,
         //        r_mode->integer, s_xcb_win.desktopWidth, s_xcb_win.desktopHeight);
-        width = 640;
-	    height = 480;
+        width = 800;
+	    height = 600;
     }
     
     // R_SetWinMode(r_mode->integer, 640, 480, 60);
@@ -264,8 +243,8 @@ void WinSys_Init(glconfig_t * const pConfig, void ** pContext)
             pScreen->root_visual,
             value_mask, value_list);
     
-    pConfig->vidWidth = s_xcb_win.winWidth = width;
-    pConfig->vidHeight = s_xcb_win.winHeight = height;
+    s_xcb_win.winWidth = width;
+    s_xcb_win.winHeight = height;
 
 
     // If the window has already been created, we can use the xcb_change_window_attributes()
@@ -313,9 +292,8 @@ void WinSys_Init(glconfig_t * const pConfig, void ** pContext)
     
     free(reply);
 
-
     // input system ?
-    IN_Init(&s_xcb_win);
+    IN_Init();
 
 }
 
