@@ -2,7 +2,6 @@
 
 #include "vk_instance.h"
 #include "tr_cvar.h"
-#include "glConfig.h"
 #include "ref_import.h"
 
 

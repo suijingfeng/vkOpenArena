@@ -15,7 +15,68 @@
 struct xcb_windata_s s_xcb_win;
 
 static cvar_t* r_mode;				// video mode
+static cvar_t* r_customwidth;
+static cvar_t* r_customheight;
+static cvar_t* r_customaspect;
+
 static cvar_t* r_fullscreen;
+
+
+typedef struct vidmode_s
+{
+    const char *description;
+    int         width, height;
+	float		pixelAspect;		// pixel width / height
+} vidmode_t;
+
+
+static const vidmode_t r_vidModes[] =
+{
+	{ "Mode  0: 320x240",		320,	240,	1 },
+	{ "Mode  1: 400x300",		400,	300,	1 },
+	{ "Mode  2: 512x384",		512,	384,	1 },
+	{ "Mode  3: 640x480 (480p)",	640,	480,	1 },
+	{ "Mode  4: 800x600",		800,	600,	1 },
+	{ "Mode  5: 960x720",		960,	720,	1 },
+	{ "Mode  6: 1024x768",		1024,	768,	1 },
+	{ "Mode  7: 1152x864",		1152,	864,	1 },
+	{ "Mode  8: 1280x1024",		1280,	1024,	1 },
+	{ "Mode  9: 1600x1200",		1600,	1200,	1 },
+	{ "Mode 10: 2048x1536",		2048,	1536,	1 },
+	{ "Mode 11: 856x480",		856,	480,	1 }, // Q3 MODES END HERE AND EXTENDED MODES BEGIN
+	{ "Mode 12: 1280x720 (720p)",	1280,	720,	1 },
+	{ "Mode 13: 1280x768",		1280,	768,	1 },
+	{ "Mode 14: 1280x800",		1280,	800,	1 },
+	{ "Mode 15: 1280x960",		1280,	960,	1 },
+	{ "Mode 16: 1360x768",		1360,	768,	1 },
+	{ "Mode 17: 1366x768",		1366,	768,	1 }, // yes there are some out there on that extra 6
+	{ "Mode 18: 1360x1024",		1360,	1024,	1 },
+	{ "Mode 19: 1400x1050",		1400,	1050,	1 },
+	{ "Mode 20: 1400x900",		1400,	900,	1 },
+	{ "Mode 21: 1600x900",		1600,	900,	1 },
+	{ "Mode 22: 1680x1050",		1680,	1050,	1 },
+	{ "Mode 23: 1920x1080 (1080p)",	1920,	1080,	1 },
+	{ "Mode 24: 1920x1200",		1920,	1200,	1 },
+	{ "Mode 25: 1920x1440",		1920,	1440,	1 },
+    { "Mode 26: 2560x1080",		2560,	1080,	1 },
+    { "Mode 27: 2560x1600",		2560,	1600,	1 },
+	{ "Mode 28: 3840x2160 (4K)",	3840,	2160,	1 }
+};
+
+static const int s_numVidModes = 29;
+
+
+static void R_DisplayResolutionList_f( void )
+{
+	Com_Printf( PRINT_ALL, "\n" );
+	for (uint32_t i = 0; i < s_numVidModes; i++ )
+	{
+		Com_Printf( PRINT_ALL, "%s\n", r_vidModes[i].description );
+	}
+	Com_Printf( PRINT_ALL, "\n" );
+}
+
+
 
 xcb_intern_atom_reply_t *atom_wm_delete_window;
 
@@ -28,7 +89,11 @@ void WinSys_Init(glconfig_t * const pConfig, void ** pContext)
     // but they have nothing to do with the renderer. 
     r_mode = Cvar_Get( "r_mode", "3", CVAR_ARCHIVE | CVAR_LATCH );
     r_fullscreen = Cvar_Get( "r_fullscreen", "0", CVAR_ARCHIVE | CVAR_LATCH );
-
+    r_customwidth = Cvar_Get( "r_customwidth", "960", CVAR_ARCHIVE | CVAR_LATCH );
+    r_customheight = Cvar_Get( "r_customheight", "540", CVAR_ARCHIVE | CVAR_LATCH );
+    r_customaspect = Cvar_Get( "r_customaspect", "1.78", CVAR_ARCHIVE | CVAR_LATCH );
+    
+    // Cmd_AddCommand( "displayResoList", R_DisplayResolutionList_f );
 
     pConfig->isFullscreen =  qfalse;
 	pConfig->stereoEnabled = qfalse;
@@ -249,8 +314,6 @@ void WinSys_Init(glconfig_t * const pConfig, void ** pContext)
     free(reply);
 
 
-
-
     // input system ?
     IN_Init(&s_xcb_win);
 
@@ -265,6 +328,10 @@ void WinSys_Shutdown(void)
     
     //xcb_disconnect(connection);
     memset(&s_xcb_win, 0, sizeof(s_xcb_win));
+
+
+    Cmd_RemoveCommand("displayResoList");
+
 
     Com_Printf(" Window subsystem destroyed. \n");
 }

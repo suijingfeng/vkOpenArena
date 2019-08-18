@@ -1681,7 +1681,6 @@ Q3VKOBJ = \
   $(B)/renderer_vulkan/RB_DrawTris.o \
   $(B)/renderer_vulkan/R_PrintMat.o \
   \
-  $(B)/renderer_vulkan/glConfig.o \
   $(B)/renderer_vulkan/vk_khr_display.o \
   \
   $(B)/renderer_vulkan/R_PortalPlane.o \
