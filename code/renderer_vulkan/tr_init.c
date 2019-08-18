@@ -124,7 +124,6 @@ void R_Init( void )
 	ri.Printf(PRINT_ALL, " Create window fot vulkan . \n");
 
 	// This function set the render window's height and width.
-	// R_SetWinMode( r_mode->integer, GetDesktopWidth(), GetDesktopHeight() , 60 );
 	void * pWinContext;
 
 	// Create window.

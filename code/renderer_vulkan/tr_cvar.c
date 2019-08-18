@@ -69,7 +69,6 @@ cvar_t	*r_maxpolys;
 cvar_t	*r_maxpolyverts;
 
 cvar_t* r_allowResize; // make window resizable
-cvar_t* r_mode;
 
 cvar_t	*r_gpuIndex;
 
