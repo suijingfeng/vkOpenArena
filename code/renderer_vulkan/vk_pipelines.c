@@ -65,7 +65,7 @@ struct PipelineParameter_t {
 static uint32_t s_numPipelines = 0;
 
 
-static int32_t ComparePar(const struct ParmsKey* const par1, 
+static int32_t isPipelineParamEqual(const struct ParmsKey* const par1, 
         const struct ParmsKey* const par2)
 {
     if( (par1->state_bits == par2->state_bits) &&
@@ -75,10 +75,10 @@ static int32_t ComparePar(const struct ParmsKey* const par1,
         (par1->clipping_plane == par2->clipping_plane) &&
         (par1->mirror == par2->mirror) )
     {
-        return 0;
+        return 1;
     }
 
-    return -1;
+    return 0;
 }
 
 //==================================================================
@@ -86,7 +86,7 @@ static int32_t ComparePar(const struct ParmsKey* const par1,
 #define PL_TAB_SIZE         512
 #define MAX_VK_PIPELINES    256
 
-static struct PipelineParameter_t* plHashTable[PL_TAB_SIZE];
+static struct PipelineParameter_t* plHashTable[PL_TAB_SIZE] = {0};
     
 static uint32_t genHashVal( const struct ParmsKey * const par , uint32_t size)
 {
@@ -112,19 +112,25 @@ static uint32_t genHashVal( const struct ParmsKey * const par , uint32_t size)
 
 static VkPipeline FindPipeline(const struct ParmsKey * const par)
 {
-    int32_t hVal = genHashVal(par, PL_TAB_SIZE);
+    uint32_t hashVal = genHashVal(par, PL_TAB_SIZE);
 
-    struct PipelineParameter_t * pTmp = plHashTable[hVal];
+    
 
-    for( ; pTmp != NULL; pTmp = pTmp->next )
+    for(struct PipelineParameter_t * pTmp = plHashTable[hashVal]; 
+			pTmp != NULL; 
+			pTmp = pTmp->next )
     {
-        if( 0 == ComparePar(par, &pTmp->key) )
+        if( isPipelineParamEqual(par, &pTmp->key) )
             return pTmp->pipeline;
     }
 
-    // not find, create a new
-    // Hunk_Alloc vs malloc ?
-    pTmp = (struct PipelineParameter_t *) 
+    
+	
+	// not find, create a new
+    
+	// Hunk_Alloc vs malloc ?
+    
+	struct PipelineParameter_t * pNew = (struct PipelineParameter_t *) 
         ri.Hunk_Alloc( sizeof(struct PipelineParameter_t ), h_low );
 
     // plPar.line_primitives = VK_FALSE;
@@ -136,10 +142,10 @@ static VkPipeline FindPipeline(const struct ParmsKey * const par)
             &newPipeline );
 
 
-    pTmp->key = *par;
-    pTmp->pipeline = newPipeline; 
-    pTmp->next = plHashTable[hVal];
-    plHashTable[hVal] = pTmp;
+    pNew->key = *par;
+    pNew->pipeline = newPipeline; 
+    pNew->next = plHashTable[hashVal];
+    plHashTable[hashVal] = pNew;
    
     ++s_numPipelines;
 
@@ -149,34 +155,37 @@ static VkPipeline FindPipeline(const struct ParmsKey * const par)
 
 void vk_destroyShaderStagePipeline(void)
 {
-    ri.Printf(PRINT_ALL, " Destroy %d shader stage pipelines. \n", s_numPipelines);
 
     NO_CHECK( qvkDeviceWaitIdle(vk.device) );
 
-    uint32_t i;
     uint32_t count = 0;
-    for( i = 0; i < PL_TAB_SIZE; ++i )
+    for(uint32_t  i = 0; i < PL_TAB_SIZE; ++i )
     {
-        if(plHashTable[i] != NULL)
-        {
-            struct PipelineParameter_t * pRoot = plHashTable[i];            
-            while( pRoot != NULL )
-            {
-                struct PipelineParameter_t * pBakeup = pRoot->next;
-                qvkDestroyPipeline(vk.device, pRoot->pipeline, NULL);
-                ++count;
-                memset(pRoot, 0, sizeof(struct PipelineParameter_t));
+		struct PipelineParameter_t * pHead = plHashTable[i];
+		while( pHead != NULL )
+		{
+			struct PipelineParameter_t * pNext = pHead->next;
 
-                pRoot = pBakeup;
-            }
+			NO_CHECK( qvkDestroyPipeline(vk.device, pHead->pipeline, NULL) );
 
-            plHashTable[i] = NULL;
-        }
+			++count;
+
+			memset(pHead, 0, sizeof(struct PipelineParameter_t));
+
+			pHead = pNext;
+		}
+
+        plHashTable[i] = NULL;
     }
-
+	
+    ri.Printf(PRINT_ALL, " Destroy %d shader stage pipelines. \n", s_numPipelines);
+	
     if(count != s_numPipelines) {
         ri.Printf(PRINT_WARNING, " Created pipeline(%d) don't match Destroyed(%d). \n", s_numPipelines, count );
     }
+
+	s_numPipelines = 0;
+
 }
 
 
