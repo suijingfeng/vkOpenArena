@@ -29,7 +29,7 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #include <stdlib.h>
 #include <stdio.h>
 #include <xcb/xcb.h>
-#include <xcb/xcb_util.h>
+
 #include "xcb_input.h"
 
 // #include <X11/XKBlib.h>
@@ -61,12 +61,6 @@ extern xcb_intern_atom_reply_t *atom_wm_delete_window;
 static int win_center_x, win_center_y;
 
 // mark the current mouse position
-
-static int acc_x;
-static int acc_y;
-
-static int last_pos_x = 0;
-static int last_pos_y = 0;
 
 #define MAX_CONSOLE_KEYS 16
 
@@ -698,7 +692,6 @@ uint32_t 	full_sequence
 */
 	xcb_generic_event_t *e;
 
-	qboolean dowarp = qfalse;
     //xcb_generic_event_t *e = xcb_poll_for_event(s_xcb_win.connection);
 
 	while( (e = xcb_poll_for_event(s_xcb_win.connection)) )
@@ -929,8 +922,6 @@ Scroll wheel. TODO: direction?
                 //  XCB_EVENT_MASK_BUTTON_5_MOTION
                 //int t = Sys_Milliseconds();
                 xcb_motion_notify_event_t *ev = (xcb_motion_notify_event_t *)e;
-                int t = Sys_Milliseconds();
-
 /*
 uint8_t 	response_type
 uint8_t 	detail
@@ -954,56 +945,24 @@ uint8_t 	pad0
 
                 int dx = ev->event_x - win_center_x;
                 int dy = ev->event_y - win_center_y;
-                last_pos_x = ev->event_x;
-                last_pos_y = ev->event_y;
-
-   
 
                 // accurate the delta
 
-                acc_x += dx;
-                acc_y += dy;
-
-				if ( (acc_x != 0) || (acc_y != 0 ) )
+      			if ( (dx != 0) || (dy != 0 ) )
                 {
-                    if (t - mouseResetTime > 20 )
-                    {
-                        Com_QueueEvent( t, SE_MOUSE, acc_x, acc_y, 0, NULL );
-                        acc_x = 0;
-                        acc_y = 0;
-                    }
+                    // if (t - mouseResetTime > 10 )
                     
-
-                }
-
-                if(dx!=0 || dy!=0) {
+                    Com_QueueEvent( Sys_Milliseconds(), SE_MOUSE, dx, dy, 0, NULL );
+					dx = 0;
+                    dy = 0;
+                    
                     xcb_warp_pointer( s_xcb_win.connection, XCB_NONE, s_xcb_win.hWnd, 
                     0, 0, s_xcb_win.winWidth, s_xcb_win.winHeight, win_center_x, win_center_y); 
-
-                    printf ("MOTION_NOTIFY: (%d, %d, %d, %d), win center,(%d, %d)\n",
-                        ev->root_x, ev->root_y, ev->event_x, ev->event_y);
                 }
-/*                
-				if ( (acc_x != 0) || (acc_y != 0 ) )
-                {
-                    // accurate the delta
 
-                    if (t - mouseResetTime > 50 )
-                    {
-                        Com_QueueEvent( t, SE_MOUSE, acc_x, acc_y, 0, NULL );
-                        acc_x = 0;
-                        acc_y = 0;
-                    }
-                    // printf("dx: %d, dy:%d \n", dx, dy);
-                    last_pos_x = win_center_x;
-                    last_pos_y = win_center_y;
-                    dowarp = qtrue;
-                }
-*/
-                      
-
-
-            
+                
+				// printf ("MOTION_NOTIFY: (%d, %d, %d, %d), win center,(%d, %d)\n",
+                //    ev->root_x, ev->root_y, ev->event_x, ev->event_y, win_center_x, win_center_y);
             } break;
 
             case XCB_CLIENT_MESSAGE:

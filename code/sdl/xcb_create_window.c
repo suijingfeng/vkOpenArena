@@ -3,7 +3,7 @@
 #endif
 
 #include <xcb/xcb.h>
-#include <xcb/xcb_atom.h>
+
 #include <dlfcn.h>
 
 #include "../qcommon/q_shared.h"
@@ -68,12 +68,12 @@ static const int s_numVidModes = 29;
 
 static void R_DisplayResolutionList_f( void )
 {
-	Com_Printf( PRINT_ALL, "\n" );
+	Com_Printf( "\n" );
 	for (uint32_t i = 0; i < s_numVidModes; i++ )
 	{
-		Com_Printf( PRINT_ALL, "%s\n", r_vidModes[i].description );
+		Com_Printf( "%s\n", r_vidModes[i].description );
 	}
-	Com_Printf( PRINT_ALL, "\n" );
+	Com_Printf("\n" );
 }
 
 
@@ -200,8 +200,8 @@ void WinSys_Init(void ** pContext)
     {
        	// r_mode->integer = R_GetModeInfo(&width, &height,
         //        r_mode->integer, s_xcb_win.desktopWidth, s_xcb_win.desktopHeight);
-        width = 800;
-	    height = 600;
+        width = 1280;
+	    height = 720;
     }
     
     // R_SetWinMode(r_mode->integer, 640, 480, 60);
@@ -309,7 +309,6 @@ void WinSys_Shutdown(void)
 
 
     Cmd_RemoveCommand("displayResoList");
-
 
     Com_Printf(" Window subsystem destroyed. \n");
 }
