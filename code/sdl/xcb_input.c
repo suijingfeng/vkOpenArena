@@ -718,11 +718,7 @@ uint32_t 	full_sequence
                     if( key_value == K_BACKSPACE ) {
                         Com_QueueEvent(t, SE_CHAR, ('h'-'a'+1), 0, 0, NULL );
                     }
-                    else if (key_value)
-                    {
-                            printf("key_value \n" ); 
-                        Com_QueueEvent(t, SE_KEY, key_value, qtrue, 0, NULL );
-                    }
+
                     // !directMap() && 
                     if ( (ev->detail < 0x3F) )
                     {
@@ -748,7 +744,6 @@ uint32_t 	full_sequence
 
                         Com_QueueEvent( t, SE_CHAR, ch, 0, 0, NULL );
 
-                        // printf("%c = %d \n", ch, ch ); 
                     }
 
                     // Com_Printf( "^2K+^7 %08X\n", key_value );
@@ -767,16 +762,46 @@ uint32_t 	full_sequence
             {
                 xcb_key_release_event_t *ev = (xcb_key_release_event_t *)e;
  
-                    uint32_t key_value = 0;
+                uint32_t key_value = 0;
                 //key = ev->detail;
 			    
                 XLateKey( ev, &key_value );
 			    
+				int t = 0;
                
                 if (key_value >= 'A' && key_value <= 'Z')
                     key_value = key_value - 'A' + 'a';
 
-                Com_QueueEvent( 0, SE_KEY, key_value, qfalse, 0, NULL );
+                // Com_QueueEvent( 0, SE_KEY, key_value, qfalse, 0, NULL );
+                if ( (ev->detail < 0x3F) )
+                {
+ 
+					char ch = s_keytochar[ ev->detail ];
+
+					if ( ch >= 'a' && ch <= 'z' )
+					{
+						int isShift = ev->state & XCB_MOD_MASK_SHIFT;
+						int isCapLock = ev->state & XCB_MOD_MASK_LOCK;
+
+						if ( isShift ^ isCapLock )
+						{
+							ch = ch - 'a' + 'A';
+						}                            
+					}
+					else
+					{
+						ch = s_keytochar[ ev->detail | ((!!(ev->state & XCB_MOD_MASK_SHIFT))<<6) ];
+					}
+
+					Com_QueueEvent( t, SE_KEY, ch, qtrue, 0, NULL );
+
+					// Com_QueueEvent( t, SE_CHAR, ch, 0, 0, NULL );
+
+					printf("%c = %d \n", ch, ch ); 
+
+
+                }
+
 
             } break;
 
@@ -1026,17 +1051,17 @@ uint8_t 	pad1 [3]
             {
                 xcb_enter_notify_event_t *ev = (xcb_enter_notify_event_t *)e;
 
-                // printf ("Mouse entered window %d, at coordinates (%d,%d)\n",
-                //         ev->event, ev->event_x, ev->event_y);
+                printf ("Mouse entered window %d, at coordinates (%d,%d)\n",
+                         ev->event, ev->event_x, ev->event_y);
                 break;
             }
 
             case XCB_LEAVE_NOTIFY:
             {
-                // xcb_leave_notify_event_t *ev = (xcb_leave_notify_event_t *)e;
+                xcb_leave_notify_event_t *ev = (xcb_leave_notify_event_t *)e;
 
-                // printf ("Mouse left window %d, at coordinates (%d,%d)\n",
-                //        ev->event, ev->event_x, ev->event_y);
+                printf ("Mouse left window %d, at coordinates (%d,%d)\n",
+                        ev->event, ev->event_x, ev->event_y);
                 break;
             }
 
