@@ -470,6 +470,7 @@ static void VK_CheckSwapChainExtention(	VkPhysicalDevice hGPU, const char * cons
 
 
 static void VK_CreateLogicalDevice(
+		VkPhysicalDevice hGPU,
         const char* const* ppExtNamesEnabled, 
         const uint32_t nExtEnabled,
         const uint32_t idxQueueFamily, 
@@ -478,7 +479,7 @@ static void VK_CreateLogicalDevice(
 
     for(uint32_t j = 0; j < nExtEnabled; ++j)
     {    
-        VK_CheckSwapChainExtention(vk.physical_device, ppExtNamesEnabled[j]);
+        VK_CheckSwapChainExtention(hGPU, ppExtNamesEnabled[j]);
     }
 	////////////////////////
 
@@ -498,7 +499,7 @@ static void VK_CreateLogicalDevice(
 
 	VkPhysicalDeviceFeatures features;
 	
-    NO_CHECK( qvkGetPhysicalDeviceFeatures(vk.physical_device, &features) );
+    NO_CHECK( qvkGetPhysicalDeviceFeatures(hGPU, &features) );
 	
     if (features.shaderClipDistance == VK_FALSE)
 	{
@@ -534,97 +535,97 @@ static void VK_CreateLogicalDevice(
 	// queue families are available. You can create multiple logical
 	// devices from the same physical device if you have varying requirements.
 	ri.Printf(PRINT_ALL, " Create logical device: vk.device \n");
-	VK_CHECK( qvkCreateDevice(vk.physical_device, &device_desc, NULL, pLogicalDev) );
+	VK_CHECK( qvkCreateDevice(hGPU, &device_desc, NULL, pLogicalDev) );
 }
 
 
-static void VK_LoadDeviceFunctions(void)
+static void VK_LoadDeviceFunctions(VkDevice	hLogicalDevice)
 {
 	ri.Printf(PRINT_ALL, " Loading device level function. \n");
 
 #define INIT_DEVICE_FUNCTION(func)                              \
-    q##func = (PFN_ ## func)qvkGetDeviceProcAddr(vk.device, #func); \
+    q##func = (PFN_ ## func)qvkGetDeviceProcAddr(hLogicalDevice, #func); \
     if (q##func == NULL) {                                          \
         ri.Error(ERR_FATAL, "Failed to find entrypoint %s", #func); \
     }     
 
 	INIT_DEVICE_FUNCTION(vkAllocateCommandBuffers)
-		INIT_DEVICE_FUNCTION(vkAllocateDescriptorSets)
-		INIT_DEVICE_FUNCTION(vkAllocateMemory)
-		INIT_DEVICE_FUNCTION(vkBeginCommandBuffer)
-		INIT_DEVICE_FUNCTION(vkBindBufferMemory)
-		INIT_DEVICE_FUNCTION(vkBindImageMemory)
-		INIT_DEVICE_FUNCTION(vkCmdBeginRenderPass)
-		INIT_DEVICE_FUNCTION(vkCmdBindDescriptorSets)
-		INIT_DEVICE_FUNCTION(vkCmdBindIndexBuffer)
-		INIT_DEVICE_FUNCTION(vkCmdBindPipeline)
-		INIT_DEVICE_FUNCTION(vkCmdBindVertexBuffers)
-		INIT_DEVICE_FUNCTION(vkCmdBlitImage)
-		INIT_DEVICE_FUNCTION(vkCmdClearAttachments)
-		INIT_DEVICE_FUNCTION(vkCmdClearColorImage)
-		INIT_DEVICE_FUNCTION(vkCmdCopyBufferToImage)
-		INIT_DEVICE_FUNCTION(vkCmdCopyImage)
-		INIT_DEVICE_FUNCTION(vkCmdCopyImageToBuffer)
-		INIT_DEVICE_FUNCTION(vkCmdDraw)
-		INIT_DEVICE_FUNCTION(vkCmdDrawIndexed)
-		INIT_DEVICE_FUNCTION(vkCmdEndRenderPass)
-		INIT_DEVICE_FUNCTION(vkCmdPipelineBarrier)
-		INIT_DEVICE_FUNCTION(vkCmdPushConstants)
-		INIT_DEVICE_FUNCTION(vkCmdSetDepthBias)
-		INIT_DEVICE_FUNCTION(vkCmdSetScissor)
-		INIT_DEVICE_FUNCTION(vkCmdSetViewport)
-		INIT_DEVICE_FUNCTION(vkCreateBuffer)
-		INIT_DEVICE_FUNCTION(vkCreateCommandPool)
-		INIT_DEVICE_FUNCTION(vkCreateDescriptorPool)
-		INIT_DEVICE_FUNCTION(vkCreateDescriptorSetLayout)
-		INIT_DEVICE_FUNCTION(vkCreateFence)
-		INIT_DEVICE_FUNCTION(vkCreateFramebuffer)
-		INIT_DEVICE_FUNCTION(vkCreateGraphicsPipelines)
-		INIT_DEVICE_FUNCTION(vkCreateImage)
-		INIT_DEVICE_FUNCTION(vkCreateImageView)
-		INIT_DEVICE_FUNCTION(vkCreatePipelineLayout)
-		INIT_DEVICE_FUNCTION(vkCreateRenderPass)
-		INIT_DEVICE_FUNCTION(vkCreateSampler)
-		INIT_DEVICE_FUNCTION(vkCreateSemaphore)
-		INIT_DEVICE_FUNCTION(vkCreateShaderModule)
-		INIT_DEVICE_FUNCTION(vkDestroyBuffer)
-		INIT_DEVICE_FUNCTION(vkDestroyCommandPool)
-		INIT_DEVICE_FUNCTION(vkDestroyDescriptorPool)
-		INIT_DEVICE_FUNCTION(vkDestroyDescriptorSetLayout)
-		INIT_DEVICE_FUNCTION(vkDestroyDevice)
-		INIT_DEVICE_FUNCTION(vkDestroyFence)
-		INIT_DEVICE_FUNCTION(vkDestroyFramebuffer)
-		INIT_DEVICE_FUNCTION(vkDestroyImage)
-		INIT_DEVICE_FUNCTION(vkDestroyImageView)
-		INIT_DEVICE_FUNCTION(vkDestroyPipeline)
-		INIT_DEVICE_FUNCTION(vkDestroyPipelineLayout)
-		INIT_DEVICE_FUNCTION(vkDestroyRenderPass)
-		INIT_DEVICE_FUNCTION(vkDestroySampler)
-		INIT_DEVICE_FUNCTION(vkDestroySemaphore)
-		INIT_DEVICE_FUNCTION(vkDestroyShaderModule)
-		INIT_DEVICE_FUNCTION(vkDeviceWaitIdle)
-		INIT_DEVICE_FUNCTION(vkEndCommandBuffer)
-		INIT_DEVICE_FUNCTION(vkFreeCommandBuffers)
-		INIT_DEVICE_FUNCTION(vkFreeDescriptorSets)
-		INIT_DEVICE_FUNCTION(vkFreeMemory)
-		INIT_DEVICE_FUNCTION(vkGetBufferMemoryRequirements)
-		INIT_DEVICE_FUNCTION(vkGetDeviceQueue)
-		INIT_DEVICE_FUNCTION(vkGetImageMemoryRequirements)
-		INIT_DEVICE_FUNCTION(vkGetImageSubresourceLayout)
-		INIT_DEVICE_FUNCTION(vkMapMemory)
-		INIT_DEVICE_FUNCTION(vkUnmapMemory)
-		INIT_DEVICE_FUNCTION(vkQueueSubmit)
-		INIT_DEVICE_FUNCTION(vkQueueWaitIdle)
-		INIT_DEVICE_FUNCTION(vkResetDescriptorPool)
-		INIT_DEVICE_FUNCTION(vkResetFences)
-		INIT_DEVICE_FUNCTION(vkUpdateDescriptorSets)
-		INIT_DEVICE_FUNCTION(vkWaitForFences)
+	INIT_DEVICE_FUNCTION(vkAllocateDescriptorSets)
+	INIT_DEVICE_FUNCTION(vkAllocateMemory)
+	INIT_DEVICE_FUNCTION(vkBeginCommandBuffer)
+	INIT_DEVICE_FUNCTION(vkBindBufferMemory)
+	INIT_DEVICE_FUNCTION(vkBindImageMemory)
+	INIT_DEVICE_FUNCTION(vkCmdBeginRenderPass)
+	INIT_DEVICE_FUNCTION(vkCmdBindDescriptorSets)
+	INIT_DEVICE_FUNCTION(vkCmdBindIndexBuffer)
+	INIT_DEVICE_FUNCTION(vkCmdBindPipeline)
+	INIT_DEVICE_FUNCTION(vkCmdBindVertexBuffers)
+	INIT_DEVICE_FUNCTION(vkCmdBlitImage)
+	INIT_DEVICE_FUNCTION(vkCmdClearAttachments)
+	INIT_DEVICE_FUNCTION(vkCmdClearColorImage)
+	INIT_DEVICE_FUNCTION(vkCmdCopyBufferToImage)
+	INIT_DEVICE_FUNCTION(vkCmdCopyImage)
+	INIT_DEVICE_FUNCTION(vkCmdCopyImageToBuffer)
+	INIT_DEVICE_FUNCTION(vkCmdDraw)
+	INIT_DEVICE_FUNCTION(vkCmdDrawIndexed)
+	INIT_DEVICE_FUNCTION(vkCmdEndRenderPass)
+	INIT_DEVICE_FUNCTION(vkCmdPipelineBarrier)
+	INIT_DEVICE_FUNCTION(vkCmdPushConstants)
+	INIT_DEVICE_FUNCTION(vkCmdSetDepthBias)
+	INIT_DEVICE_FUNCTION(vkCmdSetScissor)
+	INIT_DEVICE_FUNCTION(vkCmdSetViewport)
+	INIT_DEVICE_FUNCTION(vkCreateBuffer)
+	INIT_DEVICE_FUNCTION(vkCreateCommandPool)
+	INIT_DEVICE_FUNCTION(vkCreateDescriptorPool)
+	INIT_DEVICE_FUNCTION(vkCreateDescriptorSetLayout)
+	INIT_DEVICE_FUNCTION(vkCreateFence)
+	INIT_DEVICE_FUNCTION(vkCreateFramebuffer)
+	INIT_DEVICE_FUNCTION(vkCreateGraphicsPipelines)
+	INIT_DEVICE_FUNCTION(vkCreateImage)
+	INIT_DEVICE_FUNCTION(vkCreateImageView)
+	INIT_DEVICE_FUNCTION(vkCreatePipelineLayout)
+	INIT_DEVICE_FUNCTION(vkCreateRenderPass)
+	INIT_DEVICE_FUNCTION(vkCreateSampler)
+	INIT_DEVICE_FUNCTION(vkCreateSemaphore)
+	INIT_DEVICE_FUNCTION(vkCreateShaderModule)
+	INIT_DEVICE_FUNCTION(vkDestroyBuffer)
+	INIT_DEVICE_FUNCTION(vkDestroyCommandPool)
+	INIT_DEVICE_FUNCTION(vkDestroyDescriptorPool)
+	INIT_DEVICE_FUNCTION(vkDestroyDescriptorSetLayout)
+	INIT_DEVICE_FUNCTION(vkDestroyDevice)
+	INIT_DEVICE_FUNCTION(vkDestroyFence)
+	INIT_DEVICE_FUNCTION(vkDestroyFramebuffer)
+	INIT_DEVICE_FUNCTION(vkDestroyImage)
+	INIT_DEVICE_FUNCTION(vkDestroyImageView)
+	INIT_DEVICE_FUNCTION(vkDestroyPipeline)
+	INIT_DEVICE_FUNCTION(vkDestroyPipelineLayout)
+	INIT_DEVICE_FUNCTION(vkDestroyRenderPass)
+	INIT_DEVICE_FUNCTION(vkDestroySampler)
+	INIT_DEVICE_FUNCTION(vkDestroySemaphore)
+	INIT_DEVICE_FUNCTION(vkDestroyShaderModule)
+	INIT_DEVICE_FUNCTION(vkDeviceWaitIdle)
+	INIT_DEVICE_FUNCTION(vkEndCommandBuffer)
+	INIT_DEVICE_FUNCTION(vkFreeCommandBuffers)
+	INIT_DEVICE_FUNCTION(vkFreeDescriptorSets)
+	INIT_DEVICE_FUNCTION(vkFreeMemory)
+	INIT_DEVICE_FUNCTION(vkGetBufferMemoryRequirements)
+	INIT_DEVICE_FUNCTION(vkGetDeviceQueue)
+	INIT_DEVICE_FUNCTION(vkGetImageMemoryRequirements)
+	INIT_DEVICE_FUNCTION(vkGetImageSubresourceLayout)
+	INIT_DEVICE_FUNCTION(vkMapMemory)
+	INIT_DEVICE_FUNCTION(vkUnmapMemory)
+	INIT_DEVICE_FUNCTION(vkQueueSubmit)
+	INIT_DEVICE_FUNCTION(vkQueueWaitIdle)
+	INIT_DEVICE_FUNCTION(vkResetDescriptorPool)
+	INIT_DEVICE_FUNCTION(vkResetFences)
+	INIT_DEVICE_FUNCTION(vkUpdateDescriptorSets)
+	INIT_DEVICE_FUNCTION(vkWaitForFences)
 
-		INIT_DEVICE_FUNCTION(vkCreateSwapchainKHR)
-		INIT_DEVICE_FUNCTION(vkDestroySwapchainKHR)
-		INIT_DEVICE_FUNCTION(vkGetSwapchainImagesKHR)
-		INIT_DEVICE_FUNCTION(vkAcquireNextImageKHR)
-		INIT_DEVICE_FUNCTION(vkQueuePresentKHR)
+	INIT_DEVICE_FUNCTION(vkCreateSwapchainKHR)
+	INIT_DEVICE_FUNCTION(vkDestroySwapchainKHR)
+	INIT_DEVICE_FUNCTION(vkGetSwapchainImagesKHR)
+	INIT_DEVICE_FUNCTION(vkAcquireNextImageKHR)
+	INIT_DEVICE_FUNCTION(vkQueuePresentKHR)
 
 #undef INIT_DEVICE_FUNCTION
 }
@@ -668,11 +669,11 @@ void vk_initialize(void * pWinContext)
 	};
 
 
-	VK_CreateLogicalDevice(enable_features_array, 1, vk.queue_family_index, &vk.device);
+	VK_CreateLogicalDevice(vk.physical_device, enable_features_array, 1, vk.queue_family_index, &vk.device);
 
 	// Get device level functions. depended on the created logical device
 	// thus must be called AFTER vk_createLogicalDevice.
-	VK_LoadDeviceFunctions();
+	VK_LoadDeviceFunctions(vk.device);
 
 
 	// a call to retrieve queue handle
