@@ -29,7 +29,7 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 */
 #include "tr_local.h"
 #include "qgl.h"
-#include "../qcommon/sys_loadlib.h"
+
 
 
 

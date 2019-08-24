@@ -1674,7 +1674,6 @@ Q3VKOBJ = \
   $(B)/renderer_vulkan/single_texture_frag.o \
   $(B)/renderer_vulkan/single_texture_vert.o \
   \
-  $(B)/renderer_vulkan/R_StretchRaw.o \
   $(B)/renderer_vulkan/RB_DebugGraphics.o \
   $(B)/renderer_vulkan/RB_ShowImages.o \
   $(B)/renderer_vulkan/RB_DrawNormals.o \
@@ -1995,7 +1994,7 @@ ifeq ($(HAVE_VM_COMPILED),true)
 endif
 
 Q3OBJ += \
-	$(B)/client/signals.o \
+	$(B)/client/sys_signals.o \
 	$(B)/client/sys_loadlib.o
 
 ifdef MINGW
@@ -2208,7 +2207,7 @@ Q3DOBJ = \
   \
   $(B)/ded/con_log.o \
   $(B)/ded/sys_main.o \
-  $(B)/ded/signals.o \
+  $(B)/ded/sys_signals.o \
   $(B)/ded/sys_loadlib.o
   
 ifeq ($(ARCH),x86)

@@ -22,7 +22,7 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
 #include "../qcommon/q_shared.h"
 #include "../qcommon/qcommon.h"
-#include "sys_local.h"
+#include "sys_public.h"
 
 #include <windows.h>
 #include <lmerr.h>
@@ -63,19 +63,22 @@ Set FPU control word to default value
   #define _MCW_EM	0x0008001fU
   #define _MCW_RC	0x00000300U
   #define _MCW_PC	0x00030000U
-  #define _RC_NEAR      0x00000000U
+  #define _RC_NEAR  0x00000000U
   #define _PC_53	0x00010000U
   
   unsigned int _controlfp(unsigned int new, unsigned int mask);
 #endif
 
-#define FPUCWMASK1 (_MCW_RC | _MCW_EM)
+
 #define FPUCW (_RC_NEAR | _MCW_EM | _PC_53)
 
 #if idx64
-#define FPUCWMASK	(FPUCWMASK1)
+#define FPUCWMASK	(_MCW_RC | _MCW_EM)
 #else
-#define FPUCWMASK	(FPUCWMASK1 | _MCW_PC)
+// _MCW_PC (Precision control, Not supported on ARM or x64 platforms.)
+// _MCW_RC (Rounding control)
+// _MCW_EM (Interrupt exception mask)
+#define FPUCWMASK	(_MCW_RC | _MCW_EM | _MCW_PC)
 #endif
 
 void Sys_SetFloatEnv(void)
@@ -188,10 +191,11 @@ Sys_Milliseconds
 int sys_timeBase;
 int Sys_Milliseconds (void)
 {
-	int             sys_curtime;
+	int sys_curtime;
 	static qboolean initialized = qfalse;
 
-	if (!initialized) {
+	if (!initialized)
+	{
 		sys_timeBase = timeGetTime();
 		initialized = qtrue;
 	}
@@ -199,6 +203,8 @@ int Sys_Milliseconds (void)
 
 	return sys_curtime;
 }
+
+
 
 /*
 ================
@@ -228,7 +234,7 @@ qboolean Sys_RandomBytes( byte *string, int len )
 Sys_GetCurrentUser
 ================
 */
-char *Sys_GetCurrentUser( void )
+char* Sys_GetCurrentUser( void )
 {
 	static char s_userName[1024];
 	unsigned long size = sizeof( s_userName );
@@ -243,6 +249,8 @@ char *Sys_GetCurrentUser( void )
 
 	return s_userName;
 }
+
+
 
 #define MEM_THRESHOLD 96*1024*1024
 
@@ -266,9 +274,7 @@ Sys_Basename
 const char *Sys_Basename( char *path )
 {
 	static char base[ MAX_OSPATH ] = { 0 };
-	int length;
-
-	length = strlen( path ) - 1;
+	int length = strlen( path ) - 1;
 
 	// Skip trailing slashes
 	while( length > 0 && path[ length ] == '\\' )
@@ -296,10 +302,9 @@ Sys_Dirname
 const char *Sys_Dirname( char *path )
 {
 	static char dir[ MAX_OSPATH ] = { 0 };
-	int length;
 
 	Q_strncpyz( dir, path, sizeof( dir ) );
-	length = strlen( dir ) - 1;
+	int length = strlen( dir ) - 1;
 
 	while( length > 0 && dir[ length ] != '\\' )
 		length--;
@@ -314,11 +319,12 @@ const char *Sys_Dirname( char *path )
 Sys_FOpen
 ==============
 */
-FILE *Sys_FOpen( const char *ospath, const char *mode ) {
-	size_t length;
+FILE *Sys_FOpen( const char *ospath, const char *mode )
+{
+	size_t length = strlen(ospath);
 
 	// Windows API ignores all trailing spaces and periods which can get around Quake 3 file system restrictions.
-	length = strlen( ospath );
+
 	if ( length == 0 || ospath[length-1] == ' ' || ospath[length-1] == '.' ) {
 		return NULL;
 	}

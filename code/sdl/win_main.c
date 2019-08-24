@@ -506,27 +506,27 @@ void Sys_Init( void )
 //=======================================================================
 
 
-int WinMain (HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nCmdShow)
+int WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nCmdShow)
 {
-	char cwd[MAX_OSPATH];
+
 	char sys_cmdline[MAX_STRING_CHARS];
 
 	int	totalMsec = 0;
 	int countMsec = 0;
 
-    // should never get a previous instance in Win32
-    if ( hPrevInstance ) {
-        return 0;
+	// should never get a previous instance in Win32
+	if (hPrevInstance) {
+		return 0;
 	}
 
 	g_wv.hInstance = hInstance;
-	Q_strncpyz( sys_cmdline, lpCmdLine, sizeof( sys_cmdline ) );
+	Q_strncpyz(sys_cmdline, lpCmdLine, sizeof(sys_cmdline));
 
 	// done before Com/Sys_Init since we need this for error output
 	Sys_CreateConsole();
 
 	// no abort/retry/fail errors
-	
+
 	// SEM_FAILCRITICALERRORS = 0x0001 :
 	// The system does not display the critical - error - handler message box. 
 	// Instead, the system sends the error to the calling process.
@@ -534,21 +534,23 @@ int WinMain (HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int 
 	// function with a parameter of SEM_FAILCRITICALERRORS at startup. 
 	// This is to prevent error mode dialogs from hanging the application.
 
-	SetErrorMode( SEM_FAILCRITICALERRORS );
+	SetErrorMode(SEM_FAILCRITICALERRORS);
 
 	// get the initial time base
 	Sys_Milliseconds();
 
-	
+
 	com_viewlog = Cvar_Get("viewlog", "0", CVAR_CHEAT);
 
-	Com_Init( sys_cmdline );
+	Com_Init(sys_cmdline);
 	NET_Init();
 
-	_getcwd (cwd, sizeof(cwd));
+	{
+		char cwd[MAX_OSPATH];
+		_getcwd(cwd, sizeof(cwd));
 
-	Com_Printf(" Working directory: %s\n", cwd);
-
+		Com_Printf(" Working directory: %s\n", cwd);
+	}
 	// hide the early console since we've reached the point where we
 	// have a working graphics subsystems
 	if ( !com_dedicated->integer && !com_viewlog->integer ) {

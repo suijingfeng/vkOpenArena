@@ -70,26 +70,22 @@
     <ClCompile Include="..\..\..\code\qcommon\vm.c" />
     <ClCompile Include="..\..\..\code\qcommon\vm_interpreted.c" />
     <ClCompile Include="..\..\..\code\qcommon\vm_x86.c" />
-    <ClCompile Include="..\..\..\code\win32\win_create_window.c" />
-    <ClCompile Include="..\..\..\code\win32\win_event.c" />
-    <ClCompile Include="..\..\..\code\win32\win_fstream.c" />
-    <ClCompile Include="..\..\..\code\win32\win_gamma.c" />
-    <ClCompile Include="..\..\..\code\win32\win_get_clipboard.c" />
-    <ClCompile Include="..\..\..\code\win32\win_input.c" />
-    <ClCompile Include="..\..\..\code\win32\win_log.c" />
-    <ClCompile Include="..\..\..\code\win32\win_main.c" />
-    <ClCompile Include="..\..\..\code\win32\win_mode.c" />
-    <ClCompile Include="..\..\..\code\win32\win_net.c" />
-    <ClCompile Include="..\..\..\code\win32\win_shared.c" />
-    <ClCompile Include="..\..\..\code\win32\win_snd.c" />
-    <ClCompile Include="..\..\..\code\win32\win_syscon.c" />
-    <ClCompile Include="..\..\..\code\win32\win_wndproc.c" />
-  </ItemGroup>
-  <ItemGroup>
-    <Image Include="..\..\..\code\win32\oa3.ico" />
-  </ItemGroup>
-  <ItemGroup>
-    <ResourceCompile Include="..\..\..\code\win32\winquake.rc" />
+    <ClCompile Include="..\..\..\code\sdl\win_create_window.c" />
+    <ClCompile Include="..\..\..\code\sdl\win_event.c" />
+    <ClCompile Include="..\..\..\code\sdl\win_fstream.c" />
+    <ClCompile Include="..\..\..\code\sdl\win_gamma.c" />
+    <ClCompile Include="..\..\..\code\sdl\win_get_clipboard.c" />
+    <ClCompile Include="..\..\..\code\sdl\win_input.c" />
+    <ClCompile Include="..\..\..\code\sdl\win_log.c" />
+    <ClCompile Include="..\..\..\code\sdl\win_main.c" />
+    <ClCompile Include="..\..\..\code\sdl\win_shared.c" />
+    <ClCompile Include="..\..\..\code\sdl\win_snd.c" />
+    <ClCompile Include="..\..\..\code\sdl\win_syscon.c" />
+    <ClCompile Include="..\..\..\code\sdl\win_wndproc.c" />
+    <ClCompile Include="..\..\..\code\sys\con_passive.c" />
+    <ClCompile Include="..\..\..\code\sys\con_win32.c" />
+    <ClCompile Include="..\..\..\code\sys\sys_main.c" />
+    <ClCompile Include="..\..\..\code\sys\sys_win32.c" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\..\code\win32\resource.h" />
@@ -108,6 +104,12 @@
     <ProjectReference Include="..\botlib\botlib.vcxproj">
       <Project>{53020065-2e52-4ffa-8b15-94d4be0e674f}</Project>
     </ProjectReference>
+  </ItemGroup>
+  <ItemGroup>
+    <ResourceCompile Include="..\..\..\code\sdl\winquake.rc" />
+  </ItemGroup>
+  <ItemGroup>
+    <Image Include="..\..\..\code\sdl\oa3.ico" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <VCProjectVersion>15.0</VCProjectVersion>
@@ -161,6 +163,10 @@
   </ImportGroup>
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <OutDir>$(ProjectDir)..\bin\$(PlatformName)\$(Configuration)\</OutDir>
+    <IntDir>$(ProjectDir)..\bin\$(PlatformName)\$(Configuration)\intermediate\$(ProjectName)\</IntDir>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <OutDir>$(ProjectDir)..\bin\$(PlatformName)\$(Configuration)\</OutDir>
     <IntDir>$(ProjectDir)..\bin\$(PlatformName)\$(Configuration)\intermediate\$(ProjectName)\</IntDir>
   </PropertyGroup>

@@ -31,9 +31,9 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #include <ctype.h>
 #include <errno.h>
 
-#include "sys_local.h"
 
-#include "../qcommon/sys_loadlib.h"
+
+#include "../sys/sys_public.h"
 #include "../qcommon/q_shared.h"
 #include "../qcommon/qcommon.h"
 
@@ -207,8 +207,8 @@ void Sys_ParseArgs( int argc, char **argv )
 
 int main( int argc, char **argv )
 {
-	int   i;
-	char  commandLine[ MAX_STRING_CHARS ] = { 0 };
+
+	char commandLine[ MAX_STRING_CHARS ] = { 0 };
 
 
 	Sys_PlatformInit();
@@ -227,7 +227,7 @@ int main( int argc, char **argv )
 	Sys_SetDefaultInstallPath( DEFAULT_BASEDIR );
 
 	// Concatenate the command line for passing to Com_Init
-	for(i = 1; i < argc; i++)
+	for(int i = 1; i < argc; ++i)
 	{
 		const qboolean containsSpaces = (strchr(argv[i], ' ') != NULL);
 		if(containsSpaces)

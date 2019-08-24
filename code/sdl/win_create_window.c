@@ -13,7 +13,6 @@
 */
 
 #include "../client/client.h"
-#include "win_mode.h"
 #include "win_gamma.h"
 #include "win_log.h"
 #include "win_public.h"
@@ -102,6 +101,7 @@ int R_GetModeInfo(int * const width, int * const height, int mode, const int des
 
 	return i;
 }
+
 
 
 void R_ListDisplayMode_f( void )
