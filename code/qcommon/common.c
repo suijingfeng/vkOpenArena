@@ -26,6 +26,7 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
 #include "../sys/sys_public.h"
 
+
 #include <setjmp.h>
 #ifndef _WIN32
 #include <netinet/in.h>
@@ -34,7 +35,6 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #include <winsock.h>
 #endif
 
-#include "../sdl/input.h"
 
 #define MAX_NUM_ARGVS	50
 
@@ -2044,6 +2044,7 @@ sysEvent_t Com_GetSystemEvent( void )
 		eventTail++;
 		return eventQueue[ ( eventTail - 1 ) & MASK_QUEUED_EVENTS ];
 	}
+
 
     // Handle new console input
 	// check for console commands

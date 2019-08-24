@@ -252,19 +252,57 @@ char* Sys_GetCurrentUser( void )
 
 
 
-#define MEM_THRESHOLD 96*1024*1024
+#define MEM_THRESHOLD 128*1024*1024
+
 
 /*
 ==================
-Sys_LowPhysicalMemory
+ Retrieves information about the system's current
+ usage of both physical and virtual memory.
 ==================
 */
-qboolean Sys_LowPhysicalMemory( void )
+
+qboolean Sys_LowPhysicalMemory(void)
 {
-	MEMORYSTATUS stat;
-	GlobalMemoryStatus (&stat);
-	return (stat.dwTotalPhys <= MEM_THRESHOLD) ? qtrue : qfalse;
+	MEMORYSTATUSEX stat;
+
+	stat.dwLength = sizeof(stat);
+
+	// You can use the GlobalMemoryStatusEx function to 
+	// determine how much memory your application can 
+	// allocate without severely impacting other applications.
+	//
+	// The information returned by the GlobalMemoryStatusEx function
+	// is volatile. There is no guarantee that two sequential calls 
+	// to this function will return the same information.
+	GlobalMemoryStatusEx(&stat);
+
+	Com_Printf(" There is %ld percent of memory in use.\n",
+		stat.dwMemoryLoad);
+	Com_Printf(" There are %I64d total MB of physical memory.\n",
+		stat.ullTotalPhys / (1024 * 1024));
+	Com_Printf(" There are %I64d free MB of physical memory.\n",
+		stat.ullAvailPhys / (1024 * 1024));
+	Com_Printf(" There are %I64d total MB of paging file.\n",
+		stat.ullTotalPageFile / (1024 * 1024));
+	Com_Printf(" There are %I64d free MB of paging file.\n",
+		stat.ullAvailPageFile / (1024 * 1024));
+	Com_Printf(" There are %I64d total MB of virtual memory.\n",
+		stat.ullTotalVirtual / (1024 * 1024));
+	Com_Printf(" There are %I64d free  MB of virtual memory.\n",
+		stat.ullAvailVirtual / (1024 * 1024));
+
+	// Show the amount of extended memory available.
+
+	Com_Printf("There are %I64d free MB of extended memory.\n",
+		stat.ullAvailExtendedVirtual / (1024 * 1024));
+
+	// Com_sprintf(search, sizeof(search), "%s\\*", basedir);
+
+	return (stat.ullTotalPhys <= MEM_THRESHOLD) ? qtrue : qfalse;
 }
+
+
 
 /*
 ==============
@@ -339,6 +377,10 @@ Sys_Mkdir
 */
 qboolean Sys_Mkdir( const char *path )
 {
+	//  _mkdir are runtime library functions. CreateDirectory is specific to Windows. 
+	// If you want portable code, call _mkdir. portable to linux ???
+	// If you're fine making your program Windows-specific, or you need the ability to add security descriptors, then call CreateDirectory
+	// return _mkdir(path); ???
 	if( !CreateDirectory( path, NULL ) )
 	{
 		if( GetLastError( ) != ERROR_ALREADY_EXISTS )
@@ -347,6 +389,8 @@ qboolean Sys_Mkdir( const char *path )
 
 	return qtrue;
 }
+
+
 
 /*
 ==================
@@ -369,6 +413,8 @@ char *Sys_Cwd( void )
 
 	return cwd;
 }
+
+
 
 /*
 ==============================================================
@@ -789,4 +835,29 @@ qboolean Sys_PIDIsRunning( int pid )
 	}
 
 	return qfalse;
+}
+
+
+char * Sys_GetClipboardData(void)
+{
+	char *data = NULL;
+
+	if (OpenClipboard(NULL) != 0)
+	{
+		HANDLE hClipboardData;
+
+		if ((hClipboardData = GetClipboardData(CF_TEXT)) != 0)
+		{
+			char *cliptext;
+			if ((cliptext = (char*)GlobalLock(hClipboardData)) != 0) {
+				data = (char*)Z_Malloc(GlobalSize(hClipboardData) + 1);
+				Q_strncpyz(data, cliptext, GlobalSize(hClipboardData));
+				GlobalUnlock(hClipboardData);
+
+				strtok(data, "\n\r\b");
+			}
+		}
+		CloseClipboard();
+	}
+	return data;
 }

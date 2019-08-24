@@ -11,7 +11,6 @@
 #include <X11/Xatom.h>
 #include <X11/XKBlib.h>
 
-#include "input.h"
 #include "local.h"
 #include "../client/client.h"
 

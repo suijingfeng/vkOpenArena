@@ -23,9 +23,8 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 // 02/21/97 JCB Added extended DirectInput code to support external controllers.
 
 #include "../client/client.h"
+#include "../sys/sys_public.h"
 #include "win_public.h"
-
-#include "win_input.h"
 #include "win_event.h"
 
 
@@ -53,16 +52,6 @@ WIN32 MOUSE CONTROL
 
 ============================================================
 */
-
-
-static void IN_InitWin32Mouse( void ) 
-{
-}
-
-
-static void IN_ShutdownWin32Mouse( void )
-{
-}
 
 
 static void IN_ActivateWin32Mouse( void )
@@ -178,7 +167,7 @@ static void IN_StartupMouse(void)
 	}
 
 	s_wmv.mouseInitialized = qtrue;
-	IN_InitWin32Mouse();
+
 	Com_Printf("Win32 mouse input initialized.\n");
 }
 
@@ -300,5 +289,6 @@ void IN_MouseEvent(int mstate)
 
 void IN_Restart( void )
 {
-   IN_Init(); 
+	IN_Shutdown();
+	IN_Init(); 
 }

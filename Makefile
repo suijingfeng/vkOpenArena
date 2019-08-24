@@ -2007,8 +2007,7 @@ ifdef MINGW
 	$(B)/client/con_passive.o
 
   Q3OBJ += \
-    $(B)/client/sdl_snd.o \
-    $(B)/client/sdl_getClipboardData.o
+    $(B)/client/sdl_snd.o 
 
   Q3OBJ += \
     $(B)/client/win_create_window.o \
@@ -2027,7 +2026,6 @@ else
 
   Q3OBJ += \
     $(B)/client/sdl_snd.o \
-    $(B)/client/sdl_getClipboardData.o \
     $(B)/client/xcb_input.o \
     $(B)/client/xcb_keysyms.o \
     $(B)/client/xcb_create_window.o 

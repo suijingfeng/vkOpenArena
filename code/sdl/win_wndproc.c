@@ -1,6 +1,7 @@
-#include "win_public.h"
+
 #include "../client/client.h"
-#include "win_input.h"
+#include "../sys/sys_public.h"
+#include "win_public.h"
 #include "win_event.h"
 #include "win_snd.h"
 

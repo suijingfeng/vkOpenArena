@@ -253,9 +253,7 @@ CON_Hide
 */
 static void CON_Hide( void )
 {
-	int realLen;
-
-	realLen = qconsole_linelen;
+	int realLen = qconsole_linelen;
 
 	// remove input line from console output buffer
 	qconsole_linelen = 0;

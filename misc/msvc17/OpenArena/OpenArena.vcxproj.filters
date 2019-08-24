@@ -165,9 +165,6 @@
     <ClCompile Include="..\..\..\code\qcommon\snapvector.c">
       <Filter>Source Files\qcommon</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\code\qcommon\sys_loadlib.c">
-      <Filter>Source Files\qcommon</Filter>
-    </ClCompile>
     <ClCompile Include="..\..\..\code\qcommon\unzip.c">
       <Filter>Source Files\qcommon</Filter>
     </ClCompile>
@@ -186,13 +183,7 @@
     <ClCompile Include="..\..\..\code\sdl\win_event.c">
       <Filter>Source Files\platform</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\code\sdl\win_fstream.c">
-      <Filter>Source Files\platform</Filter>
-    </ClCompile>
     <ClCompile Include="..\..\..\code\sdl\win_gamma.c">
-      <Filter>Source Files\platform</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\..\code\sdl\win_get_clipboard.c">
       <Filter>Source Files\platform</Filter>
     </ClCompile>
     <ClCompile Include="..\..\..\code\sdl\win_input.c">
@@ -202,9 +193,6 @@
       <Filter>Source Files\platform</Filter>
     </ClCompile>
     <ClCompile Include="..\..\..\code\sdl\win_main.c">
-      <Filter>Source Files\platform</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\..\code\sdl\win_shared.c">
       <Filter>Source Files\platform</Filter>
     </ClCompile>
     <ClCompile Include="..\..\..\code\sdl\win_snd.c">
