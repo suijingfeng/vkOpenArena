@@ -3,21 +3,19 @@
 #include "vk_instance.h"
 #include "tr_cvar.h"
 #include "ref_import.h"
-
+#include "../sdl/win_public.h"
 
 extern PFN_vkGetInstanceProcAddr qvkGetInstanceProcAddr;
 
 #if defined(_WIN32) || defined(_WIN64)
 
-#include "../sdl/win_public.h"
+
 
 HINSTANCE vk_library_handle = NULL;		// Handle to refresh DLL 
 
 #elif defined(__unix__) || defined(__linux) || defined(__linux__)
 
 #include <dlfcn.h>
-
-#include "../linux/linux_public.h"
 
 
 void * vk_library_handle = NULL; // instance of Vulkan library

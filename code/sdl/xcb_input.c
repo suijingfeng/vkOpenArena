@@ -31,9 +31,7 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #include <xcb/xcb.h>
 
 #include "xcb_input.h"
-
-// #include <X11/XKBlib.h>
-// #include <X11/keysymdef.h>
+#include "win_public.h"
 
 #define XK_MISCELLANY
 #define XK_LATIN1
@@ -166,6 +164,9 @@ static void IN_ActivateMouse( void )
 	{
 		return;
 	}
+
+	window_focused = qtrue;
+
 
 /*
 
@@ -311,7 +312,7 @@ XCB_EVENT_MASK_KEY_PRESS | XCB_EVENT_MASK_KEY_RELEASE | XCB_EVENT_MASK_BUTTON_PR
                 printf("failed grabbed the keyboard.\n");
         }
 
-        free(pReply_mouse);
+        free( pReply_mouse );
         free( pReply_keyboard );
 
 
@@ -359,7 +360,8 @@ the  offsets (dst_x, dst_y) relative to the current position of the pointer.
 
 */
 
-		// xcb_set_input_focus(s_xcb_win.connection, XCB_INPUT_FOCUS_POINTER_ROOT, s_xcb_win.hWnd, XCB_CURRENT_TIME);
+		// xcb_set_input_focus(s_xcb_win.connection, XCB_NONE,
+		//  s_xcb_win.hWnd, XCB_CURRENT_TIME);
 
 
         mouseResetTime = Sys_Milliseconds();
@@ -397,7 +399,9 @@ static void IN_DeactivateMouse(void)
         xcb_ungrab_keyboard( s_xcb_win.connection, XCB_TIME_CURRENT_TIME);
         
         xcb_flush (s_xcb_win.connection);
+		
         mouseActive = qfalse;
+		window_focused = qfalse;
 	}
 }
 
@@ -1238,12 +1242,13 @@ void IN_Init()
 	// mouse variables
 	in_mouse = Cvar_Get( "in_mouse", "1", CVAR_ARCHIVE );
 
-	mouseAvailable = (in_mouse->integer != 0) ;
-	//SDL_StartTextInput( );
-
-	IN_DeactivateMouse( );
-
     keysyms_ = xcb_key_symbols_alloc(s_xcb_win.connection);
+	
+	mouseAvailable = (in_mouse->integer != 0) ;
+
+	if(mouseAvailable)
+		IN_DeactivateMouse( );
+
 
 }
 
@@ -1264,8 +1269,6 @@ void IN_Shutdown(void)
 
     xcb_key_symbols_free(keysyms_);
 }
-
-
 
 
 

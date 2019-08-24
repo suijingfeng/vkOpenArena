@@ -8,7 +8,7 @@
 
 #include "../qcommon/q_shared.h"
 #include "../qcommon/qcommon.h"
-#include "linux_public.h"
+#include "win_public.h"
 
 #include "xcb_input.h"
 

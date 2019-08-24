@@ -3,7 +3,6 @@
 
 
 #include "input.h"
-#include "linux_public.h"
 
 
 #endif
