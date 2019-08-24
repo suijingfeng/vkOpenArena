@@ -19,7 +19,7 @@ along with Foobar; if not, write to the Free Software
 Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 ===========================================================================
 */
-// win_local.h: Win32-specific Quake3 header file
+// win_public.h: OS-specific Quake3 header file
 
 #ifndef WIN_PUBLIC_H_
 #define WIN_PUBLIC_H_
@@ -28,24 +28,22 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
 #include <windows.h>
 
-#include "../renderercommon/tr_types.h"
 
 typedef struct WinVars_s {
 	
-	HINSTANCE		reflib_library;		// Handle to refresh DLL 
+	HWND		hWnd; // main window
+	HINSTANCE	hInstance;
+    int         screenIdx;
 
-	HWND			hWnd; // main window
-	HINSTANCE		hInstance;
-	int				winWidth;
-	int				winHeight;
-
-	int				desktopWidth;
-	int				desktopHeight;
-
+    int			winWidth;
+	int			winHeight;
+	int			desktopWidth;
+	int			desktopHeight;
 	int			isFullScreen;
+    int			isMinimized;
+    int         winStyle;
 
-	int			activeApp;
-	int			isMinimized;
+    int         activeApp;
 	OSVERSIONINFO	osversion;
 
 	// when we get a windows message, we store the time off so keyboard processing
@@ -55,7 +53,33 @@ typedef struct WinVars_s {
 
 #else
 
+#if defined(__linux__)
 
+#include <xcb/xcb.h>
+
+typedef struct xcb_windata_s {
+
+    xcb_connection_t *connection;
+    xcb_window_t hWnd;
+    xcb_window_t root;
+    int     screenIdx;
+
+	int		winWidth;
+	int		winHeight;
+	int		desktopWidth;
+	int		desktopHeight;
+	int		isFullScreen;
+	int		isMinimized;
+    int     winStyle;
+    int     activeApp;
+
+    unsigned int sysMsgTime;
+
+} WinVars_t;
+
+#endif
+
+// unix freebsd ... ???
 
 #endif
 
@@ -68,7 +92,7 @@ IMPLEMENTATION SPECIFIC FUNCTIONS
 */
 
 
-void WinSys_Init(glconfig_t * const pConfig, void ** pContext);
+void WinSys_Init(void ** pContext);
 void WinSys_Shutdown(void);
 void WinSys_EndFrame(void);
 void WinSys_SetGamma(unsigned char red[256], unsigned char green[256], unsigned char blue[256]);

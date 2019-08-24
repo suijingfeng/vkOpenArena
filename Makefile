@@ -2011,6 +2011,13 @@ ifdef MINGW
     $(B)/client/sdl_snd.o \
     $(B)/client/sdl_getClipboardData.o
 
+  Q3OBJ += \
+    $(B)/client/win_create_window.o \
+	$(B)/client/win_input.o \
+	$(B)/client/win_log.o \
+	$(B)/client/win_gamma.o \
+	$(B)/client/win_wndproc.o 
+
 else
 
   Q3OBJ += \

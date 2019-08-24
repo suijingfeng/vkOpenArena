@@ -19,17 +19,10 @@ along with Foobar; if not, write to the Free Software
 Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 ===========================================================================
 */
-// win_local.h: Win32-specific Quake3 header file
-
+// win_public.h: OS-specific Quake3 header file
 
 #ifndef LINUX_PUBLIC_H_
 #define LINUX_PUBLIC_H_
-
-#if !( defined __linux__ || defined __FreeBSD__ || defined __sun || defined MACOS_X )
-#error You should include this file only on Linux/FreeBSD/Solaris platforms
-#endif
-
-
 
 #if defined(__linux__)
 
@@ -53,7 +46,7 @@ typedef struct xcb_windata_s {
 
 } WinVars_t;
 
-#else 
+#else
 
 // unix freebsd ... ???
 
@@ -66,6 +59,7 @@ IMPLEMENTATION SPECIFIC FUNCTIONS
 
 ====================================================================
 */
+
 
 void WinSys_Init(void ** pContext);
 void WinSys_Shutdown(void);

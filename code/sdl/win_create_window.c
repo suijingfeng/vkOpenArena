@@ -25,6 +25,105 @@ extern WinVars_t g_wv;
 extern LRESULT WINAPI MainWndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
 
 
+typedef struct vidmode_s
+{
+	const char * description;
+	int         width, height;
+} vidmode_t;
+
+static const vidmode_t r_vidModes[] =
+{
+	{ "Mode  0: 320x240",		320,	240},
+	{ "Mode  1: 400x300",		400,	300},
+	{ "Mode  2: 512x384",		512,	384},
+	{ "Mode  3: 640x480",		640,	480},
+	{ "Mode  4: 800x600",		800,	600},
+	{ "Mode  5: 960x720",		960,	720},
+	{ "Mode  6: 1024x768",		1024,	768},
+	{ "Mode  7: 1152x864",		1152,	864},
+	{ "Mode  8: 1280x1024",		1280,	1024},
+	{ "Mode  9: 1600x1200",		1600,	1200},
+	{ "Mode 10: 2048x1536",		2048,	1536},
+	{ "Mode 11: 856x480 (wide)",856,	480},
+	{ "Mode 12: 1280x720",		1280,	720},
+	{ "Mode 13: 1280x768",		1280,	768},
+	{ "Mode 14: 1280x800",		1280,	800},
+	{ "Mode 15: 1280x960",		1280,	960},
+	{ "Mode 16: 1360x768",		1360,	768},
+	{ "Mode 17: 1366x768",		1366,	768}, // yes there are some out there on that extra 6
+	{ "Mode 18: 1360x1024",		1360,	1024},
+	{ "Mode 19: 1400x1050",		1400,	1050},
+	{ "Mode 20: 1400x900",		1400,	900},
+	{ "Mode 21: 1600x900",		1600,	900},
+	{ "Mode 22: 1680x1050",		1680,	1050},
+	{ "Mode 23: 1920x1080",		1920,	1080},
+	{ "Mode 24: 1920x1200",		1920,	1200},
+	{ "Mode 25: 1920x1440",		1920,	1440},
+	{ "Mode 26: 2560x1080",		2560,	1080},
+	{ "Mode 27: 2560x1600",		2560,	1600},
+	{ "Mode 28: 3840x2160 (4K)",3840,	2160}
+};
+
+const static int s_numVidModes = (sizeof(r_vidModes) / sizeof(r_vidModes[0]));
+
+
+// always returu a valid mode ...
+int R_GetModeInfo(int * const width, int * const height, int mode, const int desktopWidth, const int desktopHeight)
+{
+	// corse error handle,
+	if (mode < 0 || mode >= s_numVidModes)
+	{
+		// just 640 * 480;
+		*width = 640;
+		*height = 480;
+		return 3;
+	}
+
+	int i = mode;
+	for ( ; i > 0; --i)
+	{
+		const vidmode_t * pVm = &r_vidModes[i];
+		if (pVm->width >= desktopWidth || pVm->height >= desktopHeight)
+		{
+			continue;
+		}
+
+		*width = pVm->width;
+		*height = pVm->height;
+		return i;
+	}
+
+	if (i == 0)
+	{
+		*width = 640;
+		*height = 480;
+		return 3;
+	}
+
+	return i;
+}
+
+
+void R_ListDisplayMode_f( void )
+{
+	Com_Printf( "\n" );
+	for (int i = 0; i < s_numVidModes; ++i)
+	{
+		Com_Printf( "%s \n", r_vidModes[i].description);
+	}
+	Com_Printf( "\n" );
+}
+
+void win_InitDisplayModel(void)
+{
+	Cmd_AddCommand("printDisplayModes", R_ListDisplayMode_f);
+}
+
+void win_EndDisplayModel(void)
+{
+	Cmd_RemoveCommand("printDisplayModes");
+}
+
 static int GetDesktopColorDepth(void)
 {
 	HDC hdc = GetDC(GetDesktopWindow());
@@ -55,47 +154,71 @@ static int GetDesktopHeight(void)
 
 static void win_createWindowImpl( void )
 {
+    const char MAIN_WINDOW_CLASS_NAME[] = { "OpenArena" };
+    
 	Com_Printf( " Initializing window subsystem. \n" );
 
-	cvar_t* win_fullscreen = Cvar_Get("r_fullscreen", "1", 0);
+	cvar_t* r_fullscreen = Cvar_Get("r_fullscreen", "1", 0);
 
-	cvar_t* win_mode = Cvar_Get("r_mode", "3", 0);
+	cvar_t* r_mode = Cvar_Get("r_mode", "3", 0);
 
-	int width = g_wv.desktopWidth = GetDesktopWidth();
-	int height = g_wv.desktopHeight = GetDesktopHeight();
+	g_wv.desktopWidth = GetDesktopWidth();
+	g_wv.desktopHeight = GetDesktopHeight();
+	
+    int x, y, w, h;
 
-	int	stylebits;
+	Com_Printf( " Desktop Color Depth: %d \n" , GetDesktopColorDepth() );
 
-
-
-	if ( win_fullscreen->integer )
+	if ( r_fullscreen->integer )
 	{
 		// fullscreen 
-		stylebits = WS_POPUP | WS_VISIBLE;
+		g_wv.winStyle = WS_POPUP | WS_VISIBLE;
 		g_wv.winWidth = g_wv.desktopWidth;
 		g_wv.winHeight = g_wv.desktopHeight;
-
+        g_wv.winStyle = WS_OVERLAPPEDWINDOW | WS_VISIBLE;
 		g_wv.isFullScreen = 1;
-		Cvar_Set("r_fullscreen", "1");
+        
+
+        x = 0;
+		y = 0;
+		w = g_wv.desktopWidth;
+		h = g_wv.desktopHeight;
+
 		Com_Printf(" Fullscreen mode. \n");
 	}
 	else
 	{
-		stylebits = WS_OVERLAPPEDWINDOW | WS_VISIBLE;
+		g_wv.winStyle = WS_OVERLAPPEDWINDOW | WS_VISIBLE;
 
-		int mode = R_GetModeInfo(&width, &height, win_mode->integer, g_wv.desktopWidth, g_wv.desktopHeight);
- 
+
+		int width;
+		int height;
+		RECT r;
+
+		int mode = R_GetModeInfo(&width, &height, r_mode->integer, g_wv.desktopWidth, g_wv.desktopHeight);
 
 		g_wv.winWidth = width;
 		g_wv.winHeight = height;
 		g_wv.isFullScreen = 0;
-		
-		Cvar_Set("r_fullscreen", "0");
+
+
+		r.left = 0;
+		r.top = 0;
+		r.right = width;
+		r.bottom = height;
+		// Compute window rectangle dimensions based on requested client area dimensions.
+		AdjustWindowRect(&r, g_wv.winStyle, FALSE);
+
+		x = CW_USEDEFAULT;
+		y = CW_USEDEFAULT;
+		w = r.right - r.left;
+		h = r.bottom - r.top;
+
 		Com_Printf(" windowed mode: %d. \n", mode);
+
 	}
 
 
-#define	MAIN_WINDOW_CLASS_NAME	"OpenArena"
 	// g_wv.hWnd = create_main_window(g_wv.winWidth, g_wv.winHeight, g_wv.isFullScreen);
 
 	//
@@ -138,9 +261,9 @@ static void win_createWindowImpl( void )
 		MAIN_WINDOW_CLASS_NAME,
 		// The following are the window styles. After the window has been
 		// created, these styles cannot be modified, except as noted.
-		stylebits,
-		CW_USEDEFAULT, CW_USEDEFAULT, g_wv.winWidth, g_wv.winHeight,
-		NULL,
+		g_wv.winStyle,
+        x, y, w, h,
+        NULL,
 		NULL,
 		// A handle to the instance of the module to be associated with the window
 		g_wv.hInstance,
@@ -151,7 +274,6 @@ static void win_createWindowImpl( void )
 		Com_Error(ERR_FATAL, " Couldn't create window ");
 	}
 
-#undef	MAIN_WINDOW_CLASS_NAME
 
 	ShowWindow(hwnd, SW_SHOW);
 	UpdateWindow(hwnd);
@@ -171,7 +293,6 @@ static void win_createWindowImpl( void )
 	// A handle to the window that will receive the keyboard input.
 	// If this parameter is NULL, keystrokes are ignored.
 	SetFocus(g_wv.hWnd);
-
 }
 
 
@@ -191,7 +312,7 @@ static void win_destroyWindowImpl(void)
 
 
 
-void WinSys_Init(glconfig_t * const pConfig, void **pContext)
+void WinSys_Init(void **pContext)
 {
 
 	win_createWindowImpl();
@@ -200,22 +321,6 @@ void WinSys_Init(glconfig_t * const pConfig, void **pContext)
 
 	win_InitLoging();
 
-	pConfig->vidWidth = g_wv.winWidth;
-	pConfig->vidHeight = g_wv.winHeight;
-	pConfig->windowAspect = (float)g_wv.winWidth / (float)g_wv.winHeight;
-	pConfig->isFullscreen = g_wv.isFullScreen ? qtrue : qfalse;
-	pConfig->stereoEnabled = qfalse;
-	pConfig->smpActive = qfalse;
-	pConfig->displayFrequency = 60;
-
-
-	// allways enable stencil
-	pConfig->stencilBits = 8;
-	pConfig->depthBits = 24;
-	pConfig->colorBits = 32;
-	// pConfig->deviceSupportsGamma = win_checkHardwareGamma();
-	pConfig->deviceSupportsGamma = qfalse;
-	////
 	*pContext = &g_wv;
 }
 
@@ -239,3 +344,5 @@ void WinSys_EndFrame(void)
 {
 	;
 }
+
+

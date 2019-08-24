@@ -264,16 +264,16 @@ LRESULT WINAPI MainWndProc( HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam )
 			{
 				for(int i=0; i<zDelta; ++i)
 				{
-					Sys_QueEvent( g_wv.sysMsgTime, SE_KEY, K_MWHEELUP, qtrue, 0, NULL );
-					Sys_QueEvent( g_wv.sysMsgTime, SE_KEY, K_MWHEELUP, qfalse, 0, NULL );
+					Com_QueueEvent( g_wv.sysMsgTime, SE_KEY, K_MWHEELUP, qtrue, 0, NULL );
+					Com_QueueEvent( g_wv.sysMsgTime, SE_KEY, K_MWHEELUP, qfalse, 0, NULL );
 				}
 			}
 			else
 			{
 				for(int i=0; i<-zDelta; ++i)
 				{
-					Sys_QueEvent( g_wv.sysMsgTime, SE_KEY, K_MWHEELDOWN, qtrue, 0, NULL );
-					Sys_QueEvent( g_wv.sysMsgTime, SE_KEY, K_MWHEELDOWN, qfalse, 0, NULL );
+					Com_QueueEvent( g_wv.sysMsgTime, SE_KEY, K_MWHEELDOWN, qtrue, 0, NULL );
+					Com_QueueEvent( g_wv.sysMsgTime, SE_KEY, K_MWHEELDOWN, qfalse, 0, NULL );
 				}
 			}
 			// when an application processes the WM_MOUSEWHEEL message, it must return zero
@@ -307,7 +307,7 @@ LRESULT WINAPI MainWndProc( HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam )
 			int fMinimized = (BOOL) HIWORD(wParam);
 
 			VID_AppActivate( fActive != WA_INACTIVE, fMinimized);
-			SNDDMA_Activate();
+
 		}
 		break;
 
@@ -315,8 +315,8 @@ LRESULT WINAPI MainWndProc( HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam )
 	{
 		if (!g_wv.isFullScreen)
 		{
-			int xPos = (short) LOWORD(lParam);    // horizontal position 
-			int yPos = (short) HIWORD(lParam);    // vertical position 
+			// int xPos = (short) LOWORD(lParam);    // horizontal position 
+			// int yPos = (short) HIWORD(lParam);    // vertical position 
 			RECT r;
 			r.left   = 0;
 			r.top    = 0;
@@ -376,25 +376,25 @@ LRESULT WINAPI MainWndProc( HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam )
 			return 0;
 		}
 
-		Sys_QueEvent( g_wv.sysMsgTime, SE_KEY, MapKey( wParam, lParam ), qtrue, 0, NULL );
+		Com_QueueEvent( g_wv.sysMsgTime, SE_KEY, MapKey( wParam, lParam ), qtrue, 0, NULL );
 	} break;
 
 	case WM_KEYDOWN:
-		Sys_QueEvent( g_wv.sysMsgTime, SE_KEY, MapKey( wParam, lParam ), qtrue, 0, NULL );
+		Com_QueueEvent( g_wv.sysMsgTime, SE_KEY, MapKey( wParam, lParam ), qtrue, 0, NULL );
 		break;
 
 	case WM_SYSKEYUP:
 	case WM_KEYUP:
 		//Com_Printf( "^5k-^7 wParam:%08x lParam:%08x\n", wParam, lParam );
-		Sys_QueEvent( g_wv.sysMsgTime, SE_KEY, MapKey( wParam, lParam ), qfalse, 0, NULL );
+		Com_QueueEvent( g_wv.sysMsgTime, SE_KEY, MapKey( wParam, lParam ), qfalse, 0, NULL );
 		break;
 
 	case WM_CHAR:
 	{
-		// Sys_QueEvent( g_wv.sysMsgTime, SE_CHAR, wParam, 0, 0, NULL );
+		// Com_QueueEvent( g_wv.sysMsgTime, SE_CHAR, wParam, 0, 0, NULL );
 		byte scancode = ((lParam >> 16) & 0xFF);
 		if ( wParam != VK_NUMPAD0 && scancode != 0x29 ) {
-			Sys_QueEvent( g_wv.sysMsgTime, SE_CHAR, MapChar( wParam, scancode ), 0, 0, NULL );
+			Com_QueueEvent( g_wv.sysMsgTime, SE_CHAR, MapChar( wParam, scancode ), 0, 0, NULL );
 		}
 	} break;
 	

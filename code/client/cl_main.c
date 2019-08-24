@@ -27,8 +27,7 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #include "../sys/sys_local.h"
 #include "../qcommon/sys_loadlib.h"
 #include "../sdl/input.h"
-
-#include "../win32/win_public.h"
+#include "../sdl/win_public.h"
 
 #ifdef USE_MUMBLE
 #include "libmumblelink.h"

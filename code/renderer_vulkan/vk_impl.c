@@ -9,7 +9,7 @@ extern PFN_vkGetInstanceProcAddr qvkGetInstanceProcAddr;
 
 #if defined(_WIN32) || defined(_WIN64)
 
-#include "../win32/win_public.h"
+#include "../sdl/win_public.h"
 
 HINSTANCE vk_library_handle = NULL;		// Handle to refresh DLL 
 

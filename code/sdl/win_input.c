@@ -22,8 +22,9 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 // win_input.c -- win32 mouse and joystick code
 // 02/21/97 JCB Added extended DirectInput code to support external controllers.
 
-#include "win_public.h"
 #include "../client/client.h"
+#include "win_public.h"
+
 #include "win_input.h"
 #include "win_event.h"
 
@@ -265,7 +266,7 @@ void IN_Frame (void)
 
 	if (mx || my)
 	{
-		Sys_QueEvent(0, SE_MOUSE, mx, my, 0, NULL);
+		Com_QueueEvent(0, SE_MOUSE, mx, my, 0, NULL);
 	}
 }
 
@@ -284,15 +285,20 @@ void IN_MouseEvent(int mstate)
 		if ((mstate & (1 << i)) &&
 			!(s_wmv.oldButtonState & (1 << i)))
 		{
-			Sys_QueEvent(g_wv.sysMsgTime, SE_KEY, K_MOUSE1 + i, qtrue, 0, NULL);
+			Com_QueueEvent(g_wv.sysMsgTime, SE_KEY, K_MOUSE1 + i, qtrue, 0, NULL);
 		}
 
 		if (!(mstate & (1 << i)) &&
 			(s_wmv.oldButtonState & (1 << i)))
 		{
-			Sys_QueEvent(g_wv.sysMsgTime, SE_KEY, K_MOUSE1 + i, qfalse, 0, NULL);
+			Com_QueueEvent(g_wv.sysMsgTime, SE_KEY, K_MOUSE1 + i, qfalse, 0, NULL);
 		}
 	}
 
 	s_wmv.oldButtonState = mstate;
+}
+
+void IN_Restart( void )
+{
+   IN_Init(); 
 }
