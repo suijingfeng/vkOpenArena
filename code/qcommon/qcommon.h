@@ -378,7 +378,13 @@ void	*VM_ExplicitArgPtr( vm_t *vm, intptr_t intValue );
 #define	VMA(x) VM_ArgPtr(args[x])
 static ID_INLINE float _vmf(intptr_t x)
 {
-	floatint_t fi;
+	typedef union float2int_s {
+		float f;
+		int i;
+		unsigned int ui;
+	} float2int_t;
+
+	float2int_t fi;
 	fi.i = (int) x;
 	return fi.f;
 }

@@ -11,6 +11,8 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "libjpeg", "..\libjpeg\libjp
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "botlib", "..\botlib\botlib.vcxproj", "{53020065-2E52-4FFA-8B15-94D4BE0E674F}"
 EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "renderer_d3d12", "..\renderer_d3d12\renderer_d3d12.vcxproj", "{3C11442E-9DF9-43A4-89C6-EB6013CAE401}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|x64 = Debug|x64
@@ -51,6 +53,14 @@ Global
 		{53020065-2E52-4FFA-8B15-94D4BE0E674F}.Release|x64.Build.0 = Release|x64
 		{53020065-2E52-4FFA-8B15-94D4BE0E674F}.Release|x86.ActiveCfg = Release|Win32
 		{53020065-2E52-4FFA-8B15-94D4BE0E674F}.Release|x86.Build.0 = Release|Win32
+		{3C11442E-9DF9-43A4-89C6-EB6013CAE401}.Debug|x64.ActiveCfg = Debug|x64
+		{3C11442E-9DF9-43A4-89C6-EB6013CAE401}.Debug|x64.Build.0 = Debug|x64
+		{3C11442E-9DF9-43A4-89C6-EB6013CAE401}.Debug|x86.ActiveCfg = Debug|Win32
+		{3C11442E-9DF9-43A4-89C6-EB6013CAE401}.Debug|x86.Build.0 = Debug|Win32
+		{3C11442E-9DF9-43A4-89C6-EB6013CAE401}.Release|x64.ActiveCfg = Release|x64
+		{3C11442E-9DF9-43A4-89C6-EB6013CAE401}.Release|x64.Build.0 = Release|x64
+		{3C11442E-9DF9-43A4-89C6-EB6013CAE401}.Release|x86.ActiveCfg = Release|Win32
+		{3C11442E-9DF9-43A4-89C6-EB6013CAE401}.Release|x86.Build.0 = Release|Win32
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
