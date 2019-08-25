@@ -10,7 +10,6 @@ extern PFN_vkGetInstanceProcAddr qvkGetInstanceProcAddr;
 #if defined(_WIN32) || defined(_WIN64)
 
 
-
 HINSTANCE vk_library_handle = NULL;		// Handle to refresh DLL 
 
 #elif defined(__unix__) || defined(__linux) || defined(__linux__)
@@ -75,15 +74,12 @@ void VK_CleanInstanceProcAddrImpl(void)
 {
 #if defined(_WIN32) || defined(_WIN64)
 	FreeLibrary(vk_library_handle);
-	vk_library_handle = NULL;
 #elif defined(__unix__) || defined(__linux) || defined(__linux__)
 	dlclose(vk_library_handle);
-	vk_library_handle = NULL;
 #else
 	// macos ?
-	vk_library_handle = NULL;
 #endif
-
+	vk_library_handle = NULL;
 	ri.Printf(PRINT_ALL, " vulkan DLL freed. \n");
 }
 
