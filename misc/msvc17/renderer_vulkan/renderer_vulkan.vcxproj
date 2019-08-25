@@ -45,7 +45,7 @@
     <CharacterSet>MultiByte</CharacterSet>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="Configuration">
-    <ConfigurationType>Application</ConfigurationType>
+    <ConfigurationType>DynamicLibrary</ConfigurationType>
     <UseDebugLibraries>false</UseDebugLibraries>
     <PlatformToolset>v141</PlatformToolset>
     <WholeProgramOptimization>true</WholeProgramOptimization>
@@ -79,6 +79,11 @@
     <TargetExt>.dll</TargetExt>
     <OutDir>$(ProjectDir)..\bin\$(PlatformName)\$(Configuration)\</OutDir>
     <IntDir>$(ProjectDir)..\bin\$(PlatformName)\$(Configuration)\intermediate\$(ProjectName)\</IntDir>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <OutDir>$(ProjectDir)..\bin\$(PlatformName)\$(Configuration)\</OutDir>
+    <IntDir>$(ProjectDir)..\bin\$(PlatformName)\$(Configuration)\intermediate\$(ProjectName)\</IntDir>
+    <TargetExt>.dll</TargetExt>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
@@ -132,7 +137,6 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="..\..\..\code\renderer_vulkan\FixRenderCommandList.c" />
-    <ClCompile Include="..\..\..\code\renderer_vulkan\glConfig.c" />
     <ClCompile Include="..\..\..\code\renderer_vulkan\matrix_multiplication.c" />
     <ClCompile Include="..\..\..\code\renderer_vulkan\RB_DebugGraphics.c" />
     <ClCompile Include="..\..\..\code\renderer_vulkan\RB_DeformGeometry.c" />
@@ -167,7 +171,6 @@
     <ClCompile Include="..\..\..\code\renderer_vulkan\R_ShaderText.c" />
     <ClCompile Include="..\..\..\code\renderer_vulkan\R_SortAlgorithm.c" />
     <ClCompile Include="..\..\..\code\renderer_vulkan\R_SortDrawSurfs.c" />
-    <ClCompile Include="..\..\..\code\renderer_vulkan\R_StretchRaw.c" />
     <ClCompile Include="..\..\..\code\renderer_vulkan\shaders\Compiled\multi_texture_add_frag.c" />
     <ClCompile Include="..\..\..\code\renderer_vulkan\shaders\Compiled\multi_texture_clipping_plane_vert.c" />
     <ClCompile Include="..\..\..\code\renderer_vulkan\shaders\Compiled\multi_texture_mul_frag.c" />

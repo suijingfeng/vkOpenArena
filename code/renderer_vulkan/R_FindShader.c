@@ -172,7 +172,7 @@ struct shader_s* R_FindShader( const char *name, int lightmapIndex, qboolean mip
     image_t* image = NULL;
     
     char fileName[MAX_QPATH] = {0};
-    strncpy(fileName, name, MAX_QPATH);
+    strncpy(fileName, name, sizeof(fileName)-1);
 
 
     if( (fileName[1] == ':') && (
@@ -357,7 +357,7 @@ static void Shader_DoSimpleCheck(char* name, char* p)
             break;
         
         char shaderName[MAX_QPATH]={0};
-        strncpy(shaderName, token, sizeof(shaderName));
+        strncpy(shaderName, token, sizeof(shaderName)-1);
 
         int shaderLine = R_GetCurrentParseLine();
 
@@ -404,7 +404,7 @@ a single large text block that can be scanned for shader names
 void ScanAndLoadShaderFiles( void )
 {
 
-	uint32_t numShaderFiles = 0;
+	int32_t numShaderFiles = 0;
 
 	// scan for shader files
 	char** ppShaderFiles = ri.FS_ListFiles( "scripts", ".shader", &numShaderFiles );
@@ -428,8 +428,8 @@ void ScanAndLoadShaderFiles( void )
     long sum = 0;
     char * pBuffers[MAX_SHADER_FILES] = {0};
 
-    uint32_t i;
-	for ( i = 0; i < numShaderFiles; ++i )
+
+	for (int i = 0; i < numShaderFiles; ++i )
 	{
 		char filename[MAX_QPATH] = {0};
 

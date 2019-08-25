@@ -1,12 +1,14 @@
-#include "tr_shader.h"
-
-#include "tr_cmds.h" // R_AddDrawSurfCmd
-#include "R_Portal.h"
-#include "ref_import.h"
-
 #include "tr_globals.h"
+#include "ref_import.h"
 #include "tr_shader.h"
 #include "tr_cvar.h"
+#include "tr_cmds.h" // R_AddDrawSurfCmd
+#include "R_Portal.h"
+
+
+
+
+
 
 #include "FixRenderCommandList.h"
 #include "R_GetMicroSeconds.h"

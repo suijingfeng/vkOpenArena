@@ -23,9 +23,8 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 // 02/21/97 JCB Added extended DirectInput code to support external controllers.
 
 #include "../client/client.h"
+#include "../sys/sys_public.h"
 #include "win_public.h"
-
-#include "win_input.h"
 #include "win_event.h"
 
 
@@ -43,7 +42,7 @@ typedef struct {
 
 static WinMouseVars_t s_wmv;
 
-cvar_t	*in_mouse;
+static cvar_t	*in_mouse;
 
 
 /*
@@ -55,18 +54,9 @@ WIN32 MOUSE CONTROL
 */
 
 
-static void IN_InitWin32Mouse( void ) 
-{
-}
-
-
-static void IN_ShutdownWin32Mouse( void )
-{
-}
-
-
 static void IN_ActivateWin32Mouse( void )
 {
+	Com_Printf("IN_ActivateWin32Mouse.\n");
 
 	int width = GetSystemMetrics (SM_CXSCREEN);
 	int height = GetSystemMetrics (SM_CYSCREEN);
@@ -96,13 +86,14 @@ static void IN_ActivateWin32Mouse( void )
 
 static void IN_DeactivateWin32Mouse( void ) 
 {
+	Com_Printf("IN_DeactivateWin32Mouse.\n");
 	ClipCursor (NULL);
 	ReleaseCapture ();
 	while (ShowCursor (TRUE) < 0)
 		;
 }
 
-
+/*
 static void IN_Win32Mouse( int * const mx, int * const my )
 {
 	POINT current_pos;
@@ -116,7 +107,7 @@ static void IN_Win32Mouse( int * const mx, int * const my )
 	*mx = current_pos.x - s_wmv.window_center_x;
 	*my = current_pos.y - s_wmv.window_center_y;
 }
-
+*/
 
 /*
 ===========
@@ -178,7 +169,7 @@ static void IN_StartupMouse(void)
 	}
 
 	s_wmv.mouseInitialized = qtrue;
-	IN_InitWin32Mouse();
+
 	Com_Printf("Win32 mouse input initialized.\n");
 }
 
@@ -186,6 +177,13 @@ static void IN_StartupMouse(void)
 // ====================================================
 // 
 // ====================================================
+
+void IN_Restart( void )
+{
+	IN_Shutdown();
+	IN_Init(); 
+}
+
 
 void IN_Init( void )
 {
@@ -196,11 +194,14 @@ void IN_Init( void )
 	Com_Printf("------------------------------------\n");
 
 	in_mouse->modified = qfalse;
+
+	Cmd_AddCommand("in_restart", IN_Restart);
 }
 
 void IN_Shutdown(void)
 {
 	IN_DeactivateMouse();
+	Cmd_RemoveCommand("in_restart");
 }
 
 
@@ -248,21 +249,43 @@ void IN_Frame (void)
 			return;
 		}
 	}
-
-	if ( !s_wmv.isAppActive)
+	else
+		IN_ActivateMouse();
+/*
+	if (!cls.glconfig.isFullscreen && (Key_GetCatcher() & KEYCATCH_CONSOLE))
 	{
-		IN_DeactivateMouse ();
-		return;
+		// Console is down in windowed mode
+		IN_DeactivateMouse();
 	}
-
-	IN_ActivateMouse();
-
+	else if (!cls.glconfig.isFullscreen && (clc.state != CA_DISCONNECTED && clc.state != CA_ACTIVE))
+	{
+		// If not DISCONNECTED (main menu) or ACTIVE (in game), we're loading
+		// Loading in windowed mode
+		IN_DeactivateMouse();
+	}
+	else if ( !s_wmv.isAppActive )
+	{
+		// Window not got focus
+		IN_DeactivateMouse ();
+	}
+	else
+		IN_ActivateMouse();
+*/
 	// post events to the system que
 	// IN_MouseMove();
 
-	int	mx, my;
+	// IN_Win32Mouse(&mx, &my);
 
-	IN_Win32Mouse(&mx, &my);
+	POINT current_pos;
+
+	// find mouse movement
+	GetCursorPos(&current_pos);
+
+	// force the mouse to the center, so there's room to move
+	SetCursorPos(s_wmv.window_center_x, s_wmv.window_center_y);
+
+	int mx = current_pos.x - s_wmv.window_center_x;
+	int my = current_pos.y - s_wmv.window_center_y;
 
 	if (mx || my)
 	{
@@ -274,13 +297,11 @@ void IN_Frame (void)
 
 void IN_MouseEvent(int mstate)
 {
-	int	i;
-
 	if (!s_wmv.mouseInitialized)
 		return;
 
 	// perform button actions
-	for (i = 0; i < 3; ++i)
+	for (int i = 0; i < 3; ++i)
 	{
 		if ((mstate & (1 << i)) &&
 			!(s_wmv.oldButtonState & (1 << i)))
@@ -296,9 +317,4 @@ void IN_MouseEvent(int mstate)
 	}
 
 	s_wmv.oldButtonState = mstate;
-}
-
-void IN_Restart( void )
-{
-   IN_Init(); 
 }

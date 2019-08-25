@@ -20,7 +20,7 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 ===========================================================================
 */
 #include "client.h"
-#include "../sdl/input.h"
+#include "../sys/sys_public.h"
 /*
 
 key up events are sent even if in console mode
@@ -362,19 +362,18 @@ void Field_BigDraw( field_t *edit, int x, int y, int width, qboolean showCursor,
 Field_Paste
 ================
 */
-void Field_Paste( field_t *edit ) {
-	char	*cbd;
-	int		pasteLen, i;
+void Field_Paste( field_t *edit )
+{
 
-	cbd = Sys_GetClipboardData();
+	char* cbd = Sys_GetClipboardData();
 
 	if ( !cbd ) {
 		return;
 	}
 
 	// send as if typed, so insert / overstrike works properly
-	pasteLen = strlen( cbd );
-	for ( i = 0 ; i < pasteLen ; i++ ) {
+	int pasteLen = strlen( cbd );
+	for (int i = 0 ; i < pasteLen ; i++ ) {
 		Field_CharEvent( edit, cbd[i] );
 	}
 

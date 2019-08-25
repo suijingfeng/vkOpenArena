@@ -13,7 +13,6 @@
 */
 
 #include "../client/client.h"
-#include "win_mode.h"
 #include "win_gamma.h"
 #include "win_log.h"
 #include "win_public.h"
@@ -67,40 +66,61 @@ static const vidmode_t r_vidModes[] =
 const static int s_numVidModes = (sizeof(r_vidModes) / sizeof(r_vidModes[0]));
 
 
+
 // always returu a valid mode ...
 int R_GetModeInfo(int * const width, int * const height, int mode, const int desktopWidth, const int desktopHeight)
 {
-	// corse error handle,
-	if (mode < 0 || mode >= s_numVidModes)
+	// corse error handle, only in wondowed mode , we need get a initial window resolution
+	if (mode < -2 || mode >= s_numVidModes)
 	{
 		// just 640 * 480;
 		*width = 640;
 		*height = 480;
 		return 3;
 	}
-
-	int i = mode;
-	for ( ; i > 0; --i)
+	else if (mode == -2)
 	{
-		const vidmode_t * pVm = &r_vidModes[i];
-		if (pVm->width >= desktopWidth || pVm->height >= desktopHeight)
-		{
-			continue;
-		}
+		*width = desktopWidth;
+		*height = desktopHeight;
 
-		*width = pVm->width;
-		*height = pVm->height;
-		return i;
+		return -2;
+	}
+	else if (mode == -1)
+	{
+		// custom
+		*width = 1280;
+		*height = 720;
+
+		return -1;
 	}
 
-	if (i == 0)
+
+	const vidmode_t * pVm = &r_vidModes[mode];
+	if (pVm->width == desktopWidth && pVm->height == desktopHeight)
 	{
+		// equal the destop resolution, but we are not in fullscreen mode ...
+		// we just give a minial default ...
 		*width = 640;
 		*height = 480;
 		return 3;
 	}
+	else if (pVm->width > desktopWidth || pVm->height > desktopHeight)
+	{
+		// even large than the destop resolution, but we are not in fullscreen mode ...
+		// we just give a minial default ...
+		*width = 640;
+		*height = 480;
+		return 3;
+	}
+	else
+	{
+		*width = pVm->width;
+		*height = pVm->height;
+		return mode;
+	}
 
-	return i;
+
+	return mode;
 }
 
 
@@ -158,7 +178,7 @@ static void win_createWindowImpl( void )
     
 	Com_Printf( " Initializing window subsystem. \n" );
 
-	cvar_t* r_fullscreen = Cvar_Get("r_fullscreen", "1", 0);
+	cvar_t* r_fullscreen = Cvar_Get("r_fullscreen", "0", 0);
 
 	cvar_t* r_mode = Cvar_Get("r_mode", "3", 0);
 
@@ -175,7 +195,6 @@ static void win_createWindowImpl( void )
 		g_wv.winStyle = WS_POPUP | WS_VISIBLE;
 		g_wv.winWidth = g_wv.desktopWidth;
 		g_wv.winHeight = g_wv.desktopHeight;
-        g_wv.winStyle = WS_OVERLAPPEDWINDOW | WS_VISIBLE;
 		g_wv.isFullScreen = 1;
         
 
@@ -200,7 +219,6 @@ static void win_createWindowImpl( void )
 		g_wv.winWidth = width;
 		g_wv.winHeight = height;
 		g_wv.isFullScreen = 0;
-
 
 		r.left = 0;
 		r.top = 0;

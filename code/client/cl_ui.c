@@ -21,7 +21,8 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 */
 
 #include "client.h"
-#include "../sdl/input.h"
+#include "../sys/sys_public.h"
+
 #include "../botlib/botlib.h"
 
 extern	botlib_export_t	*botlib_export;
@@ -578,10 +579,9 @@ static void CL_GetGlconfig( glconfig_t *config ) {
 CL_GetClipboardData
 ====================
 */
-static void CL_GetClipboardData( char *buf, int buflen ) {
-	char	*cbd;
-
-	cbd = Sys_GetClipboardData();
+static void CL_GetClipboardData( char *buf, int buflen )
+{
+	char* cbd = Sys_GetClipboardData();
 
 	if ( !cbd ) {
 		*buf = 0;

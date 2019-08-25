@@ -22,7 +22,7 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
 #include "../qcommon/q_shared.h"
 #include "../qcommon/qcommon.h"
-#include "sys_local.h"
+#include "sys_public.h"
 
 #include <windows.h>
 #include <lmerr.h>
@@ -63,19 +63,22 @@ Set FPU control word to default value
   #define _MCW_EM	0x0008001fU
   #define _MCW_RC	0x00000300U
   #define _MCW_PC	0x00030000U
-  #define _RC_NEAR      0x00000000U
+  #define _RC_NEAR  0x00000000U
   #define _PC_53	0x00010000U
   
   unsigned int _controlfp(unsigned int new, unsigned int mask);
 #endif
 
-#define FPUCWMASK1 (_MCW_RC | _MCW_EM)
+
 #define FPUCW (_RC_NEAR | _MCW_EM | _PC_53)
 
 #if idx64
-#define FPUCWMASK	(FPUCWMASK1)
+#define FPUCWMASK	(_MCW_RC | _MCW_EM)
 #else
-#define FPUCWMASK	(FPUCWMASK1 | _MCW_PC)
+// _MCW_PC (Precision control, Not supported on ARM or x64 platforms.)
+// _MCW_RC (Rounding control)
+// _MCW_EM (Interrupt exception mask)
+#define FPUCWMASK	(_MCW_RC | _MCW_EM | _MCW_PC)
 #endif
 
 void Sys_SetFloatEnv(void)
@@ -188,10 +191,11 @@ Sys_Milliseconds
 int sys_timeBase;
 int Sys_Milliseconds (void)
 {
-	int             sys_curtime;
+	int sys_curtime;
 	static qboolean initialized = qfalse;
 
-	if (!initialized) {
+	if (!initialized)
+	{
 		sys_timeBase = timeGetTime();
 		initialized = qtrue;
 	}
@@ -199,6 +203,8 @@ int Sys_Milliseconds (void)
 
 	return sys_curtime;
 }
+
+
 
 /*
 ================
@@ -228,7 +234,7 @@ qboolean Sys_RandomBytes( byte *string, int len )
 Sys_GetCurrentUser
 ================
 */
-char *Sys_GetCurrentUser( void )
+char* Sys_GetCurrentUser( void )
 {
 	static char s_userName[1024];
 	unsigned long size = sizeof( s_userName );
@@ -244,19 +250,59 @@ char *Sys_GetCurrentUser( void )
 	return s_userName;
 }
 
-#define MEM_THRESHOLD 96*1024*1024
+
+
+#define MEM_THRESHOLD 128*1024*1024
+
 
 /*
 ==================
-Sys_LowPhysicalMemory
+ Retrieves information about the system's current
+ usage of both physical and virtual memory.
 ==================
 */
-qboolean Sys_LowPhysicalMemory( void )
+
+qboolean Sys_LowPhysicalMemory(void)
 {
-	MEMORYSTATUS stat;
-	GlobalMemoryStatus (&stat);
-	return (stat.dwTotalPhys <= MEM_THRESHOLD) ? qtrue : qfalse;
+	MEMORYSTATUSEX stat;
+
+	stat.dwLength = sizeof(stat);
+
+	// You can use the GlobalMemoryStatusEx function to 
+	// determine how much memory your application can 
+	// allocate without severely impacting other applications.
+	//
+	// The information returned by the GlobalMemoryStatusEx function
+	// is volatile. There is no guarantee that two sequential calls 
+	// to this function will return the same information.
+	GlobalMemoryStatusEx(&stat);
+
+	Com_Printf(" There is %ld percent of memory in use.\n",
+		stat.dwMemoryLoad);
+	Com_Printf(" There are %I64d total MB of physical memory.\n",
+		stat.ullTotalPhys / (1024 * 1024));
+	Com_Printf(" There are %I64d free MB of physical memory.\n",
+		stat.ullAvailPhys / (1024 * 1024));
+	Com_Printf(" There are %I64d total MB of paging file.\n",
+		stat.ullTotalPageFile / (1024 * 1024));
+	Com_Printf(" There are %I64d free MB of paging file.\n",
+		stat.ullAvailPageFile / (1024 * 1024));
+	Com_Printf(" There are %I64d total MB of virtual memory.\n",
+		stat.ullTotalVirtual / (1024 * 1024));
+	Com_Printf(" There are %I64d free  MB of virtual memory.\n",
+		stat.ullAvailVirtual / (1024 * 1024));
+
+	// Show the amount of extended memory available.
+
+	Com_Printf("There are %I64d free MB of extended memory.\n",
+		stat.ullAvailExtendedVirtual / (1024 * 1024));
+
+	// Com_sprintf(search, sizeof(search), "%s\\*", basedir);
+
+	return (stat.ullTotalPhys <= MEM_THRESHOLD) ? qtrue : qfalse;
 }
+
+
 
 /*
 ==============
@@ -266,9 +312,7 @@ Sys_Basename
 const char *Sys_Basename( char *path )
 {
 	static char base[ MAX_OSPATH ] = { 0 };
-	int length;
-
-	length = strlen( path ) - 1;
+	int length = strlen( path ) - 1;
 
 	// Skip trailing slashes
 	while( length > 0 && path[ length ] == '\\' )
@@ -296,10 +340,9 @@ Sys_Dirname
 const char *Sys_Dirname( char *path )
 {
 	static char dir[ MAX_OSPATH ] = { 0 };
-	int length;
 
 	Q_strncpyz( dir, path, sizeof( dir ) );
-	length = strlen( dir ) - 1;
+	int length = strlen( dir ) - 1;
 
 	while( length > 0 && dir[ length ] != '\\' )
 		length--;
@@ -314,11 +357,12 @@ const char *Sys_Dirname( char *path )
 Sys_FOpen
 ==============
 */
-FILE *Sys_FOpen( const char *ospath, const char *mode ) {
-	size_t length;
+FILE *Sys_FOpen( const char *ospath, const char *mode )
+{
+	size_t length = strlen(ospath);
 
 	// Windows API ignores all trailing spaces and periods which can get around Quake 3 file system restrictions.
-	length = strlen( ospath );
+
 	if ( length == 0 || ospath[length-1] == ' ' || ospath[length-1] == '.' ) {
 		return NULL;
 	}
@@ -333,6 +377,10 @@ Sys_Mkdir
 */
 qboolean Sys_Mkdir( const char *path )
 {
+	//  _mkdir are runtime library functions. CreateDirectory is specific to Windows. 
+	// If you want portable code, call _mkdir. portable to linux ???
+	// If you're fine making your program Windows-specific, or you need the ability to add security descriptors, then call CreateDirectory
+	// return _mkdir(path); ???
 	if( !CreateDirectory( path, NULL ) )
 	{
 		if( GetLastError( ) != ERROR_ALREADY_EXISTS )
@@ -341,6 +389,8 @@ qboolean Sys_Mkdir( const char *path )
 
 	return qtrue;
 }
+
+
 
 /*
 ==================
@@ -363,6 +413,8 @@ char *Sys_Cwd( void )
 
 	return cwd;
 }
+
+
 
 /*
 ==============================================================
@@ -783,4 +835,29 @@ qboolean Sys_PIDIsRunning( int pid )
 	}
 
 	return qfalse;
+}
+
+
+char * Sys_GetClipboardData(void)
+{
+	char *data = NULL;
+
+	if (OpenClipboard(NULL) != 0)
+	{
+		HANDLE hClipboardData;
+
+		if ((hClipboardData = GetClipboardData(CF_TEXT)) != 0)
+		{
+			char *cliptext;
+			if ((cliptext = (char*)GlobalLock(hClipboardData)) != 0) {
+				data = (char*)Z_Malloc(GlobalSize(hClipboardData) + 1);
+				Q_strncpyz(data, cliptext, GlobalSize(hClipboardData));
+				GlobalUnlock(hClipboardData);
+
+				strtok(data, "\n\r\b");
+			}
+		}
+		CloseClipboard();
+	}
+	return data;
 }

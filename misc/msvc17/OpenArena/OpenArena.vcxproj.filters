@@ -19,50 +19,14 @@
     <Filter Include="Source Files\qcommon">
       <UniqueIdentifier>{b892d77e-b2ae-43db-80f7-c2b9eadf8ca4}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Source Files\platform">
+      <UniqueIdentifier>{7920d40a-78e5-4fba-b4cc-d7812222d0d2}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\system">
+      <UniqueIdentifier>{584c1cf3-aab4-4a8d-a514-af5a0b34930b}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="..\..\..\code\win32\win_create_window.c">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\..\code\win32\win_event.c">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\..\code\win32\win_fstream.c">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\..\code\win32\win_gamma.c">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\..\code\win32\win_get_clipboard.c">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\..\code\win32\win_input.c">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\..\code\win32\win_log.c">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\..\code\win32\win_main.c">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\..\code\win32\win_mode.c">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\..\code\win32\win_net.c">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\..\code\win32\win_shared.c">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\..\code\win32\win_snd.c">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\..\code\win32\win_syscon.c">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\..\code\win32\win_wndproc.c">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="..\..\..\code\client\cl_avi.c">
       <Filter>Source Files\client</Filter>
     </ClCompile>
@@ -201,9 +165,6 @@
     <ClCompile Include="..\..\..\code\qcommon\snapvector.c">
       <Filter>Source Files\qcommon</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\code\qcommon\sys_loadlib.c">
-      <Filter>Source Files\qcommon</Filter>
-    </ClCompile>
     <ClCompile Include="..\..\..\code\qcommon\unzip.c">
       <Filter>Source Files\qcommon</Filter>
     </ClCompile>
@@ -216,16 +177,45 @@
     <ClCompile Include="..\..\..\code\qcommon\vm_x86.c">
       <Filter>Source Files\qcommon</Filter>
     </ClCompile>
-  </ItemGroup>
-  <ItemGroup>
-    <Image Include="..\..\..\code\win32\oa3.ico">
-      <Filter>Resource Files</Filter>
-    </Image>
-  </ItemGroup>
-  <ItemGroup>
-    <ResourceCompile Include="..\..\..\code\win32\winquake.rc">
-      <Filter>Resource Files</Filter>
-    </ResourceCompile>
+    <ClCompile Include="..\..\..\code\sdl\win_create_window.c">
+      <Filter>Source Files\platform</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\code\sdl\win_gamma.c">
+      <Filter>Source Files\platform</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\code\sdl\win_input.c">
+      <Filter>Source Files\platform</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\code\sdl\win_log.c">
+      <Filter>Source Files\platform</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\code\sdl\win_main.c">
+      <Filter>Source Files\platform</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\code\sdl\win_snd.c">
+      <Filter>Source Files\platform</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\code\sdl\win_syscon.c">
+      <Filter>Source Files\platform</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\code\sdl\win_wndproc.c">
+      <Filter>Source Files\platform</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\code\sys\con_passive.c">
+      <Filter>Source Files\system</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\code\sys\sys_main.c">
+      <Filter>Source Files\system</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\code\sys\sys_win32.c">
+      <Filter>Source Files\system</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\code\sdl\sdl_snd.c">
+      <Filter>Source Files\platform</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\code\sdl\sdl_input.c">
+      <Filter>Source Files\platform</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\..\code\win32\win_sysconsole.h">
@@ -261,5 +251,15 @@
     <ClInclude Include="..\..\..\code\win32\resource.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <ResourceCompile Include="..\..\..\code\sdl\winquake.rc">
+      <Filter>Resource Files</Filter>
+    </ResourceCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <Image Include="..\..\..\code\sdl\oa3.ico">
+      <Filter>Resource Files</Filter>
+    </Image>
   </ItemGroup>
 </Project>

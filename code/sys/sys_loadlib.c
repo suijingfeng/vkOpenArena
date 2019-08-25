@@ -1,5 +1,5 @@
-#include "sys_loadlib.h"
-#include "qcommon.h"
+#include "sys_public.h"
+
 
 ///////////////////// sys path /////////////////////
 
@@ -170,4 +170,3 @@ void *Sys_LoadGameDll(const char *name, intptr_t (QDECL **entryPoint)(int, ...),
 
 	return libHandle;
 }
-

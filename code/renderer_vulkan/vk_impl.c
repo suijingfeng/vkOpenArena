@@ -1,8 +1,7 @@
-#include "VKimpl.h"
-
-#include "vk_instance.h"
 #include "tr_cvar.h"
 #include "ref_import.h"
+#include "vk_instance.h"
+
 #include "../sdl/win_public.h"
 
 extern PFN_vkGetInstanceProcAddr qvkGetInstanceProcAddr;
