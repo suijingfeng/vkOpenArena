@@ -21,6 +21,7 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 */
 //
 #include "ui_local.h"
+#include "../qcommon/q_math.h"
 
 #define ART_FRAMEL			"menu/" MENU_ART_DIR "/frame2_l"
 #define ART_FRAMER			"menu/" MENU_ART_DIR "/frame1_r"

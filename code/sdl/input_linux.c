@@ -324,6 +324,7 @@ static void install_mouse_grab( void )
 	else
 	{
 		// set new mouse settings
+		// int XChangePointerControl(Display *display, Bool do_accel, Bool do_threshold, int accel_numerator, int accel_denominator, int threshold);
 		XChangePointerControl( dpy, True, True, 1, 1, 1 );
 	}
 

@@ -31,13 +31,10 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #include <ctype.h>
 #include <errno.h>
 
-
-
-#include "../sys/sys_public.h"
 #include "../qcommon/q_shared.h"
 #include "../qcommon/qcommon.h"
 
-
+#include "../sys/sys_public.h"
 
 
 #ifdef DEDICATED
@@ -373,6 +370,8 @@ int main( int argc, char **argv )
 
 	while( 1 )
 	{
+		// youurayy input lag fix
+		IN_Frame();
 		Com_Frame();
 	}
 

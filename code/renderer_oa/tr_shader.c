@@ -3574,7 +3574,6 @@ static void InitShader( const char *name, int lightmapIndex )
 shader_t *R_FindShaderReal( const char *name, int lightmapIndex, qboolean mipRawImage )
 {
 	char strippedName[MAX_QPATH];
-	int	i;
 	char *shaderText;
 	image_t	*image;
 	shader_t *sh;
