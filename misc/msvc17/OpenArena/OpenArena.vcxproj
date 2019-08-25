@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?>
+﻿<?xml version="1.0" encoding="utf-8"?>
 <Project DefaultTargets="Build" ToolsVersion="15.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup Label="ProjectConfigurations">
     <ProjectConfiguration Include="Debug|Win32">
@@ -69,8 +69,9 @@
     <ClCompile Include="..\..\..\code\qcommon\vm.c" />
     <ClCompile Include="..\..\..\code\qcommon\vm_interpreted.c" />
     <ClCompile Include="..\..\..\code\qcommon\vm_x86.c" />
+    <ClCompile Include="..\..\..\code\sdl\sdl_input.c" />
+    <ClCompile Include="..\..\..\code\sdl\sdl_snd.c" />
     <ClCompile Include="..\..\..\code\sdl\win_create_window.c" />
-    <ClCompile Include="..\..\..\code\sdl\win_event.c" />
     <ClCompile Include="..\..\..\code\sdl\win_gamma.c" />
     <ClCompile Include="..\..\..\code\sdl\win_input.c" />
     <ClCompile Include="..\..\..\code\sdl\win_log.c" />
@@ -79,7 +80,6 @@
     <ClCompile Include="..\..\..\code\sdl\win_syscon.c" />
     <ClCompile Include="..\..\..\code\sdl\win_wndproc.c" />
     <ClCompile Include="..\..\..\code\sys\con_passive.c" />
-    <ClCompile Include="..\..\..\code\sys\con_win32.c" />
     <ClCompile Include="..\..\..\code\sys\sys_main.c" />
     <ClCompile Include="..\..\..\code\sys\sys_win32.c" />
   </ItemGroup>

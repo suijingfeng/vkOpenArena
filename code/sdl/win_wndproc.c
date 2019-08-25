@@ -46,24 +46,15 @@ static void VID_AppActivate(BOOL fActive, BOOL minimize)
 
 const static byte s_scantokey[128] = 
 { 
-//  0           1       2       3       4       5       6       7 
-//  8           9       A       B       C       D       E       F 
-	0  ,    27,     '1',    '2',    '3',    '4',    '5',    '6', 
-	'7',    '8',    '9',    '0',    '-',    '=',    K_BACKSPACE, 9, // 0 
-	'q',    'w',    'e',    'r',    't',    'y',    'u',    'i', 
-	'o',    'p',    '[',    ']',    13 ,    K_CTRL,'a',  's',      // 1 
-	'd',    'f',    'g',    'h',    'j',    'k',    'l',    ';', 
-	'\'' ,    '`',    K_SHIFT,'\\',  'z',    'x',    'c',    'v',      // 2 
-	'b',    'n',    'm',    ',',    '.',    '/',    K_SHIFT,'*', 
-	K_ALT,' ',   K_CAPSLOCK  ,    K_F1, K_F2, K_F3, K_F4, K_F5,   // 3 
-	K_F6, K_F7, K_F8, K_F9, K_F10,  K_PAUSE,    0  , K_HOME, 
-	K_UPARROW, K_PGUP, K_KP_MINUS, K_LEFTARROW, K_KP_5, K_RIGHTARROW, K_KP_PLUS, K_END, //4 
-	K_DOWNARROW, K_PGDN, K_INS, K_DEL, 0, 0, 0, K_F11, 
-	K_F12,  0  ,    0  ,    0  ,    0  ,    0  ,    0  ,    0,     // 5
-	0  ,    0  ,    0  ,    0  ,    0  ,    0  ,    0  ,    0, 
-	0  ,    0  ,    0  ,    0  ,    0  ,    0  ,    0  ,    0,     // 6 
-	0  ,    0  ,    0  ,    0  ,    0  ,    0  ,    0  ,    0, 
-	0  ,    0  ,    0  ,    0  ,    0  ,    0  ,    0  ,    0      // 7 
+//  0           1       2       3       4       5       6       7      8           9       A       B       C       D       E       F 
+	 0 ,	27,    '1',    '2',    '3',    '4',    '5', '6', '7',    '8',    '9',    '0',    '-',    '=',    K_BACKSPACE, 9, // 0 
+	'q',    'w',    'e',    'r',    't',    'y',    'u', 'i', 'o',    'p',    '[',    ']',    13 ,    K_CTRL,'a',  's',      // 1 
+	'd',    'f',    'g',    'h',    'j',    'k',    'l', ';', '\'' ,    '`',    K_SHIFT,'\\',  'z',    'x',    'c',    'v',  // 2 
+	'b',    'n',    'm',    ',',    '.',    '/',    K_SHIFT, '*', K_ALT, ' ',   K_CAPSLOCK,    K_F1, K_F2, K_F3, K_F4, K_F5,  // 3 
+	K_F6, K_F7, K_F8, K_F9, K_F10,  K_PAUSE,    0  , K_HOME, K_UPARROW, K_PGUP, K_KP_MINUS, K_LEFTARROW, K_KP_5, K_RIGHTARROW, K_KP_PLUS, K_END, //4 
+	K_DOWNARROW, K_PGDN, K_INS, K_DEL,  0,  0,  0,  K_F11,   K_F12,     0  ,    0  ,    0  ,    0  ,    0  ,    0  ,    0,     // 5
+	0  ,    0  ,    0  ,    0  ,    0  ,    0  ,    0  ,    0,	0  ,    0  ,    0  ,    0  ,    0  ,    0  ,    0  ,    0,     // 6 
+	0  ,    0  ,    0  ,    0  ,    0  ,    0  ,    0  ,    0,	0  ,    0  ,    0  ,    0  ,    0  ,    0  ,    0  ,    0      // 7 
 }; 
 
 /*
@@ -124,6 +115,8 @@ static int MapKey( int nVirtKey, int key )
 			return K_KP_INS;
 		case K_DEL:
 			return K_KP_DEL;
+		case '`':
+			return K_CONSOLE;
 		default:
 			return result;
 		}
@@ -142,6 +135,8 @@ static int MapKey( int nVirtKey, int key )
 			return K_KP_PLUS;
 		case '*':
 			return K_KP_STAR;
+		case '`': 
+			return K_CONSOLE;
 		}
 		return result;
 	}
@@ -185,25 +180,16 @@ static int MapChar( WPARAM wParam, byte scancode )
 {
 	static const int s_scantochar[ 128 ] = 
 	{ 
-//	0        1       2       3       4       5       6       7 
-//	8        9       A       B       C       D       E       F 
- 	 0,      0,     '1',    '2',    '3',    '4',    '5',    '6', 
-	'7',    '8',    '9',    '0',    '-',    '=',    0x8,    0x9,	// 0
-	'q',    'w',    'e',    'r',    't',    'y',    'u',    'i', 
-	'o',    'p',    '[',    ']',    0xD,     0,     'a',    's',	// 1
-	'd',    'f',    'g',    'h',    'j',    'k',    'l',    ';', 
-	'\'',    0,      0,     '\\',   'z',    'x',    'c',    'v',	// 2
-	'b',    'n',    'm',    ',',    '.',    '/',     0,     '*', 
-	 0,     ' ',     0,      0,      0,      0,      0,      0,     // 3
+//	0        1       2       3       4       5       6       7		8        9       A       B       C       D       E       F 
+ 	 0,      0,     '1',    '2',    '3',    '4',    '5',    '6', 	'7',    '8',    '9',    '0',    '-',    '=',    0x8,    0x9,	// 0
+	'q',    'w',    'e',    'r',    't',    'y',    'u',    'i', 	'o',    'p',    '[',    ']',    0xD,     0,     'a',    's',	// 1
+	'd',    'f',    'g',    'h',    'j',    'k',    'l',    ';', 	'\'',    0,      0,     '\\',   'z',    'x',    'c',    'v',	// 2
+	'b',    'n',    'm',    ',',    '.',    '/',     0,     '*', 	 0,     ' ',     0,      0,      0,      0,      0,      0,     // 3
 
-	 0,      0,     '!',    '@',    '#',    '$',    '%',    '^', 
-	'&',    '*',    '(',    ')',    '_',    '+',    0x8,    0x9,	// 4
-	'Q',    'W',    'E',    'R',    'T',    'Y',    'U',    'I', 
-	'O',    'P',    '{',    '}',    0xD,     0,     'A',    'S',	// 5
-	'D',    'F',    'G',    'H',    'J',    'K',    'L',    ':',
-	'"',     0,      0,     '|',    'Z',    'X',    'C',    'V',	// 6
-	'B',    'N',    'M',    '<',    '>',    '?',     0,     '*', 
- 	 0,     ' ',     0,      0,      0,      0,      0,      0,     // 7
+	 0,      0,     '!',    '@',    '#',    '$',    '%',    '^', 	'&',    '*',    '(',    ')',    '_',    '+',    0x8,    0x9,	// 4
+	'Q',    'W',    'E',    'R',    'T',    'Y',    'U',    'I',	'O',    'P',    '{',    '}',    0xD,     0,     'A',    'S',	// 5
+	'D',    'F',    'G',    'H',    'J',    'K',    'L',    ':',	'"',     0,      0,     '|',    'Z',    'X',    'C',    'V',	// 6
+	'B',    'N',    'M',    '<',    '>',    '?',     0,     '*', 	 0,     ' ',     0,      0,      0,      0,      0,      0,     // 7
 	}; 
 
 	if ( scancode == 0x53 )
@@ -254,7 +240,7 @@ LRESULT WINAPI MainWndProc( HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam )
 		// comments this allow pull-down console receive mousewheel message,
 		// but I don't know does this doing the right thing.
 		// !r_fullscreen->integer &&
-		if ( ( Key_GetCatcher() & KEYCATCH_CONSOLE))
+		//if ( ( Key_GetCatcher() & KEYCATCH_CONSOLE))
 		{
 			// 120 increments, might be 240 and multiples if wheel goes too fast
 			// NOTE Logitech: logitech drivers are screwed and send the message twice?
@@ -263,7 +249,7 @@ LRESULT WINAPI MainWndProc( HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam )
 	
 			if ( zDelta > 0 )
 			{
-				for(int i=0; i<zDelta; ++i)
+				//for(int i=0; i<zDelta; ++i)
 				{
 					Com_QueueEvent( g_wv.sysMsgTime, SE_KEY, K_MWHEELUP, qtrue, 0, NULL );
 					Com_QueueEvent( g_wv.sysMsgTime, SE_KEY, K_MWHEELUP, qfalse, 0, NULL );
@@ -271,14 +257,14 @@ LRESULT WINAPI MainWndProc( HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam )
 			}
 			else
 			{
-				for(int i=0; i<-zDelta; ++i)
+				//for(int i=0; i<-zDelta; ++i)
 				{
 					Com_QueueEvent( g_wv.sysMsgTime, SE_KEY, K_MWHEELDOWN, qtrue, 0, NULL );
 					Com_QueueEvent( g_wv.sysMsgTime, SE_KEY, K_MWHEELDOWN, qfalse, 0, NULL );
 				}
 			}
 			// when an application processes the WM_MOUSEWHEEL message, it must return zero
-			return 0;
+			// return 0;
 		}
 		break;
 

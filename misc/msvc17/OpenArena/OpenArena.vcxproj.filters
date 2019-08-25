@@ -180,9 +180,6 @@
     <ClCompile Include="..\..\..\code\sdl\win_create_window.c">
       <Filter>Source Files\platform</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\code\sdl\win_event.c">
-      <Filter>Source Files\platform</Filter>
-    </ClCompile>
     <ClCompile Include="..\..\..\code\sdl\win_gamma.c">
       <Filter>Source Files\platform</Filter>
     </ClCompile>
@@ -207,14 +204,17 @@
     <ClCompile Include="..\..\..\code\sys\con_passive.c">
       <Filter>Source Files\system</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\code\sys\con_win32.c">
-      <Filter>Source Files\system</Filter>
-    </ClCompile>
     <ClCompile Include="..\..\..\code\sys\sys_main.c">
       <Filter>Source Files\system</Filter>
     </ClCompile>
     <ClCompile Include="..\..\..\code\sys\sys_win32.c">
       <Filter>Source Files\system</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\code\sdl\sdl_snd.c">
+      <Filter>Source Files\platform</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\code\sdl\sdl_input.c">
+      <Filter>Source Files\platform</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

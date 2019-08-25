@@ -23,6 +23,7 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
 #include "client.h"
 #include "../sys/sys_public.h"
+
 int g_console_field_width = 78;
 #define	NUM_CON_TIMES   4
 #define	CON_TEXTSIZE    32768

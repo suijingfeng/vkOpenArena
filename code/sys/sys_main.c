@@ -208,14 +208,14 @@ void Sys_ParseArgs( int argc, char **argv )
 
 
 
-#if defined( _WIN32 ) && !defined(DEDICATED) 
+#if defined( _WIN32 ) && !defined(DEDICATED)
+
 #include "../sdl/win_public.h"
 
 extern WinVars_t g_wv;
 
 int WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nCmdShow)
 {
-
 	//char sys_cmdline[MAX_STRING_CHARS];
 
 	int	totalMsec = 0;
@@ -240,7 +240,7 @@ int WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int n
 		Sys_Error("Quake3 doesn't run on Win32s");
 
 	Sys_PlatformInit();
-	Sys_InitSignal();
+	// Sys_InitSignal();
 	
 	// done before Com/Sys_Init since we need this for error output
 	// Sys_CreateConsole();
@@ -259,38 +259,29 @@ int WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int n
 	// get the initial time base
 	Sys_Milliseconds();
 	Sys_SetDefaultInstallPath(DEFAULT_BASEDIR);
-
+	Com_Printf(" Working directory: %s\n", Sys_Cwd());
 	// com_viewlog = Cvar_Get("viewlog", "0", CVAR_CHEAT);
 	CON_Init();
 	Com_Init(lpCmdLine);
+	NET_Init();
 
 #if	!defined(DEDICATED)
 	IN_Init();		// FIXME: not in dedicated?
 #endif
 
-	NET_Init();
 
-	{
-		char cwd[MAX_OSPATH];
-		_getcwd(cwd, sizeof(cwd));
 
-		Com_Printf(" Working directory: %s\n", cwd);
-	}
+	
 	// hide the early console since we've reached the point where we
 	// have a working graphics subsystems
 	// if (!com_dedicated->integer && !com_viewlog->integer) {
 	//	Sys_ShowConsole(0, qfalse);
 	// }
 
-
-
-// pump the message loop
-// Dispatches incoming sent messages, checks the thread message queue 
-// for a posted message, and retrieves the message (if any exist).
+	// pump the message loop
+	// Dispatches incoming sent messages, checks the thread message queue 
+	// for a posted message, and retrieves the message (if any exist).
 	
-
-
-
 	// main game loop
 	while (1)
 	{
@@ -318,12 +309,13 @@ int WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int n
 			}
 
 			// save the msg time, because wndprocs don't have access to the timestamp
-			// g_wv.sysMsgTime = msg.time;
+			g_wv.sysMsgTime = msg.time;
 
 			TranslateMessage(&msg);
 			DispatchMessage(&msg);
 		}
 		else {
+			IN_Frame(); // youurayy input lag fix
 			// run the game
 			Com_Frame();
 		}

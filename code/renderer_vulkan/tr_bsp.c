@@ -1286,7 +1286,7 @@ void R_MovePatchSurfacesToHunk(void) {
 		memcpy( hunkgrid->widthLodError, grid->widthLodError, grid->width * 4 );
 
 		hunkgrid->heightLodError = (float*) ri.Hunk_Alloc( grid->height * 4, h_low );
-		memcpy( grid->heightLodError, grid->heightLodError, grid->height * 4 );
+		memcpy( hunkgrid->heightLodError, grid->heightLodError, grid->height * 4 );
 
 		R_FreeSurfaceGridMesh( grid );
 
@@ -1820,7 +1820,7 @@ static void R_LoadEntities(const lump_t * const l, world_t* const w )
 			break;
 		}
 		
-        strncpy(keyname, token, sizeof(keyname));
+        strncpy(keyname, token, sizeof(keyname)-1);
 
 		// parse value
 		token = R_ParseExt( &p, qtrue );
@@ -1835,7 +1835,7 @@ static void R_LoadEntities(const lump_t * const l, world_t* const w )
 			break;
 		}
 
-		strncpy(value, token, sizeof(value));
+		strncpy(value, token, sizeof(value)-1);
 
 		// check for remapping of shaders for vertex lighting
 		s = "vertexremapshader";
@@ -1924,9 +1924,9 @@ void RE_LoadWorldMap( const char *name )
 	tr.world = NULL;
 
 	memset( &s_worldData, 0, sizeof( s_worldData ) );
-	strncpy( s_worldData.name, name, sizeof( s_worldData.name ) );
+	strncpy( s_worldData.name, name, sizeof( s_worldData.name ) - 1);
 
-	strncpy( s_worldData.baseName, R_SkipPath( s_worldData.name ), sizeof( s_worldData.name ) );
+	strncpy( s_worldData.baseName, R_SkipPath( s_worldData.name ), sizeof(s_worldData.baseName) - 1 );
 	R_StripExtension( s_worldData.baseName, s_worldData.baseName, sizeof(s_worldData.baseName) );
 
 	unsigned char* startMarker = (byte*) ri.Hunk_Alloc(0, h_low);

@@ -15,10 +15,9 @@ consistant.
 #define VK_NO_PROTOTYPES 1
 
 #if defined(_WIN32) || defined(_WIN64)
-#define CINTERFACE
 
 #define VK_USE_PLATFORM_WIN32_KHR 1
-#include <windows.h>
+
 
 // #pragma comment(linker, "/subsystem:windows")
 

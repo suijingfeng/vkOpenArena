@@ -2044,18 +2044,31 @@ sysEvent_t Com_GetSystemEvent( void )
 		eventTail++;
 		return eventQueue[ ( eventTail - 1 ) & MASK_QUEUED_EVENTS ];
 	}
+/*
+	MSG	msg;
+	// pump the message loop
+	// Dispatches incoming sent messages, checks the thread message queue 
+	// for a posted message, and retrieves the message (if any exist).
+	while (PeekMessage(&msg, NULL, 0, 0, PM_NOREMOVE))
+	{
+		if (!GetMessage(&msg, NULL, 0, 0)) {
+			Com_Quit_f();
+		}
 
+		// save the msg time, because wndprocs don't have access to the timestamp
+		// g_wv.sysMsgTime = msg.time;
 
+		TranslateMessage(&msg);
+		DispatchMessage(&msg);
+	}
+*/
     // Handle new console input
 	// check for console commands
 	s = CON_Input();
 	if ( s )
 	{
-		char  *b;
-		int   len;
-
-		len = strlen( s ) + 1;
-		b = Z_Malloc( len );
+		int len = strlen( s ) + 1;
+		char* b = Z_Malloc( len );
 		strcpy( b, s );
 		Com_QueueEvent( 0, SE_CONSOLE, 0, 0, len, b );
 	}
@@ -2096,7 +2109,9 @@ sysEvent_t	Com_GetRealEvent( void ) {
 				Com_Error( ERR_FATAL, "Error reading from journal file" );
 			}
 		}
-	} else {
+	}
+	else
+	{
 		ev = Com_GetSystemEvent();
 
 		// write the journal value out if needed
@@ -3083,7 +3098,7 @@ void Com_Frame(void)
 			NET_Sleep(timeVal - 1);
 	} while(Com_TimeVal(minMsec));
 	
-	IN_Frame(); // youurayy input lag fix
+
 	lastTime = com_frameTime;
 	com_frameTime = Com_EventLoop();
 	
