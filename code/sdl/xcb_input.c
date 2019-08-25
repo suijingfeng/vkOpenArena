@@ -1,24 +1,5 @@
-/*
-===========================================================================
-Copyright (C) 1999-2005 Id Software, Inc.
 
-This file is part of Quake III Arena source code.
-
-Quake III Arena source code is free software; you can redistribute it
-and/or modify it under the terms of the GNU General Public License as
-published by the Free Software Foundation; either version 2 of the License,
-or (at your option) any later version.
-
-Quake III Arena source code is distributed in the hope that it will be
-useful, but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU General Public License for more details.
-
-You should have received a copy of the GNU General Public License
-along with Quake III Arena source code; if not, write to the Free Software
-Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
-===========================================================================
-*/
+// suijingfeng
 
 #include <stdarg.h>
 #include <stdio.h>
@@ -55,103 +36,6 @@ extern xcb_intern_atom_reply_t *atom_wm_delete_window;
 
 static int win_center_x, win_center_y;
 
-// mark the current mouse position
-
-#define MAX_CONSOLE_KEYS 16
-
-/*
-===============
-IN_IsConsoleKey
-
-TODO: If the SDL_Scancode situation improves, use it instead of both of these methods
-===============
-
-static qboolean IN_IsConsoleKey( keyNum_t key, int character )
-{
-	typedef struct consoleKey_s
-	{
-		enum
-		{
-			QUAKE_KEY,
-			CHARACTER
-		} type;
-
-		union
-		{
-			keyNum_t key;
-			int character;
-		} u;
-	} consoleKey_t;
-
-	static consoleKey_t consoleKeys[ MAX_CONSOLE_KEYS ];
-	static int numConsoleKeys = 0;
-	int i;
-
-	// Only parse the variable when it changes
-	if( cl_consoleKeys->modified )
-	{
-		char *text_p;
-
-		cl_consoleKeys->modified = qfalse;
-		text_p = cl_consoleKeys->string;
-		numConsoleKeys = 0;
-
-		while( numConsoleKeys < MAX_CONSOLE_KEYS )
-		{
-			consoleKey_t *c = &consoleKeys[ numConsoleKeys ];
-			int charCode = 0;
-
-			char* token = COM_ParseExt(&text_p, qtrue);
-			if( !token[ 0 ] )
-				break;
-
-			if( strlen( token ) == 4 )
-				charCode = Com_HexStrToInt( token );
-
-			if( charCode > 0 )
-			{
-				c->type = CHARACTER;
-				c->u.character = charCode;
-			}
-			else
-			{
-				c->type = QUAKE_KEY;
-				c->u.key = Key_StringToKeynum( token );
-
-				// 0 isn't a key
-				if( c->u.key <= 0 )
-					continue;
-			}
-
-			numConsoleKeys++;
-		}
-	}
-
-	// If the character is the same as the key, prefer the character
-	if( key == character )
-		key = 0;
-
-	for( i = 0; i < numConsoleKeys; i++ )
-	{
-		consoleKey_t *c = &consoleKeys[ i ];
-
-		switch( c->type )
-		{
-			case QUAKE_KEY:
-				if( key && c->u.key == key )
-					return qtrue;
-				break;
-
-			case CHARACTER:
-				if( c->u.character == character )
-					return qtrue;
-				break;
-		}
-	}
-
-	return qfalse;
-}
-*/
 
 static int mouseResetTime = 0;
 
@@ -306,7 +190,7 @@ xcb_void_cookie_t xcb_change_pointer_control(
 		uint8_t  	do_acceleration,
 		uint8_t  	do_threshold )
 */
-				xcb_change_pointer_control(s_xcb_win.connection, 1, 1, 1, 1, 1);
+				xcb_change_pointer_control(s_xcb_win.connection, 1, 4, 1, 1, 1);
 			}
             else
 			{
@@ -688,12 +572,17 @@ uint32_t 	full_sequence
             {
                 xcb_key_press_event_t *ev = (xcb_key_press_event_t *)e;
                 //int t = Sys_XTimeToSysTime( ev->time );
+				
 
-                int t = 0;
                 if ( ev->detail == 0x31 )
                 {
                     // open pull down console
-                    Com_QueueEvent( t, SE_KEY, K_CONSOLE, qtrue, 0, NULL );
+                    Com_QueueEvent( Sys_Milliseconds( ), SE_KEY, K_CONSOLE, qtrue, 0, NULL );
+                }
+				else if ( ev->detail == 0x09 )
+                {
+                    // menu
+                    Com_QueueEvent( Sys_Milliseconds( ), SE_KEY, K_ESCAPE, qtrue, 0, NULL );
                 }
                 else
                 {
@@ -702,7 +591,7 @@ uint32_t 	full_sequence
 				    XLateKey( ev, &key_value );
 				    
                     if( key_value == K_BACKSPACE ) {
-                        Com_QueueEvent(t, SE_CHAR, ('h'-'a'+1), 0, 0, NULL );
+                        Com_QueueEvent(Sys_Milliseconds( ), SE_CHAR, ('h'-'a'+1), 0, 0, NULL );
                     }
 
                     // !directMap() && 
@@ -726,13 +615,13 @@ uint32_t 	full_sequence
                             ch = s_keytochar[ ev->detail | ((!!(ev->state & XCB_MOD_MASK_SHIFT))<<6) ];
                         }
 
-				        Com_QueueEvent( t, SE_KEY, ch, qtrue, 0, NULL );
+				        Com_QueueEvent( Sys_Milliseconds( ), SE_KEY, ch, qtrue, 0, NULL );
 
-                        Com_QueueEvent( t, SE_CHAR, ch, 0, 0, NULL );
+                        Com_QueueEvent( Sys_Milliseconds( ), SE_CHAR, ch, 0, 0, NULL );
 
                     }
 
-                    // Com_Printf( "^2K+^7 %08X\n", key_value );
+
 
                     /*
                     else if( keys[K_CTRL].down && key_value >= 'a' && key_value <= 'z' )
@@ -753,7 +642,6 @@ uint32_t 	full_sequence
 			    
                 XLateKey( ev, &key_value );
 			    
-				int t = 0;
                
                 if (key_value >= 'A' && key_value <= 'Z')
                     key_value = key_value - 'A' + 'a';
@@ -779,16 +667,10 @@ uint32_t 	full_sequence
 						ch = s_keytochar[ ev->detail | ((!!(ev->state & XCB_MOD_MASK_SHIFT))<<6) ];
 					}
 
-					Com_QueueEvent( t, SE_KEY, ch, qtrue, 0, NULL );
+					Com_QueueEvent( Sys_Milliseconds( ), SE_KEY, ch, qfalse, 0, NULL );
 
 					// Com_QueueEvent( t, SE_CHAR, ch, 0, 0, NULL );
-
-					printf("%c = %d \n", ch, ch ); 
-
-
                 }
-
-
             } break;
 
             case XCB_EXPOSE:
