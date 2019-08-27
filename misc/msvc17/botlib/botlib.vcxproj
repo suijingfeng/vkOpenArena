@@ -190,6 +190,8 @@
     <ClInclude Include="..\..\..\code\botlib\l_script.h" />
     <ClInclude Include="..\..\..\code\botlib\l_struct.h" />
     <ClInclude Include="..\..\..\code\botlib\l_utils.h" />
+    <ClInclude Include="..\..\..\code\qcommon\qcommon.h" />
+    <ClInclude Include="..\..\..\code\qcommon\q_shared.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

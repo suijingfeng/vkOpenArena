@@ -28,6 +28,12 @@
     <Filter Include="Source Files\server">
       <UniqueIdentifier>{6faf2cc4-d068-4372-bb58-ffb9ba3ad9b6}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Source Files\zlib">
+      <UniqueIdentifier>{6d93fa93-e07b-47b7-bb67-dc6e4ee33ada}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\asm">
+      <UniqueIdentifier>{adf3c249-ebaf-42bf-ba8e-9142c7a05862}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\..\..\code\client\cl_avi.c">
@@ -177,9 +183,6 @@
     <ClCompile Include="..\..\..\code\qcommon\vm_interpreted.c">
       <Filter>Source Files\qcommon</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\code\qcommon\vm_x86.c">
-      <Filter>Source Files\qcommon</Filter>
-    </ClCompile>
     <ClCompile Include="..\..\..\code\sdl\win_create_window.c">
       <Filter>Source Files\platform</Filter>
     </ClCompile>
@@ -234,18 +237,33 @@
     <ClCompile Include="..\..\..\code\server\sv_world.c">
       <Filter>Source Files\server</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\..\code\sys\sys_loadlib.c">
+      <Filter>Source Files\system</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\code\zlib\adler32.c">
+      <Filter>Source Files\zlib</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\code\zlib\crc32.c">
+      <Filter>Source Files\zlib</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\code\zlib\inffast.c">
+      <Filter>Source Files\zlib</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\code\zlib\inflate.c">
+      <Filter>Source Files\zlib</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\code\zlib\inftrees.c">
+      <Filter>Source Files\zlib</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\code\zlib\zutil.c">
+      <Filter>Source Files\zlib</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="..\..\..\code\win32\win_sysconsole.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="..\..\..\code\win32\win_snd.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="..\..\..\code\win32\win_public.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\..\code\win32\win_net.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="..\..\..\code\win32\win_mode.h">
@@ -279,5 +297,16 @@
     <Image Include="..\..\..\code\sdl\oa3.ico">
       <Filter>Resource Files</Filter>
     </Image>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="..\..\..\code\asm\ftola.asm">
+      <Filter>Source Files\asm</Filter>
+    </None>
+    <None Include="..\..\..\code\asm\snapvector.asm">
+      <Filter>Source Files\asm</Filter>
+    </None>
+    <None Include="..\..\..\code\asm\vm_x86_64.asm">
+      <Filter>Source Files\asm</Filter>
+    </None>
   </ItemGroup>
 </Project>

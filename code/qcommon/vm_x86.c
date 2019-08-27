@@ -1091,12 +1091,9 @@ qboolean ConstOptimize(vm_t *vm, int callProcOfsSyscall)
   #define EDI "%%edi"
 #endif
 
-#if defined(_MSC_VER)
+#if !defined(_MSC_VER)
 
 //work around with MSVC compiler, suijingfeng
-
-#else
-
 
 static inline int Q_VMftol(void)
 {

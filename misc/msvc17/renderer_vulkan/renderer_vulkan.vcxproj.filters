@@ -117,9 +117,6 @@
     <ClCompile Include="..\..\..\code\renderer_vulkan\ref_import.c">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\code\renderer_vulkan\render_export.c">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="..\..\..\code\renderer_vulkan\tr_animation.c">
       <Filter>Source Files</Filter>
     </ClCompile>

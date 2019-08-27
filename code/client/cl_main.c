@@ -1321,9 +1321,7 @@ CL_UpdateGUID: update cl_guid using QKEY_FILE and optional prefix
 static void CL_UpdateGUID( const char *prefix, int prefix_len )
 {
 	fileHandle_t f;
-	int len;
-
-	len = FS_SV_FOpenFileRead( QKEY_FILE, &f );
+	int len = FS_SV_FOpenFileRead( QKEY_FILE, &f );
 	FS_FCloseFile( f );
 
 	if( len != QKEY_SIZE ) 
@@ -1674,8 +1672,8 @@ CL_Connect_f
 */
 void CL_Connect_f( void )
 {
-	char	*server;
-	const char	*serverString;
+	char* server;
+
 	int argc = Cmd_Argc();
 	netadrtype_t family = NA_UNSPEC;
 
@@ -1733,7 +1731,7 @@ void CL_Connect_f( void )
 		clc.serverAddress.port = BigShort( PORT_SERVER );
 	}
 
-	serverString = NET_AdrToStringwPort(clc.serverAddress);
+	const char* serverString = NET_AdrToStringwPort(clc.serverAddress);
 
 	Com_Printf( "%s resolved to %s\n", clc.servername, serverString);
 
@@ -3174,7 +3172,6 @@ static long Q_ftol(float f)
 void CL_InitRef(void)
 {
 	refimport_t	ri;
-	refexport_t	*ret;
 
 
 #ifdef USE_RENDERER_DLOPEN
@@ -3285,16 +3282,9 @@ void CL_InitRef(void)
 	ri.Sys_SetEnv = Sys_SetEnv;
 	ri.Sys_LowPhysicalMemory = Sys_LowPhysicalMemory;
 
-	ret = GetRefAPI( REF_API_VERSION, &ri );
+	GetRefAPI( REF_API_VERSION, &ri, &re);
 
-#if defined __USEA3D && defined __A3D_GEOM
-	hA3Dg_ExportRenderGeom (ret);
-#endif
 
-	if( !ret )
-		Com_Error(ERR_FATAL, "Couldn't initialize refresh" );
-
-	re = *ret;
     Com_Printf(" CL_InitRef() finished. \n");
 	Com_Printf( "-------------------------------\n");
 

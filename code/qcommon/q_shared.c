@@ -137,7 +137,7 @@ ID_INLINE void CopyLongSwap(void *dest, void *src)
 	to[3] = from[0];
 }
 
-ID_INLINE short ShortSwap(short int l)
+short ShortSwap(short int l)
 {
 	unsigned char b1 = l & 0xFF;
     unsigned char b2 = (l>>8) & 0xFF;

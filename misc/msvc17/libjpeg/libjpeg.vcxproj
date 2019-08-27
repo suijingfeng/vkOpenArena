@@ -87,7 +87,7 @@
       <SDLCheck>false</SDLCheck>
       <ConformanceMode>false</ConformanceMode>
       <CompileAs>CompileAsC</CompileAs>
-      <PreprocessorDefinitions>USE_INTERNAL_JPEG</PreprocessorDefinitions>
+      <PreprocessorDefinitions>USE_INTERNAL_JPEG;_CRT_SECURE_NO_DEPRECATE;_MBCS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">

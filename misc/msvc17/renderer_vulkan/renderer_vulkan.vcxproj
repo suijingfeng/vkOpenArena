@@ -79,11 +79,13 @@
     <TargetExt>.dll</TargetExt>
     <OutDir>$(ProjectDir)..\bin\$(PlatformName)\$(Configuration)\</OutDir>
     <IntDir>$(ProjectDir)..\bin\$(PlatformName)\$(Configuration)\intermediate\$(ProjectName)\</IntDir>
+    <TargetName>renderer_vulkan_x86_64</TargetName>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <OutDir>$(ProjectDir)..\bin\$(PlatformName)\$(Configuration)\</OutDir>
     <IntDir>$(ProjectDir)..\bin\$(PlatformName)\$(Configuration)\intermediate\$(ProjectName)\</IntDir>
     <TargetExt>.dll</TargetExt>
+    <TargetName>renderer_vulkan_x86_64</TargetName>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
@@ -100,7 +102,7 @@
       <Optimization>Disabled</Optimization>
       <SDLCheck>true</SDLCheck>
       <ConformanceMode>true</ConformanceMode>
-      <PreprocessorDefinitions>STANDALONE;USE_RENDERER_DLOPEN;_MSC_VER;_DEBUG;_MBCS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>STANDALONE;USE_RENDERER_DLOPEN;USE_INTERNAL_JPEG;DEBUG;_MSC_VER;_WINDLL;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <CompileAs>CompileAsC</CompileAs>
     </ClCompile>
   </ItemDefinitionGroup>
@@ -146,7 +148,6 @@
     <ClCompile Include="..\..\..\code\renderer_vulkan\RB_ShowImages.c" />
     <ClCompile Include="..\..\..\code\renderer_vulkan\RB_SurfaceAnim.c" />
     <ClCompile Include="..\..\..\code\renderer_vulkan\ref_import.c" />
-    <ClCompile Include="..\..\..\code\renderer_vulkan\render_export.c" />
     <ClCompile Include="..\..\..\code\renderer_vulkan\RE_RegisterModel.c" />
     <ClCompile Include="..\..\..\code\renderer_vulkan\R_FindShader.c" />
     <ClCompile Include="..\..\..\code\renderer_vulkan\R_GetMicroSeconds.c" />

@@ -377,7 +377,7 @@ ID_INLINE float	AngleMod(float a)
 RadiusFromBounds
 =================
 */
-ID_INLINE float RadiusFromBounds( const vec3_t mins, const vec3_t maxs )
+float RadiusFromBounds( const vec3_t mins, const vec3_t maxs )
 {
 	int		i;
 	vec3_t	corner;
@@ -565,7 +565,7 @@ float Q_rsqrt( float number )
 
 
 
-ID_INLINE void MatrixMultiply(float in1[3][3], float in2[3][3], float out[3][3])
+void MatrixMultiply(float in1[3][3], float in2[3][3], float out[3][3])
 {
     const float a = in1[0][0];
     const float b = in1[1][0];
@@ -669,31 +669,31 @@ void PerpendicularVector( vec3_t dst, const vec3_t src )
 //------------------------------------------------------------------------
 //
 
-ID_INLINE int VectorCompare( const vec3_t v1, const vec3_t v2 ) {
+int VectorCompare( const vec3_t v1, const vec3_t v2 ) {
 	if (v1[0] != v2[0] || v1[1] != v2[1] || v1[2] != v2[2]) {
 		return 0;
 	}			
 	return 1;
 }
 
-ID_INLINE vec_t VectorLength( const vec3_t v )
+vec_t VectorLength( const vec3_t v )
 {
 	return (vec_t)sqrt (v[0]*v[0] + v[1]*v[1] + v[2]*v[2]);
 }
 
-ID_INLINE vec_t VectorLengthSquared( const vec3_t v )
+vec_t VectorLengthSquared( const vec3_t v )
 {
 	return (v[0]*v[0] + v[1]*v[1] + v[2]*v[2]);
 }
 
-ID_INLINE vec_t Distance( const vec3_t p1, const vec3_t p2 ) {
+vec_t Distance( const vec3_t p1, const vec3_t p2 ) {
 	vec3_t	v;
 
 	VectorSubtract (p2, p1, v);
 	return VectorLength( v );
 }
 
-ID_INLINE vec_t DistanceSquared( const vec3_t p1, const vec3_t p2 )
+vec_t DistanceSquared( const vec3_t p1, const vec3_t p2 )
 {
 	vec3_t	v;
 	VectorSubtract (p2, p1, v);
@@ -701,18 +701,15 @@ ID_INLINE vec_t DistanceSquared( const vec3_t p1, const vec3_t p2 )
 }
 
 
-
-
-ID_INLINE void VectorInverse( vec3_t v ){
+void VectorInverse( vec3_t v ){
 	v[0] = -v[0];
 	v[1] = -v[1];
 	v[2] = -v[2];
 }
 
-ID_INLINE void CrossProduct( const vec3_t v1, const vec3_t v2, vec3_t cross )
+void CrossProduct( const vec3_t v1, const vec3_t v2, vec3_t cross )
 {
 	cross[0] = v1[1]*v2[2] - v1[2]*v2[1];
 	cross[1] = v1[2]*v2[0] - v1[0]*v2[2];
 	cross[2] = v1[0]*v2[1] - v1[1]*v2[0];
 }
-

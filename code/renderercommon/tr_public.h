@@ -183,9 +183,9 @@ typedef struct {
 // If the module can't init to a valid rendering state, NULL will be returned.
 
 #ifdef USE_RENDERER_DLOPEN
-typedef	refexport_t* (QDECL *GetRefAPI_t) (int apiVersion, refimport_t * rimp);
+typedef	void (QDECL *GetRefAPI_t) (int apiVersion, refimport_t * riimp, refexport_t* rexp);
 #else
-refexport_t* GetRefAPI(int apiVersion, refimport_t *rimp );
+void GetRefAPI(int apiVersion, refimport_t *rimp, refexport_t* rexp);
 #endif
 
 #endif	// __TR_PUBLIC_H
