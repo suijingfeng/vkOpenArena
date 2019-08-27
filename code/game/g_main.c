@@ -812,7 +812,7 @@ void G_InitGame( int levelTime, int randomSeed, int restart )
 			trap_GetServerinfo( serverinfo, sizeof( serverinfo ) );
 			G_LogPrintf("------------------------------------------------------------\n" );
 			G_LogPrintf("InitGame: %s\n", serverinfo );
-			G_LogPrintf("Info: ServerInfo length: %ld of %d\n", strlen(serverinfo), MAX_INFO_STRING );
+			G_LogPrintf("Info: ServerInfo length: %ld of %d\n", (long)strlen(serverinfo), MAX_INFO_STRING );
 		}
 	}
 	else {

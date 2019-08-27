@@ -427,7 +427,7 @@ extern	vec4_t		colorDkGrey;
 #define COLOR_CYAN      '5'
 #define COLOR_MAGENTA   '6'
 #define COLOR_WHITE     '7'
-#define COLOR_MENU      '8'
+#define COLOR_UI_MENU   '8'
 #define ColorIndexForNumber(c) ((c) % NUMBER_OF_COLORS)
 #define ColorIndex(c) (ColorIndexForNumber((c) - '0'))
 
@@ -439,7 +439,7 @@ extern	vec4_t		colorDkGrey;
 #define S_COLOR_CYAN	"^5"
 #define S_COLOR_MAGENTA	"^6"
 #define S_COLOR_WHITE	"^7"
-#define S_COLOR_MENU	"^8"
+#define S_COLOR_UI_MENU	"^8"
 
 extern const vec4_t	g_color_table[NUMBER_OF_COLORS];
 
