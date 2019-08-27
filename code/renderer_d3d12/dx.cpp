@@ -598,6 +598,7 @@ void DX_CreateDevice(IDXGIFactory4* const pFactory, ID3D12Device** const ppDevic
 
 void dx_initialize(void * pWinContext)
 {
+	ri.Printf(PRINT_ALL, " d3d12 Initial. \n");
 	// enable validation in debug configuration
 #ifndef NDEBUG
 	ID3D12Debug* debug_controller;
@@ -668,6 +669,7 @@ void dx_initialize(void * pWinContext)
 	// Create command allocators and command list.
 	//
 	{
+
 		DX_CHECK(dx.device->CreateCommandAllocator(D3D12_COMMAND_LIST_TYPE_DIRECT,
 			IID_PPV_ARGS(&dx.command_allocator)));
 
