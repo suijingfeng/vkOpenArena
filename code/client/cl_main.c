@@ -2242,7 +2242,6 @@ void CL_NextDownload(void)
 				cl_allowDownload->integer);
 		}
 
-
 		if(!useCURL) {
 			if((cl_allowDownload->integer & DLF_NO_UDP)) {
 				Com_Error(ERR_DROP, "UDP Downloads are "

@@ -25,6 +25,9 @@
     <Filter Include="Source Files\system">
       <UniqueIdentifier>{584c1cf3-aab4-4a8d-a514-af5a0b34930b}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Source Files\server">
+      <UniqueIdentifier>{6faf2cc4-d068-4372-bb58-ffb9ba3ad9b6}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\..\..\code\client\cl_avi.c">
@@ -189,13 +192,7 @@
     <ClCompile Include="..\..\..\code\sdl\win_log.c">
       <Filter>Source Files\platform</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\code\sdl\win_main.c">
-      <Filter>Source Files\platform</Filter>
-    </ClCompile>
     <ClCompile Include="..\..\..\code\sdl\win_snd.c">
-      <Filter>Source Files\platform</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\..\code\sdl\win_syscon.c">
       <Filter>Source Files\platform</Filter>
     </ClCompile>
     <ClCompile Include="..\..\..\code\sdl\win_wndproc.c">
@@ -210,11 +207,32 @@
     <ClCompile Include="..\..\..\code\sys\sys_win32.c">
       <Filter>Source Files\system</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\code\sdl\sdl_snd.c">
-      <Filter>Source Files\platform</Filter>
+    <ClCompile Include="..\..\..\code\server\sv_bot.c">
+      <Filter>Source Files\server</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\code\sdl\sdl_input.c">
-      <Filter>Source Files\platform</Filter>
+    <ClCompile Include="..\..\..\code\server\sv_ccmds.c">
+      <Filter>Source Files\server</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\code\server\sv_client.c">
+      <Filter>Source Files\server</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\code\server\sv_game.c">
+      <Filter>Source Files\server</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\code\server\sv_init.c">
+      <Filter>Source Files\server</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\code\server\sv_main.c">
+      <Filter>Source Files\server</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\code\server\sv_net_chan.c">
+      <Filter>Source Files\server</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\code\server\sv_snapshot.c">
+      <Filter>Source Files\server</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\code\server\sv_world.c">
+      <Filter>Source Files\server</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

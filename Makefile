@@ -176,7 +176,7 @@ endif
 
 ifndef USE_CURL_DLOPEN
   ifdef MINGW
-    USE_CURL_DLOPEN=0
+    USE_CURL_DLOPEN=1
   else
     USE_CURL_DLOPEN=1
   endif
