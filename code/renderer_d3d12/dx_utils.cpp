@@ -1,7 +1,7 @@
 // utils
 // Cheaper adapter enumeration
 // For Direct3D 12, it’s no longer possible to backtrack from a device to the IDXGIAdapter 
-// that was used to create it. It’s also no longer possible to provide D3D_DRIVER_TYPE_WARP
+// that was used to create it. Its also no longer possible to provide D3D_DRIVER_TYPE_WARP
 // into D3D12CreateDevice.To make development easier, you can use IDXGIFactory4 to deal with
 // both of these.IDXGIFactory4::EnumAdapterByLuid(designed to be paired with 
 // ID3D12Device::GetAdapterLuid) enables an app to retrieve information about the adapter 

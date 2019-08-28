@@ -3271,7 +3271,7 @@ void CL_InitRef(void)
 	ri.IN_Shutdown = IN_Shutdown;
 	ri.IN_Restart = IN_Restart;
 
-	ri.ftol = Q_ftol;
+	// ri.ftol = Q_ftol;
 
 	ri.WinSysInit = WinSys_Init;
 	ri.WinSysShutdown = WinSys_Shutdown;
@@ -3279,8 +3279,8 @@ void CL_InitRef(void)
 	ri.WinSysSetGamma = WinSys_SetGamma;
 	ri.pfnLog = FileSys_Logging;
 
-	ri.Sys_SetEnv = Sys_SetEnv;
-	ri.Sys_LowPhysicalMemory = Sys_LowPhysicalMemory;
+	// ri.Sys_SetEnv = Sys_SetEnv;
+	// ri.Sys_LowPhysicalMemory = Sys_LowPhysicalMemory;
 
 	GetRefAPI( REF_API_VERSION, &ri, &re);
 

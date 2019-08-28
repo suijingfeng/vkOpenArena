@@ -266,8 +266,6 @@ int WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int n
 	IN_Init();		// FIXME: not in dedicated?
 #endif
 
-
-
 	
 	// hide the early console since we've reached the point where we
 	// have a working graphics subsystems
@@ -299,7 +297,7 @@ int WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int n
 		// make sure mouse and joystick are only called once a frame
 		// IN_Frame();
 		MSG	msg;
-		if (PeekMessage(&msg, NULL, 0, 0, PM_NOREMOVE))
+		while (PeekMessage(&msg, NULL, 0, 0, PM_NOREMOVE))
 		{
 			if (!GetMessage(&msg, NULL, 0, 0)) {
 				Com_Quit_f();
@@ -311,11 +309,12 @@ int WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int n
 			TranslateMessage(&msg);
 			DispatchMessage(&msg);
 		}
-		else {
-			IN_Frame(); // youurayy input lag fix
+		
+		
+		IN_Frame(); // youurayy input lag fix
 			// run the game
-			Com_Frame();
-		}
+		Com_Frame();
+		
 /*
 		int endTime = Sys_Milliseconds();
 		totalMsec += endTime - startTime;

@@ -1,10 +1,11 @@
 #include <D3d12.h>
 #include <dxgi1_6.h>
-#include "../sdl/win_public.h"
+
 #include "tr_local.h"
 #include "dx_world.h"
 #include "dx_utils.h"
 
+#include "../sdl/win_public.h"
 // DX12
 extern Dx_Instance	dx;
 
@@ -637,7 +638,6 @@ void dx_initialize(void * pWinContext)
 	DX_CHECK( CreateDXGIFactory2(0, IID_PPV_ARGS(&pFactory)) );
 #endif
 	
-	// printAvailableAdapters(pFactory);
 
 	DX_CreateDevice(pFactory, &dx.device);
 

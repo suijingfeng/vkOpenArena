@@ -161,7 +161,7 @@ typedef struct {
 
 
 	// math, i really want ot remove this, but to keep the API/ABI consistant with ioq3
-	long (* ftol)(float f);
+	// long (* ftol)(float f);
 
 	// window systems impl
 	void (* WinSysInit)(void ** pContext);
@@ -172,10 +172,10 @@ typedef struct {
 	void (* pfnLog)(char * const pComment);
 
 	// system stuff
-	void (* Sys_SetEnv)( const char *name, const char *value );
-//	void (* Sys_GLimpSafeInit)(void);
-//	void (* Sys_GLimpInit)(void);
-	qboolean (* Sys_LowPhysicalMemory)(void);
+	// void (* Sys_SetEnv)( const char *name, const char *value );
+    // void (* Sys_GLimpSafeInit)(void);
+    // void (* Sys_GLimpInit)(void);
+	// qboolean (* Sys_LowPhysicalMemory)(void);
 } refimport_t;
 
 
