@@ -24,10 +24,7 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #define _TR_TYPES_H_
 
 
-
-
 #define	MAX_DLIGHTS		32		// can't be increased, because bit flags are used on surfaces
-
 #define	REFENTITYNUM_BITS	10		// can't be increased without changing drawsurf bit packing
 #define	REFENTITYNUM_MASK	((1<<REFENTITYNUM_BITS) - 1)
 // the last N-bit number (2^REFENTITYNUM_BITS - 1) is reserved for the special world refentity,
@@ -218,4 +215,3 @@ typedef struct {
 } glconfig_t;
 
 #endif
-

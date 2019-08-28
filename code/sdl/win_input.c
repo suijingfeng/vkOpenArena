@@ -25,7 +25,6 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #include "../client/client.h"
 #include "../sys/sys_public.h"
 #include "win_public.h"
-#include "win_event.h"
 
 
 extern WinVars_t g_wv;

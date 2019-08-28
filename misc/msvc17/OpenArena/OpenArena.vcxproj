@@ -95,17 +95,6 @@
     <ClCompile Include="..\..\..\code\zlib\zutil.c" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="..\..\..\code\win32\resource.h" />
-    <ClInclude Include="..\..\..\code\win32\win_event.h" />
-    <ClInclude Include="..\..\..\code\win32\win_gamma.h" />
-    <ClInclude Include="..\..\..\code\win32\win_get_clipboard.h" />
-    <ClInclude Include="..\..\..\code\win32\win_input.h" />
-    <ClInclude Include="..\..\..\code\win32\win_log.h" />
-    <ClInclude Include="..\..\..\code\win32\win_mode.h" />
-    <ClInclude Include="..\..\..\code\win32\win_public.h" />
-    <ClInclude Include="..\..\..\code\win32\win_snd.h" />
-  </ItemGroup>
-  <ItemGroup>
     <ProjectReference Include="..\botlib\botlib.vcxproj">
       <Project>{53020065-2e52-4ffa-8b15-94d4be0e674f}</Project>
     </ProjectReference>
@@ -120,6 +109,13 @@
     <None Include="..\..\..\code\asm\ftola.asm" />
     <None Include="..\..\..\code\asm\snapvector.asm" />
     <None Include="..\..\..\code\asm\vm_x86_64.asm" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="..\..\..\code\sdl\resource.h" />
+    <ClInclude Include="..\..\..\code\sdl\win_gamma.h" />
+    <ClInclude Include="..\..\..\code\sdl\win_log.h" />
+    <ClInclude Include="..\..\..\code\sdl\win_public.h" />
+    <ClInclude Include="..\..\..\code\sdl\win_snd.h" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <VCProjectVersion>15.0</VCProjectVersion>
@@ -222,7 +218,7 @@
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <SDLCheck>true</SDLCheck>
       <ConformanceMode>true</ConformanceMode>
-      <PreprocessorDefinitions>STANDALONE;USE_RENDERER_DLOPEN;USE_CURL_DLOPEN;_MBCS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>NDEBUG;NO_VM_COMPILED;NO_GZIP;STANDALONE;USE_RENDERER_DLOPEN;USE_CURL_DLOPEN;_MSC_VER;_MBCS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
     <Link>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>

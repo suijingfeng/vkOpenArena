@@ -20,8 +20,8 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 ===========================================================================
 */
 //
-#ifndef __Q_SHARED_H_
-#define __Q_SHARED_H_
+#ifndef __TR_SHARED_H_
+#define __TR_SHARED_H_
 
 
 #include <assert.h>
@@ -200,9 +200,6 @@ typedef enum {
 	h_dontcare
 } ha_pref;
 
-
-void Com_Memset (void* dest, const int val, const size_t count);
-void Com_Memcpy (void* dest, const void* src, const size_t count);
 
 #define CIN_system	1
 #define CIN_loop	2
@@ -396,7 +393,6 @@ void Vector4Scale( const vec4_t in, vec_t scale, vec4_t out );
 void VectorRotate( vec3_t in, vec3_t matrix[3], vec3_t out );
 int Q_log2(int val);
 
-float Q_acos(float c);
 
 int		Q_rand( int *seed );
 float	Q_random( int *seed );

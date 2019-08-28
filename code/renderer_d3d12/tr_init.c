@@ -170,11 +170,11 @@ void GfxInfo_f( void )
 	//
 	// Info that doesn't depend on r_renderAPI
 	//
-	ri.Printf( PRINT_ALL, "\nMODE: %d x %d %s\n", glConfig.vidWidth, glConfig.vidHeight);
+	ri.Printf( PRINT_ALL, "\nMODE: %d x %d \n", glConfig.vidWidth, glConfig.vidHeight);
 
 	if (glConfig.deviceSupportsGamma) {
 		ri.Printf( PRINT_ALL, "GAMMA: hardware w/ %d overbright bits\n", tr.overbrightBits );
-	} 
+	}
 	else {
 		ri.Printf( PRINT_ALL, "GAMMA: software w/ %d overbright bits\n", tr.overbrightBits );
 	}
@@ -343,16 +343,6 @@ void R_Init( void )
 	//		- r_ignorehwgamma
 	//		- r_gamma
 	//
-	if (dx.active != true)
-	{
-		void * pWinContext;
-		// DX12
-		// &glConfig, 
-		ri.WinSysInit( &pWinContext );
-
-		dx_initialize( pWinContext );
-	}
-
 
 	//
 	// init function tables
@@ -402,9 +392,20 @@ void R_Init( void )
 	backEndData[0]->polys = (srfPoly_t *) ((char *) ptr + sizeof( *backEndData[0] ));
 	backEndData[0]->polyVerts = (polyVert_t *) ((char *) ptr + sizeof( *backEndData[0] ) + sizeof(srfPoly_t) * max_polys);
 
+	if (dx.active != true)
+	{
+		void * pWinContext;
+		// DX12
+		// &glConfig, 
+		ri.WinSysInit(&pWinContext);
+
+		dx_initialize(pWinContext);
+	}
+
 
 	GL_SetDefaultState();
 	
+
 	R_ToggleSmpFrame();
 
 
@@ -478,8 +479,7 @@ void RE_Shutdown( qboolean destroyWindow )
 
 void RE_BeginRegistration(glconfig_t *pConfig)
 {
-
-	R_Init();
+	ri.Printf(PRINT_ALL, " RE_BeginRegistration. \n");
 
 	pConfig->isFullscreen = qfalse;
 	pConfig->stereoEnabled = qfalse;
@@ -498,6 +498,7 @@ void RE_BeginRegistration(glconfig_t *pConfig)
 	pConfig->driverType = GLDRV_ICD;
 	pConfig->hardwareType = GLHW_GENERIC;
 
+	R_Init();
 
 	tr.viewCluster = -1;		// force markleafs to regenerate
 	RE_ClearScene();

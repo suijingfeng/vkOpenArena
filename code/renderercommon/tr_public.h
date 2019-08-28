@@ -29,7 +29,7 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 //
 // these are the functions exported by the refresh module
 //
-typedef struct
+typedef struct refexport_s
 {
 	// called before the library is unloaded,
 	// if the system is just reconfiguring, pass destroyWindow = qfalse, which will keep the screen from flashing to the desktop.
@@ -183,7 +183,7 @@ typedef struct {
 // If the module can't init to a valid rendering state, NULL will be returned.
 
 #ifdef USE_RENDERER_DLOPEN
-typedef	void (QDECL *GetRefAPI_t) (int apiVersion, refimport_t * riimp, refexport_t* rexp);
+typedef	void (QDECL *GetRefAPI_t) (int apiVersion, refimport_t * const rimp, refexport_t* const rexp);
 #else
 void GetRefAPI(int apiVersion, refimport_t *rimp, refexport_t* rexp);
 #endif
