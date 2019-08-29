@@ -1,4 +1,8 @@
-# OpenArena Engine 
+﻿# OpenArena Engine 
+
+* checkout the SDL2 branch for stable build and playing happily.
+* the master branch under developing, stuck on linux xcb keyboard and mouse things as lack of documention ...
+
 
 This project is a fork of OpenArena with specific changes to its renderer module.
 It is mainly for myself to study Vulkan/OpenGL API and Quake3's engine, 
@@ -110,7 +114,13 @@ make -j4
 ```
 5. Find the executables and dlls in build/release-mingw64-x86\_64 . 
 
+### Building with vs2017 ###
+I am trying to add vs2017 project files(OpenArena.sln) for build this repository,
+ it is on the developing stage, you can find it at `vkOpenArena\misc\msvc17\OpenArena\`
 
+Currently, only vulkan and d3d12 based renderer merely works, need time fix a lot of thing ... 
+
+find the the executable at `vkOpenArena\misc\msvc17\bin\x64\Release`
 
 ## RUN ##
 First, download the map packages from http://openarena.ws/download.php
