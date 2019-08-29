@@ -89,6 +89,9 @@ typedef struct refexport_s
 	qboolean (*inPVS)( const vec3_t p1, const vec3_t p2 );
 
 	void (*TakeVideoFrame)( int h, int w, byte* captureBuffer, byte *encodeBuffer, qboolean motionJpeg );
+
+	void(* SysMessage)(unsigned int msgType, int x, int y, int w, int h);
+	void (* WaitRenderFinishCurFrame)(void);
 } refexport_t;
 
 //

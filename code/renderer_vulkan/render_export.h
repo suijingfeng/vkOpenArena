@@ -54,4 +54,8 @@ qboolean RE_GetEntityToken( char *buffer, int size );
 qboolean RE_inPVS( const vec3_t p1, const vec3_t p2 );
 void RE_TakeVideoFrame( int width, int height, unsigned char *captureBuffer, unsigned char *encodeBuffer, qboolean motionJpeg );
 
+// win resize interactive
+void RE_WinMessage(unsigned int msgType, int x, int y, int w, int h);
+void RE_WaitRenderFinishCurFrame(void);
+
 #endif

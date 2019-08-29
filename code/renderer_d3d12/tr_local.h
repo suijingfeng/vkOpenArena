@@ -1483,6 +1483,11 @@ void SaveJPG(char * filename, int quality, int image_width, int image_height, un
 void R_InitFreeType();
 void R_DoneFreeType();
 void RE_RegisterFont(const char *fontName, int pointSize, fontInfo_t *font);
-void RE_WinMessage(unsigned int msgType, int Param1, int Param2, int Param3, int Param4);
+
+
+// win resize interactive
+void RE_WinMessage(unsigned int msgType, int x, int y, int w, int h);
+void RE_WaitRenderFinishCurFrame(void);
+
 
 #endif //TR_LOCAL_H

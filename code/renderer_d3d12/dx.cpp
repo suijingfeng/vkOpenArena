@@ -165,15 +165,15 @@ void OnSizeChanged(UINT width, UINT height)
 }
 
 
-void RE_WinMessage(unsigned int msgType, int Param1, int Param2, int Param3, int Param4)
+void RE_WinMessage(unsigned int msgType, int x, int y, int w, int h)
 {
 	ri.Printf(PRINT_ALL, "message type:%d from windows system: %d, %d, %d, %d",
-		msgType, Param1, Param2, Param3, Param4);
+		msgType, x, y, w, h);
 	switch(msgType)
 	{
 		case 1: 
 			// width, height
-			OnSizeChanged(Param3 - Param1, Param4 - Param2);
+			OnSizeChanged(w, h);
 			break;
 		case 4:
 		default:
@@ -182,6 +182,10 @@ void RE_WinMessage(unsigned int msgType, int Param1, int Param2, int Param3, int
 }
 
 
+void RE_WaitRenderFinishCurFrame(void)
+{
+	dx_wait_device_idle();
+}
 
 static D3D12_HEAP_PROPERTIES get_heap_properties(D3D12_HEAP_TYPE heap_type)
 {

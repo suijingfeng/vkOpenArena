@@ -17,7 +17,7 @@ GetRefAPI
 Q_EXPORT void QDECL GetRefAPI( int apiVersion, refimport_t *rimp , refexport_t* rexp)
 {
 #else
-refexport_t* GetRefAPI(int apiVersion, refimport_t *rimp)
+void GetRefAPI(int apiVersion, refimport_t *rimp, refexport_t* rexp)
 {
 #endif
 
@@ -25,8 +25,8 @@ refexport_t* GetRefAPI(int apiVersion, refimport_t *rimp)
 
 	if( apiVersion != REF_API_VERSION )
 	{
-		ri.Printf(PRINT_ALL, "Mismatched REF_API_VERSION: expected %i, got %i\n", REF_API_VERSION, apiVersion );
-		return NULL;
+		ri.Printf(PRINT_WARNING, "Mismatched REF_API_VERSION: expected %i, got %i\n", REF_API_VERSION, apiVersion );
+		return;
 	}
 
 	rexp->Shutdown = RE_Shutdown;
@@ -63,5 +63,6 @@ refexport_t* GetRefAPI(int apiVersion, refimport_t *rimp)
 
 	rexp->TakeVideoFrame = RE_TakeVideoFrame;
 
-	return;
+	rexp->SysMessage = RE_WinMessage;
+	rexp->WaitRenderFinishCurFrame = RE_WaitRenderFinishCurFrame;
 }

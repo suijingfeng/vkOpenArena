@@ -80,6 +80,6 @@ void GetRefAPI(int apiVersion, refimport_t *rimp, refexport_t * re)
 	pRExp->GetEntityToken = R_GetEntityToken;
 	pRExp->inPVS = R_inPVS;
 
-	// pRExp->WinMessage = RE_WinMessage;
-
+	pRExp->SysMessage = RE_WinMessage;
+	pRExp->WaitRenderFinishCurFrame = RE_WaitRenderFinishCurFrame;
 }
