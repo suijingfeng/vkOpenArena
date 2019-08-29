@@ -29,14 +29,15 @@ allowedVote
 ==================
  */
 #define MAX_VOTENAME_LENGTH 14 //currently the longest string is "/map_restart/\0" (14 chars)
-int allowedVote(const char *commandStr) {
+int allowedVote(const char *commandStr)
+{
 	char tempStr[MAX_VOTENAME_LENGTH];
 	int length;
 	char voteNames[MAX_CVAR_VALUE_STRING];
 	trap_Cvar_VariableStringBuffer( "g_voteNames", voteNames, sizeof( voteNames ) );
 	if(Q_strequal(voteNames, "*" ))
 		return qtrue; //if star, everything is allowed
-	length = strlen(commandStr);
+	length = (int)strlen(commandStr);
 	if(length>MAX_VOTENAME_LENGTH-3)
 	{
 		//Error: too long
@@ -44,7 +45,7 @@ int allowedVote(const char *commandStr) {
 	}
 	//Now constructing a string that starts and ends with '/' like: "/clientkick/"
 	tempStr[0] = '/';
-	strncpy(&tempStr[1],commandStr,length);
+	strncpy(&tempStr[1],commandStr, MAX_VOTENAME_LENGTH - 3);
 	tempStr[length+1] = '/';
 	tempStr[length+2] = '\0';
 	if(Q_stristr(voteNames,tempStr) != NULL)
@@ -172,21 +173,22 @@ allowedGametype
 ==================
  */
 #define MAX_GAMETYPENAME_LENGTH 5 //currently the longest string is "/12/\0" (5 chars)
-int allowedGametype(const char *gametypeStr) {
+int allowedGametype(const char *gametypeStr)
+{
 	char tempStr[MAX_GAMETYPENAME_LENGTH];
 	int length;
 	char voteGametypes[MAX_CVAR_VALUE_STRING];
 	trap_Cvar_VariableStringBuffer( "g_voteGametypes", voteGametypes, sizeof( voteGametypes ) );
 	if(Q_strequal(voteGametypes, "*" ))
 		return qtrue; //if star, everything is allowed
-	length = strlen(gametypeStr);
+	length = (int)strlen(gametypeStr);
 	if(length>MAX_GAMETYPENAME_LENGTH-3)
 	{
 		//Error: too long
 		return qfalse;
 	}
 	tempStr[0] = '/';
-	strncpy(&tempStr[1],gametypeStr,length);
+	strncpy(&tempStr[1],gametypeStr, MAX_GAMETYPENAME_LENGTH - 3);
 	tempStr[length+1] = '/';
 	tempStr[length+2] = '\0';
 	if(Q_stristr(voteGametypes,tempStr) != NULL)
