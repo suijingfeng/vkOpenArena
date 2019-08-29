@@ -2025,7 +2025,7 @@ else
 	$(B)/client/con_tty.o
 
   Q3OBJ += \
-    $(B)/client/sdl_snd.o \
+    $(B)/client/linux_sound.o \
     $(B)/client/xcb_input.o \
     $(B)/client/xcb_keysyms.o \
     $(B)/client/xcb_create_window.o 

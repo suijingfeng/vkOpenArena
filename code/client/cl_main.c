@@ -3280,7 +3280,7 @@ void CL_InitRef(void)
 	ri.pfnLog = FileSys_Logging;
 
 	// ri.Sys_SetEnv = Sys_SetEnv;
-	// ri.Sys_LowPhysicalMemory = Sys_LowPhysicalMemory;
+	ri.Sys_LowPhysicalMemory = Sys_LowPhysicalMemory;
 
 	GetRefAPI( REF_API_VERSION, &ri, &re);
 

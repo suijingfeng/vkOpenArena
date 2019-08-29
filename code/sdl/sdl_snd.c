@@ -28,11 +28,8 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #include "../client/client.h"
 
 
-#ifdef _WIN32
-	#include "../SDL2/include/SDL.h"
-#else
-	#include <SDL2/SDL.h>
-#endif
+#include "../SDL2/include/SDL.h"
+
 
 qboolean snd_inited = qfalse;
 

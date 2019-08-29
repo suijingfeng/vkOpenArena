@@ -110,11 +110,7 @@ typedef struct
 } glwstate_t;
 
 
-typedef struct sym_s
-{
-	void **symbol;
-	const char *name;
-} sym_t;
+
 
 #ifdef MACOS_X
 char *Sys_StripAppBundle( char *pwd );

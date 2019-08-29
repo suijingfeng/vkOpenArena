@@ -10,7 +10,7 @@
 #include "../client/snd_local.h"
 #include "../qcommon/q_shared.h"
 
-#include "local.h"
+#include "../sys/sys_public.h"
 
 #define USE_SPINLOCK
 
@@ -85,19 +85,19 @@ static cvar_t *s_device;
 static void *t_lib = NULL;
 
 #ifdef USE_SPINLOCK
-static int (*_pthread_spin_init)(pthread_spinlock_t *lock, int pshared);
-static int (*_pthread_spin_destroy)(pthread_spinlock_t *lock);
-static int (*_pthread_spin_lock)(pthread_spinlock_t *lock);
-static int (*_pthread_spin_unlock)(pthread_spinlock_t *lock);
+static int (* _pthread_spin_init)(pthread_spinlock_t *lock, int pshared);
+static int (* _pthread_spin_destroy)(pthread_spinlock_t *lock);
+static int (* _pthread_spin_lock)(pthread_spinlock_t *lock);
+static int (* _pthread_spin_unlock)(pthread_spinlock_t *lock);
 #else
-static int (*_pthread_mutex_init)(pthread_mutex_t *mutex, const pthread_mutexattr_t *mutexattr);
-static int (*_pthread_mutex_destroy)(pthread_mutex_t *mutex);
-static int (*_pthread_mutex_lock)(pthread_mutex_t *mutex);
-static int (*_pthread_mutex_unlock)(pthread_mutex_t *mutex);
+static int (* _pthread_mutex_init)(pthread_mutex_t *mutex, const pthread_mutexattr_t *mutexattr);
+static int (* _pthread_mutex_destroy)(pthread_mutex_t *mutex);
+static int (* _pthread_mutex_lock)(pthread_mutex_t *mutex);
+static int (* _pthread_mutex_unlock)(pthread_mutex_t *mutex);
 #endif
-static int (*_pthread_join)(pthread_t __th, void **__thread_return);
-static int (*_pthread_create)(pthread_t *thread, const pthread_attr_t *attr, void *(*func) (void *), void *arg);
-static void (*_pthread_exit)(void *retval);
+static int (* _pthread_join)(pthread_t __th, void **__thread_return);
+static int (* _pthread_create)(pthread_t *thread, const pthread_attr_t *attr, void *(*func) (void *), void *arg);
+static void (* _pthread_exit)(void *retval);
 
 /* alsa private variables */
 
@@ -137,6 +137,13 @@ static snd_pcm_sframes_t (*_snd_pcm_avail_update)(snd_pcm_t *pcm);
 static int (*_snd_pcm_mmap_begin)(snd_pcm_t *pcm, const snd_pcm_channel_area_t **areas, snd_pcm_uframes_t *offset, snd_pcm_uframes_t *frames);
 static snd_pcm_sframes_t (*_snd_pcm_mmap_commit)(snd_pcm_t *pcm, snd_pcm_uframes_t offset, snd_pcm_uframes_t frames);
 static snd_pcm_sframes_t (*_snd_pcm_writei)(snd_pcm_t *pcm, const void *buffer, snd_pcm_uframes_t size);
+
+
+typedef struct sym_s
+{
+	void **symbol;
+	const char *name;
+} sym_t;
 
 
 sym_t t_list[] = {
@@ -288,7 +295,7 @@ qboolean SNDDMA_Init( void )
 		}
 	}
 
-	for ( i = 0 ; i < ARRAY_LEN( t_list ) ; i++ )
+	for ( i = 0 ; i < ARRAY_LEN( t_list ) ; ++i )
 	{
 		*t_list[i].symbol = Sys_LoadFunction( t_lib, t_list[i].name );
 		if ( *t_list[i].symbol == NULL )
