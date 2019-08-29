@@ -34,11 +34,24 @@ static DXGI_FORMAT get_depth_format()
 
 void UpdateForSizeChange(UINT clientWidth, UINT clientHeight)
 {
+
+	dx.cl_win_width = clientWidth;
+	dx.cl_win_height = clientHeight;
+
 	glConfig.vidWidth = clientWidth;
 	glConfig.vidHeight = clientHeight;
 	glConfig.windowAspect = static_cast<float>(clientWidth) / static_cast<float>(clientHeight);
 }
 
+unsigned int DX_GetRenderAreaWidth(void)
+{
+	return dx.cl_win_width;
+}
+
+unsigned int DX_GetRenderAreaHeight(void)
+{
+	return dx.cl_win_height;
+}
 
 // Set up the screen viewport and scissor rect to match the current window size and scene rendering resolution.
 void UpdatePostViewAndScissor()
@@ -401,6 +414,9 @@ static void DX_CreateSwapChain(ID3D12CommandQueue* pCmdQueue, DXGI_FORMAT fmt, U
 
 	pTmpSwapchain->Release();
 	pTmpSwapchain = nullptr;
+
+
+
 
 	ri.Printf(PRINT_ALL, " Swap chain created( %d x %d ). \n", pWinSys->winWidth, pWinSys->winHeight);
 }
@@ -1022,7 +1038,7 @@ void dx_shutdown()
 
 void dx_release_resources()
 {
-	ri.Printf(PRINT_ALL, "Release DirectX12 Resources. \n");
+	ri.Printf(PRINT_ALL, " Release DirectX12 Resources. \n");
 	dx_wait_device_idle();
 
 	for (int i = 0; i < dx_world.num_pipelines; ++i)

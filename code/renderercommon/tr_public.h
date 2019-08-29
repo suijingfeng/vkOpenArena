@@ -40,7 +40,7 @@ typedef struct refexport_s
 	//
 	// BeginRegistration makes any existing media pointers invalid and returns the current gl configuration, 
     // including screen width and height, which can be used by the client to intelligently size display elements
-	void (*BeginRegistration)( glconfig_t *config );
+	void (*BeginRegistration)( glconfig_t * const pConfig );
 	qhandle_t (*RegisterModel)( const char *name );
 	qhandle_t (*RegisterSkin)( const char *name );
 	qhandle_t (*RegisterShader)( const char *name );
@@ -159,9 +159,6 @@ typedef struct {
 	void (* IN_Shutdown)( void );
 	void (* IN_Restart)( void );
 
-
-	// math, i really want ot remove this, but to keep the API/ABI consistant with ioq3
-	// long (* ftol)(float f);
 
 	// window systems impl
 	void (* WinSysInit)(void ** pContext);

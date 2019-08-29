@@ -85,6 +85,9 @@ void dx_bind_geometry();
 void dx_shade_geometry(ID3D12PipelineState* pipeline, bool multitexture, DX_Depth_Range depth_range, bool indexed, bool lines);
 
 
+unsigned int DX_GetRenderAreaWidth(void);
+unsigned int DX_GetRenderAreaHeight(void);
+
 struct Dx_Instance
 {
 	bool active = false;
@@ -158,4 +161,11 @@ struct Dx_Instance
 	ID3D12PipelineState* surface_debug_pipeline_solid = nullptr;
 	ID3D12PipelineState* surface_debug_pipeline_outline = nullptr;
 	ID3D12PipelineState* images_debug_pipeline = nullptr;
+
+	// client area start position
+	// ralative to destop screen ?
+	int cl_start_x;
+	int cl_start_y;
+	unsigned int cl_win_width;
+	unsigned int cl_win_height;
 };

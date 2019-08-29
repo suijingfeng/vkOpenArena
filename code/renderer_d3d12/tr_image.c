@@ -72,10 +72,11 @@ static	image_t*		hashTable[FILE_HASH_SIZE];
 /*
 ** R_GammaCorrect
 */
-void R_GammaCorrect( byte *buffer, int bufSize ) {
-	int i;
+void R_GammaCorrect( byte * const buffer, int bufSize )
+{
 
-	for ( i = 0; i < bufSize; i++ ) {
+	for (int i = 0; i < bufSize; ++i )
+	{
 		buffer[i] = s_gammatable[buffer[i]];
 	}
 }
@@ -171,12 +172,12 @@ void GL_TextureMode( const char *string ) {
 R_SumOfUsedImages
 ===============
 */
-int R_SumOfUsedImages( void ) {
-	int	total;
-	int i;
+int R_SumOfUsedImages( void )
+{
+	int	total = 0;
 
-	total = 0;
-	for ( i = 0; i < tr.numImages; i++ ) {
+	for (int i = 0; i < tr.numImages; ++i )
+	{
 		if ( tr.images[i]->frameUsed == tr.frameCount ) {
 			total += tr.images[i]->uploadWidth * tr.images[i]->uploadHeight;
 		}
@@ -1548,7 +1549,6 @@ void R_LoadImage(const char *name, unsigned char **pic, int *width, int *height)
         }
         else
             ri.Printf( PRINT_WARNING, "%s not present.\n", name);
-
     }
 
 }
@@ -1757,7 +1757,7 @@ static void R_CreateFogImage( void ) {
 R_CreateDefaultImage
 ==================
 */
-#define	DEFAULT_SIZE	16
+#define	DEFAULT_SIZE	32
 static void R_CreateDefaultImage( void ) {
 	int		x;
 	byte	data[DEFAULT_SIZE][DEFAULT_SIZE][4];
@@ -1818,7 +1818,8 @@ void R_CreateBuiltinImages( void ) {
 	tr.identityLightImage = R_CreateImage("*identityLight", (byte *)data, 8, 8, qfalse, qfalse, GL_REPEAT );
 
 
-	for(x=0;x<32;x++) {
+	for(x=0;x<32;x++)
+	{
 		// scratchimage is usually used for cinematic drawing
 		tr.scratchImage[x] = R_CreateImage("*scratch", (byte *)data, DEFAULT_SIZE, DEFAULT_SIZE, qfalse, qtrue, GL_CLAMP );
 	}
@@ -1959,7 +1960,7 @@ static char *CommaParse( char **data_p ) {
 	char *data;
 	static char com_token[MAX_TOKEN_CHARS];
 
-	static char fuck[4] = {""};
+	static char empty_str[4] = {""};
 	data = *data_p;
 	len = 0;
 	com_token[0] = 0;
@@ -2007,7 +2008,7 @@ static char *CommaParse( char **data_p ) {
 	}
 
 	if ( c == 0 ) {
-		return fuck;
+		return empty_str;
 	}
 
 	// handle quoted strings
@@ -2168,13 +2169,12 @@ qhandle_t RE_RegisterSkin( const char *name ) {
 R_InitSkins
 ===============
 */
-void	R_InitSkins( void ) {
-	skin_t		*skin;
-
+void R_InitSkins( void )
+{
 	tr.numSkins = 1;
 
 	// make the default skin have all default shaders
-	skin = tr.skins[0] = (skin_t*) ri.Hunk_Alloc( sizeof( skin_t ), h_low );
+	skin_t * skin = tr.skins[0] = (skin_t*) ri.Hunk_Alloc( sizeof( skin_t ), h_low );
 	Q_strncpyz( skin->name, "<default skin>", sizeof( skin->name )  );
 	skin->numSurfaces = 1;
 	skin->surfaces[0] = (skinSurface_t*) ri.Hunk_Alloc( sizeof( *skin->surfaces ), h_low );
@@ -2186,7 +2186,8 @@ void	R_InitSkins( void ) {
 R_GetSkinByHandle
 ===============
 */
-skin_t	*R_GetSkinByHandle( qhandle_t hSkin ) {
+skin_t* R_GetSkinByHandle( qhandle_t hSkin )
+{
 	if ( hSkin < 1 || hSkin >= tr.numSkins ) {
 		return tr.skins[0];
 	}

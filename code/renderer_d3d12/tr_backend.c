@@ -688,7 +688,7 @@ void RE_StretchRaw( int x, int y, int w, int h, int cols, int rows, const byte *
 	}
 
 	// make sure rows and cols are powers of 2
-	for ( i = 0 ; ( 1 << i ) < cols ; i++ ) {
+	for (i = 0 ; ( 1 << i ) < cols ; i++ ) {
 	}
 	for ( j = 0 ; ( 1 << j ) < rows ; j++ ) {
 	}

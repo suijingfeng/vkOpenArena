@@ -1100,7 +1100,8 @@ void	RE_StretchRaw (int x, int y, int w, int h, int cols, int rows, const byte *
 void	RE_UploadCinematic (int w, int h, int cols, int rows, const byte *data, int client, qboolean dirty);
 
 void		RE_BeginFrame( stereoFrame_t stereoFrame );
-void		RE_BeginRegistration( glconfig_t *glconfig );
+void		RE_BeginRegistration( glconfig_t * const glconfig );
+void		RE_EndRegistration(void);
 void		RE_LoadWorldMap( const char *mapname );
 void		RE_SetWorldVisData( const byte *vis );
 qhandle_t	RE_RegisterModel( const char *name );
@@ -1118,7 +1119,7 @@ image_t		*R_CreateImage( const char name[], const byte *pic, int width, int heig
 					, qboolean allowPicmip, int wrapClampMode );
 
 void		R_SetColorMappings( void );
-void		R_GammaCorrect( byte *buffer, int bufSize );
+void		R_GammaCorrect( byte *const pBuffer, int bufSize );
 
 void	R_ImageList_f( void );
 void	R_SkinList_f( void );

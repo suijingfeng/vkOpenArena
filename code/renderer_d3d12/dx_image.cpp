@@ -256,7 +256,12 @@ void RE_UploadCinematic(int w, int h, int cols, int rows, const byte *data, int 
 	GL_Bind(tr.scratchImage[client]);
 
 	// if the scratchImage isn't in the format we want, specify it as a new texture
-	if (cols != tr.scratchImage[client]->width || rows != tr.scratchImage[client]->height) {
+	if (cols != tr.scratchImage[client]->width || rows != tr.scratchImage[client]->height)
+	{
+
+		ri.Printf(PRINT_ALL, "w=%d, h=%d, cols=%d, rows=%d, client=%d, prtImage->width=%d, prtImage->height=%d\n",
+			w, h, cols, rows, client, tr.scratchImage[client]->width, tr.scratchImage[client]->height);
+
 		tr.scratchImage[client]->width = tr.scratchImage[client]->uploadWidth = cols;
 		tr.scratchImage[client]->height = tr.scratchImage[client]->uploadHeight = rows;
 
@@ -296,7 +301,6 @@ void RE_UploadCinematic(int w, int h, int cols, int rows, const byte *data, int 
 			{
 				qglTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, cols, rows, GL_RGBA, GL_UNSIGNED_BYTE, data);
 			}
-
 		}
 	}
 }

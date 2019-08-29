@@ -77,7 +77,7 @@ void vk_destroyScratchImage(void)
 
 
 
-void RE_UploadCinematic(int w, int h, int cols, int rows, const unsigned char * data, int client, VkBool32 dirty)
+void RE_UploadCinematic(int w, int h, int cols, int rows, const unsigned char * data, int client, int dirty)
 {
 
     // the image may not even created, and it image data may not even uploaded.

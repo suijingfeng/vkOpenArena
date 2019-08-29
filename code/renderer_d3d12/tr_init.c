@@ -157,13 +157,6 @@ static void GL_SetDefaultState( void )
 
 void GfxInfo_f( void ) 
 {
-	const char * enablestrings[2] =
-	{
-		"disabled",
-		"enabled"
-	};
-
-
 	ri.Printf( PRINT_ALL, "\nActive 3D API: DirectX 12\n" );
 
 
@@ -441,9 +434,10 @@ void RE_Shutdown( qboolean destroyWindow )
 	ri.Cmd_RemoveCommand("shaderlist");
 	ri.Cmd_RemoveCommand("skinlist");
 	ri.Cmd_RemoveCommand("gfxinfo");
-	ri.Cmd_RemoveCommand("modelist" );
-	ri.Cmd_RemoveCommand("shaderstate" );
+	// ri.Cmd_RemoveCommand("shaderstate" );
 	ri.Cmd_RemoveCommand("printAvailableAdapters");
+
+
 	if ( tr.registered ) {
 		R_IssueRenderCommands(qfalse);
 		R_DeleteTextures();
@@ -477,7 +471,7 @@ void RE_Shutdown( qboolean destroyWindow )
 //=============================================================================
 
 
-void RE_BeginRegistration(glconfig_t *pConfig)
+void RE_BeginRegistration(glconfig_t * const pConfig)
 {
 	ri.Printf(PRINT_ALL, " RE_BeginRegistration. \n");
 
@@ -499,6 +493,9 @@ void RE_BeginRegistration(glconfig_t *pConfig)
 	pConfig->hardwareType = GLHW_GENERIC;
 
 	R_Init();
+
+	pConfig->vidWidth = DX_GetRenderAreaWidth();
+	pConfig->vidHeight = DX_GetRenderAreaHeight();
 
 	tr.viewCluster = -1;		// force markleafs to regenerate
 	RE_ClearScene();
