@@ -31,7 +31,7 @@ void RE_SetColor( const float *rgba );
 
 void RE_StretchPic ( float x, float y, float w, float h, float s1, float t1, float s2, float t2, qhandle_t hShader );
 void RE_StretchRaw (int x, int y, int w, int h, int cols, int rows, const unsigned char *data, int client, qboolean dirty);
-void RE_UploadCinematic (int w, int h, int cols, int rows, const byte *data, int client, qboolean dirty);
+void RE_UploadCinematic (int w, int h, int cols, int rows, const byte *data, int client, int dirty);
 
 void RE_BeginFrame( stereoFrame_t notUsed );
 void RE_EndFrame( int *frontEndMsec, int *backEndMsec );
