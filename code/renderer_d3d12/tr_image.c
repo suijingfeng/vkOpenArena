@@ -780,9 +780,7 @@ static void LoadBMP( const char *name, byte **pic, int *width, int *height )
 	int		columns, rows, numPixels;
 	byte	*pixbuf;
 	int		row, column;
-	byte	*buf_p;
-	byte	*buffer;
-	int		length;
+
 	BMPHeader_t bmpHeader;
 	byte		*bmpRGBA;
 
@@ -791,12 +789,13 @@ static void LoadBMP( const char *name, byte **pic, int *width, int *height )
 	//
 	// load the file
 	//
-	length = ri.FS_ReadFile( ( char * ) name, (void **)&buffer);
+	char* buffer;
+	int length = ri.FS_ReadFile( ( char * ) name, &buffer);
 	if (!buffer) {
 		return;
 	}
 
-	buf_p = buffer;
+	byte* buf_p = (byte*)buffer;
 
 	bmpHeader.id[0] = *buf_p++;
 	bmpHeader.id[1] = *buf_p++;
@@ -963,10 +962,9 @@ LoadPCX
 */
 static void LoadPCX ( const char *filename, byte **pic, byte **palette, int *width, int *height)
 {
-	byte	*raw;
+
 	pcx_t	*pcx;
 	int		x, y;
-	int		len;
 	int		dataByte, runLength;
 	byte	*out, *pix;
 	int		xmax, ymax;
@@ -977,7 +975,8 @@ static void LoadPCX ( const char *filename, byte **pic, byte **palette, int *wid
 	//
 	// load the file
 	//
-	len = ri.FS_ReadFile( ( char * ) filename, (void **)&raw);
+	char* raw;
+	int len = ri.FS_ReadFile( ( char * ) filename, &raw);
 	if (!raw) {
 		return;
 	}
@@ -986,7 +985,7 @@ static void LoadPCX ( const char *filename, byte **pic, byte **palette, int *wid
 	// parse the PCX file
 	//
 	pcx = (pcx_t *)raw;
-	raw = &pcx->data;
+	raw = (char*)&pcx->data;
 
   	xmax = (pcx->xmax);
     ymax = (pcx->ymax);
@@ -1040,7 +1039,7 @@ static void LoadPCX ( const char *filename, byte **pic, byte **palette, int *wid
 
 	}
 
-	if ( raw - (byte *)pcx > len)
+	if ( raw - (char *)pcx > len)
 	{
 		ri.Printf (PRINT_DEVELOPER, "PCX file %s was malformed", filename);
 		ri.Free (*pic);
@@ -1108,7 +1107,7 @@ static void LoadTGA ( const char *name, byte **pic, int *width, int *height)
 	byte	*pixbuf;
 	int		row, column;
 	byte	*buf_p;
-	byte	*buffer;
+
 	TargaHeader	targa_header;
 	byte		*targa_rgba;
 
@@ -1117,12 +1116,13 @@ static void LoadTGA ( const char *name, byte **pic, int *width, int *height)
 	//
 	// load the file
 	//
-	ri.FS_ReadFile ( ( char * ) name, (void **)&buffer);
+	char* buffer;
+	ri.FS_ReadFile ( ( char * ) name, &buffer);
 	if (!buffer) {
 		return;
 	}
 
-	buf_p = buffer;
+	buf_p = (byte*)buffer;
 
 	targa_header.id_length = *buf_p++;
 	targa_header.colormap_type = *buf_p++;
@@ -1341,15 +1341,16 @@ static void LoadTGA ( const char *name, byte **pic, int *width, int *height)
   ri.FS_FreeFile (buffer);
 }
 
-static void LoadJPG( const char *filename, byte **pic, int *width, int *height ) {
-  byte* fbuffer;
-  int len = ri.FS_ReadFile ( ( char * ) filename, (void **)&fbuffer);
+static void LoadJPG( const char *filename, byte **pic, int *width, int *height )
+{
+  char* fbuffer;
+  int len = ri.FS_ReadFile ( ( char * ) filename, &fbuffer);
   if (!fbuffer) {
 	return;
   }
   
   int components;
-  *pic = stbi_load_from_memory(fbuffer, len, width, height, &components, STBI_rgb_alpha);
+  *pic = stbi_load_from_memory((stbi_uc *)fbuffer, len, width, height, &components, STBI_rgb_alpha);
   if (*pic == nullptr) {
       ri.FS_FreeFile(fbuffer);
       return;
@@ -2117,7 +2118,7 @@ qhandle_t RE_RegisterSkin( const char *name ) {
 	}
 
 	// load and parse the skin file
-    ri.FS_ReadFile( name, (void **)&text );
+    ri.FS_ReadFile( name, &text );
 	if ( !text ) {
 		return 0;
 	}

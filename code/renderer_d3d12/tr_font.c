@@ -332,7 +332,7 @@ void RE_RegisterFont(const char *fontName, int pointSize, fontInfo_t *font) {
   qhandle_t h;
 	float max;
 #endif
-  void *faceData;
+
 	int i, len;
   char name[1024];
 	float dpi = 72;											//
@@ -361,7 +361,9 @@ void RE_RegisterFont(const char *fontName, int pointSize, fontInfo_t *font) {
 	}
 
 	len = ri.FS_ReadFile(name, NULL);
-	if (len == sizeof(fontInfo_t)) {
+	if (len == sizeof(fontInfo_t))
+	{
+		char* faceData;
 		ri.FS_ReadFile(name, &faceData);
 		fdOffset = 0;
 		fdFile = (byte*) faceData;

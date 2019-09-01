@@ -250,7 +250,7 @@ Dx_Image upload_dx_image(const Image_Upload_Data& upload_data, bool repeat_textu
 
 
 
-void RE_UploadCinematic(int w, int h, int cols, int rows, const byte *data, int client, qboolean dirty)
+void RE_UploadCinematic(int w, int h, int cols, int rows, const byte *data, int client, int dirty)
 {
 
 	GL_Bind(tr.scratchImage[client]);

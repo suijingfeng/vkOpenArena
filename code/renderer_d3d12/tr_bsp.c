@@ -1793,10 +1793,11 @@ RE_LoadWorldMap
 Called directly from cgame
 =================
 */
-void RE_LoadWorldMap( const char *name ) {
+void RE_LoadWorldMap( const char *name )
+{
 	int			i;
 	dheader_t	*header;
-	byte		*buffer;
+
 	byte		*startMarker;
 
 	if ( tr.worldMapLoaded ) {
@@ -1814,7 +1815,8 @@ void RE_LoadWorldMap( const char *name ) {
 	tr.worldMapLoaded = qtrue;
 
 	// load it
-    ri.FS_ReadFile( name, (void **)&buffer );
+	char* buffer;
+    ri.FS_ReadFile( name, &buffer );
 	if ( !buffer ) {
 		ri.Error (ERR_DROP, "RE_LoadWorldMap: %s not found", name);
 	}

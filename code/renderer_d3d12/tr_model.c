@@ -78,9 +78,10 @@ optimization to prevent disk rescanning if they are
 asked for again.
 ====================
 */
-qhandle_t RE_RegisterModel( const char *name ) {
+qhandle_t RE_RegisterModel( const char *name )
+{
 	model_t		*mod;
-	unsigned	*buf;
+
 	int			lod;
 	int			ident;
 	qboolean	loaded;
@@ -145,8 +146,8 @@ qhandle_t RE_RegisterModel( const char *name ) {
 			sprintf( namebuf, "_%d.md3", lod );
 			strcat( filename, namebuf );
 		}
-
-		ri.FS_ReadFile( filename, (void **)&buf );
+		char* buf;
+		ri.FS_ReadFile( filename, &buf );
 		if ( !buf ) {
 			continue;
 		}
