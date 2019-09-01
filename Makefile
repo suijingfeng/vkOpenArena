@@ -662,6 +662,17 @@ ifdef MINGW
 	CLIENT_EXTRA_FILES += $(LIBSDIR)/win64/OpenAL64.dll
 	endif
 
+	ifeq ($(ARCH),x86)
+	CLIENT_LIBS += $(LIBSDIR)/win32/libcurl32-4.dll
+	CLIENT_EXTRA_FILES += $(LIBSDIR)/win32/libcurl32-4.dll
+	else
+	CLIENT_LIBS += $(LIBSDIR)/win64/libcurl-4.dll
+	CLIENT_EXTRA_FILES +=$(LIBSDIR)/win64/libcurl-4.dll
+	endif
+
+
+ 
+
 else # ifdef MINGW
 
 #############################################################################
