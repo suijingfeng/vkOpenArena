@@ -1687,7 +1687,6 @@ Q3VKOBJ = \
   $(B)/renderer_vulkan/R_RotateForViewer.o \
   \
   $(B)/renderer_vulkan/ref_import.o \
-  $(B)/renderer_vulkan/render_export.o \
   \
   $(B)/renderer_vulkan/vk_image.o \
   $(B)/renderer_vulkan/vk_buffers.o \
