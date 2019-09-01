@@ -36,10 +36,6 @@ ifndef BUILD_MISSIONPACK
   BUILD_MISSIONPACK= 1
 endif
 
-ifndef BUILD_WITH_SDL
-  BUILD_WITH_SDL = 1
-endif
-
 
 ifndef USE_RENDERER_DLOPEN
 USE_RENDERER_DLOPEN=1
@@ -297,28 +293,12 @@ ifneq ($(BUILD_CLIENT),0)
 	OPENAL_CFLAGS ?= $(shell PKG_CONFIG --silence-errors --cflags openal)
 	OPENAL_LIBS ?= $(shell PKG_CONFIG --silence-errors --libs openal)
 
-ifeq ($(BUILD_WITH_SDL), 1)
-	SDL_CFLAGS ?= $(shell PKG_CONFIG --silence-errors --cflags sdl2|sed 's/-Dmain=SDL_main//')
-	SDL_LIBS ?= $(shell PKG_CONFIG --silence-errors --libs sdl2)
-endif
-
 	FREETYPE_CFLAGS ?= $(shell PKG_CONFIG --silence-errors --cflags freetype2)
   else
 	# assume they're in the system default paths (no -I or -L needed)
 	CURL_LIBS ?= -lcurl
 	OPENAL_LIBS ?= -lopenal
   endif
-
-ifeq ($(BUILD_WITH_SDL), 1)
-
-  # Use sdl2-config if all else fails
-  ifeq ($(SDL_CFLAGS),)
-	ifneq ($(call bin_path, sdl2-config),)
-	  SDL_CFLAGS ?= $(shell sdl2-config --cflags)
-	  SDL_LIBS ?= $(shell sdl2-config --libs)
-	endif
-  endif
-endif
 endif
 
 
@@ -364,15 +344,11 @@ endif
   THREAD_LIBS=-lpthread
   LIBS=-ldl -lm
 
+#TODO:remove SDL2
   CLIENT_LIBS=$(SDL_LIBS)
 
-  CLIENT_LIBS += $(XCB_LIBS)
-
-ifeq ($(BUILD_WITH_SDL), 1)
-  RENDERER_LIBS = $(SDL_LIBS) 
-else
   RENDERER_LIBS = -lGL
-endif
+
 
 #  XCB_CFLAGS = $(shell PKG_CONFIG --silence-errors --cflags xcb)
   XCB_LIBS = $(shell pkg-config --libs xcb)
@@ -380,7 +356,8 @@ endif
   CLIENT_CFLAGS += $(CURL_CFLAGS)
   CLIENT_LIBS += $(CURL_LIBS)
 
-
+  CLIENT_LIBS += $(XCB_LIBS)
+  
   ifeq ($(USE_OPENAL),1)
     ifneq ($(USE_OPENAL_DLOPEN),1)
       CLIENT_LIBS += $(THREAD_LIBS) $(OPENAL_LIBS)
@@ -669,7 +646,6 @@ ifdef MINGW
 	CLIENT_LIBS += $(LIBSDIR)/win64/libcurl-4.dll
 	CLIENT_EXTRA_FILES +=$(LIBSDIR)/win64/libcurl-4.dll
 	endif
-
 
  
 
@@ -1081,6 +1057,10 @@ endif
 	@echo ""
 	@echo "  LIBS:"
 	$(call print_wrapped, $(LIBS))
+
+	@echo "  RENDERER_LIBS:"
+	$(call print_wrapped, $(RENDERER_LIBS))
+
 	@echo ""
 	@echo "  CLIENT_LIBS:"
 	$(call print_wrapped, $(CLIENT_LIBS))
