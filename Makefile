@@ -2005,8 +2005,11 @@ ifdef MINGW
   Q3OBJ += \
 	$(B)/client/con_passive.o
 
+#  Q3OBJ += \
+#    $(B)/client/sdl_snd.o 
+
   Q3OBJ += \
-    $(B)/client/sdl_snd.o 
+    $(B)/client/win_snd.o 
 
   Q3OBJ += \
     $(B)/client/win_create_window.o \

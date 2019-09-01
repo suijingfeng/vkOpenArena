@@ -191,6 +191,10 @@ Q: How to enable vulkan support from the pulldown console ?
 \cl_renerer opengl1
 \vid_restart
 
+# Enable d3d12 ported from kenny
+\cl_renerer d3d12
+\vid_restart
+
 # Enable openarena
 \cl_renerer openarena
 \vid_restart

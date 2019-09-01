@@ -117,7 +117,7 @@ void SNDDMA_Shutdown( void ) {
 
 
 
-int SNDDMA_InitDS ()
+int SNDDMA_InitDS (void)
 {
 
 	DSBUFFERDESC	dsbuf;
@@ -138,7 +138,8 @@ int SNDDMA_InitDS ()
     if( FAILED( hresult ))
 	{
 		use8 = 0;
-	    if( FAILED( hresult = CoCreateInstance(CLSID_DirectSound, NULL, CLSCTX_INPROC_SERVER, IID_IDirectSound, (void **)&pDS))) {
+	    if( FAILED( hresult = CoCreateInstance(CLSID_DirectSound, NULL, CLSCTX_INPROC_SERVER, IID_IDirectSound, (void **)&pDS)))
+		{
 			Com_Printf ("failed\n");
 			SNDDMA_Shutdown ();
 			return qfalse;
