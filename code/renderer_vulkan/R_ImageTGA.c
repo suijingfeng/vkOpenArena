@@ -40,7 +40,7 @@ typedef struct _TargaHeader {
 	unsigned char	pixel_size, attributes;
 } TargaHeader;
 
-void R_LoadTGA ( const char *name, unsigned char** pic, int *width, int *height)
+void R_LoadTGA ( const char *name, unsigned char** pic, unsigned int *width, unsigned int *height)
 {
 	unsigned	columns, rows, numPixels;
 	unsigned char	*pixbuf;
@@ -62,7 +62,7 @@ void R_LoadTGA ( const char *name, unsigned char** pic, int *width, int *height)
 	//
 	// load the file
 	//
-	length = ri.FS_ReadFile ( name, (void**)&buffer);
+	length = ri.FS_ReadFile ( name, &buffer);
 	if (!buffer || length < 0) {
 		return;
 	}

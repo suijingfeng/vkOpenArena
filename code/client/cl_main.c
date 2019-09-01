@@ -3164,10 +3164,12 @@ int CL_ScaledMilliseconds(void) {
 
 
 // not used
+/*
 static long Q_ftol(float f)
 {
 	return (long)f;
 }
+*/
 
 void CL_InitRef(void)
 {

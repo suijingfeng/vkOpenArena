@@ -1137,7 +1137,7 @@ qhandle_t R_RegisterIQM(const char *name, model_t *mod)
 	qboolean loaded = qfalse;
 	int filesize;
 
-	filesize = ri.FS_ReadFile(name, (void **)&buf);
+	filesize = ri.FS_ReadFile(name, &buf);
 	if(!buf)
 	{
 		mod->type = MOD_BAD;

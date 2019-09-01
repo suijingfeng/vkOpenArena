@@ -726,7 +726,8 @@ void RE_StretchRaw (int x, int y, int w, int h, int cols, int rows, const byte *
 	RB_InstantQuad2(quadVerts, texCoords);
 }
 
-void RE_UploadCinematic (int w, int h, int cols, int rows, const byte *data, int client, qboolean dirty) {
+void RE_UploadCinematic (int w, int h, int cols, int rows, const byte *data, int client, int dirty)
+{
 	GLuint texture;
 
 	if (!tr.scratchImage[client])

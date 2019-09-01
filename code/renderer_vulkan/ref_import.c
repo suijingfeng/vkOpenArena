@@ -14,10 +14,10 @@ GetRefAPI
 */
 
 #ifdef USE_RENDERER_DLOPEN
-Q_EXPORT void QDECL GetRefAPI( int apiVersion, refimport_t *rimp , refexport_t* rexp)
+Q_EXPORT void QDECL GetRefAPI( int apiVersion, refimport_t * const rimp , refexport_t* const rexp)
 {
 #else
-void GetRefAPI(int apiVersion, refimport_t *rimp, refexport_t* rexp)
+void GetRefAPI(int apiVersion, refimport_t * const rimp, refexport_t* const rexp)
 {
 #endif
 

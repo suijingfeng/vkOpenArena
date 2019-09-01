@@ -67,7 +67,7 @@ typedef struct refexport_s
 
 	// Draw images for cinematic rendering, pass as 32 bit rgba
 	void (*DrawStretchRaw) (int x, int y, int w, int h, int cols, int rows, const byte *data, int client, qboolean dirty);
-	void (*UploadCinematic) (int w, int h, int cols, int rows, const byte *data, int client, qboolean dirty);
+	void (*UploadCinematic) (int w, int h, int cols, int rows, const byte *data, int client, int dirty);
 
 	void (*BeginFrame)( stereoFrame_t stereoFrame );
 
@@ -143,7 +143,7 @@ typedef struct {
 	// a -1 return means the file does not exist
 	// NULL can be passed for buf to just determine existance
 	int     (*FS_FileIsInPAK)( const char *name, int *pCheckSum );
-	long    (*FS_ReadFile)( const char *name, void **buf );
+	long    (*FS_ReadFile)( const char *name, char** ppBuf );
 	void	(*FS_FreeFile)( void *buf );
 	char **	(*FS_ListFiles)( const char *name, const char *extension, int *numfilesfound );
 	void	(*FS_FreeFileList)( char **filelist );
@@ -185,7 +185,7 @@ typedef struct {
 #ifdef USE_RENDERER_DLOPEN
 typedef	void (QDECL *GetRefAPI_t) (int apiVersion, refimport_t * const rimp, refexport_t* const rexp);
 #else
-void GetRefAPI(int apiVersion, refimport_t *rimp, refexport_t* rexp);
+void GetRefAPI(int apiVersion, refimport_t * const rimp, refexport_t* const rexp);
 #endif
 
 #endif	// __TR_PUBLIC_H

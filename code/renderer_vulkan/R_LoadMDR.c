@@ -497,7 +497,7 @@ qhandle_t R_RegisterMDR(const char *name, model_t *mod)
 	char* buf;
 
 	qboolean loaded = qfalse;
-	int filesize = ri.FS_ReadFile(name, (void **)&buf);
+	int filesize = ri.FS_ReadFile(name, &buf);
 	if(!buf)
 	{
 		mod->type = MOD_BAD;

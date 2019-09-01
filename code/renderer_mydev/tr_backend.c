@@ -684,7 +684,8 @@ void RE_StretchRaw (int x, int y, int w, int h, int cols, int rows, const byte *
     RE_StretchPic(x, y, w, h,  0.5f / cols, 0.5f / rows,  1.0f - 0.5f / cols, 1.0f - 0.5 / rows, tr.cinematicShader->index);
 }
 
-void RE_UploadCinematic (int w, int h, int cols, int rows, const byte *data, int client, qboolean dirty) {
+void RE_UploadCinematic (int w, int h, int cols, int rows, const byte *data, int client, int dirty)
+{
 
 	GL_Bind( tr.scratchImage[client] );
 

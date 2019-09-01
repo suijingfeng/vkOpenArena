@@ -16,7 +16,7 @@ enum IMAGE_EXT_TYPE_t {
 
 static const char * ExTable[5]={".tga",".jpg",".bmp",".png",".pcx"};
 
-typedef void (* pFnImageLoader_t)(const char *, unsigned char **, int *, int *);
+typedef void (* pFnImageLoader_t)(const char *, unsigned char **, unsigned int *, unsigned int *);
 
 
 //TODO : STB SUPPORT
@@ -43,8 +43,7 @@ const static pFnImageLoader_t fnImgLdrs[5] = {
 #endif
 
 // Load the image without a extention
-static void
-R_LoadNSE(const char * const pName, unsigned char **pic, int *width, int *height)
+static void R_LoadNSE(const char * const pName, unsigned char **pic, unsigned int *width, unsigned int *height)
 {
     *pic = NULL;
 
