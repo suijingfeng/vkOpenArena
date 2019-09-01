@@ -163,11 +163,9 @@ inline static int ParseHex(const char* text)
 VM_LoadSymbols
 ===============
 */
-void VM_LoadSymbols( vm_t *vm ) {
-	union {
-		char	*c;
-		void	*v;
-	} mapfile;
+void VM_LoadSymbols( vm_t *vm )
+{
+    char* pMapfile;
 
 	char *text_p, *token;
 	char	name[MAX_QPATH];
@@ -186,8 +184,9 @@ void VM_LoadSymbols( vm_t *vm ) {
 
 	COM_StripExtension(vm->name, name, sizeof(name));
 	Com_sprintf( symbols, sizeof( symbols ), "vm/%s.map", name );
-	FS_ReadFile( symbols, &mapfile.v );
-	if ( !mapfile.c ) {
+	
+    FS_ReadFile( symbols, &pMapfile );
+	if ( pMapfile == NULL ) {
 		Com_Printf( "Couldn't load symbol file: %s\n", symbols );
 		return;
 	}
@@ -195,7 +194,7 @@ void VM_LoadSymbols( vm_t *vm ) {
 	numInstructions = vm->instructionCount;
 
 	// parse the symbols
-	text_p = mapfile.c;
+	text_p = pMapfile;
 	prev = &vm->symbols;
 	count = 0;
 
@@ -242,7 +241,7 @@ void VM_LoadSymbols( vm_t *vm ) {
 
 	vm->numSymbols = count;
 	Com_Printf( "%i symbols parsed from %s\n", count, symbols );
-	FS_FreeFile( mapfile.v );
+	FS_FreeFile( pMapfile );
 }
 
 /*

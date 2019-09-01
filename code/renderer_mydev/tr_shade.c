@@ -481,7 +481,7 @@ static void RB_CalcSpecularAlphaNew(unsigned char (*alphas)[4])
 	}
 }
 
-
+/*
 static float NormalizeColor(const vec3_t in, vec3_t out)
 {
 	float max= in[0];
@@ -506,7 +506,7 @@ static float NormalizeColor(const vec3_t in, vec3_t out)
 	}
 	return max;
 }
-
+*/
 
 /*
 ===============

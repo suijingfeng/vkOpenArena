@@ -79,7 +79,7 @@ static void R_JPGOutputMessage(j_common_ptr cinfo)
   ri.Printf(PRINT_ALL, "%s\n", buffer);
 }
 
-void R_LoadJPG(const char *filename, unsigned char **pic, int *width, int *height)
+void R_LoadJPG(const char *filename, unsigned char **pic, unsigned int *width, unsigned int *height)
 {
   /* This struct contains the JPEG decompression parameters and pointers to
    * working space (which is allocated as needed by the JPEG library).

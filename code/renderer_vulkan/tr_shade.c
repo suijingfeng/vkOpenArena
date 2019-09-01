@@ -664,6 +664,8 @@ void RB_CalcFlatAmbient( unsigned char *colors )
 */
 vec3_t lightOrigin = { -960, 1980, 96 };		// FIXME: track dynamically
 
+/*
+
 static void RB_CalcSpecularAlpha( unsigned char *alphas )
 {
 	int			i;
@@ -716,6 +718,8 @@ static void RB_CalcSpecularAlpha( unsigned char *alphas )
 		*alphas = b;
 	}
 }
+
+*/
 
 /*
 ** The basic vertex lighting calc

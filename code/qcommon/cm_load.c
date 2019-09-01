@@ -545,10 +545,11 @@ CM_LoadMap
 Loads in the map and all submodels
 ==================
 */
-void CM_LoadMap( const char *name, qboolean clientload, int *checksum ) {
+void CM_LoadMap( const char *name, qboolean clientload, int *checksum )
+{
 	union {
-		int				*i;
-		void			*v;
+		int* i;
+		char* v;
 	} buf;
 
 	dheader_t		header;
