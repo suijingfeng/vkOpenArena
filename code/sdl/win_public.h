@@ -55,27 +55,36 @@ typedef struct WinVars_s {
 
 #if defined(__linux__)
 
-#include <xcb/xcb.h>
+  #if defined(USING_XCB)
+    #include <xcb/xcb.h>
+  #elif defined(USING_XLIB)
+    #include <X11/Xutil.h>
+  #endif
 
-typedef struct xcb_windata_s {
+    typedef struct xcb_windata_s {
+  #if defined(USING_XCB)
+        xcb_connection_t *connection;
+        xcb_window_t hWnd;
+        xcb_window_t root;
+  #elif defined(USING_XLIB)
+        Display* display;
+        Window  hWnd;
+  #endif
 
-    xcb_connection_t *connection;
-    xcb_window_t hWnd;
-    xcb_window_t root;
-    int     screenIdx;
+        int     screenIdx;
 
-	int		winWidth;
-	int		winHeight;
-	int		desktopWidth;
-	int		desktopHeight;
-	int		isFullScreen;
-	int		isMinimized;
-    int     winStyle;
-    int     activeApp;
+        int		winWidth;
+        int		winHeight;
+        int		desktopWidth;
+        int		desktopHeight;
+        int		isFullScreen;
+        int		isMinimized;
+        int     winStyle;
+        int     activeApp;
 
-    unsigned int sysMsgTime;
+        unsigned int sysMsgTime;
 
-} WinVars_t;
+    } WinVars_t;
 
 #endif
 
