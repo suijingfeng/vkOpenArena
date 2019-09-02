@@ -257,7 +257,7 @@ ROADIR=$(MOUNT_DIR)/renderer_oa
 RVULKANDIR=$(MOUNT_DIR)/renderer_vulkan
 RMYDEVDIR=$(MOUNT_DIR)/renderer_mydev
 CMDIR=$(MOUNT_DIR)/qcommon
-SDLDIR=$(MOUNT_DIR)/sdl
+SDLDIR=$(MOUNT_DIR)/platform
 SYSDIR=$(MOUNT_DIR)/sys
 GDIR=$(MOUNT_DIR)/game
 CGDIR=$(MOUNT_DIR)/cgame
@@ -317,7 +317,12 @@ ifneq (,$(findstring "$(PLATFORM)", "linux" "gnu_kfreebsd" "kfreebsd-gnu" "gnu")
   TOOLS_CFLAGS += -DARCH_STRING=\"$(ARCH)\"
   BASE_CFLAGS = -Wall -Wimplicit -Wstrict-prototypes \
 	-pipe -DUSE_ICON -DARCH_STRING=\\\"$(ARCH)\\\"
-  CLIENT_CFLAGS += $(SDL_CFLAGS)
+  
+#  CLIENT_CFLAGS += -DUSING_XCB
+  CLIENT_CFLAGS += -DUSING_XLIB
+#  CLIENT_CFLAGS += -DUSING_WAYLAND
+
+
 #####################################
 #  BASE_CFLAGS += -fno-strict-aliasing
 ####################################
