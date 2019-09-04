@@ -806,8 +806,21 @@ void RB_DrawSun( float scale, shader_t *shader ) {
 		float translation[16] QALIGN(16);
 
 		Mat4Translation( backEnd.viewParms.or.origin, translation );
+
+	#ifdef PROCESSOR_HAVE_SSE
+
 		MatrixMultiply4x4_SSE( translation, backEnd.viewParms.world.modelMatrix, glState.modelview );
-        MatrixMultiply4x4_SSE( glState.modelview, glState.projection, glState.modelviewProjection);	
+        MatrixMultiply4x4_SSE( glState.modelview, glState.projection, glState.modelviewProjection);
+
+	#else
+
+		MatrixMultiply4x4( translation, backEnd.viewParms.world.modelMatrix, glState.modelview );
+        MatrixMultiply4x4( glState.modelview, glState.projection, glState.modelviewProjection);	
+	#endif
+
+
+
+
 	}
 
 	dist = 	backEnd.viewParms.zFar / 1.75;		// div sqrt(3)
@@ -879,7 +892,15 @@ void RB_StageIteratorSky( void ) {
 
 			Mat4Copy( glState.modelview, oldmodelview );
 			Mat4Translation( backEnd.viewParms.or.origin, trans );
+
+	
+#ifdef PROCESSOR_HAVE_SSE
 			MatrixMultiply4x4_SSE( trans, glState.modelview, product );
+#else
+			MatrixMultiply4x4( trans, glState.modelview, product );
+#endif
+
+
 			GL_SetModelviewMatrix( product );
 		}
 

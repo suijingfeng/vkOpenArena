@@ -515,8 +515,12 @@ void R_RotateForEntity( const trRefEntity_t *ent, const viewParms_t *viewParms, 
 	glMatrix[15] = 1;
 
 	Mat4Copy(glMatrix, or->transformMatrix);
-	MatrixMultiply4x4_SSE( glMatrix, viewParms->world.modelMatrix, or->modelMatrix );
-
+	
+    #ifdef PROCESSOR_HAVE_SSE
+	MatrixMultiply4x4_SSE(glMatrix, viewParms->world.modelMatrix, or->modelMatrix );
+    #else
+	MatrixMultiply4x4( glMatrix, viewParms->world.modelMatrix, or->modelMatrix );
+    #endif
 	// calculate the viewer origin in the model's space
 	// needed for fog, specular, and environment mapping
 	VectorSubtract( viewParms->or.origin, or->origin, delta );
@@ -581,7 +585,11 @@ void R_RotateForViewer (void)
 
 	// convert from our coordinate system (looking down X)
 	// to OpenGL's coordinate system (looking down -Z)
+    #ifdef PROCESSOR_HAVE_SSE
 	MatrixMultiply4x4_SSE( viewerMatrix, s_flipMatrix, tr.or.modelMatrix );
+    #else
+	MatrixMultiply4x4( viewerMatrix, s_flipMatrix, tr.or.modelMatrix );
+    #endif
 
 	tr.viewParms.world = tr.or;
 

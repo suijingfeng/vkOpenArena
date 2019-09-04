@@ -319,8 +319,20 @@ void RB_SunRays(FBO_t *srcFbo, int srcBox[4], FBO_t *dstFbo, int dstBox[4])
         float model[16] QALIGN(16);
 
 		Mat4Translation( backEnd.viewParms.or.origin, trans );
+    
+	#ifdef PROCESSOR_HAVE_SSE
+
 		MatrixMultiply4x4_SSE( trans, backEnd.viewParms.world.modelMatrix, model );
 		MatrixMultiply4x4_SSE( model, backEnd.viewParms.projectionMatrix, mvp);
+
+	#else
+
+		MatrixMultiply4x4( trans, backEnd.viewParms.world.modelMatrix, model );
+		MatrixMultiply4x4( model, backEnd.viewParms.projectionMatrix, mvp);
+
+	#endif
+
+
 
 		float dist = backEnd.viewParms.zFar / 1.75;		// div sqrt(3)
 
