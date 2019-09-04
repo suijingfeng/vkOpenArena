@@ -36,10 +36,10 @@ ifndef BUILD_MISSIONPACK
   BUILD_MISSIONPACK= 1
 endif
 
-
-ifndef USE_RENDERER_DLOPEN
-USE_RENDERER_DLOPEN=1
+ifndef BUILD_VULKAN
+  BUILD_VULKAN = 1
 endif
+
 
 BASEGAME=baseoa
 VERSION=3.0.0a
@@ -53,6 +53,11 @@ VERSION=3.0.0a
 #
 #############################################################################
 -include Makefile.local
+
+ifndef USE_RENDERER_DLOPEN
+USE_RENDERER_DLOPEN=1
+endif
+
 
 ifeq ($(COMPILE_PLATFORM),cygwin)
   PLATFORM=mingw32
@@ -701,7 +706,11 @@ ifneq ($(BUILD_CLIENT),0)
   ifneq ($(USE_RENDERER_DLOPEN),0)
 	TARGETS += $(B)/$(CLIENTBIN)$(FULLBINEXT)
 	TARGETS += $(B)/renderer_openarena_$(SHLIBNAME) $(B)/renderer_opengl1_$(SHLIBNAME) $(B)/renderer_opengl2_$(SHLIBNAME)
-	TARGETS += $(B)/renderer_vulkan_$(SHLIBNAME) $(B)/renderer_mydev_$(SHLIBNAME)
+
+    ifneq ($(BUILD_VULKAN),0)
+		TARGETS += $(B)/renderer_vulkan_$(SHLIBNAME) $(B)/renderer_mydev_$(SHLIBNAME)
+	endif
+
   else
 	TARGETS += $(B)/$(CLIENTBIN)$(FULLBINEXT) $(B)/$(CLIENTBIN)_opengl1$(FULLBINEXT) $(B)/$(CLIENTBIN)_opengl2$(FULLBINEXT)
 	TARGETS += $(B)/$(CLIENTBIN)_vulkan$(FULLBINEXT) $(B)/$(CLIENTBIN)_mydev$(FULLBINEXT)
