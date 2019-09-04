@@ -7,7 +7,7 @@
 #include <X11/extensions/Xrandr.h>
 #include <X11/extensions/Xrender.h>
 
-#include "local.h"
+#include "win_public.h"
 
 #define MAX_MONITORS 16
 
@@ -26,6 +26,13 @@ typedef struct
 	RRMode oldMode;
 	char name[32];
 } monitor_t;
+
+typedef struct sym_s
+{
+	void **symbol;
+	const char *name;
+} sym_t;
+
 
 monitor_t monitors[ MAX_MONITORS ];
 monitor_t *current_monitor;
@@ -384,6 +391,31 @@ static monitor_t *FindNearestMonitor( int x, int y, int w, int h )
 }
 
 
+static void SetMonitorGamma( unsigned short *red, unsigned short *green, unsigned short *blue, int size )
+{
+	XRRCrtcGamma* gamma;
+
+	gamma = _XRRAllocGamma( size );
+	if ( gamma )
+	{
+		memcpy( gamma->red,   red,   size * sizeof( unsigned short ) );
+		memcpy( gamma->green, green, size * sizeof( unsigned short ) );
+		memcpy( gamma->blue,  blue,  size * sizeof( unsigned short ) );
+		_XRRSetCrtcGamma( dpy, desktop_monitor.crtcn, gamma );
+		_XRRFreeGamma( gamma );
+	}
+}
+
+
+void RandR_RestoreGamma( void )
+{
+	if ( glw_state.randr_gamma && old_gamma_size )
+		SetMonitorGamma( old_gamma[0], old_gamma[1], old_gamma[2], old_gamma_size );
+
+	old_gamma_size = 0;
+}
+
+
 void RandR_UpdateMonitor( int x, int y, int w, int h )
 {
 	monitor_t *cm;
@@ -424,12 +456,11 @@ void RandR_UpdateMonitor( int x, int y, int w, int h )
 			desktop_monitor.name );
 
 		BackupMonitorGamma();
-/*
+
 		if ( glw_state.randr_gamma && gammaSet && re.SetColorMappings )
 		{
 			re.SetColorMappings();
 		}
-*/        
 	}
 }
 
@@ -469,29 +500,6 @@ static qboolean BackupMonitorGamma( void )
 	return qfalse;
 }
 
-
-static void SetMonitorGamma( unsigned short *red, unsigned short *green, unsigned short *blue, int size )
-{
-	XRRCrtcGamma* gamma;
-
-	gamma = _XRRAllocGamma( size );
-	if ( gamma )
-	{
-		memcpy( gamma->red,   red,   size * sizeof( unsigned short ) );
-		memcpy( gamma->green, green, size * sizeof( unsigned short ) );
-		memcpy( gamma->blue,  blue,  size * sizeof( unsigned short ) );
-		_XRRSetCrtcGamma( dpy, desktop_monitor.crtcn, gamma );
-		_XRRFreeGamma( gamma );
-	}
-}
-
-void RandR_RestoreGamma( void )
-{
-	if ( glw_state.randr_gamma && old_gamma_size )
-		SetMonitorGamma( old_gamma[0], old_gamma[1], old_gamma[2], old_gamma_size );
-
-	old_gamma_size = 0;
-}
 
 
 void RandR_SetGamma( unsigned char red[256], unsigned char green[256], unsigned char blue[256] )

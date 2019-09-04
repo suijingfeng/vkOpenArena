@@ -316,6 +316,7 @@ INSTALL=install
 MKDIR=mkdir -p
 EXTRA_FILES=
 CLIENT_EXTRA_FILES=
+USING_XLIB = 1
 
 #Possible values "gnu90", "gnu99" and "gnu11". Note that the engine uses gnu-extensions. gnu90 is broken in the commit where this message is added. Travis does not support gnu11 at the moment.
 CFLAGS+="-std=gnu99"
@@ -2034,11 +2035,20 @@ else
 	$(B)/client/con_tty.o
 
   Q3OBJ += \
-    $(B)/client/linux_sound.o \
+    $(B)/client/linux_sound.o
+
+  ifeq ($(USING_XLIB), 1)
+  Q3OBJ += \
+    $(B)/client/xlib_input.o \
+    $(B)/client/xlib_create_window.o \
+	$(B)/client/x11_randr.o \
+	
+  else
+  Q3OBJ += \
     $(B)/client/xcb_input.o \
     $(B)/client/xcb_keysyms.o \
     $(B)/client/xcb_create_window.o 
-
+  endif
 endif
 
 

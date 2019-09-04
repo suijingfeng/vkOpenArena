@@ -1,10 +1,12 @@
-#include "local.h"
+#include "win_public.h"
+#include "../sys/sys_public.h"
 
 
 extern glwstate_t glw_state;
-////////////////////////////////////////////////////
+extern void RandR_SetGamma( unsigned char red[256], unsigned char green[256], unsigned char blue[256] );
 
-/*****************************************************************************/
+
+
 
 qboolean BuildGammaRampTable( unsigned char *red, unsigned char *green, unsigned char *blue, int gammaRampSize, unsigned short table[3][4096] )
 {
@@ -46,7 +48,7 @@ qboolean BuildGammaRampTable( unsigned char *red, unsigned char *green, unsigned
 	return qtrue;
 }
 
-
+/*
 void InitGammaImpl( glconfig_t *config )
 {
     config->deviceSupportsGamma = qfalse;
@@ -65,7 +67,7 @@ void InitGammaImpl( glconfig_t *config )
 		return;
 	}
 }
-
+*/
 
 /*
 ** GLimp_SetGamma
@@ -79,11 +81,15 @@ void GLimp_SetGamma( unsigned char red[256], unsigned char green[256], unsigned 
 		RandR_SetGamma( red, green, blue );
 		return;
 	}
-	
+
+/*
+
 	if ( glw_state.vidmode_gamma )
 	{
 		VidMode_SetGamma( red, green, blue );
 		return;
 	}
+
+*/
 }
 

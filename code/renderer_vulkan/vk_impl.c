@@ -2,7 +2,7 @@
 #include "ref_import.h"
 #include "vk_instance.h"
 
-#include "../sdl/win_public.h"
+#include "../platform/win_public.h"
 
 extern PFN_vkGetInstanceProcAddr qvkGetInstanceProcAddr;
 

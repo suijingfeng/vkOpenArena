@@ -41,6 +41,7 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #endif
 #include <stdarg.h>
 #include <stdio.h>
+#include <signal.h>
 #include <pthread.h>
 #include <semaphore.h>
 
@@ -76,42 +77,10 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
 #include "../client/client.h"
 #include "local.h"
-#include "input.h"
+#include "inputs.h"
 
 
-#if defined(_WIN32)
-
-    #include <windows.h>
-    static HINSTANCE hinstOpenGL; // HINSTANCE for the OpenGL library
-
-
-    #define OPENGL_DRIVER_NAME	"opengl32"
-    HGLRC ( WINAPI * qwglCreateContext)(HDC);
-    BOOL  ( WINAPI * qwglDeleteContext)(HGLRC);
-    PROC  ( WINAPI * qwglGetProcAddress)(LPCSTR);
-    BOOL  ( WINAPI * qwglMakeCurrent)(HDC, HGLRC);
-    int   ( WINAPI * qwglSwapIntervalEXT)( int interval );
-
-    static HGLRC nowglCreateContext(HDC) { return NULL;}
-    static BOOL  nowglDeleteContext(HGLRC) { return FALSE; }
-    static PROC  nowglGetProcAddress(LPCSTR) { return NULL; }
-    static BOOL  nowglMakeCurrent(HDC, HGLRC) { return FALSE; }
-    static int   nowglSwapIntervalEXT( int interval ) { return -1; }
-
-
-#elif defined(MACOS_X)
-
-    #define OPENGL_DRIVER_NAME	"/System/Library/Frameworks/OpenGL.framework/Libraries/libGL.dylib"
-
-#else
-
-     #define OPENGL_DRIVER_NAME	"libGL.so.1"
-    static GLXContext noglXCreateContext(Display *dpy, XVisualInfo *vis, GLXContext shareList, Bool direct ) {return NULL;}
-    static void noglXDestroyContext(Display *dpy, GLXContext ctx) {return;}
-    static Bool noglXMakeCurrent(Display *dpy, GLXDrawable drawable, GLXContext ctx) {return 0;}
-    static void noglXSwapIntervalEXT(Display *dpy, GLXDrawable drawable, int interval) {return;}
-    static void noglXSwapBuffers(Display *dpy, GLXDrawable drawable ) {return;}
-    static XVisualInfo* noglXChooseVisual(Display *dpy, int screen, int *attribList ) {return NULL;}
+#define OPENGL_DRIVER_NAME	"libGL.so.1"
 
 #define QGL_LinX11_PROCS \
 	GLE( XVisualInfo*, glXChooseVisual, Display *dpy, int screen, int *attribList ) \
@@ -127,15 +96,11 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 	GLE( int,	glXSwapIntervalMESA, unsigned interval ) \
 	GLE( int,	glXSwapIntervalSGI, int interval )
 
-/*
+
 #define GLE( ret, name, ... ) ret ( APIENTRY * q##name )( __VA_ARGS__ );
     QGL_LinX11_PROCS;
     QGL_Swp_PROCS;
 #undef GLE
-*/
-#endif
-
-
 
 
 /////////////////////////////
@@ -154,6 +119,7 @@ cvar_t	*r_stencilbits;
 cvar_t	*r_depthbits;
 cvar_t	*r_colorbits;
 
+cvar_t	*r_stereoSeparation;
 
 cvar_t   *vid_xpos;
 cvar_t   *vid_ypos;
@@ -223,7 +189,7 @@ static const vidmode_t r_vidModes[] = {
 };
 static const int s_numVidModes = ARRAY_LEN( r_vidModes );
 
-qboolean CL_GetModeInfo(unsigned int *width, unsigned int *height, int mode, int dw, int dh, qboolean fullscreen )
+qboolean CL_GetModeInfo( int *width, int *height, int mode, int dw, int dh, qboolean fullscreen )
 {
 	if ( mode < -2 )
 		return qfalse;
@@ -248,144 +214,95 @@ qboolean CL_GetModeInfo(unsigned int *width, unsigned int *height, int mode, int
 	return qtrue;
 }
 
-//////////////////////////////////////////////////////////////////
-
-
-#ifdef SMP
 /*
-===========================================================
+static void GLimp_DetectAvailableModes(void)
+{
+	int i, j;
+	char buf[ MAX_STRING_CHARS ] = { 0 };
 
-SMP acceleration
 
-===========================================================
+	SDL_DisplayMode windowMode;
+    
+	// If a window exists, note its display index
+	if( SDL_window != NULL )
+	{
+		r_displayIndex->integer = SDL_GetWindowDisplayIndex( SDL_window );
+		if( r_displayIndex->integer < 0 )
+		{
+			Com_Printf("SDL_GetWindowDisplayIndex() failed: %s\n", SDL_GetError() );
+            return;
+		}
+	}
+
+	int numSDLModes = SDL_GetNumDisplayModes( r_displayIndex->integer );
+
+	if( SDL_GetWindowDisplayMode( SDL_window, &windowMode ) < 0 || numSDLModes <= 0 )
+	{
+		Com_Printf("Couldn't get window display mode, no resolutions detected: %s\n", SDL_GetError() );
+		return;
+	}
+
+	int numModes = 0;
+	SDL_Rect* modes = SDL_calloc(numSDLModes, sizeof( SDL_Rect ));
+	if ( !modes )
+	{
+        ////////////////////////////////////
+		Com_Error(ERR_FATAL, "Out of memory" );
+        ////////////////////////////////////
+	}
+
+	for( i = 0; i < numSDLModes; i++ )
+	{
+		SDL_DisplayMode mode;
+
+		if( SDL_GetDisplayMode( r_displayIndex->integer, i, &mode ) < 0 )
+			continue;
+
+		if( !mode.w || !mode.h )
+		{
+			Com_Printf( "Display supports any resolution\n" );
+			SDL_free( modes );
+			return;
+		}
+
+		if( windowMode.format != mode.format )
+			continue;
+
+		// SDL can give the same resolution with different refresh rates.
+		// Only list resolution once.
+		for( j = 0; j < numModes; j++ )
+		{
+			if( (mode.w == modes[ j ].w) && (mode.h == modes[ j ].h) )
+				break;
+		}
+
+		if( j != numModes )
+			continue;
+
+		modes[ numModes ].w = mode.w;
+		modes[ numModes ].h = mode.h;
+		numModes++;
+	}
+
+	for( i = 0; i < numModes; i++ )
+	{
+		const char *newModeString = va( "%ux%u ", modes[ i ].w, modes[ i ].h );
+
+		if( strlen( newModeString ) < (int)sizeof( buf ) - strlen( buf ) )
+			Q_strcat( buf, sizeof( buf ), newModeString );
+		else
+			Com_Printf( "Skipping mode %ux%u, buffer too small\n", modes[ i ].w, modes[ i ].h );
+	}
+
+	if( *buf )
+	{
+		buf[ strlen( buf ) - 1 ] = 0;
+		Com_Printf("Available modes: '%s'\n", buf );
+		Cvar_Set( "r_availableModes", buf );
+	}
+	SDL_free( modes );
+}
 */
-
-static pthread_mutex_t	smpMutex = PTHREAD_MUTEX_INITIALIZER;
-
-static pthread_cond_t		renderCommandsEvent = PTHREAD_COND_INITIALIZER;
-static pthread_cond_t		renderCompletedEvent = PTHREAD_COND_INITIALIZER;
-
-static void (*glimpRenderThread)( void );
-
-static void *GLimp_RenderThreadWrapper( void *arg )
-{
-	Com_Printf( "Render thread starting\n" );
-
-    glimpRenderThread();
-
-	qglXMakeCurrent( dpy, None, NULL );
-
-	Com_Printf( "Render thread terminating\n" );
-
-	return arg;
-}
-
-qboolean GLimp_SpawnRenderThread( void (*function)( void ) )
-{
-	pthread_t renderThread;
-	int ret;
-
-	pthread_mutex_init( &smpMutex, NULL );
-
-	pthread_cond_init( &renderCommandsEvent, NULL );
-	pthread_cond_init( &renderCompletedEvent, NULL );
-
-    glimpRenderThread = function;
-
-	ret = pthread_create( &renderThread,
-						  NULL,			// attributes
-						  GLimp_RenderThreadWrapper,
-						  NULL );		// argument
-	if ( ret ) {
-		Com_Printf( PRINT_ALL, "pthread_create returned %d: %s", ret, strerror( ret ) );
-    return qfalse;
-	} else {
-		ret = pthread_detach( renderThread );
-		if ( ret ) {
-			Com_Printf( PRINT_ALL, "pthread_detach returned %d: %s", ret, strerror( ret ) );
-		}
-  }
-
-  return qtrue;
-}
-
-static volatile void    *smpData = NULL;
-static volatile qboolean smpDataReady;
-
-void *GLimp_RendererSleep( void )
-{
-	void  *data;
-
-	qglXMakeCurrent( dpy, None, NULL );
-
-	pthread_mutex_lock( &smpMutex );
-	{
-		smpData = NULL;
-		smpDataReady = qfalse;
-
-		// after this, the front end can exit GLimp_FrontEndSleep
-		pthread_cond_signal( &renderCompletedEvent );
-
-		while ( !smpDataReady ) {
-			pthread_cond_wait( &renderCommandsEvent, &smpMutex );
-		}
-
-		data = (void *)smpData;
-	}
-	pthread_mutex_unlock( &smpMutex );
-
-	qglXMakeCurrent( dpy, win, ctx );
-
-  return data;
-}
-
-void GLimp_FrontEndSleep( void )
-{
-	pthread_mutex_lock( &smpMutex );
-	{
-		while ( smpData ) {
-			pthread_cond_wait( &renderCompletedEvent, &smpMutex );
-		}
-	}
-	pthread_mutex_unlock( &smpMutex );
-
-	qglXMakeCurrent( dpy, win, ctx );
-}
-
-void GLimp_WakeRenderer( void *data )
-{
-	qglXMakeCurrent( dpy, None, NULL );
-
-	pthread_mutex_lock( &smpMutex );
-	{
-		assert( smpData == NULL );
-		smpData = data;
-		smpDataReady = qtrue;
-
-		// after this, the renderer can continue through GLimp_RendererSleep
-		pthread_cond_signal( &renderCommandsEvent );
-	}
-	pthread_mutex_unlock( &smpMutex );
-}
-
-#else
-
-void GLimp_RenderThreadWrapper( void *stub ) {}
-qboolean GLimp_SpawnRenderThread( void (*function)( void ) ) {
-	Com_Printf("ERROR: SMP support was disabled at compile time\n");
-  return qfalse;
-}
-void *GLimp_RendererSleep( void ) {
-  return NULL;
-}
-void GLimp_FrontEndSleep( void ) {}
-void GLimp_WakeRenderer( void *data ) {}
-
-#endif
-
-
-
-
 
 static void ModeList_f( void )
 {
@@ -403,12 +320,8 @@ static void ModeList_f( void )
 
 void* GLimp_GetProcAddress( const char *symbol )
 {
-#if defined(_WIN32)
-    void *sym = (void*)GetProcAddress( glw_state.OpenGLLib, symbol );
-#else
 	void *sym = dlsym(glw_state.OpenGLLib, symbol);
 //    void *sym = glXGetProcAddressARB((const unsigned char *)symbol);
-#endif    
     return sym;
 }
 
@@ -573,7 +486,7 @@ static int GLW_SetMode(glconfig_t *config, int mode, qboolean fullscreen )
 
     config->vidWidth = window_width = actualWidth;
     config->vidHeight = window_height = actualHeight;
-    config->refresh_rate = actualRate;
+    config->displayFrequency = actualRate;
 
     config->windowAspect = (float) window_width / (float) window_height;
     config->isFullscreen = glw_state.cdsFullscreen = fullscreen;
@@ -745,7 +658,7 @@ static qboolean GLW_LoadOpenGL(const char* dllname)
 	if( qglXSwapIntervalEXT || qglXSwapIntervalMESA || qglXSwapIntervalSGI )
 	{
 		Com_Printf( "...using GLX_EXT_swap_control\n" );
-		// Cvar_SetModified( "r_swapInterval", qtrue ); // force a set next frame
+		Cvar_SetModified( "r_swapInterval", qtrue ); // force a set next frame
 	}
 	else
 	{
@@ -782,15 +695,15 @@ static int qXErrorHandler( Display *dpy, XErrorEvent *ev )
 ** This routine is responsible for initializing the OS specific portions
 ** of OpenGL.
 */
-void GLimp_Init(glconfig_t *config, qboolean coreContext)
+void GLimp_Init( glconfig_t *config )
 {
-
     r_fullscreen = Cvar_Get( "r_fullscreen", "0", CVAR_ARCHIVE | CVAR_LATCH);
 	r_mode = Cvar_Get( "r_mode", "-2", CVAR_ARCHIVE | CVAR_LATCH );
 
 	r_colorbits = Cvar_Get( "r_colorbits", "24", CVAR_ARCHIVE | CVAR_LATCH );
 	r_stencilbits = Cvar_Get( "r_stencilbits", "0", CVAR_ARCHIVE | CVAR_LATCH );
 	r_depthbits = Cvar_Get( "r_depthbits", "24", CVAR_ARCHIVE | CVAR_LATCH ); 
+	r_stereoSeparation = Cvar_Get( "r_stereoSeparation", "64", CVAR_ARCHIVE );
     r_drawBuffer = Cvar_Get( "r_drawBuffer", "GL_BACK", CVAR_CHEAT );
     
 	r_customwidth = Cvar_Get( "r_customwidth", "1920", CVAR_ARCHIVE | CVAR_LATCH );
@@ -803,6 +716,11 @@ void GLimp_Init(glconfig_t *config, qboolean coreContext)
 	vid_ypos = Cvar_Get( "vid_ypos", "22", CVAR_ARCHIVE );
 
 
+	if ( r_swapInterval->integer )
+		setenv( "vblank_mode", "2", 1 );
+	else
+		setenv( "vblank_mode", "1", 1 );
+
 	// load the GL layer
 
 
@@ -812,7 +730,7 @@ void GLimp_Init(glconfig_t *config, qboolean coreContext)
 	config->driverType = GLDRV_ICD;
 	config->hardwareType = GLHW_GENERIC;
 
-
+    IN_Init();   // rcg08312005 moved into glimp.
 
 	// set up our custom error handler for X failures
 	XSetErrorHandler( &qXErrorHandler );
@@ -847,8 +765,6 @@ void GLimp_Init(glconfig_t *config, qboolean coreContext)
         if(0 != GLW_SetMode( config, 3, qfalse ))
             Com_Error(ERR_FATAL, "Error setting given display modes\n" );
     }
-
-    IN_Init();   // rcg08312005 moved into glimp.
 }
 
 
@@ -883,20 +799,6 @@ void GLimp_EndFrame( void )
 	}
 }
 
-
-void GLimp_DeleteGLContext(void)
-{
-	if ( ctx )
-		qglXDestroyContext( dpy, ctx );
-    ctx = NULL;
-}
-
-void GLimp_DestroyWindow(void)
-{
-    if ( win )
-		XDestroyWindow( dpy, win );
-    win = 0;
-}
 
 /*
 ** GLimp_Shutdown
@@ -952,6 +854,7 @@ void GLimp_Shutdown( qboolean unloadDLL )
 	win = 0;
 	ctx = NULL;
 
+	unsetenv( "vblank_mode" );
 	
 	//if ( glw_state.cdsFullscreen )
 	{
@@ -973,3 +876,48 @@ void GLimp_LogComment( char *comment )
 		fprintf( glw_state.log_fp, "%s", comment );
 	}
 }
+
+
+
+//////////////////////////////////////////////////////////////////////////////////////////////////
+
+
+/*
+=================
+Sys_GetClipboardData
+=================
+*/
+char *Sys_GetClipboardData( void )
+{
+	const Atom xtarget = XInternAtom( dpy, "UTF8_STRING", 0 );
+	unsigned long nitems, rem;
+	unsigned char *data;
+	Atom type;
+	XEvent ev;
+	char *buf;
+	int format;
+
+	XConvertSelection( dpy, XA_PRIMARY, xtarget, XA_PRIMARY, win, CurrentTime );
+	XSync( dpy, False );
+	XNextEvent( dpy, &ev );
+	if ( !XFilterEvent( &ev, None ) && ev.type == SelectionNotify ) {
+		if ( XGetWindowProperty( dpy, win, XA_PRIMARY, 0, 8, False, AnyPropertyType,
+			&type, &format, &nitems, &rem, &data ) == 0 ) {
+			if ( format == 8 ) {
+				if ( nitems > 0 ) {
+					buf = Z_Malloc( nitems + 1 );
+					Q_strncpyz( buf, (char*)data, nitems + 1 );
+					strtok( buf, "\n\r\b" );
+					return buf;
+				}
+			} else {
+				fprintf( stderr, "Bad clipboard format %i\n", format );
+			}
+		} else {
+			fprintf( stderr, "Clipboard allocation failed\n" );
+		}
+	}
+	return NULL;
+}
+
+

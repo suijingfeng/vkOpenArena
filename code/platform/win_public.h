@@ -58,7 +58,35 @@ typedef struct WinVars_s {
   #if defined(USING_XCB)
     #include <xcb/xcb.h>
   #elif defined(USING_XLIB)
+
     #include <X11/Xutil.h>
+
+    typedef struct {
+        void *OpenGLLib; // instance of OpenGL library
+
+        int	monitorCount;
+
+        int gammaSet;
+
+        int cdsFullscreen;
+
+        int dga_ext;
+
+        int vidmode_ext;
+        int vidmode_active;
+        int vidmode_gamma;
+
+        int randr_ext;
+        int randr_active;
+        int randr_gamma;
+
+        int desktop_ok;
+        int desktop_width;
+        int desktop_height;
+        int desktop_x;
+        int desktop_y;
+    } glwstate_t;
+
   #endif
 
     typedef struct xcb_windata_s {
