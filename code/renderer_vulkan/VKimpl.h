@@ -18,16 +18,28 @@ consistant.
 
 #define VK_USE_PLATFORM_WIN32_KHR 1
 
-
 // #pragma comment(linker, "/subsystem:windows")
 
 #elif defined(__unix__) || defined(__linux) || defined(__linux__)
 
+#if defined(USING_XCB)
 
-#define VK_USE_PLATFORM_XCB_KHR 1
-#include <xcb/xcb.h>
+    #define VK_USE_PLATFORM_XCB_KHR 1
+    #include <xcb/xcb.h>
+
+#elif defined(USING_XLIB)
+
+    #define VK_USE_PLATFORM_XLIB_KHR 1
+    #include <X11/Xlib.h>
+
+#elif defined(USING_WAYLAND)
+
+    #define VK_USE_PLATFORM_WAYLAND_KHR 1
+    #include <linux/input.h>
+
 #endif
 
+#endif
 
 #include "../vulkan/vulkan.h"
 

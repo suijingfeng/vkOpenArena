@@ -119,6 +119,8 @@ void VK_CreateSurfaceImpl(VkInstance hInstance, void * pCtx, VkSurfaceKHR* const
 
 #elif defined(__unix__) || defined(__linux) || defined(__linux__)
 
+  #if defined(USING_XCB)
+  
 	PFN_vkCreateXcbSurfaceKHR qvkCreateXcbSurfaceKHR = (PFN_vkCreateXcbSurfaceKHR)
 		qvkGetInstanceProcAddr(hInstance, "vkCreateXcbSurfaceKHR");
 
@@ -136,7 +138,22 @@ void VK_CreateSurfaceImpl(VkInstance hInstance, void * pCtx, VkSurfaceKHR* const
 	createInfo.window = pWinCtx->hWnd;
 	
     VK_CHECK( qvkCreateXcbSurfaceKHR(hInstance, &createInfo, NULL, pSurface) );
-	
+
+  #elif defined(USING_XLIB)
+
+    PFN_vkCreateXlibSurfaceKHR qvkCreateXlibSurfaceKHR = (PFN_vkCreateXlibSurfaceKHR)
+        qvkGetInstanceProcAddr(hInstance, "vkCreateXlibSurfaceKHR");
+
+    VkXlibSurfaceCreateInfoKHR createInfo;
+    createInfo.sType = VK_STRUCTURE_TYPE_XLIB_SURFACE_CREATE_INFO_KHR;
+    createInfo.pNext = NULL;
+    createInfo.flags = 0;
+    createInfo.dpy = pWinCtx->display;
+    createInfo.window = pWinCtx->hWnd;
+
+    VK_CHECK( qvkCreateXlibSurfaceKHR(hInstance, &createInfo, NULL, pSurface) );
+
+  #endif
     
     ri.Printf(PRINT_ALL, " CreateXcbSurface done. \n");
 
