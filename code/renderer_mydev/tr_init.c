@@ -227,9 +227,6 @@ static void R_ModeList_f( void )
 
 
 
-
-
-
 /*
 ** This function is responsible for initializing a valid OpenGL/Vulkan subsystem.
 */
@@ -313,8 +310,6 @@ void GL_CheckErrors( void ) {
 
     ri.Error( ERR_FATAL, "GL_CheckErrors: %s", s );
 }
-
-
 
 
 /* 
@@ -957,7 +952,9 @@ void RE_EndRegistration( void ) {
 
 }
 
-void R_Init( void ) {	
+
+void R_Init( void )
+{	
 	int	err;
 	int i;
 	byte *ptr;

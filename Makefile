@@ -708,8 +708,12 @@ ifneq ($(BUILD_CLIENT),0)
 	TARGETS += $(B)/renderer_openarena_$(SHLIBNAME) $(B)/renderer_opengl1_$(SHLIBNAME) $(B)/renderer_opengl2_$(SHLIBNAME)
 
     ifneq ($(BUILD_VULKAN),0)
-		TARGETS += $(B)/renderer_vulkan_$(SHLIBNAME) $(B)/renderer_mydev_$(SHLIBNAME)
+		TARGETS += $(B)/renderer_vulkan_$(SHLIBNAME)
 	endif
+
+	TARGETS += $(B)/renderer_mydev_$(SHLIBNAME)
+
+
 
   else
 	TARGETS += $(B)/$(CLIENTBIN)$(FULLBINEXT) $(B)/$(CLIENTBIN)_opengl1$(FULLBINEXT) $(B)/$(CLIENTBIN)_opengl2$(FULLBINEXT)

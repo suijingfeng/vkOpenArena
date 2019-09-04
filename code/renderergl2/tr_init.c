@@ -278,7 +278,6 @@ qboolean GLimp_GetProcAddresses( void )
        q_gl_version_at_least_3_2 = 0;
     }
 
-
 #undef GLE
 
 	return success;
@@ -724,10 +723,14 @@ static void InitOpenGL( void )
 	
 	if ( glConfig.vidWidth == 0 )
 	{
-		GLint		temp;
+		GLint temp;
 		
-		GLimp_Init(&glConfig, qtrue);
+		// GLimp_Init(&glConfig, qtrue);
+
+		void * pContext;
 	
+		ri.WinSysInit(&pContext);
+
         const char *renderer;
 
         if ( GLimp_GetProcAddresses() )

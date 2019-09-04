@@ -364,10 +364,12 @@ static void InitOpenGL( void )
 	
 	if ( glConfig.vidWidth == 0 )
 	{
-		GLint		temp;
+		GLint temp;
 		
 		GLimp_Init(&glConfig, qfalse);
+
         
+
         if ( !GLimp_GetProcAddresses() )
         {
             ri.Error(ERR_FATAL, "GLimp_GetProcAddresses() failed\n" );
