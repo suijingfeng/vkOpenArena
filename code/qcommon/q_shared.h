@@ -455,7 +455,7 @@ extern	vec3_t	vec3_origin;
 extern	vec3_t	axisDefault[3];
 
 
-void qsnapvectorsse(vec3_t vec);
+
 
 void CrossProduct( const vec3_t v1, const vec3_t v2, vec3_t cross );
 float VectorLengthSquared( const vec3_t v );
