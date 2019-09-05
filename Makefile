@@ -338,7 +338,7 @@ ifneq (,$(findstring "$(PLATFORM)", "linux" "gnu_kfreebsd" "kfreebsd-gnu" "gnu")
   OPTIMIZE = $(OPTIMIZEVM) -ffast-math
 
   ifeq ($(ARCH),x86_64)
-    OPTIMIZEVM = -O2 -msse2
+    OPTIMIZEVM = -O2
     OPTIMIZE = $(OPTIMIZEVM) -ffast-math
     HAVE_VM_COMPILED=true
   else
@@ -358,7 +358,7 @@ endif
   LIBS=-ldl -lm
 
 #TODO:remove SDL2
-  CLIENT_LIBS=$(SDL_LIBS)
+  CLIENT_LIBS = -lX11
 
   RENDERER_LIBS = -lGL
 

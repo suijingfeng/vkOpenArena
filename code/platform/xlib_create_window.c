@@ -61,24 +61,12 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #include <GL/glx.h>
 #include <GL/glxext.h>
 
-/*
-#if !defined(__sun)
-#include <X11/extensions/Xxf86dga.h>
-#endif
-*/
-
-
 #include <dlfcn.h>
 
-
-#ifdef _XF86DGA_H_
-#define HAVE_XF86DGA
-#endif
-
 #include "../client/client.h"
-#include "local.h"
-#include "inputs.h"
-
+#include "../sys/sys_public.h"
+#include "win_public.h"
+#include "x11_randr.h"
 
 #define OPENGL_DRIVER_NAME	"libGL.so.1"
 
@@ -107,7 +95,6 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
 
 static cvar_t* r_fullscreen;
-static cvar_t* r_availableModes;
 
 static cvar_t* r_customwidth;
 static cvar_t* r_customheight;
@@ -423,19 +410,11 @@ static int GLW_SetMode(glconfig_t *config, int mode, qboolean fullscreen )
 
 	if ( !glw_state.randr_ext )
 	{
-		VidMode_Init();
+		Com_Printf( " randr_ext failed. \n" );
 	}
 
-#ifdef HAVE_XF86DGA
-	if ( in_dgamouse && in_dgamouse->integer )
-	{
-		if ( !DGA_Init( dpy ) )
-		{
-			Cvar_Set( "in_dgamouse", "0" );
-		}
-	}
-#endif
-	printf( "...setting mode %d:", mode );
+
+	Com_Printf( "...setting mode %d:", mode );
 
 	if ( !CL_GetModeInfo( &config->vidWidth, &config->vidHeight, mode, glw_state.desktop_width, glw_state.desktop_height, fullscreen ) )
 	{
@@ -453,14 +432,6 @@ static int GLW_SetMode(glconfig_t *config, int mode, qboolean fullscreen )
 	if ( fullscreen ) // try randr first
 	{
 		RandR_SetMode( &actualWidth, &actualHeight, &actualRate );
-	}
-
-	if ( glw_state.vidmode_ext && !glw_state.randr_active )
-	{
-		if ( fullscreen )
-			VidMode_SetMode( &actualWidth, &actualHeight, &actualRate );
-		else
-			Com_Printf( "XFree86-VidModeExtension: Ignored on non-fullscreen\n" );
 	}
 
 
@@ -497,7 +468,10 @@ static int GLW_SetMode(glconfig_t *config, int mode, qboolean fullscreen )
 	attr.background_pixel = BlackPixel( dpy, scrnum );
 	attr.border_pixel = 0;
 	attr.colormap = XCreateColormap( dpy, root, visinfo->visual, AllocNone );
-	attr.event_mask = X_MASK;
+	attr.event_mask = ( 
+            KeyPressMask | KeyReleaseMask | 
+            ButtonPressMask | ButtonReleaseMask | PointerMotionMask | ButtonMotionMask |
+            VisibilityChangeMask | StructureNotifyMask | FocusChangeMask );
 
 	if ( fullscreen )
 	{
@@ -655,10 +629,9 @@ static qboolean GLW_LoadOpenGL(const char* dllname)
         QGL_Swp_PROCS;
     #undef GLE
 
-	if( qglXSwapIntervalEXT || qglXSwapIntervalMESA || qglXSwapIntervalSGI )
+	if( qglXSwapIntervalEXT )
 	{
 		Com_Printf( "...using GLX_EXT_swap_control\n" );
-		Cvar_SetModified( "r_swapInterval", qtrue ); // force a set next frame
 	}
 	else
 	{
@@ -829,14 +802,6 @@ void GLimp_Shutdown( qboolean unloadDLL )
 		if ( win )
 			XDestroyWindow( dpy, win );
 
-		if ( glw_state.gammaSet )
-		{
-			VidMode_RestoreGamma();
-			glw_state.gammaSet = qfalse;
-		}
-
-		if ( glw_state.vidmode_active )
-			VidMode_RestoreMode();
 
 		// NOTE TTimo opening/closing the display should be necessary only once per run
 		// but it seems GL_Shutdown gets called in a lot of occasion
@@ -846,7 +811,6 @@ void GLimp_Shutdown( qboolean unloadDLL )
 	}
 
 	RandR_Done();
-	VidMode_Done();
 
 	glw_state.desktop_ok = qfalse;
 
@@ -871,10 +835,12 @@ void GLimp_Shutdown( qboolean unloadDLL )
 */
 void GLimp_LogComment( char *comment )
 {
+/*   
 	if ( glw_state.log_fp )
 	{
 		fprintf( glw_state.log_fp, "%s", comment );
 	}
+*/
 }
 
 

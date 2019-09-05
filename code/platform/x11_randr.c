@@ -8,6 +8,7 @@
 #include <X11/extensions/Xrender.h>
 
 #include "win_public.h"
+#include "../sys/sys_public.h"
 
 #define MAX_MONITORS 16
 
@@ -457,10 +458,6 @@ void RandR_UpdateMonitor( int x, int y, int w, int h )
 
 		BackupMonitorGamma();
 
-		if ( glw_state.randr_gamma && gammaSet && re.SetColorMappings )
-		{
-			re.SetColorMappings();
-		}
 	}
 }
 
@@ -502,6 +499,48 @@ static qboolean BackupMonitorGamma( void )
 
 
 
+qboolean BuildGammaRampTable( unsigned char *red, unsigned char *green, unsigned char *blue,
+        int gammaRampSize, unsigned short table[3][4096] )
+{
+	int i, j;
+	int shift;
+
+	switch ( gammaRampSize )
+	{
+		case 256: shift = 0; break;
+		case 512: shift = 1; break;
+		case 1024: shift = 2; break;
+		case 2048: shift = 3; break;
+		case 4096: shift = 4; break;
+		default:
+			Com_Printf( "Unsupported gamma ramp size: %d\n", gammaRampSize );
+		return qfalse;
+	};
+	
+	int m = gammaRampSize / 256;
+	int m1 = 256 / m;
+
+	for ( i = 0; i < 256; i++ ) {
+		for ( j = 0; j < m; j++ ) {
+			table[0][i*m+j] = (unsigned short)(red[i] << 8)   | (m1 * j) | ( red[i] >> shift );
+			table[1][i*m+j] = (unsigned short)(green[i] << 8) | (m1 * j) | ( green[i] >> shift );
+			table[2][i*m+j] = (unsigned short)(blue[i] << 8)  | (m1 * j) | ( blue[i] >> shift );
+		}
+	}
+
+	// enforce constantly increasing
+	for ( j = 0 ; j < 3 ; j++ ) {
+		for ( i = 1 ; i < gammaRampSize ; i++ ) {
+			if ( table[j][i] < table[j][i-1] ) {
+				table[j][i] = table[j][i-1];
+			}
+		}
+	}
+
+	return qtrue;
+}
+
+
 void RandR_SetGamma( unsigned char red[256], unsigned char green[256], unsigned char blue[256] )
 {
 	unsigned short table[3][4096];
@@ -513,6 +552,17 @@ void RandR_SetGamma( unsigned char red[256], unsigned char green[256], unsigned 
 	}
 }
 
+
+void RandR_Done( void )
+{
+	if ( r_lib )
+	{
+		Sys_UnloadLibrary( r_lib );
+		r_lib = NULL;
+	}
+	glw_state.randr_ext = qfalse;
+	glw_state.randr_gamma = qfalse;
+}
 
 qboolean RandR_Init( int x, int y, int w, int h )
 {
@@ -543,7 +593,7 @@ qboolean RandR_Init( int x, int y, int w, int h )
 		}
 	}
 
-	for ( i = 0 ; i < ARRAY_LEN( r_list ); i++ )
+	for ( i = 0 ; i < ARRAY_LEN( r_list ); ++i )
 	{
 		*r_list[ i ].symbol = Sys_LoadFunction( r_lib, r_list[ i ].name );
 		if ( *r_list[ i ].symbol == NULL )
@@ -577,13 +627,4 @@ __fail:
 }
 
 
-void RandR_Done( void )
-{
-	if ( r_lib )
-	{
-		Sys_UnloadLibrary( r_lib );
-		r_lib = NULL;
-	}
-	glw_state.randr_ext = qfalse;
-	glw_state.randr_gamma = qfalse;
-}
+
