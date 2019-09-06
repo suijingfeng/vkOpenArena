@@ -307,11 +307,9 @@ static void ModeList_f( void )
 
 void* GLimp_GetProcAddress( const char *symbol )
 {
-	void *sym = dlsym(glw_state.OpenGLLib, symbol);
-//    void *sym = glXGetProcAddressARB((const unsigned char *)symbol);
-    return sym;
+    //void *sym = glXGetProcAddressARB((const unsigned char *)symbol);
+    return dlsym(glw_state.OpenGLLib, symbol);
 }
-
 
 
 
@@ -711,7 +709,7 @@ void GLimp_Init( glconfig_t *config )
 	//
 	// load and initialize the specific OpenGL driver
 	//
-	printf( "...GLW_StartOpenGL...\n" );
+	Com_Printf( "...GLW_StartOpenGL...\n" );
 	// load and initialize the specific OpenGL driver
 	if ( !GLW_LoadOpenGL( r_glDriver->string ) )
 	{
@@ -748,7 +746,7 @@ void GLimp_Init( glconfig_t *config )
 ** as yet to be determined.  Probably better not to make this a GLimp
 ** function and instead do a call to GLimp_SwapBuffers.
 */
-void GLimp_EndFrame( void )
+void WinSys_EndFrame( void )
 {
 	// don't flip if drawing to front buffer
 	if ( Q_stricmp( r_drawBuffer->string, "GL_FRONT" ) != 0 )
@@ -830,10 +828,7 @@ void GLimp_Shutdown( qboolean unloadDLL )
 }
 
 
-/*
-** GLimp_LogComment
-*/
-void GLimp_LogComment( char *comment )
+void FileSys_Logging( char *comment )
 {
 /*   
 	if ( glw_state.log_fp )
@@ -884,6 +879,22 @@ char *Sys_GetClipboardData( void )
 		}
 	}
 	return NULL;
+}
+
+
+void WinSys_Init(void ** pContext)
+{
+    Com_Printf( "... WinSys_Init ...\n" );
+
+    glconfig_t * pConfig = (glconfig_t * )(*pContext);
+
+    GLimp_Init( pConfig );
+}
+
+
+void WinSys_Shutdown(void)
+{
+    GLimp_Shutdown( qtrue );
 }
 
 

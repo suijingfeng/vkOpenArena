@@ -163,4 +163,6 @@ void IN_DeactivateMouse( void );
 void IN_Frame(void);
 void IN_MouseEvent(int mstate);
 
+void* GLimp_GetProcAddress( const char *symbol );
+
 #endif

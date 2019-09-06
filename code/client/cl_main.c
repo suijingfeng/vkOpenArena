@@ -3280,7 +3280,9 @@ void CL_InitRef(void)
 	ri.WinSysEndFrame = WinSys_EndFrame;
 	ri.WinSysSetGamma = WinSys_SetGamma;
 	ri.pfnLog = FileSys_Logging;
-
+	
+	ri.GetGlProcAddress = GLimp_GetProcAddress;
+	
 	// ri.Sys_SetEnv = Sys_SetEnv;
 	ri.Sys_LowPhysicalMemory = Sys_LowPhysicalMemory;
 

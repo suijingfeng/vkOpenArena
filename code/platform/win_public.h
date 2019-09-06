@@ -99,16 +99,16 @@ typedef struct WinVars_s {
         Window  hWnd;
   #endif
 
-        int     screenIdx;
+        int	screenIdx;
 
-        int		winWidth;
-        int		winHeight;
-        int		desktopWidth;
-        int		desktopHeight;
-        int		isFullScreen;
-        int		isMinimized;
+        int	winWidth;
+        int	winHeight;
+        int	desktopWidth;
+        int	desktopHeight;
+        int	isFullScreen;
+        int	isMinimized;
         int     winStyle;
-        int     activeApp;
+        int	activeApp;
 
         unsigned int sysMsgTime;
 

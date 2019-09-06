@@ -1471,8 +1471,7 @@ Q3R2OBJ = \
   $(B)/renderergl2/tr_vbo.o \
   $(B)/renderergl2/tr_world.o \
   $(B)/renderergl2/tr_common.o \
-  $(B)/renderergl2/matrix_multiplication.o \
-  $(B)/renderergl2/sdl_glimp.o
+  $(B)/renderergl2/matrix_multiplication.o
 
 
 Q3R2STRINGOBJ = \
@@ -1535,8 +1534,7 @@ Q3ROBJ = \
   $(B)/renderergl1/tr_surface.o \
   $(B)/renderergl1/tr_world.o \
   $(B)/renderergl1/tr_common.o \
-  $(B)/renderergl1/matrix_multiplication.o \
-  $(B)/renderergl1/sdl_glimp.o
+  $(B)/renderergl1/matrix_multiplication.o
 
 
 Q3ROAOBJ = \
@@ -1567,8 +1565,7 @@ Q3ROAOBJ = \
   $(B)/renderer_oa/tr_surface.o \
   $(B)/renderer_oa/tr_world.o \
   $(B)/renderer_oa/tr_common.o \
-  $(B)/renderer_oa/matrix_multiplication.o \
-  $(B)/renderer_oa/sdl_glimp.o \
+  $(B)/renderer_oa/matrix_multiplication.o
 
 ######################  MYDEV  ######################
 
@@ -1604,8 +1601,7 @@ Q3MYDEVOBJ = \
   $(B)/renderer_mydev/qgl.o \
   $(B)/renderer_mydev/qgl_log.o \
   $(B)/renderer_mydev/loadImage.o \
-  $(B)/renderer_mydev/matrix_multiplication.o \
-  $(B)/renderer_mydev/sdl_glimp.o
+  $(B)/renderer_mydev/matrix_multiplication.o
 
 ######################  VULKAN  ######################
 

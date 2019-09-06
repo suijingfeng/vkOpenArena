@@ -541,7 +541,7 @@ qboolean BuildGammaRampTable( unsigned char *red, unsigned char *green, unsigned
 }
 
 
-void RandR_SetGamma( unsigned char red[256], unsigned char green[256], unsigned char blue[256] )
+void WinSys_SetGamma( unsigned char red[256], unsigned char green[256], unsigned char blue[256] )
 {
 	unsigned short table[3][4096];
 	
@@ -551,6 +551,8 @@ void RandR_SetGamma( unsigned char red[256], unsigned char green[256], unsigned 
 		glw_state.gammaSet = qtrue;
 	}
 }
+
+
 
 
 void RandR_Done( void )

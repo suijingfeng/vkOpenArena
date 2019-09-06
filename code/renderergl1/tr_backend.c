@@ -579,7 +579,7 @@ static const void* RB_SwapBuffers( const void *data )
 		qglFinish();
 	}
 
-	GLimp_EndFrame();
+	ri.WinSysEndFrame();
 
 	backEnd.projection2D = qfalse;
 

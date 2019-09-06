@@ -918,3 +918,10 @@ void IN_Frame(void)
 	}
 */    
 }
+
+
+void IN_Restart( void )
+{
+	IN_Shutdown();
+	IN_Init(); 
+}

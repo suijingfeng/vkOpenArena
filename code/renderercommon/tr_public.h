@@ -170,6 +170,9 @@ typedef struct {
 	void (* WinSysMinimize)(void);
 	void (* WinSysSetGamma)(unsigned char red[256], unsigned char green[256], unsigned char blue[256]);
 	void (* pfnLog)(char * const pComment);
+	
+	// for OpenGL only
+	void * (* GetGlProcAddress)( const char *symbol );
 
 	// system stuff
 	// void (* Sys_SetEnv)( const char *name, const char *value );
