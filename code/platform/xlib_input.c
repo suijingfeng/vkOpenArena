@@ -17,18 +17,14 @@
 
 
 cvar_t *in_subframe;
-cvar_t *in_dgamouse; // user pref for dga mouse
 cvar_t *in_forceCharset;
 static cvar_t *in_nograb; // this is strictly for developers
 
 extern void RandR_UpdateMonitor( int x, int y, int w, int h );
 
-extern Display *dpy;
-extern Window win;
-extern int window_width;
-extern int window_height;
+
 extern Atom wmDeleteEvent;
-extern glwstate_t glw_state;
+extern WinVars_t glw_state;
 extern qboolean window_created;
 
 //#define KBD_DBG
@@ -47,7 +43,7 @@ static const char s_keytochar[ 128 ] =
  '"',  0x0,  0x0,  '|',  'Z',  'X',  'C',  'V',  'B',  'N',  'M',  '<',  '>',  '?',  0x0,  '*',  // 7
 };
 
-static qboolean gw_minimized = qfalse; // this will be always true for dedicated servers
+
 
 // Time mouse was reset, we ignore the first 50ms of the mouse to allow settling of events
 static int mouseResetTime = 0;
@@ -304,20 +300,20 @@ static void install_mouse_grab( void )
 	int res;
 
 	// move pointer to destination window area
-	XWarpPointer( dpy, None, win, 0, 0, 0, 0, window_width / 2, window_height / 2 );
+	XWarpPointer( glw_state.pDisplay, None, glw_state.hWnd, 0, 0, 0, 0, glw_state.winWidth/2, glw_state.winHeight/2 );
 
-	XSync( dpy, False );
+	XSync( glw_state.pDisplay, False );
 
 	// hide cursor
-	XDefineCursor( dpy, win, CreateNullCursor( dpy, win ) );
+	XDefineCursor( glw_state.pDisplay, glw_state.hWnd, CreateNullCursor( glw_state.pDisplay, glw_state.hWnd ) );
 
 	// save old mouse settings
-	XGetPointerControl( dpy, &mouse_accel_numerator, &mouse_accel_denominator, &mouse_threshold );
+	XGetPointerControl( glw_state.pDisplay, &mouse_accel_numerator, &mouse_accel_denominator, &mouse_threshold );
 
 	// do this earlier?
-	res = XGrabPointer( dpy, win, False, 
+	res = XGrabPointer( glw_state.pDisplay, glw_state.hWnd, False, 
         ButtonPressMask | ButtonReleaseMask | PointerMotionMask | ButtonMotionMask, 
-        GrabModeAsync, GrabModeAsync, win, None, CurrentTime );
+        GrabModeAsync, GrabModeAsync, glw_state.hWnd, None, CurrentTime );
 	if ( res != GrabSuccess )
 	{
 		//Com_Printf( S_COLOR_YELLOW "Warning: XGrabPointer() failed\n" );
@@ -325,35 +321,19 @@ static void install_mouse_grab( void )
 	else
 	{
 		// set new mouse settings
-		XChangePointerControl( dpy, True, True, 1, 1, 1 );
+		XChangePointerControl( glw_state.pDisplay, True, True, 1, 1, 1 );
 	}
 
-	XSync( dpy, False );
+	XSync( glw_state.pDisplay, False );
 
 	mouseResetTime = Sys_Milliseconds();
 
-#ifdef HAVE_XF86DGA
-	if ( in_dgamouse->integer )
-	{
-		if ( !glw_state.dga_ext )
-		{
-			Cvar_Set( "in_dgamouse", "0" );
-		}
-		else
-		{
-			DGA_Mouse( qtrue );
-			XWarpPointer( dpy, None, win, 0, 0, 0, 0, window_width / 2, window_height / 2 );
-		}
-	}
-	else
-#endif /* HAVE_XF86DGA */
-	{
-		mwx = window_width / 2;
-		mwy = window_height / 2;
-		mx = my = 0;
-	}
+	mwx = glw_state.winWidth/2;
+	mwy = glw_state.winHeight/2;
+	mx = my = 0;
 
-	XSync( dpy, False );
+
+	XSync( glw_state.pDisplay, False );
 }
 
 
@@ -361,50 +341,40 @@ static void install_kb_grab( void )
 {
 	int res;
 
-	res = XGrabKeyboard( dpy, win, False, GrabModeAsync, GrabModeAsync, CurrentTime );
+	res = XGrabKeyboard( glw_state.pDisplay, glw_state.hWnd, False, GrabModeAsync, GrabModeAsync, CurrentTime );
 	if ( res != GrabSuccess )
 	{
 		//Com_Printf( S_COLOR_YELLOW "Warning: XGrabKeyboard() failed\n" );
 	}
 
-	XSync( dpy, False );
+	XSync( glw_state.pDisplay, False );
 }
 
 
 static void uninstall_mouse_grab( void )
 {
-#ifdef HAVE_XF86DGA
-	if ( in_dgamouse->integer )
-	{
-		if ( com_developer->integer )
-		{
-			Com_Printf( "DGA Mouse - Disabling DGA DirectVideo\n" );
-		}
-		DGA_Mouse( qfalse );
-	}
-#endif /* HAVE_XF86DGA */
 
 	// restore mouse settings
-	XChangePointerControl( dpy, qtrue, qtrue, mouse_accel_numerator, 
+	XChangePointerControl( glw_state.pDisplay, qtrue, qtrue, mouse_accel_numerator, 
 		mouse_accel_denominator, mouse_threshold );
 
-	XWarpPointer( dpy, None, win, 0, 0, 0, 0, window_width / 2, window_height / 2 );
+	XWarpPointer( glw_state.pDisplay, None, glw_state.hWnd, 0, 0, 0, 0, glw_state.winWidth/2, glw_state.winHeight/2 );
 
-	XUngrabPointer( dpy, CurrentTime );
-	XUngrabKeyboard( dpy, CurrentTime );
+	XUngrabPointer( glw_state.pDisplay, CurrentTime );
+	XUngrabKeyboard( glw_state.pDisplay, CurrentTime );
 
 	// show cursor
-	XUndefineCursor( dpy, win );
+	XUndefineCursor( glw_state.pDisplay, glw_state.hWnd );
 
-	XSync( dpy, False );
+	XSync( glw_state.pDisplay, False );
 }
 
 
 static void uninstall_kb_grab( void )
 {
-	XUngrabKeyboard( dpy, CurrentTime );
+	XUngrabKeyboard( glw_state.pDisplay, CurrentTime );
 
-	XSync( dpy, False );
+	XSync( glw_state.pDisplay, False );
 }
 
 
@@ -423,12 +393,12 @@ static void uninstall_kb_grab( void )
  */
 static qboolean X11_PendingInput( void )
 {
-	assert(dpy != NULL);
+	assert(glw_state.pDisplay != NULL);
 
 	// Flush the display connection and look to see if events are queued
-	XFlush( dpy );
+	XFlush( glw_state.pDisplay );
 
-	if ( XEventsQueued( dpy, QueuedAlready ) )
+	if ( XEventsQueued( glw_state.pDisplay, QueuedAlready ) )
 	{
 		return qtrue;
 	}
@@ -439,12 +409,12 @@ static qboolean X11_PendingInput( void )
 		int x11_fd;
 		fd_set fdset;
 
-		x11_fd = ConnectionNumber( dpy );
+		x11_fd = ConnectionNumber( glw_state.pDisplay );
 		FD_ZERO( &fdset );
 		FD_SET( x11_fd, &fdset );
 		if ( select( x11_fd+1, &fdset, NULL, NULL, &zero_time ) == 1 )
 		{
-			return( XPending( dpy ) );
+			return( XPending( glw_state.pDisplay ) );
 		}
 	}
 
@@ -457,11 +427,11 @@ static qboolean repeated_press( XEvent *event )
 {
 	XEvent peek;
 
-	assert( dpy != NULL );
+	assert( glw_state.pDisplay != NULL );
 
 	if ( X11_PendingInput() )
 	{
-		XPeekEvent( dpy, &peek );
+		XPeekEvent( glw_state.pDisplay, &peek );
 
 		if ( ( peek.type == KeyPress ) &&
 			 ( peek.xkey.keycode == event->xkey.keycode ) &&
@@ -475,38 +445,7 @@ static qboolean repeated_press( XEvent *event )
 }
 
 
-static qboolean WindowMinimized( Display *dpy, Window win )
-{
-	unsigned long i, num_items, bytes_after;
-	Atom actual_type, *atoms, nws, nwsh;
-	int actual_format;
 
-	nws = XInternAtom( dpy, "_NET_WM_STATE", True );
-	if ( nws == BadValue || nws == None )
-		return qfalse;
-
-	nwsh = XInternAtom( dpy, "_NET_WM_STATE_HIDDEN", True );
-	if ( nwsh == BadValue || nwsh == None )
-		return qfalse;
-
-	atoms = NULL;
-
-	XGetWindowProperty( dpy, win, nws, 0, 0x7FFFFFFF, False, XA_ATOM,
-		&actual_type, &actual_format, &num_items,
-		&bytes_after, (unsigned char**)&atoms );
-
-	for ( i = 0; i < num_items; i++ )
-	{
-		if ( atoms[i] == nwsh )
-		{
-			XFree( atoms );
-			return qtrue;
-		}
-	}
-
-	XFree( atoms );
-	return qfalse;
-}
 
 
 static qboolean directMap( const byte chr )
@@ -552,12 +491,12 @@ void Sys_SendKeyEvents( void )
 	qboolean btn_press;
 	char buf[2];
 
-	if ( !dpy )
+	if ( !glw_state.pDisplay )
 		return;
 
-	while( XPending( dpy ) )
+	while( XPending( glw_state.pDisplay ) )
 	{
-		XNextEvent( dpy, &event );
+		XNextEvent( glw_state.pDisplay, &event );
 
 		switch( event.type )
 		{
@@ -597,7 +536,7 @@ void Sys_SendKeyEvents( void )
 					if ( ch >= 'a' && ch <= 'z' )
 					{
 						unsigned int capital;
-						XkbGetIndicatorState( dpy, XkbUseCoreKbd, &capital );
+						XkbGetIndicatorState( glw_state.pDisplay, XkbUseCoreKbd, &capital );
 						capital &= 1;
 						if ( capital ^ shift )
 						{
@@ -634,7 +573,7 @@ void Sys_SendKeyEvents( void )
             int key;
 
 			if ( repeated_press( &event ) )
-				break; // XNextEvent( dpy, &event )
+				break; // XNextEvent( glw_state.pDisplay, &event )
 
 			//t = Sys_XTimeToSysTime( event.xkey.time );
             t = Sys_Milliseconds();
@@ -648,47 +587,35 @@ void Sys_SendKeyEvents( void )
         } break; // case KeyRelease
 
 		case MotionNotify:
-			if ( IN_MouseActive() )
-			{
-				//t = Sys_XTimeToSysTime( event.xkey.time );
-                t = Sys_Milliseconds();
-#ifdef HAVE_XF86DGA
-				if ( in_dgamouse->integer )
-				{
-					mx += event.xmotion.x_root;
-					my += event.xmotion.y_root;
-					if (t - mouseResetTime > MOUSE_RESET_DELAY )
-					{
-						Com_QueueEvent( t, SE_MOUSE, mx, my, 0, NULL );
-					}
-					mx = my = 0;
-				}
-				else
-#endif // HAVE_XF86DGA
-				{
-					// If it's a center motion, we've just returned from our warp
-					if ( event.xmotion.x == window_width/2 && event.xmotion.y == window_height/2 )
-					{
-						mwx = window_width/2;
-						mwy = window_height/2;
-						if (t - mouseResetTime > MOUSE_RESET_DELAY )
-						{
-							Com_QueueEvent( t, SE_MOUSE, mx, my, 0, NULL );
-						}
-						mx = my = 0;
-						break;
-					}
+	if ( IN_MouseActive() )
+	{
+		//t = Sys_XTimeToSysTime( event.xkey.time );
+		t = Sys_Milliseconds();
 
-					dx = ((int)event.xmotion.x - mwx);
-					dy = ((int)event.xmotion.y - mwy);
-					mx += dx;
-					my += dy;
-					mwx = event.xmotion.x;
-					mwy = event.xmotion.y;
-					dowarp = qtrue;
-				} // if ( !in_dgamouse->value )
-			} // if ( mouse_active )
+
+		// If it's a center motion, we've just returned from our warp
+		if ( event.xmotion.x == glw_state.winWidth/2 && event.xmotion.y == glw_state.winHeight/2 )
+		{
+			mwx = glw_state.winWidth/2;
+			mwy = glw_state.winHeight/2;
+			if (t - mouseResetTime > MOUSE_RESET_DELAY )
+			{
+				Com_QueueEvent( t, SE_MOUSE, mx, my, 0, NULL );
+			}
+			mx = my = 0;
 			break;
+		}
+
+		dx = ((int)event.xmotion.x - mwx);
+		dy = ((int)event.xmotion.y - mwy);
+		mx += dx;
+		my += dy;
+		mwx = event.xmotion.x;
+		mwy = event.xmotion.y;
+		dowarp = qtrue;
+
+	} // if ( mouse_active )
+	break;
 
 		case ButtonPress:
 		case ButtonRelease:
@@ -731,12 +658,13 @@ void Sys_SendKeyEvents( void )
 			break;
 
 		case ConfigureNotify:
-			gw_minimized = WindowMinimized( dpy, win );
-			Com_DPrintf( "ConfigureNotify gw_minimized: %i\n", gw_minimized );
+			
+			WinMinimize_f();
+
 			win_x = event.xconfigure.x;
 			win_y = event.xconfigure.y;
 			
-			if ( !glw_state.cdsFullscreen && window_created && !gw_minimized )
+			if ( !glw_state.isFullScreen && window_created && !glw_state.isMinimized )
 			{
 				Cvar_SetValue( "vid_xpos", win_x );
 				Cvar_SetValue( "vid_ypos", win_y );
@@ -764,7 +692,7 @@ void Sys_SendKeyEvents( void )
 
 	if ( dowarp )
 	{
-		XWarpPointer( dpy, None, win, 0, 0, 0, 0, window_width/2, window_height/2 );
+		XWarpPointer( glw_state.pDisplay, None, glw_state.hWnd, 0, 0, 0, 0, glw_state.winWidth/2, glw_state.winHeight/2 );
 	}
 }
 
@@ -786,17 +714,13 @@ void KBD_Close( void )
 
 void IN_ActivateMouse( void )
 {
-	if ( !mouse_avail || !dpy || !win )
+	if ( !mouse_avail || !glw_state.pDisplay || !glw_state.hWnd )
 	{
 		return;
 	}
 
 	if ( !mouse_active )
 	{
-		if ( in_dgamouse->integer && in_nograb->integer ) // force dga mouse to 0 if using nograb
-		{
-			Cvar_Set( "in_dgamouse", "0" );
-		}
 		install_mouse_grab();
 		install_kb_grab();
 		mouse_active = qtrue;
@@ -811,7 +735,7 @@ IN_DeactivateMouse
 */
 void IN_DeactivateMouse( void )
 {
-	if ( !mouse_avail || !dpy || !win )
+	if ( !mouse_avail || !glw_state.pDisplay || !glw_state.hWnd )
 	{
 		return;
 	}
@@ -820,10 +744,6 @@ void IN_DeactivateMouse( void )
 	{
 		uninstall_mouse_grab();
 		uninstall_kb_grab();
-		if ( in_dgamouse->integer && in_nograb->integer ) // force dga mouse to 0 if using nograb
-		{
-			Cvar_Set( "in_dgamouse", "0" );
-		}
 		mouse_active = qfalse;
 	}
 }
@@ -831,11 +751,7 @@ void IN_DeactivateMouse( void )
 
 
 
-//////////////////
-void WinMinimize(void)
-{
-    WindowMinimized( dpy, win );
-}
+
 
 
 /*****************************************************************************/
@@ -851,7 +767,6 @@ void IN_Init( void )
 
 	// mouse variables
 	in_mouse = Cvar_Get( "in_mouse", "1", CVAR_ARCHIVE );
-	in_dgamouse = Cvar_Get( "in_dgamouse", "1", CVAR_ARCHIVE );
 	in_shiftedKeys = Cvar_Get( "in_shiftedKeys", "0", CVAR_ARCHIVE );
 
 	// turn on-off sub-frame timing of X events
@@ -861,8 +776,9 @@ void IN_Init( void )
 	in_nograb = Cvar_Get( "in_nograb", "0", 0 );
 
 	in_forceCharset = Cvar_Get( "in_forceCharset", "1", CVAR_ARCHIVE );
-	Cmd_AddCommand( "in_restart", IN_Init );
-	Cmd_AddCommand( "minimize", WinMinimize );
+	
+	Cmd_AddCommand( "in_restart", IN_Restart );
+
 
 	if ( in_mouse->integer )
 	{
@@ -879,6 +795,7 @@ void IN_Init( void )
 void IN_Shutdown( void )
 {
 	mouse_avail = qfalse;
+	Cmd_RemoveCommand( "in_restart" );
 }
 
 
@@ -898,7 +815,7 @@ void IN_Frame(void)
 		// Loading in windowed mode
 		IN_DeactivateMouse( );
 	}
-	else if( !window_focused || gw_minimized || in_nograb->integer)
+	else if( !window_focused || glw_state.isMinimized || in_nograb->integer)
 	{
 		// Window not got focus
 		IN_DeactivateMouse( );

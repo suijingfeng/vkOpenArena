@@ -3269,9 +3269,9 @@ void CL_InitRef(void)
   
 	ri.CL_WriteAVIVideoFrame = CL_WriteAVIVideoFrame;
 
-	ri.IN_Init = IN_Init;
-	ri.IN_Shutdown = IN_Shutdown;
-	ri.IN_Restart = IN_Restart;
+	// ri.IN_Init = IN_Init;
+	// ri.IN_Shutdown = IN_Shutdown;
+	// ri.IN_Restart = IN_Restart;
 
 	// ri.ftol = Q_ftol;
 
@@ -3289,7 +3289,7 @@ void CL_InitRef(void)
 	GetRefAPI( REF_API_VERSION, &ri, &re);
 
 
-    Com_Printf(" CL_InitRef() finished. \n");
+	Com_Printf(" CL_InitRef() finished. \n");
 	Com_Printf( "-------------------------------\n");
 
 	// unpause so the cgame definately gets a snapshot and renders a frame

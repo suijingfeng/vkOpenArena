@@ -114,15 +114,10 @@ cvar_t   *vid_ypos;
 static cvar_t* r_glDriver;
 cvar_t* r_drawBuffer;
 ///////////////////////////
- 
-glwstate_t glw_state;
+WinVars_t glw_state;
 
-Display *dpy = NULL;
-Window win = 0;
 
 int scrnum;
-int window_width = 0;
-int window_height = 0;
 
 
 extern cvar_t *in_dgamouse; // user pref for dga mouse
@@ -385,23 +380,19 @@ static int GLW_SetMode(glconfig_t *config, int mode, qboolean fullscreen )
 	int actualWidth, actualHeight, actualRate;
 
 
-	window_width = 0;
-	window_height = 0;
 	window_created = qfalse;
 
-	glw_state.dga_ext = qfalse;
 	glw_state.randr_ext = qfalse;
-	glw_state.vidmode_ext = qfalse;
 
-	dpy = XOpenDisplay( NULL );
+	glw_state.pDisplay = XOpenDisplay( NULL );
 
-	if ( dpy == NULL )
+	if ( glw_state.pDisplay == NULL )
 	{
 		Com_Printf( "Couldn't open the X display\n" );
 	}
 
-	scrnum = DefaultScreen( dpy );
-	root = RootWindow( dpy, scrnum );
+	scrnum = DefaultScreen( glw_state.pDisplay );
+	root = RootWindow( glw_state.pDisplay, scrnum );
 
 	// Init xrandr and get desktop resolution if available
 	RandR_Init( vid_xpos->integer, vid_ypos->integer, 640, 480 );
@@ -414,7 +405,7 @@ static int GLW_SetMode(glconfig_t *config, int mode, qboolean fullscreen )
 
 	Com_Printf( "...setting mode %d:", mode );
 
-	if ( !CL_GetModeInfo( &config->vidWidth, &config->vidHeight, mode, glw_state.desktop_width, glw_state.desktop_height, fullscreen ) )
+	if ( !CL_GetModeInfo( &config->vidWidth, &config->vidHeight, mode, glw_state.desktopWidth, glw_state.desktopHeight, fullscreen ) )
 	{
         Com_Error( ERR_FATAL, " invalid mode\n" );
 	}
@@ -438,7 +429,7 @@ static int GLW_SetMode(glconfig_t *config, int mode, qboolean fullscreen )
     attrib[ATTR_RED_IDX] = 8;
     attrib[ATTR_GREEN_IDX] = 8;
     attrib[ATTR_BLUE_IDX] = 8;
-    visinfo = qglXChooseVisual( dpy, scrnum, attrib );
+    visinfo = qglXChooseVisual( glw_state.pDisplay, scrnum, attrib );
 	if ( !visinfo )
 	{
 		Com_Printf( "Couldn't get a visual\n" );
@@ -448,24 +439,24 @@ static int GLW_SetMode(glconfig_t *config, int mode, qboolean fullscreen )
         attrib[ATTR_RED_IDX], attrib[ATTR_GREEN_IDX], attrib[ATTR_BLUE_IDX],
         attrib[ATTR_DEPTH_IDX], attrib[ATTR_STENCIL_IDX]);
 
-    config->colorBits = 24;
+    config->colorBits = 32;
     config->depthBits = 24;
     config->stencilBits = 0;
 
 
-    config->vidWidth = window_width = actualWidth;
-    config->vidHeight = window_height = actualHeight;
+    config->vidWidth = glw_state.winWidth = actualWidth;
+    config->vidHeight = glw_state.winHeight = actualHeight;
     config->displayFrequency = actualRate;
 
-    config->windowAspect = (float) window_width / (float) window_height;
-    config->isFullscreen = glw_state.cdsFullscreen = fullscreen;
+    config->windowAspect = (float) actualWidth / (float) actualHeight;
+    config->isFullscreen = glw_state.isFullScreen = fullscreen;
 
 
 
 	/* window attributes */
-	attr.background_pixel = BlackPixel( dpy, scrnum );
+	attr.background_pixel = BlackPixel( glw_state.pDisplay, scrnum );
 	attr.border_pixel = 0;
-	attr.colormap = XCreateColormap( dpy, root, visinfo->visual, AllocNone );
+	attr.colormap = XCreateColormap( glw_state.pDisplay, root, visinfo->visual, AllocNone );
 	attr.event_mask = ( 
             KeyPressMask | KeyReleaseMask | 
             ButtonPressMask | ButtonReleaseMask | PointerMotionMask | ButtonMotionMask |
@@ -484,57 +475,57 @@ static int GLW_SetMode(glconfig_t *config, int mode, qboolean fullscreen )
 		mask = CWBackPixel | CWBorderPixel | CWColormap | CWEventMask;
 	}
 
-	win = XCreateWindow( dpy, root, 0, 0,
+	glw_state.hWnd = XCreateWindow( glw_state.pDisplay, root, 0, 0,
 		actualWidth, actualHeight,
 		0, visinfo->depth, InputOutput,
 		visinfo->visual, mask, &attr );
 
-	XStoreName( dpy, win, CLIENT_WINDOW_TITLE );
+	XStoreName( glw_state.pDisplay, glw_state.hWnd, CLIENT_WINDOW_TITLE );
 
 	/* GH: Don't let the window be resized */
 	sizehints.flags = PMinSize | PMaxSize;
 	sizehints.min_width = sizehints.max_width = actualWidth;
 	sizehints.min_height = sizehints.max_height = actualHeight;
 
-	XSetWMNormalHints( dpy, win, &sizehints );
+	XSetWMNormalHints( glw_state.pDisplay, glw_state.hWnd, &sizehints );
 
-	XMapWindow( dpy, win );
+	XMapWindow( glw_state.pDisplay, glw_state.hWnd );
 
-	wmDeleteEvent = XInternAtom( dpy, "WM_DELETE_WINDOW", True );
+	wmDeleteEvent = XInternAtom( glw_state.pDisplay, "WM_DELETE_WINDOW", True );
 	if ( wmDeleteEvent == BadValue )
 		wmDeleteEvent = None;
 	if ( wmDeleteEvent != None )
-		XSetWMProtocols( dpy, win, &wmDeleteEvent, 1 );
+		XSetWMProtocols( glw_state.pDisplay, glw_state.hWnd, &wmDeleteEvent, 1 );
 
-    if(win)
+    if(glw_state.hWnd)
 	{
         window_created = qtrue;
         //GLimp_DetectAvailableModes();
     }
 	if ( fullscreen )
 	{
-		if ( glw_state.randr_active || glw_state.vidmode_active )
-			XMoveWindow( dpy, win, glw_state.desktop_x, glw_state.desktop_y );
+		if ( glw_state.randr_active )
+			XMoveWindow( glw_state.pDisplay, glw_state.hWnd, glw_state.desktop_x, glw_state.desktop_y );
 	}
 	else
 	{
-		XMoveWindow( dpy, win, vid_xpos->integer, vid_ypos->integer );
+		XMoveWindow( glw_state.pDisplay, glw_state.hWnd, vid_xpos->integer, vid_ypos->integer );
 	}
 
-	XFlush( dpy );
-	XSync( dpy, False );
-	ctx = qglXCreateContext( dpy, visinfo, NULL, True );
-	XSync( dpy, False );
+	XFlush( glw_state.pDisplay );
+	XSync( glw_state.pDisplay, False );
+	ctx = qglXCreateContext( glw_state.pDisplay, visinfo, NULL, True );
+	XSync( glw_state.pDisplay, False );
 
 	/* GH: Free the visinfo after we're done with it */
 	XFree( visinfo );
 
-	qglXMakeCurrent( dpy, win, ctx );
+	qglXMakeCurrent( glw_state.pDisplay, glw_state.hWnd, ctx );
 
 
 	Key_ClearStates();
 
-	XSetInputFocus( dpy, win, RevertToParent, CurrentTime );
+	XSetInputFocus( glw_state.pDisplay, glw_state.hWnd, RevertToParent, CurrentTime );
 
 	return 0;
 }
@@ -668,14 +659,14 @@ static int qXErrorHandler( Display *dpy, XErrorEvent *ev )
 */
 void GLimp_Init( glconfig_t *config )
 {
-    r_fullscreen = Cvar_Get( "r_fullscreen", "0", CVAR_ARCHIVE | CVAR_LATCH);
+	r_fullscreen = Cvar_Get( "r_fullscreen", "0", CVAR_ARCHIVE | CVAR_LATCH);
 	r_mode = Cvar_Get( "r_mode", "-2", CVAR_ARCHIVE | CVAR_LATCH );
 
 	r_colorbits = Cvar_Get( "r_colorbits", "24", CVAR_ARCHIVE | CVAR_LATCH );
 	r_stencilbits = Cvar_Get( "r_stencilbits", "0", CVAR_ARCHIVE | CVAR_LATCH );
 	r_depthbits = Cvar_Get( "r_depthbits", "24", CVAR_ARCHIVE | CVAR_LATCH ); 
 	r_stereoSeparation = Cvar_Get( "r_stereoSeparation", "64", CVAR_ARCHIVE );
-    r_drawBuffer = Cvar_Get( "r_drawBuffer", "GL_BACK", CVAR_CHEAT );
+	r_drawBuffer = Cvar_Get( "r_drawBuffer", "GL_BACK", CVAR_CHEAT );
     
 	r_customwidth = Cvar_Get( "r_customwidth", "1920", CVAR_ARCHIVE | CVAR_LATCH );
 	r_customheight = Cvar_Get( "r_customheight", "1080", CVAR_ARCHIVE | CVAR_LATCH );
@@ -683,7 +674,7 @@ void GLimp_Init( glconfig_t *config )
 	r_glDriver = Cvar_Get( "r_glDriver", OPENGL_DRIVER_NAME, CVAR_ARCHIVE | CVAR_LATCH );
 
 
-    vid_xpos = Cvar_Get( "vid_xpos", "3", CVAR_ARCHIVE );
+	vid_xpos = Cvar_Get( "vid_xpos", "3", CVAR_ARCHIVE );
 	vid_ypos = Cvar_Get( "vid_ypos", "22", CVAR_ARCHIVE );
 
 
@@ -694,14 +685,8 @@ void GLimp_Init( glconfig_t *config )
 
 	// load the GL layer
 
+	Cmd_AddCommand( "modelist", ModeList_f );
 
-    Cmd_AddCommand( "modelist", ModeList_f );
-
-	// This values force the UI to disable driver selection
-	config->driverType = GLDRV_ICD;
-	config->hardwareType = GLHW_GENERIC;
-
-    IN_Init();   // rcg08312005 moved into glimp.
 
 	// set up our custom error handler for X failures
 	XSetErrorHandler( &qXErrorHandler );
@@ -751,7 +736,7 @@ void WinSys_EndFrame( void )
 	// don't flip if drawing to front buffer
 	if ( Q_stricmp( r_drawBuffer->string, "GL_FRONT" ) != 0 )
 	{
-		qglXSwapBuffers( dpy, win );
+		qglXSwapBuffers( glw_state.pDisplay, glw_state.hWnd );
 	}
 
 	//
@@ -761,7 +746,7 @@ void WinSys_EndFrame( void )
 		r_swapInterval->modified = qfalse;
 
 		if ( qglXSwapIntervalEXT ) {
-			qglXSwapIntervalEXT( dpy, win, r_swapInterval->integer );
+			qglXSwapIntervalEXT( glw_state.pDisplay, glw_state.hWnd, r_swapInterval->integer );
 		} else if ( qglXSwapIntervalMESA ) {
 			qglXSwapIntervalMESA( r_swapInterval->integer );
 		} else if ( qglXSwapIntervalSGI ) {
@@ -784,7 +769,7 @@ void GLimp_Shutdown( qboolean unloadDLL )
 {
 	IN_DeactivateMouse();
 
-	if ( dpy )
+	if ( glw_state.pDisplay )
 	{
 		if ( glw_state.randr_gamma && glw_state.gammaSet )
 		{
@@ -795,34 +780,32 @@ void GLimp_Shutdown( qboolean unloadDLL )
 		RandR_RestoreMode();
 
 		if ( ctx )
-			qglXDestroyContext( dpy, ctx );
+			qglXDestroyContext( glw_state.pDisplay, ctx );
 
-		if ( win )
-			XDestroyWindow( dpy, win );
+		if ( glw_state.hWnd )
+			XDestroyWindow( glw_state.pDisplay, glw_state.hWnd );
 
 
 		// NOTE TTimo opening/closing the display should be necessary only once per run
 		// but it seems GL_Shutdown gets called in a lot of occasion
 		// in some cases, this XCloseDisplay is known to raise some X errors
 		// ( https://zerowing.idsoftware.com/bugzilla/show_bug.cgi?id=33 )
-		XCloseDisplay( dpy );
+		XCloseDisplay( glw_state.pDisplay );
 	}
 
 	RandR_Done();
 
-	glw_state.desktop_ok = qfalse;
-
-	dpy = NULL;
-	win = 0;
+	glw_state.pDisplay = NULL;
+	glw_state.hWnd = 0;
 	ctx = NULL;
 
 	unsetenv( "vblank_mode" );
 	
-	//if ( glw_state.cdsFullscreen )
+	if ( glw_state.isFullScreen )
 	{
-		glw_state.cdsFullscreen = qfalse;
+		glw_state.isFullScreen = qfalse;
 	}
-    Cmd_RemoveCommand("modelist");
+	Cmd_RemoveCommand("modelist");
 
 	GL_Shutdown( unloadDLL );
 }
@@ -850,7 +833,7 @@ Sys_GetClipboardData
 */
 char *Sys_GetClipboardData( void )
 {
-	const Atom xtarget = XInternAtom( dpy, "UTF8_STRING", 0 );
+	const Atom xtarget = XInternAtom( glw_state.pDisplay, "UTF8_STRING", 0 );
 	unsigned long nitems, rem;
 	unsigned char *data;
 	Atom type;
@@ -858,11 +841,11 @@ char *Sys_GetClipboardData( void )
 	char *buf;
 	int format;
 
-	XConvertSelection( dpy, XA_PRIMARY, xtarget, XA_PRIMARY, win, CurrentTime );
-	XSync( dpy, False );
-	XNextEvent( dpy, &ev );
+	XConvertSelection( glw_state.pDisplay, XA_PRIMARY, xtarget, XA_PRIMARY, glw_state.hWnd, CurrentTime );
+	XSync( glw_state.pDisplay, False );
+	XNextEvent( glw_state.pDisplay, &ev );
 	if ( !XFilterEvent( &ev, None ) && ev.type == SelectionNotify ) {
-		if ( XGetWindowProperty( dpy, win, XA_PRIMARY, 0, 8, False, AnyPropertyType,
+		if ( XGetWindowProperty( glw_state.pDisplay, glw_state.hWnd, XA_PRIMARY, 0, 8, False, AnyPropertyType,
 			&type, &format, &nitems, &rem, &data ) == 0 ) {
 			if ( format == 8 ) {
 				if ( nitems > 0 ) {
@@ -882,19 +865,71 @@ char *Sys_GetClipboardData( void )
 }
 
 
-void WinSys_Init(void ** pContext)
+
+
+static qboolean WindowMinimized( void )
+{
+	unsigned long i, num_items, bytes_after;
+	Atom actual_type, *atoms, nws, nwsh;
+	int actual_format;
+
+	nws = XInternAtom( glw_state.pDisplay, "_NET_WM_STATE", True );
+	if ( nws == BadValue || nws == None )
+		return qfalse;
+
+	nwsh = XInternAtom( glw_state.pDisplay, "_NET_WM_STATE_HIDDEN", True );
+	if ( nwsh == BadValue || nwsh == None )
+		return qfalse;
+
+	atoms = NULL;
+
+	XGetWindowProperty( glw_state.pDisplay, glw_state.hWnd, nws, 0, 0x7FFFFFFF, False, XA_ATOM,
+		&actual_type, &actual_format, &num_items,
+		&bytes_after, (unsigned char**)&atoms );
+
+	for ( i = 0; i < num_items; i++ )
+	{
+		if ( atoms[i] == nwsh )
+		{
+			XFree( atoms );
+			return qtrue;
+		}
+	}
+
+	XFree( atoms );
+	return qfalse;
+}
+
+//////////////////
+void WinMinimize_f(void)
+{
+    glw_state.isMinimized = WindowMinimized( );
+    Com_Printf( " gw_minimized: %i\n", glw_state.isMinimized );
+}
+
+void WinSys_Init(void ** pCfg)
 {
     Com_Printf( "... WinSys_Init ...\n" );
 
-    glconfig_t * pConfig = (glconfig_t * )(*pContext);
+    Cmd_AddCommand( "minimize", WinMinimize_f );
+
+    glconfig_t * pConfig = (glconfig_t * )(*pCfg);
+
+    // This values force the UI to disable driver selection
+    pConfig->driverType = GLDRV_ICD;
+    pConfig->hardwareType = GLHW_GENERIC;
+
 
     GLimp_Init( pConfig );
+
+    IN_Init();   // rcg08312005 moved into glimp.
 }
 
 
 void WinSys_Shutdown(void)
 {
-    GLimp_Shutdown( qtrue );
+	Cmd_RemoveCommand( "minimize" );
+	GLimp_Shutdown( qtrue );
 }
 
 

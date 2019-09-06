@@ -58,35 +58,7 @@ typedef struct WinVars_s {
   #if defined(USING_XCB)
     #include <xcb/xcb.h>
   #elif defined(USING_XLIB)
-
     #include <X11/Xutil.h>
-
-    typedef struct {
-        void *OpenGLLib; // instance of OpenGL library
-
-        int	monitorCount;
-
-        int gammaSet;
-
-        int cdsFullscreen;
-
-        int dga_ext;
-
-        int vidmode_ext;
-        int vidmode_active;
-        int vidmode_gamma;
-
-        int randr_ext;
-        int randr_active;
-        int randr_gamma;
-
-        int desktop_ok;
-        int desktop_width;
-        int desktop_height;
-        int desktop_x;
-        int desktop_y;
-    } glwstate_t;
-
   #endif
 
     typedef struct xcb_windata_s {
@@ -95,12 +67,13 @@ typedef struct WinVars_s {
         xcb_window_t hWnd;
         xcb_window_t root;
   #elif defined(USING_XLIB)
-        Display* display;
+        Display* pDisplay;
         Window  hWnd;
   #endif
-
+        int	monitorCount;
         int	screenIdx;
-
+        int desktop_x;
+        int desktop_y;
         int	winWidth;
         int	winHeight;
         int	desktopWidth;
@@ -109,8 +82,12 @@ typedef struct WinVars_s {
         int	isMinimized;
         int     winStyle;
         int	activeApp;
-
+	int gammaSet;
+        int randr_ext;
+        int randr_active;
+        int randr_gamma;
         unsigned int sysMsgTime;
+        void *OpenGLLib; // instance of OpenGL library
 
     } WinVars_t;
 
@@ -135,6 +112,7 @@ void WinSys_EndFrame(void);
 void WinSys_SetGamma(unsigned char red[256], unsigned char green[256], unsigned char blue[256]);
 void FileSys_Logging(char * const pComment);
 
+void WinMinimize_f(void);
 // NOTE TTimo linux works with float gamma value, not the gamma table
 // the params won't be used, getting the r_gamma cvar directly
 

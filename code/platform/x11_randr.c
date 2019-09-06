@@ -12,8 +12,7 @@
 
 #define MAX_MONITORS 16
 
-extern glwstate_t glw_state;
-extern Display *dpy;
+extern WinVars_t glw_state;
 extern int scrnum;
 
 
@@ -179,10 +178,10 @@ qboolean RandR_SetMode( int *width, int *height, int *rate )
 		return glw_state.randr_active;
 	}
 	
-	sr = _XRRGetScreenResources( dpy, DefaultRootWindow( dpy ) );
+	sr = _XRRGetScreenResources( glw_state.pDisplay, DefaultRootWindow( glw_state.pDisplay ) );
 
-	output_info = _XRRGetOutputInfo( dpy, sr, m->outputn );
-	crtc_info = _XRRGetCrtcInfo( dpy, sr, m->crtcn );
+	output_info = _XRRGetOutputInfo( glw_state.pDisplay, sr, m->outputn );
+	crtc_info = _XRRGetCrtcInfo( glw_state.pDisplay, sr, m->crtcn );
 
 	best_rate = 999999999;
 	best_dist = 999999999;
@@ -228,7 +227,7 @@ qboolean RandR_SetMode( int *width, int *height, int *rate )
 	if ( best_fit != -1 )
 	{
 		//Com_Printf( "...setting new mode 0x%x via xrandr \n", (int)newMode );
-		_XRRSetCrtcConfig( dpy, sr, m->crtcn, CurrentTime, crtc_info->x, crtc_info->y,
+		_XRRSetCrtcConfig( glw_state.pDisplay, sr, m->crtcn, CurrentTime, crtc_info->x, crtc_info->y,
 			newMode, crtc_info->rotation, crtc_info->outputs, crtc_info->noutput );
 
 		m->curMode = newMode;
@@ -253,7 +252,7 @@ void RandR_RestoreMode( void )
 	XRROutputInfo *output_info;
 	XRRCrtcInfo *crtc_info;
 	
-	if ( !glw_state.randr_ext || !glw_state.randr_active || !dpy )
+	if ( !glw_state.randr_ext || !glw_state.randr_active || !glw_state.pDisplay )
 		return;
 
 	glw_state.randr_active = qfalse;
@@ -263,12 +262,12 @@ void RandR_RestoreMode( void )
 
 	Com_Printf( "...restoring desktop display mode\n" );
 
-	sr = _XRRGetScreenResources( dpy, DefaultRootWindow( dpy ) );
+	sr = _XRRGetScreenResources( glw_state.pDisplay, DefaultRootWindow( glw_state.pDisplay ) );
 
-	output_info = _XRRGetOutputInfo( dpy, sr, m->outputn );
-	crtc_info = _XRRGetCrtcInfo( dpy, sr, m->crtcn );
+	output_info = _XRRGetOutputInfo( glw_state.pDisplay, sr, m->outputn );
+	crtc_info = _XRRGetCrtcInfo( glw_state.pDisplay, sr, m->crtcn );
 
-	_XRRSetCrtcConfig( dpy, sr, m->crtcn, CurrentTime, crtc_info->x, crtc_info->y,
+	_XRRSetCrtcConfig( glw_state.pDisplay, sr, m->crtcn, CurrentTime, crtc_info->x, crtc_info->y,
 		m->oldMode, crtc_info->rotation, crtc_info->outputs, crtc_info->noutput );
 
 	_XRRFreeCrtcInfo( crtc_info );
@@ -290,19 +289,19 @@ static void BuildMonitorList( void )
 
 	glw_state.monitorCount = 0;
 
-	sr = _XRRGetScreenResources( dpy, DefaultRootWindow( dpy ) );
+	sr = _XRRGetScreenResources( glw_state.pDisplay, DefaultRootWindow( glw_state.pDisplay ) );
 
 	if ( !sr )
 		return;
 
 	for ( outn = 0; outn < sr->noutput; outn++ )
 	{
-		info = _XRRGetOutputInfo( dpy, sr, sr->outputs[ outn ] );
+		info = _XRRGetOutputInfo( glw_state.pDisplay, sr, sr->outputs[ outn ] );
 		if ( info )
 		{
 			if ( info->connection == RR_Connected )
 			{
-				crtc_info = _XRRGetCrtcInfo( dpy, sr, info->crtc );
+				crtc_info = _XRRGetCrtcInfo( glw_state.pDisplay, sr, info->crtc );
 				if ( crtc_info )
 				{
 					//fprintf( stderr, "%ix%i @%ix%i outn:%i (crtc:%i) %s\n",
@@ -402,7 +401,7 @@ static void SetMonitorGamma( unsigned short *red, unsigned short *green, unsigne
 		memcpy( gamma->red,   red,   size * sizeof( unsigned short ) );
 		memcpy( gamma->green, green, size * sizeof( unsigned short ) );
 		memcpy( gamma->blue,  blue,  size * sizeof( unsigned short ) );
-		_XRRSetCrtcGamma( dpy, desktop_monitor.crtcn, gamma );
+		_XRRSetCrtcGamma( glw_state.pDisplay, desktop_monitor.crtcn, gamma );
 		_XRRFreeGamma( gamma );
 	}
 }
@@ -422,7 +421,7 @@ void RandR_UpdateMonitor( int x, int y, int w, int h )
 	monitor_t *cm;
 //	int i;
 	
-	if ( !glw_state.monitorCount || glw_state.cdsFullscreen )
+	if ( !glw_state.monitorCount || glw_state.isFullScreen )
 		return;
 
 	// try to find monitor to which input coordinates belongs to
@@ -446,13 +445,11 @@ void RandR_UpdateMonitor( int x, int y, int w, int h )
 
 		glw_state.desktop_x = cm->x;
 		glw_state.desktop_y = cm->y;
-		glw_state.desktop_width = cm->w;
-		glw_state.desktop_height = cm->h;
-
-		glw_state.desktop_ok = qtrue;
+		glw_state.desktopWidth = cm->w;
+		glw_state.desktopHeight = cm->h;
 
 		Com_Printf( "...current monitor: %ix%i@%i,%i %s\n",
-			glw_state.desktop_width, glw_state.desktop_height,
+			glw_state.desktopWidth, glw_state.desktopHeight,
 			glw_state.desktop_x, glw_state.desktop_y,
 			desktop_monitor.name );
 
@@ -472,7 +469,7 @@ static qboolean BackupMonitorGamma( void )
 		return qfalse;
 	}
 
-	gammaRampSize = _XRRGetCrtcGammaSize( dpy, desktop_monitor.crtcn );
+	gammaRampSize = _XRRGetCrtcGammaSize( glw_state.pDisplay, desktop_monitor.crtcn );
 	if ( gammaRampSize < 256 || gammaRampSize > 4096 )
 	{
 		glw_state.randr_gamma = qfalse;
@@ -480,7 +477,7 @@ static qboolean BackupMonitorGamma( void )
 		return qfalse;
 	}
 
-	gamma = _XRRGetCrtcGamma( dpy, desktop_monitor.crtcn );
+	gamma = _XRRGetCrtcGamma( glw_state.pDisplay, desktop_monitor.crtcn );
 
 	if ( gamma )
 	{
@@ -605,7 +602,7 @@ qboolean RandR_Init( int x, int y, int w, int h )
 		}
 	}
 
-	if ( !_XRRQueryExtension( dpy, &event_base, &error_base ) || !_XRRQueryVersion( dpy, &ver_major, &ver_minor ) )
+	if ( !_XRRQueryExtension( glw_state.pDisplay, &event_base, &error_base ) || !_XRRQueryVersion( glw_state.pDisplay, &ver_major, &ver_minor ) )
 	{
 		Com_Printf( "...RandR extension is not available.\n" );
 		goto __fail;

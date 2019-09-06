@@ -158,9 +158,9 @@ typedef struct {
 	void	(*CL_WriteAVIVideoFrame)( const unsigned char *buffer, int size );
 
 	// input event handling
-	void (* IN_Init)( void );
-	void (* IN_Shutdown)( void );
-	void (* IN_Restart)( void );
+	// void (* IN_Init)( void );
+	// void (* IN_Shutdown)( void );
+	// void (* IN_Restart)( void );
 
 
 	// window systems impl
