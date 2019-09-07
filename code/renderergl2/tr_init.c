@@ -727,7 +727,7 @@ static void InitOpenGL( void )
 		
 		// GLimp_Init(&glConfig, qtrue);
 
-		void * pContext;
+		void * pContext = &glConfig;
 	
 		ri.WinSysInit(&pContext);
 

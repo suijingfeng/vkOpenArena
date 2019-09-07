@@ -25,12 +25,11 @@ consistant.
 #if defined(USING_XCB)
 
     #define VK_USE_PLATFORM_XCB_KHR 1
-    #include <xcb/xcb.h>
 
 #elif defined(USING_XLIB)
 
     #define VK_USE_PLATFORM_XLIB_KHR 1
-    #include <X11/Xlib.h>
+    #define VK_USE_PLATFORM_XLIB_XRANDR_EXT 1
 
 #elif defined(USING_WAYLAND)
 

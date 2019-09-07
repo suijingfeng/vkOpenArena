@@ -316,7 +316,7 @@ INSTALL=install
 MKDIR=mkdir -p
 EXTRA_FILES=
 CLIENT_EXTRA_FILES=
-USING_XLIB = 1
+
 
 #Possible values "gnu90", "gnu99" and "gnu11". Note that the engine uses gnu-extensions. gnu90 is broken in the commit where this message is added. Travis does not support gnu11 at the moment.
 CFLAGS+="-std=gnu99"
@@ -326,8 +326,17 @@ ifneq (,$(findstring "$(PLATFORM)", "linux" "gnu_kfreebsd" "kfreebsd-gnu" "gnu")
   BASE_CFLAGS = -Wall -Wimplicit -Wstrict-prototypes \
 	-pipe -DUSE_ICON -DARCH_STRING=\\\"$(ARCH)\\\"
   
-#  CLIENT_CFLAGS += -DUSING_XCB
-  CLIENT_CFLAGS += -DUSING_XLIB
+
+ifeq ($(USING_XLIB), 1)
+CFLAGS += -DUSING_XLIB
+else
+
+ifeq ($(USING_XCB), 1)
+CLIENT_CFLAGS += -DUSING_XCB
+endif
+
+endif
+
 #  CLIENT_CFLAGS += -DUSING_WAYLAND
 
 

@@ -148,7 +148,7 @@ void VK_CreateSurfaceImpl(VkInstance hInstance, void * pCtx, VkSurfaceKHR* const
     createInfo.sType = VK_STRUCTURE_TYPE_XLIB_SURFACE_CREATE_INFO_KHR;
     createInfo.pNext = NULL;
     createInfo.flags = 0;
-    createInfo.dpy = pWinCtx->display;
+    createInfo.dpy = pWinCtx->pDisplay;
     createInfo.window = pWinCtx->hWnd;
 
     VK_CHECK( qvkCreateXlibSurfaceKHR(hInstance, &createInfo, NULL, pSurface) );
