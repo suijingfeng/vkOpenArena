@@ -46,7 +46,7 @@ static const char s_keytochar[ 128 ] =
 
 // Time mouse was reset, we ignore the first 50ms of the mouse to allow settling of events
 static int mouseResetTime = 0;
-#define MOUSE_RESET_DELAY 50
+#define MOUSE_RESET_DELAY 5
 
 static cvar_t *in_mouse;
 
@@ -490,9 +490,6 @@ void Sys_SendKeyEvents( void )
 	qboolean btn_press;
 	char buf[2];
 
-	if ( !glw_state.pDisplay )
-		return;
-
 	while( XPending( glw_state.pDisplay ) )
 	{
 		XNextEvent( glw_state.pDisplay, &event );
@@ -502,7 +499,8 @@ void Sys_SendKeyEvents( void )
 
 		case ClientMessage:
 
-			if ( event.xclient.data.l[0] == wmDeleteEvent ) {
+			if ( event.xclient.data.l[0] == wmDeleteEvent )
+            {
 				Cmd_Clear();
 				Com_Quit_f();
 			}
@@ -510,7 +508,7 @@ void Sys_SendKeyEvents( void )
 
 		case KeyPress:
 			// Com_Printf("^2K+^7 %08X\n", event.xkey.keycode );
-			//t = Sys_XTimeToSysTime( event.xkey.time );
+			// t = Sys_XTimeToSysTime( event.xkey.time );
             t = Sys_Milliseconds();
 			if ( event.xkey.keycode == 0x31 )
 			{
@@ -564,7 +562,6 @@ void Sys_SendKeyEvents( void )
 
 			}
             
-
 			break; // case KeyPress
 
 		case KeyRelease:
@@ -691,7 +688,8 @@ void Sys_SendKeyEvents( void )
 
 	if ( dowarp )
 	{
-		XWarpPointer( glw_state.pDisplay, None, glw_state.hWnd, 0, 0, 0, 0, glw_state.winWidth/2, glw_state.winHeight/2 );
+		XWarpPointer( glw_state.pDisplay, None, glw_state.hWnd, 0, 0, 0, 0,
+                glw_state.winWidth/2, glw_state.winHeight/2 );
 	}
 }
 
@@ -824,8 +822,11 @@ void IN_Frame(void)
 	else
 		IN_ActivateMouse( );
 
-    Sys_SendKeyEvents();
-
+    
+    if ( glw_state.pDisplay )
+	{
+        Sys_SendKeyEvents();
+    }
 /*     
 	// Set event time for next frame to earliest possible time an event could happen
 	in_eventTime = Sys_Milliseconds( );
