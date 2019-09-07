@@ -61,7 +61,7 @@ typedef struct WinVars_s {
     #include <X11/Xutil.h>
   #endif
 
-    typedef struct xcb_windata_s {
+    typedef struct WinData_s {
   #if defined(USING_XCB)
         xcb_connection_t *connection;
         xcb_window_t hWnd;
@@ -87,7 +87,7 @@ typedef struct WinVars_s {
         int randr_active;
         int randr_gamma;
         unsigned int sysMsgTime;
-        void *OpenGLLib; // instance of OpenGL library
+        void * hGraphicLib; // instance of OpenGL library
 
     } WinVars_t;
 
@@ -111,6 +111,12 @@ void WinSys_Shutdown(void);
 void WinSys_EndFrame(void);
 void WinSys_SetGamma(unsigned char red[256], unsigned char green[256], unsigned char blue[256]);
 void FileSys_Logging(char * const pComment);
+
+
+int WinSys_GetWinWidth(void);
+int WinSys_GetWinHeight(void);
+int WinSys_IsWinFullscreen(void);
+
 
 void WinMinimize_f(void);
 // NOTE TTimo linux works with float gamma value, not the gamma table

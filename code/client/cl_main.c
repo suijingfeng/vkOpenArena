@@ -772,7 +772,8 @@ void CL_Record_f( void ) {
 	MSG_WriteLong (&buf, clc.serverCommandSequence );
 
 	// configstrings
-	for ( i = 0 ; i < MAX_CONFIGSTRINGS ; i++ ) {
+	for ( i = 0 ; i < MAX_CONFIGSTRINGS ; ++i )
+    {
 		if ( !cl.gameState.stringOffsets[i] ) {
 			continue;
 		}
@@ -3280,7 +3281,11 @@ void CL_InitRef(void)
 	ri.WinSysEndFrame = WinSys_EndFrame;
 	ri.WinSysSetGamma = WinSys_SetGamma;
 	ri.pfnLog = FileSys_Logging;
-	
+
+    ri.GetWinWidth = WinSys_GetWinWidth;
+    ri.GetWinHeight = WinSys_GetWinHeight;
+    ri.IsWinFullscreen = WinSys_IsWinFullscreen;
+
 	ri.GetGlProcAddress = GLimp_GetProcAddress;
 	
 	// ri.Sys_SetEnv = Sys_SetEnv;

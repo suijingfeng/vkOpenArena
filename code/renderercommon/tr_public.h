@@ -171,6 +171,12 @@ typedef struct {
 	void (* WinSysSetGamma)(unsigned char red[256], unsigned char green[256], unsigned char blue[256]);
 	void (* pfnLog)(char * const pComment);
 	
+
+    int (* GetWinWidth)(void);
+    int (* GetWinHeight)(void);
+    int (* IsWinFullscreen)(void);
+
+
 	// for OpenGL only
 	void * (* GetGlProcAddress)( const char *symbol );
 

@@ -138,6 +138,8 @@ void VK_CreateSurfaceImpl(VkInstance hInstance, void * pCtx, VkSurfaceKHR* const
 	createInfo.window = pWinCtx->hWnd;
 	
     VK_CHECK( qvkCreateXcbSurfaceKHR(hInstance, &createInfo, NULL, pSurface) );
+    
+    ri.Printf(PRINT_ALL, " CreateXcbSurface done. \n");
 
   #elif defined(USING_XLIB)
 
@@ -153,9 +155,10 @@ void VK_CreateSurfaceImpl(VkInstance hInstance, void * pCtx, VkSurfaceKHR* const
 
     VK_CHECK( qvkCreateXlibSurfaceKHR(hInstance, &createInfo, NULL, pSurface) );
 
+    ri.Printf(PRINT_ALL, " CreateXlibSurface done. \n");
+
   #endif
     
-    ri.Printf(PRINT_ALL, " CreateXcbSurface done. \n");
 
 #endif
 

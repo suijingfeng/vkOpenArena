@@ -148,7 +148,6 @@ void vk_createSwapChain(VkDevice device, VkSurfaceKHR HSurface,
 
 
 
-    ri.Printf(PRINT_ALL, "\n Create vk.swapchain. \n");
     // Regardless of which platform you're running on, the resulting
     // VkSurfaceKHR handle refers to Vulkan's view of a window, In order
     // to actually present anything to that surface, it's necessary
@@ -221,6 +220,9 @@ void vk_createSwapChain(VkDevice device, VkSurfaceKHR HSurface,
     desc.oldSwapchain = VK_NULL_HANDLE;
 
     VK_CHECK( qvkCreateSwapchainKHR(device, &desc, NULL, pHSwapChain) );
+
+    ri.Printf(PRINT_ALL, "\n vk.swapchain Created . \n");
+
 }
 
 void vk_destroySwapChain(void)

@@ -359,15 +359,39 @@ static void InitOpenGL( void )
 	//		- r_(color|depth|stencil)bits
 	//		- r_gamma
 	//
-	
-	if ( glConfig.vidWidth == 0 )
+	glconfig_t * const pConfig = &glConfig;
+
+	if ( pConfig->vidWidth == 0 )
 	{
 		GLint temp;
 
-		void * pCfg = &glConfig;
+		void * pCfg = NULL;
             			
 		ri.WinSysInit(&pCfg);
-        
+
+
+        pConfig->stereoEnabled = qfalse;
+        pConfig->smpActive = qfalse;
+        pConfig->displayFrequency = 60;
+        // allways enable stencil
+        pConfig->stencilBits = 8;
+        pConfig->depthBits = 24;
+        pConfig->colorBits = 32;
+        pConfig->deviceSupportsGamma = qfalse;
+
+        pConfig->textureEnvAddAvailable = 0; // not used
+        pConfig->textureCompression = 0; // not used
+
+        // These values force the UI to disable driver selection
+        pConfig->driverType = GLDRV_ICD;
+        pConfig->hardwareType = GLHW_GENERIC;
+
+        pConfig->vidWidth = ri.GetWinWidth();
+        pConfig->vidHeight = ri.GetWinHeight();
+        pConfig->isFullscreen = ri.IsWinFullscreen();
+        pConfig->windowAspect = (float) pConfig->vidWidth / (float) pConfig->vidHeight;
+
+
         if ( !GLimp_GetProcAddresses() )
         {
             ri.Error(ERR_FATAL, "Get function Addresses failed. \n" );
@@ -1225,7 +1249,6 @@ void R_Register( void )
 	ri.Cmd_AddCommand( "screenshot", R_ScreenShot_f );
 	ri.Cmd_AddCommand( "screenshotJPEG", R_ScreenShotJPEG_f );
 	ri.Cmd_AddCommand( "gfxinfo", GfxInfo_f );
-	// ri.Cmd_AddCommand( "minimize", GLimp_Minimize );
 }
 
 /*
@@ -1233,7 +1256,8 @@ void R_Register( void )
 R_Init
 ===============
 */
-void R_Init( void ) {	
+void R_Init( void )
+{	
 	int	err;
 	int i;
 	byte *ptr;
@@ -1326,7 +1350,8 @@ void R_Init( void ) {
 
 
 
-void RE_Shutdown( qboolean destroyWindow ) {	
+void RE_Shutdown( qboolean destroyWindow )
+{	
 
 	ri.Printf( PRINT_ALL, "RE_Shutdown( %i )\n", destroyWindow );
 
@@ -1337,7 +1362,6 @@ void RE_Shutdown( qboolean destroyWindow ) {
 	ri.Cmd_RemoveCommand( "screenshot" );
 	ri.Cmd_RemoveCommand( "screenshotJPEG" );
 	ri.Cmd_RemoveCommand( "gfxinfo" );
-	// ri.Cmd_RemoveCommand( "minimize" );
 
 
 	if ( tr.registered ) {
@@ -1360,6 +1384,55 @@ void RE_Shutdown( qboolean destroyWindow ) {
 }
 
 
+
+//=============================================================================
+
+/*
+** RE_BeginRegistration
+*/
+void RE_BeginRegistration( glconfig_t * const pConfig )
+{
+
+	R_Init();
+
+	// *glconfigOut = glConfig;
+
+
+	pConfig->stereoEnabled = qfalse;
+	pConfig->smpActive = qfalse;
+	pConfig->displayFrequency = 60;
+	// allways enable stencil
+	pConfig->stencilBits = 8;
+	pConfig->depthBits = 24;
+	pConfig->colorBits = 32;
+	pConfig->deviceSupportsGamma = qfalse;
+
+    pConfig->textureEnvAddAvailable = 0; // not used
+    pConfig->textureCompression = 0; // not used
+
+    // These values force the UI to disable driver selection
+	pConfig->driverType = GLDRV_ICD;
+	pConfig->hardwareType = GLHW_GENERIC;
+    
+    pConfig->vidWidth = ri.GetWinWidth();
+    pConfig->vidHeight = ri.GetWinHeight();
+    pConfig->isFullscreen = ri.IsWinFullscreen();
+    pConfig->windowAspect = (float) pConfig->vidWidth / (float) pConfig->vidHeight;
+
+
+
+
+	R_IssuePendingRenderCommands();
+
+	tr.viewCluster = -1;		// force markleafs to regenerate
+	R_ClearFlares();
+	RE_ClearScene();
+
+	tr.registered = qtrue;
+}
+
+//=============================================================================
+
 /*
 =============
 RE_EndRegistration
@@ -1367,9 +1440,11 @@ RE_EndRegistration
 Touch all images to make sure they are resident
 =============
 */
-void RE_EndRegistration( void ) {
+void RE_EndRegistration( void )
+{
 	R_IssuePendingRenderCommands();
-	if (!ri.Sys_LowPhysicalMemory()) {
+	if (!ri.Sys_LowPhysicalMemory())
+    {
 		RB_ShowImages();
 	}
 }
@@ -1382,10 +1457,10 @@ GetRefAPI
 @@@@@@@@@@@@@@@@@@@@@
 */
 #ifdef USE_RENDERER_DLOPEN
-Q_EXPORT void QDECL GetRefAPI ( int apiVersion, refimport_t *rimp, refexport_t * rexp )
+Q_EXPORT void QDECL GetRefAPI ( int apiVersion, const refimport_t * const rimp, refexport_t * const rexp )
 {
 #else
-void GetRefAPI ( int apiVersion, refimport_t *rimp, refexport_t * rexp )
+void GetRefAPI ( int apiVersion, const refimport_t * const rimp, refexport_t * const rexp )
 {
 #endif
 	ri = *rimp;

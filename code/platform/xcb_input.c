@@ -26,7 +26,7 @@ static qboolean mouseAvailable = qfalse;
 static cvar_t *in_mouse;
 static cvar_t *in_nograb;
 
-extern struct xcb_windata_s s_xcb_win;
+extern struct WinData_s s_xcb_win;
 
 
 static xcb_key_symbols_t * keysyms_;
@@ -242,7 +242,7 @@ xcb_void_cookie_t xcb_change_pointer_control(
 }
 
 
-static void IN_DeactivateMouse(void)
+void IN_DeactivateMouse(void)
 {
 
     // xcb_void_cookie_t xcb_ungrab_pointer( xcb_connection_t * c, xcb_timestamp_t time );	

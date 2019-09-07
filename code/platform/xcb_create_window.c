@@ -11,7 +11,28 @@
 #include "win_public.h"
 #include "../sys/sys_public.h"
 
-struct xcb_windata_s s_xcb_win;
+struct WinData_s s_xcb_win;
+
+int WinSys_GetWinWidth(void)
+{
+    return s_xcb_win.winWidth;
+}
+
+int WinSys_GetWinHeight(void)
+{
+    return s_xcb_win.winHeight;
+}
+
+int WinSys_IsWinFullscreen(void)
+{
+    return s_xcb_win.isFullScreen;
+}
+
+void* GLimp_GetProcAddress( const char *symbol )
+{
+    //void *sym = glXGetProcAddressARB((const unsigned char *)symbol);
+    return dlsym(s_xcb_win.hGraphicLib, symbol);
+}
 
 static cvar_t* r_mode;				// video mode
 static cvar_t* r_customwidth;

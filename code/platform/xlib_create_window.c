@@ -27,7 +27,6 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 ** must be implemented by the port:
 **
 ** GLimp_EndFrame
-** GLimp_Init
 ** GLimp_Shutdown
 ** GLimp_SetGamma
 **
@@ -116,6 +115,20 @@ cvar_t* r_drawBuffer;
 ///////////////////////////
 WinVars_t glw_state;
 
+int WinSys_GetWinWidth(void)
+{
+    return glw_state.winWidth;
+}
+
+int WinSys_GetWinHeight(void)
+{
+    return glw_state.winHeight;
+}
+
+int WinSys_IsWinFullscreen(void)
+{
+    return glw_state.isFullScreen;
+}
 
 int scrnum;
 
@@ -125,10 +138,6 @@ extern cvar_t *in_dgamouse; // user pref for dga mouse
 static GLXContext ctx = NULL;
 
 Atom wmDeleteEvent = None;
-
-
-qboolean window_created = qfalse;
-
 
 
 ////////////////////////////////////////////////////////////////////////////////////////
@@ -196,102 +205,13 @@ qboolean CL_GetModeInfo( int *width, int *height, int mode, int dw, int dh, qboo
 	return qtrue;
 }
 
-/*
-static void GLimp_DetectAvailableModes(void)
-{
-	int i, j;
-	char buf[ MAX_STRING_CHARS ] = { 0 };
-
-
-	SDL_DisplayMode windowMode;
-    
-	// If a window exists, note its display index
-	if( SDL_window != NULL )
-	{
-		r_displayIndex->integer = SDL_GetWindowDisplayIndex( SDL_window );
-		if( r_displayIndex->integer < 0 )
-		{
-			Com_Printf("SDL_GetWindowDisplayIndex() failed: %s\n", SDL_GetError() );
-            return;
-		}
-	}
-
-	int numSDLModes = SDL_GetNumDisplayModes( r_displayIndex->integer );
-
-	if( SDL_GetWindowDisplayMode( SDL_window, &windowMode ) < 0 || numSDLModes <= 0 )
-	{
-		Com_Printf("Couldn't get window display mode, no resolutions detected: %s\n", SDL_GetError() );
-		return;
-	}
-
-	int numModes = 0;
-	SDL_Rect* modes = SDL_calloc(numSDLModes, sizeof( SDL_Rect ));
-	if ( !modes )
-	{
-        ////////////////////////////////////
-		Com_Error(ERR_FATAL, "Out of memory" );
-        ////////////////////////////////////
-	}
-
-	for( i = 0; i < numSDLModes; i++ )
-	{
-		SDL_DisplayMode mode;
-
-		if( SDL_GetDisplayMode( r_displayIndex->integer, i, &mode ) < 0 )
-			continue;
-
-		if( !mode.w || !mode.h )
-		{
-			Com_Printf( "Display supports any resolution\n" );
-			SDL_free( modes );
-			return;
-		}
-
-		if( windowMode.format != mode.format )
-			continue;
-
-		// SDL can give the same resolution with different refresh rates.
-		// Only list resolution once.
-		for( j = 0; j < numModes; j++ )
-		{
-			if( (mode.w == modes[ j ].w) && (mode.h == modes[ j ].h) )
-				break;
-		}
-
-		if( j != numModes )
-			continue;
-
-		modes[ numModes ].w = mode.w;
-		modes[ numModes ].h = mode.h;
-		numModes++;
-	}
-
-	for( i = 0; i < numModes; i++ )
-	{
-		const char *newModeString = va( "%ux%u ", modes[ i ].w, modes[ i ].h );
-
-		if( strlen( newModeString ) < (int)sizeof( buf ) - strlen( buf ) )
-			Q_strcat( buf, sizeof( buf ), newModeString );
-		else
-			Com_Printf( "Skipping mode %ux%u, buffer too small\n", modes[ i ].w, modes[ i ].h );
-	}
-
-	if( *buf )
-	{
-		buf[ strlen( buf ) - 1 ] = 0;
-		Com_Printf("Available modes: '%s'\n", buf );
-		Cvar_Set( "r_availableModes", buf );
-	}
-	SDL_free( modes );
-}
-*/
 
 static void ModeList_f( void )
 {
 	int i;
 
 	Com_Printf("\n" );
-	for ( i = 0; i < s_numVidModes; i++ )
+	for ( i = 0; i < s_numVidModes; ++i )
 	{
 		Com_Printf( "%s\n", r_vidModes[i].description );
 	}
@@ -303,7 +223,7 @@ static void ModeList_f( void )
 void* GLimp_GetProcAddress( const char *symbol )
 {
     //void *sym = glXGetProcAddressARB((const unsigned char *)symbol);
-    return dlsym(glw_state.OpenGLLib, symbol);
+    return dlsym(glw_state.hGraphicLib, symbol);
 }
 
 
@@ -317,7 +237,7 @@ static void GL_Shutdown( qboolean unloadDLL )
 {
 	Com_Printf( "...shutting down GL\n" );
 
-	if ( glw_state.OpenGLLib && unloadDLL )
+	if ( glw_state.hGraphicLib && unloadDLL )
 	{
 		Com_Printf( "...unloading OpenGL DLL\n" );
 		// 25/09/05 Tim Angus <tim@ngus.net>
@@ -339,9 +259,9 @@ static void GL_Shutdown( qboolean unloadDLL )
 		//	usleep( r_GLlibCoolDownMsec->integer * 1000 );
 		usleep( 250 * 1000 );
 
-		dlclose( glw_state.OpenGLLib );
+		dlclose( glw_state.hGraphicLib );
 
-		glw_state.OpenGLLib = NULL;
+		glw_state.hGraphicLib = NULL;
 	}
 }
 
@@ -349,7 +269,7 @@ static void GL_Shutdown( qboolean unloadDLL )
 
 ////////////////////////////////////////////////////////////////////////////////
 //about glw
-static int GLW_SetMode(glconfig_t *config, int mode, qboolean fullscreen )
+static int GLW_SetMode(int mode, qboolean fullscreen )
 {
 	// these match in the array
 	#define ATTR_RED_IDX 2
@@ -380,8 +300,6 @@ static int GLW_SetMode(glconfig_t *config, int mode, qboolean fullscreen )
 	int actualWidth, actualHeight, actualRate;
 
 
-	window_created = qfalse;
-
 	glw_state.randr_ext = qfalse;
 
 	glw_state.pDisplay = XOpenDisplay( NULL );
@@ -405,13 +323,12 @@ static int GLW_SetMode(glconfig_t *config, int mode, qboolean fullscreen )
 
 	Com_Printf( "...setting mode %d:", mode );
 
-	if ( !CL_GetModeInfo( &config->vidWidth, &config->vidHeight, mode, glw_state.desktopWidth, glw_state.desktopHeight, fullscreen ) )
+	if ( !CL_GetModeInfo( &actualWidth, &actualHeight, mode, glw_state.desktopWidth, glw_state.desktopHeight, fullscreen ) )
 	{
         Com_Error( ERR_FATAL, " invalid mode\n" );
 	}
 
-	actualWidth = config->vidWidth;
-	actualHeight = config->vidHeight;
+
 
 	if ( actualRate )
 		Com_Printf( " %d %d @%iHz\n", actualWidth, actualHeight, actualRate );
@@ -435,23 +352,14 @@ static int GLW_SetMode(glconfig_t *config, int mode, qboolean fullscreen )
 		Com_Printf( "Couldn't get a visual\n" );
 	}
 
-    printf( "Using %d/%d/%d Color bits, %d depth, %d stencil display.\n", 
+    Com_Printf( "Using %d/%d/%d Color bits, %d depth, %d stencil display.\n", 
         attrib[ATTR_RED_IDX], attrib[ATTR_GREEN_IDX], attrib[ATTR_BLUE_IDX],
         attrib[ATTR_DEPTH_IDX], attrib[ATTR_STENCIL_IDX]);
 
-    config->colorBits = 32;
-    config->depthBits = 24;
-    config->stencilBits = 0;
-
-
-    config->vidWidth = glw_state.winWidth = actualWidth;
-    config->vidHeight = glw_state.winHeight = actualHeight;
-    config->displayFrequency = actualRate;
-
-    config->windowAspect = (float) actualWidth / (float) actualHeight;
-    config->isFullscreen = glw_state.isFullScreen = fullscreen;
-
-
+    glw_state.winWidth = actualWidth;
+    glw_state.winHeight = actualHeight;
+    glw_state.isFullScreen = fullscreen; 
+    
 
 	/* window attributes */
 	attr.background_pixel = BlackPixel( glw_state.pDisplay, scrnum );
@@ -497,11 +405,7 @@ static int GLW_SetMode(glconfig_t *config, int mode, qboolean fullscreen )
 	if ( wmDeleteEvent != None )
 		XSetWMProtocols( glw_state.pDisplay, glw_state.hWnd, &wmDeleteEvent, 1 );
 
-    if(glw_state.hWnd)
-	{
-        window_created = qtrue;
-        //GLimp_DetectAvailableModes();
-    }
+
 	if ( fullscreen )
 	{
 		if ( glw_state.randr_active )
@@ -594,12 +498,12 @@ static int GLW_SetMode(glconfig_t *config, int mode, qboolean fullscreen )
 
 static qboolean GLW_LoadOpenGL(const char* dllname)
 {
-	if ( glw_state.OpenGLLib == NULL )
+	if ( glw_state.hGraphicLib == NULL )
 	{
-		glw_state.OpenGLLib = Sys_LoadLibrary( dllname );
-		Com_Printf( "load %s\n", dllname);
+		glw_state.hGraphicLib = dlopen(dllname, RTLD_NOW);
+		Com_Printf( " load %s ...\n", dllname);
 
-        if ( glw_state.OpenGLLib == NULL )
+        if ( glw_state.hGraphicLib == NULL )
 		{
 			Com_Error(ERR_FATAL, "GL_Init: failed to load %s from /etc/ld.so.conf: %s\n", dllname, dlerror());
 		}
@@ -652,79 +556,6 @@ static int qXErrorHandler( Display *dpy, XErrorEvent *ev )
 ///////////////////////////////////////////////////////////////////////////////////////////////
 
 /*
-** GLimp_Init
-**
-** This routine is responsible for initializing the OS specific portions
-** of OpenGL.
-*/
-void GLimp_Init( glconfig_t *config )
-{
-	r_fullscreen = Cvar_Get( "r_fullscreen", "0", CVAR_ARCHIVE | CVAR_LATCH);
-	r_mode = Cvar_Get( "r_mode", "-2", CVAR_ARCHIVE | CVAR_LATCH );
-
-	r_colorbits = Cvar_Get( "r_colorbits", "24", CVAR_ARCHIVE | CVAR_LATCH );
-	r_stencilbits = Cvar_Get( "r_stencilbits", "0", CVAR_ARCHIVE | CVAR_LATCH );
-	r_depthbits = Cvar_Get( "r_depthbits", "24", CVAR_ARCHIVE | CVAR_LATCH ); 
-	r_stereoSeparation = Cvar_Get( "r_stereoSeparation", "64", CVAR_ARCHIVE );
-	r_drawBuffer = Cvar_Get( "r_drawBuffer", "GL_BACK", CVAR_CHEAT );
-    
-	r_customwidth = Cvar_Get( "r_customwidth", "1920", CVAR_ARCHIVE | CVAR_LATCH );
-	r_customheight = Cvar_Get( "r_customheight", "1080", CVAR_ARCHIVE | CVAR_LATCH );
-   	r_swapInterval = Cvar_Get( "r_swapInterval", "0", CVAR_ARCHIVE );
-	r_glDriver = Cvar_Get( "r_glDriver", OPENGL_DRIVER_NAME, CVAR_ARCHIVE | CVAR_LATCH );
-
-
-	vid_xpos = Cvar_Get( "vid_xpos", "3", CVAR_ARCHIVE );
-	vid_ypos = Cvar_Get( "vid_ypos", "22", CVAR_ARCHIVE );
-
-
-	if ( r_swapInterval->integer )
-		setenv( "vblank_mode", "2", 1 );
-	else
-		setenv( "vblank_mode", "1", 1 );
-
-	// load the GL layer
-
-	Cmd_AddCommand( "modelist", ModeList_f );
-
-
-	// set up our custom error handler for X failures
-	XSetErrorHandler( &qXErrorHandler );
-
-	//
-	// load and initialize the specific OpenGL driver
-	//
-	Com_Printf( "...GLW_StartOpenGL...\n" );
-	// load and initialize the specific OpenGL driver
-	if ( !GLW_LoadOpenGL( r_glDriver->string ) )
-	{
-		if ( Q_stricmp( r_glDriver->string, OPENGL_DRIVER_NAME ) != 0 )
-		{
-			// try default driver
-			if ( GLW_LoadOpenGL( OPENGL_DRIVER_NAME ) )
-			{
-				Cvar_Set( "r_glDriver", OPENGL_DRIVER_NAME );
-				r_glDriver->modified = qfalse;
-				return;
-			}
-		}
-
-		Com_Error( ERR_FATAL, "GLW_StartOpenGL() - could not load OpenGL subsystem\n" );
-	}
-
-
-    // create the window and set up the context
-
-    if( 0 != GLW_SetMode( config, r_mode->integer, (r_fullscreen->integer != 0) ))
-    {
-        r_mode->integer = 3;
-        if(0 != GLW_SetMode( config, 3, qfalse ))
-            Com_Error(ERR_FATAL, "Error setting given display modes\n" );
-    }
-}
-
-
-/*
 ** GLimp_EndFrame
 ** 
 ** Responsible for doing a swapbuffers and possibly for other stuff
@@ -742,7 +573,8 @@ void WinSys_EndFrame( void )
 	//
 	// swapinterval stuff
 	//
-	if ( r_swapInterval->modified ) {
+	if ( r_swapInterval->modified )
+    {
 		r_swapInterval->modified = qfalse;
 
 		if ( qglXSwapIntervalEXT ) {
@@ -805,7 +637,6 @@ void GLimp_Shutdown( qboolean unloadDLL )
 	{
 		glw_state.isFullScreen = qfalse;
 	}
-	Cmd_RemoveCommand("modelist");
 
 	GL_Shutdown( unloadDLL );
 }
@@ -911,16 +742,70 @@ void WinSys_Init(void ** pCfg)
 {
     Com_Printf( "... WinSys_Init ...\n" );
 
+	r_fullscreen = Cvar_Get( "r_fullscreen", "0", CVAR_ARCHIVE | CVAR_LATCH);
+	r_mode = Cvar_Get( "r_mode", "-2", CVAR_ARCHIVE | CVAR_LATCH );
+
+	r_colorbits = Cvar_Get( "r_colorbits", "32", CVAR_ARCHIVE | CVAR_LATCH );
+	r_stencilbits = Cvar_Get( "r_stencilbits", "8", CVAR_ARCHIVE | CVAR_LATCH );
+	r_depthbits = Cvar_Get( "r_depthbits", "24", CVAR_ARCHIVE | CVAR_LATCH ); 
+	r_drawBuffer = Cvar_Get( "r_drawBuffer", "GL_BACK", CVAR_CHEAT );
+    
+	r_customwidth = Cvar_Get( "r_customwidth", "1920", CVAR_ARCHIVE | CVAR_LATCH );
+	r_customheight = Cvar_Get( "r_customheight", "1080", CVAR_ARCHIVE | CVAR_LATCH );
+   	r_swapInterval = Cvar_Get( "r_swapInterval", "0", CVAR_ARCHIVE );
+	r_glDriver = Cvar_Get( "r_glDriver", OPENGL_DRIVER_NAME, CVAR_ARCHIVE | CVAR_LATCH );
+
+
+	vid_xpos = Cvar_Get( "vid_xpos", "3", CVAR_ARCHIVE );
+	vid_ypos = Cvar_Get( "vid_ypos", "22", CVAR_ARCHIVE );
+
+	if ( r_swapInterval->integer )
+		setenv( "vblank_mode", "2", 1 );
+	else
+		setenv( "vblank_mode", "1", 1 );
+
+	// load the GL layer
     Cmd_AddCommand( "minimize", WinMinimize_f );
+	Cmd_AddCommand( "modelist", ModeList_f );
+    
+    *pCfg = &glw_state;
 
-    glconfig_t * pConfig = (glconfig_t * )(*pCfg);
+/*
+** Initializing the OS specific portions of OpenGL.
+*/
 
-    // This values force the UI to disable driver selection
-    pConfig->driverType = GLDRV_ICD;
-    pConfig->hardwareType = GLHW_GENERIC;
+	// set up our custom error handler for X failures
+	XSetErrorHandler( &qXErrorHandler );
+
+	//
+	// load and initialize the specific OpenGL driver
+	//
+	// load and initialize the specific OpenGL driver
+	if ( !GLW_LoadOpenGL( r_glDriver->string ) )
+	{
+		if ( Q_stricmp( r_glDriver->string, OPENGL_DRIVER_NAME ) != 0 )
+		{
+			// try default driver
+			if ( GLW_LoadOpenGL( OPENGL_DRIVER_NAME ) )
+			{
+				Cvar_Set( "r_glDriver", OPENGL_DRIVER_NAME );
+				r_glDriver->modified = qfalse;
+				return;
+			}
+		}
+
+		Com_Error( ERR_FATAL, "GLW_StartOpenGL() - could not load OpenGL subsystem\n" );
+	}
 
 
-    GLimp_Init( pConfig );
+    // create the window and set up the context
+
+    if( 0 != GLW_SetMode( r_mode->integer, (r_fullscreen->integer != 0) ))
+    {
+        r_mode->integer = 3;
+        if(0 != GLW_SetMode( 3, qfalse ))
+            Com_Error(ERR_FATAL, "Error setting given display modes\n" );
+    }
 
     IN_Init();   // rcg08312005 moved into glimp.
 }
@@ -929,6 +814,7 @@ void WinSys_Init(void ** pCfg)
 void WinSys_Shutdown(void)
 {
 	Cmd_RemoveCommand( "minimize" );
+    Cmd_RemoveCommand( "modelist" );
 	GLimp_Shutdown( qtrue );
 }
 

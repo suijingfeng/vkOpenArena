@@ -25,7 +25,6 @@ extern void RandR_UpdateMonitor( int x, int y, int w, int h );
 
 extern Atom wmDeleteEvent;
 extern WinVars_t glw_state;
-extern qboolean window_created;
 
 //#define KBD_DBG
 static const char s_keytochar[ 128 ] =
@@ -586,36 +585,36 @@ void Sys_SendKeyEvents( void )
 			Com_QueueEvent( t, SE_KEY, key, qfalse, 0, NULL );
         } break; // case KeyRelease
 
-		case MotionNotify:
-	if ( IN_MouseActive() )
-	{
-		//t = Sys_XTimeToSysTime( event.xkey.time );
-		t = Sys_Milliseconds();
+        case MotionNotify:
+        if ( IN_MouseActive() )
+        {
+            //t = Sys_XTimeToSysTime( event.xkey.time );
+            t = Sys_Milliseconds();
 
 
-		// If it's a center motion, we've just returned from our warp
-		if ( event.xmotion.x == glw_state.winWidth/2 && event.xmotion.y == glw_state.winHeight/2 )
-		{
-			mwx = glw_state.winWidth/2;
-			mwy = glw_state.winHeight/2;
-			if (t - mouseResetTime > MOUSE_RESET_DELAY )
-			{
-				Com_QueueEvent( t, SE_MOUSE, mx, my, 0, NULL );
-			}
-			mx = my = 0;
-			break;
-		}
+            // If it's a center motion, we've just returned from our warp
+            if ( event.xmotion.x == glw_state.winWidth/2 && event.xmotion.y == glw_state.winHeight/2 )
+            {
+                mwx = glw_state.winWidth/2;
+                mwy = glw_state.winHeight/2;
+                if (t - mouseResetTime > MOUSE_RESET_DELAY )
+                {
+                    Com_QueueEvent( t, SE_MOUSE, mx, my, 0, NULL );
+                }
+                mx = my = 0;
+                break;
+            }
 
-		dx = ((int)event.xmotion.x - mwx);
-		dy = ((int)event.xmotion.y - mwy);
-		mx += dx;
-		my += dy;
-		mwx = event.xmotion.x;
-		mwy = event.xmotion.y;
-		dowarp = qtrue;
+            dx = ((int)event.xmotion.x - mwx);
+            dy = ((int)event.xmotion.y - mwy);
+            mx += dx;
+            my += dy;
+            mwx = event.xmotion.x;
+            mwy = event.xmotion.y;
+            dowarp = qtrue;
 
-	} // if ( mouse_active )
-	break;
+        } // if ( mouse_active )
+        break;
 
 		case ButtonPress:
 		case ButtonRelease:
@@ -664,7 +663,7 @@ void Sys_SendKeyEvents( void )
 			win_x = event.xconfigure.x;
 			win_y = event.xconfigure.y;
 			
-			if ( !glw_state.isFullScreen && window_created && !glw_state.isMinimized )
+			if ( !glw_state.isFullScreen && !glw_state.isMinimized )
 			{
 				Cvar_SetValue( "vid_xpos", win_x );
 				Cvar_SetValue( "vid_ypos", win_y );
@@ -679,10 +678,10 @@ void Sys_SendKeyEvents( void )
 		case FocusOut:
 			if ( event.type == FocusIn ) {
 				window_focused = qtrue;
-				Com_DPrintf( "FocusIn\n" );
+				Com_Printf( "FocusIn\n" );
 			} else {
 				window_focused = qfalse;
-				Com_DPrintf( "FocusOut\n" );
+				Com_Printf( "FocusOut\n" );
 			}
 			Key_ClearStates();
 			break;
@@ -711,11 +710,12 @@ void KBD_Close( void )
 }
 
 
-
 void IN_ActivateMouse( void )
 {
 	if ( !mouse_avail || !glw_state.pDisplay || !glw_state.hWnd )
 	{
+        
+        Com_Printf( "mouse_avail Mouse actived. \n" ); 
 		return;
 	}
 
@@ -724,6 +724,8 @@ void IN_ActivateMouse( void )
 		install_mouse_grab();
 		install_kb_grab();
 		mouse_active = qtrue;
+
+        Com_Printf( " Mouse actived. \n" );
 	}
 }
 
@@ -735,9 +737,9 @@ IN_DeactivateMouse
 */
 void IN_DeactivateMouse( void )
 {
-	if ( !mouse_avail || !glw_state.pDisplay || !glw_state.hWnd )
+	if ( mouse_avail == 0 || !glw_state.pDisplay || !glw_state.hWnd )
 	{
-		return;
+ 		return;
 	}
 
 	if ( mouse_active )
@@ -745,12 +747,10 @@ void IN_DeactivateMouse( void )
 		uninstall_mouse_grab();
 		uninstall_kb_grab();
 		mouse_active = qfalse;
+
+        Com_Printf( " Mouse deactived. \n" );
 	}
 }
-
-
-
-
 
 
 
@@ -783,12 +783,13 @@ void IN_Init( void )
 	if ( in_mouse->integer )
 	{
 		mouse_avail = qtrue;
+        Com_Printf( "...mouse available...\n" );
 	}
 	else
 	{
 		mouse_avail = qfalse;
 	}
-
+	
 }
 
 
@@ -805,12 +806,12 @@ void IN_Frame(void)
 	// If not DISCONNECTED (main menu) or ACTIVE (in game), we're loading
 	qboolean loading = ( clc.state != CA_DISCONNECTED && clc.state != CA_ACTIVE );
 
-	if( !cls.glconfig.isFullscreen && ( Key_GetCatcher( ) & KEYCATCH_CONSOLE ) )
+	if( !WinSys_IsWinFullscreen() && ( Key_GetCatcher( ) & KEYCATCH_CONSOLE ) )
 	{
 		// Console is down in windowed mode
 		IN_DeactivateMouse( );
 	}
-	else if( !cls.glconfig.isFullscreen && loading )
+	else if( !WinSys_IsWinFullscreen() && loading )
 	{
 		// Loading in windowed mode
 		IN_DeactivateMouse( );
