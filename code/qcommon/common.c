@@ -2092,7 +2092,8 @@ sysEvent_t Com_GetSystemEvent( void )
 Com_GetRealEvent
 =================
 */
-sysEvent_t	Com_GetRealEvent( void ) {
+sysEvent_t Com_GetRealEvent( void )
+{
 	int			r;
 	sysEvent_t	ev;
 

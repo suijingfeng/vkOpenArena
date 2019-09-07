@@ -658,7 +658,7 @@ void Sys_SendKeyEvents( void )
 
 		case ConfigureNotify:
 			
-			WinMinimize_f();
+			// WinMinimize_f();
 
 			win_x = event.xconfigure.x;
 			win_y = event.xconfigure.y;
@@ -823,6 +823,8 @@ void IN_Frame(void)
 	}
 	else
 		IN_ActivateMouse( );
+
+    Sys_SendKeyEvents();
 
 /*     
 	// Set event time for next frame to earliest possible time an event could happen
