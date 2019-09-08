@@ -133,7 +133,7 @@ int WinSys_IsWinFullscreen(void)
 int scrnum;
 
 
-extern cvar_t *in_dgamouse; // user pref for dga mouse
+// extern cvar_t *in_dgamouse; // user pref for dga mouse
 
 static GLXContext ctx = NULL;
 
