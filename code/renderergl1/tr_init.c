@@ -397,8 +397,8 @@ static void InitOpenGL( void )
             ri.Error(ERR_FATAL, "Get function Addresses failed. \n" );
 
             GLimp_ClearProcAddresses();
-            GLimp_DeleteGLContext();
-            GLimp_DestroyWindow();
+            // GLimp_DeleteGLContext();
+            // GLimp_DestroyWindow();
         }
         else
         {

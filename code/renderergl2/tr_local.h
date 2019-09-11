@@ -48,15 +48,6 @@ QGL_ARB_vertex_array_object_PROCS;
 QGL_EXT_direct_state_access_PROCS;
 #undef GLE
 
-void GLimp_Init(glconfig_t *glConfig, qboolean coreContext);
-void GLimp_Shutdown(void);
-void GLimp_EndFrame(void);
-void GLimp_LogComment(char *comment);
-void GLimp_Minimize(void);
-void GLimp_SetGamma(unsigned char red[256], unsigned char green[256], unsigned char blue[256]);
-void* GLimp_GetProcAddress(const char* fun);
-void GLimp_DeleteGLContext(void);
-void GLimp_DestroyWindow(void);
 
 
 #define GL_INDEX_TYPE		GL_UNSIGNED_INT
