@@ -228,7 +228,7 @@ void R_Init( void )
         void * pWinContext;
 
         // Create window.
-        ri.WinSysInit(&pWinContext);
+        ri.WinSysInit(&pWinContext, 1);
 
         vk_initialize(pWinContext);
 

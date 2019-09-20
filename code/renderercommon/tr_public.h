@@ -164,7 +164,7 @@ typedef struct {
 
 
 	// window systems impl
-	void (* WinSysInit)(void ** pContext);
+	void (* WinSysInit)(void ** pContext, int type);
 	void (* WinSysShutdown)(void);
 	void (* WinSysEndFrame)(void);
 	void (* WinSysMinimize)(void);
@@ -192,9 +192,9 @@ typedef struct {
 // If the module can't init to a valid rendering state, NULL will be returned.
 
 #ifdef USE_RENDERER_DLOPEN
-typedef	void (QDECL *GetRefAPI_t) (int apiVersion, refimport_t * const rimp, refexport_t* const rexp);
+typedef	void (QDECL *GetRefAPI_t) (int apiVersion, const refimport_t * const rimp, refexport_t* const rexp);
 #else
-void GetRefAPI(int apiVersion, refimport_t * const rimp, refexport_t* const rexp);
+void GetRefAPI(int apiVersion, const refimport_t * const rimp, refexport_t* const rexp);
 #endif
 
 #endif	// __TR_PUBLIC_H

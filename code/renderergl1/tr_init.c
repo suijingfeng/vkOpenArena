@@ -367,7 +367,7 @@ static void InitOpenGL( void )
 
 		void * pCfg = NULL;
             			
-		ri.WinSysInit(&pCfg);
+		ri.WinSysInit(&pCfg, 0);
 
 
         pConfig->stereoEnabled = qfalse;
@@ -1397,7 +1397,6 @@ void RE_BeginRegistration( glconfig_t * const pConfig )
 
 	// *glconfigOut = glConfig;
 
-
 	pConfig->stereoEnabled = qfalse;
 	pConfig->smpActive = qfalse;
 	pConfig->displayFrequency = 60;
@@ -1418,8 +1417,6 @@ void RE_BeginRegistration( glconfig_t * const pConfig )
     pConfig->vidHeight = ri.GetWinHeight();
     pConfig->isFullscreen = ri.IsWinFullscreen();
     pConfig->windowAspect = (float) pConfig->vidWidth / (float) pConfig->vidHeight;
-
-
 
 
 	R_IssuePendingRenderCommands();

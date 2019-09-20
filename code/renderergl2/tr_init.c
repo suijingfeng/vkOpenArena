@@ -728,7 +728,7 @@ static void InitOpenGL( void )
 		// GLimp_Init(&glConfig, qtrue);
 		
 		void * pContex = NULL;
-		ri.WinSysInit(&pContex);
+		ri.WinSysInit(&pContex, 0);
 
         pConfig->stereoEnabled = qfalse;
         pConfig->smpActive = qfalse;

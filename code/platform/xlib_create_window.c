@@ -20,15 +20,9 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 ===========================================================================
 */
 /*
-** GLW_IMP.C
-**
 ** This file contains ALL Linux specific stuff having to do with the
 ** OpenGL refresh.  When a port is being made the following functions
 ** must be implemented by the port:
-**
-** GLimp_EndFrame
-** GLimp_Shutdown
-** GLimp_SetGamma
 **
 */
 
@@ -437,8 +431,6 @@ static int GLW_SetMode(int mode, qboolean fullscreen )
 
 
 /*
-** GLW_LoadOpenGL
-**
 ** GLimp_win.c internal function that that attempts to load and use a specific OpenGL DLL.
 **
 **                 https://www.khronos.org/registry/OpenGL/ABI/
@@ -546,10 +538,10 @@ static int qXErrorHandler( Display *dpy, XErrorEvent *ev )
 {
 	static char buf[1024];
 	XGetErrorText( dpy, ev->error_code, buf, sizeof( buf ) );
-	printf( "X Error of failed request: %s\n", buf) ;
-	printf( "  Major opcode of failed request: %d\n", ev->request_code );
-	printf( "  Minor opcode of failed request: %d\n", ev->minor_code );
-	printf( "  Serial number of failed request: %d\n", (int)ev->serial );
+	Com_Printf( "X Error of failed request: %s\n", buf) ;
+	Com_Printf( "  Major opcode of failed request: %d\n", ev->request_code );
+	Com_Printf( "  Minor opcode of failed request: %d\n", ev->minor_code );
+	Com_Printf( "  Serial number of failed request: %d\n", (int)ev->serial );
 	return 0;
 }
 
@@ -738,9 +730,14 @@ void WinMinimize_f(void)
     Com_Printf( " gw_minimized: %i\n", glw_state.isMinimized );
 }
 
-void WinSys_Init(void ** pCfg)
+/*
+type 0: OpenGL
+type 1: Vulkan
+type 2: directx
+*/
+void WinSys_Init(void ** pCfg, int type)
 {
-    Com_Printf( "... WinSys_Init ...\n" );
+    Com_Printf( "... Window System Specific Init ...\n" );
 
 	r_fullscreen = Cvar_Get( "r_fullscreen", "0", CVAR_ARCHIVE | CVAR_LATCH);
 	r_mode = Cvar_Get( "r_mode", "-2", CVAR_ARCHIVE | CVAR_LATCH );
@@ -777,25 +774,33 @@ void WinSys_Init(void ** pCfg)
 	// set up our custom error handler for X failures
 	XSetErrorHandler( &qXErrorHandler );
 
-	//
-	// load and initialize the specific OpenGL driver
-	//
-	// load and initialize the specific OpenGL driver
-	if ( !GLW_LoadOpenGL( r_glDriver->string ) )
-	{
-		if ( Q_stricmp( r_glDriver->string, OPENGL_DRIVER_NAME ) != 0 )
-		{
-			// try default driver
-			if ( GLW_LoadOpenGL( OPENGL_DRIVER_NAME ) )
-			{
-				Cvar_Set( "r_glDriver", OPENGL_DRIVER_NAME );
-				r_glDriver->modified = qfalse;
-				return;
-			}
-		}
 
-		Com_Error( ERR_FATAL, "GLW_StartOpenGL() - could not load OpenGL subsystem\n" );
-	}
+    if(type == 0)
+    {
+        //
+	    // load and initialize the specific OpenGL driver
+	    //
+        if ( !GLW_LoadOpenGL( r_glDriver->string ) )
+        {
+            if ( Q_stricmp( r_glDriver->string, OPENGL_DRIVER_NAME ) != 0 )
+            {
+                // try default driver
+                if ( GLW_LoadOpenGL( OPENGL_DRIVER_NAME ) )
+                {
+                    Cvar_Set( "r_glDriver", OPENGL_DRIVER_NAME );
+                    r_glDriver->modified = qfalse;
+                    return;
+                }
+            }
+
+            Com_Error( ERR_FATAL, "GLW_StartOpenGL() - could not load OpenGL subsystem\n" );
+        }
+    }
+    else if(type == 1)
+    {
+        // vulkan part
+    
+    }
 
 
     // create the window and set up the context
