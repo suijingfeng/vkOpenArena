@@ -371,8 +371,12 @@ void RE_BeginRegistration(glconfig_t * const pConfig)
 	pConfig->driverType = GLDRV_ICD;
 	pConfig->hardwareType = GLHW_GENERIC;
 
-    pConfig->vidWidth = vk_getWinWidth();
-    pConfig->vidHeight = vk_getWinHeight();
+    // pConfig->vidWidth = vk_getWinWidth();
+    // pConfig->vidHeight = vk_getWinHeight();
+
+    pConfig->vidWidth = ri.GetWinWidth();
+    pConfig->vidHeight = ri.GetWinHeight();
+
 
     glConfig_FillString();
 

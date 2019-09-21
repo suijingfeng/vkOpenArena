@@ -341,8 +341,8 @@ static int GLW_SetMode(int mode, qboolean fullscreen, int type )
         ctx = qglXCreateContext( glw_state.pDisplay, visinfo, NULL, True );
     
         Com_Printf( "... glX Create context . \n");
-
     }
+    
     XSync( glw_state.pDisplay, False );
 
 	/* GH: Free the visinfo after we're done with it */
