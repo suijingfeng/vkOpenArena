@@ -33,22 +33,20 @@ typedef struct WinVars_s {
 	
 	HWND		hWnd; // main window
 	HINSTANCE	hInstance;
-    int         screenIdx;
-
-    int			winWidth;
-	int			winHeight;
-	int			desktopWidth;
-	int			desktopHeight;
-	int			isFullScreen;
-    int			isMinimized;
-    int         winStyle;
-
-    int         activeApp;
+	int		screenIdx;
+	int		winWidth;
+	int		winHeight;
+	int		desktopWidth;
+	int		desktopHeight;
+	int		isFullScreen;
+	int		isMinimized;
+	int		winStyle;
+	int		activeApp;
 	OSVERSIONINFO	osversion;
 
 	// when we get a windows message, we store the time off so keyboard processing
 	// can know the exact time of an event
-	unsigned		sysMsgTime;
+	unsigned	sysMsgTime;
 } WinVars_t;
 
 #else
@@ -69,11 +67,12 @@ typedef struct WinVars_s {
   #elif defined(USING_XLIB)
         Display* pDisplay;
         Window  hWnd;
+	Window root;
   #endif
         int	monitorCount;
         int	screenIdx;
-        int desktop_x;
-        int desktop_y;
+        int	desktop_x;
+        int	desktop_y;
         int	winWidth;
         int	winHeight;
         int	desktopWidth;
@@ -82,10 +81,10 @@ typedef struct WinVars_s {
         int	isMinimized;
         int     winStyle;
         int	activeApp;
-	int gammaSet;
-        int randr_ext;
-        int randr_active;
-        int randr_gamma;
+	int	gammaSet;
+        int	randr_ext;
+        int	randr_active;
+        int	randr_gamma;
         unsigned int sysMsgTime;
         void * hGraphicLib; // instance of OpenGL library
 

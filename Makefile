@@ -2053,6 +2053,8 @@ else
     $(B)/client/xcb_keysyms.o \
     $(B)/client/xcb_create_window.o 
   endif
+
+  Q3OBJ +=  $(B)/client/WinSys_Common.o
 endif
 
 

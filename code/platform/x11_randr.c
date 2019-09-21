@@ -563,6 +563,7 @@ void RandR_Done( void )
 	glw_state.randr_gamma = qfalse;
 }
 
+
 qboolean RandR_Init( int x, int y, int w, int h )
 {
 	int event_base, error_base;

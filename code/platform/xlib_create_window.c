@@ -61,6 +61,8 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #include "win_public.h"
 #include "x11_randr.h"
 
+#include "WinSys_Common.h"
+
 #define OPENGL_DRIVER_NAME	"libGL.so.1"
 
 #define QGL_LinX11_PROCS \
@@ -89,8 +91,7 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
 static cvar_t* r_fullscreen;
 
-static cvar_t* r_customwidth;
-static cvar_t* r_customheight;
+
 
 static cvar_t* r_swapInterval;
 static cvar_t* r_mode;
@@ -109,6 +110,8 @@ cvar_t* r_drawBuffer;
 ///////////////////////////
 WinVars_t glw_state;
 
+
+
 int WinSys_GetWinWidth(void)
 {
     return glw_state.winWidth;
@@ -124,8 +127,6 @@ int WinSys_IsWinFullscreen(void)
     return glw_state.isFullScreen;
 }
 
-int scrnum;
-
 
 // extern cvar_t *in_dgamouse; // user pref for dga mouse
 
@@ -134,92 +135,12 @@ static GLXContext ctx = NULL;
 Atom wmDeleteEvent = None;
 
 
-////////////////////////////////////////////////////////////////////////////////////////
-typedef struct vidmode_s
-{
-	const char	*description;
-	int			width, height;
-	float		pixelAspect;		// pixel width / height
-} vidmode_t;
-
-static const vidmode_t r_vidModes[] = {
-	{ "Mode  0: 320x240",		320,	240,	1 },
-	{ "Mode  1: 400x300",		400,	300,	1 },
-	{ "Mode  2: 512x384",		512,	384,	1 },
-	{ "Mode  3: 640x480 (480p)",	640,	480,	1 },
-	{ "Mode  4: 800x600",		800,	600,	1 },
-	{ "Mode  5: 960x720",		960,	720,	1 },
-	{ "Mode  6: 1024x768",		1024,	768,	1 },
-	{ "Mode  7: 1152x864",		1152,	864,	1 },
-	{ "Mode  8: 1280x1024",		1280,	1024,	1 },
-	{ "Mode  9: 1600x1200",		1600,	1200,	1 },
-	{ "Mode 10: 2048x1536",		2048,	1536,	1 },
-	{ "Mode 11: 856x480",		856,	480,	1 },		// Q3 MODES END HERE AND EXTENDED MODES BEGIN
-	{ "Mode 12: 1280x720 (720p)",	1280,	720,	1 },
-	{ "Mode 13: 1280x768",		1280,	768,	1 },
-	{ "Mode 14: 1280x800",		1280,	800,	1 },
-	{ "Mode 15: 1280x960",		1280,	960,	1 },
-	{ "Mode 16: 1360x768",		1360,	768,	1 },
-	{ "Mode 17: 1366x768",		1366,	768,	1 }, // yes there are some out there on that extra 6
-	{ "Mode 18: 1360x1024",		1360,	1024,	1 },
-	{ "Mode 19: 1400x1050",		1400,	1050,	1 },
-	{ "Mode 20: 1400x900",		1400,	900,	1 },
-	{ "Mode 21: 1600x900",		1600,	900,	1 },
-	{ "Mode 22: 1680x1050",		1680,	1050,	1 },
-	{ "Mode 23: 1920x1080 (1080p)",	1920,	1080,	1 },
-	{ "Mode 24: 1920x1200",		1920,	1200,	1 },
-	{ "Mode 25: 1920x1440",		1920,	1440,	1 },
-	{ "Mode 26: 2560x1600",		2560,	1600,	1 },
-	{ "Mode 27: 3840x2160 (4K)",	3840,	2160,	1 }
-};
-static const int s_numVidModes = ARRAY_LEN( r_vidModes );
-
-qboolean CL_GetModeInfo( int *width, int *height, int mode, int dw, int dh, qboolean fullscreen )
-{
-	if ( mode < -2 )
-		return qfalse;
-
-	if ( mode >= s_numVidModes )
-		return qfalse;
-
-	// fix unknown desktop resolution
-	if ( mode == -2 && (dw == 0 || dh == 0) )
-		mode = 3;
-
-	if ( mode == -2 ) { // desktop resolution
-		*width = dw;
-		*height = dh;
-	} else if ( mode == -1 ) { // custom resolution
-		*width = r_customwidth->integer;
-		*height = r_customheight->integer;
-	} else { // predefined resolution
-		*width  = r_vidModes[ mode ].width;
-		*height = r_vidModes[ mode ].height;
-	}
-	return qtrue;
-}
-
-
-static void ModeList_f( void )
-{
-	int i;
-
-	Com_Printf("\n" );
-	for ( i = 0; i < s_numVidModes; ++i )
-	{
-		Com_Printf( "%s\n", r_vidModes[i].description );
-	}
-	Com_Printf("\n" );
-}
-
-////////////////////////////////////////////////////////////////////////////////////////
 
 void* GLimp_GetProcAddress( const char *symbol )
 {
     //void *sym = glXGetProcAddressARB((const unsigned char *)symbol);
     return dlsym(glw_state.hGraphicLib, symbol);
 }
-
 
 
 /*
@@ -265,6 +186,35 @@ static void GL_Shutdown( qboolean unloadDLL )
 //about glw
 static int GLW_SetMode(int mode, qboolean fullscreen )
 {
+	XSizeHints sizehints;
+	int actualWidth, actualHeight, actualRate;
+
+
+	int scrnum = DefaultScreen( glw_state.pDisplay );
+	glw_state.root = RootWindow( glw_state.pDisplay, scrnum );
+
+	// Init xrandr and get desktop resolution if available
+	RandR_Init( vid_xpos->integer, vid_ypos->integer, 640, 480 );
+
+
+	Com_Printf( "...setting mode %d:", mode );
+
+	if ( !CL_GetModeInfo( &actualWidth, &actualHeight, mode, glw_state.desktopWidth, glw_state.desktopHeight, fullscreen ) )
+	{
+        Com_Error( ERR_FATAL, " invalid mode\n" );
+	}
+
+
+	if ( actualRate )
+		Com_Printf( " %d %d @%iHz\n", actualWidth, actualHeight, actualRate );
+	else
+		Com_Printf( " %d %d\n", actualWidth, actualHeight );
+
+	if ( fullscreen ) // try randr first
+	{
+		RandR_SetMode( &actualWidth, &actualHeight, &actualRate );
+	}
+
 	// these match in the array
 	#define ATTR_RED_IDX 2
 	#define ATTR_GREEN_IDX 4
@@ -283,64 +233,15 @@ static int GLW_SetMode(int mode, qboolean fullscreen )
 		GLX_STENCIL_SIZE, 1,    // 10, 11
 		None
 	};
+	
 
-
-	Window root;
-	XVisualInfo *visinfo;
-
-	XSetWindowAttributes attr;
-	XSizeHints sizehints;
-	unsigned long mask;
-	int actualWidth, actualHeight, actualRate;
-
-
-	glw_state.randr_ext = qfalse;
-
-	glw_state.pDisplay = XOpenDisplay( NULL );
-
-	if ( glw_state.pDisplay == NULL )
-	{
-		Com_Printf( "Couldn't open the X display\n" );
-	}
-
-	scrnum = DefaultScreen( glw_state.pDisplay );
-	root = RootWindow( glw_state.pDisplay, scrnum );
-
-	// Init xrandr and get desktop resolution if available
-	RandR_Init( vid_xpos->integer, vid_ypos->integer, 640, 480 );
-
-	if ( !glw_state.randr_ext )
-	{
-		Com_Printf( " randr_ext failed. \n" );
-	}
-
-
-	Com_Printf( "...setting mode %d:", mode );
-
-	if ( !CL_GetModeInfo( &actualWidth, &actualHeight, mode, glw_state.desktopWidth, glw_state.desktopHeight, fullscreen ) )
-	{
-        Com_Error( ERR_FATAL, " invalid mode\n" );
-	}
-
-
-
-	if ( actualRate )
-		Com_Printf( " %d %d @%iHz\n", actualWidth, actualHeight, actualRate );
-	else
-		Com_Printf( " %d %d\n", actualWidth, actualHeight );
-
-	if ( fullscreen ) // try randr first
-	{
-		RandR_SetMode( &actualWidth, &actualHeight, &actualRate );
-	}
-
-
-    attrib[ATTR_DEPTH_IDX] = 24; // default to 24 depth
-    attrib[ATTR_STENCIL_IDX] = 0;
+	attrib[ATTR_DEPTH_IDX] = 24; // default to 24 depth
+    attrib[ATTR_STENCIL_IDX] = 8;
     attrib[ATTR_RED_IDX] = 8;
     attrib[ATTR_GREEN_IDX] = 8;
     attrib[ATTR_BLUE_IDX] = 8;
-    visinfo = qglXChooseVisual( glw_state.pDisplay, scrnum, attrib );
+    
+	XVisualInfo * visinfo = qglXChooseVisual( glw_state.pDisplay, scrnum, attrib );
 	if ( !visinfo )
 	{
 		Com_Printf( "Couldn't get a visual\n" );
@@ -350,35 +251,37 @@ static int GLW_SetMode(int mode, qboolean fullscreen )
         attrib[ATTR_RED_IDX], attrib[ATTR_GREEN_IDX], attrib[ATTR_BLUE_IDX],
         attrib[ATTR_DEPTH_IDX], attrib[ATTR_STENCIL_IDX]);
 
+
     glw_state.winWidth = actualWidth;
     glw_state.winHeight = actualHeight;
     glw_state.isFullScreen = fullscreen; 
     
 
 	/* window attributes */
+	XSetWindowAttributes attr;
+
 	attr.background_pixel = BlackPixel( glw_state.pDisplay, scrnum );
 	attr.border_pixel = 0;
-	attr.colormap = XCreateColormap( glw_state.pDisplay, root, visinfo->visual, AllocNone );
+	attr.colormap = XCreateColormap( glw_state.pDisplay, glw_state.root, visinfo->visual, AllocNone );
 	attr.event_mask = ( 
             KeyPressMask | KeyReleaseMask | 
             ButtonPressMask | ButtonReleaseMask | PointerMotionMask | ButtonMotionMask |
             VisibilityChangeMask | StructureNotifyMask | FocusChangeMask );
 
+	unsigned long mask = fullscreen ? 
+			( CWBackPixel | CWColormap | CWEventMask | CWSaveUnder | CWBackingStore | CWOverrideRedirect ) : 
+			( CWBackPixel | CWColormap | CWEventMask | CWBorderPixel );
+
+
 	if ( fullscreen )
 	{
-		mask = CWBackPixel | CWColormap | CWSaveUnder | CWBackingStore |
-			CWEventMask | CWOverrideRedirect;
 		attr.override_redirect = True;
 		attr.backing_store = NotUseful;
 		attr.save_under = False;
 	}
-	else
-	{
-		mask = CWBackPixel | CWBorderPixel | CWColormap | CWEventMask;
-	}
 
-	glw_state.hWnd = XCreateWindow( glw_state.pDisplay, root, 0, 0,
-		actualWidth, actualHeight,
+	glw_state.hWnd = XCreateWindow( glw_state.pDisplay, glw_state.root, 
+		0, 0, actualWidth, actualHeight,
 		0, visinfo->depth, InputOutput,
 		visinfo->visual, mask, &attr );
 
@@ -417,13 +320,6 @@ static int GLW_SetMode(int mode, qboolean fullscreen )
 
 	/* GH: Free the visinfo after we're done with it */
 	XFree( visinfo );
-
-	qglXMakeCurrent( glw_state.pDisplay, glw_state.hWnd, ctx );
-
-
-	Key_ClearStates();
-
-	XSetInputFocus( glw_state.pDisplay, glw_state.hWnd, RevertToParent, CurrentTime );
 
 	return 0;
 }
@@ -747,8 +643,7 @@ void WinSys_Init(void ** pCfg, int type)
 	r_depthbits = Cvar_Get( "r_depthbits", "24", CVAR_ARCHIVE | CVAR_LATCH ); 
 	r_drawBuffer = Cvar_Get( "r_drawBuffer", "GL_BACK", CVAR_CHEAT );
     
-	r_customwidth = Cvar_Get( "r_customwidth", "1920", CVAR_ARCHIVE | CVAR_LATCH );
-	r_customheight = Cvar_Get( "r_customheight", "1080", CVAR_ARCHIVE | CVAR_LATCH );
+
    	r_swapInterval = Cvar_Get( "r_swapInterval", "0", CVAR_ARCHIVE );
 	r_glDriver = Cvar_Get( "r_glDriver", OPENGL_DRIVER_NAME, CVAR_ARCHIVE | CVAR_LATCH );
 
@@ -761,15 +656,16 @@ void WinSys_Init(void ** pCfg, int type)
 	else
 		setenv( "vblank_mode", "1", 1 );
 
-	// load the GL layer
+	WinSys_ConstructDislayModes();
+
     Cmd_AddCommand( "minimize", WinMinimize_f );
-	Cmd_AddCommand( "modelist", ModeList_f );
     
     *pCfg = &glw_state;
 
 /*
-** Initializing the OS specific portions of OpenGL.
+** Initializing the OS specific portions of OpenGL / vulkan.
 */
+	glw_state.randr_ext = qfalse;
 
 	// set up our custom error handler for X failures
 	XSetErrorHandler( &qXErrorHandler );
@@ -802,15 +698,50 @@ void WinSys_Init(void ** pCfg, int type)
     
     }
 
+	// To open a connection to the X server that controls a display
+	// char *display_name: Specifies the hardware display name, 
+	// which determines the display and communications domain to be used. 
+	// On a POSIX-conformant system, if the display_name is NULL, 
+	// it defaults to the value of the DISPLAY environment variable.
+	//
+	// The encoding and interpretation of the display name is implementation dependent.
+	// Strings in the Host Portable Character Encoding are supported; support for other
+	// characters is implementation dependent. On POSIX-conformant systems, the display
+	// name or DISPLAY environment variable can be a string in the format:
+	//
+	// hostname:number.screen_number
+	//
+	// hostname: Specifies the name of the host machine on which the display is physically attached.
+	// You follow the hostname with either a single colon (:) or a double colon (::). 
+	//
+	// number : Specifies the number of the display server on that host machine. You may optionally 
+	// follow this display number with a period (.). A single CPU can have more than one display. 
+	// Multiple displays are usually numbered starting with zero. 
+	
+	glw_state.pDisplay = XOpenDisplay( NULL );
+
+	if ( glw_state.pDisplay == NULL )
+	{
+		Com_Printf( " Couldn't open the X display. \n" );
+	}
 
     // create the window and set up the context
 
     if( 0 != GLW_SetMode( r_mode->integer, (r_fullscreen->integer != 0) ))
     {
-        r_mode->integer = 3;
-        if(0 != GLW_SetMode( 3, qfalse ))
-            Com_Error(ERR_FATAL, "Error setting given display modes\n" );
+		Com_Error(ERR_FATAL, "Error setting given display modes\n" );
     }
+
+
+    if(type == 0)
+	{
+		qglXMakeCurrent( glw_state.pDisplay, glw_state.hWnd, ctx );
+	}
+
+	Key_ClearStates();
+
+	XSetInputFocus( glw_state.pDisplay, glw_state.hWnd, RevertToParent, CurrentTime );
+
 
     IN_Init();   // rcg08312005 moved into glimp.
 }
@@ -819,7 +750,7 @@ void WinSys_Init(void ** pCfg, int type)
 void WinSys_Shutdown(void)
 {
 	Cmd_RemoveCommand( "minimize" );
-    Cmd_RemoveCommand( "modelist" );
+	WinSys_DestructDislayModes( );
 	GLimp_Shutdown( qtrue );
 }
 
