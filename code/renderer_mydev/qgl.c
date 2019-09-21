@@ -275,7 +275,7 @@ static void* GL_GetProcAddressImpl( const char *symbol )
 ** operating systems we need to do the right thing, whatever that
 ** might be.
 */
-qboolean qglInit( void )
+int qglInit( void )
 {
 	ri.Printf( PRINT_ALL, "...initializing QGL\n" );
 	const char *dllname = OPENGL_DLL_NAME;

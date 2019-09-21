@@ -129,8 +129,8 @@ extern void (APIENTRY * qglXSwapBuffers) (Display *dpy, GLXDrawable drawable );
 #endif
 */
 
-void qglEnableLogging( qboolean enable );
-qboolean qglInit(void);
+
+int qglInit(void);
 void qglDumb(void);
 
 #endif
