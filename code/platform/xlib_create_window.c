@@ -28,10 +28,7 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
 #include <termios.h>
 #include <sys/ioctl.h>
-#ifdef __linux__
-  #include <sys/stat.h>
-  #include <sys/vt.h>
-#endif
+
 #include <stdarg.h>
 #include <stdio.h>
 #include <signal.h>
@@ -90,8 +87,6 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
 
 static cvar_t* r_fullscreen;
-
-
 
 static cvar_t* r_swapInterval;
 static cvar_t* r_mode;
@@ -184,7 +179,7 @@ static void GL_Shutdown( qboolean unloadDLL )
 
 ////////////////////////////////////////////////////////////////////////////////
 //about glw
-static int GLW_SetMode(int mode, qboolean fullscreen )
+static int GLW_SetMode(int mode, qboolean fullscreen, int type )
 {
 	XSizeHints sizehints;
 	int actualWidth, actualHeight, actualRate;
@@ -240,16 +235,32 @@ static int GLW_SetMode(int mode, qboolean fullscreen )
     attrib[ATTR_RED_IDX] = 8;
     attrib[ATTR_GREEN_IDX] = 8;
     attrib[ATTR_BLUE_IDX] = 8;
-    
-	XVisualInfo * visinfo = qglXChooseVisual( glw_state.pDisplay, scrnum, attrib );
-	if ( !visinfo )
-	{
-		Com_Printf( "Couldn't get a visual\n" );
-	}
 
-    Com_Printf( "Using %d/%d/%d Color bits, %d depth, %d stencil display.\n", 
-        attrib[ATTR_RED_IDX], attrib[ATTR_GREEN_IDX], attrib[ATTR_BLUE_IDX],
-        attrib[ATTR_DEPTH_IDX], attrib[ATTR_STENCIL_IDX]);
+    XVisualInfo * visinfo = NULL;
+    if(type == 0)
+    {
+        // OpenGL case
+	    visinfo = qglXChooseVisual( glw_state.pDisplay, scrnum, attrib );
+	    
+        if ( !visinfo )
+	    {
+		    Com_Printf( "Couldn't get a visual\n" );
+	    }
+
+        Com_Printf( "Using %d/%d/%d Color bits, %d depth, %d stencil display.\n", 
+            attrib[ATTR_RED_IDX], attrib[ATTR_GREEN_IDX], attrib[ATTR_BLUE_IDX],
+            attrib[ATTR_DEPTH_IDX], attrib[ATTR_STENCIL_IDX]);
+    }
+    else if(type == 1)
+    {
+        int numberOfVisuals;
+        XVisualInfo vInfoTemplate = {};
+        vInfoTemplate.screen = DefaultScreen(glw_state.pDisplay);
+        // vulkan case
+        visinfo = XGetVisualInfo(glw_state.pDisplay, VisualScreenMask, &vInfoTemplate, &numberOfVisuals);
+
+        Com_Printf( "... numberOfVisuals: %d \n", numberOfVisuals);
+    }
 
 
     glw_state.winWidth = actualWidth;
@@ -262,8 +273,13 @@ static int GLW_SetMode(int mode, qboolean fullscreen )
 
 	attr.background_pixel = BlackPixel( glw_state.pDisplay, scrnum );
 	attr.border_pixel = 0;
+
+    // The XCreateColormap() function creates a colormap of the specified visual type for the screen
+    // on which the specified window resides and returns the colormap ID associated with it. Note that
+    // the specified window is only used to determine the screen. 
 	attr.colormap = XCreateColormap( glw_state.pDisplay, glw_state.root, visinfo->visual, AllocNone );
-	attr.event_mask = ( 
+	
+    attr.event_mask = ( 
             KeyPressMask | KeyReleaseMask | 
             ButtonPressMask | ButtonReleaseMask | PointerMotionMask | ButtonMotionMask |
             VisibilityChangeMask | StructureNotifyMask | FocusChangeMask );
@@ -285,7 +301,11 @@ static int GLW_SetMode(int mode, qboolean fullscreen )
 		0, visinfo->depth, InputOutput,
 		visinfo->visual, mask, &attr );
 
+
 	XStoreName( glw_state.pDisplay, glw_state.hWnd, CLIENT_WINDOW_TITLE );
+
+    Com_Printf( "... XCreateWindow created. \n");
+
 
 	/* GH: Don't let the window be resized */
 	sizehints.flags = PMinSize | PMaxSize;
@@ -315,8 +335,15 @@ static int GLW_SetMode(int mode, qboolean fullscreen )
 
 	XFlush( glw_state.pDisplay );
 	XSync( glw_state.pDisplay, False );
-	ctx = qglXCreateContext( glw_state.pDisplay, visinfo, NULL, True );
-	XSync( glw_state.pDisplay, False );
+	
+    if(type == 0)
+    {
+        ctx = qglXCreateContext( glw_state.pDisplay, visinfo, NULL, True );
+    
+        Com_Printf( "... glX Create context . \n");
+
+    }
+    XSync( glw_state.pDisplay, False );
 
 	/* GH: Free the visinfo after we're done with it */
 	XFree( visinfo );
@@ -727,7 +754,7 @@ void WinSys_Init(void ** pCfg, int type)
 
     // create the window and set up the context
 
-    if( 0 != GLW_SetMode( r_mode->integer, (r_fullscreen->integer != 0) ))
+    if( 0 != GLW_SetMode( r_mode->integer, (r_fullscreen->integer != 0), type ))
     {
 		Com_Error(ERR_FATAL, "Error setting given display modes\n" );
     }
