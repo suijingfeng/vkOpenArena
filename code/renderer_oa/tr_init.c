@@ -521,19 +521,21 @@ static void InitOpenGL(void)
 
 	if ( glConfig.vidWidth == 0 )
 	{
-        GLimp_Init(&glConfig, qfalse);
+		void * pCfg = NULL;
+            			
+		ri.WinSysInit(&pCfg, 0);
         
         if ( !GLimp_GetProcAddresses() )
         {
             ri.Error(ERR_FATAL, "GLimp_GetProcAddresses() failed\n" );
             GLimp_ClearProcAddresses();
-            GLimp_DeleteGLContext();
-            GLimp_DestroyWindow();
+ 
         }
 
         qglClearColor( 1, 0, 0, 1 );
         qglClear( GL_COLOR_BUFFER_BIT );
-        GLimp_EndFrame();
+        
+        ri.WinSysEndFrame();
         
         // OpenGL driver constants
         qglGetIntegerv( GL_MAX_TEXTURE_SIZE, &glConfig.maxTextureSize );
@@ -1087,7 +1089,6 @@ static void R_Register( void )
 	ri.Cmd_AddCommand( "screenshot", R_ScreenShot_f );
 	ri.Cmd_AddCommand( "screenshotJPEG", R_ScreenShotJPEG_f );
 	ri.Cmd_AddCommand( "gfxinfo", GfxInfo_f );
-	ri.Cmd_AddCommand( "minimize", GLimp_Minimize );
 }
 
 
@@ -1457,8 +1458,6 @@ void RE_Shutdown( qboolean destroyWindow )
 	ri.Cmd_RemoveCommand("shaderlist");
 	ri.Cmd_RemoveCommand("skinlist");
 	ri.Cmd_RemoveCommand("gfxinfo");
-	ri.Cmd_RemoveCommand("modelist" );
-	ri.Cmd_RemoveCommand("minimize");
 
 	if ( tr.registered )
     {
@@ -1471,7 +1470,7 @@ void RE_Shutdown( qboolean destroyWindow )
 	// shut down platform specific OpenGL stuff
 	if( destroyWindow )
     {
-		GLimp_Shutdown();
+		ri.WinSysShutdown();
 
 		memset(&glConfig, 0, sizeof( glConfig ));
 		memset(&glState, 0, sizeof( glState ));

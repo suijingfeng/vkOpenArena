@@ -471,8 +471,6 @@ static int qXErrorHandler( Display *dpy, XErrorEvent *ev )
 ///////////////////////////////////////////////////////////////////////////////////////////////
 
 /*
-** GLimp_EndFrame
-** 
 ** Responsible for doing a swapbuffers and possibly for other stuff
 ** as yet to be determined.  Probably better not to make this a GLimp
 ** function and instead do a call to GLimp_SwapBuffers.

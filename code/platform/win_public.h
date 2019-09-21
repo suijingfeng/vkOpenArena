@@ -67,7 +67,7 @@ typedef struct WinVars_s {
   #elif defined(USING_XLIB)
         Display* pDisplay;
         Window  hWnd;
-	Window root;
+        Window root;
   #endif
         int	monitorCount;
         int	screenIdx;
@@ -79,9 +79,9 @@ typedef struct WinVars_s {
         int	desktopHeight;
         int	isFullScreen;
         int	isMinimized;
-        int     winStyle;
+        int winStyle;
         int	activeApp;
-	int	gammaSet;
+        int	gammaSet;
         int	randr_ext;
         int	randr_active;
         int	randr_gamma;

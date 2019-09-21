@@ -266,7 +266,6 @@ void WinSys_Init(void ** pContext, int type)
 
     // input system ?
     IN_Init();
-
 }
 
 

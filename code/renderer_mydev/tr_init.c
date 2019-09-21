@@ -238,29 +238,56 @@ static void InitOpenGL(void)
 	// GLimp_Init directly or indirectly references the following cvars:
 	//		- r_fullscreen
 	//		- r_mode
-
-	if ( glConfig.vidWidth == 0 )
+	glconfig_t * const pConfig = &glConfig;
+    
+	if ( pConfig->vidWidth == 0 )
 	{
-	    // This values force the UI to disable driver selection
-	    glConfig.driverType = GLDRV_ICD;
-	    glConfig.hardwareType = GLHW_GENERIC;
+		GLint temp;
+
+		void * pCfg = NULL;
+            			
+		ri.WinSysInit(&pCfg, 0);
 
 
-        // OpenGL
-	    GLimp_Init(&glConfig, qfalse);
+        pConfig->stereoEnabled = qfalse;
+        pConfig->smpActive = qfalse;
+        pConfig->displayFrequency = 60;
+        // allways enable stencil
+        pConfig->stencilBits = 8;
+        pConfig->depthBits = 24;
+        pConfig->colorBits = 32;
+        pConfig->deviceSupportsGamma = qfalse;
+
+        pConfig->textureEnvAddAvailable = 0; // not used
+        pConfig->textureCompression = 0; // not used
+
+        // These values force the UI to disable driver selection
+        pConfig->driverType = GLDRV_ICD;
+        pConfig->hardwareType = GLHW_GENERIC;
+
+        pConfig->vidWidth = ri.GetWinWidth();
+        pConfig->vidHeight = ri.GetWinHeight();
+        pConfig->isFullscreen = ri.IsWinFullscreen();
+        pConfig->windowAspect = (float) pConfig->vidWidth / (float) pConfig->vidHeight;
+
         // get our config strings
 		qglInit();
         qglGetIntegerv( GL_MAX_TEXTURE_SIZE, &glConfig.maxTextureSize );
 
+		// OpenGL driver constants
+		qglGetIntegerv( GL_MAX_TEXTURE_SIZE, &temp );
+
         // stubbed or broken drivers may have reported 0...
-        if( glConfig.maxTextureSize < 0 )
+        if( temp <= 0 )
         {
             glConfig.maxTextureSize = 0;
         }
+        else
+        {
+            glConfig.maxTextureSize = temp;
+        }
 	}
 
-	// init command buffers and SMP
-    glConfig.smpActive = qfalse;
 
 	// print info
 	GfxInfo_f();
@@ -1077,12 +1104,10 @@ void RE_Shutdown( qboolean destroyWindow )
 	// shut down platform specific OpenGL stuff
     if (destroyWindow)
     {
-        GLimp_Shutdown();
+		ri.WinSysShutdown();
 
         memset(&glConfig, 0, sizeof( glConfig ));
         memset(&glState, 0, sizeof( glState ));
-
-
     }
 
 
@@ -1090,9 +1115,11 @@ void RE_Shutdown( qboolean destroyWindow )
 }
 
 
-void RE_BeginRegistration(glconfig_t *glconfigOut)
+void RE_BeginRegistration(glconfig_t * const glconfigOut)
 {
-	R_Init();
+    ri.Printf( PRINT_ALL, " RE_BeginRegistration \n" );
+	
+    R_Init();
 
 	*glconfigOut = glConfig;
 
@@ -1114,10 +1141,10 @@ GetRefAPI
 @@@@@@@@@@@@@@@@@@@@@
 */
 #ifdef USE_RENDERER_DLOPEN
-Q_EXPORT refexport_t* QDECL GetRefAPI( int apiVersion, refimport_t *rimp )
+Q_EXPORT void QDECL GetRefAPI ( int apiVersion, const refimport_t * const rimp, refexport_t * const rexp )
 {
 #else
-refexport_t* GetRefAPI(int apiVersion, refimport_t *rimp)
+void GetRefAPI ( int apiVersion, const refimport_t * const rimp, rexp * const rexp )
 {
 #endif
 
@@ -1126,48 +1153,46 @@ refexport_t* GetRefAPI(int apiVersion, refimport_t *rimp)
 	if( apiVersion != REF_API_VERSION )
 	{
 		ri.Printf(PRINT_ALL, "Mismatched REF_API_VERSION: expected %i, got %i\n", REF_API_VERSION, apiVersion );
-		return NULL;
+		return;
 	}
 
-	static refexport_t re;
-	memset(&re, 0, sizeof(re));
 
     
 	// the RE_ functions are Renderer Entry points
-	re.Shutdown = RE_Shutdown;
-	re.BeginRegistration = RE_BeginRegistration;
-	re.RegisterModel = RE_RegisterModel;
-	re.RegisterSkin = RE_RegisterSkin;
-	re.RegisterShader = RE_RegisterShader;
-	re.RegisterShaderNoMip = RE_RegisterShaderNoMip;
-	re.LoadWorld = RE_LoadWorldMap;
-	re.SetWorldVisData = RE_SetWorldVisData;
-	re.EndRegistration = RE_EndRegistration;
-	re.ClearScene = RE_ClearScene;
-	re.AddRefEntityToScene = RE_AddRefEntityToScene;
-	re.AddPolyToScene = RE_AddPolyToScene;
-	re.LightForPoint = R_LightForPoint;
-	re.AddLightToScene = RE_AddLightToScene;
-	re.AddAdditiveLightToScene = RE_AddAdditiveLightToScene;
+	rexp->Shutdown = RE_Shutdown;
+	rexp->BeginRegistration = RE_BeginRegistration;
+	rexp->RegisterModel = RE_RegisterModel;
+	rexp->RegisterSkin = RE_RegisterSkin;
+	rexp->RegisterShader = RE_RegisterShader;
+	rexp->RegisterShaderNoMip = RE_RegisterShaderNoMip;
+	rexp->LoadWorld = RE_LoadWorldMap;
+	rexp->SetWorldVisData = RE_SetWorldVisData;
+	rexp->EndRegistration = RE_EndRegistration;
+	rexp->ClearScene = RE_ClearScene;
+	rexp->AddRefEntityToScene = RE_AddRefEntityToScene;
+	rexp->AddPolyToScene = RE_AddPolyToScene;
+	rexp->LightForPoint = R_LightForPoint;
+	rexp->AddLightToScene = RE_AddLightToScene;
+	rexp->AddAdditiveLightToScene = RE_AddAdditiveLightToScene;
 
-	re.RenderScene = RE_RenderScene;
-	re.SetColor = RE_SetColor;
-	re.DrawStretchPic = RE_StretchPic;
-	re.DrawStretchRaw = RE_StretchRaw;
-	re.UploadCinematic = RE_UploadCinematic;
+	rexp->RenderScene = RE_RenderScene;
+	rexp->SetColor = RE_SetColor;
+	rexp->DrawStretchPic = RE_StretchPic;
+	rexp->DrawStretchRaw = RE_StretchRaw;
+	rexp->UploadCinematic = RE_UploadCinematic;
     
-	re.BeginFrame = RE_BeginFrame;
-	re.EndFrame = RE_EndFrame;
-	re.MarkFragments = R_MarkFragments;
-	re.LerpTag = R_LerpTag;
-	re.ModelBounds = R_ModelBounds;
-	re.RegisterFont = RE_RegisterFont;
-	re.RemapShader = R_RemapShader;
-	re.GetEntityToken = R_GetEntityToken;
-	re.inPVS = R_inPVS;
-	re.TakeVideoFrame = RE_TakeVideoFrame;
+	rexp->BeginFrame = RE_BeginFrame;
+	rexp->EndFrame = RE_EndFrame;
+	rexp->MarkFragments = R_MarkFragments;
+	rexp->LerpTag = R_LerpTag;
+	rexp->ModelBounds = R_ModelBounds;
+	rexp->RegisterFont = RE_RegisterFont;
+	rexp->RemapShader = R_RemapShader;
+	rexp->GetEntityToken = R_GetEntityToken;
+	rexp->inPVS = R_inPVS;
+	rexp->TakeVideoFrame = RE_TakeVideoFrame;
 
-	return &re;
+	return ;
 }
 
 #ifdef USE_RENDERER_DLOPEN

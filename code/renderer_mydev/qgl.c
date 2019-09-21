@@ -27,15 +27,38 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 ** two functions:
 **
 */
+
+
+#if defined(_WIN32)
+#define OPENGL_DLL_NAME	"opengl32"
+#elif defined(MACOS_X)
+#define OPENGL_DLL_NAME	"/System/Library/Frameworks/OpenGL.framework/Libraries/libGL.dylib"
+#else
+#define OPENGL_DLL_NAME	"libGL.so.1"
+#endif
+
+
+#ifdef _WIN32
+#include <windows.h>
+#define Sys_LoadLibrary(f)      (void*)LoadLibrary(f)
+#define Sys_UnloadLibrary(h)    FreeLibrary((HMODULE)h)
+#define Sys_LoadFunction(h,fn)  (void*)GetProcAddress((HMODULE)h,fn)
+#define Sys_LibraryError()      "unknown"
+#else
+#include <dlfcn.h>
+#define Sys_LoadLibrary(f)      dlopen(f,RTLD_NOW)
+#define Sys_UnloadLibrary(h)    dlclose(h)
+#define Sys_LoadFunction(h,fn)  dlsym(h,fn)
+#define Sys_LibraryError()      dlerror()
+#endif
+
 #include "tr_local.h"
 #include "qgl.h"
 
 
-
-
 static cvar_t* r_ext_texture_filter_anisotropic;
 static cvar_t* r_ext_max_anisotropy;
-
+static void * hinstOpenGL;
 
 void ( APIENTRY * qglAlphaFunc )(GLenum func, GLclampf ref);
 void ( APIENTRY * qglBegin )(GLenum mode);
@@ -239,6 +262,12 @@ static qboolean GLimp_HaveExtension(const char *ext)
 }
 
 
+static void* GL_GetProcAddressImpl( const char *symbol )
+{
+    //void *sym = glXGetProcAddressARB((const unsigned char *)symbol);
+    return Sys_LoadFunction(hinstOpenGL, symbol);
+}
+
 /*
 ** This is responsible for binding our qgl function pointers to 
 ** the appropriate GL stuff.  In Windows this means doing a 
@@ -250,78 +279,77 @@ qboolean qglInit( void )
 {
 
     ri.Printf( PRINT_ALL, "...initializing QGL\n" );
-/*
-    const char *dllname = OPENGL_DRIVER_NAME;
+
+    const char *dllname = OPENGL_DLL_NAME;
 	if ( hinstOpenGL == NULL )
 	{
 		hinstOpenGL = Sys_LoadLibrary( dllname );
-		ri.Printf(PRINT_ALL, "Loading %s ... ", dllname);
 
         if ( hinstOpenGL == NULL )
 		{
 			ri.Error(ERR_FATAL, "LoadOpenGLDll: failed to load %s from /etc/ld.so.conf: %s\n", dllname, Sys_LibraryError());
 		    return qfalse;
         }
-        
-        ri.Cvar_Set( "r_glDriver", dllname );
-
-        ri.Printf( PRINT_ALL, "succeeded\n" );
+        else
+        {
+            ri.Printf(PRINT_ALL, "Loading %s successful. ", dllname);
+        }  
 	}
-*/
 
-	qglAlphaFunc            = GLimp_GetProcAddress("glAlphaFunc");
-	qglBegin                = GLimp_GetProcAddress("glBegin");
-	qglBindTexture          = GLimp_GetProcAddress("glBindTexture");
-	qglBlendFunc            = GLimp_GetProcAddress("glBlendFunc");
-	qglClear                = GLimp_GetProcAddress("glClear");
-	qglClearColor           = GLimp_GetProcAddress("glClearColor");
-	qglClipPlane            = GLimp_GetProcAddress("glClipPlane");
-	qglColor3f              = GLimp_GetProcAddress("glColor3f");
-	qglColorMask            = GLimp_GetProcAddress("glColorMask");
-	qglColorPointer         = GLimp_GetProcAddress("glColorPointer");
-	qglCullFace             = GLimp_GetProcAddress("glCullFace");
-	qglDeleteTextures       = GLimp_GetProcAddress("glDeleteTextures");
-	qglDepthFunc            = GLimp_GetProcAddress("glDepthFunc");
-	qglDepthMask            = GLimp_GetProcAddress("glDepthMask");
-	qglDepthRange           = GLimp_GetProcAddress("glDepthRange");
-	qglDisable              = GLimp_GetProcAddress("glDisable");
-	qglDisableClientState   = GLimp_GetProcAddress("glDisableClientState");
-	qglDrawBuffer           = GLimp_GetProcAddress("glDrawBuffer");
-	qglDrawElements         = GLimp_GetProcAddress("glDrawElements");
-	qglEnable               = GLimp_GetProcAddress("glEnable");
-	qglEnableClientState    = GLimp_GetProcAddress("glEnableClientState");
-	qglEnd                  = GLimp_GetProcAddress("glEnd");
-	qglFinish               = GLimp_GetProcAddress("glFinish");
-	qglGetError             = GLimp_GetProcAddress("glGetError");
-	qglGetIntegerv          = GLimp_GetProcAddress("glGetIntegerv");
-	qglGetString            = GLimp_GetProcAddress("glGetString");
-	qglLineWidth            = GLimp_GetProcAddress("glLineWidth");
-	qglLoadIdentity         = GLimp_GetProcAddress("glLoadIdentity");
-	qglLoadMatrixf          = GLimp_GetProcAddress("glLoadMatrixf");
-	qglMatrixMode           = GLimp_GetProcAddress("glMatrixMode");
-	qglOrtho                = GLimp_GetProcAddress("glOrtho");
-	qglPolygonMode          = GLimp_GetProcAddress("glPolygonMode");
-	qglPolygonOffset        = GLimp_GetProcAddress("glPolygonOffset");
-	qglPopMatrix            = GLimp_GetProcAddress("glPopMatrix");
-	qglPushMatrix           = GLimp_GetProcAddress("glPushMatrix");
-	qglReadPixels           = GLimp_GetProcAddress("glReadPixels");
-	qglScissor              = GLimp_GetProcAddress("glScissor");
-	qglStencilFunc          = GLimp_GetProcAddress("glStencilFunc");
-	qglStencilOp            = GLimp_GetProcAddress("glStencilOp");
-	qglTexCoord2f           = GLimp_GetProcAddress("glTexCoord2f");
-	qglTexCoord2fv          = GLimp_GetProcAddress("glTexCoord2fv");
-	qglTexCoordPointer      = GLimp_GetProcAddress("glTexCoordPointer");
-	qglTexEnvf              = GLimp_GetProcAddress("glTexEnvf");
-	qglTexImage2D           = GLimp_GetProcAddress("glTexImage2D");
-	qglTexParameterf        = GLimp_GetProcAddress("glTexParameterf");
-	qglTexParameterfv       = GLimp_GetProcAddress("glTexParameterfv");
-	qglTexSubImage2D        = GLimp_GetProcAddress("glTexSubImage2D");
-	qglVertex2f             = GLimp_GetProcAddress("glVertex2f");
-	qglVertex3f             = GLimp_GetProcAddress("glVertex3f");
-	qglVertex3fv            = GLimp_GetProcAddress("glVertex3fv");
-	qglVertexPointer        = GLimp_GetProcAddress("glVertexPointer");
-	qglViewport             = GLimp_GetProcAddress("glViewport");
-    qglTranslatef           = GLimp_GetProcAddress("glTranslatef");
+
+	qglAlphaFunc            = GL_GetProcAddressImpl("glAlphaFunc");
+	qglBegin                = GL_GetProcAddressImpl("glBegin");
+	qglBindTexture          = GL_GetProcAddressImpl("glBindTexture");
+	qglBlendFunc            = GL_GetProcAddressImpl("glBlendFunc");
+	qglClear                = GL_GetProcAddressImpl("glClear");
+	qglClearColor           = GL_GetProcAddressImpl("glClearColor");
+	qglClipPlane            = GL_GetProcAddressImpl("glClipPlane");
+	qglColor3f              = GL_GetProcAddressImpl("glColor3f");
+	qglColorMask            = GL_GetProcAddressImpl("glColorMask");
+	qglColorPointer         = GL_GetProcAddressImpl("glColorPointer");
+	qglCullFace             = GL_GetProcAddressImpl("glCullFace");
+	qglDeleteTextures       = GL_GetProcAddressImpl("glDeleteTextures");
+	qglDepthFunc            = GL_GetProcAddressImpl("glDepthFunc");
+	qglDepthMask            = GL_GetProcAddressImpl("glDepthMask");
+	qglDepthRange           = GL_GetProcAddressImpl("glDepthRange");
+	qglDisable              = GL_GetProcAddressImpl("glDisable");
+	qglDisableClientState   = GL_GetProcAddressImpl("glDisableClientState");
+	qglDrawBuffer           = GL_GetProcAddressImpl("glDrawBuffer");
+	qglDrawElements         = GL_GetProcAddressImpl("glDrawElements");
+	qglEnable               = GL_GetProcAddressImpl("glEnable");
+	qglEnableClientState    = GL_GetProcAddressImpl("glEnableClientState");
+	qglEnd                  = GL_GetProcAddressImpl("glEnd");
+	qglFinish               = GL_GetProcAddressImpl("glFinish");
+	qglGetError             = GL_GetProcAddressImpl("glGetError");
+	qglGetIntegerv          = GL_GetProcAddressImpl("glGetIntegerv");
+	qglGetString            = GL_GetProcAddressImpl("glGetString");
+	qglLineWidth            = GL_GetProcAddressImpl("glLineWidth");
+	qglLoadIdentity         = GL_GetProcAddressImpl("glLoadIdentity");
+	qglLoadMatrixf          = GL_GetProcAddressImpl("glLoadMatrixf");
+	qglMatrixMode           = GL_GetProcAddressImpl("glMatrixMode");
+	qglOrtho                = GL_GetProcAddressImpl("glOrtho");
+	qglPolygonMode          = GL_GetProcAddressImpl("glPolygonMode");
+	qglPolygonOffset        = GL_GetProcAddressImpl("glPolygonOffset");
+	qglPopMatrix            = GL_GetProcAddressImpl("glPopMatrix");
+	qglPushMatrix           = GL_GetProcAddressImpl("glPushMatrix");
+	qglReadPixels           = GL_GetProcAddressImpl("glReadPixels");
+	qglScissor              = GL_GetProcAddressImpl("glScissor");
+	qglStencilFunc          = GL_GetProcAddressImpl("glStencilFunc");
+	qglStencilOp            = GL_GetProcAddressImpl("glStencilOp");
+	qglTexCoord2f           = GL_GetProcAddressImpl("glTexCoord2f");
+	qglTexCoord2fv          = GL_GetProcAddressImpl("glTexCoord2fv");
+	qglTexCoordPointer      = GL_GetProcAddressImpl("glTexCoordPointer");
+	qglTexEnvf              = GL_GetProcAddressImpl("glTexEnvf");
+	qglTexImage2D           = GL_GetProcAddressImpl("glTexImage2D");
+	qglTexParameterf        = GL_GetProcAddressImpl("glTexParameterf");
+	qglTexParameterfv       = GL_GetProcAddressImpl("glTexParameterfv");
+	qglTexSubImage2D        = GL_GetProcAddressImpl("glTexSubImage2D");
+	qglVertex2f             = GL_GetProcAddressImpl("glVertex2f");
+	qglVertex3f             = GL_GetProcAddressImpl("glVertex3f");
+	qglVertex3fv            = GL_GetProcAddressImpl("glVertex3fv");
+	qglVertexPointer        = GL_GetProcAddressImpl("glVertexPointer");
+	qglViewport             = GL_GetProcAddressImpl("glViewport");
+    qglTranslatef           = GL_GetProcAddressImpl("glTranslatef");
 
 
 	qglActiveTextureARB = NULL;
@@ -369,9 +397,9 @@ qboolean qglInit( void )
 	qglClientActiveTextureARB = NULL;
 	if ( GLimp_HaveExtension( "GL_ARB_multitexture" ) )
 	{
-		qglMultiTexCoord2fARB = (void ( APIENTRY * ) (GLenum, GLfloat, GLfloat)) GLimp_GetProcAddress( "glMultiTexCoord2fARB" );
-		qglActiveTextureARB = (void ( APIENTRY * ) (GLenum )) GLimp_GetProcAddress( "glActiveTextureARB" );
-		qglClientActiveTextureARB = (void ( APIENTRY * ) (GLenum )) GLimp_GetProcAddress( "glClientActiveTextureARB" );
+		qglMultiTexCoord2fARB = (void ( APIENTRY * ) (GLenum, GLfloat, GLfloat)) GL_GetProcAddressImpl( "glMultiTexCoord2fARB" );
+		qglActiveTextureARB = (void ( APIENTRY * ) (GLenum )) GL_GetProcAddressImpl( "glActiveTextureARB" );
+		qglClientActiveTextureARB = (void ( APIENTRY * ) (GLenum )) GL_GetProcAddressImpl( "glClientActiveTextureARB" );
 
 		if ( qglActiveTextureARB )
 		{
@@ -400,8 +428,8 @@ qboolean qglInit( void )
 	if ( GLimp_HaveExtension( "GL_EXT_compiled_vertex_array" ) )
 	{
 		ri.Printf( PRINT_ALL,  "...using GL_EXT_compiled_vertex_array\n" );
-		qglLockArraysEXT = ( void ( APIENTRY * )( GLint, GLint ) ) GLimp_GetProcAddress( "glLockArraysEXT" );
-		qglUnlockArraysEXT = ( void ( APIENTRY * )( void ) ) GLimp_GetProcAddress( "glUnlockArraysEXT" );
+		qglLockArraysEXT = ( void ( APIENTRY * )( GLint, GLint ) ) GL_GetProcAddressImpl( "glLockArraysEXT" );
+		qglUnlockArraysEXT = ( void ( APIENTRY * )( void ) ) GL_GetProcAddressImpl( "glUnlockArraysEXT" );
 		if (!qglLockArraysEXT || !qglUnlockArraysEXT)
 		{
 			ri.Error(ERR_FATAL, "bad getprocaddress");

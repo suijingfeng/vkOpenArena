@@ -34,25 +34,6 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
 #include "qgl.h"
 
-////////////  GLIMP ////////////////////////
-
-void GLimp_Init(glconfig_t *glConfig, qboolean coreContext);
-
-void GLimp_Shutdown(void);
-void GLimp_EndFrame(void);
-
-void GLimp_LogComment(char *comment);
-void GLimp_Minimize(void);
-
-
-void GLimp_DeleteGLContext(void);
-void GLimp_DestroyWindow(void);
-
-void* GLimp_GetProcAddress(const char* fun);
-
-
-/////////////////////////////////////////////
-
 
 #define GL_INDEX_TYPE		GL_UNSIGNED_INT
 typedef unsigned int glIndex_t;

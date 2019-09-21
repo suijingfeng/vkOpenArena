@@ -39,15 +39,9 @@ QGL_DESKTOP_1_1_PROCS;
 QGL_1_3_PROCS;
 #undef GLE
 
-void GLimp_Init(glconfig_t *glConfig, qboolean coreContext);
-void GLimp_Shutdown(void);
-void GLimp_EndFrame(void);
-void GLimp_LogComment(char *comment);
-void GLimp_Minimize(void);
-void GLimp_SetGamma(unsigned char red[256], unsigned char green[256], unsigned char blue[256]);
+
 void* GLimp_GetProcAddress(const char* fun);
-void GLimp_DeleteGLContext(void);
-void GLimp_DestroyWindow(void);
+
 
 extern refimport_t ri;
 
