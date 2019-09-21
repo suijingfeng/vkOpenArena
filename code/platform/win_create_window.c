@@ -21,6 +21,24 @@
 
 extern WinVars_t g_wv;
 
+
+    int (* GetWinWidth)(void);
+    int (* GetWinHeight)(void);
+int WinSys_IsWinFullscreen(void)
+{
+	return g_wv.isFullScreen;
+}
+
+int WinSys_GetWinWidth(void)
+{
+	return g_wv.winWidth;
+}
+
+int WinSys_GetWinHeight(void)
+{
+	return g_wv.winHeight;
+}
+
 extern LRESULT WINAPI MainWndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
 
 
@@ -330,7 +348,7 @@ static void win_destroyWindowImpl(void)
 
 
 
-void WinSys_Init(void **pContext)
+void WinSys_Init(void **pContext, int type)
 {
 
 	win_createWindowImpl();
@@ -363,4 +381,7 @@ void WinSys_EndFrame(void)
 	;
 }
 
-
+void* GLimp_GetProcAddress( const char *symbol )
+{
+	;
+}

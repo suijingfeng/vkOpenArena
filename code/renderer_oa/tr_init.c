@@ -20,7 +20,19 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 ===========================================================================
 */
 // tr_init.c -- functions that are not called every frame
-
+#ifdef _WIN32
+#include <windows.h>
+#define Sys_LoadLibrary(f)      (void*)LoadLibrary(f)
+#define Sys_UnloadLibrary(h)    FreeLibrary((HMODULE)h)
+#define Sys_LoadFunction(h,fn)  (void*)GetProcAddress((HMODULE)h,fn)
+#define Sys_LibraryError()      "unknown"
+#else
+#include <dlfcn.h>
+#define Sys_LoadLibrary(f)      dlopen(f,RTLD_NOW)
+#define Sys_UnloadLibrary(h)    dlclose(h)
+#define Sys_LoadFunction(h,fn)  dlsym(h,fn)
+#define Sys_LibraryError()      dlerror()
+#endif
 #include "tr_local.h"
 
 extern shaderCommands_t tess;
@@ -159,7 +171,7 @@ void (APIENTRYP qglMultiTexCoord2fARB) (GLenum target, GLfloat s, GLfloat t);
 void (APIENTRYP qglLockArraysEXT) (GLint first, GLsizei count);
 void (APIENTRYP qglUnlockArraysEXT) (void);
 
-
+static void * hinstOpenGL;
 
 static qboolean GLimp_HaveExtension(const char *ext)
 {
@@ -170,7 +182,11 @@ static qboolean GLimp_HaveExtension(const char *ext)
 	return ((*ptr == ' ') || (*ptr == '\0'));  // verify it's complete string.
 }
 
-
+static void* GL_GetProcAddressImpl( const char *symbol )
+{
+    //void *sym = glXGetProcAddressARB((const unsigned char *)symbol);
+    return Sys_LoadFunction(hinstOpenGL, symbol);
+}
 /*
 ===============
 GLimp_GetProcAddresses
@@ -185,7 +201,7 @@ static qboolean GLimp_GetProcAddresses( void )
 #ifdef __SDL_NOGETPROCADDR__
 #define GLE( ret, name, ... ) qgl##name = gl#name;
 #else
-#define GLE( ret, name, ... ) qgl##name = (name##proc *) GLimp_GetProcAddress("gl" #name); \
+#define GLE( ret, name, ... ) qgl##name = (name##proc *) GL_GetProcAddressImpl("gl" #name); \
 	if ( qgl##name == NULL ) { \
 		ri.Error(ERR_FATAL, "Missing OpenGL function %s\n", "gl" #name ); \
 	}
@@ -277,9 +293,9 @@ static qboolean GLimp_GetProcAddresses( void )
 	qglClientActiveTextureARB = NULL;
 	if ( GLimp_HaveExtension( "GL_ARB_multitexture" ) )
 	{
-		qglMultiTexCoord2fARB = GLimp_GetProcAddress( "glMultiTexCoord2fARB" );
-		qglActiveTextureARB = GLimp_GetProcAddress( "glActiveTextureARB" );
-		qglClientActiveTextureARB = GLimp_GetProcAddress( "glClientActiveTextureARB" );
+		qglMultiTexCoord2fARB = GL_GetProcAddressImpl( "glMultiTexCoord2fARB" );
+		qglActiveTextureARB = GL_GetProcAddressImpl( "glActiveTextureARB" );
+		qglClientActiveTextureARB = GL_GetProcAddressImpl( "glClientActiveTextureARB" );
 
 		if ( qglActiveTextureARB )
 		{
@@ -308,8 +324,8 @@ static qboolean GLimp_GetProcAddresses( void )
 	if ( GLimp_HaveExtension( "GL_EXT_compiled_vertex_array" ) )
 	{
 		ri.Printf( PRINT_ALL,  "...using GL_EXT_compiled_vertex_array\n" );
-		qglLockArraysEXT = ( void ( APIENTRY * )( GLint, GLint ) ) GLimp_GetProcAddress( "glLockArraysEXT" );
-		qglUnlockArraysEXT = ( void ( APIENTRY * )( void ) ) GLimp_GetProcAddress( "glUnlockArraysEXT" );
+		qglLockArraysEXT = ( void ( APIENTRY * )( GLint, GLint ) ) GL_GetProcAddressImpl( "glLockArraysEXT" );
+		qglUnlockArraysEXT = ( void ( APIENTRY * )( void ) ) GL_GetProcAddressImpl( "glUnlockArraysEXT" );
 		if (!qglLockArraysEXT || !qglUnlockArraysEXT)
 		{
 			ri.Error(ERR_FATAL, "bad getprocaddress");

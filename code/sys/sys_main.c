@@ -203,11 +203,9 @@ void Sys_ParseArgs( int argc, char **argv )
 
 
 
-
-
 #if defined( _WIN32 ) && !defined(DEDICATED)
 
-#include "../sdl/win_public.h"
+#include "../platform/win_public.h"
 
 extern WinVars_t g_wv;
 

@@ -144,7 +144,7 @@ IN_DeactivateMouse
 Called when the window loses focus
 ===========
 */
-static void IN_DeactivateMouse( void )
+void IN_DeactivateMouse( void )
 {
 	if (!s_wmv.mouseInitialized ) {
 		return;
