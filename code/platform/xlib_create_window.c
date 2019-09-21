@@ -85,11 +85,11 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
 /////////////////////////////
 
-
+static cvar_t* r_mode;
 static cvar_t* r_fullscreen;
 
 static cvar_t* r_swapInterval;
-static cvar_t* r_mode;
+
 
 cvar_t	*r_stencilbits;
 cvar_t	*r_depthbits;

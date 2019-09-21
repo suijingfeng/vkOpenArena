@@ -149,8 +149,6 @@ QGL_1_3_PROCS;
 
 /*
 ===============
-GLimp_GetProcAddresses
-
 Get addresses for OpenGL functions.
 ===============
 */

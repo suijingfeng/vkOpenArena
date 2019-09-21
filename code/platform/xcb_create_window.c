@@ -10,6 +10,7 @@
 #include "../qcommon/qcommon.h"
 #include "win_public.h"
 #include "../sys/sys_public.h"
+#include "WinSys_Common.h"
 
 struct WinData_s s_xcb_win;
 
@@ -35,35 +36,17 @@ void* GLimp_GetProcAddress( const char *symbol )
 }
 
 static cvar_t* r_mode;				// video mode
-static cvar_t* r_customwidth;
-static cvar_t* r_customheight;
-
-
 static cvar_t* r_fullscreen;
 
 
 
 // use this function in non-fullscreen mode, 
 // always return a valid mode ...
-extern int R_GetDisplayMode(int mode, uint32_t * const pWidth, uint32_t * const pHeight)
-
-
-static void R_DisplayResolutionList_f( void )
-{
-	Com_Printf( "\n" );
-	for (uint32_t i = 0; i < s_numVidModes; i++ )
-	{
-		Com_Printf( "%s\n", s_vidModes[i].description );
-	}
-	Com_Printf("\n" );
-}
-
-
 
 xcb_intern_atom_reply_t *atom_wm_delete_window;
 
 
-void WinSys_Init(void ** pContext)
+void WinSys_Init(void ** pContext, int type)
 {
 	Com_Printf( " Initializing window subsystem. \n" );
    
@@ -71,10 +54,8 @@ void WinSys_Init(void ** pContext)
     // but they have nothing to do with the renderer. 
     r_mode = Cvar_Get( "r_mode", "3", CVAR_ARCHIVE | CVAR_LATCH );
     r_fullscreen = Cvar_Get( "r_fullscreen", "0", CVAR_ARCHIVE | CVAR_LATCH );
-    r_customwidth = Cvar_Get( "r_customwidth", "960", CVAR_ARCHIVE | CVAR_LATCH );
-    r_customheight = Cvar_Get( "r_customheight", "540", CVAR_ARCHIVE | CVAR_LATCH );
     
-    Cmd_AddCommand( "printfDisplayResolution", R_DisplayResolutionList_f );
+    WinSys_ConstructDislayModes();
 
     //
 	*pContext = &s_xcb_win;
@@ -298,8 +279,8 @@ void WinSys_Shutdown(void)
     //xcb_disconnect(connection);
     memset(&s_xcb_win, 0, sizeof(s_xcb_win));
 
+    WinSys_DestructDislayModes( );
 
-    Cmd_RemoveCommand("printfDisplayResolution");
 
     Com_Printf(" Window subsystem destroyed. \n");
 }

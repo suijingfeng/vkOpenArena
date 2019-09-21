@@ -75,7 +75,7 @@ qboolean CL_GetModeInfo( int *width, int *height, int mode, int dw, int dh, qboo
 }
 
 
-void ModeList_f( void )
+void printDisplayMode_f( void )
 {
 	int i;
 
@@ -109,18 +109,19 @@ int R_GetDisplayMode(int mode, uint32_t * const pWidth, uint32_t * const pHeight
 }
 
 
+
 void WinSys_ConstructDislayModes(void)
 {
 	r_customwidth = Cvar_Get( "r_customwidth", "1920", CVAR_ARCHIVE | CVAR_LATCH );
 	r_customheight = Cvar_Get( "r_customheight", "1080", CVAR_ARCHIVE | CVAR_LATCH );
 
-	Cmd_AddCommand( "modelist", ModeList_f );
+	Cmd_AddCommand( "printDisplayMode", printDisplayMode_f );
 
 }
 
 void WinSys_DestructDislayModes(void)
 {
     
-	Cmd_RemoveCommand( "modelist" );
+	Cmd_RemoveCommand( "printDisplayMode" );
 
 }
