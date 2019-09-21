@@ -189,6 +189,10 @@ void printVulkanInfo_f( void )
     ri.Printf(PRINT_ALL, "Vk device id: 0x%X\n", props.deviceID);
     ri.Printf(PRINT_ALL, "Vk device type: %s\n", device_type);
     ri.Printf(PRINT_ALL, "Vk device name: %s\n", props.deviceName);
+    
+    ri.Printf(PRINT_ALL, "Render area: %dx%d\n", vk_getWinWidth(), vk_getWinHeight());
+    ri.Printf(PRINT_ALL, "Window dimension: %dx%d\n", ri.GetWinWidth(), ri.GetWinHeight());
+
 
     printInstanceExtensionsSupported_f();
     printDeviceExtensionsSupported_f();
