@@ -559,11 +559,11 @@ void vk_destroy_shading_data(void)
     NO_CHECK( qvkUnmapMemory(vk.device, shadingDat.vertex_buffer_memory) );
     NO_CHECK( qvkUnmapMemory(vk.device, shadingDat.index_buffer_memory) );
 	
-    NO_CHECK( qvkFreeMemory(vk.device, shadingDat.vertex_buffer_memory, NULL) );
-	NO_CHECK( qvkFreeMemory(vk.device, shadingDat.index_buffer_memory, NULL) );
-
     NO_CHECK( qvkDestroyBuffer(vk.device, shadingDat.vertex_buffer, NULL) );
 	NO_CHECK( qvkDestroyBuffer(vk.device, shadingDat.index_buffer, NULL) );
+
+    NO_CHECK( qvkFreeMemory(vk.device, shadingDat.vertex_buffer_memory, NULL) );
+	NO_CHECK( qvkFreeMemory(vk.device, shadingDat.index_buffer_memory, NULL) );
 
     memset(&shadingDat, 0, sizeof(shadingDat));
 }

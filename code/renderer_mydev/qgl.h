@@ -27,19 +27,16 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #define __QGL_H__
 
 #if defined( _WIN32 )
-
 #define NOMINMAX
 #include <gl/gl.h>
-
 #else
-
 #include <GL/gl.h>
-
 #endif
 
 
-
-
+#ifndef APIENTRYP
+#define APIENTRYP APIENTRY *
+#endif
 /*
 ** multitexture extension definitions
 */

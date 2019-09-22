@@ -22,6 +22,8 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 // console.c
 
 #include "client.h"
+#include "../sys/sys_public.h"
+#include "../qcommon/q_math.h"
 
 int g_console_field_width = 78;
 #define	NUM_CON_TIMES   4

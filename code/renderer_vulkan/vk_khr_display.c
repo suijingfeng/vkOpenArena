@@ -1,15 +1,62 @@
 #include "vk_instance.h"
 #include "ref_import.h" 
 
+extern PFN_vkGetInstanceProcAddr qvkGetInstanceProcAddr;
+
 
 // VK_KHR_display
-extern PFN_vkGetPhysicalDeviceDisplayPropertiesKHR         qvkGetPhysicalDeviceDisplayPropertiesKHR;
-extern PFN_vkGetPhysicalDeviceDisplayPlanePropertiesKHR    qvkGetPhysicalDeviceDisplayPlanePropertiesKHR;
-extern PFN_vkGetDisplayPlaneSupportedDisplaysKHR           qvkGetDisplayPlaneSupportedDisplaysKHR;
-extern PFN_vkGetDisplayModePropertiesKHR                   qvkGetDisplayModePropertiesKHR;
-extern PFN_vkCreateDisplayModeKHR                          qvkCreateDisplayModeKHR;
-extern PFN_vkGetDisplayPlaneCapabilitiesKHR                qvkGetDisplayPlaneCapabilitiesKHR;
-extern PFN_vkCreateDisplayPlaneSurfaceKHR                  qvkCreateDisplayPlaneSurfaceKHR;
+static PFN_vkGetPhysicalDeviceDisplayPropertiesKHR         qvkGetPhysicalDeviceDisplayPropertiesKHR;
+static PFN_vkGetPhysicalDeviceDisplayPlanePropertiesKHR    qvkGetPhysicalDeviceDisplayPlanePropertiesKHR;
+static PFN_vkGetDisplayPlaneSupportedDisplaysKHR           qvkGetDisplayPlaneSupportedDisplaysKHR;
+static PFN_vkGetDisplayModePropertiesKHR                   qvkGetDisplayModePropertiesKHR;
+static PFN_vkCreateDisplayModeKHR                          qvkCreateDisplayModeKHR;
+static PFN_vkGetDisplayPlaneCapabilitiesKHR                qvkGetDisplayPlaneCapabilitiesKHR;
+static PFN_vkCreateDisplayPlaneSurfaceKHR                  qvkCreateDisplayPlaneSurfaceKHR;
+
+
+
+void VK_GetExtraProcAddr(VkInstance hInstance)
+{
+
+#define INIT_INSTANCE_FUNCTION(func)                                    \
+    q##func = (PFN_##func) qvkGetInstanceProcAddr(hInstance, #func);    \
+    if (q##func == NULL) {                                              \
+        ri.Error(ERR_FATAL, "Failed to find entrypoint %s", #func);     \
+    }
+    
+    // The platform-specific extensions allow a VkSurface object to be
+    // created that represents a native window owned by the operating
+    // system or window system. These extensions are typically used to
+    // render into a window with no border that covers an entire display
+    // it is more often efficient to render directly to a display instead.
+    if(vk.isKhrDisplaySupported)
+    {
+        ri.Printf(PRINT_ALL, " VK_KHR_Display Supported, Loading functions for this instance extention. \n");
+
+        INIT_INSTANCE_FUNCTION(vkGetPhysicalDeviceDisplayPropertiesKHR);
+        INIT_INSTANCE_FUNCTION(vkGetPhysicalDeviceDisplayPlanePropertiesKHR);
+        INIT_INSTANCE_FUNCTION(vkGetDisplayPlaneSupportedDisplaysKHR);
+        INIT_INSTANCE_FUNCTION(vkGetDisplayModePropertiesKHR);
+        INIT_INSTANCE_FUNCTION(vkCreateDisplayModeKHR);
+        INIT_INSTANCE_FUNCTION(vkGetDisplayPlaneCapabilitiesKHR);
+        INIT_INSTANCE_FUNCTION(vkCreateDisplayPlaneSurfaceKHR);
+    }
+
+#undef INIT_INSTANCE_FUNCTION
+
+}
+
+
+void VK_CleatExtraProcAddr(void)
+{
+    qvkGetPhysicalDeviceDisplayPropertiesKHR        = NULL;
+    qvkGetPhysicalDeviceDisplayPlanePropertiesKHR   = NULL;
+    qvkGetDisplayPlaneSupportedDisplaysKHR          = NULL;
+    qvkGetDisplayModePropertiesKHR                  = NULL;
+    qvkCreateDisplayModeKHR                         = NULL;
+    qvkGetDisplayPlaneCapabilitiesKHR               = NULL;
+    qvkCreateDisplayPlaneSurfaceKHR                 = NULL;
+}
 
 
 static VkDisplayKHR DisplayArray[4];

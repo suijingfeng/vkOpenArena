@@ -32,7 +32,8 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #include "q_shared.h"
 #include "qcommon.h"
 #include "unzip.h"
-#include "sys_loadlib.h"
+#include "../sys/sys_public.h"
+
 /*
 =============================================================================
 
@@ -1939,7 +1940,7 @@ Filename are relative to the openarena search path
 a null buffer will just return the file length without loading
 ============
 */
-long FS_ReadFile(const char *qpath, void **buffer)
+long FS_ReadFile(const char *qpath, char **buffer)
 {
 //  long FS_ReadFileDir(const char *qpath, void *searchPath, qboolean unpure, void **buffer)    
 //	return FS_ReadFileDir(qpath, NULL, qfalse, buffer);
@@ -1985,7 +1986,8 @@ long FS_ReadFile(const char *qpath, void **buffer)
 				return len;
 			}
 
-			unsigned char* buf = Hunk_AllocateTempMemory(len+1);
+			
+            char* buf = Hunk_AllocateTempMemory(len+1);
 			*buffer = buf;
 
 			r = FS_Read(buf, len, com_journalDataFile);
@@ -1994,8 +1996,8 @@ long FS_ReadFile(const char *qpath, void **buffer)
 				Com_Error( ERR_FATAL, "Read from journalDataFile failed" );
 			}
 
-			fs_loadCount++;
-			fs_loadStack++;
+			++fs_loadCount;
+			++fs_loadStack;
 
 			// guarantee that it will have a trailing 0 for string operations
 			buf[len] = 0;
@@ -2038,10 +2040,11 @@ long FS_ReadFile(const char *qpath, void **buffer)
 		return len;
 	}
 
-	fs_loadCount++;
-	fs_loadStack++;
+	++fs_loadCount;
+	++fs_loadStack;
 
-	unsigned char* buf = Hunk_AllocateTempMemory(len+1);
+	
+    char* buf = Hunk_AllocateTempMemory(len+1);
 	*buffer = buf;
 
 	FS_Read(buf, len, h);

@@ -1,4 +1,4 @@
-// #include "tr_backend.h"
+#include "VKimpl.h"
 #include "vk_shade_geometry.h"
 #include "tr_globals.h"
 #include "vk_pipelines.h"
@@ -21,15 +21,15 @@ void RB_DrawNormals (struct shaderCommands_s * const pTess, VkBool32 isPortal, V
     updateMVP(isPortal, is2D, getptr_modelview_matrix());
     // vk_rcdUpdateViewport(is2D, DEPTH_RANGE_ZERO);
 
-    int i = 0;
+    uint32_t i = 0;
     while (i < numVertexes)
     {
-        int count = numVertexes - i;
+        uint32_t count = numVertexes - i;
         if (count >= SHADER_MAX_VERTEXES/2 - 1)
             count = SHADER_MAX_VERTEXES/2 - 1;
 
-        int k;
-        for (k = 0; k < count; ++k)
+     
+        for (uint32_t k = 0; k < count; ++k)
         {
             VectorCopy(xyz[i + k], pTess->xyz[2*k]);
             VectorMA(xyz[i + k], 2, pTess->normal[i + k], pTess->xyz[2*k + 1]);

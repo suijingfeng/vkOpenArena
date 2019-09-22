@@ -1372,9 +1372,9 @@ void R_SetColorMappings(void)
 		s_gammatable[i] = inf;
 	}
 
-	if ( glConfig.deviceSupportsGamma)
+	if ( glConfig.deviceSupportsGamma )
 	{
-		GLimp_SetGamma( s_gammatable, s_gammatable, s_gammatable );
+		ri.WinSysSetGamma( s_gammatable, s_gammatable, s_gammatable );
 	}
 }
 

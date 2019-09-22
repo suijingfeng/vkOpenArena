@@ -250,11 +250,9 @@ Cmd_Exec_f
 */
 void Cmd_Exec_f( void )
 {
-	union {
-		char	*c;
-		void	*v;
-	} f;
-	char filename[MAX_QPATH];
+
+	char filename[MAX_QPATH] = {0};
+    char * pFile = NULL;
 
 	qboolean quiet = !Q_stricmp(Cmd_Argv(0), "execq");
 
@@ -266,17 +264,21 @@ void Cmd_Exec_f( void )
 
 	Q_strncpyz( filename, Cmd_Argv(1), sizeof( filename ) );
 	COM_DefaultExtension( filename, sizeof( filename ), ".cfg" );
-	FS_ReadFile( filename, &f.v);
-	if (!f.c) {
+	
+    FS_ReadFile( filename, &pFile);
+	
+    if (pFile == NULL)
+    {
 		Com_Printf ("couldn't exec %s\n", filename);
 		return;
 	}
+    
 	if (!quiet)
 		Com_Printf ("execing %s\n", filename);
 	
-	Cbuf_InsertText(f.c);
+	Cbuf_InsertText(pFile);
 
-	FS_FreeFile(f.v);
+	FS_FreeFile(pFile);
 }
 
 

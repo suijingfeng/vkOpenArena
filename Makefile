@@ -1,11 +1,17 @@
-COMPILE_PLATFORM=$(shell uname | sed -e s/_.*//|tr '[:upper:]' '[:lower:]' | sed -e 's/\//_/g')
-COMPILE_ARCH=$(shell uname -m | sed -e s/i.86/x86/ | sed -e 's/^arm.*/arm/')
+COMPILE_PLATFORM=$(shell uname | sed -e s/_.*// | tr '[:upper:]' '[:lower:]' | sed -e 's/\//_/g')
+COMPILE_ARCH=$(shell uname -m | sed -e 's/i.86/x86/' | sed -e 's/^arm.*/arm/')
 
 #CC=clang
 
 ifeq ($(COMPILE_PLATFORM),darwin)
   # Apple does some things a little differently...
-  COMPILE_ARCH=$(shell uname -p | sed -e s/i.86/x86/)
+  COMPILE_ARCH=$(shell uname -p | sed -e 's/i.86/x86/')
+endif
+
+ifeq ($(COMPILE_PLATFORM),mingw32)
+  ifeq ($(COMPILE_ARCH),i386)
+    COMPILE_ARCH=x86
+  endif
 endif
 
 ifndef BUILD_STANDALONE
@@ -30,14 +36,10 @@ ifndef BUILD_MISSIONPACK
   BUILD_MISSIONPACK= 1
 endif
 
-ifndef BUILD_WITH_SDL
-  BUILD_WITH_SDL = 1
+ifndef BUILD_VULKAN
+  BUILD_VULKAN = 1
 endif
 
-
-ifndef USE_RENDERER_DLOPEN
-USE_RENDERER_DLOPEN=1
-endif
 
 BASEGAME=baseoa
 VERSION=3.0.0a
@@ -51,6 +53,11 @@ VERSION=3.0.0a
 #
 #############################################################################
 -include Makefile.local
+
+ifndef USE_RENDERER_DLOPEN
+USE_RENDERER_DLOPEN=1
+endif
+
 
 ifeq ($(COMPILE_PLATFORM),cygwin)
   PLATFORM=mingw32
@@ -170,7 +177,7 @@ endif
 
 ifndef USE_CURL_DLOPEN
   ifdef MINGW
-    USE_CURL_DLOPEN=0
+    USE_CURL_DLOPEN=1
   else
     USE_CURL_DLOPEN=1
   endif
@@ -255,7 +262,7 @@ ROADIR=$(MOUNT_DIR)/renderer_oa
 RVULKANDIR=$(MOUNT_DIR)/renderer_vulkan
 RMYDEVDIR=$(MOUNT_DIR)/renderer_mydev
 CMDIR=$(MOUNT_DIR)/qcommon
-SDLDIR=$(MOUNT_DIR)/sdl
+PLATFORM_DIR=$(MOUNT_DIR)/platform
 SYSDIR=$(MOUNT_DIR)/sys
 GDIR=$(MOUNT_DIR)/game
 CGDIR=$(MOUNT_DIR)/cgame
@@ -291,28 +298,12 @@ ifneq ($(BUILD_CLIENT),0)
 	OPENAL_CFLAGS ?= $(shell PKG_CONFIG --silence-errors --cflags openal)
 	OPENAL_LIBS ?= $(shell PKG_CONFIG --silence-errors --libs openal)
 
-ifeq ($(BUILD_WITH_SDL), 1)
-	SDL_CFLAGS ?= $(shell PKG_CONFIG --silence-errors --cflags sdl2|sed 's/-Dmain=SDL_main//')
-	SDL_LIBS ?= $(shell PKG_CONFIG --silence-errors --libs sdl2)
-endif
-
 	FREETYPE_CFLAGS ?= $(shell PKG_CONFIG --silence-errors --cflags freetype2)
   else
 	# assume they're in the system default paths (no -I or -L needed)
 	CURL_LIBS ?= -lcurl
 	OPENAL_LIBS ?= -lopenal
   endif
-
-ifeq ($(BUILD_WITH_SDL), 1)
-
-  # Use sdl2-config if all else fails
-  ifeq ($(SDL_CFLAGS),)
-	ifneq ($(call bin_path, sdl2-config),)
-	  SDL_CFLAGS ?= $(shell sdl2-config --cflags)
-	  SDL_LIBS ?= $(shell sdl2-config --libs)
-	endif
-  endif
-endif
 endif
 
 
@@ -327,11 +318,28 @@ EXTRA_FILES=
 CLIENT_EXTRA_FILES=
 
 
+#Possible values "gnu90", "gnu99" and "gnu11". Note that the engine uses gnu-extensions. gnu90 is broken in the commit where this message is added. Travis does not support gnu11 at the moment.
+CFLAGS+="-std=gnu99"
+
 ifneq (,$(findstring "$(PLATFORM)", "linux" "gnu_kfreebsd" "kfreebsd-gnu" "gnu"))
   TOOLS_CFLAGS += -DARCH_STRING=\"$(ARCH)\"
   BASE_CFLAGS = -Wall -Wimplicit -Wstrict-prototypes \
 	-pipe -DUSE_ICON -DARCH_STRING=\\\"$(ARCH)\\\"
-  CLIENT_CFLAGS += $(SDL_CFLAGS)
+  
+
+ifeq ($(USING_XLIB), 1)
+CFLAGS += -DUSING_XLIB
+else
+
+ifeq ($(USING_XCB), 1)
+CLIENT_CFLAGS += -DUSING_XCB
+endif
+
+endif
+
+#  CLIENT_CFLAGS += -DUSING_WAYLAND
+
+
 #####################################
 #  BASE_CFLAGS += -fno-strict-aliasing
 ####################################
@@ -339,7 +347,7 @@ ifneq (,$(findstring "$(PLATFORM)", "linux" "gnu_kfreebsd" "kfreebsd-gnu" "gnu")
   OPTIMIZE = $(OPTIMIZEVM) -ffast-math
 
   ifeq ($(ARCH),x86_64)
-    OPTIMIZEVM = -O2 -msse2
+    OPTIMIZEVM = -O2
     OPTIMIZE = $(OPTIMIZEVM) -ffast-math
     HAVE_VM_COMPILED=true
   else
@@ -358,21 +366,20 @@ endif
   THREAD_LIBS=-lpthread
   LIBS=-ldl -lm
 
-  CLIENT_LIBS=$(SDL_LIBS)
+#TODO:remove SDL2
+  CLIENT_LIBS = -lX11
 
-
-
-ifeq ($(BUILD_WITH_SDL), 1)
-  RENDERER_LIBS = $(SDL_LIBS) 
-else
   RENDERER_LIBS = -lGL
-endif
 
+
+#  XCB_CFLAGS = $(shell PKG_CONFIG --silence-errors --cflags xcb)
+  XCB_LIBS = $(shell pkg-config --libs xcb)
 
   CLIENT_CFLAGS += $(CURL_CFLAGS)
   CLIENT_LIBS += $(CURL_LIBS)
 
-
+  CLIENT_LIBS += $(XCB_LIBS)
+  
   ifeq ($(USE_OPENAL),1)
     ifneq ($(USE_OPENAL_DLOPEN),1)
       CLIENT_LIBS += $(THREAD_LIBS) $(OPENAL_LIBS)
@@ -654,6 +661,16 @@ ifdef MINGW
 	CLIENT_EXTRA_FILES += $(LIBSDIR)/win64/OpenAL64.dll
 	endif
 
+	ifeq ($(ARCH),x86)
+	CLIENT_LIBS += $(LIBSDIR)/win32/libcurl32-4.dll
+	CLIENT_EXTRA_FILES += $(LIBSDIR)/win32/libcurl32-4.dll
+	else
+	CLIENT_LIBS += $(LIBSDIR)/win64/libcurl-4.dll
+	CLIENT_EXTRA_FILES +=$(LIBSDIR)/win64/libcurl-4.dll
+	endif
+
+ 
+
 else # ifdef MINGW
 
 #############################################################################
@@ -704,7 +721,15 @@ ifneq ($(BUILD_CLIENT),0)
   ifneq ($(USE_RENDERER_DLOPEN),0)
 	TARGETS += $(B)/$(CLIENTBIN)$(FULLBINEXT)
 	TARGETS += $(B)/renderer_openarena_$(SHLIBNAME) $(B)/renderer_opengl1_$(SHLIBNAME) $(B)/renderer_opengl2_$(SHLIBNAME)
-	TARGETS += $(B)/renderer_vulkan_$(SHLIBNAME) $(B)/renderer_mydev_$(SHLIBNAME)
+
+    ifneq ($(BUILD_VULKAN),0)
+		TARGETS += $(B)/renderer_vulkan_$(SHLIBNAME)
+	endif
+
+	TARGETS += $(B)/renderer_mydev_$(SHLIBNAME)
+
+
+
   else
 	TARGETS += $(B)/$(CLIENTBIN)$(FULLBINEXT) $(B)/$(CLIENTBIN)_opengl1$(FULLBINEXT) $(B)/$(CLIENTBIN)_opengl2$(FULLBINEXT)
 	TARGETS += $(B)/$(CLIENTBIN)_vulkan$(FULLBINEXT) $(B)/$(CLIENTBIN)_mydev$(FULLBINEXT)
@@ -1062,6 +1087,10 @@ endif
 	@echo ""
 	@echo "  LIBS:"
 	$(call print_wrapped, $(LIBS))
+
+	@echo "  RENDERER_LIBS:"
+	$(call print_wrapped, $(RENDERER_LIBS))
+
 	@echo ""
 	@echo "  CLIENT_LIBS:"
 	$(call print_wrapped, $(CLIENT_LIBS))
@@ -1414,32 +1443,6 @@ Q3OBJ = \
   $(B)/client/con_log.o \
   $(B)/client/sys_main.o
 
-ifeq ($(BUILD_WITH_SDL), 1)
-
-Q3OBJ += \
-  $(B)/client/sdl_input.o \
-  $(B)/client/sdl_snd.o \
-  $(B)/client/sdl_getClipboardData.o \
-  $(B)/client/win_dummy.o
-else
-Q3OBJ += \
-  $(B)/client/input_linux.o \
-  $(B)/client/sound_linux.o \
-  $(B)/client/gamma_linux.o \
-  $(B)/client/glimp_linux.o \
-  $(B)/client/x11_randr.o \
-  $(B)/client/x11_vidmode.o \
-  $(B)/client/getClipboardData_linux.o
-endif
-
-
-ifdef MINGW
-  Q3OBJ += \
-	$(B)/client/con_passive.o
-else
-  Q3OBJ += \
-	$(B)/client/con_tty.o
-endif
 
 Q3R2OBJ = \
   $(B)/renderergl2/tr_animation.o \
@@ -1477,8 +1480,7 @@ Q3R2OBJ = \
   $(B)/renderergl2/tr_vbo.o \
   $(B)/renderergl2/tr_world.o \
   $(B)/renderergl2/tr_common.o \
-  $(B)/renderergl2/matrix_multiplication.o \
-  $(B)/renderergl2/sdl_glimp.o
+  $(B)/renderergl2/matrix_multiplication.o
 
 
 Q3R2STRINGOBJ = \
@@ -1541,8 +1543,7 @@ Q3ROBJ = \
   $(B)/renderergl1/tr_surface.o \
   $(B)/renderergl1/tr_world.o \
   $(B)/renderergl1/tr_common.o \
-  $(B)/renderergl1/matrix_multiplication.o \
-  $(B)/renderergl1/sdl_glimp.o
+  $(B)/renderergl1/matrix_multiplication.o
 
 
 Q3ROAOBJ = \
@@ -1573,8 +1574,7 @@ Q3ROAOBJ = \
   $(B)/renderer_oa/tr_surface.o \
   $(B)/renderer_oa/tr_world.o \
   $(B)/renderer_oa/tr_common.o \
-  $(B)/renderer_oa/matrix_multiplication.o \
-  $(B)/renderer_oa/sdl_glimp.o \
+  $(B)/renderer_oa/matrix_multiplication.o
 
 ######################  MYDEV  ######################
 
@@ -1610,8 +1610,7 @@ Q3MYDEVOBJ = \
   $(B)/renderer_mydev/qgl.o \
   $(B)/renderer_mydev/qgl_log.o \
   $(B)/renderer_mydev/loadImage.o \
-  $(B)/renderer_mydev/matrix_multiplication.o \
-  $(B)/renderer_mydev/sdl_glimp.o
+  $(B)/renderer_mydev/matrix_multiplication.o
 
 ######################  VULKAN  ######################
 
@@ -1666,6 +1665,7 @@ Q3VKOBJ = \
   $(B)/renderer_vulkan/tr_backend.o \
   $(B)/renderer_vulkan/tr_Cull.o \
   $(B)/renderer_vulkan/tr_common.o \
+  $(B)/renderer_vulkan/vk_impl.o \
   $(B)/renderer_vulkan/vk_validation.o \
   $(B)/renderer_vulkan/vk_instance.o \
   $(B)/renderer_vulkan/vk_init.o \
@@ -1691,14 +1691,12 @@ Q3VKOBJ = \
   $(B)/renderer_vulkan/single_texture_frag.o \
   $(B)/renderer_vulkan/single_texture_vert.o \
   \
-  $(B)/renderer_vulkan/R_StretchRaw.o \
   $(B)/renderer_vulkan/RB_DebugGraphics.o \
   $(B)/renderer_vulkan/RB_ShowImages.o \
   $(B)/renderer_vulkan/RB_DrawNormals.o \
   $(B)/renderer_vulkan/RB_DrawTris.o \
   $(B)/renderer_vulkan/R_PrintMat.o \
   \
-  $(B)/renderer_vulkan/glConfig.o \
   $(B)/renderer_vulkan/vk_khr_display.o \
   \
   $(B)/renderer_vulkan/R_PortalPlane.o \
@@ -1706,7 +1704,6 @@ Q3VKOBJ = \
   $(B)/renderer_vulkan/R_RotateForViewer.o \
   \
   $(B)/renderer_vulkan/ref_import.o \
-  $(B)/renderer_vulkan/render_export.o \
   \
   $(B)/renderer_vulkan/vk_image.o \
   $(B)/renderer_vulkan/vk_buffers.o \
@@ -1719,9 +1716,8 @@ Q3VKOBJ = \
   $(B)/renderer_vulkan/R_Puff.o \
   $(B)/renderer_vulkan/R_ImagePNG.o \
   $(B)/renderer_vulkan/R_ImageBMP.o \
-  $(B)/renderer_vulkan/R_ImagePCX.o \
+  $(B)/renderer_vulkan/R_ImagePCX.o
 
-  Q3VKOBJ += $(B)/renderer_vulkan/vk_create_window_SDL.o
 
 ######################################################
 
@@ -1802,13 +1798,9 @@ endif
 ifeq ($(ARCH),x86)
   Q3OBJ += \
 	$(B)/client/snd_mixa.o \
-	$(B)/client/matha.o \
-	$(B)/client/snapvector.o
+	$(B)/client/matha.o 
 endif
-ifeq ($(ARCH),x86_64)
-  Q3OBJ += \
-	$(B)/client/snapvector.o
-endif
+
 
 ifeq ($(NEED_OPUS),1)
 ifeq ($(USE_INTERNAL_OPUS),1)
@@ -2014,17 +2006,59 @@ ifeq ($(HAVE_VM_COMPILED),true)
 endif
 
 Q3OBJ += \
-	$(B)/client/signals.o \
+	$(B)/client/sys_signals.o \
 	$(B)/client/sys_loadlib.o
 
 ifdef MINGW
+
   Q3OBJ += \
 	$(B)/client/win_resource.o \
 	$(B)/client/sys_win32.o
+
+  Q3OBJ += \
+	$(B)/client/con_passive.o
+
+#  Q3OBJ += \
+#    $(B)/client/sdl_snd.o 
+
+  Q3OBJ += \
+    $(B)/client/win_snd.o 
+
+  Q3OBJ += \
+    $(B)/client/win_create_window.o \
+	$(B)/client/win_input.o \
+	$(B)/client/win_log.o \
+	$(B)/client/win_gamma.o \
+	$(B)/client/win_wndproc.o 
+
 else
+
   Q3OBJ += \
 	$(B)/client/sys_unix.o
+
+  Q3OBJ += \
+	$(B)/client/con_tty.o
+
+  Q3OBJ += \
+    $(B)/client/linux_sound.o
+
+  ifeq ($(USING_XLIB), 1)
+  Q3OBJ += \
+    $(B)/client/xlib_input.o \
+    $(B)/client/xlib_create_window.o \
+    $(B)/client/x11_randr.o 
+  else
+  Q3OBJ += \
+    $(B)/client/xcb_input.o \
+    $(B)/client/xcb_keysyms.o \
+    $(B)/client/xcb_create_window.o 
+  endif
+
+  Q3OBJ +=  $(B)/client/WinSys_Common.o
 endif
+
+
+
 
 ifeq ($(PLATFORM),darwin)
   Q3OBJ += \
@@ -2074,7 +2108,7 @@ $(B)/renderer_mydev_$(SHLIBNAME): $(Q3MYDEVOBJ) $(JPGOBJ)
 $(B)/renderer_vulkan_$(SHLIBNAME): $(Q3VKOBJ) $(JPGOBJ)
 	$(echo_cmd) "LD $@"
 	$(Q)$(CC) $(CFLAGS) $(SHLIBLDFLAGS) -o $@ $(Q3VKOBJ) $(JPGOBJ) \
-		$(THREAD_LIBS) $(RENDERER_LIBS) $(SDL_LIBS) $(LIBS)
+		$(THREAD_LIBS) $(RENDERER_LIBS) $(LIBS)
 
 ##############################################################
 
@@ -2196,19 +2230,15 @@ Q3DOBJ = \
   \
   $(B)/ded/con_log.o \
   $(B)/ded/sys_main.o \
-  $(B)/ded/signals.o \
+  $(B)/ded/sys_signals.o \
   $(B)/ded/sys_loadlib.o
   
 ifeq ($(ARCH),x86)
   Q3DOBJ += \
 	$(B)/ded/snd_mixa.o \
-	$(B)/ded/matha.o \
-	$(B)/ded/snapvector.o
+	$(B)/ded/matha.o 
 endif
-ifeq ($(ARCH),x86_64)
-  Q3DOBJ += \
-	$(B)/ded/snapvector.o
-endif
+
 
 ifeq ($(USE_INTERNAL_ZLIB),1)
 Q3DOBJ += \
@@ -2612,7 +2642,7 @@ $(B)/client/%.o: $(OPUSFILEDIR)/src/%.c
 $(B)/client/%.o: $(ZDIR)/%.c
 	$(DO_CC)
 
-$(B)/client/%.o: $(SDLDIR)/%.c
+$(B)/client/%.o: $(PLATFORM_DIR)/%.c
 	$(DO_CC)
 
 $(B)/client/%.o: $(SYSDIR)/%.c
@@ -2630,7 +2660,7 @@ $(B)/client/%.o: $(SYSDIR)/%.rc
 $(B)/renderer_mydev/%.o: $(CMDIR)/%.c
 	$(DO_REF_CC)
 
-$(B)/renderer_mydev/%.o: $(SDLDIR)/%.c
+$(B)/renderer_mydev/%.o: $(PLATFORM_DIR)/%.c
 	$(DO_REF_CC)
 
 $(B)/renderer_mydev/%.o: $(JPDIR)/%.c
@@ -2646,7 +2676,7 @@ $(B)/renderer_mydev/%.o: $(RCOMMONDIR)/%.c
 $(B)/renderer_vulkan/%.o: $(CMDIR)/%.c
 	$(DO_REF_CC)
 
-$(B)/renderer_vulkan/%.o: $(SDLDIR)/%.c
+$(B)/renderer_vulkan/%.o: $(PLATFORM_DIR)/%.c
 	$(DO_REF_CC)
 
 $(B)/renderer_vulkan/%.o: $(JPDIR)/%.c
@@ -2663,7 +2693,7 @@ $(B)/renderer_vulkan/%.o: $(MOUNT_DIR)/renderer_vulkan/shaders/Compiled/%.c
 $(B)/renderer_oa/%.o: $(CMDIR)/%.c
 	$(DO_REF_CC)
 
-$(B)/renderer_oa/%.o: $(SDLDIR)/%.c
+$(B)/renderer_oa/%.o: $(PLATFORM_DIR)/%.c
 	$(DO_REF_CC)
 
 $(B)/renderer_oa/%.o: $(JPDIR)/%.c
@@ -2679,7 +2709,7 @@ $(B)/renderer_oa/%.o: $(ROADIR)/%.c
 $(B)/renderergl1/%.o: $(CMDIR)/%.c
 	$(DO_REF_CC)
 
-$(B)/renderergl1/%.o: $(SDLDIR)/%.c
+$(B)/renderergl1/%.o: $(PLATFORM_DIR)/%.c
 	$(DO_REF_CC)
 
 $(B)/renderergl1/%.o: $(JPDIR)/%.c
@@ -2707,7 +2737,7 @@ $(B)/renderergl2/%.o: $(RGL2DIR)/%.c
 $(B)/renderergl2/%.o: $(CMDIR)/%.c
 	$(DO_REF_CC)
 
-$(B)/renderergl2/%.o: $(SDLDIR)/%.c
+$(B)/renderergl2/%.o: $(PLATFORM_DIR)/%.c
 	$(DO_REF_CC)
 
 $(B)/renderergl2/%.o: $(JPDIR)/%.c

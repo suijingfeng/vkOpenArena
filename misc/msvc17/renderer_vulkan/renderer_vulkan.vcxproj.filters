@@ -21,9 +21,6 @@
     <ClCompile Include="..\..\..\code\renderer_vulkan\FixRenderCommandList.c">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\code\renderer_vulkan\glConfig.c">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="..\..\..\code\renderer_vulkan\matrix_multiplication.c">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -93,9 +90,6 @@
     <ClCompile Include="..\..\..\code\renderer_vulkan\R_SortDrawSurfs.c">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\code\renderer_vulkan\R_StretchRaw.c">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="..\..\..\code\renderer_vulkan\RB_DebugGraphics.c">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -121,9 +115,6 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="..\..\..\code\renderer_vulkan\ref_import.c">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\..\code\renderer_vulkan\render_export.c">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="..\..\..\code\renderer_vulkan\tr_animation.c">

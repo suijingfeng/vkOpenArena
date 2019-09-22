@@ -25,8 +25,10 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 // because games can change separately from the main system version, we need a
 // second version that must match between game and cgame
 
-#if defined(BG_PUBLIC_H)
-#else
+// #if defined(BG_PUBLIC_H)
+
+// #else
+#ifndef BG_PUBLIC_H
 #define BG_PUBLIC_H 1
 
 #define	GAME_VERSION		BASEGAME "-1"
@@ -101,7 +103,7 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #define CS_LOCATIONS			(CS_PLAYERS+MAX_CLIENTS)
 #define CS_PARTICLES			(CS_LOCATIONS+MAX_LOCATIONS)
 
-#define CS_MAX				(CS_PARTICLES+MAX_LOCATIONS)
+#define CS_MAX					(CS_PARTICLES+MAX_LOCATIONS)
 
 #if (CS_MAX) > MAX_CONFIGSTRINGS
 #error overflow: (CS_MAX) > MAX_CONFIGSTRINGS

@@ -13,7 +13,7 @@ This is called by the clipmodel subsystem so we can share the 1.8 megs of
 space in big maps...
 =================
 */
-void RE_SetWorldVisData( const uint8_t *vis )
+void RE_SetWorldVisData( const unsigned char *vis )
 {
 	tr.externalVisData = vis;
 }

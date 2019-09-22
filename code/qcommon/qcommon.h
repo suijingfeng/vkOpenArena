@@ -378,7 +378,13 @@ void	*VM_ExplicitArgPtr( vm_t *vm, intptr_t intValue );
 #define	VMA(x) VM_ArgPtr(args[x])
 static ID_INLINE float _vmf(intptr_t x)
 {
-	floatint_t fi;
+	typedef union float2int_s {
+		float f;
+		int i;
+		unsigned int ui;
+	} float2int_t;
+
+	float2int_t fi;
 	fi.i = (int) x;
 	return fi.f;
 }
@@ -667,7 +673,7 @@ void	FS_FCloseFile( fileHandle_t f );
 // note: you can't just fclose from another DLL, due to MS libc issues
 
 long	FS_ReadFileDir(const char *qpath, void *searchPath, qboolean unpure, void **buffer);
-long	FS_ReadFile(const char *qpath, void **buffer);
+long	FS_ReadFile(const char *qpath, char **buffer);
 
 // returns the length of the file
 // a null buffer will just return the file length without loading
@@ -1042,88 +1048,6 @@ qboolean UI_usesUniqueCDKey(void);
 
 
 
-/*
-==============================================================
-
-NON-PORTABLE SYSTEM SERVICES
-
-==============================================================
-*/
-
-
-
-char	*Sys_GetCurrentUser( void );
-
-void	QDECL Sys_Error( const char *error, ...) __attribute__ ((noreturn, format (printf, 1, 2)));
-void	Sys_Quit (void) __attribute__ ((noreturn));
-
-
-void	Sys_Print( const char *msg );
-void    Sys_AnsiColorPrint( const char *msg );
-// Sys_Milliseconds should only be used for profiling purposes,
-// any game related timing information should come from event timestamps
-int		Sys_Milliseconds (void);
-
-qboolean Sys_RandomBytes( byte *string, int len );
-
-// the system console is shown when a dedicated server is running
-void	Sys_DisplaySystemConsole( qboolean show );
-
-void	Sys_SetErrorText( const char *text );
-
-void	Sys_SendPacket( int length, const void *data, netadr_t to );
-
-qboolean	Sys_StringToAdr( const char *s, netadr_t *a, netadrtype_t family );
-//Does NOT parse port numbers, only base addresses.
-
-qboolean	Sys_IsLANAddress (netadr_t adr);
-void		Sys_ShowIP(void);
-
-FILE	*Sys_FOpen( const char *ospath, const char *mode );
-qboolean Sys_Mkdir( const char *path );
-FILE	*Sys_Mkfifo( const char *ospath );
-char	*Sys_Cwd( void );
-
-
-// Console
-void CON_Shutdown( void );
-void CON_Init( void );
-char *CON_Input( void );
-unsigned int CON_LogSize( void );
-
-unsigned int CON_LogRead( char *out, unsigned int outSize );
-void CON_Print( const char *message );
-unsigned int CON_LogWrite( const char *in );
-
-
-char **Sys_ListFiles( const char *directory, const char *extension, char *filter, int *numfiles, qboolean wantsubs );
-void	Sys_FreeFileList( char **list );
-void	Sys_Sleep(int msec);
-
-qboolean Sys_LowPhysicalMemory( void );
-
-void Sys_SetEnv(const char *name, const char *value);
-
-typedef enum
-{
-	DR_YES = 0,
-	DR_NO = 1,
-	DR_OK = 0,
-	DR_CANCEL = 1
-} dialogResult_t;
-
-typedef enum
-{
-	DT_INFO,
-	DT_WARNING,
-	DT_ERROR,
-	DT_YES_NO,
-	DT_OK_CANCEL
-} dialogType_t;
-
-dialogResult_t Sys_Dialog( dialogType_t type, const char *message, const char *title );
-
-qboolean Sys_WritePIDFile( void );
 
 /* This is based on the Adaptive Huffman algorithm described in Sayood's Data
  * Compression book.  The ranks are not actually stored, but implicitly defined

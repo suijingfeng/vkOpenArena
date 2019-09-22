@@ -4,7 +4,7 @@
 
 void vk_shutdown(void);
 VkBool32 isVKinitialied(void);
-void vk_initialize(void);
+void vk_initialize(void * pWinContext);
 
 
 #endif

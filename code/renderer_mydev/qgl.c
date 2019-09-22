@@ -27,75 +27,98 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 ** two functions:
 **
 */
-#include "tr_local.h"
+
+
+#if defined(_WIN32)
+#define OPENGL_DLL_NAME	"opengl32.dll"
+#elif defined(MACOS_X)
+#define OPENGL_DLL_NAME	"/System/Library/Frameworks/OpenGL.framework/Libraries/libGL.dylib"
+#else
+#define OPENGL_DLL_NAME	"libGL.so.1"
+#endif
+
+
+#ifdef _WIN32
+#include <windows.h>
+#define Sys_LoadLibrary(f)      (void*)LoadLibrary(f)
+#define Sys_UnloadLibrary(h)    FreeLibrary((HMODULE)h)
+#define Sys_LoadFunction(h,fn)  (void*)GetProcAddress((HMODULE)h,fn)
+#define Sys_LibraryError()      "unknown"
+#else
+#include <dlfcn.h>
+#define Sys_LoadLibrary(f)      dlopen(f,RTLD_NOW)
+#define Sys_UnloadLibrary(h)    dlclose(h)
+#define Sys_LoadFunction(h,fn)  dlsym(h,fn)
+#define Sys_LibraryError()      dlerror()
+#endif
+
+
 #include "qgl.h"
-#include "../qcommon/sys_loadlib.h"
-
-
+#include "tr_local.h"
 
 static cvar_t* r_ext_texture_filter_anisotropic;
 static cvar_t* r_ext_max_anisotropy;
+static void * hinstOpenGL = NULL;
 
+void ( APIENTRYP qglAlphaFunc )(GLenum func, GLclampf ref);
+void ( APIENTRYP qglBegin )(GLenum mode);
+void ( APIENTRYP qglBindTexture )(GLenum target, GLuint texture);
+void ( APIENTRYP qglBlendFunc )(GLenum sfactor, GLenum dfactor);
+void ( APIENTRYP qglClear )(GLbitfield mask);
+void ( APIENTRYP qglClearColor )(GLclampf red, GLclampf green, GLclampf blue, GLclampf alpha);
+void ( APIENTRYP qglClipPlane )(GLenum plane, const GLdouble *equation);
+void ( APIENTRYP qglColor3f )(GLfloat red, GLfloat green, GLfloat blue);
+void ( APIENTRYP qglColorMask )(GLboolean red, GLboolean green, GLboolean blue, GLboolean alpha);
+void ( APIENTRYP qglColorPointer )(GLint size, GLenum type, GLsizei stride, const GLvoid *pointer);
+void ( APIENTRYP qglCullFace )(GLenum mode);
+void ( APIENTRYP qglDeleteTextures )(GLsizei n, const GLuint *textures);
+void ( APIENTRYP qglDepthFunc )(GLenum func);
+void ( APIENTRYP qglDepthMask )(GLboolean flag);
+void ( APIENTRYP qglDepthRange )(GLclampd zNear, GLclampd zFar);
+void ( APIENTRYP qglDisable )(GLenum cap);
+void ( APIENTRYP qglDisableClientState )(GLenum array);
+void ( APIENTRYP qglDrawBuffer )(GLenum mode);
+void ( APIENTRYP qglDrawElements )(GLenum mode, GLsizei count, GLenum type, const GLvoid *indices);
+void ( APIENTRYP qglEnable )(GLenum cap);
+void ( APIENTRYP qglEnableClientState )(GLenum array);
+void ( APIENTRYP qglEnd )(void);
+void ( APIENTRYP qglFinish )(void);
+GLenum ( APIENTRYP qglGetError )(void);
+void ( APIENTRYP qglGetIntegerv )(GLenum pname, GLint *params);
+const GLubyte * ( APIENTRYP qglGetString )(GLenum name);
+void ( APIENTRYP qglLineWidth )(GLfloat width);
+void ( APIENTRYP qglLoadIdentity )(void);
+void ( APIENTRYP qglLoadMatrixf )(const GLfloat *m);
+void ( APIENTRYP qglMatrixMode )(GLenum mode);
+void ( APIENTRYP qglOrtho )(GLdouble left, GLdouble right, GLdouble bottom, GLdouble top, GLdouble zNear, GLdouble zFar);
+void ( APIENTRYP qglPolygonMode )(GLenum face, GLenum mode);
+void ( APIENTRYP qglPolygonOffset )(GLfloat factor, GLfloat units);
+void ( APIENTRYP qglPopMatrix )(void);
+void ( APIENTRYP qglPushMatrix )(void);
+void ( APIENTRYP qglReadPixels )(GLint x, GLint y, GLsizei width, GLsizei height, GLenum format, GLenum type, GLvoid *pixels);
+void ( APIENTRYP qglScissor )(GLint x, GLint y, GLsizei width, GLsizei height);
+void ( APIENTRYP qglStencilFunc )(GLenum func, GLint ref, GLuint mask);
+void ( APIENTRYP qglStencilOp )(GLenum fail, GLenum zfail, GLenum zpass);
+void ( APIENTRYP qglTexCoord2f )(GLfloat s, GLfloat t);
+void ( APIENTRYP qglTexCoord2fv )(const GLfloat *v);
+void ( APIENTRYP qglTexCoordPointer )(GLint size, GLenum type, GLsizei stride, const GLvoid *pointer);
+void ( APIENTRYP qglTexEnvf )(GLenum target, GLenum pname, GLfloat param);
+void ( APIENTRYP qglTexImage2D )(GLenum target, GLint level, GLint internalformat, GLsizei width, GLsizei height, GLint border, GLenum format, GLenum type, const GLvoid *pixels);
+void ( APIENTRYP qglTexParameterf )(GLenum target, GLenum pname, GLfloat param);
+void ( APIENTRYP qglTexParameterfv )(GLenum target, GLenum pname, const GLfloat *params);
+void ( APIENTRYP qglTexSubImage2D )(GLenum target, GLint level, GLint xoffset, GLint yoffset, GLsizei width, GLsizei height, GLenum format, GLenum type, const GLvoid *pixels);
+void ( APIENTRYP qglVertex2f )(GLfloat x, GLfloat y);
+void ( APIENTRYP qglVertex3f )(GLfloat x, GLfloat y, GLfloat z);
+void ( APIENTRYP qglVertex3fv )(const GLfloat *v);
+void ( APIENTRYP qglVertexPointer )(GLint size, GLenum type, GLsizei stride, const GLvoid *pointer);
+void ( APIENTRYP qglViewport )(GLint x, GLint y, GLsizei width, GLsizei height);
+void ( APIENTRYP qglTranslatef )(GLfloat x, GLfloat y, GLfloat z);
 
-void ( APIENTRY * qglAlphaFunc )(GLenum func, GLclampf ref);
-void ( APIENTRY * qglBegin )(GLenum mode);
-void ( APIENTRY * qglBindTexture )(GLenum target, GLuint texture);
-void ( APIENTRY * qglBlendFunc )(GLenum sfactor, GLenum dfactor);
-void ( APIENTRY * qglClear )(GLbitfield mask);
-void ( APIENTRY * qglClearColor )(GLclampf red, GLclampf green, GLclampf blue, GLclampf alpha);
-void ( APIENTRY * qglClipPlane )(GLenum plane, const GLdouble *equation);
-void ( APIENTRY * qglColor3f )(GLfloat red, GLfloat green, GLfloat blue);
-void ( APIENTRY * qglColorMask )(GLboolean red, GLboolean green, GLboolean blue, GLboolean alpha);
-void ( APIENTRY * qglColorPointer )(GLint size, GLenum type, GLsizei stride, const GLvoid *pointer);
-void ( APIENTRY * qglCullFace )(GLenum mode);
-void ( APIENTRY * qglDeleteTextures )(GLsizei n, const GLuint *textures);
-void ( APIENTRY * qglDepthFunc )(GLenum func);
-void ( APIENTRY * qglDepthMask )(GLboolean flag);
-void ( APIENTRY * qglDepthRange )(GLclampd zNear, GLclampd zFar);
-void ( APIENTRY * qglDisable )(GLenum cap);
-void ( APIENTRY * qglDisableClientState )(GLenum array);
-void ( APIENTRY * qglDrawBuffer )(GLenum mode);
-void ( APIENTRY * qglDrawElements )(GLenum mode, GLsizei count, GLenum type, const GLvoid *indices);
-void ( APIENTRY * qglEnable )(GLenum cap);
-void ( APIENTRY * qglEnableClientState )(GLenum array);
-void ( APIENTRY * qglEnd )(void);
-void ( APIENTRY * qglFinish )(void);
-GLenum ( APIENTRY * qglGetError )(void);
-void ( APIENTRY * qglGetIntegerv )(GLenum pname, GLint *params);
-const GLubyte * ( APIENTRY * qglGetString )(GLenum name);
-void ( APIENTRY * qglLineWidth )(GLfloat width);
-void ( APIENTRY * qglLoadIdentity )(void);
-void ( APIENTRY * qglLoadMatrixf )(const GLfloat *m);
-void ( APIENTRY * qglMatrixMode )(GLenum mode);
-void ( APIENTRY * qglOrtho )(GLdouble left, GLdouble right, GLdouble bottom, GLdouble top, GLdouble zNear, GLdouble zFar);
-void ( APIENTRY * qglPolygonMode )(GLenum face, GLenum mode);
-void ( APIENTRY * qglPolygonOffset )(GLfloat factor, GLfloat units);
-void ( APIENTRY * qglPopMatrix )(void);
-void ( APIENTRY * qglPushMatrix )(void);
-void ( APIENTRY * qglReadPixels )(GLint x, GLint y, GLsizei width, GLsizei height, GLenum format, GLenum type, GLvoid *pixels);
-void ( APIENTRY * qglScissor )(GLint x, GLint y, GLsizei width, GLsizei height);
-void ( APIENTRY * qglStencilFunc )(GLenum func, GLint ref, GLuint mask);
-void ( APIENTRY * qglStencilOp )(GLenum fail, GLenum zfail, GLenum zpass);
-void ( APIENTRY * qglTexCoord2f )(GLfloat s, GLfloat t);
-void ( APIENTRY * qglTexCoord2fv )(const GLfloat *v);
-void ( APIENTRY * qglTexCoordPointer )(GLint size, GLenum type, GLsizei stride, const GLvoid *pointer);
-void ( APIENTRY * qglTexEnvf )(GLenum target, GLenum pname, GLfloat param);
-void ( APIENTRY * qglTexImage2D )(GLenum target, GLint level, GLint internalformat, GLsizei width, GLsizei height, GLint border, GLenum format, GLenum type, const GLvoid *pixels);
-void ( APIENTRY * qglTexParameterf )(GLenum target, GLenum pname, GLfloat param);
-void ( APIENTRY * qglTexParameterfv )(GLenum target, GLenum pname, const GLfloat *params);
-void ( APIENTRY * qglTexSubImage2D )(GLenum target, GLint level, GLint xoffset, GLint yoffset, GLsizei width, GLsizei height, GLenum format, GLenum type, const GLvoid *pixels);
-void ( APIENTRY * qglVertex2f )(GLfloat x, GLfloat y);
-void ( APIENTRY * qglVertex3f )(GLfloat x, GLfloat y, GLfloat z);
-void ( APIENTRY * qglVertex3fv )(const GLfloat *v);
-void ( APIENTRY * qglVertexPointer )(GLint size, GLenum type, GLsizei stride, const GLvoid *pointer);
-void ( APIENTRY * qglViewport )(GLint x, GLint y, GLsizei width, GLsizei height);
-void ( APIENTRY * qglTranslatef )(GLfloat x, GLfloat y, GLfloat z);
-
-void (APIENTRY * qglActiveTextureARB) (GLenum texture);
-void (APIENTRY * qglClientActiveTextureARB) (GLenum texture);
-void (APIENTRY * qglMultiTexCoord2fARB) (GLenum target, GLfloat s, GLfloat t);
-void (APIENTRY * qglLockArraysEXT) (GLint first, GLsizei count);
-void (APIENTRY * qglUnlockArraysEXT) (void);
+void (APIENTRYP qglActiveTextureARB) (GLenum texture);
+void (APIENTRYP qglClientActiveTextureARB) (GLenum texture);
+void (APIENTRYP qglMultiTexCoord2fARB) (GLenum target, GLfloat s, GLfloat t);
+void (APIENTRYP qglLockArraysEXT) (GLint first, GLsizei count);
+void (APIENTRYP qglUnlockArraysEXT) (void);
 
 
 
@@ -224,7 +247,7 @@ void qglShutdown( qboolean unloadDLL )
 	qglVertex3fv                 = NULL;
 	qglVertexPointer             = NULL;
 	qglViewport                  = NULL;
-    qglTranslatef                = NULL;
+	qglTranslatef                = NULL;
 }
 
 
@@ -239,6 +262,12 @@ static qboolean GLimp_HaveExtension(const char *ext)
 }
 
 
+static void* GL_GetProcAddressImpl( const char *symbol )
+{
+    //void *sym = glXGetProcAddressARB((const unsigned char *)symbol);
+    return Sys_LoadFunction(hinstOpenGL, symbol);
+}
+
 /*
 ** This is responsible for binding our qgl function pointers to 
 ** the appropriate GL stuff.  In Windows this means doing a 
@@ -248,100 +277,97 @@ static qboolean GLimp_HaveExtension(const char *ext)
 */
 qboolean qglInit( void )
 {
-
-    ri.Printf( PRINT_ALL, "...initializing QGL\n" );
-/*
-    const char *dllname = OPENGL_DRIVER_NAME;
+	ri.Printf( PRINT_ALL, "...initializing QGL\n" );
+	const char *dllname = OPENGL_DLL_NAME;
 	if ( hinstOpenGL == NULL )
 	{
 		hinstOpenGL = Sys_LoadLibrary( dllname );
-		ri.Printf(PRINT_ALL, "Loading %s ... ", dllname);
 
-        if ( hinstOpenGL == NULL )
+		if ( hinstOpenGL == NULL )
 		{
-			ri.Error(ERR_FATAL, "LoadOpenGLDll: failed to load %s from /etc/ld.so.conf: %s\n", dllname, Sys_LibraryError());
-		    return qfalse;
-        }
-        
-        ri.Cvar_Set( "r_glDriver", dllname );
-
-        ri.Printf( PRINT_ALL, "succeeded\n" );
+			ri.Error(ERR_FATAL, "LoadOpenGLDll: failed to load %s from  %s\n", dllname, Sys_LibraryError());
+		    	return qfalse;
+        		}
+        		else
+        		{
+			ri.Printf(PRINT_ALL, "L oading %s successful. \n", dllname);
+		}
 	}
-*/
 
-	qglAlphaFunc            = GLimp_GetProcAddress("glAlphaFunc");
-	qglBegin                = GLimp_GetProcAddress("glBegin");
-	qglBindTexture          = GLimp_GetProcAddress("glBindTexture");
-	qglBlendFunc            = GLimp_GetProcAddress("glBlendFunc");
-	qglClear                = GLimp_GetProcAddress("glClear");
-	qglClearColor           = GLimp_GetProcAddress("glClearColor");
-	qglClipPlane            = GLimp_GetProcAddress("glClipPlane");
-	qglColor3f              = GLimp_GetProcAddress("glColor3f");
-	qglColorMask            = GLimp_GetProcAddress("glColorMask");
-	qglColorPointer         = GLimp_GetProcAddress("glColorPointer");
-	qglCullFace             = GLimp_GetProcAddress("glCullFace");
-	qglDeleteTextures       = GLimp_GetProcAddress("glDeleteTextures");
-	qglDepthFunc            = GLimp_GetProcAddress("glDepthFunc");
-	qglDepthMask            = GLimp_GetProcAddress("glDepthMask");
-	qglDepthRange           = GLimp_GetProcAddress("glDepthRange");
-	qglDisable              = GLimp_GetProcAddress("glDisable");
-	qglDisableClientState   = GLimp_GetProcAddress("glDisableClientState");
-	qglDrawBuffer           = GLimp_GetProcAddress("glDrawBuffer");
-	qglDrawElements         = GLimp_GetProcAddress("glDrawElements");
-	qglEnable               = GLimp_GetProcAddress("glEnable");
-	qglEnableClientState    = GLimp_GetProcAddress("glEnableClientState");
-	qglEnd                  = GLimp_GetProcAddress("glEnd");
-	qglFinish               = GLimp_GetProcAddress("glFinish");
-	qglGetError             = GLimp_GetProcAddress("glGetError");
-	qglGetIntegerv          = GLimp_GetProcAddress("glGetIntegerv");
-	qglGetString            = GLimp_GetProcAddress("glGetString");
-	qglLineWidth            = GLimp_GetProcAddress("glLineWidth");
-	qglLoadIdentity         = GLimp_GetProcAddress("glLoadIdentity");
-	qglLoadMatrixf          = GLimp_GetProcAddress("glLoadMatrixf");
-	qglMatrixMode           = GLimp_GetProcAddress("glMatrixMode");
-	qglOrtho                = GLimp_GetProcAddress("glOrtho");
-	qglPolygonMode          = GLimp_GetProcAddress("glPolygonMode");
-	qglPolygonOffset        = GLimp_GetProcAddress("glPolygonOffset");
-	qglPopMatrix            = GLimp_GetProcAddress("glPopMatrix");
-	qglPushMatrix           = GLimp_GetProcAddress("glPushMatrix");
-	qglReadPixels           = GLimp_GetProcAddress("glReadPixels");
-	qglScissor              = GLimp_GetProcAddress("glScissor");
-	qglStencilFunc          = GLimp_GetProcAddress("glStencilFunc");
-	qglStencilOp            = GLimp_GetProcAddress("glStencilOp");
-	qglTexCoord2f           = GLimp_GetProcAddress("glTexCoord2f");
-	qglTexCoord2fv          = GLimp_GetProcAddress("glTexCoord2fv");
-	qglTexCoordPointer      = GLimp_GetProcAddress("glTexCoordPointer");
-	qglTexEnvf              = GLimp_GetProcAddress("glTexEnvf");
-	qglTexImage2D           = GLimp_GetProcAddress("glTexImage2D");
-	qglTexParameterf        = GLimp_GetProcAddress("glTexParameterf");
-	qglTexParameterfv       = GLimp_GetProcAddress("glTexParameterfv");
-	qglTexSubImage2D        = GLimp_GetProcAddress("glTexSubImage2D");
-	qglVertex2f             = GLimp_GetProcAddress("glVertex2f");
-	qglVertex3f             = GLimp_GetProcAddress("glVertex3f");
-	qglVertex3fv            = GLimp_GetProcAddress("glVertex3fv");
-	qglVertexPointer        = GLimp_GetProcAddress("glVertexPointer");
-	qglViewport             = GLimp_GetProcAddress("glViewport");
-    qglTranslatef           = GLimp_GetProcAddress("glTranslatef");
+	qglGetString            = GL_GetProcAddressImpl("glGetString");
+
+	qglAlphaFunc	= GL_GetProcAddressImpl("glAlphaFunc");
+	qglBegin		= GL_GetProcAddressImpl("glBegin");
+	qglBindTexture          = GL_GetProcAddressImpl("glBindTexture");
+	qglBlendFunc            = GL_GetProcAddressImpl("glBlendFunc");
+	qglClear                = GL_GetProcAddressImpl("glClear");
+	qglClearColor           = GL_GetProcAddressImpl("glClearColor");
+	qglClipPlane            = GL_GetProcAddressImpl("glClipPlane");
+	qglColor3f              = GL_GetProcAddressImpl("glColor3f");
+	qglColorMask            = GL_GetProcAddressImpl("glColorMask");
+	qglColorPointer         = GL_GetProcAddressImpl("glColorPointer");
+	qglCullFace             = GL_GetProcAddressImpl("glCullFace");
+	qglDeleteTextures       = GL_GetProcAddressImpl("glDeleteTextures");
+	qglDepthFunc            = GL_GetProcAddressImpl("glDepthFunc");
+	qglDepthMask            = GL_GetProcAddressImpl("glDepthMask");
+	qglDepthRange           = GL_GetProcAddressImpl("glDepthRange");
+	qglDisable              = GL_GetProcAddressImpl("glDisable");
+	qglDisableClientState   = GL_GetProcAddressImpl("glDisableClientState");
+	qglDrawBuffer           = GL_GetProcAddressImpl("glDrawBuffer");
+	qglDrawElements         = GL_GetProcAddressImpl("glDrawElements");
+	qglEnable               = GL_GetProcAddressImpl("glEnable");
+	qglEnableClientState    = GL_GetProcAddressImpl("glEnableClientState");
+	qglEnd                  = GL_GetProcAddressImpl("glEnd");
+	qglFinish               = GL_GetProcAddressImpl("glFinish");
+	qglGetError             = GL_GetProcAddressImpl("glGetError");
+	qglGetIntegerv          = GL_GetProcAddressImpl("glGetIntegerv");
+	
+	qglLineWidth            = GL_GetProcAddressImpl("glLineWidth");
+	qglLoadIdentity         = GL_GetProcAddressImpl("glLoadIdentity");
+	qglLoadMatrixf          = GL_GetProcAddressImpl("glLoadMatrixf");
+	qglMatrixMode           = GL_GetProcAddressImpl("glMatrixMode");
+	qglOrtho                = GL_GetProcAddressImpl("glOrtho");
+	qglPolygonMode          = GL_GetProcAddressImpl("glPolygonMode");
+	qglPolygonOffset        = GL_GetProcAddressImpl("glPolygonOffset");
+	qglPopMatrix            = GL_GetProcAddressImpl("glPopMatrix");
+	qglPushMatrix           = GL_GetProcAddressImpl("glPushMatrix");
+	qglReadPixels           = GL_GetProcAddressImpl("glReadPixels");
+	qglScissor              = GL_GetProcAddressImpl("glScissor");
+	qglStencilFunc          = GL_GetProcAddressImpl("glStencilFunc");
+	qglStencilOp            = GL_GetProcAddressImpl("glStencilOp");
+	qglTexCoord2f           = GL_GetProcAddressImpl("glTexCoord2f");
+	qglTexCoord2fv          = GL_GetProcAddressImpl("glTexCoord2fv");
+	qglTexCoordPointer      = GL_GetProcAddressImpl("glTexCoordPointer");
+	qglTexEnvf              = GL_GetProcAddressImpl("glTexEnvf");
+	qglTexImage2D           = GL_GetProcAddressImpl("glTexImage2D");
+	qglTexParameterf        = GL_GetProcAddressImpl("glTexParameterf");
+	qglTexParameterfv       = GL_GetProcAddressImpl("glTexParameterfv");
+	qglTexSubImage2D        = GL_GetProcAddressImpl("glTexSubImage2D");
+	qglVertex2f             = GL_GetProcAddressImpl("glVertex2f");
+	qglVertex3f             = GL_GetProcAddressImpl("glVertex3f");
+	qglVertex3fv            = GL_GetProcAddressImpl("glVertex3fv");
+	qglVertexPointer        = GL_GetProcAddressImpl("glVertexPointer");
+	qglViewport             = GL_GetProcAddressImpl("glViewport");
+	qglTranslatef           = GL_GetProcAddressImpl("glTranslatef");
 
 
 	qglActiveTextureARB = NULL;
 	qglClientActiveTextureARB = NULL;
-    qglMultiTexCoord2fARB = NULL;
+	qglMultiTexCoord2fARB = NULL;
 	qglLockArraysEXT = NULL;
 	qglUnlockArraysEXT = NULL;
 
 	ri.Printf( PRINT_ALL,  "\n...Initializing OpenGL extensions\n" );
 
-
-    Q_strncpyz( glConfig.vendor_string, (char *) qglGetString (GL_VENDOR), sizeof( glConfig.vendor_string ) );
-    Q_strncpyz( glConfig.renderer_string, (char *) qglGetString (GL_RENDERER), sizeof( glConfig.renderer_string ) );
-    if (*glConfig.renderer_string && glConfig.renderer_string[strlen(glConfig.renderer_string) - 1] == '\n')
-        glConfig.renderer_string[strlen(glConfig.renderer_string) - 1] = 0;
-    Q_strncpyz( glConfig.version_string, (char *) qglGetString (GL_VERSION), sizeof( glConfig.version_string ) );
-    Q_strncpyz( glConfig.extensions_string, (char *)qglGetString(GL_EXTENSIONS), sizeof( glConfig.extensions_string ) );
+	Q_strncpyz( glConfig.vendor_string, (char *) qglGetString (GL_VENDOR), sizeof( glConfig.vendor_string ) );
+	Q_strncpyz( glConfig.renderer_string, (char *) qglGetString (GL_RENDERER), sizeof( glConfig.renderer_string ) );
+	if (*glConfig.renderer_string && glConfig.renderer_string[strlen(glConfig.renderer_string) - 1] == '\n')
+		glConfig.renderer_string[strlen(glConfig.renderer_string) - 1] = 0;
+	Q_strncpyz( glConfig.version_string, (char *) qglGetString (GL_VERSION), sizeof( glConfig.version_string ) );
+	Q_strncpyz( glConfig.extensions_string, (char *)qglGetString(GL_EXTENSIONS), sizeof( glConfig.extensions_string ) );
 
 	r_ext_max_anisotropy = ri.Cvar_Get( "r_ext_max_anisotropy", "2", CVAR_ARCHIVE | CVAR_LATCH );
-    r_ext_texture_filter_anisotropic = ri.Cvar_Get( "r_ext_texture_filter_anisotropic", "0", CVAR_ARCHIVE | CVAR_LATCH );
+	r_ext_texture_filter_anisotropic = ri.Cvar_Get( "r_ext_texture_filter_anisotropic", "0", CVAR_ARCHIVE | CVAR_LATCH );
 
 	// GL_EXT_texture_env_add
 	glConfig.textureEnvAddAvailable = qfalse;
@@ -369,9 +395,9 @@ qboolean qglInit( void )
 	qglClientActiveTextureARB = NULL;
 	if ( GLimp_HaveExtension( "GL_ARB_multitexture" ) )
 	{
-		qglMultiTexCoord2fARB = (void ( APIENTRY * ) (GLenum, GLfloat, GLfloat)) GLimp_GetProcAddress( "glMultiTexCoord2fARB" );
-		qglActiveTextureARB = (void ( APIENTRY * ) (GLenum )) GLimp_GetProcAddress( "glActiveTextureARB" );
-		qglClientActiveTextureARB = (void ( APIENTRY * ) (GLenum )) GLimp_GetProcAddress( "glClientActiveTextureARB" );
+		qglMultiTexCoord2fARB = (void ( APIENTRYP ) (GLenum, GLfloat, GLfloat)) GL_GetProcAddressImpl( "glMultiTexCoord2fARB" );
+		qglActiveTextureARB = (void ( APIENTRYP ) (GLenum )) GL_GetProcAddressImpl( "glActiveTextureARB" );
+		qglClientActiveTextureARB = (void ( APIENTRYP ) (GLenum )) GL_GetProcAddressImpl( "glClientActiveTextureARB" );
 
 		if ( qglActiveTextureARB )
 		{
@@ -400,8 +426,8 @@ qboolean qglInit( void )
 	if ( GLimp_HaveExtension( "GL_EXT_compiled_vertex_array" ) )
 	{
 		ri.Printf( PRINT_ALL,  "...using GL_EXT_compiled_vertex_array\n" );
-		qglLockArraysEXT = ( void ( APIENTRY * )( GLint, GLint ) ) GLimp_GetProcAddress( "glLockArraysEXT" );
-		qglUnlockArraysEXT = ( void ( APIENTRY * )( void ) ) GLimp_GetProcAddress( "glUnlockArraysEXT" );
+		qglLockArraysEXT = ( void ( APIENTRYP )( GLint, GLint ) ) GL_GetProcAddressImpl( "glLockArraysEXT" );
+		qglUnlockArraysEXT = ( void ( APIENTRYP )( void ) ) GL_GetProcAddressImpl( "glUnlockArraysEXT" );
 		if (!qglLockArraysEXT || !qglUnlockArraysEXT)
 		{
 			ri.Error(ERR_FATAL, "bad getprocaddress");

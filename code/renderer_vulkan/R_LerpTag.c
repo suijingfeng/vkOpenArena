@@ -38,7 +38,7 @@ static md3Tag_t *R_GetAnimTag( mdrHeader_t *mod, int framenum, const char *tagNa
 	{
 		if ( !strcmp( tag->name, tagName ) )
 		{
-			Q_strncpyz(dest->name, tag->name, sizeof(dest->name));
+			strncpy(dest->name, tag->name, sizeof(dest->name));
 
 			// uncompressed model...
 			//

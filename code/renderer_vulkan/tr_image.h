@@ -1,11 +1,9 @@
 #ifndef TR_IMAGE_H_
 #define TR_IMAGE_H_
 
-#include "VKimpl.h"
 #include "../qcommon/q_shared.h"
 
-
-
+#include "VKimpl.h"
 
 
 typedef struct image_s {

@@ -22,7 +22,7 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 // cl.input.c  -- builds an intended movement command to send to the server
 
 #include "client.h"
-
+#include "../sys/sys_public.h"
 unsigned	frame_msec;
 int			old_com_frameTime;
 
@@ -479,7 +479,7 @@ void CL_MouseMove(usercmd_t *cmd)
 	if (cl_scaleSensWithFov->integer) {
 		// Scale the mouse sensitivity value according FOV
 		//
-		// The sensitivity value in `cl_sensitivity` is the sensitivity
+		// The sensitivity value in "cl_sensitivity" is the sensitivity
 		// the user would have if playing on 90 degree FOV. This
 		// sensitivity value gets scaled when the user is playing at a
 		// different FOV so the mouse feels the same.

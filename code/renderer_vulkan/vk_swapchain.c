@@ -44,12 +44,6 @@ void vk_recreateSwapChain(void)
 
     ri.Printf( PRINT_ALL, " Recreate swap chain \n");
 
-    if( r_fullscreen->integer )
-    {
-        ri.Cvar_Set( "r_fullscreen", "0" );
-        r_fullscreen->modified = qtrue;
-    }
-
     // hasty prevent crash.
     ri.Cmd_ExecuteText (EXEC_NOW, "vid_restart\n");
 }
@@ -90,7 +84,13 @@ void vk_createSwapChain(VkDevice device, VkSurfaceKHR HSurface,
                 MAX(surfCaps.minImageExtent.height, 480u) );
     }
 
-    ri.Printf(PRINT_ALL, " image_extent.width: %d, image_extent.height: %d\n",
+    vk.renderArea.offset.x = 0;
+    vk.renderArea.offset.y = 0;
+    vk.renderArea.extent.width = image_extent.width;
+    vk.renderArea.extent.height = image_extent.height;
+
+
+    ri.Printf(PRINT_ALL, "Create swapchain, image_extent.width: %d, image_extent.height: %d\n",
             image_extent.width, image_extent.height);
 
 
@@ -148,7 +148,6 @@ void vk_createSwapChain(VkDevice device, VkSurfaceKHR HSurface,
 
 
 
-    ri.Printf(PRINT_ALL, "\n Create vk.swapchain. \n");
     // Regardless of which platform you're running on, the resulting
     // VkSurfaceKHR handle refers to Vulkan's view of a window, In order
     // to actually present anything to that surface, it's necessary
@@ -221,6 +220,9 @@ void vk_createSwapChain(VkDevice device, VkSurfaceKHR HSurface,
     desc.oldSwapchain = VK_NULL_HANDLE;
 
     VK_CHECK( qvkCreateSwapchainKHR(device, &desc, NULL, pHSwapChain) );
+
+    ri.Printf(PRINT_ALL, "\n vk.swapchain Created . \n");
+
 }
 
 void vk_destroySwapChain(void)

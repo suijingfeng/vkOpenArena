@@ -231,17 +231,16 @@ qboolean GLimp_GetProcAddresses( void )
 {
 	qboolean success = qtrue;
 	const char *version;
-    int qglMajorVersion, qglMinorVersion;
-//int qglesMajorVersion, qglesMinorVersion;
-#ifdef __SDL_NOGETPROCADDR__
-#define GLE( ret, name, ... ) qgl##name = gl#name;
-#else
-#define GLE( ret, name, ... ) qgl##name = (name##proc *) GLimp_GetProcAddress("gl" #name); \
-	if ( qgl##name == NULL ) { \
-		ri.Error(ERR_FATAL, "ERROR: Missing OpenGL function %s\n", "gl" #name ); \
-		success = qfalse; \
+	int qglMajorVersion, qglMinorVersion;
+	//int qglesMajorVersion, qglesMinorVersion;
+
+#define GLE( ret, name, ... )								\
+	qgl##name = (name##proc *) ri.GetGlProcAddress("gl" #name);			\
+	if ( qgl##name == NULL ) {							\
+		ri.Error(ERR_FATAL, "ERROR: Missing OpenGL function %s\n", "gl" #name );	\
+		success = qfalse;							\
 	}
-#endif
+
 
 	// OpenGL 1.0 and OpenGL ES 1.0
 	GLE(const GLubyte *, GetString, GLenum name)
@@ -258,26 +257,28 @@ qboolean GLimp_GetProcAddresses( void )
 
 	sscanf( version, "%d.%d", &qglMajorVersion, &qglMinorVersion );
 
-	if ( (qglMajorVersion > 1) || ( ( qglMajorVersion == 1) && (qglMinorVersion >= 2 ) ) ) {
+	if ( (qglMajorVersion > 1) || ( ( qglMajorVersion == 1) && (qglMinorVersion >= 2 ) ) )
+	{
 		QGL_1_1_PROCS;
 		QGL_DESKTOP_1_1_PROCS;
-        QGL_1_3_PROCS;
+		QGL_1_3_PROCS;
 		QGL_1_5_PROCS;
 		QGL_2_0_PROCS;
-	}else {
+	}
+	else
+	{
 		ri.Error( ERR_FATAL, "Unsupported OpenGL Version: %s\n", version );
 	}
 
 	if ( (qglMajorVersion > 3) || ( ( qglMajorVersion == 3) && (qglMinorVersion >= 2 ) ) )
-    {
+    	{
 		QGL_3_0_PROCS;
-        q_gl_version_at_least_3_2 = 1;
+        		q_gl_version_at_least_3_2 = 1;
 	}
-    else
-    {
-       q_gl_version_at_least_3_2 = 0;
-    }
-
+	else
+	{
+		q_gl_version_at_least_3_2 = 0;
+	}
 
 #undef GLE
 
@@ -356,9 +357,9 @@ static void GLimp_InitExtensions(void)
 	qglClientActiveTextureARB = NULL;
 	if ( GLimp_HaveExtension( "GL_ARB_multitexture" ) )
 	{
-		qglMultiTexCoord2fARB = GLimp_GetProcAddress( "glMultiTexCoord2fARB" );
-		qglActiveTextureARB = GLimp_GetProcAddress( "glActiveTextureARB" );
-		qglClientActiveTextureARB = GLimp_GetProcAddress( "glClientActiveTextureARB" );
+		qglMultiTexCoord2fARB = ri.GetGlProcAddress( "glMultiTexCoord2fARB" );
+		qglActiveTextureARB = ri.GetGlProcAddress( "glActiveTextureARB" );
+		qglClientActiveTextureARB = ri.GetGlProcAddress( "glClientActiveTextureARB" );
 
 		if ( qglActiveTextureARB )
 		{
@@ -388,8 +389,8 @@ static void GLimp_InitExtensions(void)
 	if ( GLimp_HaveExtension( "GL_EXT_compiled_vertex_array" ) )
 	{
 		ri.Printf( PRINT_ALL,  "...using GL_EXT_compiled_vertex_array\n" );
-		qglLockArraysEXT = ( void ( APIENTRY * )( GLint, GLint ) ) GLimp_GetProcAddress( "glLockArraysEXT" );
-		qglUnlockArraysEXT = ( void ( APIENTRY * )( void ) ) GLimp_GetProcAddress( "glUnlockArraysEXT" );
+		qglLockArraysEXT = ( void ( APIENTRY * )( GLint, GLint ) ) ri.GetGlProcAddress( "glLockArraysEXT" );
+		qglUnlockArraysEXT = ( void ( APIENTRY * )( void ) ) ri.GetGlProcAddress( "glUnlockArraysEXT" );
 		if (!qglLockArraysEXT || !qglUnlockArraysEXT)
 		{
 			ri.Error(ERR_FATAL, "bad getprocaddress");
@@ -444,7 +445,7 @@ static void GLimp_InitExtensions(void)
 #undef GLE
 
 	// GL function loader, based on https://gist.github.com/rygorous/16796a0c876cf8a5f542caddb55bce8a
-#define GLE(ret, name, ...) qgl##name = (name##proc *) GLimp_GetProcAddress("gl" #name);
+#define GLE(ret, name, ...) qgl##name = (name##proc *) ri.GetGlProcAddress("gl" #name);
 
 	// OpenGL 1.3, was GL_ARB_texture_compression
 	QGL_1_3_PROCS;
@@ -721,13 +722,37 @@ static void InitOpenGL( void )
 	//		- r_(color|depth|stencil)bits
 	//		- r_gamma
 	//
-	
+	glconfig_t * const pConfig = &glConfig;	
 	if ( glConfig.vidWidth == 0 )
 	{
-		GLint		temp;
+		GLint temp;
 		
-		GLimp_Init(&glConfig, qtrue);
-	
+		// GLimp_Init(&glConfig, qtrue);
+		
+		void * pContex = NULL;
+		ri.WinSysInit(&pContex, 0);
+
+        pConfig->stereoEnabled = qfalse;
+        pConfig->smpActive = qfalse;
+        pConfig->displayFrequency = 60;
+        // allways enable stencil
+        pConfig->stencilBits = 8;
+        pConfig->depthBits = 24;
+        pConfig->colorBits = 32;
+        pConfig->deviceSupportsGamma = qfalse;
+
+        pConfig->textureEnvAddAvailable = 0; // not used
+        pConfig->textureCompression = 0; // not used
+
+        // These values force the UI to disable driver selection
+        pConfig->driverType = GLDRV_ICD;
+        pConfig->hardwareType = GLHW_GENERIC;
+
+        pConfig->vidWidth = ri.GetWinWidth();
+        pConfig->vidHeight = ri.GetWinHeight();
+        pConfig->isFullscreen = ri.IsWinFullscreen();
+        pConfig->windowAspect = (float) pConfig->vidWidth / (float) pConfig->vidHeight;
+
         const char *renderer;
 
         if ( GLimp_GetProcAddresses() )
@@ -738,8 +763,8 @@ static void InitOpenGL( void )
         {
             ri.Error(ERR_FATAL, "GLimp_GetProcAddresses() failed for OpenGL 3.2 core context\n");
             GLimp_ClearProcAddresses();
-            GLimp_DeleteGLContext();
-            GLimp_DestroyWindow();
+            // GLimp_DeleteGLContext();
+            // GLimp_DestroyWindow();
         }
 
         if (!renderer || (strstr(renderer, "Software Renderer") || strstr(renderer, "Software Rasterizer")))
@@ -748,17 +773,17 @@ static void InitOpenGL( void )
                 ri.Error(ERR_FATAL, "GL_RENDERER is %s, rejecting context\n", renderer);
 
             GLimp_ClearProcAddresses();
-            GLimp_DeleteGLContext();
+            // GLimp_DeleteGLContext();
             /*
             SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK, profileMask);
             SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, majorVersion);
             SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, minorVersion);
             */
         }
+	qglClearColor( 0, 0, 1, 1 );
+	qglClear( GL_COLOR_BUFFER_BIT );
+	ri.WinSysEndFrame();
 
-        qglClearColor( 0, 0, 1, 1 );
-        qglClear( GL_COLOR_BUFFER_BIT );
-	    GLimp_EndFrame();
 
 
         // get our config strings
@@ -1775,7 +1800,6 @@ void R_Register( void )
 	ri.Cmd_AddCommand( "screenshot", R_ScreenShot_f );
 	ri.Cmd_AddCommand( "screenshotJPEG", R_ScreenShotJPEG_f );
 	ri.Cmd_AddCommand( "gfxinfo", GfxInfo_f );
-	ri.Cmd_AddCommand( "minimize", GLimp_Minimize );
 	ri.Cmd_AddCommand( "gfxmeminfo", GfxMemInfo_f );
 	ri.Cmd_AddCommand( "exportCubemaps", R_ExportCubemaps_f );
 }
@@ -1916,7 +1940,6 @@ void RE_Shutdown( qboolean destroyWindow )
 	ri.Cmd_RemoveCommand( "screenshot" );
 	ri.Cmd_RemoveCommand( "screenshotJPEG" );
 	ri.Cmd_RemoveCommand( "gfxinfo" );
-	ri.Cmd_RemoveCommand( "minimize" );
 	ri.Cmd_RemoveCommand( "gfxmeminfo" );
 	ri.Cmd_RemoveCommand( "exportCubemaps" );
 
@@ -1937,13 +1960,14 @@ void RE_Shutdown( qboolean destroyWindow )
 
 	// shut down platform specific OpenGL stuff
 	if ( destroyWindow )
-    {
-        GLimp_Shutdown();
+	{
+		ri.WinSysShutdown();
+		
 		memset( &glConfig, 0, sizeof( glConfig ) );
 		memset( &glRefConfig, 0, sizeof( glRefConfig ) );
 		memset( &glState, 0, sizeof( glState ) );
 
-        GLimp_ClearProcAddresses();
+		GLimp_ClearProcAddresses();
 	}
 }
 
@@ -1970,64 +1994,61 @@ GetRefAPI
 @@@@@@@@@@@@@@@@@@@@@
 */
 #ifdef USE_RENDERER_DLOPEN
-Q_EXPORT refexport_t* QDECL GetRefAPI ( int apiVersion, refimport_t *rimp ) {
+Q_EXPORT void QDECL GetRefAPI ( int apiVersion, const refimport_t * const rimp, refexport_t * const rexp )
+{
 #else
-refexport_t *GetRefAPI ( int apiVersion, refimport_t *rimp ) {
+void GetRefAPI ( int apiVersion, const refimport_t * const rimp, refexport_t * const rexp )
+{
 #endif
-
-	static refexport_t	re;
-
 	ri = *rimp;
 
-	memset( &re, 0, sizeof( re ) );
+	memset( rexp, 0, sizeof( refexport_t ) );
 
 	if ( apiVersion != REF_API_VERSION ) {
 		ri.Printf(PRINT_ALL, "Mismatched REF_API_VERSION: expected %i, got %i\n", 
 			REF_API_VERSION, apiVersion );
-		return NULL;
+		return ;
 	}
 
 	// the RE_ functions are Renderer Entry points
 
-	re.Shutdown = RE_Shutdown;
+	rexp->Shutdown = RE_Shutdown;
 
-	re.BeginRegistration = RE_BeginRegistration;
-	re.RegisterModel = RE_RegisterModel;
-	re.RegisterSkin = RE_RegisterSkin;
-	re.RegisterShader = RE_RegisterShader;
-	re.RegisterShaderNoMip = RE_RegisterShaderNoMip;
-	re.LoadWorld = RE_LoadWorldMap;
-	re.SetWorldVisData = RE_SetWorldVisData;
-	re.EndRegistration = RE_EndRegistration;
+	rexp->BeginRegistration = RE_BeginRegistration;
+	rexp->RegisterModel = RE_RegisterModel;
+	rexp->RegisterSkin = RE_RegisterSkin;
+	rexp->RegisterShader = RE_RegisterShader;
+	rexp->RegisterShaderNoMip = RE_RegisterShaderNoMip;
+	rexp->LoadWorld = RE_LoadWorldMap;
+	rexp->SetWorldVisData = RE_SetWorldVisData;
+	rexp->EndRegistration = RE_EndRegistration;
 
-	re.BeginFrame = RE_BeginFrame;
-	re.EndFrame = RE_EndFrame;
+	rexp->BeginFrame = RE_BeginFrame;
+	rexp->EndFrame = RE_EndFrame;
 
-	re.MarkFragments = R_MarkFragments;
-	re.LerpTag = R_LerpTag;
-	re.ModelBounds = R_ModelBounds;
+	rexp->MarkFragments = R_MarkFragments;
+	rexp->LerpTag = R_LerpTag;
+	rexp->ModelBounds = R_ModelBounds;
 
-	re.ClearScene = RE_ClearScene;
-	re.AddRefEntityToScene = RE_AddRefEntityToScene;
-	re.AddPolyToScene = RE_AddPolyToScene;
-	re.LightForPoint = R_LightForPoint;
-	re.AddLightToScene = RE_AddLightToScene;
-	re.AddAdditiveLightToScene = RE_AddAdditiveLightToScene;
-	re.RenderScene = RE_RenderScene;
+	rexp->ClearScene = RE_ClearScene;
+	rexp->AddRefEntityToScene = RE_AddRefEntityToScene;
+	rexp->AddPolyToScene = RE_AddPolyToScene;
+	rexp->LightForPoint = R_LightForPoint;
+	rexp->AddLightToScene = RE_AddLightToScene;
+	rexp->AddAdditiveLightToScene = RE_AddAdditiveLightToScene;
+	rexp->RenderScene = RE_RenderScene;
 
-	re.SetColor = RE_SetColor;
-	re.DrawStretchPic = RE_StretchPic;
-	re.DrawStretchRaw = RE_StretchRaw;
-	re.UploadCinematic = RE_UploadCinematic;
+	rexp->SetColor = RE_SetColor;
+	rexp->DrawStretchPic = RE_StretchPic;
+	rexp->DrawStretchRaw = RE_StretchRaw;
+	rexp->UploadCinematic = RE_UploadCinematic;
 
-	re.RegisterFont = RE_RegisterFont;
-	re.RemapShader = R_RemapShader;
-	re.GetEntityToken = R_GetEntityToken;
-	re.inPVS = R_inPVS;
+	rexp->RegisterFont = RE_RegisterFont;
+	rexp->RemapShader = R_RemapShader;
+	rexp->GetEntityToken = R_GetEntityToken;
+	rexp->inPVS = R_inPVS;
 
-	re.TakeVideoFrame = RE_TakeVideoFrame;
-
-	return &re;
+	rexp->TakeVideoFrame = RE_TakeVideoFrame;
 }
 
 

@@ -24,6 +24,8 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #ifndef TR_LOCAL_H
 #define TR_LOCAL_H
 
+#include "qgl.h"
+
 #include "../qcommon/q_shared.h"
 #include "../qcommon/qfiles.h"
 #include "../qcommon/qcommon.h"
@@ -32,27 +34,7 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #include "tr_common.h"
 #include "image.h"
 
-#include "qgl.h"
 
-////////////  GLIMP ////////////////////////
-
-void GLimp_Init(glconfig_t *glConfig, qboolean coreContext);
-
-void GLimp_Shutdown(void);
-void GLimp_EndFrame(void);
-
-void GLimp_LogComment(char *comment);
-void GLimp_Minimize(void);
-
-void GLimp_SetGamma(unsigned char red[256], unsigned char green[256], unsigned char blue[256]);
-
-void GLimp_DeleteGLContext(void);
-void GLimp_DestroyWindow(void);
-
-void* GLimp_GetProcAddress(const char* fun);
-
-
-/////////////////////////////////////////////
 
 
 #define GL_INDEX_TYPE		GL_UNSIGNED_INT
@@ -98,7 +80,7 @@ typedef struct {
 	vec3_t		origin;			// in world coordinates
 	vec3_t		axis[3];		// orientation in world
 	vec3_t		viewOrigin;		// viewParms->or.origin in local coordinates
-	float		modelMatrix[16] QALIGN(16);
+	QALIGN(16) float modelMatrix[16];
 } orientationr_t;
 
 /*
@@ -1212,7 +1194,7 @@ void	GL_Cull( int cullType );
 #define GLS_DEFAULT			GLS_DEPTHMASK_TRUE
 
 void	RE_StretchRaw (int x, int y, int w, int h, int cols, int rows, const byte *data, int client, qboolean dirty);
-void	RE_UploadCinematic (int w, int h, int cols, int rows, const byte *data, int client, qboolean dirty);
+void	RE_UploadCinematic (int w, int h, int cols, int rows, const byte *data, int client, int dirty);
 
 void		RE_BeginFrame( stereoFrame_t notUsed );
 void		RE_BeginRegistration( glconfig_t *glconfig );

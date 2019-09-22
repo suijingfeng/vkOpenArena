@@ -80,16 +80,18 @@ void BotResetNodeSwitches(void) {
 BotDumpNodeSwitches
 ==================
 */
-void BotDumpNodeSwitches(bot_state_t *bs) {
+void BotDumpNodeSwitches(bot_state_t *bs)
+{
 	int i;
 	char netname[MAX_NETNAME];
 
 	ClientName(bs->client, netname, sizeof(netname));
 	BotAI_Print(PRT_MESSAGE, "%s at %1.1f switched more than %d AI nodes\n", netname, FloatTime(), MAX_NODESWITCHES);
-	for (i = 0; i < numnodeswitches; i++) {
+	for (i = 0; i < numnodeswitches; ++i)
+	{
 		BotAI_Print(PRT_MESSAGE, "%s", nodeswitch[i]);
 	}
-	BotAI_Print(PRT_FATAL, "");
+	BotAI_Print(PRT_FATAL, "BotDumpNodeSwitches");
 }
 
 /*

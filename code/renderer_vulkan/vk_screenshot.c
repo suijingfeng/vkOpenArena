@@ -43,8 +43,8 @@ Implementations may support additional limits and capabilities beyond those list
 
 
 extern void R_GetWorldBaseName(char* checkname);
-extern size_t RE_SaveJPGToBuffer(byte *buffer, size_t bufSize, int quality,
-    int image_width, int image_height, byte *image_buffer, int padding);
+extern uint32_t RE_SaveJPGToBuffer(unsigned char *buffer, unsigned int bufSize, int quality,
+    int image_width, int image_height, unsigned char *image_buffer, int padding);
 
 
 static uint32_t s_lastNumber = 0;
@@ -77,7 +77,19 @@ void vk_clearScreenShotManager(void)
     if(scnShotMgr.initialized)
     {
         NO_CHECK( qvkUnmapMemory(vk.device, scnShotMgr.hMemory) );
-        vk_destroyBufferResource(scnShotMgr.hBuffer, scnShotMgr.hMemory);
+
+		if (scnShotMgr.hBuffer != VK_NULL_HANDLE)
+		{
+			NO_CHECK( qvkDestroyBuffer(vk.device, scnShotMgr.hBuffer, NULL) );
+			scnShotMgr.hBuffer = VK_NULL_HANDLE;
+		}
+
+		if (scnShotMgr.hMemory != VK_NULL_HANDLE)
+		{
+			NO_CHECK( qvkFreeMemory(vk.device, scnShotMgr.hMemory, NULL) );
+			scnShotMgr.hMemory = VK_NULL_HANDLE;
+		}
+
         memset(&scnShotMgr, 0, sizeof(scnShotMgr)); 
     }
 
@@ -238,8 +250,14 @@ static void vk_read_pixels(unsigned char* const pBuf, uint32_t W, uint32_t H)
     image_barrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
     image_barrier.pNext = NULL;
     // srcAccessMask is a bitmask of VkAccessFlagBits specifying a source access mask.
+
     image_barrier.srcAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
     // VK_ACCESS_TRANSFER_READ_BIT ?
+
+    // the source accesss mask specifies how the memory was last written
+    // the destination access mask specifies how the memory will
+    // next be read.
+    
     // dstAccessMask is a bitmask of VkAccessFlagBits specifying a destination access mask.
     image_barrier.dstAccessMask = VK_ACCESS_TRANSFER_READ_BIT;
     image_barrier.oldLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
@@ -249,7 +267,8 @@ static void vk_read_pixels(unsigned char* const pBuf, uint32_t W, uint32_t H)
     // VK_PIPELINE_STAGE_TRANSFER_BIT). This layout is valid only 
     // for image subresources of images created with the 
     // VK_IMAGE_USAGE_TRANSFER_SRC_BIT usage bit enabled.
-    image_barrier.newLayout = VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL;
+	// VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL ?
+    image_barrier.newLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
     image_barrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
     image_barrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
     image_barrier.image = vk.swapchain_images_array[vk.idx_swapchain_image];
@@ -259,8 +278,10 @@ static void vk_read_pixels(unsigned char* const pBuf, uint32_t W, uint32_t H)
     image_barrier.subresourceRange.baseArrayLayer = 0;
     image_barrier.subresourceRange.layerCount = 1;
 
+	// VK_PIPELINE_STAGE_TRANSFER_BIT ?
+	// the pipeline stage corresponds to access from the host
     NO_CHECK( qvkCmdPipelineBarrier(vk.tmpRecordBuffer, 
-        VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT,
+        VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT, VK_PIPELINE_STAGE_HOST_BIT,
         0, 0, NULL, 0, NULL, 1, &image_barrier) );
     
     NO_CHECK( qvkCmdCopyImageToBuffer(vk.tmpRecordBuffer, 
@@ -277,8 +298,8 @@ static void vk_read_pixels(unsigned char* const pBuf, uint32_t W, uint32_t H)
 
 
 
-extern size_t RE_SaveJPGToBuffer(byte *buffer, size_t bufSize, int quality,
-    int image_width, int image_height, byte *image_buffer, int padding);
+extern uint32_t RE_SaveJPGToBuffer(unsigned char *buffer, unsigned int bufSize, int quality,
+    int image_width, int image_height, unsigned char *image_buffer, int padding);
 
 
 static void RB_TakeScreenshotJPEG(unsigned char * const pImg, uint32_t width, uint32_t height, char * const fileName,

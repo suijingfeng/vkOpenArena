@@ -78,16 +78,12 @@ void GL_SelectTexture( int unit )
 	if ( unit == 0 )
 	{
 		qglActiveTextureARB( GL_TEXTURE0_ARB );
-		GLimp_LogComment( "glActiveTextureARB( GL_TEXTURE0_ARB )\n" );
 		qglClientActiveTextureARB( GL_TEXTURE0_ARB );
-		GLimp_LogComment( "glClientActiveTextureARB( GL_TEXTURE0_ARB )\n" );
 	}
 	else if ( unit == 1 )
 	{
 		qglActiveTextureARB( GL_TEXTURE1_ARB );
-		GLimp_LogComment( "glActiveTextureARB( GL_TEXTURE1_ARB )\n" );
 		qglClientActiveTextureARB( GL_TEXTURE1_ARB );
-		GLimp_LogComment( "glClientActiveTextureARB( GL_TEXTURE1_ARB )\n" );
 	} else {
 		ri.Error( ERR_DROP, "GL_SelectTexture: unit = %i", unit );
 	}
@@ -684,7 +680,8 @@ void RE_StretchRaw (int x, int y, int w, int h, int cols, int rows, const byte *
     RE_StretchPic(x, y, w, h,  0.5f / cols, 0.5f / rows,  1.0f - 0.5f / cols, 1.0f - 0.5 / rows, tr.cinematicShader->index);
 }
 
-void RE_UploadCinematic (int w, int h, int cols, int rows, const byte *data, int client, qboolean dirty) {
+void RE_UploadCinematic (int w, int h, int cols, int rows, const byte *data, int client, int dirty)
+{
 
 	GL_Bind( tr.scratchImage[client] );
 
@@ -923,8 +920,9 @@ RB_SwapBuffers
 
 =============
 */
-const void	*RB_SwapBuffers( const void *data ) {
-	const swapBuffersCommand_t	*cmd;
+const void * RB_SwapBuffers( const void *data )
+{
+	const swapBuffersCommand_t * cmd;
 
 	// finish any 2D drawing if needed
 	if ( tess.numIndexes ) {
@@ -938,9 +936,8 @@ const void	*RB_SwapBuffers( const void *data ) {
 
 	cmd = (const swapBuffersCommand_t *)data;
 
-	GLimp_LogComment( "***************** RB_SwapBuffers *****************\n\n\n" );
 
-	GLimp_EndFrame();
+	ri.WinSysEndFrame();
 
 	backEnd.projection2D = qfalse;
 

@@ -1091,12 +1091,9 @@ qboolean ConstOptimize(vm_t *vm, int callProcOfsSyscall)
   #define EDI "%%edi"
 #endif
 
-#if defined(_MSC_VER)
+#if !defined(_MSC_VER)
 
 //work around with MSVC compiler, suijingfeng
-
-#else
-
 
 static inline int Q_VMftol(void)
 {
@@ -1771,11 +1768,6 @@ VM_CallCompiled
 This function is called directly by the generated code
 ==============
 */
-
-#if defined(_MSC_VER) && defined(idx64)
-extern uint8_t qvmcall64(int *programStack, int *opStack, intptr_t *instructionPointers, unsigned char *dataBase);
-#endif
-
 intptr_t VM_CallCompiled(vm_t *vm, int *args)
 {
 	unsigned char stack[OPSTACK_SIZE + 15];
@@ -1810,7 +1802,10 @@ intptr_t VM_CallCompiled(vm_t *vm, int *args)
 
 #ifdef _MSC_VER
   #if idx64
-	opStackOfs = qvmcall64(&programStack, opStack, vm->instructionPointers, vm->dataBase);
+	extern uint8_t qvmcall64(int *programStack, int *opStack, intptr_t *instructionPointers, unsigned char *dataBase);
+	typedef uint8_t (* qvmcall64_t)(int *programStack, int *opStack, intptr_t *instructionPointers, unsigned char *dataBase);
+	qvmcall64_t fnQvmcall64 = qvmcall64;
+	opStackOfs = fnQvmcall64(&programStack, opStack, vm->instructionPointers, vm->dataBase);
   #else
 	__asm
 	{

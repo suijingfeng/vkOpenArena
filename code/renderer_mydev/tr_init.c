@@ -23,7 +23,7 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
 #include "tr_local.h"
 
-
+#include "qgl.h"
 
 glconfig_t  glConfig;
 glstate_t	glState;
@@ -74,7 +74,7 @@ cvar_t	*r_lightmap;
 cvar_t	*r_vertexLight;
 cvar_t	*r_uiFullScreen;
 cvar_t	*r_shadows;
-cvar_t	*r_mode;
+
 cvar_t	*r_nobind;
 cvar_t	*r_singleShader;
 cvar_t	*r_roundImagesDown;
@@ -95,8 +95,6 @@ cvar_t	*r_portalOnly;
 
 cvar_t	*r_subdivisions;
 cvar_t	*r_lodCurveError;
-
-cvar_t	*r_fullscreen;
 
 cvar_t	*r_customwidth;
 cvar_t	*r_customheight;
@@ -119,9 +117,9 @@ cvar_t	*r_saveFontData;
 
 
 cvar_t	*r_maxpolys;
-int		max_polys;
+int max_polys;
 cvar_t	*r_maxpolyverts;
-int		max_polyverts;
+int max_polyverts;
 
 
 static void AssertCvarRange( cvar_t *cv, float minVal, float maxVal, qboolean shouldBeIntegral )
@@ -149,86 +147,6 @@ static void AssertCvarRange( cvar_t *cv, float minVal, float maxVal, qboolean sh
 
 
 
-typedef struct vidmode_s
-{
-    const char *description;
-    int         width, height;
-	float		pixelAspect;		// pixel width / height
-} vidmode_t;
-
-static const vidmode_t r_vidModes[] =
-{
-	{ "Mode  0: 320x240",		320,	240,	1 },
-	{ "Mode  1: 400x300",		400,	300,	1 },
-	{ "Mode  2: 512x384",		512,	384,	1 },
-	{ "Mode  3: 640x480 (480p)",	640,	480,	1 },
-	{ "Mode  4: 800x600",		800,	600,	1 },
-	{ "Mode  5: 960x720",		960,	720,	1 },
-	{ "Mode  6: 1024x768",		1024,	768,	1 },
-	{ "Mode  7: 1152x864",		1152,	864,	1 },
-	{ "Mode  8: 1280x1024",		1280,	1024,	1 },
-	{ "Mode  9: 1600x1200",		1600,	1200,	1 },
-	{ "Mode 10: 2048x1536",		2048,	1536,	1 },
-	{ "Mode 11: 856x480",		856,	480,	1 },		// Q3 MODES END HERE AND EXTENDED MODES BEGIN
-	{ "Mode 12: 1280x720 (720p)",	1280,	720,	1 },
-	{ "Mode 13: 1280x768",		1280,	768,	1 },
-	{ "Mode 14: 1280x800",		1280,	800,	1 },
-	{ "Mode 15: 1280x960",		1280,	960,	1 },
-	{ "Mode 16: 1360x768",		1360,	768,	1 },
-	{ "Mode 17: 1366x768",		1366,	768,	1 }, // yes there are some out there on that extra 6
-	{ "Mode 18: 1360x1024",		1360,	1024,	1 },
-	{ "Mode 19: 1400x1050",		1400,	1050,	1 },
-	{ "Mode 20: 1400x900",		1400,	900,	1 },
-	{ "Mode 21: 1600x900",		1600,	900,	1 },
-	{ "Mode 22: 1680x1050",		1680,	1050,	1 },
-	{ "Mode 23: 1920x1080 (1080p)",	1920,	1080,	1 },
-	{ "Mode 24: 1920x1200",		1920,	1200,	1 },
-	{ "Mode 25: 1920x1440",		1920,	1440,	1 },
-	{ "Mode 26: 2560x1600",		2560,	1600,	1 },
-	{ "Mode 27: 3840x2160 (4K)",	3840,	2160,	1 }
-};
-static const int s_numVidModes = ( sizeof( r_vidModes ) / sizeof( r_vidModes[0] ) );
-
-qboolean R_GetModeInfo(unsigned int *width, unsigned int *height, float *windowAspect, int mode)
-{
-	const vidmode_t	*vm;
-
-    if ( mode < -1 || mode >= s_numVidModes) {
-        return qfalse;
-	}
-
-	if ( mode == -1 ) {
-		*width = r_customwidth->integer;
-		*height = r_customheight->integer;
-		*windowAspect = r_customaspect->value;
-		return qtrue;
-	}
-
-	vm = &r_vidModes[mode];
-
-    *width  = vm->width;
-    *height = vm->height;
-    *windowAspect = (float)vm->width / ( vm->height * vm->pixelAspect );
-
-    return qtrue;
-}
-
-static void R_ModeList_f( void )
-{
-	int i;
-
-	ri.Printf( PRINT_ALL, "\n" );
-	for ( i = 0; i < s_numVidModes; i++ )
-	{
-		ri.Printf( PRINT_ALL, "%s\n", r_vidModes[i].description );
-	}
-	ri.Printf( PRINT_ALL, "\n" );
-}
-
-
-
-
-
 
 /*
 ** This function is responsible for initializing a valid OpenGL/Vulkan subsystem.
@@ -236,34 +154,47 @@ static void R_ModeList_f( void )
 static void InitOpenGL(void)
 {
 	//
-	// initialize OS specific portions of the renderer
+	ri.Printf( PRINT_WARNING, "initialize OS specific portions of the renderer");
 	//
-	// GLimp_Init directly or indirectly references the following cvars:
-	//		- r_fullscreen
-	//		- r_mode
 
-	if ( glConfig.vidWidth == 0 )
+	glconfig_t * const pConfig = &glConfig;
+    
+	if ( pConfig->vidWidth == 0 )
 	{
-	    // This values force the UI to disable driver selection
-	    glConfig.driverType = GLDRV_ICD;
-	    glConfig.hardwareType = GLHW_GENERIC;
+
+		void * pCfg = NULL;
+            			
+		ri.WinSysInit(&pCfg, 0);
+
+        pConfig->stereoEnabled = qfalse;
+        pConfig->smpActive = qfalse;
+        pConfig->displayFrequency = 60;
+        // allways enable stencil
+        pConfig->stencilBits = 8;
+        pConfig->depthBits = 24;
+        pConfig->colorBits = 32;
+        pConfig->deviceSupportsGamma = qfalse;
+
+        pConfig->textureEnvAddAvailable = 0; // not used
+        pConfig->textureCompression = 0; // not used
+
+        // These values force the UI to disable driver selection
+        pConfig->driverType = GLDRV_ICD;
+        pConfig->hardwareType = GLHW_GENERIC;
+
+        pConfig->vidWidth = ri.GetWinWidth();
+        pConfig->vidHeight = ri.GetWinHeight();
+        pConfig->isFullscreen = ri.IsWinFullscreen();
+        pConfig->windowAspect = (float) pConfig->vidWidth / (float) pConfig->vidHeight;
 
 
-        // OpenGL
-	    GLimp_Init(&glConfig, qfalse);
-        // get our config strings
-		qglInit();
-        qglGetIntegerv( GL_MAX_TEXTURE_SIZE, &glConfig.maxTextureSize );
+	// get our config strings
+	qglInit();
+	// OpenGL driver constants
+	qglGetIntegerv( GL_MAX_TEXTURE_SIZE, &glConfig.maxTextureSize );
 
-        // stubbed or broken drivers may have reported 0...
-        if( glConfig.maxTextureSize < 0 )
-        {
-            glConfig.maxTextureSize = 0;
-        }
 	}
 
-	// init command buffers and SMP
-    glConfig.smpActive = qfalse;
 
 	// print info
 	GfxInfo_f();
@@ -313,8 +244,6 @@ void GL_CheckErrors( void ) {
 
     ri.Error( ERR_FATAL, "GL_CheckErrors: %s", s );
 }
-
-
 
 
 /* 
@@ -482,8 +411,7 @@ void R_ScreenshotFilename( int lastNumber, char *fileName )
 	lastNumber -= c*10;
 	d = lastNumber;
 
-	Com_sprintf( fileName, MAX_OSPATH, "screenshots/shot%i%i%i%i.tga"
-		, a, b, c, d );
+	Com_sprintf( fileName, MAX_OSPATH, "screenshots/shot%i%i%i%i.tga", a, b, c, d );
 }
 
 /* 
@@ -781,11 +709,6 @@ void GfxInfo_f( void )
 		"disabled",
 		"enabled"
 	};
-	const char *fsstrings[] =
-	{
-		"windowed",
-		"fullscreen"
-	};
 
 
     ri.Printf( PRINT_ALL, "\nActive 3D API: OpenGL\n" );
@@ -807,7 +730,7 @@ void GfxInfo_f( void )
 	//
 	// Info that doesn't depend on r_renderAPI
 	//
-	ri.Printf( PRINT_ALL, "\nMODE: %d, %d x %d %s\n", r_mode->integer, glConfig.vidWidth, glConfig.vidHeight, fsstrings[r_fullscreen->integer == 1] );
+	ri.Printf( PRINT_ALL, "\nMODE: %d x %d \n", glConfig.vidWidth, glConfig.vidHeight);
 
 	if (glConfig.deviceSupportsGamma) {
 		ri.Printf( PRINT_ALL, "GAMMA: hardware w/ %d overbright bits\n", tr.overbrightBits );
@@ -843,8 +766,7 @@ void R_Register( void )
 	r_stencilbits = ri.Cvar_Get( "r_stencilbits", "8", CVAR_ARCHIVE | CVAR_LATCH );
 	r_depthbits = ri.Cvar_Get( "r_depthbits", "0", CVAR_ARCHIVE | CVAR_LATCH );
 	r_overBrightBits = ri.Cvar_Get ("r_overBrightBits", "1", CVAR_ARCHIVE | CVAR_LATCH );
-	r_mode = ri.Cvar_Get( "r_mode", "3", CVAR_ARCHIVE | CVAR_LATCH );
-	r_fullscreen = ri.Cvar_Get( "r_fullscreen", "1", CVAR_ARCHIVE | CVAR_LATCH );
+
 	r_customwidth = ri.Cvar_Get( "r_customwidth", "960", CVAR_ARCHIVE | CVAR_LATCH );
 	r_customheight = ri.Cvar_Get( "r_customheight", "540", CVAR_ARCHIVE | CVAR_LATCH );
 	r_customaspect = ri.Cvar_Get( "r_customaspect", "1", CVAR_ARCHIVE | CVAR_LATCH );
@@ -953,20 +875,16 @@ void RE_EndRegistration( void ) {
 	if (!ri.Sys_LowPhysicalMemory()) {
 		RB_ShowImages();
 	}
-
-
 }
 
-void R_Init( void ) {	
+
+void R_Init( void )
+{	
 	int	err;
 	int i;
 	byte *ptr;
 
 	ri.Printf( PRINT_ALL, "----- R_Init -----\n" );
-
-
-    r_fullscreen = ri.Cvar_Get( "r_fullscreen", "0", CVAR_ARCHIVE | CVAR_LATCH);
-	r_mode = ri.Cvar_Get( "r_mode", "-2", CVAR_ARCHIVE | CVAR_LATCH );
 
 	//r_colorbits = Cvar_Get( "r_colorbits", "24", CVAR_ARCHIVE | CVAR_LATCH );
 	r_stencilbits = ri.Cvar_Get( "r_stencilbits", "0", CVAR_ARCHIVE | CVAR_LATCH );
@@ -1051,7 +969,6 @@ void R_Init( void ) {
 
 	ri.Printf( PRINT_ALL, "----- finished R_Init -----\n" );
 
-    ri.Cmd_AddCommand( "modelist", R_ModeList_f );
 	ri.Printf( PRINT_ALL, "------- R_Init() finished -------\n\n");
 }
 
@@ -1067,7 +984,6 @@ void RE_Shutdown( qboolean destroyWindow )
 	ri.Cmd_RemoveCommand("shaderlist");
 	ri.Cmd_RemoveCommand("skinlist");
 	ri.Cmd_RemoveCommand("gfxinfo");
-	ri.Cmd_RemoveCommand("modelist" );
 
 	if ( tr.registered )
     {
@@ -1080,12 +996,10 @@ void RE_Shutdown( qboolean destroyWindow )
 	// shut down platform specific OpenGL stuff
     if (destroyWindow)
     {
-        GLimp_Shutdown();
+		ri.WinSysShutdown();
 
         memset(&glConfig, 0, sizeof( glConfig ));
         memset(&glState, 0, sizeof( glState ));
-
-
     }
 
 
@@ -1093,9 +1007,11 @@ void RE_Shutdown( qboolean destroyWindow )
 }
 
 
-void RE_BeginRegistration(glconfig_t *glconfigOut)
+void RE_BeginRegistration(glconfig_t * const glconfigOut)
 {
-	R_Init();
+    ri.Printf( PRINT_ALL, " RE_BeginRegistration \n" );
+	
+    R_Init();
 
 	*glconfigOut = glConfig;
 
@@ -1117,10 +1033,10 @@ GetRefAPI
 @@@@@@@@@@@@@@@@@@@@@
 */
 #ifdef USE_RENDERER_DLOPEN
-Q_EXPORT refexport_t* QDECL GetRefAPI( int apiVersion, refimport_t *rimp )
+Q_EXPORT void QDECL GetRefAPI ( int apiVersion, const refimport_t * const rimp, refexport_t * const rexp )
 {
 #else
-refexport_t* GetRefAPI(int apiVersion, refimport_t *rimp)
+void GetRefAPI ( int apiVersion, const refimport_t * const rimp, rexp * const rexp )
 {
 #endif
 
@@ -1129,48 +1045,46 @@ refexport_t* GetRefAPI(int apiVersion, refimport_t *rimp)
 	if( apiVersion != REF_API_VERSION )
 	{
 		ri.Printf(PRINT_ALL, "Mismatched REF_API_VERSION: expected %i, got %i\n", REF_API_VERSION, apiVersion );
-		return NULL;
+		return;
 	}
 
-	static refexport_t re;
-	memset(&re, 0, sizeof(re));
 
     
 	// the RE_ functions are Renderer Entry points
-	re.Shutdown = RE_Shutdown;
-	re.BeginRegistration = RE_BeginRegistration;
-	re.RegisterModel = RE_RegisterModel;
-	re.RegisterSkin = RE_RegisterSkin;
-	re.RegisterShader = RE_RegisterShader;
-	re.RegisterShaderNoMip = RE_RegisterShaderNoMip;
-	re.LoadWorld = RE_LoadWorldMap;
-	re.SetWorldVisData = RE_SetWorldVisData;
-	re.EndRegistration = RE_EndRegistration;
-	re.ClearScene = RE_ClearScene;
-	re.AddRefEntityToScene = RE_AddRefEntityToScene;
-	re.AddPolyToScene = RE_AddPolyToScene;
-	re.LightForPoint = R_LightForPoint;
-	re.AddLightToScene = RE_AddLightToScene;
-	re.AddAdditiveLightToScene = RE_AddAdditiveLightToScene;
+	rexp->Shutdown = RE_Shutdown;
+	rexp->BeginRegistration = RE_BeginRegistration;
+	rexp->RegisterModel = RE_RegisterModel;
+	rexp->RegisterSkin = RE_RegisterSkin;
+	rexp->RegisterShader = RE_RegisterShader;
+	rexp->RegisterShaderNoMip = RE_RegisterShaderNoMip;
+	rexp->LoadWorld = RE_LoadWorldMap;
+	rexp->SetWorldVisData = RE_SetWorldVisData;
+	rexp->EndRegistration = RE_EndRegistration;
+	rexp->ClearScene = RE_ClearScene;
+	rexp->AddRefEntityToScene = RE_AddRefEntityToScene;
+	rexp->AddPolyToScene = RE_AddPolyToScene;
+	rexp->LightForPoint = R_LightForPoint;
+	rexp->AddLightToScene = RE_AddLightToScene;
+	rexp->AddAdditiveLightToScene = RE_AddAdditiveLightToScene;
 
-	re.RenderScene = RE_RenderScene;
-	re.SetColor = RE_SetColor;
-	re.DrawStretchPic = RE_StretchPic;
-	re.DrawStretchRaw = RE_StretchRaw;
-	re.UploadCinematic = RE_UploadCinematic;
+	rexp->RenderScene = RE_RenderScene;
+	rexp->SetColor = RE_SetColor;
+	rexp->DrawStretchPic = RE_StretchPic;
+	rexp->DrawStretchRaw = RE_StretchRaw;
+	rexp->UploadCinematic = RE_UploadCinematic;
     
-	re.BeginFrame = RE_BeginFrame;
-	re.EndFrame = RE_EndFrame;
-	re.MarkFragments = R_MarkFragments;
-	re.LerpTag = R_LerpTag;
-	re.ModelBounds = R_ModelBounds;
-	re.RegisterFont = RE_RegisterFont;
-	re.RemapShader = R_RemapShader;
-	re.GetEntityToken = R_GetEntityToken;
-	re.inPVS = R_inPVS;
-	re.TakeVideoFrame = RE_TakeVideoFrame;
+	rexp->BeginFrame = RE_BeginFrame;
+	rexp->EndFrame = RE_EndFrame;
+	rexp->MarkFragments = R_MarkFragments;
+	rexp->LerpTag = R_LerpTag;
+	rexp->ModelBounds = R_ModelBounds;
+	rexp->RegisterFont = RE_RegisterFont;
+	rexp->RemapShader = R_RemapShader;
+	rexp->GetEntityToken = R_GetEntityToken;
+	rexp->inPVS = R_inPVS;
+	rexp->TakeVideoFrame = RE_TakeVideoFrame;
 
-	return &re;
+	return ;
 }
 
 #ifdef USE_RENDERER_DLOPEN

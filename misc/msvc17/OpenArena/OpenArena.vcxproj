@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?>
+﻿<?xml version="1.0" encoding="utf-8"?>
 <Project DefaultTargets="Build" ToolsVersion="15.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup Label="ProjectConfigurations">
     <ProjectConfiguration Include="Debug|Win32">
@@ -65,51 +65,57 @@
     <ClCompile Include="..\..\..\code\qcommon\q_math.c" />
     <ClCompile Include="..\..\..\code\qcommon\q_shared.c" />
     <ClCompile Include="..\..\..\code\qcommon\snapvector.c" />
-    <ClCompile Include="..\..\..\code\qcommon\sys_loadlib.c" />
     <ClCompile Include="..\..\..\code\qcommon\unzip.c" />
     <ClCompile Include="..\..\..\code\qcommon\vm.c" />
     <ClCompile Include="..\..\..\code\qcommon\vm_interpreted.c" />
-    <ClCompile Include="..\..\..\code\qcommon\vm_x86.c" />
-    <ClCompile Include="..\..\..\code\win32\win_create_window.c" />
-    <ClCompile Include="..\..\..\code\win32\win_dll.c" />
-    <ClCompile Include="..\..\..\code\win32\win_event.c" />
-    <ClCompile Include="..\..\..\code\win32\win_fstream.c" />
-    <ClCompile Include="..\..\..\code\win32\win_gamma.c" />
-    <ClCompile Include="..\..\..\code\win32\win_get_clipboard.c" />
-    <ClCompile Include="..\..\..\code\win32\win_input.c" />
-    <ClCompile Include="..\..\..\code\win32\win_log.c" />
-    <ClCompile Include="..\..\..\code\win32\win_main.c" />
-    <ClCompile Include="..\..\..\code\win32\win_mode.c" />
-    <ClCompile Include="..\..\..\code\win32\win_net.c" />
-    <ClCompile Include="..\..\..\code\win32\win_shared.c" />
-    <ClCompile Include="..\..\..\code\win32\win_snd.c" />
-    <ClCompile Include="..\..\..\code\win32\win_syscon.c" />
-    <ClCompile Include="..\..\..\code\win32\win_wndproc.c" />
-  </ItemGroup>
-  <ItemGroup>
-    <Image Include="..\..\..\code\win32\oa3.ico" />
-  </ItemGroup>
-  <ItemGroup>
-    <ResourceCompile Include="..\..\..\code\win32\winquake.rc" />
-  </ItemGroup>
-  <ItemGroup>
-    <ClInclude Include="..\..\..\code\win32\resource.h" />
-    <ClInclude Include="..\..\..\code\win32\win_dll.h" />
-    <ClInclude Include="..\..\..\code\win32\win_event.h" />
-    <ClInclude Include="..\..\..\code\win32\win_gamma.h" />
-    <ClInclude Include="..\..\..\code\win32\win_get_clipboard.h" />
-    <ClInclude Include="..\..\..\code\win32\win_input.h" />
-    <ClInclude Include="..\..\..\code\win32\win_log.h" />
-    <ClInclude Include="..\..\..\code\win32\win_mode.h" />
-    <ClInclude Include="..\..\..\code\win32\win_net.h" />
-    <ClInclude Include="..\..\..\code\win32\win_public.h" />
-    <ClInclude Include="..\..\..\code\win32\win_snd.h" />
-    <ClInclude Include="..\..\..\code\win32\win_sysconsole.h" />
+    <ClCompile Include="..\..\..\code\sdl\win_create_window.c" />
+    <ClCompile Include="..\..\..\code\sdl\win_gamma.c" />
+    <ClCompile Include="..\..\..\code\sdl\win_input.c" />
+    <ClCompile Include="..\..\..\code\sdl\win_log.c" />
+    <ClCompile Include="..\..\..\code\sdl\win_snd.c" />
+    <ClCompile Include="..\..\..\code\sdl\win_wndproc.c" />
+    <ClCompile Include="..\..\..\code\server\sv_bot.c" />
+    <ClCompile Include="..\..\..\code\server\sv_ccmds.c" />
+    <ClCompile Include="..\..\..\code\server\sv_client.c" />
+    <ClCompile Include="..\..\..\code\server\sv_game.c" />
+    <ClCompile Include="..\..\..\code\server\sv_init.c" />
+    <ClCompile Include="..\..\..\code\server\sv_main.c" />
+    <ClCompile Include="..\..\..\code\server\sv_net_chan.c" />
+    <ClCompile Include="..\..\..\code\server\sv_snapshot.c" />
+    <ClCompile Include="..\..\..\code\server\sv_world.c" />
+    <ClCompile Include="..\..\..\code\sys\con_passive.c" />
+    <ClCompile Include="..\..\..\code\sys\sys_loadlib.c" />
+    <ClCompile Include="..\..\..\code\sys\sys_main.c" />
+    <ClCompile Include="..\..\..\code\sys\sys_win32.c" />
+    <ClCompile Include="..\..\..\code\zlib\adler32.c" />
+    <ClCompile Include="..\..\..\code\zlib\crc32.c" />
+    <ClCompile Include="..\..\..\code\zlib\inffast.c" />
+    <ClCompile Include="..\..\..\code\zlib\inflate.c" />
+    <ClCompile Include="..\..\..\code\zlib\inftrees.c" />
+    <ClCompile Include="..\..\..\code\zlib\zutil.c" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\botlib\botlib.vcxproj">
       <Project>{53020065-2e52-4ffa-8b15-94d4be0e674f}</Project>
     </ProjectReference>
+  </ItemGroup>
+  <ItemGroup>
+    <ResourceCompile Include="..\..\..\code\sdl\winquake.rc" />
+  </ItemGroup>
+  <ItemGroup>
+    <Image Include="..\..\..\code\sdl\oa3.ico" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="..\..\..\code\asm\ftola.asm" />
+    <None Include="..\..\..\code\asm\snapvector.asm" />
+    <None Include="..\..\..\code\asm\vm_x86_64.asm" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="..\..\..\code\sdl\resource.h" />
+    <ClInclude Include="..\..\..\code\sdl\win_gamma.h" />
+    <ClInclude Include="..\..\..\code\sdl\win_log.h" />
+    <ClInclude Include="..\..\..\code\sdl\win_public.h" />
+    <ClInclude Include="..\..\..\code\sdl\win_snd.h" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <VCProjectVersion>15.0</VCProjectVersion>
@@ -166,6 +172,12 @@
     <OutDir>$(ProjectDir)..\bin\$(PlatformName)\$(Configuration)\</OutDir>
     <IntDir>$(ProjectDir)..\bin\$(PlatformName)\$(Configuration)\intermediate\$(ProjectName)\</IntDir>
   </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <OutDir>$(ProjectDir)..\bin\$(PlatformName)\$(Configuration)\</OutDir>
+    <IntDir>$(ProjectDir)..\bin\$(PlatformName)\$(Configuration)\intermediate\$(ProjectName)\</IntDir>
+    <CustomBuildAfterTargets>
+    </CustomBuildAfterTargets>
+  </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
       <WarningLevel>Level3</WarningLevel>
@@ -180,8 +192,11 @@
       <Optimization>Disabled</Optimization>
       <SDLCheck>true</SDLCheck>
       <ConformanceMode>true</ConformanceMode>
-      <PreprocessorDefinitions>STANDALONE;USE_RENDERER_DLOPEN;_MSC_VER;_MBCS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>NO_VM_COMPILED;NO_GZIP;STANDALONE;USE_RENDERER_DLOPEN;USE_CURL_DLOPEN;_MSC_VER;_MBCS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
+    <Link>
+      <AdditionalDependencies>ws2_32.lib;winmm.lib;psapi.lib;kernel32.lib;user32.lib;gdi32.lib;winspool.lib;comdlg32.lib;advapi32.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;odbc32.lib;odbccp32.lib;%(AdditionalDependencies)</AdditionalDependencies>
+    </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <ClCompile>
@@ -196,6 +211,14 @@
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
     </Link>
+    <CustomBuildStep>
+      <Command>
+      </Command>
+    </CustomBuildStep>
+    <CustomBuildStep>
+      <Outputs>
+      </Outputs>
+    </CustomBuildStep>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <ClCompile>
@@ -205,11 +228,19 @@
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <SDLCheck>true</SDLCheck>
       <ConformanceMode>true</ConformanceMode>
+      <PreprocessorDefinitions>NDEBUG;NO_VM_COMPILED;NO_GZIP;STANDALONE;USE_RENDERER_DLOPEN;USE_CURL_DLOPEN;_MSC_VER;_MBCS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
     <Link>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
+      <AdditionalDependencies>ws2_32.lib;winmm.lib;psapi.lib;kernel32.lib;user32.lib;gdi32.lib;winspool.lib;comdlg32.lib;advapi32.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;odbc32.lib;odbccp32.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
+    <CustomBuildStep>
+      <Command>
+      </Command>
+      <Outputs>
+      </Outputs>
+    </CustomBuildStep>
   </ItemDefinitionGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

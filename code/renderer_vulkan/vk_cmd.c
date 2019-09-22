@@ -96,7 +96,7 @@ void vk_create_command_pool(VkCommandPool* const pPool)
 }
 
 
-void vk_create_command_buffer(VkCommandPool pool, VkCommandBuffer* const pBuf)
+void vk_create_command_buffer(VkCommandPool hPool, VkCommandBuffer* const pBuf)
 {
     // Command buffers are objects used to record commands which can be
     // subsequently submitted to a device queue for execution. There are
@@ -137,7 +137,7 @@ void vk_create_command_buffer(VkCommandPool pool, VkCommandBuffer* const pBuf)
     VkCommandBufferAllocateInfo alloc_info;
     alloc_info.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
     alloc_info.pNext = NULL;
-    alloc_info.commandPool = pool;
+    alloc_info.commandPool = hPool;
     // Can be submitted to a queue for execution,
     // but cannnot be called from other command buffers.
     alloc_info.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;

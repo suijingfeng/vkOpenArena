@@ -22,7 +22,7 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 // cl_cgame.c  -- client system interaction with client game
 
 #include "client.h"
-
+#include "../sys/sys_public.h"
 #include "../botlib/botlib.h"
 
 #ifdef USE_MUMBLE
@@ -425,6 +425,12 @@ static void VertmToHorpFov( float *fov_x, float *fov_y, float aspect ) {
 	*fov_x = VfovToHfov( *fov_y, aspect );
 }
 
+static void qsnapvectorsse(vec3_t vec)
+{
+	vec[0] = (int) vec[0];
+	vec[1] = (int) vec[1];
+	vec[2] = (int) vec[2];
+}
 
 /*
 ====================

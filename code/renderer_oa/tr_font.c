@@ -378,7 +378,8 @@ void RE_RegisterFont(const char *fontName, int pointSize, fontInfo_t *font)
 	}
 
 	int len = ri.FS_ReadFile(name, NULL);
-	if (len == sizeof(fontInfo_t)) {
+	if (len == sizeof(fontInfo_t))
+    {
 		ri.FS_ReadFile(name, &faceData);
 		fdOffset = 0;
 		fdFile = (unsigned char*)faceData;

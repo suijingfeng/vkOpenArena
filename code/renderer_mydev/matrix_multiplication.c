@@ -5,11 +5,13 @@
  * ==========================================================================
  */
 
-#include <xmmintrin.h>
 #include <stdio.h>
 
 #include "matrix_multiplication.h"
 
+#ifdef PROCESSOR_HAVE_SSE
+#include <xmmintrin.h>
+#endif
 
 static const float s_Identity3x3[3][3] = {
     { 1.0f, 0.0f, 0.0f },
@@ -38,26 +40,7 @@ void Mat4Translation( float vec[3], float out[16] )
     out[13] = vec[1];
     out[14] = vec[2];
 }
-//
-// NOTE; out = b * a ???
-// a, b and c are specified in column-major order
-//
-void myGlMultMatrix(const float A[16], const float B[16], float out[16])
-{
-	int	i, j;
 
-	for ( i = 0 ; i < 4 ; i++ )
-    {
-		for ( j = 0 ; j < 4 ; j++ )
-        {
-			out[ i * 4 + j ] =
-				  A [ i * 4 + 0 ] * B [ 0 * 4 + j ]
-				+ A [ i * 4 + 1 ] * B [ 1 * 4 + j ]
-				+ A [ i * 4 + 2 ] * B [ 2 * 4 + j ]
-				+ A [ i * 4 + 3 ] * B [ 3 * 4 + j ];
-		}
-	}
-}
 
 
 void MatrixMultiply4x4(const float A[16], const float B[16], float out[16])
@@ -89,6 +72,8 @@ void MatrixMultiply4x4(const float A[16], const float B[16], float out[16])
  * out must be 16 byte aliagned
  */
 
+#ifdef PROCESSOR_HAVE_SSE
+
 void MatrixMultiply4x4_SSE(const float A[16], const float B[16], float out[16])
 {
     __m128 row1 = _mm_load_ps(&B[0]);
@@ -112,36 +97,6 @@ void MatrixMultiply4x4_SSE(const float A[16], const float B[16], float out[16])
         _mm_store_ps(&out[4*i], row);
     }
 }
-
-
-void Mat4Transform( const float in1[16], const float in2[4], float out[4] )
-{
-    // 16 mult, 12 plus
-
-    float a = in2[0];
-    float b = in2[1];
-    float c = in2[2];
-    float d = in2[3];
-
-	out[0] = in1[0] * a + in1[4] * b + in1[ 8] * c + in1[12] * d;
-	out[1] = in1[1] * a + in1[5] * b + in1[ 9] * c + in1[13] * d;
-	out[2] = in1[2] * a + in1[6] * b + in1[10] * c + in1[14] * d;
-	out[3] = in1[3] * a + in1[7] * b + in1[11] * c + in1[15] * d;
-}
-
-
-void Vec3Transform(const float Mat[16], const float v[3], float out[3])
-{
-    float x = v[0];
-    float y = v[1];
-    float z = v[2];
-    
-	out[0] = Mat[0] * x + Mat[4] * y + Mat[ 8] * z + Mat[12];
-	out[1] = Mat[1] * x + Mat[5] * y + Mat[ 9] * z + Mat[13];
-	out[2] = Mat[2] * x + Mat[6] * y + Mat[10] * z + Mat[14];
-}
-
-
 
 // unlucky, not faseter than Mat4Transform
 void Mat4x1Transform_SSE( const float A[16], const float x[4], float out[4] )
@@ -182,14 +137,6 @@ void Vec4Transform_SSE( const float A[16], float v[4], float out[4] )
 
     _mm_store_ps(out, _mm_add_ps( _mm_add_ps( r1, r2 ), _mm_add_ps( r3, r4 ) ));
 }
-
-
-void Mat3x3Identity( float pMat[3][3] )
-{
-    memcpy(pMat, s_Identity3x3, 36);
-}
-
-
 
 void TransformModelToClip_SSE( const float src[3], const float pMatModel[16], const float pMatProj[16], float dst[4] )
 {
@@ -259,6 +206,43 @@ void TransformModelToClip_SSE2( const float x[3], const float pMatModel[16], con
 }
 
 
+#endif
+
+
+void Mat4Transform( const float in1[16], const float in2[4], float out[4] )
+{
+    // 16 mult, 12 plus
+
+    float a = in2[0];
+    float b = in2[1];
+    float c = in2[2];
+    float d = in2[3];
+
+	out[0] = in1[0] * a + in1[4] * b + in1[ 8] * c + in1[12] * d;
+	out[1] = in1[1] * a + in1[5] * b + in1[ 9] * c + in1[13] * d;
+	out[2] = in1[2] * a + in1[6] * b + in1[10] * c + in1[14] * d;
+	out[3] = in1[3] * a + in1[7] * b + in1[11] * c + in1[15] * d;
+}
+
+
+void Vec3Transform(const float Mat[16], const float v[3], float out[3])
+{
+    float x = v[0];
+    float y = v[1];
+    float z = v[2];
+    
+	out[0] = Mat[0] * x + Mat[4] * y + Mat[ 8] * z + Mat[12];
+	out[1] = Mat[1] * x + Mat[5] * y + Mat[ 9] * z + Mat[13];
+	out[2] = Mat[2] * x + Mat[6] * y + Mat[10] * z + Mat[14];
+}
+
+
+
+void Mat3x3Identity( float pMat[3][3] )
+{
+    memcpy(pMat, s_Identity3x3, 36);
+}
+
 
 void TransformModelToClip( const float src[3], const float* pMatModel, const float* pMatProj, float eye[4], float dst[4])
 {
@@ -285,7 +269,22 @@ void TransformModelToClip( const float src[3], const float* pMatModel, const flo
 
 
 
+void Mat4Copy( const float in[64], float out[16] )
+{
+    memcpy(out, in, 64);
+}
 
+void Mat3x3Copy( float dst[3][3], const float src[3][3] )
+{
+    memcpy(dst, src, 36);
+}
+
+void VectorLerp( float a[3], float b[3], float lerp, float out[3])
+{
+	out[0] = a[0] + (b[0] - a[0]) * lerp;
+	out[1] = a[1] + (b[1] - a[1]) * lerp;
+	out[2] = a[2] + (b[2] - a[2]) * lerp;
+}
 
 
 // ===============================================

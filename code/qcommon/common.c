@@ -23,6 +23,10 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
 #include "q_shared.h"
 #include "qcommon.h"
+
+#include "../sys/sys_public.h"
+
+
 #include <setjmp.h>
 #ifndef _WIN32
 #include <netinet/in.h>
@@ -31,7 +35,6 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #include <winsock.h>
 #endif
 
-#include "../sdl/input.h"
 
 #define MAX_NUM_ARGVS	50
 
@@ -2041,17 +2044,31 @@ sysEvent_t Com_GetSystemEvent( void )
 		eventTail++;
 		return eventQueue[ ( eventTail - 1 ) & MASK_QUEUED_EVENTS ];
 	}
+/*
+	MSG	msg;
+	// pump the message loop
+	// Dispatches incoming sent messages, checks the thread message queue 
+	// for a posted message, and retrieves the message (if any exist).
+	while (PeekMessage(&msg, NULL, 0, 0, PM_NOREMOVE))
+	{
+		if (!GetMessage(&msg, NULL, 0, 0)) {
+			Com_Quit_f();
+		}
 
+		// save the msg time, because wndprocs don't have access to the timestamp
+		// g_wv.sysMsgTime = msg.time;
+
+		TranslateMessage(&msg);
+		DispatchMessage(&msg);
+	}
+*/
     // Handle new console input
 	// check for console commands
 	s = CON_Input();
 	if ( s )
 	{
-		char  *b;
-		int   len;
-
-		len = strlen( s ) + 1;
-		b = Z_Malloc( len );
+		int len = strlen( s ) + 1;
+		char* b = Z_Malloc( len );
 		strcpy( b, s );
 		Com_QueueEvent( 0, SE_CONSOLE, 0, 0, len, b );
 	}
@@ -2075,7 +2092,8 @@ sysEvent_t Com_GetSystemEvent( void )
 Com_GetRealEvent
 =================
 */
-sysEvent_t	Com_GetRealEvent( void ) {
+sysEvent_t Com_GetRealEvent( void )
+{
 	int			r;
 	sysEvent_t	ev;
 
@@ -2092,7 +2110,9 @@ sysEvent_t	Com_GetRealEvent( void ) {
 				Com_Error( ERR_FATAL, "Error reading from journal file" );
 			}
 		}
-	} else {
+	}
+	else
+	{
 		ev = Com_GetSystemEvent();
 
 		// write the journal value out if needed
@@ -3079,7 +3099,7 @@ void Com_Frame(void)
 			NET_Sleep(timeVal - 1);
 	} while(Com_TimeVal(minMsec));
 	
-	IN_Frame(); // youurayy input lag fix
+
 	lastTime = com_frameTime;
 	com_frameTime = Com_EventLoop();
 	
@@ -3368,10 +3388,9 @@ void Field_CompleteFilename( const char *dir, const char *ext, qboolean stripExt
 Field_CompleteCommand
 ===============
 */
-void Field_CompleteCommand( char *cmd,
-		qboolean doCommands, qboolean doCvars )
+void Field_CompleteCommand( char *cmd, qboolean doCommands, qboolean doCvars )
 {
-	int		completionArgument = 0;
+	int	completionArgument = 0;
 
 	// Skip leading whitespace and quotes
 	cmd = Com_SkipCharset( cmd, " \"" );
@@ -3526,12 +3545,10 @@ Field_CompletePlayerName
 */
 static qboolean Field_CompletePlayerNameFinal( qboolean whitespace )
 {
-	int completionOffset;
-
 	if( matchCount == 0 )
 		return qtrue;
 
-	completionOffset = strlen( completionField->buffer ) - strlen( completionString );
+	int completionOffset = strlen( completionField->buffer ) - strlen( completionString );
 
 	Q_strncpyz( &completionField->buffer[ completionOffset ], shortestMatch,
 		sizeof( completionField->buffer ) - completionOffset );

@@ -42,11 +42,17 @@ uint32_t R_GetGpuMemConsumedByImage(void)
 
 uint32_t find_memory_type(uint32_t memory_type_bits, VkMemoryPropertyFlags properties)
 {
-    uint32_t i;
-    for (i = 0; i < vk.devMemProperties.memoryTypeCount; ++i)
+	// we dont rarely need devMemProperties at runtime, 
+	// so we dont save a cache of it in strcut vk,
+	// query it when need .
+	VkPhysicalDeviceMemoryProperties devMemProperties;
+
+	NO_CHECK( qvkGetPhysicalDeviceMemoryProperties(vk.physical_device, &devMemProperties) );
+
+    for (uint32_t i = 0; i < devMemProperties.memoryTypeCount; ++i)
     {
         if ( ((memory_type_bits & (1 << i)) != 0) && 
-                (vk.devMemProperties.memoryTypes[i].propertyFlags & properties) == properties)
+                (devMemProperties.memoryTypes[i].propertyFlags & properties) == properties)
         {
             return i;
         }
@@ -427,7 +433,11 @@ image_t* R_CreateImage( const char *name, unsigned char* pic, const uint32_t wid
     // the set of all bytes bound to another destination region.
 
     VkBufferImageCopy regions[12];
-
+	// bufferRowLength and bufferImageHeight specify in texels a subregion of 
+	// a larger two- or three-dimensional image in buffer memory, and control 
+	// the addressing calculations. If either of these values is zero, that 
+	// aspect of the buffer memory is considered to be tightly packed according
+	// to the imageExtent.
     regions[0].bufferOffset = 0;
     regions[0].bufferRowLength = 0;
     regions[0].bufferImageHeight = 0;

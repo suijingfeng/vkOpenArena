@@ -31,7 +31,7 @@ void RE_SetColor( const float *rgba );
 
 void RE_StretchPic ( float x, float y, float w, float h, float s1, float t1, float s2, float t2, qhandle_t hShader );
 void RE_StretchRaw (int x, int y, int w, int h, int cols, int rows, const unsigned char *data, int client, qboolean dirty);
-void RE_UploadCinematic (int w, int h, int cols, int rows, const byte *data, int client, qboolean dirty);
+void RE_UploadCinematic (int w, int h, int cols, int rows, const byte *data, int client, int dirty);
 
 void RE_BeginFrame( stereoFrame_t notUsed );
 void RE_EndFrame( int *frontEndMsec, int *backEndMsec );
@@ -53,5 +53,9 @@ qboolean RE_GetEntityToken( char *buffer, int size );
 
 qboolean RE_inPVS( const vec3_t p1, const vec3_t p2 );
 void RE_TakeVideoFrame( int width, int height, unsigned char *captureBuffer, unsigned char *encodeBuffer, qboolean motionJpeg );
+
+// win resize interactive
+void RE_WinMessage(unsigned int msgType, int x, int y, int w, int h);
+void RE_WaitRenderFinishCurFrame(void);
 
 #endif

@@ -51,7 +51,7 @@ static int R_MDRCullModel( mdrHeader_t *header, trRefEntity_t *ent )
 	vec3_t bounds[2];
 	int	i;
 
-	int frameSize = (size_t)( &((mdrFrame_t *)0)->bones[ header->numBones ] );
+	size_t frameSize = (size_t)( &((mdrFrame_t *)0)->bones[ header->numBones ] );
 	
 	// compute frame pointers
 	mdrFrame_t* newFrame = ( mdrFrame_t * ) ( ( byte * ) header + header->ofsFrames + frameSize * ent->e.frame);
@@ -144,7 +144,7 @@ static int R_MDRComputeFogNum( mdrHeader_t *header, trRefEntity_t *ent )
 		return 0;
 	}
 	
-	int frameSize = (size_t)( &((mdrFrame_t *)0)->bones[ header->numBones ] );
+	size_t frameSize = (size_t)( &((mdrFrame_t *)0)->bones[ header->numBones ] );
 
 	// FIXME: non-normalized axis issues
 	mdrFrame_t* mdrFrame = ( mdrFrame_t * ) ( ( byte * ) header + header->ofsFrames + frameSize * ent->e.frame);

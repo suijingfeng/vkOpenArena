@@ -271,21 +271,37 @@ void GL_State( unsigned long stateBits )
 void GL_SetProjectionMatrix(float matrix[16])
 {
 	Mat4Copy(matrix, glState.projection);
-	MatrixMultiply4x4_SSE(glState.modelview, glState.projection, glState.modelviewProjection);	
+
+#ifdef PROCESSOR_HAVE_SSE
+	MatrixMultiply4x4_SSE(glState.modelview, glState.projection, glState.modelviewProjection);
+#else
+	MatrixMultiply4x4(glState.modelview, glState.projection, glState.modelviewProjection);
+#endif
+
 }
 
 
 void GL_SetModelviewMatrix(float matrix[16])
 {
 	Mat4Copy(matrix, glState.modelview);
-	MatrixMultiply4x4_SSE(glState.modelview, glState.projection, glState.modelviewProjection);	
+#ifdef PROCESSOR_HAVE_SSE
+	MatrixMultiply4x4_SSE(glState.modelview, glState.projection, glState.modelviewProjection);
+#else
+	MatrixMultiply4x4(glState.modelview, glState.projection, glState.modelviewProjection);
+#endif
 }
 
 void GL_SetMvpMatrix(float MV[16], float P[16])
 {
 	Mat4Copy(MV, glState.modelview);
 	Mat4Copy(P, glState.projection);
+
+#ifdef PROCESSOR_HAVE_SSE
 	MatrixMultiply4x4_SSE(glState.modelview, glState.projection, glState.modelviewProjection);
+#else
+	MatrixMultiply4x4(glState.modelview, glState.projection, glState.modelviewProjection);
+#endif
+
 }
 
 
@@ -632,10 +648,15 @@ void	RB_SetGL2D (void) {
 	// set 2D virtual screen size
 	qglViewport( 0, 0, width, height );
 	qglScissor( 0, 0, width, height );
-
-    Mat4Identity(glState.modelview);
+	Mat4Identity(glState.modelview);
 	Mat4Ortho(0, width, height, 0, 0, 1, glState.projection);
+	
+
+	#ifdef PROCESSOR_HAVE_SSE
 	MatrixMultiply4x4_SSE(glState.modelview, glState.projection, glState.modelviewProjection);	
+	#else
+	MatrixMultiply4x4(glState.modelview, glState.projection, glState.modelviewProjection);	
+    #endif
 
 
 	GL_State( GLS_DEPTHTEST_DISABLE |
@@ -726,7 +747,8 @@ void RE_StretchRaw (int x, int y, int w, int h, int cols, int rows, const byte *
 	RB_InstantQuad2(quadVerts, texCoords);
 }
 
-void RE_UploadCinematic (int w, int h, int cols, int rows, const byte *data, int client, qboolean dirty) {
+void RE_UploadCinematic (int w, int h, int cols, int rows, const byte *data, int client, int dirty)
+{
 	GLuint texture;
 
 	if (!tr.scratchImage[client])
@@ -1408,7 +1430,7 @@ const void	*RB_SwapBuffers( const void *data )
 		qglFinish();
 	}
 
-	GLimp_EndFrame();
+	ri.WinSysEndFrame();
 
 	backEnd.framePostProcessed = qfalse;
 	backEnd.projection2D = qfalse;

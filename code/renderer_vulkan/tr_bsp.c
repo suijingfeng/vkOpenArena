@@ -46,6 +46,8 @@ void RE_LoadWorldMap( const char *name );
 
 */
 
+
+
 static	world_t		s_worldData ;
 static	unsigned char* fileBase = NULL;
 
@@ -1284,7 +1286,7 @@ void R_MovePatchSurfacesToHunk(void) {
 		memcpy( hunkgrid->widthLodError, grid->widthLodError, grid->width * 4 );
 
 		hunkgrid->heightLodError = (float*) ri.Hunk_Alloc( grid->height * 4, h_low );
-		memcpy( grid->heightLodError, grid->heightLodError, grid->height * 4 );
+		memcpy( hunkgrid->heightLodError, grid->heightLodError, grid->height * 4 );
 
 		R_FreeSurfaceGridMesh( grid );
 
@@ -1818,7 +1820,7 @@ static void R_LoadEntities(const lump_t * const l, world_t* const w )
 			break;
 		}
 		
-        Q_strncpyz(keyname, token, sizeof(keyname));
+        strncpy(keyname, token, sizeof(keyname)-1);
 
 		// parse value
 		token = R_ParseExt( &p, qtrue );
@@ -1833,11 +1835,11 @@ static void R_LoadEntities(const lump_t * const l, world_t* const w )
 			break;
 		}
 
-		Q_strncpyz(value, token, sizeof(value));
+		strncpy(value, token, sizeof(value)-1);
 
 		// check for remapping of shaders for vertex lighting
 		s = "vertexremapshader";
-		if (!isNonCaseNStringEqual(keyname, s, strlen(s)) )
+		if (!isNonCaseNStringEqual(keyname, s, (int)strlen(s)) )
         {
 			s = strchr(value, ';');
 			if (!s) {
@@ -1877,7 +1879,7 @@ static void R_LoadEntities(const lump_t * const l, world_t* const w )
 qboolean RE_GetEntityToken( char *buffer, int size )
 {
 	const char* s = R_ParseExt( &s_worldData.entityParsePoint, qtrue);
-	Q_strncpyz( buffer, s, size );
+	strncpy( buffer, s, size );
 	if ( !s_worldData.entityParsePoint || !s[0] ) {
 		s_worldData.entityParsePoint = s_worldData.entityString;
 		return qfalse;
@@ -1922,9 +1924,9 @@ void RE_LoadWorldMap( const char *name )
 	tr.world = NULL;
 
 	memset( &s_worldData, 0, sizeof( s_worldData ) );
-	Q_strncpyz( s_worldData.name, name, sizeof( s_worldData.name ) );
+	strncpy( s_worldData.name, name, sizeof( s_worldData.name ) - 1);
 
-	Q_strncpyz( s_worldData.baseName, R_SkipPath( s_worldData.name ), sizeof( s_worldData.name ) );
+	strncpy( s_worldData.baseName, R_SkipPath( s_worldData.name ), sizeof(s_worldData.baseName) - 1 );
 	R_StripExtension( s_worldData.baseName, s_worldData.baseName, sizeof(s_worldData.baseName) );
 
 	unsigned char* startMarker = (byte*) ri.Hunk_Alloc(0, h_low);

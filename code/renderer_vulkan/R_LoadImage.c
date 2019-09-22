@@ -1,3 +1,5 @@
+#include <stdint.h>
+
 #include "R_LoadImage.h"
 #include "ref_import.h"
 // Description:  Loads any of the supported image types into
@@ -14,7 +16,8 @@ enum IMAGE_EXT_TYPE_t {
 
 static const char * ExTable[5]={".tga",".jpg",".bmp",".png",".pcx"};
 
-typedef void (* pFnImageLoader_t)(const char *, unsigned char **, int *, int *);
+typedef void (* pFnImageLoader_t)(const char *, unsigned char **, unsigned int *, unsigned int *);
+
 
 //TODO : STB SUPPORT
 #ifdef USE_STB_IMAGE_LIB
@@ -40,8 +43,7 @@ const static pFnImageLoader_t fnImgLdrs[5] = {
 #endif
 
 // Load the image without a extention
-static void
-R_LoadNSE(const char * const pName, unsigned char **pic, int *width, int *height)
+static void R_LoadNSE(const char * const pName, unsigned char **pic, unsigned int *width, unsigned int *height)
 {
     *pic = NULL;
 
@@ -71,8 +73,7 @@ R_LoadNSE(const char * const pName, unsigned char **pic, int *width, int *height
     // no ext now
 
 
-    uint32_t i; 
-    for(i = 0; i < IMG_EXT_CNT; ++i)
+    for(unsigned int i = 0; i < IMG_EXT_CNT; ++i)
     {
         // strncpy(pPt, ExTable[i], 5); 
         pPt[0] = ExTable[i][0];
@@ -94,7 +95,7 @@ R_LoadNSE(const char * const pName, unsigned char **pic, int *width, int *height
 
 
 // pName must not be null;
-void R_LoadImage(const char * pName, unsigned char **pic, int *width, int *height )
+void R_LoadImage(const char * pName, unsigned char **pic, uint32_t *width, uint32_t *height )
 {
     const char* pExt = NULL;
 

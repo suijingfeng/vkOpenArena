@@ -22,7 +22,7 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 // sv_game.c -- interface to the game dll
 
 #include "server.h"
-
+#include "../sys/sys_public.h"
 #include "../botlib/botlib.h"
 
 botlib_export_t	*botlib_export;
@@ -275,10 +275,18 @@ void SV_GetUsercmd( int clientNum, usercmd_t *cmd ) {
 
 //==============================================
 
-static int	FloatAsInt( float f ) {
+static int FloatAsInt( float f )
+{
 	floatint_t fi;
 	fi.f = f;
 	return fi.i;
+}
+
+static void qsnapvectorsse(vec3_t vec)
+{
+	vec[0] = (int) vec[0];
+	vec[1] = (int) vec[1];
+	vec[2] = (int) vec[2];
 }
 
 /*
@@ -426,8 +434,6 @@ intptr_t SV_GameSystemCalls( intptr_t *args )
 	case G_SNAPVECTOR:
 		qsnapvectorsse(VMA(1));
 		return 0;
-
-		//====================================
 
 	case BOTLIB_SETUP:
 		return SV_BotLibSetup();

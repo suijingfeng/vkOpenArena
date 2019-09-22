@@ -579,7 +579,7 @@ static const void* RB_SwapBuffers( const void *data )
 		qglFinish();
 	}
 
-	GLimp_EndFrame();
+	ri.WinSysEndFrame();
 
 	backEnd.projection2D = qfalse;
 
@@ -1002,7 +1002,7 @@ void RE_StretchRaw (int x, int y, int w, int h, int cols, int rows, const unsign
 }
 
 
-void RE_UploadCinematic (int w, int h, int cols, int rows, const byte *data, int client, qboolean dirty)
+void RE_UploadCinematic (int w, int h, int cols, int rows, const byte *data, int client, int dirty)
 {
 	GL_Bind( tr.scratchImage[client] );
 

@@ -196,7 +196,8 @@ qhandle_t RE_RegisterSkin( const char *name )
 
 	skin_t * skin = (skin_t*) ri.Hunk_Alloc( sizeof( skin_t ), h_low );
 	tr.skins[hSkin] = skin;
-	Q_strncpyz( skin->name, name, sizeof( skin->name ) );
+	// Q_strncpyz
+	strncpy( skin->name, name, sizeof( skin->name ) );
 	skin->numSurfaces = 0;
 
 
@@ -218,7 +219,7 @@ qhandle_t RE_RegisterSkin( const char *name )
 	while ( text_p && *text_p ) {
 		// get surface name
 		token = CommaParse( &text_p );
-		Q_strncpyz( surfName, token, sizeof( surfName ) );
+		strncpy( surfName, token, sizeof( surfName ) );
 
 		if ( !token[0] ) {
 			break;
@@ -239,7 +240,7 @@ qhandle_t RE_RegisterSkin( const char *name )
 
 //		surf = skin->surfaces[ skin->numSurfaces ] = (skinSurface_t*) ri.Hunk_Alloc( sizeof( *skin->surfaces[0] ), h_low );
 		surf = &parseSurfaces[skin->numSurfaces]; 
-		Q_strncpyz( surf->name, surfName, sizeof( surf->name ) );
+		strncpy( surf->name, surfName, sizeof( surf->name ) );
 		surf->shader = R_FindShader( token, LIGHTMAP_NONE, qtrue );
 		skin->numSurfaces++;
 	}
@@ -274,7 +275,7 @@ void R_InitSkins( void )
 
 	// make the default skin have all default shaders
 	skin = tr.skins[0] = (skin_t*) ri.Hunk_Alloc( sizeof( skin_t ), h_low );
-	Q_strncpyz( skin->name, "<default skin>", sizeof( skin->name )  );
+	strncpy( skin->name, "<default skin>", sizeof( skin->name )  );
 	skin->numSurfaces = 1;
 //	skin->surfaces[0] = (skinSurface_t*) ri.Hunk_Alloc( sizeof( *skin->surfaces ), h_low );
 //	skin->surfaces[0]->shader = tr.defaultShader;

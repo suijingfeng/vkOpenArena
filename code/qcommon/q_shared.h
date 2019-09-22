@@ -108,6 +108,8 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #pragma warning(disable : 4220)		// varargs matches remaining parameters
 //#pragma intrinsic( memset, memcpy )
 
+
+#pragma warning(disable : 4703)	// potentially uninitialized local pointer variable
 #pragma warning(disable : 4996) // the function or variable may be unsafe
 
 #endif
@@ -425,7 +427,7 @@ extern	vec4_t		colorDkGrey;
 #define COLOR_CYAN      '5'
 #define COLOR_MAGENTA   '6'
 #define COLOR_WHITE     '7'
-#define COLOR_MENU      '8'
+#define COLOR_UI_MENU   '8'
 #define ColorIndexForNumber(c) ((c) % NUMBER_OF_COLORS)
 #define ColorIndex(c) (ColorIndexForNumber((c) - '0'))
 
@@ -437,7 +439,7 @@ extern	vec4_t		colorDkGrey;
 #define S_COLOR_CYAN	"^5"
 #define S_COLOR_MAGENTA	"^6"
 #define S_COLOR_WHITE	"^7"
-#define S_COLOR_MENU	"^8"
+#define S_COLOR_UI_MENU	"^8"
 
 extern const vec4_t	g_color_table[NUMBER_OF_COLORS];
 
@@ -453,7 +455,7 @@ extern	vec3_t	vec3_origin;
 extern	vec3_t	axisDefault[3];
 
 
-void qsnapvectorsse(vec3_t vec);
+
 
 void CrossProduct( const vec3_t v1, const vec3_t v2, vec3_t cross );
 float VectorLengthSquared( const vec3_t v );

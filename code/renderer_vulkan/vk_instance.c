@@ -3,15 +3,9 @@
 
 #include "VKimpl.h"
 #include "vk_instance.h"
-#include "tr_cvar.h"
-#include "vk_image.h"
-#include "vk_instance.h"
-#include "vk_shade_geometry.h"
-#include "vk_pipelines.h"
-#include "vk_frame.h"
-#include "vk_shaders.h"
 #include "vk_validation.h"
 #include "ref_import.h" 
+#include "vk_khr_display.h"
 
 struct Vk_Instance vk;
 
@@ -45,14 +39,7 @@ PFN_vkGetPhysicalDeviceSurfaceFormatsKHR		qvkGetPhysicalDeviceSurfaceFormatsKHR;
 PFN_vkGetPhysicalDeviceSurfacePresentModesKHR	qvkGetPhysicalDeviceSurfacePresentModesKHR;
 PFN_vkGetPhysicalDeviceSurfaceSupportKHR		qvkGetPhysicalDeviceSurfaceSupportKHR;
 
-// VK_KHR_display
-PFN_vkGetPhysicalDeviceDisplayPropertiesKHR         qvkGetPhysicalDeviceDisplayPropertiesKHR;
-PFN_vkGetPhysicalDeviceDisplayPlanePropertiesKHR    qvkGetPhysicalDeviceDisplayPlanePropertiesKHR;
-PFN_vkGetDisplayPlaneSupportedDisplaysKHR           qvkGetDisplayPlaneSupportedDisplaysKHR;
-PFN_vkGetDisplayModePropertiesKHR                   qvkGetDisplayModePropertiesKHR;
-PFN_vkCreateDisplayModeKHR                          qvkCreateDisplayModeKHR;
-PFN_vkGetDisplayPlaneCapabilitiesKHR                qvkGetDisplayPlaneCapabilitiesKHR;
-PFN_vkCreateDisplayPlaneSurfaceKHR                  qvkCreateDisplayPlaneSurfaceKHR;
+
 
 #ifndef NDEBUG
 PFN_vkCreateDebugReportCallbackEXT				qvkCreateDebugReportCallbackEXT;
@@ -140,7 +127,7 @@ PFN_vkQueuePresentKHR							qvkQueuePresentKHR;
 
 
 #ifndef NDEBUG
-static VkBool32 vk_assertStandValidationLayer(void)
+static VkBool32 VK_AssertStandValidationLayer(void)
 {
     // Look For Standard Validation Layer
     VkBool32 found = VK_FALSE;
@@ -188,216 +175,13 @@ static VkBool32 vk_assertStandValidationLayer(void)
 #endif
 
 
-// this function not be placed in vk_utils.c because 
-// I dont want to qvkEnumerateInstanceExtensionProperties
-// available to other files ...
-void printInstanceExtensionsSupported_f(void)
-{
-    uint32_t i = 0;
 
-	uint32_t nInsExt = 0;
-    // To retrieve a list of supported extensions before creating an instance
-	VK_CHECK( qvkEnumerateInstanceExtensionProperties( NULL, &nInsExt, NULL) );
-
-    assert(nInsExt > 0);
-
-    VkExtensionProperties* const pInsExt = (VkExtensionProperties *) malloc(sizeof(VkExtensionProperties) * nInsExt);
-    
-    VK_CHECK( qvkEnumerateInstanceExtensionProperties( NULL, &nInsExt, pInsExt) );
-
-    ri.Printf(PRINT_ALL, "\n");
-
-    ri.Printf(PRINT_ALL, "----- Total %d Instance Extension Supported -----\n", nInsExt);
-    for (i = 0; i < nInsExt; ++i)
-    {            
-        ri.Printf(PRINT_ALL, "%s\n", pInsExt[i].extensionName );
-    }
-    ri.Printf(PRINT_ALL, "----- ------------------------------------- -----\n\n");
-   
-    free(pInsExt);
-}
-
-
-// Platform dependent code, not elegant :(
-// doing this to avoid enable every instance extension,
-// not knowing if it is necessary.
-static void vk_fillRequiredInstanceExtention( 
-        const VkExtensionProperties * const pInsExt, const uint32_t nInsExt, 
-        char * * const ppInsExt, uint32_t * nExt )
-{
-    uint32_t enExtCnt = 0;
-    uint32_t i = 0;
-
-#if defined(_WIN32) || defined(_WIN64)
-
-    #ifndef VK_KHR_WIN32_SURFACE_EXTENSION_NAME
-    #define VK_KHR_WIN32_SURFACE_EXTENSION_NAME "VK_KHR_win32_surface"
-    #endif
-    
-    for (i = 0; i < nInsExt; ++i)
-    {
-        // Platform dependent stuff,
-        // Enable VK_KHR_win32_surface
-        if( 0 == strcmp(VK_KHR_WIN32_SURFACE_EXTENSION_NAME, pInsExt[i].extensionName) )
-        {
-            ppInsExt[enExtCnt] = pInsExt[i].extensionName;
-            enExtCnt += 1;
-            continue;
-        }
-
-        // common part
-
-        // Enable VK_EXT_direct_mode_display
-        // TODO: add doc why enable this, what's the useful ?
-        if( 0 == strcmp(VK_EXT_DIRECT_MODE_DISPLAY_EXTENSION_NAME, pInsExt[i].extensionName) )
-        {
-            ppInsExt[enExtCnt] = pInsExt[i].extensionName;
-            enExtCnt += 1;
-            continue;
-        }
-
-        // Enable VK_EXT_display_surface_counter
-        // TODO: add doc why enable this, what's the useful ?
-        if( 0 == strcmp(VK_EXT_DISPLAY_SURFACE_COUNTER_EXTENSION_NAME, pInsExt[i].extensionName) )
-        {
-            ppInsExt[enExtCnt] = pInsExt[i].extensionName;
-            enExtCnt += 1;
-            continue;
-        }
-
-        // Enable VK_KHR_display
-        // TODO: add doc why enable this, what's the useful ?
-        if( 0 == strcmp(VK_KHR_DISPLAY_EXTENSION_NAME, pInsExt[i].extensionName) )
-        {
-            ppInsExt[enExtCnt] = pInsExt[i].extensionName;
-            enExtCnt += 1;
-            vk.isKhrDisplaySupported = VK_TRUE;
-            continue;
-        }
-
-        // Enable VK_KHR_surface
-        if( 0 == strcmp(VK_KHR_SURFACE_EXTENSION_NAME, pInsExt[i].extensionName) )
-        {
-            ppInsExt[enExtCnt] = pInsExt[i].extensionName;
-            enExtCnt += 1;
-            continue;
-        }
-    }
-
-    #ifndef NDEBUG
-    //  VK_EXT_debug_report 
-    ppInsExt[enExtCnt] = VK_EXT_DEBUG_REPORT_EXTENSION_NAME;
-    enExtCnt += 1;
-    #endif
-
-#elif defined(__unix__) || defined(__linux) || defined(__linux__)
-
-    #ifndef VK_KHR_XCB_SURFACE_EXTENSION_NAME
-    #define VK_KHR_XCB_SURFACE_EXTENSION_NAME "VK_KHR_xcb_surface"
-    #endif
-
-    #ifndef VK_KHR_XLIB_SURFACE_EXTENSION_NAME
-    #define VK_KHR_XLIB_SURFACE_EXTENSION_NAME "VK_KHR_xlib_surface"
-    #endif
-
-    #ifndef VK_EXT_ACQUIRE_XLIB_DISPLAY_EXTENSION_NAME
-    #define VK_EXT_ACQUIRE_XLIB_DISPLAY_EXTENSION_NAME "VK_EXT_acquire_xlib_display"
-    #endif 
-
-    for (i = 0; i < nInsExt; ++i)
-    {
-
-        // Platform dependent stuff,
-        // Enable VK_KHR_xcb_surface
-        // TODO: How can i force SDL2 using XCB instead XLIB ???
-        if( 0 == strcmp(VK_KHR_XCB_SURFACE_EXTENSION_NAME, pInsExt[i].extensionName) )
-        {
-            ppInsExt[enExtCnt] = pInsExt[i].extensionName;
-            enExtCnt += 1;
-            continue;
-        }
-
-        // Enable VK_KHR_xlib_surface
-        if( 0 == strcmp(VK_KHR_XLIB_SURFACE_EXTENSION_NAME, pInsExt[i].extensionName) )
-        {
-            ppInsExt[enExtCnt] = pInsExt[i].extensionName;
-            enExtCnt += 1;
-            continue;
-        }
-
-        // Enable VK_EXT_acquire_xlib_display
-        if( 0 == strcmp(VK_EXT_ACQUIRE_XLIB_DISPLAY_EXTENSION_NAME, pInsExt[i].extensionName) )
-        {
-            ppInsExt[enExtCnt] = pInsExt[i].extensionName;
-            enExtCnt += 1;
-            continue;
-        }
-
-
-        // common part
-        // Enable VK_EXT_direct_mode_display
-        // TODO: add doc why enable this, what's the useful ?
-        if( 0 == strcmp(VK_EXT_DIRECT_MODE_DISPLAY_EXTENSION_NAME, pInsExt[i].extensionName) )
-        {
-            ppInsExt[enExtCnt] = pInsExt[i].extensionName;
-            enExtCnt += 1;
-            continue;
-        }
-
-        // Enable VK_EXT_display_surface_counter
-        // TODO: add doc why enable this, what's the useful ?
-        if( 0 == strcmp(VK_EXT_DISPLAY_SURFACE_COUNTER_EXTENSION_NAME, pInsExt[i].extensionName) )
-        {
-            ppInsExt[enExtCnt] = pInsExt[i].extensionName;
-            enExtCnt += 1;
-            continue;
-        }
-
-        // Enable VK_KHR_display
-        // TODO: add doc why enable this, what's the useful ?
-        if( 0 == strcmp(VK_KHR_DISPLAY_EXTENSION_NAME, pInsExt[i].extensionName) )
-        {
-            ppInsExt[enExtCnt] = pInsExt[i].extensionName;
-            enExtCnt += 1;
-            vk.isKhrDisplaySupported = VK_TRUE;
-            continue;
-        }
-
-        // Enable VK_KHR_surface
-        if( 0 == strcmp(VK_KHR_SURFACE_EXTENSION_NAME, pInsExt[i].extensionName) )
-        {
-            ppInsExt[enExtCnt] = pInsExt[i].extensionName;
-            enExtCnt += 1;
-            continue;
-        }
-    }
-
-    #ifndef NDEBUG
-    //  VK_EXT_debug_report 
-    ppInsExt[enExtCnt] = VK_EXT_DEBUG_REPORT_EXTENSION_NAME;
-    enExtCnt += 1;
-    #endif
-
-#else
-    // TODO: CHECK OUT
-    // All of the instance extention enabled, Does this reasonable ?
-    for (i = 0; i < nInsExt; ++i)
-    {    
-        ppInsExt[i] = pInsExt[i].extensionName;
-    }
-#endif
-
-    *nExt = enExtCnt;
-}
-
-
-static void vk_createInstance(VkInstance* const pInstance)
+static void VK_CreateInstanceImpl(VkInstance* const pInstance)
 {
     // There is no global state in Vulkan and all per-application state
     // is stored in a VkInstance object. Creating a VkInstance object 
     // initializes the Vulkan library and allows the application to pass
     // information about itself to the implementation.
-    ri.Printf(PRINT_ALL, " Creating instance: vk.instance\n");
 	
     // The version of Vulkan that is supported by an instance may be 
     // different than the version of Vulkan supported by a device or
@@ -409,6 +193,8 @@ static void vk_createInstance(VkInstance* const pInstance)
     // call vkEnumerateInstanceVersion to determine the version of Vulkan.
 
     VkApplicationInfo appInfo;
+    VkInstanceCreateInfo instanceCreateInfo;
+
 	appInfo.sType = VK_STRUCTURE_TYPE_APPLICATION_INFO;
     appInfo.pNext = NULL;
 	appInfo.pApplicationName = "OpenArena";
@@ -424,7 +210,6 @@ static void vk_createInstance(VkInstance* const pInstance)
 	appInfo.apiVersion = VK_MAKE_VERSION(1, 0, 0);
 
 
-	VkInstanceCreateInfo instanceCreateInfo;
 	
     instanceCreateInfo.sType = VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO;
     // pNext is NULL or a pointer to an extension-specific structure.
@@ -452,44 +237,53 @@ static void vk_createInstance(VkInstance* const pInstance)
     //
     // check extensions availability
 	uint32_t nInsExt = 0;
-    uint32_t i = 0;
-	uint32_t EnableInsExtCount = 0;
+
     // To retrieve a list of supported extensions before creating an instance
+    // When pLayerName parameter is NULL, only extensions provided by the 
+    // Vulkan implementation or by implicitly enabled layers are returned. 
+    // When pLayerName is the name of a layer, the instance extensions 
+    // provided by that layer are returned.
 	VK_CHECK( qvkEnumerateInstanceExtensionProperties( NULL, &nInsExt, NULL) );
 
-    assert(nInsExt > 0);
+    assert( nInsExt > 0 );
 
     VkExtensionProperties * pInsExt = (VkExtensionProperties *) malloc(sizeof(VkExtensionProperties) * nInsExt);
-    VK_CHECK(qvkEnumerateInstanceExtensionProperties( NULL, &nInsExt, pInsExt));
-
-	char* * const ppInstanceExtEnabled = malloc(sizeof(char *) * (nInsExt));
-
-    // Each platform-specific extension is an instance extension.
-    // The application must enable instance extensions with vkCreateInstance
-    // before using them.
-    vk_fillRequiredInstanceExtention(pInsExt, nInsExt, ppInstanceExtEnabled, &EnableInsExtCount);
-
+    
+    VK_CHECK( qvkEnumerateInstanceExtensionProperties( NULL, &nInsExt, pInsExt) );
+	
     ri.Printf(PRINT_ALL, "\n -------- Total %d instance extensions. -------- \n", nInsExt);
-    for (i = 0; i < nInsExt; ++i)
+    for (uint32_t i = 0; i < nInsExt; ++i)
     {    
         ri.Printf(PRINT_ALL, " %s \n", pInsExt[i].extensionName);
     }
 
-    ri.Printf(PRINT_ALL, "\n -------- %d instance extensions Enable. -------- \n", EnableInsExtCount);
-    for (i = 0; i < EnableInsExtCount; ++i)
+
+
+    ////
+    uint32_t cntEnabledInsExt = 0;
+	const char* ppInstanceExtEnabled[16] = { 0 };
+
+    // Each platform-specific extension is an instance extension.
+    // The application must enable instance extensions with vkCreateInstance
+    // before using them.
+    VK_FillRequiredInstanceExtention(pInsExt, nInsExt, ppInstanceExtEnabled, &cntEnabledInsExt);
+
+
+    ri.Printf(PRINT_ALL, "\n -------- %d instance extensions Enable. -------- \n", cntEnabledInsExt);
+    for (uint32_t i = 0; i < cntEnabledInsExt; ++i)
     {    
         ri.Printf(PRINT_ALL, " %s \n", ppInstanceExtEnabled[i]);
     }
     ri.Printf(PRINT_ALL, " -------- ----------------------------- -------- \n\n");
 
 
-    instanceCreateInfo.enabledExtensionCount = EnableInsExtCount;
+    instanceCreateInfo.enabledExtensionCount = cntEnabledInsExt;
 	instanceCreateInfo.ppEnabledExtensionNames = ppInstanceExtEnabled;
     instanceCreateInfo.enabledLayerCount = 0;
 	instanceCreateInfo.ppEnabledLayerNames = NULL;
 
 #ifndef NDEBUG
-	if( vk_assertStandValidationLayer() )
+	if( VK_AssertStandValidationLayer() )
 	{
 		ri.Printf(PRINT_ALL, "Using VK_LAYER_LUNARG_standard_validation. \n");
 
@@ -503,7 +297,7 @@ static void vk_createInstance(VkInstance* const pInstance)
     VkResult e = qvkCreateInstance(&instanceCreateInfo, NULL, pInstance);
     if(e == VK_SUCCESS)
     {
-        ri.Printf(PRINT_ALL, " Vulkan create instance success! \n\n");
+        ri.Printf(PRINT_ALL, " Vulkan instance Created. \n\n");
     }
     else if (e == VK_ERROR_INCOMPATIBLE_DRIVER)
 	{
@@ -521,7 +315,6 @@ static void vk_createInstance(VkInstance* const pInstance)
         ri.Error(ERR_FATAL, "%d, returned by qvkCreateInstance.\n", e);
     }
    
-    free(ppInstanceExtEnabled);
 
     free(pInsExt);
 }
@@ -538,7 +331,7 @@ static void vk_createInstance(VkInstance* const pInstance)
 // This operation is performed with global-level functions, 
 // which we need to load first.
 
-static void vk_loadGlobalLevelFunctions(void)
+static void VK_LoadGlobalLevelFunctions(void)
 {
     ri.Printf(PRINT_ALL, " Loading vulkan instance functions \n");
 
@@ -551,7 +344,7 @@ static void vk_loadGlobalLevelFunctions(void)
     // what instance-level extensions and layers are available
     // and to create the Instance itself.
 
-    qvkGetInstanceProcAddr = (PFN_vkGetInstanceProcAddr) vk_getInstanceProcAddrImpl();
+    qvkGetInstanceProcAddr = (PFN_vkGetInstanceProcAddr) VK_GetInstanceProcAddrImpl();
     
     if( qvkGetInstanceProcAddr == NULL)
     {
@@ -563,7 +356,8 @@ static void vk_loadGlobalLevelFunctions(void)
     q##func = (PFN_##func) qvkGetInstanceProcAddr( NULL, #func );   \
     if( q##func == NULL ) {                                         \
         ri.Error(ERR_FATAL, "Failed to find entrypoint %s", #func); \
-}
+    }
+    
 
 	INIT_GLOBAL_LEVEL_FUNCTION(vkCreateInstance)
 	INIT_GLOBAL_LEVEL_FUNCTION(vkEnumerateInstanceExtensionProperties)
@@ -576,7 +370,7 @@ static void vk_loadGlobalLevelFunctions(void)
 
 
 
-static void vk_loadInstanceLevelFunctions(void)
+static void VK_LoadInstanceLevelFunctions(VkInstance hInstance)
 {
     ri.Printf(PRINT_ALL, " Loading Instance level functions. \n");
 
@@ -590,7 +384,7 @@ static void vk_loadInstanceLevelFunctions(void)
     // physical devices. There are multiple instance-level functions.
     
 #define INIT_INSTANCE_FUNCTION(func)                                    \
-    q##func = (PFN_##func) qvkGetInstanceProcAddr(vk.instance, #func);  \
+    q##func = (PFN_##func) qvkGetInstanceProcAddr(hInstance, #func);  \
     if (q##func == NULL) {                                              \
         ri.Error(ERR_FATAL, "Failed to find entrypoint %s", #func);     \
     }
@@ -614,32 +408,12 @@ static void vk_loadInstanceLevelFunctions(void)
 	INIT_INSTANCE_FUNCTION(vkGetPhysicalDeviceSurfacePresentModesKHR)
 	INIT_INSTANCE_FUNCTION(vkGetPhysicalDeviceSurfaceSupportKHR)
 
-
-    // The platform-specific extensions allow a VkSurface object to be
-    // created that represents a native window owned by the operating
-    // system or window system. These extensions are typically used to
-    // render into a window with no border that covers an entire display
-    // it is more often efficient to render directly to a display instead.
-    if(vk.isKhrDisplaySupported)
-    {
-        ri.Printf(PRINT_ALL, " VK_KHR_Display Supported, Loading functions for this instance extention. \n");
-
-        INIT_INSTANCE_FUNCTION(vkGetPhysicalDeviceDisplayPropertiesKHR);
-        INIT_INSTANCE_FUNCTION(vkGetPhysicalDeviceDisplayPlanePropertiesKHR);
-        INIT_INSTANCE_FUNCTION(vkGetDisplayPlaneSupportedDisplaysKHR);
-        INIT_INSTANCE_FUNCTION(vkGetDisplayModePropertiesKHR);
-        INIT_INSTANCE_FUNCTION(vkCreateDisplayModeKHR);
-        INIT_INSTANCE_FUNCTION(vkGetDisplayPlaneCapabilitiesKHR);
-        INIT_INSTANCE_FUNCTION(vkCreateDisplayPlaneSurfaceKHR);
-    }
-
 #ifndef NDEBUG
     INIT_INSTANCE_FUNCTION(vkCreateDebugReportCallbackEXT)
 	INIT_INSTANCE_FUNCTION(vkDestroyDebugReportCallbackEXT)	//
 #endif
 
 #undef INIT_INSTANCE_FUNCTION
-
 }
 
 
@@ -647,702 +421,16 @@ static void vk_loadInstanceLevelFunctions(void)
 ////////////////////////////////
 
 
-static void vk_selectPhysicalDevice(void)
+void VK_CreateInstance( VkInstance * const pInstance)
 {
-    // After initializing the Vulkan library through a VkInstance
-    // we need to look for and select a graphics card in the system
-    // that supports the features we need. In fact we can select any
-    // number of graphics cards and use them simultaneously.
-	uint32_t gpu_count = 0;
+    VK_LoadGlobalLevelFunctions();
 
-    // Initial call to query gpu_count, then second call for gpu info.
-	qvkEnumeratePhysicalDevices(vk.instance, &gpu_count, NULL);
-
-	if (gpu_count <= 0) {
-		ri.Error(ERR_FATAL, "Vulkan: no physical device found");
-    }
-
-    VkPhysicalDevice * pPhyDev = (VkPhysicalDevice *) malloc (sizeof(VkPhysicalDevice) * gpu_count);
-    
-
-    VK_CHECK( qvkEnumeratePhysicalDevices(vk.instance, &gpu_count, pPhyDev) );
-    // Select the right gpu from r_gpuIndex
-    
-    if (gpu_count == 1)
-    {
-        // we have only one GPU, no choice
-        vk.physical_device = pPhyDev[0];
-        r_gpuIndex->integer = 1;
-    }
-    else
-    {
-        // out of range check ...
-        if(r_gpuIndex->integer < 0) 
-        {
-            r_gpuIndex->integer = 0;
-        }
-        else if(r_gpuIndex->integer >= gpu_count)
-        {
-            r_gpuIndex->integer = gpu_count - 1;
-        }
-        // let the user decide.
-        vk.physical_device = pPhyDev[r_gpuIndex->integer];
-    }
-
-    free(pPhyDev);
-
-    ri.Printf(PRINT_ALL, " Total %d graphics card, selected card index: [%d]. \n",
-            gpu_count, r_gpuIndex->integer);
-
-    ri.Printf(PRINT_ALL, " Get physical device memory properties: vk.devMemProperties \n");
-    
-    NO_CHECK( qvkGetPhysicalDeviceMemoryProperties(vk.physical_device, &vk.devMemProperties) );
-}
-
-
-const char * ColorSpaceEnum2str(enum VkColorSpaceKHR cs)
-{
-    switch(cs)
-    {
-        case VK_COLOR_SPACE_SRGB_NONLINEAR_KHR:
-            return "VK_COLOR_SPACE_SRGB_NONLINEAR_KHR";
-        case VK_COLOR_SPACE_DISPLAY_P3_NONLINEAR_EXT:
-            return "VK_COLOR_SPACE_DISPLAY_P3_NONLINEAR_EXT";
-        case VK_COLOR_SPACE_EXTENDED_SRGB_LINEAR_EXT:
-            return "VK_COLOR_SPACE_EXTENDED_SRGB_LINEAR_EXT";
-        case VK_COLOR_SPACE_DCI_P3_LINEAR_EXT:
-            return "VK_COLOR_SPACE_DCI_P3_LINEAR_EXT";
-        case VK_COLOR_SPACE_DCI_P3_NONLINEAR_EXT:
-            return "VK_COLOR_SPACE_DCI_P3_NONLINEAR_EXT";
-        case VK_COLOR_SPACE_BT709_LINEAR_EXT:
-            return "VK_COLOR_SPACE_BT709_LINEAR_EXT";
-        case VK_COLOR_SPACE_BT709_NONLINEAR_EXT:
-            return "VK_COLOR_SPACE_BT709_NONLINEAR_EXT";
-        case VK_COLOR_SPACE_BT2020_LINEAR_EXT:
-            return "VK_COLOR_SPACE_BT2020_LINEAR_EXT";
-        case VK_COLOR_SPACE_HDR10_ST2084_EXT:
-            return "VK_COLOR_SPACE_HDR10_ST2084_EXT";
-        case VK_COLOR_SPACE_DOLBYVISION_EXT:
-            return "VK_COLOR_SPACE_DOLBYVISION_EXT";
-        case VK_COLOR_SPACE_HDR10_HLG_EXT:
-            return "VK_COLOR_SPACE_HDR10_HLG_EXT";
-        case VK_COLOR_SPACE_ADOBERGB_LINEAR_EXT:
-            return "VK_COLOR_SPACE_ADOBERGB_LINEAR_EXT";
-        case VK_COLOR_SPACE_ADOBERGB_NONLINEAR_EXT:
-            return "VK_COLOR_SPACE_ADOBERGB_NONLINEAR_EXT";
-        case VK_COLOR_SPACE_PASS_THROUGH_EXT:
-            return "VK_COLOR_SPACE_PASS_THROUGH_EXT";
-        case VK_COLOR_SPACE_EXTENDED_SRGB_NONLINEAR_EXT:
-            return "VK_COLOR_SPACE_EXTENDED_SRGB_NONLINEAR_EXT";
-        default:
-            return "Not_Known";
-    }
-}
-
-
-static void vk_assertSurfaceCapabilities(VkSurfaceKHR HSurface)
-{
-    // To query supported format features which are properties of the physical device
-	ri.Printf(PRINT_ALL, "\n --------  Query supported format features --------\n");
-    
-    VkFormatProperties props;
-
-
-    // To determine the set of valid usage bits for a given format,
-    // ========================= color ================
-    qvkGetPhysicalDeviceFormatProperties(vk.physical_device, vk.surface_format.format, &props);
-    
-    // Check if the device supports blitting to linear images 
-    if ( props.linearTilingFeatures & VK_FORMAT_FEATURE_SAMPLED_IMAGE_BIT )
-        ri.Printf(PRINT_ALL, " Linear Tiling Features supported. \n");
-
-    if ( props.linearTilingFeatures & VK_FORMAT_FEATURE_BLIT_DST_BIT ) 
-    {
-        ri.Printf(PRINT_ALL, " Blitting from linear tiled images supported.\n");
-    }
-
-    if ( props.optimalTilingFeatures & VK_FORMAT_FEATURE_BLIT_SRC_BIT )
-    {
-        ri.Printf(PRINT_ALL, " Blitting from optimal tiled images supported.\n");
-        vk.isBlitSupported = VK_TRUE;
-    }
-
-
-    //=========================== depth =====================================
-    qvkGetPhysicalDeviceFormatProperties(vk.physical_device, VK_FORMAT_D24_UNORM_S8_UINT, &props);
-    if ( props.optimalTilingFeatures & VK_FORMAT_FEATURE_DEPTH_STENCIL_ATTACHMENT_BIT )
-    {
-        ri.Printf(PRINT_ALL, " VK_FORMAT_D24_UNORM_S8_UINT optimal Tiling feature supported.\n");
-        vk.fmt_DepthStencil = VK_FORMAT_D24_UNORM_S8_UINT;
-    }
-    else
-    {
-        qvkGetPhysicalDeviceFormatProperties(vk.physical_device, VK_FORMAT_D32_SFLOAT_S8_UINT, &props);
-
-        if ( props.optimalTilingFeatures & VK_FORMAT_FEATURE_DEPTH_STENCIL_ATTACHMENT_BIT )
-        {
-            ri.Printf(PRINT_ALL, " VK_FORMAT_D32_SFLOAT_S8_UINT optimal Tiling feature supported.\n");
-            vk.fmt_DepthStencil = VK_FORMAT_D32_SFLOAT_S8_UINT;
-        }
-        else
-        {
-            //formats[0] = VK_FORMAT_X8_D24_UNORM_PACK32;
-		    //formats[1] = VK_FORMAT_D32_SFLOAT;
-            // never get here.
-	        ri.Error(ERR_FATAL, " Failed to find depth attachment format.\n");
-        }
-    }
-
-    ri.Printf(PRINT_ALL, " -------- --------------------------- --------\n\n");
-}
-
-
-static void vk_selectSurfaceFormat(VkSurfaceKHR HSurface)
-{
-    uint32_t nSurfmt;
-    uint32_t i;
-
-    // Get the numbers of VkFormat's that are supported
-    // "vk.surface" is the surface that will be associated with the swapchain.
-    // "vk.surface" must be a valid VkSurfaceKHR handle
-    VK_CHECK( qvkGetPhysicalDeviceSurfaceFormatsKHR(vk.physical_device, HSurface, &nSurfmt, NULL) );
-    assert(nSurfmt > 0);
-
-    VkSurfaceFormatKHR * pSurfFmts = 
-        (VkSurfaceFormatKHR *) malloc( nSurfmt * sizeof(VkSurfaceFormatKHR) );
-
-    // To query the supported swapchain format-color space pairs for a surface
-    VK_CHECK( qvkGetPhysicalDeviceSurfaceFormatsKHR(vk.physical_device, HSurface, &nSurfmt, pSurfFmts) );
-
-    ri.Printf(PRINT_ALL, " -------- Total %d surface formats supported. -------- \n", nSurfmt);
-    
-    for( i = 0; i < nSurfmt; ++i)
-    {
-        ri.Printf(PRINT_ALL, " [%d] format: %d, color space: %s \n",
-            i, pSurfFmts[i].format, ColorSpaceEnum2str(pSurfFmts[i].colorSpace));
-    }
-
-
-    // If the format list includes just one entry of VK_FORMAT_UNDEFINED, the surface
-    // has no preferred format. Otherwise, at least one supported format will be returned.
-    if ( (nSurfmt == 1) && (pSurfFmts[0].format == VK_FORMAT_UNDEFINED) )
-    {
-        // special case that means we can choose any format
-        vk.surface_format.format = VK_FORMAT_B8G8R8A8_UNORM;
-        vk.surface_format.colorSpace = VK_COLORSPACE_SRGB_NONLINEAR_KHR;
-        ri.Printf(PRINT_ALL, "VK_FORMAT_R8G8B8A8_UNORM\n");
-        ri.Printf(PRINT_ALL, "VK_COLORSPACE_SRGB_NONLINEAR_KHR\n");
-    }
-    else
-    {
-        ri.Printf(PRINT_ALL, " we choose: \n" );
-
-        for( i = 0; i < nSurfmt; ++i)
-        {
-            if( ( pSurfFmts[i].format == VK_FORMAT_B8G8R8A8_UNORM) &&
-                ( pSurfFmts[i].colorSpace == VK_COLORSPACE_SRGB_NONLINEAR_KHR) )
-            {
-
-                ri.Printf(PRINT_ALL, " format = VK_FORMAT_B8G8R8A8_UNORM \n");
-                ri.Printf(PRINT_ALL, " colorSpace = VK_COLORSPACE_SRGB_NONLINEAR_KHR \n");
-                
-                vk.surface_format = pSurfFmts[i];
-                break;
-            }
-        }
-
-        if (i == nSurfmt)
-            vk.surface_format = pSurfFmts[0];
-    }
-
-    ri.Printf(PRINT_ALL, " --- ----------------------------------- --- \n");
-
-    free(pSurfFmts);
-}
-
-
-// Vulkan device execute work that is submitted to queues.
-// each device will have one or more queues, and each of those queues
-// will belong to one of the device's queue families. A queue family
-// is a group of queues that have identical capabilities but are 
-// able to run in parallel.
-//
-// The number of queue families, the capabilities of each family,
-// and the number of queues belonging to each family are all
-// properties of the physical device.
-static uint32_t vk_selectQueueFamilyForPresentation(VkSurfaceKHR HSurface)
-{
-    // Almosty every operation in Vulkan, anything from drawing textures,
-    // requires commands to be submitted to a queue. There are different
-    // types of queues that originate from differnet queue families and
-    // each family of queues allows only a subset of commands. 
-    // For example, there could be a queue family allows processing of 
-    // compute commands or one that only allows memory thansfer related
-    // commands. We need to check which queue families are supported by
-    // the device and which one of these supports the commands that we use.
-
-
-    uint32_t nQueueFamily;
-    uint32_t i;
-
-    qvkGetPhysicalDeviceQueueFamilyProperties(vk.physical_device, &nQueueFamily, NULL);
-    
-    assert(nQueueFamily > 0);
-
-    VkQueueFamilyProperties* const pQueueFamilies = (VkQueueFamilyProperties *) 
-        malloc( nQueueFamily * sizeof(VkQueueFamilyProperties) );
-
-    // To query properties of queues available on a physical device
-    qvkGetPhysicalDeviceQueueFamilyProperties(vk.physical_device, &nQueueFamily, pQueueFamilies);
-
-    ri.Printf(PRINT_ALL, "\n -------- Total %d Queue families -------- \n", nQueueFamily);
-
-    // Queues within a family are essentially identical. 
-    // Queues in different families may have different internal capabilities
-    // that can't be expressed easily in the Vulkan API. For this reason,
-    // an implementation might choose to report similar queues as members 
-    // of different families.
-    //
-    // All commands that are allowed on a queue that supports transfer operations are
-    // also allowed on a queue that supports either graphics or compute operations.
-    // Thus, if the capabilities of a queue family include VK_QUEUE_GRAPHICS_BIT or
-    // VK_QUEUE_COMPUTE_BIT, then reporting the VK_QUEUE_TRANSFER_BIT capability
-    // separately for that queue family is OPTIONAL.
-    // 
-    for (i = 0; i < nQueueFamily; ++i)
-    {
-        // print every queue family's capability
-        ri.Printf(PRINT_ALL, " Queue family [%d]: %d queues ", 
-                i, pQueueFamilies[i].queueCount );
-
-        if( pQueueFamilies[i].queueFlags & VK_QUEUE_GRAPHICS_BIT )
-            ri.Printf(PRINT_ALL, " Graphic ");
-        
-        if( pQueueFamilies[i].queueFlags & VK_QUEUE_COMPUTE_BIT )
-            ri.Printf(PRINT_ALL, " Compute ");
-
-        if( pQueueFamilies[i].queueFlags & VK_QUEUE_TRANSFER_BIT )
-            ri.Printf(PRINT_ALL, " Transfer ");
-
-        if( pQueueFamilies[i].queueFlags & VK_QUEUE_SPARSE_BINDING_BIT )
-            ri.Printf(PRINT_ALL, " Sparse ");
-
-
-        VkBool32 isPresentSupported = VK_FALSE;
-        VK_CHECK( qvkGetPhysicalDeviceSurfaceSupportKHR(
-                    vk.physical_device, i, HSurface, &isPresentSupported));
-
-        if (isPresentSupported)
-        {
-            ri.Printf(PRINT_ALL, " presentation supported. \n --------\n");
-        }
-        else
-        {
-            ri.Printf(PRINT_ALL, " \n -------- \n");
-        }
-    }
-
-    // Select queue family with presentation and graphics support
-    // Iterate over each queue to learn whether it supports presenting:
-
-    
-    for (i = 0; i < nQueueFamily; ++i)
-    {
-        // To look for a queue family that has the capability of presenting
-        // to our window surface
-        
-        VkBool32 presentation_supported = VK_FALSE;
-        VK_CHECK( qvkGetPhysicalDeviceSurfaceSupportKHR(
-                    vk.physical_device, i, HSurface, &presentation_supported) );
-
-        if (presentation_supported && 
-                (pQueueFamilies[i].queueFlags & VK_QUEUE_GRAPHICS_BIT) != 0)
-        {
-            
-          
-            ri.Printf(PRINT_ALL, " Queue family index %d selected for presentation.\n", i);
-            return i ;
-        }
-    }
-
-    if (i == nQueueFamily) {
-        ri.Error(ERR_FATAL, "Vulkan: failed to find a queue family for presentation. ");
-    }
-
-    ri.Printf(PRINT_ALL, " -------- ---------------------------- -------- \n\n");
-
-    free(pQueueFamilies);
-
-	return i;
-}
-
-
-
-static void vk_checkSwapChainExtention(const char * const pName)
-{
-    /* Look for device extensions */
-
-
-    //  Not all graphics cards are capble of presenting images directly
-    //  to a screen for various reasons, for example because they are 
-    //  designed for servers and don't have any display outputs. 
-    //  Secondly, since image presentation is heavily tied into the 
-    //  window system and the surfaces associated with windows, it is
-    //  not actually part of the vulkan core. You have to enable the
-    //  VK_KHR_swapchain device extension after querying for its support.
-    uint32_t nDevExts = 0;
-    
-    VkBool32 swapchainExtFound = 0;
-
-    // To query the numbers of extensions available to a given physical device
-    ri.Printf( PRINT_ALL, " Check for VK_KHR_swapchain extension. \n" );
-
-    qvkEnumerateDeviceExtensionProperties( vk.physical_device, NULL, &nDevExts, NULL);
-
-    VkExtensionProperties* const pDeviceExt = 
-        (VkExtensionProperties *) malloc( sizeof(VkExtensionProperties) * nDevExts );
-
-    qvkEnumerateDeviceExtensionProperties( vk.physical_device, NULL, &nDevExts, pDeviceExt);
-
-
-    uint32_t j;
-    for (j = 0; j < nDevExts; ++j)
-    {
-        if (0 == strcmp(pName, pDeviceExt[j].extensionName))
-        {
-            swapchainExtFound = VK_TRUE;
-            break;
-        }
-    }
-    
-    if (VK_FALSE == swapchainExtFound)
-        ri.Error(ERR_FATAL, "VK_KHR_SWAPCHAIN_EXTENSION_NAME is not available on you GPU driver.");
-
-    // info
-    ri.Printf( PRINT_ALL, "-------- Total %d device extensions supported --------\n", nDevExts);
-    for (j = 0; j < nDevExts; ++j)
-    {
-        ri.Printf( PRINT_ALL, "%s \n", pDeviceExt[j].extensionName);
-    }
-
-    ri.Printf(PRINT_ALL, "-------- Enabled device extensions on this app --------\n");
-    
-    ri.Printf(PRINT_ALL, " %s \n", pName);
-
-    ri.Printf(PRINT_ALL, "-------- --------------------------------------- ------\n\n");
-
-    free(pDeviceExt);
-}
-
-
-
-static void vk_createLogicalDevice(const char* const* ppExtNamesEnabled, uint32_t nExtEnabled,
-        uint32_t idxQueueFamily, VkDevice * const pLogicalDev)
-{
-////////////////////////
-
-    const float priority = 1.0;
-    VkDeviceQueueCreateInfo queue_desc;
-    queue_desc.sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO;
-    queue_desc.pNext = NULL;
-    queue_desc.flags = 0;
-    queue_desc.queueFamilyIndex = idxQueueFamily;
-    queue_desc.queueCount = 1;
-    queue_desc.pQueuePriorities = &priority;
-
-
-    // Query fine-grained feature support for this physical device.
-    // If APP has specific feature requirements it should check supported
-    // features based on this query.
-
-	VkPhysicalDeviceFeatures features;
-	qvkGetPhysicalDeviceFeatures(vk.physical_device, &features);
-	if (features.shaderClipDistance == VK_FALSE)
-    {
-		ri.Error(ERR_FATAL,
-            "vk_create_device: shaderClipDistance feature is not supported");
-        // vulkan need this to render portal and mirrors
-        // wandering if we can provide a soft impl ...
-    }
-    if (features.fillModeNonSolid == VK_FALSE) {
-	    ri.Error(ERR_FATAL,
-            "vk_create_device: fillModeNonSolid feature is not supported");
-    }
-
-    VkDeviceCreateInfo device_desc;
-    device_desc.sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO;
-    device_desc.pNext = NULL;
-    device_desc.flags = 0;
-    device_desc.queueCreateInfoCount = 1;
-    // Creating a logical device also creates the queues associated with that device.
-    device_desc.pQueueCreateInfos = &queue_desc;
-    device_desc.enabledLayerCount = 0;
-    device_desc.ppEnabledLayerNames = NULL;
-    device_desc.enabledExtensionCount = nExtEnabled;
-    device_desc.ppEnabledExtensionNames = ppExtNamesEnabled;
-    device_desc.pEnabledFeatures = &features;
-    
-
-    // After selecting a physical device to use we need to set up a
-    // logical device to interface with it. The logical device 
-    // creation process id similar to the instance creation process
-    // and describes the features we want to use. we also need to 
-    // specify which queues to create now that we've queried which
-    // queue families are available. You can create multiple logical
-    // devices from the same physical device if you have varying requirements.
-    ri.Printf( PRINT_ALL, " Create logical device: vk.device \n" );
-    VK_CHECK( qvkCreateDevice(vk.physical_device, &device_desc, NULL, pLogicalDev) );
-
-}
-
-
-static void vk_loadDeviceFunctions(void)
-{
-    ri.Printf( PRINT_ALL, " Loading device level function. \n" );
-
-    #define INIT_DEVICE_FUNCTION(func)                              \
-    q##func = (PFN_ ## func)qvkGetDeviceProcAddr(vk.device, #func); \
-    if (q##func == NULL) {                                          \
-        ri.Error(ERR_FATAL, "Failed to find entrypoint %s", #func); \
-    }     
-
-	INIT_DEVICE_FUNCTION(vkAllocateCommandBuffers)
-	INIT_DEVICE_FUNCTION(vkAllocateDescriptorSets)
-	INIT_DEVICE_FUNCTION(vkAllocateMemory)
-	INIT_DEVICE_FUNCTION(vkBeginCommandBuffer)
-	INIT_DEVICE_FUNCTION(vkBindBufferMemory)
-	INIT_DEVICE_FUNCTION(vkBindImageMemory)
-	INIT_DEVICE_FUNCTION(vkCmdBeginRenderPass)
-	INIT_DEVICE_FUNCTION(vkCmdBindDescriptorSets)
-	INIT_DEVICE_FUNCTION(vkCmdBindIndexBuffer)
-	INIT_DEVICE_FUNCTION(vkCmdBindPipeline)
-	INIT_DEVICE_FUNCTION(vkCmdBindVertexBuffers)
-	INIT_DEVICE_FUNCTION(vkCmdBlitImage)
-	INIT_DEVICE_FUNCTION(vkCmdClearAttachments)
-	INIT_DEVICE_FUNCTION(vkCmdClearColorImage)
-	INIT_DEVICE_FUNCTION(vkCmdCopyBufferToImage)
-	INIT_DEVICE_FUNCTION(vkCmdCopyImage)
-    INIT_DEVICE_FUNCTION(vkCmdCopyImageToBuffer)
-	INIT_DEVICE_FUNCTION(vkCmdDraw)
-	INIT_DEVICE_FUNCTION(vkCmdDrawIndexed)
-	INIT_DEVICE_FUNCTION(vkCmdEndRenderPass)
-	INIT_DEVICE_FUNCTION(vkCmdPipelineBarrier)
-	INIT_DEVICE_FUNCTION(vkCmdPushConstants)
-	INIT_DEVICE_FUNCTION(vkCmdSetDepthBias)
-	INIT_DEVICE_FUNCTION(vkCmdSetScissor)
-	INIT_DEVICE_FUNCTION(vkCmdSetViewport)
-	INIT_DEVICE_FUNCTION(vkCreateBuffer)
-	INIT_DEVICE_FUNCTION(vkCreateCommandPool)
-	INIT_DEVICE_FUNCTION(vkCreateDescriptorPool)
-	INIT_DEVICE_FUNCTION(vkCreateDescriptorSetLayout)
-	INIT_DEVICE_FUNCTION(vkCreateFence)
-	INIT_DEVICE_FUNCTION(vkCreateFramebuffer)
-	INIT_DEVICE_FUNCTION(vkCreateGraphicsPipelines)
-	INIT_DEVICE_FUNCTION(vkCreateImage)
-	INIT_DEVICE_FUNCTION(vkCreateImageView)
-	INIT_DEVICE_FUNCTION(vkCreatePipelineLayout)
-	INIT_DEVICE_FUNCTION(vkCreateRenderPass)
-	INIT_DEVICE_FUNCTION(vkCreateSampler)
-	INIT_DEVICE_FUNCTION(vkCreateSemaphore)
-	INIT_DEVICE_FUNCTION(vkCreateShaderModule)
-	INIT_DEVICE_FUNCTION(vkDestroyBuffer)
-	INIT_DEVICE_FUNCTION(vkDestroyCommandPool)
-	INIT_DEVICE_FUNCTION(vkDestroyDescriptorPool)
-	INIT_DEVICE_FUNCTION(vkDestroyDescriptorSetLayout)
-	INIT_DEVICE_FUNCTION(vkDestroyDevice)
-	INIT_DEVICE_FUNCTION(vkDestroyFence)
-	INIT_DEVICE_FUNCTION(vkDestroyFramebuffer)
-	INIT_DEVICE_FUNCTION(vkDestroyImage)
-	INIT_DEVICE_FUNCTION(vkDestroyImageView)
-	INIT_DEVICE_FUNCTION(vkDestroyPipeline)
-	INIT_DEVICE_FUNCTION(vkDestroyPipelineLayout)
-	INIT_DEVICE_FUNCTION(vkDestroyRenderPass)
-	INIT_DEVICE_FUNCTION(vkDestroySampler)
-	INIT_DEVICE_FUNCTION(vkDestroySemaphore)
-	INIT_DEVICE_FUNCTION(vkDestroyShaderModule)
-	INIT_DEVICE_FUNCTION(vkDeviceWaitIdle)
-	INIT_DEVICE_FUNCTION(vkEndCommandBuffer)
-	INIT_DEVICE_FUNCTION(vkFreeCommandBuffers)
-	INIT_DEVICE_FUNCTION(vkFreeDescriptorSets)
-	INIT_DEVICE_FUNCTION(vkFreeMemory)
-	INIT_DEVICE_FUNCTION(vkGetBufferMemoryRequirements)
-	INIT_DEVICE_FUNCTION(vkGetDeviceQueue)
-	INIT_DEVICE_FUNCTION(vkGetImageMemoryRequirements)
-	INIT_DEVICE_FUNCTION(vkGetImageSubresourceLayout)
-	INIT_DEVICE_FUNCTION(vkMapMemory)
-	INIT_DEVICE_FUNCTION(vkUnmapMemory)
-	INIT_DEVICE_FUNCTION(vkQueueSubmit)
-	INIT_DEVICE_FUNCTION(vkQueueWaitIdle)
-	INIT_DEVICE_FUNCTION(vkResetDescriptorPool)
-	INIT_DEVICE_FUNCTION(vkResetFences)
-	INIT_DEVICE_FUNCTION(vkUpdateDescriptorSets)
-	INIT_DEVICE_FUNCTION(vkWaitForFences)
-    
-	INIT_DEVICE_FUNCTION(vkCreateSwapchainKHR)
-	INIT_DEVICE_FUNCTION(vkDestroySwapchainKHR)
-	INIT_DEVICE_FUNCTION(vkGetSwapchainImagesKHR)
-    INIT_DEVICE_FUNCTION(vkAcquireNextImageKHR)
-	INIT_DEVICE_FUNCTION(vkQueuePresentKHR)
-
-    #undef INIT_DEVICE_FUNCTION
-}
-
-
-static VkPresentModeKHR vk_selectPresentationMode(VkSurfaceKHR HSurface)
-{
-    // The presentation is arguably the most impottant setting for the swap chain
-    // because it represents the actual conditions for showing images to the screen
-    // There four possible modes available in Vulkan:
-
-    // 1) VK_PRESENT_MODE_IMMEDIATE_KHR: Images submitted by your application
-    //    are transferred to the screen right away, which may result in tearing.
-    //
-    // 2) VK_PRESENT_MODE_FIFO_KHR: The swap chain is a queue where the display
-    //    takes an image from the front of the queue when the display is refreshed
-    //    and the program inserts rendered images at the back of the queue. If the
-    //    queue is full then the program has to wait. This is most similar to 
-    //    vertical sync as found in modern games
-    //
-    // 3) VK_PRESENT_MODE_FIFO_RELAXED_KHR: variation of 2)
-    //
-    // 4) VK_PRESENT_MODE_MAILBOX_KHR: another variation of 2), the image already
-    //    queued are simply replaced with the newer ones. This mode can be used
-    //    to avoid tearing significantly less latency issues than standard vertical
-    //    sync that uses double buffering.
-    uint32_t nPM = 0, i;
-    
-    VkBool32 mailbox_supported = VK_FALSE;
-    VkBool32 immediate_supported = VK_FALSE;
-    
-    // Look for the best mode available.
-
-    qvkGetPhysicalDeviceSurfacePresentModesKHR(vk.physical_device, HSurface, &nPM, NULL);
-
-    assert(nPM > 0);
-
-    VkPresentModeKHR * pPresentModes = (VkPresentModeKHR *) malloc( nPM * sizeof(VkPresentModeKHR) );
-
-    qvkGetPhysicalDeviceSurfacePresentModesKHR(vk.physical_device, HSurface, &nPM, pPresentModes);
-
-    ri.Printf(PRINT_ALL, "-------- Total %d present mode supported. -------- \n", nPM);
-    for (i = 0; i < nPM; ++i)
-    {
-        switch( pPresentModes[i] )
-        {
-            case VK_PRESENT_MODE_IMMEDIATE_KHR:
-                ri.Printf(PRINT_ALL, " [%d] VK_PRESENT_MODE_IMMEDIATE_KHR \n", i);
-                immediate_supported = VK_TRUE;
-                break;
-            case VK_PRESENT_MODE_MAILBOX_KHR:
-                ri.Printf(PRINT_ALL, " [%d] VK_PRESENT_MODE_MAILBOX_KHR \n", i);
-                mailbox_supported = VK_TRUE;
-                break;
-            case VK_PRESENT_MODE_FIFO_KHR:
-                ri.Printf(PRINT_ALL, " [%d] VK_PRESENT_MODE_FIFO_KHR \n", i);
-                break;
-            case VK_PRESENT_MODE_FIFO_RELAXED_KHR:
-                ri.Printf(PRINT_ALL, " [%d] VK_PRESENT_MODE_FIFO_RELAXED_KHR \n", i);
-                break;
-            default:
-                ri.Printf(PRINT_WARNING, "Unknown presentation mode: %d. \n",
-                        pPresentModes[i]);
-                break;
-        }
-    }
-
-    free(pPresentModes);
-
-    ri.Printf(PRINT_ALL, "\n");
-    if (mailbox_supported)
-    {
-        ri.Printf(PRINT_ALL, " Presentation with VK_PRESENT_MODE_MAILBOX_KHR mode. \n");
-        ri.Printf(PRINT_ALL, "-------- ----------------------------- --------\n");
-        return VK_PRESENT_MODE_MAILBOX_KHR;
-    }
-    else if(immediate_supported)
-    {
-        ri.Printf(PRINT_ALL, " Presentation with VK_PRESENT_MODE_IMMEDIATE_KHR mode. \n");
-        ri.Printf(PRINT_ALL, "-------- ----------------------------- --------\n");
-        return VK_PRESENT_MODE_IMMEDIATE_KHR;
-    }
-
-    // FIFO_KHR mode is guaranteed to be available according to the spec.
-	// this is worsest, lag 
-    ri.Printf(PRINT_ALL, " Presentation with VK_PRESENT_MODE_FIFO_KHR mode. \n");
-    ri.Printf(PRINT_ALL, "-------- ----------------------------- --------\n");
-    return VK_PRESENT_MODE_FIFO_KHR;
-}
-
-
-void vk_getProcAddress(void)
-{
-    vk_loadGlobalLevelFunctions();
-
-    vk_createInstance( &vk.instance );
+    VK_CreateInstanceImpl( pInstance );
     // We have created a Vulkan Instance object, then 
     // use that instance to load instance level functions
-    vk_loadInstanceLevelFunctions();
+    VK_LoadInstanceLevelFunctions( vk.instance );
 
-	// Create debug callback.
-    vk_createDebugCallback( );
-
-    // The window surface needs to be created right after the instance creation,
-    // because it can actually influence the presentation mode selection.
-	ri.Printf(PRINT_ALL, " Create Surface: vk.surface. \n");
-    vk_createSurfaceImpl(vk.instance, &vk.surface ); 
-
-    // select physical device
-    vk_selectPhysicalDevice();
-
-    vk_selectSurfaceFormat(vk.surface);
-    
-    vk_assertSurfaceCapabilities(vk.surface);
-    
-    vk.present_mode = vk_selectPresentationMode(vk.surface);
-
-	vk.queue_family_index = vk_selectQueueFamilyForPresentation(vk.surface);
-
-    
-    //////////
-    const char* enable_features_name_array[1] = {
-        VK_KHR_SWAPCHAIN_EXTENSION_NAME
-    };
-
-    vk_checkSwapChainExtention(enable_features_name_array[0]);
-    
-    vk_createLogicalDevice(enable_features_name_array, 1, vk.queue_family_index, &vk.device);
-
-    // Get device level functions. depended on the created logical device
-    // thus must be called AFTER vk_createLogicalDevice.
-    vk_loadDeviceFunctions();
-
-    
-    // a call to retrieve queue handle
-    // The queues are constructed when the device is created, For this
-    // reason, we don't create queues, but obtain them from the device.
-    // maybe the queue is abstraction of specific hardware ...
-	NO_CHECK( qvkGetDeviceQueue(vk.device, vk.queue_family_index, 0, &vk.queue) );
-    //
-    //     Queue Family Index
-    //
-    // The queue family index is used in multiple places in Vulkan in order to
-    // tie operations to a specific family of queues. When retrieving a handle 
-    // to the queue via vkGetDeviceQueue, the queue family index is used to
-    // select which queue family to retrieve the VkQueue handle from.
-    // 
-    // When creating a VkCommandPool object, a queue family index is specified
-    // in the VkCommandPoolCreateInfo structure. Command buffers from this pool
-    // can only be submitted on queues corresponding to this queue family.
-    //
-    // When creating VkImage (see Images) and VkBuffer (see Buffers) resources,
-    // a set of queue families is included in the VkImageCreateInfo and 
-    // VkBufferCreateInfo structures to specify the queue families that can 
-    // access the resource.
-    //
-    // When inserting a VkBufferMemoryBarrier or VkImageMemoryBarrier
-    // a source and destination queue family index is specified to allow the 
-    // ownership of a buffer or image to be transferred from one queue family
-    // to another.
+    VK_GetExtraProcAddr( vk.instance );
 }
 
 
@@ -1351,13 +439,14 @@ uint32_t vk_getWinWidth(void)
 	return vk.renderArea.extent.width;
 }
 
+
 uint32_t vk_getWinHeight(void)
 {
 	return vk.renderArea.extent.height;
 }
 
 
-void vk_clearProcAddress(void)
+void VK_ClearProcAddress(void)
 {
 
     ri.Printf( PRINT_ALL, " clear all proc address \n" );
@@ -1379,15 +468,6 @@ void vk_clearProcAddress(void)
 	qvkGetPhysicalDeviceMemoryProperties		= NULL;
 	qvkGetPhysicalDeviceProperties				= NULL;
 	qvkGetPhysicalDeviceQueueFamilyProperties	= NULL;
-
-
-    qvkGetPhysicalDeviceDisplayPropertiesKHR    = NULL;
-    qvkGetPhysicalDeviceDisplayPlanePropertiesKHR = NULL;
-    qvkGetDisplayPlaneSupportedDisplaysKHR      = NULL;
-    qvkGetDisplayModePropertiesKHR              = NULL;
-    qvkCreateDisplayModeKHR                     = NULL;
-    qvkGetDisplayPlaneCapabilitiesKHR           = NULL;
-    qvkCreateDisplayPlaneSurfaceKHR             = NULL;
 
 
     qvkDestroySurfaceKHR						= NULL;
@@ -1479,16 +559,53 @@ void vk_clearProcAddress(void)
 }
 
 
-void vk_destroy_instance(void)
+void VK_DestroyInstance(void)
 {
 
     ri.Printf( PRINT_ALL, " Destroy surface: vk.surface. \n" );
     
     // make sure that the surface is destroyed before the instance
-    qvkDestroySurfaceKHR(vk.instance, vk.surface, NULL);
+    NO_CHECK( qvkDestroySurfaceKHR(vk.instance, vk.surface, NULL) );
 
-    vk_destroyDebugReportHandle();
+    VK_DestroyDebugReportHandle(vk.instance);
 
-    ri.Printf( PRINT_ALL, " Destroy instance: vk.instance. \n" );
-	qvkDestroyInstance(vk.instance, NULL);
+	
+    NO_CHECK( qvkDestroyInstance(vk.instance, NULL) );
+
+    VK_ClearProcAddress();
+
+    VK_CleatExtraProcAddr();
+
+    memset(&vk, 0, sizeof(vk));
+
+
+    ri.Printf( PRINT_ALL, " Vulkan instance Destroyed. \n" );
 }
+
+
+// I dont want to make qvkEnumerateInstanceExtensionProperties 
+// available to other src files, so this function sitting here 
+void printInstanceExtensionsSupported_f(void)
+{
+	uint32_t nInsExt = 0;
+    // To retrieve a list of supported extensions before creating an instance
+	VK_CHECK( qvkEnumerateInstanceExtensionProperties( NULL, &nInsExt, NULL) );
+
+    assert(nInsExt > 0);
+
+    VkExtensionProperties* const pInsExt = (VkExtensionProperties *) malloc(sizeof(VkExtensionProperties) * nInsExt);
+    
+    VK_CHECK( qvkEnumerateInstanceExtensionProperties( NULL, &nInsExt, pInsExt) );
+
+    ri.Printf(PRINT_ALL, "\n");
+
+    ri.Printf(PRINT_ALL, "----- Total %d Instance Extension Supported -----\n", nInsExt);
+    for (uint32_t i = 0; i < nInsExt; ++i)
+    {            
+        ri.Printf(PRINT_ALL, "%s\n", pInsExt[i].extensionName );
+    }
+    ri.Printf(PRINT_ALL, "----- ------------------------------------- -----\n\n");
+   
+    free(pInsExt);
+}
+

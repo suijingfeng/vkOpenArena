@@ -29,7 +29,7 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 //
 // these are the functions exported by the refresh module
 //
-typedef struct
+typedef struct refexport_s
 {
 	// called before the library is unloaded,
 	// if the system is just reconfiguring, pass destroyWindow = qfalse, which will keep the screen from flashing to the desktop.
@@ -39,8 +39,8 @@ typedef struct
 	// but they can still be registered at a later time if necessary.
 	//
 	// BeginRegistration makes any existing media pointers invalid and returns the current gl configuration, 
-    // including screen width and height, which can be used by the client to intelligently size display elements
-	void (*BeginRegistration)( glconfig_t *config );
+	// including screen width and height, which can be used by the client to intelligently size display elements
+	void (*BeginRegistration)( glconfig_t * const pConfig );
 	qhandle_t (*RegisterModel)( const char *name );
 	qhandle_t (*RegisterSkin)( const char *name );
 	qhandle_t (*RegisterShader)( const char *name );
@@ -67,7 +67,7 @@ typedef struct
 
 	// Draw images for cinematic rendering, pass as 32 bit rgba
 	void (*DrawStretchRaw) (int x, int y, int w, int h, int cols, int rows, const byte *data, int client, qboolean dirty);
-	void (*UploadCinematic) (int w, int h, int cols, int rows, const byte *data, int client, qboolean dirty);
+	void (*UploadCinematic) (int w, int h, int cols, int rows, const byte *data, int client, int dirty);
 
 	void (*BeginFrame)( stereoFrame_t stereoFrame );
 
@@ -75,9 +75,9 @@ typedef struct
 	void (*EndFrame)( int *frontEndMsec, int *backEndMsec );
 
 
-	int	(*MarkFragments)( int numPoints, const vec3_t *points, const vec3_t projection, int maxPoints, vec3_t pointBuffer, int maxFragments, markFragment_t *fragmentBuffer );
+	int (*MarkFragments)( int numPoints, const vec3_t *points, const vec3_t projection, int maxPoints, vec3_t pointBuffer, int maxFragments, markFragment_t *fragmentBuffer );
 
-	int	(*LerpTag)( orientation_t *tag,  qhandle_t model, int startFrame, int endFrame, float frac, const char *tagName );
+	int (*LerpTag)( orientation_t *tag,  qhandle_t model, int startFrame, int endFrame, float frac, const char *tagName );
 	void (*ModelBounds)( qhandle_t model, vec3_t mins, vec3_t maxs );
 
 #ifdef __USEA3D
@@ -89,6 +89,9 @@ typedef struct
 	qboolean (*inPVS)( const vec3_t p1, const vec3_t p2 );
 
 	void (*TakeVideoFrame)( int h, int w, byte* captureBuffer, byte *encodeBuffer, qboolean motionJpeg );
+
+	void(* SysMessage)(unsigned int msgType, int x, int y, int w, int h);
+	void (* WaitRenderFinishCurFrame)(void);
 } refexport_t;
 
 //
@@ -135,12 +138,12 @@ typedef struct {
 	unsigned char *(*CM_ClusterPVS)(int cluster);
 
 	// visualization for debugging collision detection
-	void	(*CM_DrawDebugSurface)( void (*drawPoly)(int color, int numPoints, float *points) );
+	void (*CM_DrawDebugSurface)( void (*drawPoly)(int color, int numPoints, float *points) );
 
 	// a -1 return means the file does not exist
 	// NULL can be passed for buf to just determine existance
 	int     (*FS_FileIsInPAK)( const char *name, int *pCheckSum );
-	long    (*FS_ReadFile)( const char *name, void **buf );
+	long    (*FS_ReadFile)( const char *name, char** ppBuf );
 	void	(*FS_FreeFile)( void *buf );
 	char **	(*FS_ListFiles)( const char *name, const char *extension, int *numfilesfound );
 	void	(*FS_FreeFileList)( char **filelist );
@@ -149,32 +152,38 @@ typedef struct {
 
 	// cinematic stuff
 	void	(*CIN_UploadCinematic)(int handle);
-	int		(*CIN_PlayCinematic)( const char *arg0, int xpos, int ypos, int width, int height, int bits);
+	int	(*CIN_PlayCinematic)( const char *arg0, int xpos, int ypos, int width, int height, int bits);
 	e_status (*CIN_RunCinematic) (int handle);
 
 	void	(*CL_WriteAVIVideoFrame)( const unsigned char *buffer, int size );
 
 	// input event handling
-	void (* IN_Init)( void* );
-	void (* IN_Shutdown)( void );
-	void (* IN_Restart)( void );
+	// void (* IN_Init)( void );
+	// void (* IN_Shutdown)( void );
+	// void (* IN_Restart)( void );
 
 
-	// math, i really want ot remove this, but to keep the API/ABI consistant with ioq3
-	long (* ftol)(float f);
-
-	// GLimp
-	void (* GLimpInit)(glconfig_t * const glConfig, void ** pContext);
-	void (* GLimpShutdown)(void);
-	void (* GLimpEndFrame)(void);
-	void (* GLimpMinimize)(void);
-	void (* GLimpSetGamma)(unsigned char red[256], unsigned char green[256], unsigned char blue[256]);
+	// window systems impl
+	void (* WinSysInit)(void ** pContext, int type);
+	void (* WinSysShutdown)(void);
+	void (* WinSysEndFrame)(void);
+	void (* WinSysMinimize)(void);
+	void (* WinSysSetGamma)(unsigned char red[256], unsigned char green[256], unsigned char blue[256]);
 	void (* pfnLog)(char * const pComment);
+	
+
+	int (* GetWinWidth)(void);
+	int (* GetWinHeight)(void);
+	int (* IsWinFullscreen)(void);
+
+
+	// for OpenGL only
+	void * (* GetGlProcAddress)( const char *symbol );
 
 	// system stuff
-	void (* Sys_SetEnv)( const char *name, const char *value );
-//	void (* Sys_GLimpSafeInit)(void);
-//	void (* Sys_GLimpInit)(void);
+	// void (* Sys_SetEnv)( const char *name, const char *value );
+    // void (* Sys_GLimpSafeInit)(void);
+    // void (* Sys_GLimpInit)(void);
 	qboolean (* Sys_LowPhysicalMemory)(void);
 } refimport_t;
 
@@ -183,9 +192,9 @@ typedef struct {
 // If the module can't init to a valid rendering state, NULL will be returned.
 
 #ifdef USE_RENDERER_DLOPEN
-typedef	refexport_t* (QDECL *GetRefAPI_t) (int apiVersion, refimport_t * rimp);
+typedef void (QDECL *GetRefAPI_t) (int apiVersion, const refimport_t * const rimp, refexport_t* const rexp);
 #else
-refexport_t* GetRefAPI(int apiVersion, refimport_t *rimp );
+void GetRefAPI(int apiVersion, const refimport_t * const rimp, refexport_t* const rexp);
 #endif
 
 #endif	// __TR_PUBLIC_H

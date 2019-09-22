@@ -49,16 +49,12 @@ void vk_destroyScratchImage(void)
         tr_scratchImage.descriptor_set = VK_NULL_HANDLE;
     }
 */
+
+
     if (tr_scratchImage.view != VK_NULL_HANDLE)
     {
         NO_CHECK( qvkDestroyImageView(vk.device, tr_scratchImage.view, NULL) );
         tr_scratchImage.view = VK_NULL_HANDLE; 
-    }
-
-    if (s_mappableMemory != VK_NULL_HANDLE)
-    {
-        NO_CHECK( qvkFreeMemory(vk.device, s_mappableMemory, NULL) );
-        s_mappableMemory = VK_NULL_HANDLE;
     }
 
     if (tr_scratchImage.handle != VK_NULL_HANDLE)
@@ -67,6 +63,13 @@ void vk_destroyScratchImage(void)
          tr_scratchImage.handle = VK_NULL_HANDLE;
     }
 
+    if (s_mappableMemory != VK_NULL_HANDLE)
+    {
+        NO_CHECK( qvkFreeMemory(vk.device, s_mappableMemory, NULL) );
+        s_mappableMemory = VK_NULL_HANDLE;
+    }
+
+
     memset( &tr_scratchImage, 0, sizeof( tr_scratchImage ) );
 
     ri.Printf (PRINT_ALL, " Destroy Scratch Image. \n");
@@ -74,7 +77,7 @@ void vk_destroyScratchImage(void)
 
 
 
-void RE_UploadCinematic(int w, int h, int cols, int rows, const unsigned char * data, int client, VkBool32 dirty)
+void RE_UploadCinematic(int w, int h, int cols, int rows, const unsigned char * data, int client, int dirty)
 {
 
     // the image may not even created, and it image data may not even uploaded.
@@ -90,8 +93,8 @@ void RE_UploadCinematic(int w, int h, int cols, int rows, const unsigned char * 
 		vk_destroyScratchImage();
 
         strncpy (tr_scratchImage.imgName, "*scratch", 10);
-        tr_scratchImage.uploadWidth = cols;
-        tr_scratchImage.uploadHeight = rows;
+		tr_scratchImage.width = tr_scratchImage.uploadWidth = cols;
+		tr_scratchImage.height = tr_scratchImage.uploadHeight = rows;
 
         {
             VkImageCreateInfo imgDesc;
@@ -238,6 +241,7 @@ void RE_UploadCinematic(int w, int h, int cols, int rows, const unsigned char * 
 
         vk_stagBufToDevLocal(tr_scratchImage.handle, regions, 1);
     }
+    
 }
 
 

@@ -25,7 +25,7 @@ cvar_t	*r_nocurves;
 
 
 
-cvar_t* r_fullscreen;
+
 // display refresh rate
 cvar_t* r_displayRefresh;
 
@@ -69,7 +69,6 @@ cvar_t	*r_maxpolys;
 cvar_t	*r_maxpolyverts;
 
 cvar_t* r_allowResize; // make window resizable
-cvar_t* r_mode;
 
 cvar_t	*r_gpuIndex;
 
@@ -156,8 +155,6 @@ void R_Register( void )
 	r_maxpolyverts = ri.Cvar_Get( "r_maxpolyverts", "3000", 0);
 
     
-    r_mode = ri.Cvar_Get( "r_mode", "-2", CVAR_ARCHIVE | CVAR_LATCH );
-    r_fullscreen = ri.Cvar_Get( "r_fullscreen", "1", CVAR_ARCHIVE | CVAR_LATCH );
     r_displayRefresh = ri.Cvar_Get( "r_displayRefresh", "60", CVAR_LATCH );
     ri.Cvar_CheckRange( r_displayRefresh, 30.0f, 200.0f, qfalse );
 
@@ -165,4 +162,6 @@ void R_Register( void )
 
 
 	r_gpuIndex = ri.Cvar_Get( "r_gpuIndex", "0", CVAR_ARCHIVE );
+
+	ri.Printf(PRINT_ALL, "R_Register finished.\n");
 }

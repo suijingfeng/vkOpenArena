@@ -22,7 +22,7 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
 #include "../qcommon/q_shared.h"
 #include "../qcommon/qcommon.h"
-#include "sys_local.h"
+#include "sys_public.h"
 #include "windows.h"
 
 #define QCONSOLE_HISTORY 32
@@ -253,9 +253,7 @@ CON_Hide
 */
 static void CON_Hide( void )
 {
-	int realLen;
-
-	realLen = qconsole_linelen;
+	int realLen = qconsole_linelen;
 
 	// remove input line from console output buffer
 	qconsole_linelen = 0;

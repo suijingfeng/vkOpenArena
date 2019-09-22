@@ -24,11 +24,9 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #include "client.h"
 #include <limits.h>
 
-#include "../sys/sys_local.h"
-#include "../qcommon/sys_loadlib.h"
-#include "../sdl/input.h"
 
-#include "../win32/win_public.h"
+#include "../sys/sys_public.h"
+#include "../platform/win_public.h"
 
 #ifdef USE_MUMBLE
 #include "libmumblelink.h"
@@ -774,7 +772,8 @@ void CL_Record_f( void ) {
 	MSG_WriteLong (&buf, clc.serverCommandSequence );
 
 	// configstrings
-	for ( i = 0 ; i < MAX_CONFIGSTRINGS ; i++ ) {
+	for ( i = 0 ; i < MAX_CONFIGSTRINGS ; ++i )
+    {
 		if ( !cl.gameState.stringOffsets[i] ) {
 			continue;
 		}
@@ -1323,9 +1322,7 @@ CL_UpdateGUID: update cl_guid using QKEY_FILE and optional prefix
 static void CL_UpdateGUID( const char *prefix, int prefix_len )
 {
 	fileHandle_t f;
-	int len;
-
-	len = FS_SV_FOpenFileRead( QKEY_FILE, &f );
+	int len = FS_SV_FOpenFileRead( QKEY_FILE, &f );
 	FS_FCloseFile( f );
 
 	if( len != QKEY_SIZE ) 
@@ -1676,8 +1673,8 @@ CL_Connect_f
 */
 void CL_Connect_f( void )
 {
-	char	*server;
-	const char	*serverString;
+	char* server;
+
 	int argc = Cmd_Argc();
 	netadrtype_t family = NA_UNSPEC;
 
@@ -1735,7 +1732,7 @@ void CL_Connect_f( void )
 		clc.serverAddress.port = BigShort( PORT_SERVER );
 	}
 
-	serverString = NET_AdrToStringwPort(clc.serverAddress);
+	const char* serverString = NET_AdrToStringwPort(clc.serverAddress);
 
 	Com_Printf( "%s resolved to %s\n", clc.servername, serverString);
 
@@ -2243,7 +2240,6 @@ void CL_NextDownload(void)
 				"configuration (cl_allowDownload is %d)\n",
 				cl_allowDownload->integer);
 		}
-
 
 		if(!useCURL) {
 			if((cl_allowDownload->integer & DLF_NO_UDP)) {
@@ -3169,15 +3165,16 @@ int CL_ScaledMilliseconds(void) {
 
 
 // not used
+/*
 static long Q_ftol(float f)
 {
 	return (long)f;
 }
+*/
 
 void CL_InitRef(void)
 {
 	refimport_t	ri;
-	refexport_t	*ret;
 
 
 #ifdef USE_RENDERER_DLOPEN
@@ -3273,32 +3270,31 @@ void CL_InitRef(void)
   
 	ri.CL_WriteAVIVideoFrame = CL_WriteAVIVideoFrame;
 
-	ri.IN_Init = IN_Init;
-	ri.IN_Shutdown = IN_Shutdown;
-	ri.IN_Restart = IN_Restart;
+	// ri.IN_Init = IN_Init;
+	// ri.IN_Shutdown = IN_Shutdown;
+	// ri.IN_Restart = IN_Restart;
 
-	ri.ftol = Q_ftol;
+	// ri.ftol = Q_ftol;
 
-	ri.GLimpInit = WinSys_Init;
-	ri.GLimpShutdown = WinSys_Shutdown;
-	ri.GLimpEndFrame = WinSys_EndFrame;
-	ri.GLimpSetGamma = WinSys_SetGamma;
+	ri.WinSysInit = WinSys_Init;
+	ri.WinSysShutdown = WinSys_Shutdown;
+	ri.WinSysEndFrame = WinSys_EndFrame;
+	ri.WinSysSetGamma = WinSys_SetGamma;
 	ri.pfnLog = FileSys_Logging;
 
-	ri.Sys_SetEnv = Sys_SetEnv;
+    ri.GetWinWidth = WinSys_GetWinWidth;
+    ri.GetWinHeight = WinSys_GetWinHeight;
+    ri.IsWinFullscreen = WinSys_IsWinFullscreen;
+
+	ri.GetGlProcAddress = GLimp_GetProcAddress;
+	
+	// ri.Sys_SetEnv = Sys_SetEnv;
 	ri.Sys_LowPhysicalMemory = Sys_LowPhysicalMemory;
 
-	ret = GetRefAPI( REF_API_VERSION, &ri );
+	GetRefAPI( REF_API_VERSION, &ri, &re);
 
-#if defined __USEA3D && defined __A3D_GEOM
-	hA3Dg_ExportRenderGeom (ret);
-#endif
 
-	if( !ret )
-		Com_Error(ERR_FATAL, "Couldn't initialize refresh" );
-
-	re = *ret;
-    Com_Printf(" CL_InitRef() finished. \n");
+	Com_Printf(" CL_InitRef() finished. \n");
 	Com_Printf( "-------------------------------\n");
 
 	// unpause so the cgame definately gets a snapshot and renders a frame

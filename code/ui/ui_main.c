@@ -32,6 +32,7 @@ USER INTERFACE MAIN
 //#define PRE_RELEASE_TADEMO
 
 #include "ui_local.h"
+#include "../qcommon/q_math.h"
 
 uiInfo_t uiInfo;
 

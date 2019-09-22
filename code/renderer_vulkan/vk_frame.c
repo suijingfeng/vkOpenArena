@@ -483,8 +483,8 @@ void vk_createColorAttachment(VkDevice lgDev, const VkSwapchainKHR HSwapChain,
     // To obtain presentable image handles associated with a swapchain
     VK_CHECK( qvkGetSwapchainImagesKHR(lgDev, HSwapChain, &swapchainLen, vk.swapchain_images_array) );
 
-    uint32_t i;
-    for (i = 0; i < swapchainLen; ++i)
+
+    for (uint32_t i = 0; i < swapchainLen; ++i)
     {
         VkImageViewCreateInfo desc;
         desc.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
@@ -513,8 +513,7 @@ void vk_destroyColorAttachment(void)
 {
     ri.Printf(PRINT_ALL, " Destroy vk.color_image_views.\n");
     
-    uint32_t i;
-	for (i = 0; i < vk.swapchain_image_count; ++i)
+	for (uint32_t i = 0; i < vk.swapchain_image_count; ++i)
     {
 		NO_CHECK( qvkDestroyImageView(vk.device, vk.color_image_views[i], NULL) );
         // NO_CHECK( qvkDestroyImage(vk.device, vk.swapchain_images_array[i], NULL) );
@@ -645,8 +644,8 @@ void vk_destroyDepthAttachment(void)
     ri.Printf(PRINT_ALL, " Destroy vk.depth_image_view vk.depth_image_memory vk.depth_image.\n");
 
     NO_CHECK( qvkDestroyImageView(vk.device, vk.depth_image_view, NULL) );
-	NO_CHECK( qvkFreeMemory(vk.device, vk.depth_image_memory, NULL) );
     NO_CHECK( qvkDestroyImage(vk.device, vk.depth_image, NULL) );
+	NO_CHECK( qvkFreeMemory(vk.device, vk.depth_image_memory, NULL) );
 }
 
 
@@ -1088,4 +1087,18 @@ void vk_end_frame(void)
 
         vk_recreateSwapChain();
     }
+}
+
+// win resize interactive
+void RE_WinMessage(unsigned int msgType, int x, int y, int w, int h)
+{
+	// take a place
+	ri.Printf(PRINT_ALL, "message type:%d from windows system: %d, %d, %d, %d",
+		msgType, x, y, w, h);
+}
+
+
+void RE_WaitRenderFinishCurFrame(void)
+{
+	VK_CHECK( qvkDeviceWaitIdle(vk.device) );
 }

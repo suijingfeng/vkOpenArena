@@ -273,13 +273,19 @@ ChallengeMessage
 ==================
 */
 
-void ChallengeMessage(gentity_t *ent, int challenge) {
+void ChallengeMessage(gentity_t *ent, int challenge)
+{
+	int cl_num;
 	if ( level.warmupTime != 0) {
 		//We don't send anything doring warmup
 		return;
 	}
-	trap_SendServerCommand( ent-g_entities, va("ch %u", challenge) );
-	G_LogPrintf( "Challenge: %li %i %i: Client %li got award %i\n",ent-g_entities,challenge,1,ent-g_entities,challenge);
+
+	cl_num = ent - g_entities;
+
+	trap_SendServerCommand(cl_num, va("ch %u", challenge) );
+	G_LogPrintf( "Challenge: %i %i %i: Client %i got award %i\n",
+		cl_num, challenge, 1, cl_num, challenge);
 }
 
 /*

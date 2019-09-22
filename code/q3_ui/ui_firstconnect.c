@@ -21,7 +21,7 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 */
 //
 #include "ui_local.h"
-
+#include "../qcommon/q_math.h"
 /******************************************************************************
  * This is the menu displayed the first time the player selects "Multiplayer" *
  * It only has the must set or know about options!                            *
