@@ -238,10 +238,10 @@ static void vk_read_pixels(unsigned char* const pBuf, uint32_t W, uint32_t H)
     image_barrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
     image_barrier.pNext = NULL;
     // srcAccessMask is a bitmask of VkAccessFlagBits specifying a source access mask.
-    image_barrier.srcAccessMask = VK_ACCESS_COLOR_ATTACHMENT_READ_BIT;
+    image_barrier.srcAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
     // VK_ACCESS_TRANSFER_READ_BIT ?
     // dstAccessMask is a bitmask of VkAccessFlagBits specifying a destination access mask.
-    image_barrier.dstAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
+    image_barrier.dstAccessMask = VK_ACCESS_TRANSFER_READ_BIT;
     image_barrier.oldLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
 
     // VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL must only be used as a
