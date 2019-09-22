@@ -39,7 +39,7 @@ typedef struct refexport_s
 	// but they can still be registered at a later time if necessary.
 	//
 	// BeginRegistration makes any existing media pointers invalid and returns the current gl configuration, 
-    // including screen width and height, which can be used by the client to intelligently size display elements
+	// including screen width and height, which can be used by the client to intelligently size display elements
 	void (*BeginRegistration)( glconfig_t * const pConfig );
 	qhandle_t (*RegisterModel)( const char *name );
 	qhandle_t (*RegisterSkin)( const char *name );
@@ -75,9 +75,9 @@ typedef struct refexport_s
 	void (*EndFrame)( int *frontEndMsec, int *backEndMsec );
 
 
-	int	(*MarkFragments)( int numPoints, const vec3_t *points, const vec3_t projection, int maxPoints, vec3_t pointBuffer, int maxFragments, markFragment_t *fragmentBuffer );
+	int (*MarkFragments)( int numPoints, const vec3_t *points, const vec3_t projection, int maxPoints, vec3_t pointBuffer, int maxFragments, markFragment_t *fragmentBuffer );
 
-	int	(*LerpTag)( orientation_t *tag,  qhandle_t model, int startFrame, int endFrame, float frac, const char *tagName );
+	int (*LerpTag)( orientation_t *tag,  qhandle_t model, int startFrame, int endFrame, float frac, const char *tagName );
 	void (*ModelBounds)( qhandle_t model, vec3_t mins, vec3_t maxs );
 
 #ifdef __USEA3D
@@ -138,7 +138,7 @@ typedef struct {
 	unsigned char *(*CM_ClusterPVS)(int cluster);
 
 	// visualization for debugging collision detection
-	void	(*CM_DrawDebugSurface)( void (*drawPoly)(int color, int numPoints, float *points) );
+	void (*CM_DrawDebugSurface)( void (*drawPoly)(int color, int numPoints, float *points) );
 
 	// a -1 return means the file does not exist
 	// NULL can be passed for buf to just determine existance
@@ -152,7 +152,7 @@ typedef struct {
 
 	// cinematic stuff
 	void	(*CIN_UploadCinematic)(int handle);
-	int		(*CIN_PlayCinematic)( const char *arg0, int xpos, int ypos, int width, int height, int bits);
+	int	(*CIN_PlayCinematic)( const char *arg0, int xpos, int ypos, int width, int height, int bits);
 	e_status (*CIN_RunCinematic) (int handle);
 
 	void	(*CL_WriteAVIVideoFrame)( const unsigned char *buffer, int size );
@@ -172,9 +172,9 @@ typedef struct {
 	void (* pfnLog)(char * const pComment);
 	
 
-    int (* GetWinWidth)(void);
-    int (* GetWinHeight)(void);
-    int (* IsWinFullscreen)(void);
+	int (* GetWinWidth)(void);
+	int (* GetWinHeight)(void);
+	int (* IsWinFullscreen)(void);
 
 
 	// for OpenGL only

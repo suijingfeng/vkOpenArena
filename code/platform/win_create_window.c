@@ -22,8 +22,9 @@
 extern WinVars_t g_wv;
 
 
-    int (* GetWinWidth)(void);
-    int (* GetWinHeight)(void);
+// int (* GetWinWidth)(void);
+// int (* GetWinHeight)(void);
+
 int WinSys_IsWinFullscreen(void)
 {
 	return g_wv.isFullScreen;

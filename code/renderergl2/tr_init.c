@@ -231,17 +231,16 @@ qboolean GLimp_GetProcAddresses( void )
 {
 	qboolean success = qtrue;
 	const char *version;
-    int qglMajorVersion, qglMinorVersion;
-//int qglesMajorVersion, qglesMinorVersion;
-#ifdef __SDL_NOGETPROCADDR__
-#define GLE( ret, name, ... ) qgl##name = gl#name;
-#else
-#define GLE( ret, name, ... ) qgl##name = (name##proc *) ri.GetGlProcAddress("gl" #name); \
-	if ( qgl##name == NULL ) { \
-		ri.Error(ERR_FATAL, "ERROR: Missing OpenGL function %s\n", "gl" #name ); \
-		success = qfalse; \
+	int qglMajorVersion, qglMinorVersion;
+	//int qglesMajorVersion, qglesMinorVersion;
+
+#define GLE( ret, name, ... )								\
+	qgl##name = (name##proc *) ri.GetGlProcAddress("gl" #name);			\
+	if ( qgl##name == NULL ) {							\
+		ri.Error(ERR_FATAL, "ERROR: Missing OpenGL function %s\n", "gl" #name );	\
+		success = qfalse;							\
 	}
-#endif
+
 
 	// OpenGL 1.0 and OpenGL ES 1.0
 	GLE(const GLubyte *, GetString, GLenum name)
@@ -258,25 +257,28 @@ qboolean GLimp_GetProcAddresses( void )
 
 	sscanf( version, "%d.%d", &qglMajorVersion, &qglMinorVersion );
 
-	if ( (qglMajorVersion > 1) || ( ( qglMajorVersion == 1) && (qglMinorVersion >= 2 ) ) ) {
+	if ( (qglMajorVersion > 1) || ( ( qglMajorVersion == 1) && (qglMinorVersion >= 2 ) ) )
+	{
 		QGL_1_1_PROCS;
 		QGL_DESKTOP_1_1_PROCS;
-        QGL_1_3_PROCS;
+		QGL_1_3_PROCS;
 		QGL_1_5_PROCS;
 		QGL_2_0_PROCS;
-	}else {
+	}
+	else
+	{
 		ri.Error( ERR_FATAL, "Unsupported OpenGL Version: %s\n", version );
 	}
 
 	if ( (qglMajorVersion > 3) || ( ( qglMajorVersion == 3) && (qglMinorVersion >= 2 ) ) )
-    {
+    	{
 		QGL_3_0_PROCS;
-        q_gl_version_at_least_3_2 = 1;
+        		q_gl_version_at_least_3_2 = 1;
 	}
-    else
-    {
-       q_gl_version_at_least_3_2 = 0;
-    }
+	else
+	{
+		q_gl_version_at_least_3_2 = 0;
+	}
 
 #undef GLE
 

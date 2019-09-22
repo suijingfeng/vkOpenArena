@@ -30,7 +30,7 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
 
 #if defined(_WIN32)
-#define OPENGL_DLL_NAME	"opengl32"
+#define OPENGL_DLL_NAME	"opengl32.dll"
 #elif defined(MACOS_X)
 #define OPENGL_DLL_NAME	"/System/Library/Frameworks/OpenGL.framework/Libraries/libGL.dylib"
 #else
@@ -58,7 +58,7 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
 static cvar_t* r_ext_texture_filter_anisotropic;
 static cvar_t* r_ext_max_anisotropy;
-static void * hinstOpenGL;
+static void * hinstOpenGL = NULL;
 
 void ( APIENTRY * qglAlphaFunc )(GLenum func, GLclampf ref);
 void ( APIENTRY * qglBegin )(GLenum mode);
@@ -247,7 +247,7 @@ void qglShutdown( qboolean unloadDLL )
 	qglVertex3fv                 = NULL;
 	qglVertexPointer             = NULL;
 	qglViewport                  = NULL;
-    qglTranslatef                = NULL;
+	qglTranslatef                = NULL;
 }
 
 
@@ -277,28 +277,27 @@ static void* GL_GetProcAddressImpl( const char *symbol )
 */
 qboolean qglInit( void )
 {
-
-    ri.Printf( PRINT_ALL, "...initializing QGL\n" );
-
-    const char *dllname = OPENGL_DLL_NAME;
+	ri.Printf( PRINT_ALL, "...initializing QGL\n" );
+	const char *dllname = OPENGL_DLL_NAME;
 	if ( hinstOpenGL == NULL )
 	{
 		hinstOpenGL = Sys_LoadLibrary( dllname );
 
-        if ( hinstOpenGL == NULL )
+		if ( hinstOpenGL == NULL )
 		{
-			ri.Error(ERR_FATAL, "LoadOpenGLDll: failed to load %s from /etc/ld.so.conf: %s\n", dllname, Sys_LibraryError());
-		    return qfalse;
-        }
-        else
-        {
-            ri.Printf(PRINT_ALL, "Loading %s successful. ", dllname);
-        }  
+			ri.Error(ERR_FATAL, "LoadOpenGLDll: failed to load %s from  %s\n", dllname, Sys_LibraryError());
+		    	return qfalse;
+        		}
+        		else
+        		{
+			ri.Printf(PRINT_ALL, "L oading %s successful. \n", dllname);
+		}
 	}
 
+	qglGetString            = GL_GetProcAddressImpl("glGetString");
 
-	qglAlphaFunc            = GL_GetProcAddressImpl("glAlphaFunc");
-	qglBegin                = GL_GetProcAddressImpl("glBegin");
+	qglAlphaFunc	= GL_GetProcAddressImpl("glAlphaFunc");
+	qglBegin		= GL_GetProcAddressImpl("glBegin");
 	qglBindTexture          = GL_GetProcAddressImpl("glBindTexture");
 	qglBlendFunc            = GL_GetProcAddressImpl("glBlendFunc");
 	qglClear                = GL_GetProcAddressImpl("glClear");
@@ -322,7 +321,7 @@ qboolean qglInit( void )
 	qglFinish               = GL_GetProcAddressImpl("glFinish");
 	qglGetError             = GL_GetProcAddressImpl("glGetError");
 	qglGetIntegerv          = GL_GetProcAddressImpl("glGetIntegerv");
-	qglGetString            = GL_GetProcAddressImpl("glGetString");
+	
 	qglLineWidth            = GL_GetProcAddressImpl("glLineWidth");
 	qglLoadIdentity         = GL_GetProcAddressImpl("glLoadIdentity");
 	qglLoadMatrixf          = GL_GetProcAddressImpl("glLoadMatrixf");
@@ -349,27 +348,26 @@ qboolean qglInit( void )
 	qglVertex3fv            = GL_GetProcAddressImpl("glVertex3fv");
 	qglVertexPointer        = GL_GetProcAddressImpl("glVertexPointer");
 	qglViewport             = GL_GetProcAddressImpl("glViewport");
-    qglTranslatef           = GL_GetProcAddressImpl("glTranslatef");
+	qglTranslatef           = GL_GetProcAddressImpl("glTranslatef");
 
 
 	qglActiveTextureARB = NULL;
 	qglClientActiveTextureARB = NULL;
-    qglMultiTexCoord2fARB = NULL;
+	qglMultiTexCoord2fARB = NULL;
 	qglLockArraysEXT = NULL;
 	qglUnlockArraysEXT = NULL;
 
 	ri.Printf( PRINT_ALL,  "\n...Initializing OpenGL extensions\n" );
 
-
-    Q_strncpyz( glConfig.vendor_string, (char *) qglGetString (GL_VENDOR), sizeof( glConfig.vendor_string ) );
-    Q_strncpyz( glConfig.renderer_string, (char *) qglGetString (GL_RENDERER), sizeof( glConfig.renderer_string ) );
-    if (*glConfig.renderer_string && glConfig.renderer_string[strlen(glConfig.renderer_string) - 1] == '\n')
-        glConfig.renderer_string[strlen(glConfig.renderer_string) - 1] = 0;
-    Q_strncpyz( glConfig.version_string, (char *) qglGetString (GL_VERSION), sizeof( glConfig.version_string ) );
-    Q_strncpyz( glConfig.extensions_string, (char *)qglGetString(GL_EXTENSIONS), sizeof( glConfig.extensions_string ) );
+	Q_strncpyz( glConfig.vendor_string, (char *) qglGetString (GL_VENDOR), sizeof( glConfig.vendor_string ) );
+	Q_strncpyz( glConfig.renderer_string, (char *) qglGetString (GL_RENDERER), sizeof( glConfig.renderer_string ) );
+	if (*glConfig.renderer_string && glConfig.renderer_string[strlen(glConfig.renderer_string) - 1] == '\n')
+		glConfig.renderer_string[strlen(glConfig.renderer_string) - 1] = 0;
+	Q_strncpyz( glConfig.version_string, (char *) qglGetString (GL_VERSION), sizeof( glConfig.version_string ) );
+	Q_strncpyz( glConfig.extensions_string, (char *)qglGetString(GL_EXTENSIONS), sizeof( glConfig.extensions_string ) );
 
 	r_ext_max_anisotropy = ri.Cvar_Get( "r_ext_max_anisotropy", "2", CVAR_ARCHIVE | CVAR_LATCH );
-    r_ext_texture_filter_anisotropic = ri.Cvar_Get( "r_ext_texture_filter_anisotropic", "0", CVAR_ARCHIVE | CVAR_LATCH );
+	r_ext_texture_filter_anisotropic = ri.Cvar_Get( "r_ext_texture_filter_anisotropic", "0", CVAR_ARCHIVE | CVAR_LATCH );
 
 	// GL_EXT_texture_env_add
 	glConfig.textureEnvAddAvailable = qfalse;

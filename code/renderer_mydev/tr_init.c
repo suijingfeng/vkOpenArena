@@ -74,7 +74,7 @@ cvar_t	*r_lightmap;
 cvar_t	*r_vertexLight;
 cvar_t	*r_uiFullScreen;
 cvar_t	*r_shadows;
-cvar_t	*r_mode;
+
 cvar_t	*r_nobind;
 cvar_t	*r_singleShader;
 cvar_t	*r_roundImagesDown;
@@ -95,8 +95,6 @@ cvar_t	*r_portalOnly;
 
 cvar_t	*r_subdivisions;
 cvar_t	*r_lodCurveError;
-
-cvar_t	*r_fullscreen;
 
 cvar_t	*r_customwidth;
 cvar_t	*r_customheight;
@@ -119,9 +117,9 @@ cvar_t	*r_saveFontData;
 
 
 cvar_t	*r_maxpolys;
-int		max_polys;
+int max_polys;
 cvar_t	*r_maxpolyverts;
-int		max_polyverts;
+int max_polyverts;
 
 
 static void AssertCvarRange( cvar_t *cv, float minVal, float maxVal, qboolean shouldBeIntegral )
@@ -156,21 +154,17 @@ static void AssertCvarRange( cvar_t *cv, float minVal, float maxVal, qboolean sh
 static void InitOpenGL(void)
 {
 	//
-	// initialize OS specific portions of the renderer
+	ri.Printf( PRINT_WARNING, "initialize OS specific portions of the renderer");
 	//
-	// GLimp_Init directly or indirectly references the following cvars:
-	//		- r_fullscreen
-	//		- r_mode
+
 	glconfig_t * const pConfig = &glConfig;
     
 	if ( pConfig->vidWidth == 0 )
 	{
 		GLint temp;
-
 		void * pCfg = NULL;
             			
 		ri.WinSysInit(&pCfg, 0);
-
 
         pConfig->stereoEnabled = qfalse;
         pConfig->smpActive = qfalse;
@@ -193,22 +187,23 @@ static void InitOpenGL(void)
         pConfig->isFullscreen = ri.IsWinFullscreen();
         pConfig->windowAspect = (float) pConfig->vidWidth / (float) pConfig->vidHeight;
 
-        // get our config strings
-		qglInit();
-        qglGetIntegerv( GL_MAX_TEXTURE_SIZE, &glConfig.maxTextureSize );
 
-		// OpenGL driver constants
-		qglGetIntegerv( GL_MAX_TEXTURE_SIZE, &temp );
+	// get our config strings
+	qglInit();
+	qglGetIntegerv( GL_MAX_TEXTURE_SIZE, &glConfig.maxTextureSize );
 
-        // stubbed or broken drivers may have reported 0...
-        if( temp <= 0 )
-        {
-            glConfig.maxTextureSize = 0;
-        }
-        else
-        {
-            glConfig.maxTextureSize = temp;
-        }
+	// OpenGL driver constants
+	qglGetIntegerv( GL_MAX_TEXTURE_SIZE, &temp );
+
+	// stubbed or broken drivers may have reported 0...
+	if( temp <= 0 )
+	{
+		glConfig.maxTextureSize = 0;
+	}
+	else
+	{
+		glConfig.maxTextureSize = temp;
+        	}
 	}
 
 
@@ -427,8 +422,7 @@ void R_ScreenshotFilename( int lastNumber, char *fileName )
 	lastNumber -= c*10;
 	d = lastNumber;
 
-	Com_sprintf( fileName, MAX_OSPATH, "screenshots/shot%i%i%i%i.tga"
-		, a, b, c, d );
+	Com_sprintf( fileName, MAX_OSPATH, "screenshots/shot%i%i%i%i.tga", a, b, c, d );
 }
 
 /* 
@@ -752,7 +746,7 @@ void GfxInfo_f( void )
 	//
 	// Info that doesn't depend on r_renderAPI
 	//
-	ri.Printf( PRINT_ALL, "\nMODE: %d, %d x %d %s\n", r_mode->integer, glConfig.vidWidth, glConfig.vidHeight, fsstrings[r_fullscreen->integer == 1] );
+	ri.Printf( PRINT_ALL, "\nMODE: %d x %d \n", glConfig.vidWidth, glConfig.vidHeight);
 
 	if (glConfig.deviceSupportsGamma) {
 		ri.Printf( PRINT_ALL, "GAMMA: hardware w/ %d overbright bits\n", tr.overbrightBits );
@@ -788,8 +782,7 @@ void R_Register( void )
 	r_stencilbits = ri.Cvar_Get( "r_stencilbits", "8", CVAR_ARCHIVE | CVAR_LATCH );
 	r_depthbits = ri.Cvar_Get( "r_depthbits", "0", CVAR_ARCHIVE | CVAR_LATCH );
 	r_overBrightBits = ri.Cvar_Get ("r_overBrightBits", "1", CVAR_ARCHIVE | CVAR_LATCH );
-	r_mode = ri.Cvar_Get( "r_mode", "3", CVAR_ARCHIVE | CVAR_LATCH );
-	r_fullscreen = ri.Cvar_Get( "r_fullscreen", "1", CVAR_ARCHIVE | CVAR_LATCH );
+
 	r_customwidth = ri.Cvar_Get( "r_customwidth", "960", CVAR_ARCHIVE | CVAR_LATCH );
 	r_customheight = ri.Cvar_Get( "r_customheight", "540", CVAR_ARCHIVE | CVAR_LATCH );
 	r_customaspect = ri.Cvar_Get( "r_customaspect", "1", CVAR_ARCHIVE | CVAR_LATCH );
@@ -898,8 +891,6 @@ void RE_EndRegistration( void ) {
 	if (!ri.Sys_LowPhysicalMemory()) {
 		RB_ShowImages();
 	}
-
-
 }
 
 
@@ -910,10 +901,6 @@ void R_Init( void )
 	byte *ptr;
 
 	ri.Printf( PRINT_ALL, "----- R_Init -----\n" );
-
-
-    r_fullscreen = ri.Cvar_Get( "r_fullscreen", "0", CVAR_ARCHIVE | CVAR_LATCH);
-	r_mode = ri.Cvar_Get( "r_mode", "-2", CVAR_ARCHIVE | CVAR_LATCH );
 
 	//r_colorbits = Cvar_Get( "r_colorbits", "24", CVAR_ARCHIVE | CVAR_LATCH );
 	r_stencilbits = ri.Cvar_Get( "r_stencilbits", "0", CVAR_ARCHIVE | CVAR_LATCH );
