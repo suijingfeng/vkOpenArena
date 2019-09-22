@@ -210,6 +210,54 @@ QGL_ARB_vertex_array_object_PROCS;
 QGL_EXT_direct_state_access_PROCS;
 #undef GLE
 
+static void * hinstOpenGL = NULL;
+
+#ifdef _WIN32
+#include <windows.h>
+#define Sys_LoadFunction(h,fn)  (void*)GetProcAddress((HMODULE)h,fn)
+#define Sys_LibraryError()      "unknown"
+#else
+#include <dlfcn.h>
+#define Sys_LoadFunction(h,fn)  dlsym(h,fn)
+#define Sys_LibraryError()      dlerror()
+#endif
+
+static void qglInit( void )
+{
+#if defined(_WIN32)
+#define OPENGL_DLL_NAME	"opengl32.dll"
+#elif defined(MACOS_X)
+#define OPENGL_DLL_NAME	"/System/Library/Frameworks/OpenGL.framework/Libraries/libGL.dylib"
+#else
+#define OPENGL_DLL_NAME	"libGL.so.1"
+#endif
+
+	ri.Printf( PRINT_ALL, "...initializing QGL\n" );
+	const char *dllname = OPENGL_DLL_NAME;
+	if ( hinstOpenGL == NULL )
+	{
+		hinstOpenGL = ri.LoadDLL( dllname, 1 );
+
+		if ( hinstOpenGL == NULL )
+		{
+			ri.Error(ERR_FATAL, "LoadOpenGLDll: failed to load %s from  %s\n", dllname, Sys_LibraryError());
+        	}
+        	else
+        	{
+			ri.Printf(PRINT_ALL, "L oading %s successful. \n", dllname);
+		}
+	}
+
+# undef OPENGL_DLL_NAME
+}
+
+
+static void* GL_GetProcAddressImpl( const char *symbol )
+{
+    //void *sym = glXGetProcAddressARB((const unsigned char *)symbol);
+    return Sys_LoadFunction(hinstOpenGL, symbol);
+}
+
 
 void (APIENTRYP qglActiveTextureARB) (GLenum texture);
 void (APIENTRYP qglClientActiveTextureARB) (GLenum texture);
@@ -235,7 +283,7 @@ qboolean GLimp_GetProcAddresses( void )
 	//int qglesMajorVersion, qglesMinorVersion;
 
 #define GLE( ret, name, ... )								\
-	qgl##name = (name##proc *) ri.GetGlProcAddress("gl" #name);			\
+	qgl##name = (name##proc *) GL_GetProcAddressImpl("gl" #name);			\
 	if ( qgl##name == NULL ) {							\
 		ri.Error(ERR_FATAL, "ERROR: Missing OpenGL function %s\n", "gl" #name );	\
 		success = qfalse;							\
@@ -357,9 +405,9 @@ static void GLimp_InitExtensions(void)
 	qglClientActiveTextureARB = NULL;
 	if ( GLimp_HaveExtension( "GL_ARB_multitexture" ) )
 	{
-		qglMultiTexCoord2fARB = ri.GetGlProcAddress( "glMultiTexCoord2fARB" );
-		qglActiveTextureARB = ri.GetGlProcAddress( "glActiveTextureARB" );
-		qglClientActiveTextureARB = ri.GetGlProcAddress( "glClientActiveTextureARB" );
+		qglMultiTexCoord2fARB = GL_GetProcAddressImpl( "glMultiTexCoord2fARB" );
+		qglActiveTextureARB = GL_GetProcAddressImpl( "glActiveTextureARB" );
+		qglClientActiveTextureARB = GL_GetProcAddressImpl( "glClientActiveTextureARB" );
 
 		if ( qglActiveTextureARB )
 		{
@@ -389,8 +437,8 @@ static void GLimp_InitExtensions(void)
 	if ( GLimp_HaveExtension( "GL_EXT_compiled_vertex_array" ) )
 	{
 		ri.Printf( PRINT_ALL,  "...using GL_EXT_compiled_vertex_array\n" );
-		qglLockArraysEXT = ( void ( APIENTRY * )( GLint, GLint ) ) ri.GetGlProcAddress( "glLockArraysEXT" );
-		qglUnlockArraysEXT = ( void ( APIENTRY * )( void ) ) ri.GetGlProcAddress( "glUnlockArraysEXT" );
+		qglLockArraysEXT = ( void ( APIENTRY * )( GLint, GLint ) ) GL_GetProcAddressImpl( "glLockArraysEXT" );
+		qglUnlockArraysEXT = ( void ( APIENTRY * )( void ) ) GL_GetProcAddressImpl( "glUnlockArraysEXT" );
 		if (!qglLockArraysEXT || !qglUnlockArraysEXT)
 		{
 			ri.Error(ERR_FATAL, "bad getprocaddress");
@@ -445,7 +493,7 @@ static void GLimp_InitExtensions(void)
 #undef GLE
 
 	// GL function loader, based on https://gist.github.com/rygorous/16796a0c876cf8a5f542caddb55bce8a
-#define GLE(ret, name, ...) qgl##name = (name##proc *) ri.GetGlProcAddress("gl" #name);
+#define GLE(ret, name, ...) qgl##name = (name##proc *) GL_GetProcAddressImpl("gl" #name);
 
 	// OpenGL 1.3, was GL_ARB_texture_compression
 	QGL_1_3_PROCS;
@@ -714,7 +762,8 @@ static void GLimp_InitExtensions(void)
 static void InitOpenGL( void )
 {
 	char renderer_buffer[1024];
-
+	
+	qglInit();
 	//
 	// initialize OS specific portions of the renderer
 	//

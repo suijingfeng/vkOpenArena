@@ -66,7 +66,7 @@ from executable path, then fs_basepath.
 =================
 */
 
-void *Sys_LoadDll(const char *name, qboolean useSystemLib)
+void *Sys_LoadDll(const char *name, int useSystemLib)
 {
 	void *dllhandle = NULL;
 

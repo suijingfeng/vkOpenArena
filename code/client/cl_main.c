@@ -3282,11 +3282,12 @@ void CL_InitRef(void)
 	ri.WinSysSetGamma = WinSys_SetGamma;
 	ri.pfnLog = FileSys_Logging;
 
-    ri.GetWinWidth = WinSys_GetWinWidth;
-    ri.GetWinHeight = WinSys_GetWinHeight;
-    ri.IsWinFullscreen = WinSys_IsWinFullscreen;
-
-	ri.GetGlProcAddress = GLimp_GetProcAddress;
+	ri.GetWinWidth = WinSys_GetWinWidth;
+	ri.GetWinHeight = WinSys_GetWinHeight;
+	ri.IsWinFullscreen = WinSys_IsWinFullscreen;
+	
+	ri.LoadDLL = Sys_LoadDll;
+	// ri.GetGlProcAddress = GLimp_GetProcAddress;
 	
 	// ri.Sys_SetEnv = Sys_SetEnv;
 	ri.Sys_LowPhysicalMemory = Sys_LowPhysicalMemory;

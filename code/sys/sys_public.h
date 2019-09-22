@@ -43,7 +43,7 @@ const char *Sys_Basename(char *path);
 
 
 
-void* QDECL Sys_LoadDll(const char *name, qboolean useSystemLib);
+void* QDECL Sys_LoadDll(const char *name, int useSystemLib);
 
 // general development dll loading for virtual machine testing
 void* QDECL Sys_LoadGameDll(const char *name, intptr_t(QDECL **entryPoint)(int, ...),
@@ -163,6 +163,6 @@ void IN_DeactivateMouse( void );
 void IN_Frame(void);
 void IN_MouseEvent(int mstate);
 
-void* GLimp_GetProcAddress( const char *symbol );
+// void* GLimp_GetProcAddress( const char *symbol );
 
 #endif

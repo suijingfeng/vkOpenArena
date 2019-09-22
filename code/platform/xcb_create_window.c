@@ -39,7 +39,6 @@ static cvar_t* r_mode;				// video mode
 static cvar_t* r_fullscreen;
 
 
-
 // use this function in non-fullscreen mode, 
 // always return a valid mode ...
 
@@ -141,9 +140,9 @@ void WinSys_Init(void ** pContext, int type)
     uint16_t border_width, uint16_t _class, xcb_visualid_t visual,
     uint32_t value_mask, const uint32_t* value_list );
     */
-    uint32_t x = 0;
-    uint32_t y = 0;
-    uint32_t width = s_xcb_win.desktopWidth;
+	uint32_t x = 0;
+	uint32_t y = 0;
+	uint32_t width = s_xcb_win.desktopWidth;
 	uint32_t height = s_xcb_win.desktopHeight;
     
     // -------------------------------------------------

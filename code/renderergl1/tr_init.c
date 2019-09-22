@@ -26,7 +26,7 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 glconfig_t  glConfig;
 
 
-glstate_t	glState;
+glstate_t glState;
 
 static void GfxInfo_f( void );
 
@@ -125,9 +125,9 @@ cvar_t	*r_aviMotionJpegQuality;
 cvar_t	*r_screenshotJpegQuality;
 
 cvar_t	*r_maxpolys;
-int		max_polys;
+int	max_polys;
 cvar_t	*r_maxpolyverts;
-int		max_polyverts;
+int	max_polyverts;
 
 
 static cvar_t* r_ext_texture_filter_anisotropic;
@@ -147,6 +147,27 @@ QGL_1_3_PROCS;
 #undef GLE
 
 
+static void * hinstOpenGL = NULL;
+
+
+#ifdef _WIN32
+#include <windows.h>
+#define Sys_LoadFunction(h,fn)  (void*)GetProcAddress((HMODULE)h,fn)
+#define Sys_LibraryError()      "unknown"
+#else
+#include <dlfcn.h>
+#define Sys_LoadFunction(h,fn)  dlsym(h,fn)
+#define Sys_LibraryError()      dlerror()
+#endif
+
+
+
+static void* GL_GetProcAddressImpl( const char *symbol )
+{
+    //void *sym = glXGetProcAddressARB((const unsigned char *)symbol);
+    return Sys_LoadFunction(hinstOpenGL, symbol);
+}
+
 /*
 ===============
 Get addresses for OpenGL functions.
@@ -155,7 +176,7 @@ Get addresses for OpenGL functions.
 static qboolean GLimp_GetProcAddresses( void )
 {
 #define GLE( ret, name, ... ) \
-	qgl##name = (name##proc *) ri.GetGlProcAddress("gl" #name); \
+	qgl##name = (name##proc *) GL_GetProcAddressImpl("gl" #name); \
 	if ( qgl##name == NULL ) { \
 		ri.Error(ERR_FATAL, "Missing OpenGL function %s\n", "gl" #name ); \
 		success = qfalse; \
@@ -234,7 +255,7 @@ static qboolean GLimp_HaveExtension(const char *ext)
 void GLimp_InitExtensions( void )
 {
 	r_ext_max_anisotropy = ri.Cvar_Get( "r_ext_max_anisotropy", "2", CVAR_ARCHIVE | CVAR_LATCH );
-    r_ext_texture_filter_anisotropic = ri.Cvar_Get( "r_ext_texture_filter_anisotropic", "0", CVAR_ARCHIVE | CVAR_LATCH );
+	r_ext_texture_filter_anisotropic = ri.Cvar_Get( "r_ext_texture_filter_anisotropic", "0", CVAR_ARCHIVE | CVAR_LATCH );
 
 	ri.Printf( PRINT_ALL,  "\n...Initializing OpenGL extensions\n" );
 
@@ -265,9 +286,9 @@ void GLimp_InitExtensions( void )
 	qglClientActiveTextureARB = NULL;
 	if ( GLimp_HaveExtension( "GL_ARB_multitexture" ) )
 	{
-		qglMultiTexCoord2fARB = ri.GetGlProcAddress( "glMultiTexCoord2fARB" );
-		qglActiveTextureARB = ri.GetGlProcAddress( "glActiveTextureARB" );
-		qglClientActiveTextureARB = ri.GetGlProcAddress( "glClientActiveTextureARB" );
+		qglMultiTexCoord2fARB = GL_GetProcAddressImpl( "glMultiTexCoord2fARB" );
+		qglActiveTextureARB = GL_GetProcAddressImpl( "glActiveTextureARB" );
+		qglClientActiveTextureARB = GL_GetProcAddressImpl( "glClientActiveTextureARB" );
 
 		if ( qglActiveTextureARB )
 		{
@@ -296,8 +317,8 @@ void GLimp_InitExtensions( void )
 	if ( GLimp_HaveExtension( "GL_EXT_compiled_vertex_array" ) )
 	{
 		ri.Printf( PRINT_ALL,  "...using GL_EXT_compiled_vertex_array\n" );
-		qglLockArraysEXT = ( void ( APIENTRY * )( GLint, GLint ) ) ri.GetGlProcAddress( "glLockArraysEXT" );
-		qglUnlockArraysEXT = ( void ( APIENTRY * )( void ) ) ri.GetGlProcAddress( "glUnlockArraysEXT" );
+		qglLockArraysEXT = ( void ( APIENTRY * )( GLint, GLint ) ) GL_GetProcAddressImpl( "glLockArraysEXT" );
+		qglUnlockArraysEXT = ( void ( APIENTRY * )( void ) ) GL_GetProcAddressImpl( "glUnlockArraysEXT" );
 		if (!qglLockArraysEXT || !qglUnlockArraysEXT)
 		{
 			ri.Error(ERR_FATAL, "bad getprocaddress");
@@ -338,6 +359,37 @@ void GLimp_InitExtensions( void )
 	}
 }
 
+
+
+static void qglInit( void )
+{
+#if defined(_WIN32)
+#define OPENGL_DLL_NAME	"opengl32.dll"
+#elif defined(MACOS_X)
+#define OPENGL_DLL_NAME	"/System/Library/Frameworks/OpenGL.framework/Libraries/libGL.dylib"
+#else
+#define OPENGL_DLL_NAME	"libGL.so.1"
+#endif
+
+	ri.Printf( PRINT_ALL, "...initializing QGL\n" );
+	const char *dllname = OPENGL_DLL_NAME;
+	if ( hinstOpenGL == NULL )
+	{
+		hinstOpenGL = ri.LoadDLL( dllname, 1 );
+
+		if ( hinstOpenGL == NULL )
+		{
+			ri.Error(ERR_FATAL, "LoadOpenGLDll: failed to load %s from  %s\n", dllname, Sys_LibraryError());
+        	}
+        	else
+        	{
+			ri.Printf(PRINT_ALL, "L oading %s successful. \n", dllname);
+		}
+	}
+
+# undef OPENGL_DLL_NAME
+}
+
 /*
 ** InitOpenGL
 **
@@ -349,7 +401,7 @@ void GLimp_InitExtensions( void )
 static void InitOpenGL( void )
 {
 	char renderer_buffer[1024];
-
+	qglInit();
 	//
 	// initialize OS specific portions of the renderer
 	//
@@ -368,57 +420,55 @@ static void InitOpenGL( void )
 		ri.WinSysInit(&pCfg, 0);
 
 
-        pConfig->stereoEnabled = qfalse;
-        pConfig->smpActive = qfalse;
-        pConfig->displayFrequency = 60;
-        // allways enable stencil
-        pConfig->stencilBits = 8;
-        pConfig->depthBits = 24;
-        pConfig->colorBits = 32;
-        pConfig->deviceSupportsGamma = qfalse;
+		pConfig->stereoEnabled = qfalse;
+		pConfig->smpActive = qfalse;
+		pConfig->displayFrequency = 60;
+		// allways enable stencil
+		pConfig->stencilBits = 8;
+		pConfig->depthBits = 24;
+		pConfig->colorBits = 32;
+		pConfig->deviceSupportsGamma = qfalse;
 
-        pConfig->textureEnvAddAvailable = 0; // not used
-        pConfig->textureCompression = 0; // not used
+		pConfig->textureEnvAddAvailable = 0; // not used
+		pConfig->textureCompression = 0; // not used
+		// These values force the UI to disable driver selection
+		pConfig->driverType = GLDRV_ICD;
+		pConfig->hardwareType = GLHW_GENERIC;
 
-        // These values force the UI to disable driver selection
-        pConfig->driverType = GLDRV_ICD;
-        pConfig->hardwareType = GLHW_GENERIC;
-
-        pConfig->vidWidth = ri.GetWinWidth();
-        pConfig->vidHeight = ri.GetWinHeight();
-        pConfig->isFullscreen = ri.IsWinFullscreen();
-        pConfig->windowAspect = (float) pConfig->vidWidth / (float) pConfig->vidHeight;
+		pConfig->vidWidth = ri.GetWinWidth();
+		pConfig->vidHeight = ri.GetWinHeight();
+		pConfig->isFullscreen = ri.IsWinFullscreen();
+		pConfig->windowAspect = (float) pConfig->vidWidth / (float) pConfig->vidHeight;
 
 
-        if ( !GLimp_GetProcAddresses() )
-        {
-            ri.Error(ERR_FATAL, "Get function Addresses failed. \n" );
+		if ( !GLimp_GetProcAddresses() )
+		{
+			ri.Error(ERR_FATAL, "Get function Addresses failed. \n" );
+			GLimp_ClearProcAddresses();
+			// GLimp_DeleteGLContext();
+			// GLimp_DestroyWindow();
+		}
+		else
+		{
+			ri.Printf(PRINT_ALL, "Get function Addresses successed. \n" );
+		}
 
-            GLimp_ClearProcAddresses();
-            // GLimp_DeleteGLContext();
-            // GLimp_DestroyWindow();
-        }
-        else
-        {
-            ri.Printf(PRINT_ALL, "Get function Addresses successed. \n" );
-        }
-
-        qglClearColor( 0, 1, 0, 1 );
-        qglClear( GL_COLOR_BUFFER_BIT );
+		qglClearColor( 0, 1, 0, 1 );
+		qglClear( GL_COLOR_BUFFER_BIT );
+        	
+		ri.WinSysEndFrame();
         
-	ri.WinSysEndFrame();
-        
-        // get our config strings
-        Q_strncpyz( glConfig.vendor_string, (char *) qglGetString (GL_VENDOR), sizeof( glConfig.vendor_string ) );
-        Q_strncpyz( glConfig.renderer_string, (char *) qglGetString (GL_RENDERER), sizeof( glConfig.renderer_string ) );
-        if (*glConfig.renderer_string && glConfig.renderer_string[strlen(glConfig.renderer_string) - 1] == '\n')
-            glConfig.renderer_string[strlen(glConfig.renderer_string) - 1] = 0;
-        Q_strncpyz( glConfig.version_string, (char *) qglGetString (GL_VERSION), sizeof( glConfig.version_string ) );
-        Q_strncpyz( glConfig.extensions_string, (char *)qglGetString(GL_EXTENSIONS), sizeof( glConfig.extensions_string ) );
+		// get our config strings
+		Q_strncpyz( glConfig.vendor_string, (char *) qglGetString (GL_VENDOR), sizeof( glConfig.vendor_string ) );
+		Q_strncpyz( glConfig.renderer_string, (char *) qglGetString (GL_RENDERER), sizeof( glConfig.renderer_string ) );
+		if (*glConfig.renderer_string && glConfig.renderer_string[strlen(glConfig.renderer_string) - 1] == '\n')
+			glConfig.renderer_string[strlen(glConfig.renderer_string) - 1] = 0;
+		Q_strncpyz( glConfig.version_string, (char *) qglGetString (GL_VERSION), sizeof( glConfig.version_string ) );
+		Q_strncpyz( glConfig.extensions_string, (char *)qglGetString(GL_EXTENSIONS), sizeof( glConfig.extensions_string ) );
 
-        GLimp_InitExtensions();
+		GLimp_InitExtensions();
 
-        strcpy( renderer_buffer, glConfig.renderer_string );
+		strcpy( renderer_buffer, glConfig.renderer_string );
 		Q_strlwr( renderer_buffer );
 
 		// OpenGL driver constants

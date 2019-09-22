@@ -157,11 +157,6 @@ typedef struct {
 
 	void	(*CL_WriteAVIVideoFrame)( const unsigned char *buffer, int size );
 
-	// input event handling
-	// void (* IN_Init)( void );
-	// void (* IN_Shutdown)( void );
-	// void (* IN_Restart)( void );
-
 
 	// window systems impl
 	void (* WinSysInit)(void ** pContext, int type);
@@ -176,9 +171,9 @@ typedef struct {
 	int (* GetWinHeight)(void);
 	int (* IsWinFullscreen)(void);
 
+	void * (* LoadDLL)( const char * name, int isSysLib );
 
-	// for OpenGL only
-	void * (* GetGlProcAddress)( const char *symbol );
+	// void * (* GetProcAddress)( const void * handle, const char * symbol );
 
 	// system stuff
 	// void (* Sys_SetEnv)( const char *name, const char *value );

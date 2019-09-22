@@ -369,7 +369,7 @@ endif
 #TODO:remove SDL2
   CLIENT_LIBS = -lX11
 
-  RENDERER_LIBS = -lGL
+#  RENDERER_LIBS = -lGL
 
 
 #  XCB_CFLAGS = $(shell PKG_CONFIG --silence-errors --cflags xcb)
