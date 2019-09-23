@@ -1,7 +1,8 @@
 ﻿# OpenArena Engine 
 
-* checkout the SDL2 branch for stable build and playing happily.
-* the master branch under developing, stuck on linux xcb keyboard and mouse things as lack of documention ...
+* checkout the SDL2 branch for stable build and playing, the following description works for SDL2 branch,
+* the master branch is under developing now, I'm get stuck on q3 xcb /xlib keyboard, mouse input event handle things as lack of documention ...
+
 
 
 This project is a fork of OpenArena with specific changes to its renderer module.
@@ -70,7 +71,7 @@ $ sudo apt-get install mesa-vulkan-drivers
 
 $ git clone https://github.com/suijingfeng/vkOpenArena.git
 $ cd vkOpenArena
-$ make -j4
+$ make -j$(nproc)
 ```
 
 Please note that vulkan renderer requires at least SDL 2.0.6. 
@@ -107,6 +108,8 @@ $ yum install libXrandr-devel.x86_64
 $ yum install libcurl-devel.x86_64
 $ yum install mesa-vulkan-drivers
 $ yum install mesa-vulkan-devel.x86_64
+
+$ make -j$(nproc)
 ```
 
 ## Building on Windows 7 or 10 ##
