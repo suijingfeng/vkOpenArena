@@ -10,7 +10,7 @@
 #include "../client/snd_local.h"
 #include "../qcommon/q_shared.h"
 
-#include "../sys/sys_public.h"
+#include "sys_public.h"
 
 #define USE_SPINLOCK
 

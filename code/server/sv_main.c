@@ -21,7 +21,7 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 */
 
 #include "server.h"
-#include "../sys/sys_public.h"
+#include "../platform/sys_public.h"
 #ifdef USE_VOIP
 cvar_t *sv_voip;
 cvar_t *sv_voipProtocol;

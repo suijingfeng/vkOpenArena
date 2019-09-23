@@ -24,7 +24,7 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #include "q_shared.h"
 #include "qcommon.h"
 
-#include "../sys/sys_public.h"
+#include "../platform/sys_public.h"
 
 
 #include <setjmp.h>

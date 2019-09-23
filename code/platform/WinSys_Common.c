@@ -1,5 +1,5 @@
 #include "../client/client.h"
-#include "../sys/sys_public.h"
+#include "sys_public.h"
 #include "win_public.h"
 
 static cvar_t* r_customwidth;

@@ -263,7 +263,7 @@ RVULKANDIR=$(MOUNT_DIR)/renderer_vulkan
 RMYDEVDIR=$(MOUNT_DIR)/renderer_mydev
 CMDIR=$(MOUNT_DIR)/qcommon
 PLATFORM_DIR=$(MOUNT_DIR)/platform
-SYSDIR=$(MOUNT_DIR)/sys
+
 GDIR=$(MOUNT_DIR)/game
 CGDIR=$(MOUNT_DIR)/cgame
 BLIBDIR=$(MOUNT_DIR)/botlib
@@ -2645,13 +2645,10 @@ $(B)/client/%.o: $(ZDIR)/%.c
 $(B)/client/%.o: $(PLATFORM_DIR)/%.c
 	$(DO_CC)
 
-$(B)/client/%.o: $(SYSDIR)/%.c
+$(B)/client/%.o: $(PLATFORM_DIR)/%.m
 	$(DO_CC)
 
-$(B)/client/%.o: $(SYSDIR)/%.m
-	$(DO_CC)
-
-$(B)/client/%.o: $(SYSDIR)/%.rc
+$(B)/client/%.o: $(PLATFORM_DIR)/%.rc
 	$(DO_WINDRES)
 
 
@@ -2764,13 +2761,13 @@ $(B)/ded/%.o: $(ZDIR)/%.c
 $(B)/ded/%.o: $(BLIBDIR)/%.c
 	$(DO_BOT_CC)
 
-$(B)/ded/%.o: $(SYSDIR)/%.c
+$(B)/ded/%.o: $(PLATFORM_DIR)/%.c
 	$(DO_DED_CC)
 
-$(B)/ded/%.o: $(SYSDIR)/%.m
+$(B)/ded/%.o: $(PLATFORM_DIR)/%.m
 	$(DO_DED_CC)
 
-$(B)/ded/%.o: $(SYSDIR)/%.rc
+$(B)/ded/%.o: $(PLATFORM_DIR)/%.rc
 	$(DO_WINDRES)
 
 $(B)/ded/%.o: $(NDIR)/%.c

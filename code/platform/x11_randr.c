@@ -8,7 +8,7 @@
 #include <X11/extensions/Xrender.h>
 
 #include "win_public.h"
-#include "../sys/sys_public.h"
+#include "sys_public.h"
 
 #define MAX_MONITORS 16
 

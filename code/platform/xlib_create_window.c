@@ -54,7 +54,7 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #include <dlfcn.h>
 
 #include "../client/client.h"
-#include "../sys/sys_public.h"
+#include "sys_public.h"
 #include "win_public.h"
 #include "x11_randr.h"
 

@@ -24,7 +24,7 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
 #ifdef USE_CURL_DLOPEN
 
-#include "../sys/sys_public.h"
+#include "../platform/sys_public.h"
 
 #ifndef CURL_MAX_READ_SIZE
 	#define CURL_MAX_READ_SIZE 524288

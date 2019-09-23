@@ -12,7 +12,7 @@
 #include <X11/XKBlib.h>
 
 #include "win_public.h"
-#include "../sys/sys_public.h"
+#include "sys_public.h"
 #include "../client/client.h"
 
 

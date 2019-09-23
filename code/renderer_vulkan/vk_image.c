@@ -348,7 +348,7 @@ image_t* R_CreateImage( const char *name, unsigned char* pic, const uint32_t wid
 
     image_t* pImage = (image_t*) ri.Hunk_Alloc( sizeof( image_t ), h_low );
 
-    strncpy (pImage->imgName, name, sizeof(pImage->imgName));
+    strncpy (pImage->imgName, name, sizeof(pImage->imgName)-1);
     pImage->index = tr.numImages;
     pImage->mipmap = isMipMap;
     pImage->mipLevels = 1;

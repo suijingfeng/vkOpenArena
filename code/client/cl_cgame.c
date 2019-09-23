@@ -22,7 +22,7 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 // cl_cgame.c  -- client system interaction with client game
 
 #include "client.h"
-#include "../sys/sys_public.h"
+#include "../platform/sys_public.h"
 #include "../botlib/botlib.h"
 
 #ifdef USE_MUMBLE

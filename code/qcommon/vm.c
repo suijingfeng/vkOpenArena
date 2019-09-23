@@ -31,7 +31,7 @@ and one exported function: Perform
 */
 
 #include "vm_local.h"
-#include "../sys/sys_public.h"
+#include "../platform/sys_public.h"
 ////////// globals //////////////
 vm_t* currentVM = NULL;
 
