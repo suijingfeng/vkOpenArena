@@ -350,7 +350,7 @@ void RE_RegisterFont(const char *fontName, int pointSize, fontInfo_t *font)
 #endif
 	char *faceData;
 	int i;
-	char name[1024];
+	char name[64];
 
 	if (!fontName) {
 		ri.Printf(PRINT_ALL, "RE_RegisterFont: called with empty name\n");

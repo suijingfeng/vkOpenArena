@@ -11,7 +11,8 @@ static md3Tag_t *R_GetTag( md3Header_t *mod, int frame, const char *tagName ) {
 	}
 
 	tag = (md3Tag_t *)((byte *)mod + mod->ofsTags) + frame * mod->numTags;
-	for ( i = 0 ; i < mod->numTags ; i++, tag++ ) {
+	for ( i = 0 ; i < mod->numTags ; ++i, ++tag )
+	{
 		if ( !strcmp( tag->name, tagName ) ) {
 			return tag;	// found it
 		}
@@ -38,7 +39,7 @@ static md3Tag_t *R_GetAnimTag( mdrHeader_t *mod, int framenum, const char *tagNa
 	{
 		if ( !strcmp( tag->name, tagName ) )
 		{
-			strncpy(dest->name, tag->name, sizeof(dest->name));
+			strncpy(dest->name, tag->name, sizeof(dest->name)-1);
 
 			// uncompressed model...
 			//

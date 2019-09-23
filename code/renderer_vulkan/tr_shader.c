@@ -2062,24 +2062,26 @@ void R_SetTheShader( const char * name, int lightmapIndex )
 	// clear the global shader
 	memset( &shader, 0, sizeof( shader ) );
 
-	strncpy( shader.name, name, sizeof( shader.name ) );
+	strncpy( shader.name, name, sizeof( shader.name ) - 1 );
 	
-    shader.lightmapIndex = lightmapIndex;
-    // FIXME: set these "need" values appropriately
+	shader.lightmapIndex = lightmapIndex;
+	
+	// FIXME: set these "need" values appropriately
+	
 	shader.needsNormal = qtrue;
 	shader.needsST1 = qtrue;
 	shader.needsST2 = qtrue;
 	shader.needsColor = qtrue;
 
 
-    // stages
+	// stages
 	memset( &stages, 0, sizeof( stages ) );
 /*
-    uint32_t i;
+	uint32_t i;
 	for ( i = 0 ; i < MAX_SHADER_STAGES ; ++i )
-    {
+	{
 		stages[i].bundle[0].texMods = texMods[i];
-    	memset( &stages[i].bundle[0].texMods, 0, sizeof(texMods[i]));
+    		memset( &stages[i].bundle[0].texMods, 0, sizeof(texMods[i]));
 	}
 */
 }

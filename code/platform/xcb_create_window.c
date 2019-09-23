@@ -9,7 +9,7 @@
 #include "../qcommon/q_shared.h"
 #include "../qcommon/qcommon.h"
 #include "win_public.h"
-#include "../sys/sys_public.h"
+#include "sys_public.h"
 #include "WinSys_Common.h"
 
 struct WinData_s s_xcb_win;
