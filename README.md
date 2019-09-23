@@ -101,13 +101,18 @@ sudo make install
 $ yum install clang gcc make git
 $ yum install openal-soft-devel.x86_64
 $ yum install alsa-lib-devel.x86_64
-$ yum install libxcb-devel.x86_64
-$ yum install libX11-devel.x86_64
 $ yum install mesa-libGL-devel.x86_64
-$ yum install libXrandr-devel.x86_64
 $ yum install libcurl-devel.x86_64
 $ yum install mesa-vulkan-drivers
 $ yum install mesa-vulkan-devel.x86_64
+
+# if build on master branch
+$ yum install libxcb-devel.x86_64
+$ yum install libX11-devel.x86_64
+$ yum install libXrandr-devel.x86_64
+
+# if build the on SDL2 branch
+$ yum install SDL2-devel.x86_64
 
 $ make -j$(nproc)
 ```
@@ -472,7 +477,7 @@ opengl2: 3398 frames 47.6 seconds 71.4 fps 5.0/14.0/81.0/2.4 ms
 ```
 
 
-### GT72VR 6RD, i7-6700HQ, GTX 1060, ubuntu 18.04 GNOME 3.28.2
+### GT72VR 6RD, i7-6700HQ, GTX 1060, ubuntu 18.04 GNOME 3.28.2, 
 
 ```
 vulkan:  3398 frames 4.6 seconds 731.2 fps 1.0/1.4/3.0/0.5 ms
@@ -480,6 +485,19 @@ opengl1: 3398 frames 5.8 seconds 589.2 fps 1.0/1.7/6.0/0.6 ms
 opengl2: 3398 frames 7.2 seconds 469.7 fps 1.0/2.1/21.0/0.7 ms
 ```
 
+### Testing on fedora 30, Radeon RX 580, AMD Ryzen 7 2700x, 2560x1080 LG34WK659 ultrawide monitor, DNOME 3.32.0, Mesa 19.1.6
+```
+SDL2 branch, vulkan: 3398 frames 5.6 seconds 604.3 fps 1.0/1.7/3.0/0.5 ms
+SDL2 branch, opengl1: 3398 frames 6.9 seconds 490.3 fps 1.0/2.0/8.0/0.6 ms
+
+libx11, vulkan: 3398 frames 5.6 seconds 609.5 fps 1.0/1.6/3.0/0.5 ms
+libx11, opengl1: 3398 frames 7.2 seconds 474.3 fps 1.0/2.1/6.0/0.7 ms
+
+
+```
+
+even if the framerate is high, but if i can not progroamming the event process module correctly,
+or dont have a network, the feeling of play this game is like eating shit! 
 
 # OpenArena gamecode
 
