@@ -95,8 +95,6 @@ cvar_t	*r_stencilbits;
 cvar_t	*r_depthbits;
 cvar_t	*r_colorbits;
 
-cvar_t	*r_stereoSeparation;
-
 cvar_t   *vid_xpos;
 cvar_t   *vid_ypos;
 
@@ -104,7 +102,6 @@ static cvar_t* r_glDriver;
 cvar_t* r_drawBuffer;
 ///////////////////////////
 WinVars_t glw_state;
-
 
 
 int WinSys_GetWinWidth(void)
@@ -487,7 +484,7 @@ void WinSys_EndFrame( void )
 	// swapinterval stuff
 	//
 	if ( r_swapInterval->modified )
-    {
+	{
 		r_swapInterval->modified = qfalse;
 
 		if ( qglXSwapIntervalEXT ) {

@@ -26,32 +26,9 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
 #if defined(_WIN32) || defined(_WIN64)
 
-#include <windows.h>
+  #include <windows.h>
 
-
-typedef struct WinVars_s {
-	
-	HWND		hWnd; // main window
-	HINSTANCE	hInstance;
-	int		screenIdx;
-	int		winWidth;
-	int		winHeight;
-	int		desktopWidth;
-	int		desktopHeight;
-	int		isFullScreen;
-	int		isMinimized;
-	int		winStyle;
-	int		activeApp;
-	OSVERSIONINFO	osversion;
-
-	// when we get a windows message, we store the time off so keyboard processing
-	// can know the exact time of an event
-	unsigned	sysMsgTime;
-} WinVars_t;
-
-#else
-
-#if defined(__linux__)
+#elif defined(__linux__)
 
   #if defined(USING_XCB)
     #include <xcb/xcb.h>
@@ -59,42 +36,53 @@ typedef struct WinVars_s {
     #include <X11/Xutil.h>
   #endif
 
-    typedef struct WinData_s {
-  #if defined(USING_XCB)
-        xcb_connection_t *connection;
-        xcb_window_t hWnd;
-        xcb_window_t root;
-  #elif defined(USING_XLIB)
-        Display* pDisplay;
-        Window  hWnd;
-        Window root;
-  #endif
-        int	monitorCount;
-        int	screenIdx;
-        int	desktop_x;
-        int	desktop_y;
-        int	winWidth;
-        int	winHeight;
-        int	desktopWidth;
-        int	desktopHeight;
-        int	isFullScreen;
-        int	isMinimized;
-        int winStyle;
-        int	activeApp;
-        int	gammaSet;
-        int	randr_ext;
-        int	randr_active;
-        int	randr_gamma;
-        unsigned int sysMsgTime;
-        void * hGraphicLib; // instance of OpenGL library
-
-    } WinVars_t;
-
 #endif
+
+typedef struct WinData_s {
+#if defined(_WIN32) || defined(_WIN64)
+	HWND		hWnd; // main window
+	HINSTANCE	hInstance;
+	OSVERSIONINFO	osversion;
+
+#elif defined(USING_XCB)
+	xcb_connection_t *connection;
+	xcb_window_t hWnd;
+	xcb_window_t root;
+#elif defined(USING_XLIB)
+	Display* pDisplay;
+	Window  hWnd;
+	Window root;
+
+	int	randr_ext;
+	int	randr_active;
+	int	randr_gamma;
+#endif
+	int	monitorCount;
+	int	screenIdx;
+	int	desktop_x;
+	int	desktop_y;
+	int	winWidth;
+	int	winHeight;
+	int	desktopWidth;
+	int	desktopHeight;
+	int	isFullScreen;
+	int	isMinimized;
+	int	winStyle;
+	int	activeApp;
+	int	gammaSet;
+
+	// when we get a windows message, we store the time off so keyboard processing
+	// can know the exact time of an event
+
+	unsigned int sysMsgTime;
+
+	void * hGraphicLib; // instance of OpenGL library
+
+} WinVars_t;
+
 
 // unix freebsd ... ???
 
-#endif
 
 /*
 ====================================================================

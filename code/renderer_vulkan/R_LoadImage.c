@@ -47,8 +47,8 @@ static void R_LoadNSE(const char * const pName, unsigned char **pic, unsigned in
 {
     *pic = NULL;
 
-	char localName[128];
-    strncpy(localName, pName, 128);
+    char localName[128];
+    strncpy(localName, pName, 127);
     char* pPt = NULL;
     char* pSrc = localName;
     for( ; *pSrc != 0; ++pSrc)
@@ -90,7 +90,6 @@ static void R_LoadNSE(const char * const pName, unsigned char **pic, unsigned in
             return;
     }
 
-//    ri.Printf( PRINT_WARNING, " Failed loading %s. \n", pName);
 }
 
 
