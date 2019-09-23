@@ -101,7 +101,7 @@ $ yum install clang gcc make git
 $ yum install openal-soft-devel.x86_64
 $ yum install alsa-lib-devel.x86_64
 $ yum install libxcb-devel.x86_64
-$ um install libX11-devel.x86_64
+$ yum install libX11-devel.x86_64
 $ yum install mesa-libGL-devel.x86_64
 $ yum install libXrandr-devel.x86_64
 $ yum install libcurl-devel.x86_64
