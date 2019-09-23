@@ -3287,7 +3287,6 @@ void CL_InitRef(void)
 	ri.IsWinFullscreen = WinSys_IsWinFullscreen;
 	
 	ri.LoadDLL = Sys_LoadDll;
-	// ri.GetGlProcAddress = GLimp_GetProcAddress;
 	
 	// ri.Sys_SetEnv = Sys_SetEnv;
 	ri.Sys_LowPhysicalMemory = Sys_LowPhysicalMemory;

@@ -124,15 +124,35 @@ int WinSys_IsWinFullscreen(void)
 
 static GLXContext ctx = NULL;
 
+// 
+//   Properties and Atoms
+// A property is a collection of named, typed data. The window system has a set of predefined properties 
+// (for example, the name of a window, size hints, and so on), and users can define any other arbitrary 
+// information and associate it with windows. Each property has a name, which is an ISO Latin-1 string. 
+// For each named property, a unique identifier (atom) is associated with it.  
+// A property also has a type, for example, string or integer. These types are also indicated using atoms, 
+// so arbitrary new types can be defined. Data of only one type may be associated with a single property name. 
+// Clients can store and retrieve properties associated with windows. For efficiency reasons, 
+// an atom is used rather than a character string. XInternAtom() can be used to obtain the atom for property names.
+//
+// A property is also stored in one of several possible formats. 
+// The X server can store the information as 8-bit quantities, 16-bit quantities, or 32-bit quantities.
+// This permits the X server to present the data in the byte order that the client expects. 
+// 
+// If you define further properties of complex type, you must encode and decode them yourself.
+// These functions must be carefully written if they are to be portable. 
+// For further information about how to write a library extension, see "Extensions".
+//
+// The type of a property is defined by an atom, which allows for arbitrary extension in this type scheme. 
+//
+// Certain property names are predefined in the server for commonly used functions. 
+// The atoms for these properties are defined in X11/Xatom.h. To avoid name clashes with user symbols, 
+// the #define name for each atom has the XA_ prefix. For definitions of these properties, see below. 
+// For an explanation of the functions that let you get and set much of the information stored in these predefined properties,
+//  see "Inter-Client Communication Functions". 
+//
+//
 Atom wmDeleteEvent = None;
-
-
-
-void* GLimp_GetProcAddress( const char *symbol )
-{
-    //void *sym = glXGetProcAddressARB((const unsigned char *)symbol);
-    return dlsym(glw_state.hGraphicLib, symbol);
-}
 
 
 /*
@@ -300,8 +320,8 @@ static int GLW_SetMode(int mode, qboolean fullscreen, int type )
 
 
 	XStoreName( glw_state.pDisplay, glw_state.hWnd, CLIENT_WINDOW_TITLE );
-
-    Com_Printf( "... XCreateWindow created. \n");
+	
+	Com_Printf( "... XCreateWindow created. \n");
 
 
 	/* GH: Don't let the window be resized */
@@ -333,14 +353,14 @@ static int GLW_SetMode(int mode, qboolean fullscreen, int type )
 	XFlush( glw_state.pDisplay );
 	XSync( glw_state.pDisplay, False );
 	
-    if(type == 0)
-    {
-        ctx = qglXCreateContext( glw_state.pDisplay, visinfo, NULL, True );
-    
-        Com_Printf( "... glX Create context . \n");
-    }
-    
-    XSync( glw_state.pDisplay, False );
+	if(type == 0)
+	{
+        	ctx = qglXCreateContext( glw_state.pDisplay, visinfo, NULL, True );
+		Com_Printf( "... glX Create context . \n");
+    	}
+	
+
+    	XSync( glw_state.pDisplay, False );
 
 	/* GH: Free the visinfo after we're done with it */
 	XFree( visinfo );
@@ -424,13 +444,13 @@ static qboolean GLW_LoadOpenGL(const char* dllname)
     // expand constants before stringifying them
     // load the GLX funs
     #define GLE( ret, name, ... ) \
-        q##name = GLimp_GetProcAddress( XSTRING( name ) ); if ( !q##name ) Com_Error(ERR_FATAL, "Error resolving glx core functions\n");
+        q##name = dlsym(glw_state.hGraphicLib, XSTRING( name )); if ( !q##name ) Com_Error(ERR_FATAL, "Error resolving glx core functions\n");
 	    QGL_LinX11_PROCS;
     #undef GLE
 
 
     #define GLE( ret, name, ... ) \
-        q##name = GLimp_GetProcAddress( XSTRING( name ) );
+        q##name = dlsym(glw_state.hGraphicLib, XSTRING( name ));
         QGL_Swp_PROCS;
     #undef GLE
 
@@ -662,10 +682,9 @@ void WinSys_Init(void ** pCfg, int type)
 
 	r_colorbits = Cvar_Get( "r_colorbits", "32", CVAR_ARCHIVE | CVAR_LATCH );
 	r_stencilbits = Cvar_Get( "r_stencilbits", "8", CVAR_ARCHIVE | CVAR_LATCH );
-	r_depthbits = Cvar_Get( "r_depthbits", "24", CVAR_ARCHIVE | CVAR_LATCH ); 
-	r_drawBuffer = Cvar_Get( "r_drawBuffer", "GL_BACK", CVAR_CHEAT );
-    
+	r_depthbits = Cvar_Get( "r_depthbits", "24", CVAR_ARCHIVE | CVAR_LATCH );
 
+	r_drawBuffer = Cvar_Get( "r_drawBuffer", "GL_BACK", CVAR_CHEAT );
    	r_swapInterval = Cvar_Get( "r_swapInterval", "0", CVAR_ARCHIVE );
 	r_glDriver = Cvar_Get( "r_glDriver", OPENGL_DRIVER_NAME, CVAR_ARCHIVE | CVAR_LATCH );
 
@@ -695,7 +714,6 @@ void WinSys_Init(void ** pCfg, int type)
 
     if(type == 0)
     {
-        //
 	    // load and initialize the specific OpenGL driver
 	    //
         if ( !GLW_LoadOpenGL( r_glDriver->string ) )

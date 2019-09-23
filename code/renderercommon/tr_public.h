@@ -173,12 +173,11 @@ typedef struct {
 
 	void * (* LoadDLL)( const char * name, int isSysLib );
 
-	// void * (* GetProcAddress)( const void * handle, const char * symbol );
 
 	// system stuff
 	// void (* Sys_SetEnv)( const char *name, const char *value );
-    // void (* Sys_GLimpSafeInit)(void);
-    // void (* Sys_GLimpInit)(void);
+	// void (* Sys_GLimpSafeInit)(void);
+	// void (* Sys_GLimpInit)(void);
 	qboolean (* Sys_LowPhysicalMemory)(void);
 } refimport_t;
 
