@@ -155,45 +155,6 @@ static GLXContext ctx = NULL;
 Atom wmDeleteEvent = None;
 
 
-/*
-** GL_Shutdown
-**
-** Unloads the specified DLL then nulls out all the proc pointers.
-*/
-static void GL_Shutdown( qboolean unloadDLL )
-{
-	Com_Printf( "...shutting down GL\n" );
-
-	if ( glw_state.hGraphicLib && unloadDLL )
-	{
-		Com_Printf( "...unloading OpenGL DLL\n" );
-		// 25/09/05 Tim Angus <tim@ngus.net>
-		// Certain combinations of hardware and software, specifically
-		// Linux/SMP/Nvidia/agpgart (OK, OK. MY combination of hardware and
-		// software), seem to cause a catastrophic (hard reboot required) crash
-		// when libGL is dynamically unloaded. I'm unsure of the precise cause,
-		// suffice to say I don't see anything in the Q3 code that could cause it.
-		// I suspect it's an Nvidia driver bug, but without the source or means to
-		// debug I obviously can't prove (or disprove) this. Interestingly (though
-		// perhaps not suprisingly), Enemy Territory and Doom 3 both exhibit the
-		// same problem.
-		//
-		// After many, many reboots and prodding here and there, it seems that a
-		// placing a short delay before libGL is unloaded works around the problem.
-		// This delay is changable via the r_GLlibCoolDownMsec cvar (nice name
-		// huh?), and it defaults to 0. For me, 500 seems to work.
-		//if( r_GLlibCoolDownMsec->integer )
-		//	usleep( r_GLlibCoolDownMsec->integer * 1000 );
-		usleep( 250 * 1000 );
-
-		dlclose( glw_state.hGraphicLib );
-
-		glw_state.hGraphicLib = NULL;
-	}
-}
-
-
-
 ////////////////////////////////////////////////////////////////////////////////
 //about glw
 static int GLW_SetMode(int mode, qboolean fullscreen, int type )
@@ -202,8 +163,8 @@ static int GLW_SetMode(int mode, qboolean fullscreen, int type )
 	int actualWidth, actualHeight, actualRate;
 
 
-	int scrnum = DefaultScreen( glw_state.pDisplay );
-	glw_state.root = RootWindow( glw_state.pDisplay, scrnum );
+	glw_state.screenIdx = DefaultScreen( glw_state.pDisplay );
+	glw_state.root = RootWindow( glw_state.pDisplay, glw_state.screenIdx );
 
 	// Init xrandr and get desktop resolution if available
 	RandR_Init( vid_xpos->integer, vid_ypos->integer, 640, 480 );
@@ -213,7 +174,7 @@ static int GLW_SetMode(int mode, qboolean fullscreen, int type )
 
 	if ( !CL_GetModeInfo( &actualWidth, &actualHeight, mode, glw_state.desktopWidth, glw_state.desktopHeight, fullscreen ) )
 	{
-        Com_Error( ERR_FATAL, " invalid mode\n" );
+		Com_Error( ERR_FATAL, " invalid mode\n" );
 	}
 
 
@@ -228,11 +189,11 @@ static int GLW_SetMode(int mode, qboolean fullscreen, int type )
 	}
 
 	// these match in the array
-	#define ATTR_RED_IDX 2
-	#define ATTR_GREEN_IDX 4
-	#define ATTR_BLUE_IDX 6
-	#define ATTR_DEPTH_IDX 9
-	#define ATTR_STENCIL_IDX 11
+#define ATTR_RED_IDX 2
+#define ATTR_GREEN_IDX 4
+#define ATTR_BLUE_IDX 6
+#define ATTR_DEPTH_IDX 9
+#define ATTR_STENCIL_IDX 11
 
 	static int attrib[] =
 	{
@@ -245,50 +206,50 @@ static int GLW_SetMode(int mode, qboolean fullscreen, int type )
 		GLX_STENCIL_SIZE, 1,    // 10, 11
 		None
 	};
-	
+
 
 	attrib[ATTR_DEPTH_IDX] = 24; // default to 24 depth
-    attrib[ATTR_STENCIL_IDX] = 8;
-    attrib[ATTR_RED_IDX] = 8;
-    attrib[ATTR_GREEN_IDX] = 8;
-    attrib[ATTR_BLUE_IDX] = 8;
+	attrib[ATTR_STENCIL_IDX] = 8;
+	attrib[ATTR_RED_IDX] = 8;
+	attrib[ATTR_GREEN_IDX] = 8;
+	attrib[ATTR_BLUE_IDX] = 8;
 
-    XVisualInfo * visinfo = NULL;
-    if(type == 0)
-    {
-        // OpenGL case
-	    visinfo = qglXChooseVisual( glw_state.pDisplay, scrnum, attrib );
-	    
-        if ( !visinfo )
-	    {
-		    Com_Printf( "Couldn't get a visual\n" );
-	    }
+	XVisualInfo * visinfo = NULL;
+	if(type == 0)
+	{
+		// OpenGL case
+		visinfo = qglXChooseVisual( glw_state.pDisplay, glw_state.screenIdx, attrib );
 
-        Com_Printf( "Using %d/%d/%d Color bits, %d depth, %d stencil display.\n", 
-            attrib[ATTR_RED_IDX], attrib[ATTR_GREEN_IDX], attrib[ATTR_BLUE_IDX],
-            attrib[ATTR_DEPTH_IDX], attrib[ATTR_STENCIL_IDX]);
-    }
-    else if(type == 1)
-    {
-        int numberOfVisuals;
-        XVisualInfo vInfoTemplate = {};
-        vInfoTemplate.screen = DefaultScreen(glw_state.pDisplay);
-        // vulkan case
-        visinfo = XGetVisualInfo(glw_state.pDisplay, VisualScreenMask, &vInfoTemplate, &numberOfVisuals);
+		if ( !visinfo )
+		{
+			Com_Printf( "Couldn't get a visual\n" );
+		}
 
-        Com_Printf( "... numberOfVisuals: %d \n", numberOfVisuals);
-    }
+		Com_Printf( "Using %d/%d/%d Color bits, %d depth, %d stencil display.\n", 
+				attrib[ATTR_RED_IDX], attrib[ATTR_GREEN_IDX], attrib[ATTR_BLUE_IDX],
+				attrib[ATTR_DEPTH_IDX], attrib[ATTR_STENCIL_IDX]);
+	}
+	else if(type == 1)
+	{
+		int numberOfVisuals;
+		XVisualInfo vInfoTemplate = {};
+		vInfoTemplate.screen = DefaultScreen(glw_state.pDisplay);
+		// vulkan case
+		visinfo = XGetVisualInfo(glw_state.pDisplay, VisualScreenMask, &vInfoTemplate, &numberOfVisuals);
+
+		Com_Printf( "... numberOfVisuals: %d \n", numberOfVisuals);
+	}
 
 
-    glw_state.winWidth = actualWidth;
-    glw_state.winHeight = actualHeight;
-    glw_state.isFullScreen = fullscreen; 
+	glw_state.winWidth = actualWidth;
+	glw_state.winHeight = actualHeight;
+	glw_state.isFullScreen = fullscreen; 
     
 
 	/* window attributes */
 	XSetWindowAttributes attr;
 
-	attr.background_pixel = BlackPixel( glw_state.pDisplay, scrnum );
+	attr.background_pixel = BlackPixel( glw_state.pDisplay, glw_state.screenIdx );
 	attr.border_pixel = 0;
 
     // The XCreateColormap() function creates a colormap of the specified visual type for the screen
@@ -296,7 +257,7 @@ static int GLW_SetMode(int mode, qboolean fullscreen, int type )
     // the specified window is only used to determine the screen. 
 	attr.colormap = XCreateColormap( glw_state.pDisplay, glw_state.root, visinfo->visual, AllocNone );
 	
-    attr.event_mask = ( 
+	attr.event_mask = ( 
             KeyPressMask | KeyReleaseMask | 
             ButtonPressMask | ButtonReleaseMask | PointerMotionMask | ButtonMotionMask |
             VisibilityChangeMask | StructureNotifyMask | FocusChangeMask );
@@ -435,24 +396,27 @@ static qboolean GLW_LoadOpenGL(const char* dllname)
 		glw_state.hGraphicLib = dlopen(dllname, RTLD_NOW);
 		Com_Printf( " load %s ...\n", dllname);
 
-        if ( glw_state.hGraphicLib == NULL )
+		if ( glw_state.hGraphicLib == NULL )
 		{
 			Com_Error(ERR_FATAL, "GL_Init: failed to load %s from /etc/ld.so.conf: %s\n", dllname, dlerror());
 		}
 	}
-		
-    // expand constants before stringifying them
-    // load the GLX funs
-    #define GLE( ret, name, ... ) \
-        q##name = dlsym(glw_state.hGraphicLib, XSTRING( name )); if ( !q##name ) Com_Error(ERR_FATAL, "Error resolving glx core functions\n");
-	    QGL_LinX11_PROCS;
-    #undef GLE
+
+	// expand constants before stringifying them
+	// load the GLX funs
+#define GLE( ret, name, ... ) \
+	q##name = dlsym(glw_state.hGraphicLib, XSTRING( name )); \
+	if ( !q##name ) \
+		Com_Error(ERR_FATAL, "Error resolving glx core functions\n");
+	
+	QGL_LinX11_PROCS;
+#undef GLE
 
 
-    #define GLE( ret, name, ... ) \
-        q##name = dlsym(glw_state.hGraphicLib, XSTRING( name ));
-        QGL_Swp_PROCS;
-    #undef GLE
+#define GLE( ret, name, ... ) \
+	q##name = dlsym(glw_state.hGraphicLib, XSTRING( name ));
+	QGL_Swp_PROCS;
+#undef GLE
 
 	if( qglXSwapIntervalEXT )
 	{
@@ -463,7 +427,7 @@ static qboolean GLW_LoadOpenGL(const char* dllname)
 		Com_Printf( "...GLX_EXT_swap_control not found\n" );
 	}
 
-    return qtrue;
+	return qtrue;
 }
 
 
@@ -516,72 +480,6 @@ void WinSys_EndFrame( void )
 		}
 	}
 }
-
-
-/*
-** GLimp_Shutdown
-**
-** This routine does all OS specific shutdown procedures for the OpenGL
-** subsystem.  Under OpenGL this means NULLing out the current DC and
-** HGLRC, deleting the rendering context, and releasing the DC acquired
-** for the window.  The state structure is also nulled out.
-**
-*/
-void GLimp_Shutdown( qboolean unloadDLL )
-{
-	IN_DeactivateMouse();
-
-	if ( glw_state.pDisplay )
-	{
-		if ( glw_state.randr_gamma && glw_state.gammaSet )
-		{
-			RandR_RestoreGamma();
-			glw_state.gammaSet = qfalse;
-		}
-
-		RandR_RestoreMode();
-
-		if ( ctx )
-			qglXDestroyContext( glw_state.pDisplay, ctx );
-
-		if ( glw_state.hWnd )
-			XDestroyWindow( glw_state.pDisplay, glw_state.hWnd );
-
-
-		// NOTE TTimo opening/closing the display should be necessary only once per run
-		// but it seems GL_Shutdown gets called in a lot of occasion
-		// in some cases, this XCloseDisplay is known to raise some X errors
-		// ( https://zerowing.idsoftware.com/bugzilla/show_bug.cgi?id=33 )
-		XCloseDisplay( glw_state.pDisplay );
-	}
-
-	RandR_Done();
-
-	glw_state.pDisplay = NULL;
-	glw_state.hWnd = 0;
-	ctx = NULL;
-
-	unsetenv( "vblank_mode" );
-	
-	if ( glw_state.isFullScreen )
-	{
-		glw_state.isFullScreen = qfalse;
-	}
-
-	GL_Shutdown( unloadDLL );
-}
-
-
-void FileSys_Logging( char *comment )
-{
-/*   
-	if ( glw_state.log_fp )
-	{
-		fprintf( glw_state.log_fp, "%s", comment );
-	}
-*/
-}
-
 
 
 //////////////////////////////////////////////////////////////////////////////////////////////////
@@ -675,7 +573,7 @@ type 2: directx
 */
 void WinSys_Init(void ** pCfg, int type)
 {
-    Com_Printf( "... Window System Specific Init ...\n" );
+	Com_Printf( "... Window System Specific Init ...\n" );
 
 	r_fullscreen = Cvar_Get( "r_fullscreen", "0", CVAR_ARCHIVE | CVAR_LATCH);
 	r_mode = Cvar_Get( "r_mode", "-2", CVAR_ARCHIVE | CVAR_LATCH );
@@ -698,45 +596,41 @@ void WinSys_Init(void ** pCfg, int type)
 		setenv( "vblank_mode", "1", 1 );
 
 	WinSys_ConstructDislayModes();
+	
+	Cmd_AddCommand( "minimize", WinMinimize_f );
+	
+	*pCfg = &glw_state;
 
-    Cmd_AddCommand( "minimize", WinMinimize_f );
-    
-    *pCfg = &glw_state;
-
-/*
-** Initializing the OS specific portions of OpenGL / vulkan.
-*/
 	glw_state.randr_ext = qfalse;
 
 	// set up our custom error handler for X failures
 	XSetErrorHandler( &qXErrorHandler );
 
 
-    if(type == 0)
-    {
-	    // load and initialize the specific OpenGL driver
-	    //
-        if ( !GLW_LoadOpenGL( r_glDriver->string ) )
-        {
-            if ( Q_stricmp( r_glDriver->string, OPENGL_DRIVER_NAME ) != 0 )
-            {
-                // try default driver
-                if ( GLW_LoadOpenGL( OPENGL_DRIVER_NAME ) )
-                {
-                    Cvar_Set( "r_glDriver", OPENGL_DRIVER_NAME );
-                    r_glDriver->modified = qfalse;
-                    return;
-                }
-            }
+	if(type == 0)
+	{
+		// load and initialize the specific OpenGL driver
+		//
+		if ( !GLW_LoadOpenGL( r_glDriver->string ) )
+		{
+			if ( Q_stricmp( r_glDriver->string, OPENGL_DRIVER_NAME ) != 0 )
+			{
+				// try default driver
+				if ( GLW_LoadOpenGL( OPENGL_DRIVER_NAME ) )
+				{
+					Cvar_Set( "r_glDriver", OPENGL_DRIVER_NAME );
+					r_glDriver->modified = qfalse;
+					return;
+				}
+			}
 
-            Com_Error( ERR_FATAL, "GLW_StartOpenGL() - could not load OpenGL subsystem\n" );
-        }
-    }
-    else if(type == 1)
-    {
-        // vulkan part
-    
-    }
+			Com_Error( ERR_FATAL, "GLW_StartOpenGL() - could not load OpenGL subsystem\n" );
+		}
+	}
+	else if(type == 1)
+	{
+		// vulkan part
+	}
 
 	// To open a connection to the X server that controls a display
 	// char *display_name: Specifies the hardware display name, 
@@ -765,15 +659,16 @@ void WinSys_Init(void ** pCfg, int type)
 		Com_Printf( " Couldn't open the X display. \n" );
 	}
 
-    // create the window and set up the context
+	
+	// create the window and set up the context
 
-    if( 0 != GLW_SetMode( r_mode->integer, (r_fullscreen->integer != 0), type ))
-    {
+	if( 0 != GLW_SetMode( r_mode->integer, (r_fullscreen->integer != 0), type ))
+	{
 		Com_Error(ERR_FATAL, "Error setting given display modes\n" );
-    }
+	}
 
 
-    if(type == 0)
+	if(type == 0)
 	{
 		qglXMakeCurrent( glw_state.pDisplay, glw_state.hWnd, ctx );
 	}
@@ -783,15 +678,88 @@ void WinSys_Init(void ** pCfg, int type)
 	XSetInputFocus( glw_state.pDisplay, glw_state.hWnd, RevertToParent, CurrentTime );
 
 
-    IN_Init();   // rcg08312005 moved into glimp.
+	IN_Init();   // rcg08312005 moved into glimp.
 }
 
-
+/*
+** This routine does all OS specific shutdown procedures for the OpenGL
+** subsystem.  Under OpenGL this means NULLing out the current DC and
+** HGLRC, deleting the rendering context, and releasing the DC acquired
+** for the window.  The state structure is also nulled out.
+*/
 void WinSys_Shutdown(void)
 {
 	Cmd_RemoveCommand( "minimize" );
+	
 	WinSys_DestructDislayModes( );
-	GLimp_Shutdown( qtrue );
+	
+	IN_DeactivateMouse();
+
+	if ( glw_state.pDisplay )
+	{
+		if ( glw_state.randr_gamma && glw_state.gammaSet )
+		{
+			RandR_RestoreGamma();
+			glw_state.gammaSet = qfalse;
+		}
+
+		RandR_RestoreMode();
+
+		if ( ctx ) {
+			qglXDestroyContext( glw_state.pDisplay, ctx );
+			ctx = NULL;
+		}
+
+		if ( glw_state.hWnd )
+		{
+			XDestroyWindow( glw_state.pDisplay, glw_state.hWnd );
+			glw_state.hWnd = 0;
+		}
+
+		// NOTE TTimo opening/closing the display should be necessary only once per run
+		// but it seems GL_Shutdown gets called in a lot of occasion
+		// in some cases, this XCloseDisplay is known to raise some X errors
+		// ( https://zerowing.idsoftware.com/bugzilla/show_bug.cgi?id=33 )
+		XCloseDisplay( glw_state.pDisplay );
+		glw_state.pDisplay = NULL;
+	}
+
+	RandR_Done();
+
+	unsetenv( "vblank_mode" );
+	
+	if ( glw_state.isFullScreen )
+	{
+		glw_state.isFullScreen = qfalse;
+	}
+
+
+	if ( glw_state.hGraphicLib )
+	{
+		Com_Printf( "...unloading OpenGL DLL\n" );
+		// 25/09/05 Tim Angus <tim@ngus.net>
+		// Certain combinations of hardware and software, specifically
+		// Linux/SMP/Nvidia/agpgart (OK, OK. MY combination of hardware and
+		// software), seem to cause a catastrophic (hard reboot required) crash
+		// when libGL is dynamically unloaded. I'm unsure of the precise cause,
+		// suffice to say I don't see anything in the Q3 code that could cause it.
+		// I suspect it's an Nvidia driver bug, but without the source or means to
+		// debug I obviously can't prove (or disprove) this. Interestingly (though
+		// perhaps not suprisingly), Enemy Territory and Doom 3 both exhibit the
+		// same problem.
+		//
+		// After many, many reboots and prodding here and there, it seems that a
+		// placing a short delay before libGL is unloaded works around the problem.
+		// This delay is changable via the r_GLlibCoolDownMsec cvar (nice name
+		// huh?), and it defaults to 0. For me, 500 seems to work.
+		//if( r_GLlibCoolDownMsec->integer )
+		//	usleep( r_GLlibCoolDownMsec->integer * 1000 );
+		usleep( 250 * 1000 );
+
+		dlclose( glw_state.hGraphicLib );
+
+		glw_state.hGraphicLib = NULL;
+	}
 }
 
 

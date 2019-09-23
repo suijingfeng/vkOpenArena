@@ -197,7 +197,7 @@ qhandle_t RE_RegisterSkin( const char *name )
 	skin_t * skin = (skin_t*) ri.Hunk_Alloc( sizeof( skin_t ), h_low );
 	tr.skins[hSkin] = skin;
 	// Q_strncpyz
-	strncpy( skin->name, name, sizeof( skin->name ) );
+	strncpy( skin->name, name, sizeof( skin->name ) - 1 );
 	skin->numSurfaces = 0;
 
 
@@ -219,7 +219,7 @@ qhandle_t RE_RegisterSkin( const char *name )
 	while ( text_p && *text_p ) {
 		// get surface name
 		token = CommaParse( &text_p );
-		strncpy( surfName, token, sizeof( surfName ) );
+		strncpy( surfName, token, sizeof( surfName ) - 1);
 
 		if ( !token[0] ) {
 			break;

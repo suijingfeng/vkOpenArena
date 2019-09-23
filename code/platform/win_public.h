@@ -97,7 +97,6 @@ void WinSys_Init(void ** pContext, int type);
 void WinSys_Shutdown(void);
 void WinSys_EndFrame(void);
 void WinSys_SetGamma(unsigned char red[256], unsigned char green[256], unsigned char blue[256]);
-void FileSys_Logging(char * const pComment);
 
 
 int WinSys_GetWinWidth(void);
@@ -106,6 +105,10 @@ int WinSys_IsWinFullscreen(void);
 
 
 void WinMinimize_f(void);
+
+
+void FileSys_Logging(const char * const pComment);
+
 // NOTE TTimo linux works with float gamma value, not the gamma table
 // the params won't be used, getting the r_gamma cvar directly
 

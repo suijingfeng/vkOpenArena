@@ -125,3 +125,14 @@ void WinSys_DestructDislayModes(void)
 	Cmd_RemoveCommand( "printDisplayMode" );
 
 }
+
+
+void FileSys_Logging(const char * const comment )
+{
+/*   
+	if ( glw_state.log_fp )
+	{
+		fprintf( glw_state.log_fp, "%s", comment );
+	}
+*/
+}

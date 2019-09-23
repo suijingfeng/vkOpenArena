@@ -296,10 +296,7 @@ void WinSys_SetGamma(unsigned char red[256], unsigned char green[256], unsigned 
 }
 
 
-void FileSys_Logging(char * const pComment)
-{
-    Com_Printf(" FileSys_Logging: GammaNot Implemented Now. \n");
-}
+
 
 
 // TODO: impl

@@ -164,7 +164,7 @@ typedef struct {
 	void (* WinSysEndFrame)(void);
 	void (* WinSysMinimize)(void);
 	void (* WinSysSetGamma)(unsigned char red[256], unsigned char green[256], unsigned char blue[256]);
-	void (* pfnLog)(char * const pComment);
+	void (* pfnLog)(const char * const pComment);
 	
 
 	int (* GetWinWidth)(void);

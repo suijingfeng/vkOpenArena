@@ -286,17 +286,17 @@ int qglInit( void )
 		if ( hinstOpenGL == NULL )
 		{
 			ri.Error(ERR_FATAL, "LoadOpenGLDll: failed to load %s from  %s\n", dllname, Sys_LibraryError());
-		    	return qfalse;
-        		}
-        		else
-        		{
+			return qfalse;
+		}
+		else
+		{
 			ri.Printf(PRINT_ALL, "L oading %s successful. \n", dllname);
 		}
 	}
 
 	qglGetString            = GL_GetProcAddressImpl("glGetString");
 
-	qglAlphaFunc	= GL_GetProcAddressImpl("glAlphaFunc");
+	qglAlphaFunc		= GL_GetProcAddressImpl("glAlphaFunc");
 	qglBegin		= GL_GetProcAddressImpl("glBegin");
 	qglBindTexture          = GL_GetProcAddressImpl("glBindTexture");
 	qglBlendFunc            = GL_GetProcAddressImpl("glBlendFunc");
@@ -321,7 +321,7 @@ int qglInit( void )
 	qglFinish               = GL_GetProcAddressImpl("glFinish");
 	qglGetError             = GL_GetProcAddressImpl("glGetError");
 	qglGetIntegerv          = GL_GetProcAddressImpl("glGetIntegerv");
-	
+
 	qglLineWidth            = GL_GetProcAddressImpl("glLineWidth");
 	qglLoadIdentity         = GL_GetProcAddressImpl("glLoadIdentity");
 	qglLoadMatrixf          = GL_GetProcAddressImpl("glLoadMatrixf");
@@ -441,13 +441,13 @@ int qglInit( void )
 	if ( GLimp_HaveExtension( "GL_EXT_texture_filter_anisotropic" ) )
 	{
 		if ( r_ext_texture_filter_anisotropic->integer )
-        {
-            int maxAnisotropy = 0;
-            char target_string[4] = {0};
+		{
+			int maxAnisotropy = 0;
 
-            #ifndef GL_MAX_TEXTURE_MAX_ANISOTROPY_EXT
-            #define GL_MAX_TEXTURE_MAX_ANISOTROPY_EXT 0x84FF
-            #endif
+#ifndef GL_MAX_TEXTURE_MAX_ANISOTROPY_EXT
+#define GL_MAX_TEXTURE_MAX_ANISOTROPY_EXT 0x84FF
+#endif
+
 			qglGetIntegerv( GL_MAX_TEXTURE_MAX_ANISOTROPY_EXT, (GLint *)&maxAnisotropy );
 			if ( maxAnisotropy <= 0 ) {
 				ri.Printf( PRINT_ALL, "...GL_EXT_texture_filter_anisotropic not properly supported!\n" );
@@ -455,9 +455,10 @@ int qglInit( void )
 			}
 			else
 			{
-                sprintf(target_string, "%d", maxAnisotropy);
+				char target_string[11] = {0};
+				sprintf(target_string, "%d", maxAnisotropy);
 				ri.Printf( PRINT_ALL,  "...using GL_EXT_texture_filter_anisotropic (max: %i)\n", maxAnisotropy );
-                ri.Cvar_Set( "r_ext_max_anisotropy", target_string);
+				ri.Cvar_Set( "r_ext_max_anisotropy", target_string);
 
 			}
 		}
