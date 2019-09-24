@@ -492,10 +492,16 @@ SDL2 branch, opengl1: 3398 frames 6.9 seconds 490.3 fps 1.0/2.0/8.0/0.6 ms
 
 libx11, vulkan: 3398 frames 5.6 seconds 609.5 fps 1.0/1.6/3.0/0.5 ms
 libx11, opengl1: 3398 frames 7.2 seconds 474.3 fps 1.0/2.1/6.0/0.7 ms
-
-
 ```
 
+### Testing on Loongnix, LG34WK659 2560x1080 ultrawide monitor, Mesa 18.0.5, LOONGSON 3A CPU,  AMD R7 430 GPU. 
+
+```
+# there no native compiler for MIPS, the CPU is the bottle neck. :(
+
+opengl1: 3398 frames 70.6 seconds 48.1 fps 11.0/20.8/57.0/4.5 ms
+
+```
 even if the framerate is high, but if i can not progroamming the event process module correctly,
 or dont have a network, the feeling of play this game is like eating shit! 
 
