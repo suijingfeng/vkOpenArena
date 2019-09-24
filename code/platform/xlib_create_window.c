@@ -188,35 +188,37 @@ static int GLW_SetMode(int mode, qboolean fullscreen, int type )
 		RandR_SetMode( &actualWidth, &actualHeight, &actualRate );
 	}
 
-	// these match in the array
+	XVisualInfo * visinfo = NULL;
+	if(type == 0)
+	{
+		// these match in the array
 #define ATTR_RED_IDX 2
 #define ATTR_GREEN_IDX 4
 #define ATTR_BLUE_IDX 6
 #define ATTR_DEPTH_IDX 9
 #define ATTR_STENCIL_IDX 11
 
-	static int attrib[] =
-	{
-		GLX_RGBA,         // 0
-		GLX_RED_SIZE, 4,      // 1, 2
-		GLX_GREEN_SIZE, 4,      // 3, 4
-		GLX_BLUE_SIZE, 4,     // 5, 6
-		GLX_DOUBLEBUFFER,     // 7
-		GLX_DEPTH_SIZE, 1,      // 8, 9
-		GLX_STENCIL_SIZE, 1,    // 10, 11
-		None
-	};
+		int attrib[] =
+		{
+			GLX_RGBA,         // 0
+			GLX_RED_SIZE, 4,      // 1, 2
+			GLX_GREEN_SIZE, 4,      // 3, 4
+			GLX_BLUE_SIZE, 4,     // 5, 6
+			GLX_DOUBLEBUFFER,     // 7
+			GLX_DEPTH_SIZE, 1,      // 8, 9
+			GLX_STENCIL_SIZE, 1,    // 10, 11
+			None
+		};
 
 
-	attrib[ATTR_DEPTH_IDX] = 24; // default to 24 depth
-	attrib[ATTR_STENCIL_IDX] = 8;
-	attrib[ATTR_RED_IDX] = 8;
-	attrib[ATTR_GREEN_IDX] = 8;
-	attrib[ATTR_BLUE_IDX] = 8;
+		attrib[ATTR_DEPTH_IDX] = 24; // default to 24 depth
+		attrib[ATTR_STENCIL_IDX] = 8;
+		attrib[ATTR_RED_IDX] = 8;
+		attrib[ATTR_GREEN_IDX] = 8;
+		attrib[ATTR_BLUE_IDX] = 8;
 
-	XVisualInfo * visinfo = NULL;
-	if(type == 0)
-	{
+
+
 		// OpenGL case
 		visinfo = qglXChooseVisual( glw_state.pDisplay, glw_state.screenIdx, attrib );
 
@@ -681,6 +683,7 @@ void WinSys_Init(void ** pCfg, int type)
 	IN_Init();   // rcg08312005 moved into glimp.
 }
 
+
 /*
 ** This routine does all OS specific shutdown procedures for the OpenGL
 ** subsystem.  Under OpenGL this means NULLing out the current DC and
@@ -761,5 +764,3 @@ void WinSys_Shutdown(void)
 		glw_state.hGraphicLib = NULL;
 	}
 }
-
-
