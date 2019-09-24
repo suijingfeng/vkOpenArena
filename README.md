@@ -493,8 +493,10 @@ SDL2 branch, opengl1: 3398 frames 6.9 seconds 490.3 fps 1.0/2.0/8.0/0.6 ms
 libx11, vulkan: 3398 frames 5.6 seconds 609.5 fps 1.0/1.6/3.0/0.5 ms
 libx11, opengl1: 3398 frames 7.2 seconds 474.3 fps 1.0/2.1/6.0/0.7 ms
 ```
+even if the framerate is high, but if i can not progroamming the event process module correctly,
+or dont have a network, the feeling of play this game is like eating shit! 
 
-### Testing on Loongnix, LG34WK659 2560x1080 ultrawide monitor, Mesa 18.0.5, LOONGSON 3A CPU,  AMD R7 430 GPU. 
+### Testing on Loongnix, LG34WK659 2560x1080 ultrawide monitor, Mesa 18.0.5, LOONGSON 3A3000 CPU, AMD R7 430 GPU. 
 
 ```
 # there no native compiler for MIPS, the CPU is the bottle neck. :(
@@ -502,8 +504,16 @@ libx11, opengl1: 3398 frames 7.2 seconds 474.3 fps 1.0/2.1/6.0/0.7 ms
 opengl1: 3398 frames 70.6 seconds 48.1 fps 11.0/20.8/57.0/4.5 ms
 
 ```
-even if the framerate is high, but if i can not progroamming the event process module correctly,
-or dont have a network, the feeling of play this game is like eating shit! 
+
+### Testing on Loongnix, AOC 1920x1080 monitor, Mesa 18.0.5, LOONGSON 3A3000 CPU, AMD RX 580 GPU. 
+```
+opengl1: 3398 frames 64.5 seconds 52.7 fps 9.0/19.0/35.0/4.1 ms
+
+# the cpu is the bottle neck, using better GPU is not meaningful
+
+```
+
+
 
 # OpenArena gamecode
 
