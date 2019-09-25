@@ -84,7 +84,7 @@ void fnToggleLogging_f(void)
 }
 
 
-void FileSys_Logging(char * const comment)
+void FileSys_Logging(const char * const comment)
 {
 	if (log_fp) {
 		fprintf(log_fp, "%s", comment);

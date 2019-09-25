@@ -1,6 +1,6 @@
 
 #include "../client/client.h"
-#include "../sys/sys_public.h"
+#include "sys_public.h"
 #include "win_public.h"
 #include "win_snd.h"
 

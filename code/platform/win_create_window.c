@@ -381,8 +381,3 @@ void WinSys_EndFrame(void)
 {
 	;
 }
-
-void* GLimp_GetProcAddress( const char *symbol )
-{
-	;
-}

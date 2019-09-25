@@ -24,8 +24,8 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
 extern glconfig_t glConfig;
 
-extern void (APIENTRYP qglActiveTextureARB) (GLenum texture);
-extern void (APIENTRYP qglClientActiveTextureARB) (GLenum texture);
+extern void (APIENTRY * qglActiveTextureARB) (GLenum texture);
+extern void (APIENTRY * qglClientActiveTextureARB) (GLenum texture);
 
 
 extern shaderCommands_t tess;

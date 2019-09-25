@@ -44,6 +44,16 @@
     <ClCompile Include="..\..\..\code\client\snd_mix.c" />
     <ClCompile Include="..\..\..\code\client\snd_openal.c" />
     <ClCompile Include="..\..\..\code\client\snd_wavelet.c" />
+    <ClCompile Include="..\..\..\code\platform\con_passive.c" />
+    <ClCompile Include="..\..\..\code\platform\sys_loadlib.c" />
+    <ClCompile Include="..\..\..\code\platform\sys_main.c" />
+    <ClCompile Include="..\..\..\code\platform\sys_win32.c" />
+    <ClCompile Include="..\..\..\code\platform\win_create_window.c" />
+    <ClCompile Include="..\..\..\code\platform\win_gamma.c" />
+    <ClCompile Include="..\..\..\code\platform\win_input.c" />
+    <ClCompile Include="..\..\..\code\platform\win_log.c" />
+    <ClCompile Include="..\..\..\code\platform\win_snd.c" />
+    <ClCompile Include="..\..\..\code\platform\win_wndproc.c" />
     <ClCompile Include="..\..\..\code\qcommon\cmd.c" />
     <ClCompile Include="..\..\..\code\qcommon\cm_load.c" />
     <ClCompile Include="..\..\..\code\qcommon\cm_patch.c" />
@@ -64,16 +74,9 @@
     <ClCompile Include="..\..\..\code\qcommon\puff.c" />
     <ClCompile Include="..\..\..\code\qcommon\q_math.c" />
     <ClCompile Include="..\..\..\code\qcommon\q_shared.c" />
-    <ClCompile Include="..\..\..\code\qcommon\snapvector.c" />
     <ClCompile Include="..\..\..\code\qcommon\unzip.c" />
     <ClCompile Include="..\..\..\code\qcommon\vm.c" />
     <ClCompile Include="..\..\..\code\qcommon\vm_interpreted.c" />
-    <ClCompile Include="..\..\..\code\sdl\win_create_window.c" />
-    <ClCompile Include="..\..\..\code\sdl\win_gamma.c" />
-    <ClCompile Include="..\..\..\code\sdl\win_input.c" />
-    <ClCompile Include="..\..\..\code\sdl\win_log.c" />
-    <ClCompile Include="..\..\..\code\sdl\win_snd.c" />
-    <ClCompile Include="..\..\..\code\sdl\win_wndproc.c" />
     <ClCompile Include="..\..\..\code\server\sv_bot.c" />
     <ClCompile Include="..\..\..\code\server\sv_ccmds.c" />
     <ClCompile Include="..\..\..\code\server\sv_client.c" />
@@ -83,10 +86,6 @@
     <ClCompile Include="..\..\..\code\server\sv_net_chan.c" />
     <ClCompile Include="..\..\..\code\server\sv_snapshot.c" />
     <ClCompile Include="..\..\..\code\server\sv_world.c" />
-    <ClCompile Include="..\..\..\code\sys\con_passive.c" />
-    <ClCompile Include="..\..\..\code\sys\sys_loadlib.c" />
-    <ClCompile Include="..\..\..\code\sys\sys_main.c" />
-    <ClCompile Include="..\..\..\code\sys\sys_win32.c" />
     <ClCompile Include="..\..\..\code\zlib\adler32.c" />
     <ClCompile Include="..\..\..\code\zlib\crc32.c" />
     <ClCompile Include="..\..\..\code\zlib\inffast.c" />
@@ -100,12 +99,6 @@
     </ProjectReference>
   </ItemGroup>
   <ItemGroup>
-    <ResourceCompile Include="..\..\..\code\sdl\winquake.rc" />
-  </ItemGroup>
-  <ItemGroup>
-    <Image Include="..\..\..\code\sdl\oa3.ico" />
-  </ItemGroup>
-  <ItemGroup>
     <None Include="..\..\..\code\asm\ftola.asm" />
     <None Include="..\..\..\code\asm\snapvector.asm" />
     <None Include="..\..\..\code\asm\vm_x86_64.asm" />
@@ -116,6 +109,12 @@
     <ClInclude Include="..\..\..\code\sdl\win_log.h" />
     <ClInclude Include="..\..\..\code\sdl\win_public.h" />
     <ClInclude Include="..\..\..\code\sdl\win_snd.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <ResourceCompile Include="..\..\..\code\platform\winquake.rc" />
+  </ItemGroup>
+  <ItemGroup>
+    <Image Include="..\..\..\code\platform\oa3.ico" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <VCProjectVersion>15.0</VCProjectVersion>
