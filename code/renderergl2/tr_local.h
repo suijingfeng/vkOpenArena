@@ -49,7 +49,6 @@ QGL_EXT_direct_state_access_PROCS;
 #undef GLE
 
 
-
 #define GL_INDEX_TYPE		GL_UNSIGNED_INT
 typedef unsigned int glIndex_t;
 
