@@ -141,8 +141,8 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 	GLE(void, BindBuffer, GLenum target, GLuint buffer) \
 	GLE(void, DeleteBuffers, GLsizei n, const GLuint *buffers) \
 	GLE(void, GenBuffers, GLsizei n, GLuint *buffers) \
-	GLE(void, BufferData, GLenum target, GLsizei * size, const void *data, GLenum usage) \
-	GLE(void, BufferSubData, GLenum target, GLint * offset, GLsizei * size, const void *data) \
+	GLE(void, BufferData, GLenum target, GLsizeiptr size, const void *data, GLenum usage) \
+	GLE(void, BufferSubData, GLenum target, GLintptr offset, GLsizeiptr size, const void *data) \
 
 #define QGL_2_0_PROCS \
 	GLE(void, AttachShader, GLuint program, GLuint shader) \
