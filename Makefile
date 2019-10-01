@@ -639,20 +639,6 @@ ifdef MINGW
   CLIENT_LIBS += -lmingw32
   RENDERER_LIBS += -lmingw32
 
-	CLIENT_CFLAGS += -I$(SDLHDIR)/include
-
-	ifeq ($(ARCH),x86)
-	CLIENT_LIBS += $(LIBSDIR)/win32/libSDL2main.a $(LIBSDIR)/win32/libSDL2.dll.a
-	RENDERER_LIBS += $(LIBSDIR)/win32/libSDL2main.a $(LIBSDIR)/win32/libSDL2.dll.a
-	SDLDLL=SDL2.dll
-	CLIENT_EXTRA_FILES += $(LIBSDIR)/win32/SDL2.dll
-	else
-	CLIENT_LIBS += $(LIBSDIR)/win64/libSDL264main.a $(LIBSDIR)/win64/libSDL264.dll.a
-	RENDERER_LIBS += $(LIBSDIR)/win64/libSDL264main.a $(LIBSDIR)/win64/libSDL264.dll.a
-	SDLDLL=SDL264.dll
-	CLIENT_EXTRA_FILES += $(LIBSDIR)/win64/SDL264.dll
-	endif
-
 	ifeq ($(ARCH),x86)
 	CLIENT_LIBS += $(LIBSDIR)/win32/OpenAL32.dll
 	CLIENT_EXTRA_FILES += $(LIBSDIR)/win32/OpenAL32.dll
@@ -2017,9 +2003,6 @@ ifdef MINGW
 
   Q3OBJ += \
 	$(B)/client/con_passive.o
-
-#  Q3OBJ += \
-#    $(B)/client/sdl_snd.o 
 
   Q3OBJ += \
     $(B)/client/win_snd.o 

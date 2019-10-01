@@ -24,7 +24,7 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
 #include "tr_local.h"
 
-extern void (APIENTRYP qglActiveTextureARB) (GLenum texture);
+extern void (APIENTRY * qglActiveTextureARB) (GLenum texture);
 
 
 extern	backEndData_t *backEndData;	// the second one may not be allocated

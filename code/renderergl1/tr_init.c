@@ -130,15 +130,14 @@ cvar_t	*r_maxpolyverts;
 int	max_polyverts;
 
 
-static cvar_t* r_ext_texture_filter_anisotropic;
 static cvar_t* r_ext_max_anisotropy;
 
 
-void (APIENTRYP qglActiveTextureARB) (GLenum texture);
-void (APIENTRYP qglClientActiveTextureARB) (GLenum texture);
-void (APIENTRYP qglMultiTexCoord2fARB) (GLenum target, GLfloat s, GLfloat t);
-void (APIENTRYP qglLockArraysEXT) (GLint first, GLsizei count);
-void (APIENTRYP qglUnlockArraysEXT) (void);
+void (APIENTRY * qglActiveTextureARB) (GLenum texture);
+void (APIENTRY * qglClientActiveTextureARB) (GLenum texture);
+void (APIENTRY * qglMultiTexCoord2fARB) (GLenum target, GLfloat s, GLfloat t);
+void (APIENTRY * qglLockArraysEXT) (GLint first, GLsizei count);
+void (APIENTRY * qglUnlockArraysEXT) (void);
 
 #define GLE(ret, name, ...) name##proc * qgl##name;
 QGL_1_1_PROCS;
@@ -206,7 +205,7 @@ static qboolean GLimp_GetProcAddresses( void )
 	{
 		QGL_1_1_PROCS;
 		QGL_DESKTOP_1_1_PROCS;
-        	QGL_1_3_PROCS;
+        QGL_1_3_PROCS;
 	}
 	else {
 		ri.Error( ERR_FATAL, "Unsupported OpenGL Version: %s\n", version );
@@ -255,7 +254,6 @@ static qboolean GLimp_HaveExtension(const char *ext)
 void GLimp_InitExtensions( void )
 {
 	r_ext_max_anisotropy = ri.Cvar_Get( "r_ext_max_anisotropy", "2", CVAR_ARCHIVE | CVAR_LATCH );
-	r_ext_texture_filter_anisotropic = ri.Cvar_Get( "r_ext_texture_filter_anisotropic", "0", CVAR_ARCHIVE | CVAR_LATCH );
 
 	ri.Printf( PRINT_ALL,  "\n...Initializing OpenGL extensions\n" );
 
@@ -289,7 +287,7 @@ void GLimp_InitExtensions( void )
 		qglMultiTexCoord2fARB = GL_GetProcAddressImpl( "glMultiTexCoord2fARB" );
 		qglActiveTextureARB = GL_GetProcAddressImpl( "glActiveTextureARB" );
 		qglClientActiveTextureARB = GL_GetProcAddressImpl( "glClientActiveTextureARB" );
-
+/*
 		if ( qglActiveTextureARB )
 		{
 			GLint glint = 0;
@@ -307,6 +305,7 @@ void GLimp_InitExtensions( void )
 				ri.Printf( PRINT_ALL, "...not using GL_ARB_multitexture, < 2 texture units\n" );
 			}
 		}
+*/        
 	}
 	else
 	{
@@ -329,34 +328,6 @@ void GLimp_InitExtensions( void )
 		ri.Printf( PRINT_ALL, "...GL_EXT_compiled_vertex_array not found\n" );
 	}
 
-	if ( GLimp_HaveExtension( "GL_EXT_texture_filter_anisotropic" ) )
-	{
-		if ( r_ext_texture_filter_anisotropic->integer )
-        {
-            int maxAnisotropy = 0;
-            char target_string[4] = {0};
-			qglGetIntegerv( GL_MAX_TEXTURE_MAX_ANISOTROPY_EXT, (GLint *)&maxAnisotropy );
-			if ( maxAnisotropy <= 0 ) {
-				ri.Printf( PRINT_ALL, "...GL_EXT_texture_filter_anisotropic not properly supported!\n" );
-				maxAnisotropy = 0;
-			}
-			else
-			{
-                sprintf(target_string, "%d", maxAnisotropy);
-				ri.Printf( PRINT_ALL,  "...using GL_EXT_texture_filter_anisotropic (max: %i)\n", maxAnisotropy );
-                ri.Cvar_Set( "r_ext_max_anisotropy", target_string);
-
-			}
-		}
-		else
-		{
-			ri.Printf( PRINT_ALL,  "...ignoring GL_EXT_texture_filter_anisotropic\n" );
-		}
-	}
-	else
-	{
-		ri.Printf( PRINT_ALL, "...GL_EXT_texture_filter_anisotropic not found\n" );
-	}
 }
 
 
