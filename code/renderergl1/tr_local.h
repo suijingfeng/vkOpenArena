@@ -30,7 +30,7 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #include "../renderercommon/tr_public.h"
 #include "tr_common.h"
 #include "../renderercommon/iqm.h"
-#include "qgl.h"
+
 
 #include "image.h"
 
@@ -1548,10 +1548,5 @@ void RE_TakeVideoFrame( int width, int height,
 		byte *captureBuffer, byte *encodeBuffer, qboolean motionJpeg );
 
 
-#define GLE(ret, name, ...) extern name##proc * qgl##name;
-QGL_1_1_PROCS;
-QGL_DESKTOP_1_1_PROCS;
-// QGL_1_3_PROCS;
-#undef GLE
 
 #endif //TR_LOCAL_H

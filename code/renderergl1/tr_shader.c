@@ -20,6 +20,7 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 ===========================================================================
 */
 #include "tr_local.h"
+#include "qgl.h"
 extern glconfig_t glConfig;
 // tr_shader.c -- this file deals with the parsing and definition of shaders
 
