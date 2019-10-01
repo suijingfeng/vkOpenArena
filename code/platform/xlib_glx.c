@@ -54,13 +54,11 @@
 ** of the symbol is to provide a compile-time test by which application code knows
 ** whether the ABI guarantees are in force.
 */
-#include <sys/time.h>
-#include <sys/types.h>
+
 #include <unistd.h>
 
 #include <GL/gl.h>
 #include <GL/glext.h>
-
 #include <GL/glx.h>
 #include <GL/glxext.h>
 
