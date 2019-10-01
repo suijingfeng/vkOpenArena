@@ -58,10 +58,10 @@ extern void XSys_SetCurrentContextForGL(void);
 extern void XSys_ClearCurrentContextForGL(void);
 
 ///////////////////////////
-
-
 static cvar_t* r_mode;
 static cvar_t* r_fullscreen;
+
+cvar_t* r_swapInterval;
 static cvar_t* r_allowResize; // make window resizable
 
 cvar_t * r_stencilbits;
@@ -156,10 +156,19 @@ static int CreateWindowForRenderer(int mode, qboolean fullscreen, int type )
 		RandR_SetMode( &actualWidth, &actualHeight, &actualRate );
 	}
 
+	glw_state.winWidth = actualWidth;
+	glw_state.winHeight = actualHeight;
+	glw_state.isFullScreen = fullscreen; 
+	
+	
 	XVisualInfo * visinfo = NULL;
 	if(type == 0)
 	{
 		visinfo = GetXVisualPtrWrapper();
+		if(visinfo == NULL)
+		{
+			Com_Error(ERR_FATAL,  "XGetVisualInfo() says no visuals available!\n" );
+		}
 	}
 	else if(type == 1)
 	{
@@ -193,11 +202,6 @@ static int CreateWindowForRenderer(int mode, qboolean fullscreen, int type )
 	}
 
 
-	glw_state.winWidth = actualWidth;
-	glw_state.winHeight = actualHeight;
-	glw_state.isFullScreen = fullscreen; 
-    
-
 	/* window attributes */
 	unsigned long win_mask = fullscreen ? 
 		( CWBackPixel | CWColormap | CWEventMask | CWSaveUnder | CWBackingStore | CWOverrideRedirect ) : 
@@ -210,10 +214,80 @@ static int CreateWindowForRenderer(int mode, qboolean fullscreen, int type )
 
 	win_attr.background_pixel = BlackPixel( glw_state.pDisplay, glw_state.screenIdx );
 	win_attr.border_pixel = 10;
+	
+	// The XCreateColormap() function creates a colormap of the specified visual type for the screen
+	// on which the specified window resides and returns the colormap ID associated with it. Note that
+	// the specified window is only used to determine the screen. 
+	//
+	// The initial values of the colormap entries are undefined for the visual classes GrayScale, 
+	// PseudoColor, and DirectColor. For StaticGray, StaticColor, and TrueColor, the entries have defined values, 
+	// but those values are specific to the visual and are not defined by X. 
+	// For StaticGray, StaticColor, and TrueColor, alloc must be AllocNone, or a BadMatch error results. 
+	// For the other visual classes, if alloc is AllocNone, the colormap initially has no allocated entries, 
+	// and clients can allocate them. For information about the visual types. 
+	//
+	// Xlib requires specification of a colormap when creating a window.
+	// The GLX extension, which integrates OpenGL and X, is used by X servers that support OpenGL.
+	// GLX is both an API and an X extension protocol for supporting OpenGL. 
+	// GLX routines provide basic interaction between X and OpenGL. 
+	// Use them, for example, to create a rendering context and bind it to a window. 
+	// A standard X visual specifies how the server should map a given pixel value to a color to be displayed on the screen. 
+	// Different windows on the screen can have different visuals.
+	// GLX overloads X visuals to include both the standard X definition of a visual and 
+	// OpenGL specific information about the configuration of the framebuffer and ancillary
+	// buffers that might be associated with a drawable. Only those overloaded visuals support 
+	// both OpenGL and X rendering—GLX therefore requires that an X server support a 
+	// high minimum baseline of OpenGL functionality.
+	// 
+	// Not all X visuals support OpenGL rendering, but all X servers capable of 
+	// OpenGL rendering have at least two OpenGL capable visuals.
+	// An RGBA visual is required for any hardware system that supports OpenGL
+	//
+	// As a rule, a drawable is something X can draw into, either a window or a pixmap 
+	// (an exception is pbuffers, which are GLX drawables but cannot be used for X rendering).
+	//
+	// A GLX drawable is something both OpenGL can draw into, either an OpenGL capable window or a GLX pixmap.
+	//  (A GLX pixmap is a handle to an X pixmap that is allocated in a special way;
+	//
+	//  Another kind of GLX drawable is the pixel buffer (or pbuffer), which permits hardware-accelerated off-screen rendering.
+	//
+	//  Resources As Server Data
+	//
+	//  Resources, in X, are data structures maintained by the server rather than by client programs. 
+	//  Colormaps (as well as windows, pixmaps, and fonts) are implemented as resources.
+	//
+	//  Rather than keeping information about a window in the client program and sending an entire window data structure from client to server, 
+	//  for instance, window data is stored in the server and given a unique integer ID called an XID. To manipulate or query the window data, 
+	//  the client sends the window's ID number; the server can then perform any requested operation on that window. This reduces network traffic.
+	// 
+	// Because pixmaps and windows are resources, they are part of the X server and can be shared by different processes (or threads). 
+	// OpenGL contexts are also resources. In standard OpenGL, they can be shared by threads in the same process but not by separate processes
+	//
+	// X Window Colormaps
+	//
+	// A colormap maps pixel values from the framebuffer to intensities on screen.  
+	// Each pixel value indexes into the colormap to produce intensities of red, green, and blue for display. 
+	// Depending on hardware limitations, one or more colormaps may be installed at one time, 
+	// such that windows associated with those maps display with the correct colors. 
+	// If there is only one colormap, two windows that load colormaps with different values look correct 
+	// only when they have their particular colormap is installed. The X window manager takes care of 
+	// colormap installation and tries to make sure that the X client with input focus has its colormaps installed. 
+	// On all systems, the colormap is a limited resource.
+	//
+	// Every X window needs a colormap. If you are using the OpenGL drawing area-widget to render in RGB mode into a TrueColor visual, 
+	// you may not need to worry about the colormap. In other cases, you may need to assign one. For additional information, 
+	// see “Using Colormaps”. Colormaps are also discussed in detail in O'Reilly, Volume One. 
 
-    // The XCreateColormap() function creates a colormap of the specified visual type for the screen
-    // on which the specified window resides and returns the colormap ID associated with it. Note that
-    // the specified window is only used to determine the screen. 
+
+	// OpenGL supports two rendering modes: RGBA mode and color index mode.
+	//
+	// In RGBA mode, color buffers store red, green, blue, and alpha components directly.
+	//
+	// In color-index mode, color buffers store indexes (names) of colors that are dereferenced by the display hardware. 
+	// A color index represents a color by name rather than value. A colormap is a table of index-to-RGB mappings.
+	
+	// OpenGL 1.0 and 1.1 and GLX 1.0, 1.1, and 1.2 require an RGBA mode program to use a TrueColor or DirectColor visual, 
+	// and require a color index mode program to use a PseudoColor or StaticColor visual. 
 	win_attr.colormap = XCreateColormap( glw_state.pDisplay, glw_state.root, visinfo->visual, AllocNone );
 	
 	win_attr.event_mask = ( 
@@ -463,10 +537,19 @@ void WinSys_Init(void ** pCfg, int type)
 	r_stencilbits = Cvar_Get( "r_stencilbits", "8", CVAR_ARCHIVE | CVAR_LATCH );
 	r_depthbits = Cvar_Get( "r_depthbits", "24", CVAR_ARCHIVE | CVAR_LATCH );
 
+   	r_swapInterval = Cvar_Get( "r_swapInterval", "0", CVAR_ARCHIVE );
+
+	// r_glDriver = Cvar_Get( "r_glDriver", "libGL.so.1", CVAR_ARCHIVE | CVAR_LATCH );
+
 	r_allowResize = Cvar_Get( "r_allowResize", "0", CVAR_ARCHIVE | CVAR_LATCH );
 	
 	vid_xpos = Cvar_Get( "vid_xpos", "3", CVAR_ARCHIVE );
 	vid_ypos = Cvar_Get( "vid_ypos", "22", CVAR_ARCHIVE );
+
+	if ( r_swapInterval->integer )
+		setenv( "vblank_mode", "2", 1 );
+	else
+		setenv( "vblank_mode", "1", 1 );
 
 	WinSys_ConstructDislayModes();
 	

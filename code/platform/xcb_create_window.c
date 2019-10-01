@@ -29,11 +29,6 @@ int WinSys_IsWinFullscreen(void)
     return s_xcb_win.isFullScreen;
 }
 
-void* GLimp_GetProcAddress( const char *symbol )
-{
-    //void *sym = glXGetProcAddressARB((const unsigned char *)symbol);
-    return dlsym(s_xcb_win.hGraphicLib, symbol);
-}
 
 static cvar_t* r_mode;				// video mode
 static cvar_t* r_fullscreen;

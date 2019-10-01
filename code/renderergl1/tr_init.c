@@ -206,7 +206,7 @@ static qboolean GLimp_GetProcAddresses( void )
 	{
 		QGL_1_1_PROCS;
 		QGL_DESKTOP_1_1_PROCS;
-        QGL_1_3_PROCS;
+        	QGL_1_3_PROCS;
 	}
 	else {
 		ri.Error( ERR_FATAL, "Unsupported OpenGL Version: %s\n", version );

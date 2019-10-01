@@ -28,8 +28,8 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #include "../qcommon/qfiles.h"
 
 #include "../renderercommon/iqm.h"
-#include "../renderercommon/qgl.h"
 #include "../renderercommon/tr_public.h"
+#include "qgl.h"
 #include "tr_common.h"
 #include "image.h"
 
@@ -39,8 +39,6 @@ QGL_DESKTOP_1_1_PROCS;
 QGL_1_3_PROCS;
 #undef GLE
 
-
-void* GLimp_GetProcAddress(const char* fun);
 
 
 extern refimport_t ri;

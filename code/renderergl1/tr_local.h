@@ -30,7 +30,7 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #include "../renderercommon/tr_public.h"
 #include "tr_common.h"
 #include "../renderercommon/iqm.h"
-#include "../renderercommon/qgl.h"
+#include "qgl.h"
 
 #include "image.h"
 
@@ -1551,12 +1551,7 @@ void RE_TakeVideoFrame( int width, int height,
 #define GLE(ret, name, ...) extern name##proc * qgl##name;
 QGL_1_1_PROCS;
 QGL_DESKTOP_1_1_PROCS;
-QGL_1_3_PROCS;
-QGL_1_5_PROCS;
+// QGL_1_3_PROCS;
 #undef GLE
-
-void GLimp_EndFrame(void);
-void GLimp_SetGamma(unsigned char red[256], unsigned char green[256], unsigned char blue[256]);
-void* GLimp_GetProcAddress(const char* fun);
 
 #endif //TR_LOCAL_H

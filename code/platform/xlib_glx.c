@@ -90,12 +90,12 @@
 
 
 extern WinVars_t glw_state;
+extern cvar_t* r_swapInterval;
 
 
 static void * hGraphicLib; // instance of OpenGL library
 static GLXContext ctx_gl;
 
-extern cvar_t* r_swapInterval;
 
 void XSys_LoadOpenGL( void )
 {
@@ -125,9 +125,11 @@ void XSys_LoadOpenGL( void )
 	// expand constants before stringifying them
 	// load the GLX funs
 #define GLE( ret, name, ... ) \
-	q##name = dlsym(hGraphicLib, XSTRING( name )); \
-	if ( !q##name ) \
-		Com_Error(ERR_FATAL, "Error resolving glx core functions\n");
+	q##name = dlsym(hGraphicLib, #name ); \
+	if ( !q##name ) { \
+		Com_Error(ERR_FATAL, "Error resolving glx core functions\n"); \
+	}
+	
 	QGL_LinX11_PROCS;
 #undef GLE
 
@@ -185,7 +187,14 @@ void XSys_UnloadOpenGL(void)
 
 XVisualInfo * GetXVisualPtrWrapper(void)
 {
-	// these match in the array
+	// Choose a visual. If you intend to use RGBA mode, specify RGBA in the attribute list when calling glXChooseVisual(). 
+	// First decide whether your program will use RGBA or color-index mode. Some operations, 
+	// such as texturing and blending, are not supported in color index mode; others, such as lighting, work differently in the two modes. 
+	// Because of that, RGBA rendering is usually the right choice. 
+	// Remember that RGBA is usually the right choice for OpenGL on a Silicon Graphics system.
+	// OpenGL 1.0 and 1.1 and GLX 1.0, 1.1, and 1.2 require an RGBA mode program to use a TrueColor or DirectColor visual, 
+	// and require a color index mode program to use a PseudoColor or StaticColor visual. 
+	
 	XVisualInfo * pRet = NULL;
 	int attrib[] =
 	{
@@ -196,14 +205,16 @@ XVisualInfo * GetXVisualPtrWrapper(void)
 		GLX_ALPHA_SIZE, 8,	// 7, 8
 		GLX_DEPTH_SIZE, 24,	// 9, 10
 		GLX_STENCIL_SIZE, 8,	// 11, 12
-		GLX_DOUBLEBUFFER,	// 13
+		GLX_DOUBLEBUFFER, True,	// 13, 14
 		None
 	};
 
 	// GLX_RGBA: 
 	// If present, only TrueColor and DirectColor visuals are considered. 
 	// Otherwise, only PseudoColor and StaticColor visuals are considered. 
-	//
+	// If RGBA is not specified in the attribute list, glXChooseVisual() selects a PseudoColor visual to 
+	// support color index mode (or a StaticColor visual if no PseudoColor visual is available).
+	// Many OpenGL applications use a 24-bit TrueColor visual (by specifying GLX_RGBA in the visual attribute list when choosing a visual). 
 
 	// XVisualInfo *glXChooseVisual(Display* dpy, int screen, int * attribList)
 	// dpy: Specifies the connection to the X server.
@@ -234,8 +245,9 @@ XVisualInfo * GetXVisualPtrWrapper(void)
 	{
 		Com_Printf( " Choose visual Using %d/%d/%d Color bits, %d depth, %d stencil display.\n", 
 				attrib[2], attrib[4], attrib[6], attrib[10], attrib[12]);
-
+		// then, Create a colormap that can be used with the selected visual. 
 		return pRet;
+
 	}
 	else
 	{
@@ -247,11 +259,29 @@ XVisualInfo * GetXVisualPtrWrapper(void)
 
 void XSys_CreateContextForGL( XVisualInfo * pVisinfo )
 {
+	// glXCreateContext fails to create a rendering context, NULL is returned. 
+	// A thread is one of a set of subprocesses that share a single address space, 
+	// but maintain separate program counters, stack spaces, and other related global data. 
+	// A thread that is the only member of its subprocess group is equivalent to a process. 
 	ctx_gl = qglXCreateContext( glw_state.pDisplay, pVisinfo, NULL, True );
-	
-	Com_Printf( " Context create for GL. \n");
+	if( ctx_gl ) {
+		Com_Printf( " Context Created for GL. \n");
+	}
 }
 
+void XSys_SetCurrentContextForGL(void)
+{
+	qglXMakeCurrent( glw_state.pDisplay, glw_state.hWnd, ctx_gl );
+}
+
+void XSys_ClearCurrentContextForGL(void)
+{
+	if( ctx_gl != NULL )
+	{
+		qglXDestroyContext( glw_state.pDisplay, ctx_gl );
+		ctx_gl = 0;
+	}
+}
 
 ///////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -271,15 +301,4 @@ void WinSys_EndFrame( void )
 
 }
 
-
-void XSys_SetCurrentContextForGL(void)
-{
-	qglXMakeCurrent( glw_state.pDisplay, glw_state.hWnd, ctx_gl );
-}
-
-void XSys_ClearCurrentContextForGL(void)
-{
-	qglXDestroyContext( glw_state.pDisplay, ctx_gl );
-	ctx_gl = 0;
-}
 //////////////////////////////////////////////////////////////////////////////////////////////////

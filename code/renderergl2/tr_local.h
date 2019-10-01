@@ -30,7 +30,7 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #include "../renderercommon/tr_public.h"
 #include "tr_common.h"
 #include "../renderercommon/iqm.h"
-#include "../renderercommon/qgl.h"
+#include "qgl.h"
 #include "tr_extratypes.h"
 #include "tr_fbo.h"
 #include "tr_postprocess.h"
