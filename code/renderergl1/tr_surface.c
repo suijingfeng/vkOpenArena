@@ -37,7 +37,6 @@ if you don't want to use the shader system.
 
 
 
-
 void RB_CheckOverflow( int verts, int indexes )
 {
 	if ( (tess.numVertexes + verts < SHADER_MAX_VERTEXES) &&

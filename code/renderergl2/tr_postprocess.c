@@ -268,31 +268,7 @@ static void RB_RadialBlur(FBO_t *srcFbo, FBO_t *dstFbo, int passes, float stretc
 
 static qboolean RB_UpdateSunFlareVis(void)
 {
-	GLuint sampleCount = 0;
-	if (!glRefConfig.occlusionQuery)
-		return qtrue;
-
-	tr.sunFlareQueryIndex ^= 1;
-	if (!tr.sunFlareQueryActive[tr.sunFlareQueryIndex])
-		return qtrue;
-
-	/* debug code */
-	if (0)
-	{
-		int iter;
-		for (iter=0 ; ; ++iter)
-		{
-			GLint available = 0;
-			qglGetQueryObjectiv(tr.sunFlareQuery[tr.sunFlareQueryIndex], GL_QUERY_RESULT_AVAILABLE, &available);
-			if (available)
-				break;
-		}
-
-		ri.Printf(PRINT_DEVELOPER, "Waited %d iterations\n", iter);
-	}
-	
-	qglGetQueryObjectuiv(tr.sunFlareQuery[tr.sunFlareQueryIndex], GL_QUERY_RESULT, &sampleCount);
-	return sampleCount > 0;
+	return qtrue;
 }
 
 void RB_SunRays(FBO_t *srcFbo, int srcBox[4], FBO_t *dstFbo, int dstBox[4])

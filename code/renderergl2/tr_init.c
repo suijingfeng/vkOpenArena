@@ -377,7 +377,7 @@ static qboolean GLimp_HaveExtension(const char *ext)
 
 static void GLimp_InitExtensions(void)
 {
-    r_ext_texture_filter_anisotropic = ri.Cvar_Get( "r_ext_texture_filter_anisotropic", "0", CVAR_ARCHIVE | CVAR_LATCH );
+	r_ext_texture_filter_anisotropic = ri.Cvar_Get( "r_ext_texture_filter_anisotropic", "0", CVAR_ARCHIVE | CVAR_LATCH );
 	r_ext_max_anisotropy = ri.Cvar_Get( "r_ext_max_anisotropy", "2", CVAR_ARCHIVE | CVAR_LATCH );
 	ri.Printf( PRINT_ALL,  "\n...Initializing OpenGL extensions\n" );
 
@@ -503,12 +503,9 @@ static void GLimp_InitExtensions(void)
 
 	// OpenGL 1.5, was GL_ARB_vertex_buffer_object and GL_ARB_occlusion_query
 	QGL_1_5_PROCS;
-	glRefConfig.occlusionQuery = qtrue;
 
 	// OpenGL 2.0, was GL_ARB_shading_language_100, GL_ARB_vertex_program, GL_ARB_shader_objects, and GL_ARB_vertex_shader
 	QGL_2_0_PROCS;
-
-
 
 ///////
 
@@ -517,7 +514,7 @@ static void GLimp_InitExtensions(void)
 	glConfig.textureCompression = TC_NONE;
 
 	// GL_EXT_texture_compression_s3tc
-    if( GLimp_HaveExtension( "GL_ARB_texture_compression" ) && GLimp_HaveExtension( "GL_EXT_texture_compression_s3tc" ) )
+	if( GLimp_HaveExtension( "GL_ARB_texture_compression" ) && GLimp_HaveExtension( "GL_EXT_texture_compression_s3tc" ) )
 	{
 		if ( r_ext_compressed_textures->value )
 		{
@@ -1858,20 +1855,12 @@ void R_Register( void )
 
 void R_InitQueries(void)
 {
-	if (!glRefConfig.occlusionQuery)
-		return;
-
-	if (r_drawSunRays->integer)
-		qglGenQueries(ARRAY_LEN(tr.sunFlareQuery), tr.sunFlareQuery);
+	return;
 }
 
 void R_ShutDownQueries(void)
 {
-	if (!glRefConfig.occlusionQuery)
-		return;
-
-	if (r_drawSunRays->integer)
-		qglDeleteQueries(ARRAY_LEN(tr.sunFlareQuery), tr.sunFlareQuery);
+	return;
 }
 
 

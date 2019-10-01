@@ -1351,8 +1351,6 @@ typedef enum {
 typedef struct {
 	qboolean    intelGraphics;
 
-	qboolean	occlusionQuery;
-
 	int glslMajorVersion;
 	int glslMinorVersion;
 

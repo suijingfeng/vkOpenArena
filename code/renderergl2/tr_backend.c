@@ -1181,18 +1181,7 @@ const void* RB_DrawSurfs( const void *data )
 			qglClearColor( 0.0f, 0.0f, 0.0f, 1.0f );
 			qglClear( GL_COLOR_BUFFER_BIT );
 
-			if (glRefConfig.occlusionQuery)
-			{
-				tr.sunFlareQueryActive[tr.sunFlareQueryIndex] = qtrue;
-				qglBeginQuery(GL_SAMPLES_PASSED, tr.sunFlareQuery[tr.sunFlareQueryIndex]);
-			}
-
 			RB_DrawSun(0.3, tr.sunFlareShader);
-
-			if (glRefConfig.occlusionQuery)
-			{
-				qglEndQuery(GL_SAMPLES_PASSED);
-			}
 
 			FBO_Bind(oldFbo);
 		}

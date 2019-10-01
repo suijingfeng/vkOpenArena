@@ -124,11 +124,11 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 	GLE(void, Frustumf, GLfloat left, GLfloat right, GLfloat bottom, GLfloat top, GLfloat near_val, GLfloat far_val) \
 	GLE(void, Orthof, GLfloat left, GLfloat right, GLfloat bottom, GLfloat top, GLfloat near_val, GLfloat far_val) \
 
+
 // OpenGL 1.3, was GL_ARB_texture_compression
 #define QGL_1_3_PROCS \
-	GLE(void, ActiveTexture, GLenum texture) \
-	GLE(void, CompressedTexImage2D, GLenum target, GLint level, GLenum internalformat, GLsizei width, GLsizei height, GLint border, GLsizei imageSize, const void *data) \
-	GLE(void, CompressedTexSubImage2D, GLenum target, GLint level, GLint xoffset, GLint yoffset, GLsizei width, GLsizei height, GLenum format, GLsizei imageSize, const void *data) \
+	GLE(void, ActiveTexture, GLenum texture)
+
 
 // OpenGL 1.5, was GL_ARB_vertex_buffer_object and GL_ARB_occlusion_query
 #define QGL_1_5_PROCS \

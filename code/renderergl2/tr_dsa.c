@@ -120,20 +120,6 @@ GLvoid APIENTRY GLDSA_CopyTextureSubImage2DEXT(GLuint texture, GLenum target, GL
 	qglCopyTexSubImage2D(target, level, xoffset, yoffset, x, y, width, height);
 }
 
-GLvoid APIENTRY  GLDSA_CompressedTextureImage2DEXT(GLuint texture, GLenum target, GLint level, GLenum internalformat,
-	GLsizei width, GLsizei height, GLint border, GLsizei imageSize, const GLvoid *data)
-{
-	GL_BindMultiTexture(glDsaState.texunit, target, texture);
-	qglCompressedTexImage2D(target, level, internalformat, width, height, border, imageSize, data);
-}
-
-GLvoid APIENTRY GLDSA_CompressedTextureSubImage2DEXT(GLuint texture, GLenum target, GLint level,
-	GLint xoffset, GLint yoffset, GLsizei width, GLsizei height, GLenum format,
-	GLsizei imageSize, const GLvoid *data)
-{
-	GL_BindMultiTexture(glDsaState.texunit, target, texture);
-	qglCompressedTexSubImage2D(target, level, xoffset, yoffset, width, height, format, imageSize, data);
-}
 
 GLvoid APIENTRY GLDSA_GenerateTextureMipmapEXT(GLuint texture, GLenum target)
 {
