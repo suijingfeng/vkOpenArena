@@ -52,10 +52,9 @@ void* VK_GetInstanceProcAddrImpl(void)
 	{
 		ri.Error(ERR_FATAL, " Load libvulkan.so.1 failed. \n");
 	}
-    else
-    {
+	else {
 	    ri.Printf(PRINT_ALL, " libvulkan.so.1 loaded. \n");
-    }
+	}
 
 	ri.Printf(PRINT_ALL, " Get instance proc address. \n");
 
@@ -90,6 +89,8 @@ void VK_CleanInstanceProcAddrImpl(void)
 
 // The window size may become (0, 0) on this platform (e.g. when the window is
 // minimized), and so a swapchain cannot be created until the size changes.
+//
+//  we only create the surface once a time, so get the function pointer in place
 void VK_CreateSurfaceImpl(VkInstance hInstance, void * pCtx, VkSurfaceKHR* const pSurface)
 {
 	WinVars_t * pWinCtx = (WinVars_t*)pCtx;
@@ -107,19 +108,33 @@ void VK_CreateSurfaceImpl(VkInstance hInstance, void * pCtx, VkSurfaceKHR* const
 	desc.sType = VK_STRUCTURE_TYPE_WIN32_SURFACE_CREATE_INFO_KHR;
 	desc.pNext = NULL;
 	desc.flags = 0;
-    // hinstance and hwnd are the Win32 HINSTANCE and HWND for the window
-    // to associate the surface with.
+	
+	// hinstance and hwnd are the Win32 HINSTANCE and HWND for the window
+	// to associate the surface with.
 
 	// This function returns a module handle for the specified module 
 	// if the file is mapped into the address space of the calling process.
-    //
 	desc.hinstance = pWinCtx->hInstance;
 	desc.hwnd = pWinCtx->hWnd;
 	VK_CHECK( qvkCreateWin32SurfaceKHR(hInstance, &desc, NULL, pSurface) );
 
 #elif defined(__unix__) || defined(__linux) || defined(__linux__)
 
-  #if defined(USING_XCB)
+  #if defined(VK_USE_PLATFORM_WAYLAND_KHR)
+
+	PFN_vkCreateWaylandSurfaceKHR qvkCreateWaylandSurfaceKHR = (PFN_vkCreateWaylandSurfaceKHR)
+		qvkGetInstanceProcAddr(hInstance, "vkCreateWaylandSurfaceKHR");
+
+	VkWaylandSurfaceCreateInfoKHR createInfo;
+	createInfo.sType = VK_STRUCTURE_TYPE_WAYLAND_SURFACE_CREATE_INFO_KHR;
+	createInfo.pNext = NULL;
+	createInfo.flags = 0;
+	createInfo.display = pWinCtx->pDisplay;
+	createInfo.surface = pWinCtx->hWnd;
+
+	VK_CHECK( qvkCreateWaylandSurfaceKHR(hInstance, &createInfo, NULL, pSurface) );
+
+  #elif defined(VK_USE_PLATFORM_XCB_KHR)
   
 	PFN_vkCreateXcbSurfaceKHR qvkCreateXcbSurfaceKHR = (PFN_vkCreateXcbSurfaceKHR)
 		qvkGetInstanceProcAddr(hInstance, "vkCreateXcbSurfaceKHR");
@@ -137,11 +152,11 @@ void VK_CreateSurfaceImpl(VkInstance hInstance, void * pCtx, VkSurfaceKHR* const
 	createInfo.connection = pWinCtx->connection;
 	createInfo.window = pWinCtx->hWnd;
 	
-    VK_CHECK( qvkCreateXcbSurfaceKHR(hInstance, &createInfo, NULL, pSurface) );
+	VK_CHECK( qvkCreateXcbSurfaceKHR(hInstance, &createInfo, NULL, pSurface) );
     
-    ri.Printf(PRINT_ALL, " CreateXcbSurface done. \n");
+	ri.Printf(PRINT_ALL, " CreateXcbSurface done. \n");
 
-  #elif defined(USING_XLIB)
+  #elif defined(VK_USE_PLATFORM_XLIB_KHR)
 
     PFN_vkCreateXlibSurfaceKHR qvkCreateXlibSurfaceKHR = (PFN_vkCreateXlibSurfaceKHR)
         qvkGetInstanceProcAddr(hInstance, "vkCreateXlibSurfaceKHR");

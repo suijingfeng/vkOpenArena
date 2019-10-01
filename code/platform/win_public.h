@@ -43,6 +43,13 @@ typedef struct WinData_s {
 	HWND		hWnd; // main window
 	HINSTANCE	hInstance;
 	OSVERSIONINFO	osversion;
+#elif defined(USDING_WAYLAND)
+	
+	struct wl_display * pDisplay;
+	struct wl_surface * hWnd;
+    
+	struct wl_registry *registry;
+	struct wl_compositor *compositor;
 
 #elif defined(USING_XCB)
 	xcb_connection_t *connection;
