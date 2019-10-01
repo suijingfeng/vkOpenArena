@@ -49,14 +49,19 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #include "WinSys_Common.h"
 
 
-
-
 /////////////////////////////
+extern void XSys_LoadOpenGL(void);
+extern void XSys_UnloadOpenGL(void);
+extern XVisualInfo * GetXVisualPtrWrapper(void);
+extern void XSys_CreateContextForGL(XVisualInfo * pVisinfo);
+extern void XSys_SetCurrentContextForGL(void);
+extern void XSys_ClearCurrentContextForGL(void);
+
+///////////////////////////
+
 
 static cvar_t* r_mode;
 static cvar_t* r_fullscreen;
-
-cvar_t* r_swapInterval;
 static cvar_t* r_allowResize; // make window resizable
 
 cvar_t * r_stencilbits;
@@ -67,14 +72,7 @@ cvar_t * vid_xpos;
 cvar_t * vid_ypos;
 
 
-extern void XSys_LoadOpenGL(void);
-extern void XSys_UnloadOpenGL(void);
-extern XVisualInfo * GetXVisualPtrWrapper(void);
-extern void XSys_CreateContextForGL(XVisualInfo * pVisinfo);
-extern void XSys_SetCurrentContextForGL(void);
-extern void XSys_ClearCurrentContextForGL(void);
 
-///////////////////////////
 WinVars_t glw_state;
 
 
@@ -465,19 +463,10 @@ void WinSys_Init(void ** pCfg, int type)
 	r_stencilbits = Cvar_Get( "r_stencilbits", "8", CVAR_ARCHIVE | CVAR_LATCH );
 	r_depthbits = Cvar_Get( "r_depthbits", "24", CVAR_ARCHIVE | CVAR_LATCH );
 
-   	r_swapInterval = Cvar_Get( "r_swapInterval", "0", CVAR_ARCHIVE );
-
-	// r_glDriver = Cvar_Get( "r_glDriver", "libGL.so.1", CVAR_ARCHIVE | CVAR_LATCH );
-
 	r_allowResize = Cvar_Get( "r_allowResize", "0", CVAR_ARCHIVE | CVAR_LATCH );
 	
 	vid_xpos = Cvar_Get( "vid_xpos", "3", CVAR_ARCHIVE );
 	vid_ypos = Cvar_Get( "vid_ypos", "22", CVAR_ARCHIVE );
-
-	if ( r_swapInterval->integer )
-		setenv( "vblank_mode", "2", 1 );
-	else
-		setenv( "vblank_mode", "1", 1 );
 
 	WinSys_ConstructDislayModes();
 	
