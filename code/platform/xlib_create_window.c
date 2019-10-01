@@ -27,13 +27,10 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 */
 
 #include <termios.h>
-#include <sys/ioctl.h>
 
 #include <stdarg.h>
 #include <stdio.h>
 #include <signal.h>
-#include <pthread.h>
-#include <semaphore.h>
 
 #include <sys/time.h>
 #include <sys/types.h>
@@ -43,15 +40,6 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #include <X11/cursorfont.h>
 #include <X11/Xatom.h>
 #include <X11/XKBlib.h>
-
-
-#include <GL/gl.h>
-#include <GL/glext.h>
-
-#include <GL/glx.h>
-#include <GL/glxext.h>
-
-#include <dlfcn.h>
 
 #include "../client/client.h"
 #include "sys_public.h"
@@ -367,9 +355,6 @@ static int CreateWindowForRenderer(int mode, qboolean fullscreen, int type )
 
 
 
-
-
-
 /*
 ** XErrorHandler
 **   the default X error handler exits the application
@@ -387,8 +372,6 @@ static int qXErrorHandler( Display *dpy, XErrorEvent *ev )
 	Com_Printf( "  Serial number of failed request: %d\n", (int)ev->serial );
 	return 0;
 }
-
-
 
 
 /*
@@ -428,7 +411,6 @@ char *Sys_GetClipboardData( void )
 	}
 	return NULL;
 }
-
 
 
 
@@ -566,7 +548,6 @@ void WinSys_Init(void ** pCfg, int type)
 
 	XSetInputFocus( glw_state.pDisplay, glw_state.hWnd, RevertToParent, CurrentTime );
 
-
 	IN_Init();   // rcg08312005 moved into glimp.
 }
 
@@ -623,5 +604,4 @@ void WinSys_Shutdown(void)
 	}
 
 	XSys_UnloadOpenGL();
-
 }
