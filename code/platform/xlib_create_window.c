@@ -60,27 +60,7 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
 #include "WinSys_Common.h"
 
-#define OPENGL_DRIVER_NAME	"libGL.so.1"
 
-#define QGL_LinX11_PROCS \
-	GLE( XVisualInfo*, glXChooseVisual, Display *dpy, int screen, int *attribList ) \
-	GLE( GLXContext, glXCreateContext, Display *dpy, XVisualInfo *vis, GLXContext shareList, Bool direct ) \
-	GLE( void, glXDestroyContext, Display *dpy, GLXContext ctx ) \
-	GLE( Bool, glXMakeCurrent, Display *dpy, GLXDrawable drawable, GLXContext ctx) \
-	GLE( void, glXCopyContext, Display *dpy, GLXContext src, GLXContext dst, GLuint mask ) \
-	GLE( void, glXSwapBuffers, Display *dpy, GLXDrawable drawable )
-
-
-#define QGL_Swp_PROCS \
-	GLE( void,	glXSwapIntervalEXT, Display *dpy, GLXDrawable drawable, int interval ) \
-	GLE( int,	glXSwapIntervalMESA, unsigned interval ) \
-	GLE( int,	glXSwapIntervalSGI, int interval )
-
-
-#define GLE( ret, name, ... ) ret ( APIENTRY * q##name )( __VA_ARGS__ );
-    QGL_LinX11_PROCS;
-    QGL_Swp_PROCS;
-#undef GLE
 
 
 /////////////////////////////
@@ -88,18 +68,26 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 static cvar_t* r_mode;
 static cvar_t* r_fullscreen;
 
-static cvar_t* r_swapInterval;
+cvar_t* r_swapInterval;
+static cvar_t* r_allowResize; // make window resizable
+
+cvar_t * r_stencilbits;
+cvar_t * r_depthbits;
+cvar_t * r_colorbits;
+
+cvar_t * vid_xpos;
+cvar_t * vid_ypos;
 
 
-cvar_t	*r_stencilbits;
-cvar_t	*r_depthbits;
-cvar_t	*r_colorbits;
 
-cvar_t   *vid_xpos;
-cvar_t   *vid_ypos;
 
-static cvar_t* r_glDriver;
-cvar_t* r_drawBuffer;
+extern void XSys_LoadOpenGL(void);
+extern void XSys_UnloadOpenGL(void);
+extern XVisualInfo * GetXVisualPtrWrapper(void);
+extern void XSys_CreateContextForGL(XVisualInfo * pVisinfo);
+extern void XSys_SetCurrentContextForGL(void);
+extern void XSys_ClearCurrentContextForGL(void);
+
 ///////////////////////////
 WinVars_t glw_state;
 
@@ -122,7 +110,6 @@ int WinSys_IsWinFullscreen(void)
 
 // extern cvar_t *in_dgamouse; // user pref for dga mouse
 
-static GLXContext ctx = NULL;
 
 // 
 //   Properties and Atoms
@@ -157,9 +144,9 @@ Atom wmDeleteEvent = None;
 
 ////////////////////////////////////////////////////////////////////////////////
 //about glw
-static int GLW_SetMode(int mode, qboolean fullscreen, int type )
+static int CreateWindowForRenderer(int mode, qboolean fullscreen, int type )
 {
-	XSizeHints sizehints;
+
 	int actualWidth, actualHeight, actualRate;
 
 
@@ -170,7 +157,7 @@ static int GLW_SetMode(int mode, qboolean fullscreen, int type )
 	RandR_Init( vid_xpos->integer, vid_ypos->integer, 640, 480 );
 
 
-	Com_Printf( "...setting mode %d:", mode );
+	Com_Printf( " Setting display mode %d:", mode );
 
 	if ( !CL_GetModeInfo( &actualWidth, &actualHeight, mode, glw_state.desktopWidth, glw_state.desktopHeight, fullscreen ) )
 	{
@@ -191,53 +178,35 @@ static int GLW_SetMode(int mode, qboolean fullscreen, int type )
 	XVisualInfo * visinfo = NULL;
 	if(type == 0)
 	{
-		// these match in the array
-#define ATTR_RED_IDX 2
-#define ATTR_GREEN_IDX 4
-#define ATTR_BLUE_IDX 6
-#define ATTR_DEPTH_IDX 9
-#define ATTR_STENCIL_IDX 11
-
-		int attrib[] =
-		{
-			GLX_RGBA,         // 0
-			GLX_RED_SIZE, 4,      // 1, 2
-			GLX_GREEN_SIZE, 4,      // 3, 4
-			GLX_BLUE_SIZE, 4,     // 5, 6
-			GLX_DOUBLEBUFFER,     // 7
-			GLX_DEPTH_SIZE, 1,      // 8, 9
-			GLX_STENCIL_SIZE, 1,    // 10, 11
-			None
-		};
-
-
-		attrib[ATTR_DEPTH_IDX] = 24; // default to 24 depth
-		attrib[ATTR_STENCIL_IDX] = 8;
-		attrib[ATTR_RED_IDX] = 8;
-		attrib[ATTR_GREEN_IDX] = 8;
-		attrib[ATTR_BLUE_IDX] = 8;
-
-
-
-		// OpenGL case
-		visinfo = qglXChooseVisual( glw_state.pDisplay, glw_state.screenIdx, attrib );
-
-		if ( !visinfo )
-		{
-			Com_Printf( "Couldn't get a visual\n" );
-		}
-
-		Com_Printf( "Using %d/%d/%d Color bits, %d depth, %d stencil display.\n", 
-				attrib[ATTR_RED_IDX], attrib[ATTR_GREEN_IDX], attrib[ATTR_BLUE_IDX],
-				attrib[ATTR_DEPTH_IDX], attrib[ATTR_STENCIL_IDX]);
+		visinfo = GetXVisualPtrWrapper();
 	}
 	else if(type == 1)
 	{
 		int numberOfVisuals;
 		XVisualInfo vInfoTemplate = {};
-		vInfoTemplate.screen = DefaultScreen(glw_state.pDisplay);
+		vInfoTemplate.screen = glw_state.screenIdx;
+		vInfoTemplate.class = TrueColor;
+		vInfoTemplate.red_mask = 8;
+		vInfoTemplate.green_mask = 8;
+		vInfoTemplate.blue_mask = 8;
+		vInfoTemplate.depth = 24; 
 		// vulkan case
-		visinfo = XGetVisualInfo(glw_state.pDisplay, VisualScreenMask, &vInfoTemplate, &numberOfVisuals);
+		//
+		// XVisualInfo * XGetVisualInfo(Display * display, long vinfo_mask, XVisualInfo * vinfo_template, int * nitems_return)
+		//  display: Specifies the connection to the X server;
+		//  vinfo_mask: Specifies the visual mask value;
+		//  vinfo_template: Specifies the visual attributes that are to be used in matching the visual structures. 
+		//  nitems_return: returns the number of matching visual structures
+		//
+		// The XGetVisualInfo() function returns a list of visual structures that have attributes equal to the attributes
+		//  specified by vinfo_template. 
+		visinfo = XGetVisualInfo(glw_state.pDisplay, VisualScreenMask | VisualClassMask, 
+				&vInfoTemplate, &numberOfVisuals);
+
+		if(visinfo == NULL)
+		{
+			Com_Printf( "XGetVisualInfo() says no visuals available!\n" );
+		}
 
 		Com_Printf( "... numberOfVisuals: %d \n", numberOfVisuals);
 	}
@@ -249,51 +218,117 @@ static int GLW_SetMode(int mode, qboolean fullscreen, int type )
     
 
 	/* window attributes */
-	XSetWindowAttributes attr;
+	unsigned long win_mask = fullscreen ? 
+		( CWBackPixel | CWColormap | CWEventMask | CWSaveUnder | CWBackingStore | CWOverrideRedirect ) : 
+		( CWBackPixel | CWColormap | CWEventMask | CWBorderPixel );
 
-	attr.background_pixel = BlackPixel( glw_state.pDisplay, glw_state.screenIdx );
-	attr.border_pixel = 0;
+	// Window attribute value mask bits 
+
+
+	XSetWindowAttributes win_attr;
+
+	win_attr.background_pixel = BlackPixel( glw_state.pDisplay, glw_state.screenIdx );
+	win_attr.border_pixel = 10;
 
     // The XCreateColormap() function creates a colormap of the specified visual type for the screen
     // on which the specified window resides and returns the colormap ID associated with it. Note that
     // the specified window is only used to determine the screen. 
-	attr.colormap = XCreateColormap( glw_state.pDisplay, glw_state.root, visinfo->visual, AllocNone );
+	win_attr.colormap = XCreateColormap( glw_state.pDisplay, glw_state.root, visinfo->visual, AllocNone );
 	
-	attr.event_mask = ( 
+	win_attr.event_mask = ( 
             KeyPressMask | KeyReleaseMask | 
             ButtonPressMask | ButtonReleaseMask | PointerMotionMask | ButtonMotionMask |
             VisibilityChangeMask | StructureNotifyMask | FocusChangeMask );
 
-	unsigned long mask = fullscreen ? 
-			( CWBackPixel | CWColormap | CWEventMask | CWSaveUnder | CWBackingStore | CWOverrideRedirect ) : 
-			( CWBackPixel | CWColormap | CWEventMask | CWBorderPixel );
-
 
 	if ( fullscreen )
 	{
-		attr.override_redirect = True;
-		attr.backing_store = NotUseful;
-		attr.save_under = False;
+		win_attr.override_redirect = True;
+		win_attr.backing_store = NotUseful;
+		win_attr.save_under = False;
+		win_attr.border_pixel = 0;
 	}
 
+
+	// The XCreateWindow function creates an unmapped subwindow for a specified parent window, 
+	// returns the window ID of the created window, and causes the X server to generate a CreateNotify event. 
+	// The created window is placed on top in the stacking order with respect to siblings. 
+	//
+	// The coordinate system has the X axis horizontal and the Y axis vertical with the origin [0, 0] at the upper-left corner. 
+	// Coordinates are integral, in terms of pixels, and coincide with pixel centers. 
+	// Each window and pixmap has its own coordinate system. 
+	// For a window, the origin is inside the border at the inside, upper-left corner. 
+	//
+	// The border_width for an InputOnly window must be zero, or a BadMatch error results. 
+	// For class InputOutput, the visual type and depth must be a combination supported for the screen, 
+	// or a BadMatch error results. The depth need not be the same as the parent, 
+	// but the parent must not be a window of class InputOnly, or a BadMatch error results. 
+	// For an InputOnly window, the depth must be zero, and the visual must be one supported by the screen. 
+	// If either condition is not met, a BadMatch error results. 
+	// The parent window, however, may have any depth and class. 
+	// If you specify any invalid window attribute for a window, a BadMatch error results. 
+	//
+	//
+	// Window XCreateWindow ( Display *display, Window parent, 
+	// 	int x, int y, unsigned int width, unsigned int height, 
+	// 	unsigned int border_width, int depth, unsigned int class, 
+	// 	Visual *visual, unsigned long valuemask, XSetWindowAttributes *attributes); 
+	//
+	// attributes:  Specifies the structure from which the values (as specified by the value mask) are to be taken. 
+	// The value mask should have the appropriate bits set to indicate which attributes have been set in the structure.
+	//
+	// class:  Specifies the created window's class. You can pass InputOutput, InputOnly, or CopyFromParent.
+	// A class of CopyFromParent means the class is taken from the parent.  
+	//
+	// depth:  Specifies the window's depth. A depth of CopyFromParent means the depth is taken from the parent. 
+	//
+	// valuemask:  Specifies which window attributes are defined in the attributes argument. 
+	// This mask is the bitwise inclusive OR of the valid attribute mask bits. 
+	// If valuemask is zero, the attributes are ignored and are not referenced.
+	//
+	// visual:  Specifies the visual type. A visual of CopyFromParent means the visual type is taken from the parent.
+	//
+	// width, height: Specify the width and height, which are the created window's inside dimensions and
+	//  do not include the created window's borders. 
 	glw_state.hWnd = XCreateWindow( glw_state.pDisplay, glw_state.root, 
 		0, 0, actualWidth, actualHeight,
 		0, visinfo->depth, InputOutput,
-		visinfo->visual, mask, &attr );
+		visinfo->visual, win_mask, &win_attr );
 
+	// All InputOutput windows have a border width of zero or more pixels, an optional background, 
+	// an event suppression mask (which suppresses propagation of events from children), and a property list (see "Properties and Atoms"). 
+	// The window border and background can be a solid color or a pattern, called a tile. 
+	// All windows except the root have a parent and are clipped by their parent. 
+	// If a window is stacked on top of another window, it obscures that other window for the purpose of input. 
+	// If a window has a background (almost all do), it obscures the other window for purposes of output. 
+	// Attempts to output to the obscured area do nothing, 
+	// and no input events (for example, pointer motion) are generated for the obscured area. 
+
+
+	Com_Printf( " X Window created. \n");
 
 	XStoreName( glw_state.pDisplay, glw_state.hWnd, CLIENT_WINDOW_TITLE );
 	
-	Com_Printf( "... XCreateWindow created. \n");
+	// Don't let the window be resized.
 
+	if( r_allowResize->integer == 0 )
+	{
+		XSizeHints sizehints;
+		sizehints.flags = PMinSize | PMaxSize;
+		sizehints.min_width = sizehints.max_width = actualWidth;
+		sizehints.min_height = sizehints.max_height = actualHeight;
 
-	/* GH: Don't let the window be resized */
-	sizehints.flags = PMinSize | PMaxSize;
-	sizehints.min_width = sizehints.max_width = actualWidth;
-	sizehints.min_height = sizehints.max_height = actualHeight;
+		XSetWMNormalHints( glw_state.pDisplay, glw_state.hWnd, &sizehints );
+	}
 
-	XSetWMNormalHints( glw_state.pDisplay, glw_state.hWnd, &sizehints );
-
+	// The created window is not yet displayed (mapped) on the user's display.
+	// To display the window, call XMapWindow. 
+	// The new window initially uses the same cursor as its parent. 
+	// A new cursor can be defined for the new window by calling XDefineCursor.
+	// The window will not be visible on the screen unless it and all of 
+	// its ancestors are mapped and it is not obscured by any of its ancestors.
+	
+	
 	XMapWindow( glw_state.pDisplay, glw_state.hWnd );
 
 	wmDeleteEvent = XInternAtom( glw_state.pDisplay, "WM_DELETE_WINDOW", True );
@@ -318,8 +353,7 @@ static int GLW_SetMode(int mode, qboolean fullscreen, int type )
 	
 	if(type == 0)
 	{
-        	ctx = qglXCreateContext( glw_state.pDisplay, visinfo, NULL, True );
-		Com_Printf( "... glX Create context . \n");
+		XSys_CreateContextForGL( visinfo );
     	}
 	
 
@@ -333,104 +367,7 @@ static int GLW_SetMode(int mode, qboolean fullscreen, int type )
 
 
 
-/*
-** GLimp_win.c internal function that that attempts to load and use a specific OpenGL DLL.
-**
-**                 https://www.khronos.org/registry/OpenGL/ABI/
-**
-** This is responsible for binding our qgl function pointers to the appropriate GL stuff.
-** In Windows this means doing a LoadLibrary and a bunch of calls to GetProcAddress.
-** On other operating systems we need to do the right thing, whatever that might be.
-** 
-** There are two link-level libraries. libGL includes the OpenGL and GLX entry points 
-** and in general depends on underlying hardware and/or X server dependent code that 
-** may or may not be incorporated into this library. 
-** The libraries must export all OpenGL 1.2, GLU 1.3, GLX 1.3, and ARB_multitexture 
-** entry points statically. It's possible (but unlikely) that additional ARB or vendor
-** extensions will be mandated before the ABI is finalized. Applications should not 
-** expect to link statically against any entry points not specified here. Because 
-** non-ARB extensions vary so widely and are constantly increasing in number, 
-** it's infeasible to require that they all be supported, and extensions can always 
-** be added to hardware drivers after the base link libraries are released. These 
-** drivers are dynamically loaded by libGL, so extensions not in the base library
-** must also be obtained dynamically. 
-** 
-** To perform the dynamic query, libGL also must export an entry point called 
-    void (*glXGetProcAddressARB(const GLubyte *))();
-** It takes the string name of a GL or GLX entry point and returns a pointer to
-** a function implementing that entry point. It is functionally identical to the 
-** wglGetProcAddress query defined by the Windows OpenGL library, except that the 
-** function pointers returned are context independent, unlike the WGL query. 
-** All OpenGL and GLX entry points may be queried with this extension; 
 
-** Thread safety (the ability to issue OpenGL calls to different graphics contexts
-** from different application threads) is required. Multithreaded applications must
-** use -lpthread. 
-** libGL must be transitively linked with any libraries they require in their own 
-** internal implementation, so that applications don't fail on some implementations
-** due to not pulling in libraries needed not by the app, but by the implementation. 
-** 
-** The following header files are required:
-
-    <GL/gl.h> --- OpenGL
-    <GL/glx.h> --- GLX
-    <GL/glext.h> --- OpenGL Extensions
-    <GL/glxext.h> --- GLX Extensions
-
-** All OpenGL 1.2 and ARB_multitexture, and GLX 1.3 entry points and enumerants
-** must be present in the corresponding header files gl.h, and glx.h, 
-** even if only OpenGL 1.1 is implemented at runtime by the associated runtime libraries. 
-** Non-ARB OpenGL extensions are defined in glext.h, and non-ARB GLX extensions in glxext.h.
-
-** gl.h must define the symbol GL_OGLBASE_VERSION. This symbol must be an integer
-** defining the version of the ABI supported by the headers. Its value is 
-** 1000 * major_version + minor_version where major_version and minor_version are
-** the major and minor revision numbers of this ABI standard. The primary purpose
-** of the symbol is to provide a compile-time test by which application code knows
-** whether the ABI guarantees are in force.
-*/
-
-
-static qboolean GLW_LoadOpenGL(const char* dllname)
-{
-	if ( glw_state.hGraphicLib == NULL )
-	{
-		glw_state.hGraphicLib = dlopen(dllname, RTLD_NOW);
-		Com_Printf( " load %s ...\n", dllname);
-
-		if ( glw_state.hGraphicLib == NULL )
-		{
-			Com_Error(ERR_FATAL, "GL_Init: failed to load %s from /etc/ld.so.conf: %s\n", dllname, dlerror());
-		}
-	}
-
-	// expand constants before stringifying them
-	// load the GLX funs
-#define GLE( ret, name, ... ) \
-	q##name = dlsym(glw_state.hGraphicLib, XSTRING( name )); \
-	if ( !q##name ) \
-		Com_Error(ERR_FATAL, "Error resolving glx core functions\n");
-	
-	QGL_LinX11_PROCS;
-#undef GLE
-
-
-#define GLE( ret, name, ... ) \
-	q##name = dlsym(glw_state.hGraphicLib, XSTRING( name ));
-	QGL_Swp_PROCS;
-#undef GLE
-
-	if( qglXSwapIntervalEXT )
-	{
-		Com_Printf( "...using GLX_EXT_swap_control\n" );
-	}
-	else
-	{
-		Com_Printf( "...GLX_EXT_swap_control not found\n" );
-	}
-
-	return qtrue;
-}
 
 
 /*
@@ -442,7 +379,7 @@ static qboolean GLW_LoadOpenGL(const char* dllname)
 */
 static int qXErrorHandler( Display *dpy, XErrorEvent *ev )
 {
-	static char buf[1024];
+	char buf[1024];
 	XGetErrorText( dpy, ev->error_code, buf, sizeof( buf ) );
 	Com_Printf( "X Error of failed request: %s\n", buf) ;
 	Com_Printf( "  Major opcode of failed request: %d\n", ev->request_code );
@@ -451,40 +388,7 @@ static int qXErrorHandler( Display *dpy, XErrorEvent *ev )
 	return 0;
 }
 
-///////////////////////////////////////////////////////////////////////////////////////////////
 
-/*
-** Responsible for doing a swapbuffers and possibly for other stuff
-** as yet to be determined.  Probably better not to make this a GLimp
-** function and instead do a call to GLimp_SwapBuffers.
-*/
-void WinSys_EndFrame( void )
-{
-	// don't flip if drawing to front buffer
-	if ( Q_stricmp( r_drawBuffer->string, "GL_FRONT" ) != 0 )
-	{
-		qglXSwapBuffers( glw_state.pDisplay, glw_state.hWnd );
-	}
-
-	//
-	// swapinterval stuff
-	//
-	if ( r_swapInterval->modified )
-	{
-		r_swapInterval->modified = qfalse;
-
-		if ( qglXSwapIntervalEXT ) {
-			qglXSwapIntervalEXT( glw_state.pDisplay, glw_state.hWnd, r_swapInterval->integer );
-		} else if ( qglXSwapIntervalMESA ) {
-			qglXSwapIntervalMESA( r_swapInterval->integer );
-		} else if ( qglXSwapIntervalSGI ) {
-			qglXSwapIntervalSGI( r_swapInterval->integer );
-		}
-	}
-}
-
-
-//////////////////////////////////////////////////////////////////////////////////////////////////
 
 
 /*
@@ -584,11 +488,12 @@ void WinSys_Init(void ** pCfg, int type)
 	r_stencilbits = Cvar_Get( "r_stencilbits", "8", CVAR_ARCHIVE | CVAR_LATCH );
 	r_depthbits = Cvar_Get( "r_depthbits", "24", CVAR_ARCHIVE | CVAR_LATCH );
 
-	r_drawBuffer = Cvar_Get( "r_drawBuffer", "GL_BACK", CVAR_CHEAT );
    	r_swapInterval = Cvar_Get( "r_swapInterval", "0", CVAR_ARCHIVE );
-	r_glDriver = Cvar_Get( "r_glDriver", OPENGL_DRIVER_NAME, CVAR_ARCHIVE | CVAR_LATCH );
 
+	// r_glDriver = Cvar_Get( "r_glDriver", "libGL.so.1", CVAR_ARCHIVE | CVAR_LATCH );
 
+	r_allowResize = Cvar_Get( "r_allowResize", "0", CVAR_ARCHIVE | CVAR_LATCH );
+	
 	vid_xpos = Cvar_Get( "vid_xpos", "3", CVAR_ARCHIVE );
 	vid_ypos = Cvar_Get( "vid_ypos", "22", CVAR_ARCHIVE );
 
@@ -607,32 +512,6 @@ void WinSys_Init(void ** pCfg, int type)
 
 	// set up our custom error handler for X failures
 	XSetErrorHandler( &qXErrorHandler );
-
-
-	if(type == 0)
-	{
-		// load and initialize the specific OpenGL driver
-		//
-		if ( !GLW_LoadOpenGL( r_glDriver->string ) )
-		{
-			if ( Q_stricmp( r_glDriver->string, OPENGL_DRIVER_NAME ) != 0 )
-			{
-				// try default driver
-				if ( GLW_LoadOpenGL( OPENGL_DRIVER_NAME ) )
-				{
-					Cvar_Set( "r_glDriver", OPENGL_DRIVER_NAME );
-					r_glDriver->modified = qfalse;
-					return;
-				}
-			}
-
-			Com_Error( ERR_FATAL, "GLW_StartOpenGL() - could not load OpenGL subsystem\n" );
-		}
-	}
-	else if(type == 1)
-	{
-		// vulkan part
-	}
 
 	// To open a connection to the X server that controls a display
 	// char *display_name: Specifies the hardware display name, 
@@ -661,18 +540,26 @@ void WinSys_Init(void ** pCfg, int type)
 		Com_Printf( " Couldn't open the X display. \n" );
 	}
 
-	
+	if(type == 0)
+	{
+		// load and initialize the specific OpenGL driver
+		XSys_LoadOpenGL( );
+	}
 	// create the window and set up the context
 
-	if( 0 != GLW_SetMode( r_mode->integer, (r_fullscreen->integer != 0), type ))
+	if( 0 != CreateWindowForRenderer( r_mode->integer, (r_fullscreen->integer != 0), type ))
 	{
 		Com_Error(ERR_FATAL, "Error setting given display modes\n" );
 	}
 
-
 	if(type == 0)
 	{
-		qglXMakeCurrent( glw_state.pDisplay, glw_state.hWnd, ctx );
+		// load and initialize the specific OpenGL driver
+		XSys_SetCurrentContextForGL();
+	}
+	else if(type == 1)
+	{
+		// vulkan part
 	}
 
 	Key_ClearStates();
@@ -708,10 +595,9 @@ void WinSys_Shutdown(void)
 
 		RandR_RestoreMode();
 
-		if ( ctx ) {
-			qglXDestroyContext( glw_state.pDisplay, ctx );
-			ctx = NULL;
-		}
+
+		
+		XSys_ClearCurrentContextForGL();
 
 		if ( glw_state.hWnd )
 		{
@@ -736,31 +622,6 @@ void WinSys_Shutdown(void)
 		glw_state.isFullScreen = qfalse;
 	}
 
+	XSys_UnloadOpenGL();
 
-	if ( glw_state.hGraphicLib )
-	{
-		Com_Printf( "...unloading OpenGL DLL\n" );
-		// 25/09/05 Tim Angus <tim@ngus.net>
-		// Certain combinations of hardware and software, specifically
-		// Linux/SMP/Nvidia/agpgart (OK, OK. MY combination of hardware and
-		// software), seem to cause a catastrophic (hard reboot required) crash
-		// when libGL is dynamically unloaded. I'm unsure of the precise cause,
-		// suffice to say I don't see anything in the Q3 code that could cause it.
-		// I suspect it's an Nvidia driver bug, but without the source or means to
-		// debug I obviously can't prove (or disprove) this. Interestingly (though
-		// perhaps not suprisingly), Enemy Territory and Doom 3 both exhibit the
-		// same problem.
-		//
-		// After many, many reboots and prodding here and there, it seems that a
-		// placing a short delay before libGL is unloaded works around the problem.
-		// This delay is changable via the r_GLlibCoolDownMsec cvar (nice name
-		// huh?), and it defaults to 0. For me, 500 seems to work.
-		//if( r_GLlibCoolDownMsec->integer )
-		//	usleep( r_GLlibCoolDownMsec->integer * 1000 );
-		usleep( 250 * 1000 );
-
-		dlclose( glw_state.hGraphicLib );
-
-		glw_state.hGraphicLib = NULL;
-	}
 }

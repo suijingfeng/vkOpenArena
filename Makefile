@@ -2046,6 +2046,7 @@ else
   Q3OBJ += \
     $(B)/client/xlib_input.o \
     $(B)/client/xlib_create_window.o \
+    $(B)/client/xlib_glx.o \
     $(B)/client/x11_randr.o 
   else
   Q3OBJ += \

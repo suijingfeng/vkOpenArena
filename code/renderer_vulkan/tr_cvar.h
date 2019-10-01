@@ -34,7 +34,7 @@ extern cvar_t	*r_showcluster;
 
 
 extern cvar_t	*r_gamma;
-extern cvar_t	*r_allowResize;			// make window resizable
+
 extern cvar_t	*r_displayRefresh;		// refresh rate
 extern cvar_t   *r_gpuIndex;            // Your GPU card number
 

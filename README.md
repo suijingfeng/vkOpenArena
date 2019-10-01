@@ -496,6 +496,13 @@ libx11, opengl1: 3398 frames 7.2 seconds 474.3 fps 1.0/2.1/6.0/0.7 ms
 even if the framerate is high, but if i can not progroamming the event process module correctly,
 or dont have a network, the feeling of play this game is like eating shit! 
 
+### Testing on fedora 30, AMD wx 5100, AMD Ryzen 7 2700x, 2560x1080 LG34WK659 ultrawide monitor, DNOME 3.32.0, Mesa 19.1.6
+```
+opengl1: 3398 frames 7.0 seconds 486.6 fps 1.0/2.1/8.0/0.6 ms
+opengl2: 3398 frames 7.5 seconds 455.8 fps 1.0/2.2/9.0/0.6 ms
+vulkan:  3398 frames 6.8 seconds 503.1 fps 1.0/2.0/4.0/0.6 ms
+```
+
 ### Testing on Loongnix, LG34WK659 2560x1080 ultrawide monitor, Mesa 18.0.5, LOONGSON 3A3000 CPU, AMD R7 430 GPU. 
 
 ```

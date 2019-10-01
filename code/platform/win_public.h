@@ -75,9 +75,6 @@ typedef struct WinData_s {
 	// can know the exact time of an event
 
 	unsigned int sysMsgTime;
-
-	void * hGraphicLib; // instance of OpenGL library
-
 } WinVars_t;
 
 
