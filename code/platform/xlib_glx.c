@@ -263,6 +263,22 @@ void XSys_CreateContextForGL( XVisualInfo * pVisinfo )
 	// A thread is one of a set of subprocesses that share a single address space, 
 	// but maintain separate program counters, stack spaces, and other related global data. 
 	// A thread that is the only member of its subprocess group is equivalent to a process. 
+	//
+	// GLXContext glXCreateContext(Display * dpy,  XVisualInfo * vis,  GLXContext shareList,  Bool direct);
+	// 
+	// dpy : 
+	//       Specifies the connection to the X server.
+	// vis : 
+	//       Specifies the visual that defines the frame buffer resources available to the rendering context.
+	//       It is a pointer to an XVisualInfo structure, not a visual ID or a pointer to a Visual.
+        // shareList : 
+	//             Specifies the context with which to share display lists.
+	//             NULL indicates that no sharing is to take place.
+        //        
+	// direct : 
+        //            Specifies whether rendering is to be done with a direct connection
+        //            to the graphics system if possible (True) or through the X server (False).
+                
 	ctx_gl = qglXCreateContext( glw_state.pDisplay, pVisinfo, NULL, True );
 	if( ctx_gl ) {
 		Com_Printf( " Context Created for GL. \n");
