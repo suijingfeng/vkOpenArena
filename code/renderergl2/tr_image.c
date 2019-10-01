@@ -1832,51 +1832,7 @@ static void CompressMonoBlock(byte outdata[8], const byte indata[16])
 	}
 }
 
-static void RawImage_UploadToRgtc2Texture(GLuint texture, int miplevel, int x, int y, int width, int height, byte *data)
-{
-	int wBlocks, hBlocks, iy, ix, size;
-	byte *compressedData, *p;
 
-	wBlocks = (width + 3) / 4;
-	hBlocks = (height + 3) / 4;
-	size = wBlocks * hBlocks * 16;
-
-	p = compressedData = ri.Hunk_AllocateTempMemory(size);
-	for (iy = 0; iy < height; iy += 4)
-	{
-		int oh = MIN(4, height - iy);
-
-		for (ix = 0; ix < width; ix += 4)
-		{
-			byte workingData[16];
-			int component;
-
-			int ow = MIN(4, width - ix);
-
-			for (component = 0; component < 2; component++)
-			{
-				int ox, oy;
-
-				for (oy = 0; oy < oh; oy++)
-					for (ox = 0; ox < ow; ox++)
-						workingData[oy * 4 + ox] = data[((iy + oy) * width + ix + ox) * 4 + component];
-
-				// dupe data to fill
-				for (oy = 0; oy < 4; oy++)
-					for (ox = (oy < oh) ? ow : 0; ox < 4; ox++)
-						workingData[oy * 4 + ox] = workingData[(oy % oh) * 4 + ox % ow];
-
-				CompressMonoBlock(p, workingData);
-				p += 8;
-			}
-		}
-	}
-
-	// FIXME: Won't work for x/y that aren't multiples of 4.
-	qglCompressedTextureSubImage2DEXT(texture, GL_TEXTURE_2D, miplevel, x, y, width, height, GL_COMPRESSED_RG_RGTC2, size, compressedData);
-
-	ri.Hunk_FreeTempMemory(compressedData);
-}
 
 static int CalculateMipSize(int width, int height, GLenum picFormat)
 {
@@ -1939,7 +1895,6 @@ static GLenum PixelDataFormatFromInternalFormat(GLenum internalFormat)
 static void RawImage_UploadTexture(GLuint texture, byte *data, int x, int y, int width, int height, GLenum target, GLenum picFormat, int numMips, GLenum internalFormat, imgType_t type, imgFlags_t flags, qboolean subtexture )
 {
 	GLenum dataFormat, dataType;
-	qboolean rgtc = internalFormat == GL_COMPRESSED_RG_RGTC2;
 	qboolean rgba8 = picFormat == GL_RGBA8 || picFormat == GL_SRGB8_ALPHA8_EXT;
 	qboolean rgba = rgba8 || picFormat == GL_RGBA16;
 	qboolean mipmap = !!(flags & IMGFLAG_MIPMAP);
@@ -1955,19 +1910,12 @@ static void RawImage_UploadTexture(GLuint texture, byte *data, int x, int y, int
 		lastMip = (width == 1 && height == 1) || !mipmap;
 		size = CalculateMipSize(width, height, picFormat);
 
-		if (!rgba)
-		{
-			qglCompressedTextureSubImage2DEXT(texture, target, miplevel, x, y, width, height, picFormat, size, data);
-		}
-		else
+
 		{
 			if (rgba8 && miplevel != 0 && r_colorMipLevels->integer)
 				R_BlendOverTexture((byte *)data, width * height, mipBlendColors[miplevel]);
 
-			if (rgba8 && rgtc)
-				RawImage_UploadToRgtc2Texture(texture, miplevel, x, y, width, height, data);
-			else
-				qglTextureSubImage2DEXT(texture, target, miplevel, x, y, width, height, dataFormat, dataType, data);
+			qglTextureSubImage2DEXT(texture, target, miplevel, x, y, width, height, dataFormat, dataType, data);
 		}
 
 		if (!lastMip && numMips < 2)

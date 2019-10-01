@@ -172,6 +172,35 @@ void (APIENTRY * qglUnlockArraysEXT) (void);
 
 static void * hinstOpenGL;
 
+static void qglInit( void )
+{
+#if defined(_WIN32)
+#define OPENGL_DLL_NAME	"opengl32.dll"
+#elif defined(MACOS_X)
+#define OPENGL_DLL_NAME	"/System/Library/Frameworks/OpenGL.framework/Libraries/libGL.dylib"
+#else
+#define OPENGL_DLL_NAME	"libGL.so.1"
+#endif
+
+	ri.Printf( PRINT_ALL, "...initializing QGL\n" );
+	const char *dllname = OPENGL_DLL_NAME;
+	if ( hinstOpenGL == NULL )
+	{
+		hinstOpenGL = ri.LoadDLL( dllname, 1 );
+
+		if ( hinstOpenGL == NULL )
+		{
+			ri.Error(ERR_FATAL, "LoadOpenGLDll: failed to load %s from  %s\n", dllname, Sys_LibraryError());
+        	}
+        	else
+        	{
+			ri.Printf(PRINT_ALL, "L oading %s successful. \n", dllname);
+		}
+	}
+
+# undef OPENGL_DLL_NAME
+}
+
 static qboolean GLimp_HaveExtension(const char *ext)
 {
 	const char *ptr = Q_stristr( glConfig.extensions_string, ext );
@@ -197,14 +226,10 @@ static qboolean GLimp_GetProcAddresses( void )
 {
     int qglMajorVersion, qglMinorVersion;
 
-#ifdef __SDL_NOGETPROCADDR__
-#define GLE( ret, name, ... ) qgl##name = gl#name;
-#else
 #define GLE( ret, name, ... ) qgl##name = (name##proc *) GL_GetProcAddressImpl("gl" #name); \
 	if ( qgl##name == NULL ) { \
 		ri.Error(ERR_FATAL, "Missing OpenGL function %s\n", "gl" #name ); \
 	}
-#endif
 
 	// OpenGL 1.0 and OpenGL ES 1.0
 	GLE(const GLubyte *, GetString, GLenum name)
@@ -226,7 +251,7 @@ static qboolean GLimp_GetProcAddresses( void )
 	{
 		QGL_1_1_PROCS;
 		QGL_DESKTOP_1_1_PROCS;
-        	QGL_1_3_PROCS;
+        QGL_1_3_PROCS;
 	} else {
 		ri.Error( ERR_FATAL, "Unsupported OpenGL Version: %s\n", pStr);
 	}
@@ -505,7 +530,7 @@ static void InitOpenGL(void)
 	//		- r_mode
 	//		- r_(color|depth|stencil)bits
 	//		- r_gamma
-
+	qglInit();
 	if ( glConfig.vidWidth == 0 )
 	{
 		void * pCfg = NULL;

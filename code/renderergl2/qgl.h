@@ -283,8 +283,6 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 	GLE(GLvoid, TextureImage2DEXT, GLuint texture, GLenum target, GLint level, GLint internalformat, GLsizei width, GLsizei height, GLint border, GLenum format, GLenum type, const GLvoid *pixels) \
 	GLE(GLvoid, TextureSubImage2DEXT, GLuint texture, GLenum target, GLint level, GLint xoffset, GLint yoffset, GLsizei width, GLsizei height, GLenum format, GLenum type, const GLvoid *pixels) \
 	GLE(GLvoid, CopyTextureSubImage2DEXT, GLuint texture, GLenum target, GLint level, GLint xoffset, GLint yoffset, GLint x, GLint y, GLsizei width, GLsizei height) \
-	GLE(GLvoid, CompressedTextureImage2DEXT, GLuint texture, GLenum target, GLint level, GLenum internalformat, GLsizei width, GLsizei height, GLint border, GLsizei imageSize, const GLvoid *data) \
-	GLE(GLvoid, CompressedTextureSubImage2DEXT, GLuint texture, GLenum target, GLint level, GLint xoffset, GLint yoffset, GLsizei width, GLsizei height, GLenum format, GLsizei imageSize, const GLvoid *data) \
 	GLE(GLvoid, GenerateTextureMipmapEXT, GLuint texture, GLenum target) \
 	GLE(GLvoid, ProgramUniform1iEXT, GLuint program, GLint location, GLint v0) \
 	GLE(GLvoid, ProgramUniform1fEXT, GLuint program, GLint location, GLfloat v0) \
