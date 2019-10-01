@@ -1212,10 +1212,9 @@ RB_DrawBuffer
 
 =============
 */
-const void	*RB_DrawBuffer( const void *data ) {
-	const drawBufferCommand_t	*cmd;
-
-	cmd = (const drawBufferCommand_t *)data;
+const void * RB_DrawBuffer( const void *data )
+{
+	const drawBufferCommand_t* cmd = (const drawBufferCommand_t *)data;
 
 	// finish any 2D drawing if needed
 	if(tess.numIndexes)

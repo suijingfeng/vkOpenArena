@@ -224,10 +224,10 @@ static qboolean GLimp_GetProcAddresses( void )
 
 
 	if ( (qglMajorVersion > 1) || ( (qglMajorVersion == 1) && (qglMinorVersion >= 2) ) )
-    {
+	{
 		QGL_1_1_PROCS;
 		QGL_DESKTOP_1_1_PROCS;
-        QGL_1_3_PROCS;
+        	QGL_1_3_PROCS;
 	} else {
 		ri.Error( ERR_FATAL, "Unsupported OpenGL Version: %s\n", pStr);
 	}
@@ -246,7 +246,7 @@ static qboolean GLimp_GetProcAddresses( void )
 
 
 	// GL_EXT_texture_compression_s3tc
-    glConfig.textureCompression = TC_NONE;
+	glConfig.textureCompression = TC_NONE;
 	if ( GLimp_HaveExtension( "GL_ARB_texture_compression" ) &&
 	     GLimp_HaveExtension( "GL_EXT_texture_compression_s3tc" ) )
 	{
@@ -379,11 +379,11 @@ Clear addresses for OpenGL functions.
 static void GLimp_ClearProcAddresses(void)
 {
 #define GLE( ret, name, ... ) qgl##name = NULL;
-    QGL_1_1_PROCS;
-    QGL_DESKTOP_1_1_PROCS;
-    QGL_1_3_PROCS;
+	QGL_1_1_PROCS;
+	QGL_DESKTOP_1_1_PROCS;
+	QGL_1_3_PROCS;
     
-    qglActiveTextureARB = NULL;
+	qglActiveTextureARB = NULL;
 	qglClientActiveTextureARB = NULL;
 	qglMultiTexCoord2fARB = NULL;
 
@@ -405,7 +405,7 @@ static void GL_SetDefaultState(void)
 
 	// initialize downstream texture unit if we're running in a multitexture environment
 	if ( qglActiveTextureARB )
-    {
+	{
 		GL_SelectTexture( 1 );
 		GL_TextureMode( r_textureMode->string );
 		GL_TexEnv( GL_MODULATE );
@@ -469,7 +469,7 @@ static void GfxInfo_f( void )
 	ri.Printf( PRINT_ALL, "GL_VERSION: %s\n", glConfig.version_string );
 	ri.Printf( PRINT_ALL, "GL_EXTENSIONS: " );
 	R_PrintLongString( glConfig.extensions_string );
-    ri.Printf( PRINT_ALL, "\n" );
+	ri.Printf( PRINT_ALL, "\n" );
 	ri.Printf( PRINT_ALL, "GL_MAX_TEXTURE_SIZE: %d\n", glConfig.maxTextureSize );
 	ri.Printf( PRINT_ALL, "GL_MAX_TEXTURE_UNITS_ARB: %d\n", glConfig.numTextureUnits );
 	ri.Printf( PRINT_ALL, "\nPIXELFORMAT: color(%d-bits) Z(%d-bit) stencil(%d-bits)\n", glConfig.colorBits, glConfig.depthBits, glConfig.stencilBits );
@@ -538,36 +538,56 @@ static void InitOpenGL(void)
 	if ( glConfig.vidWidth == 0 )
 	{
 		void * pCfg = NULL;
-            			
+            	
 		ri.WinSysInit(&pCfg, 0);
-        
-        if ( !GLimp_GetProcAddresses() )
-        {
-            ri.Error(ERR_FATAL, "GLimp_GetProcAddresses() failed\n" );
-            GLimp_ClearProcAddresses();
- 
-        }
+		
+		glconfig_t * const pConfig = &glConfig;
 
-        qglClearColor( 1, 0, 0, 1 );
-        qglClear( GL_COLOR_BUFFER_BIT );
-        
-        ri.WinSysEndFrame();
-        
-        // OpenGL driver constants
-        qglGetIntegerv( GL_MAX_TEXTURE_SIZE, &glConfig.maxTextureSize );
+		pConfig->stereoEnabled = qfalse;
+		pConfig->smpActive = qfalse;
+		pConfig->displayFrequency = 60;
+		// allways enable stencil
+		pConfig->stencilBits = 8;
+		pConfig->depthBits = 24;
+		pConfig->colorBits = 32;
+		pConfig->deviceSupportsGamma = qfalse;
 
-        // stubbed or broken drivers may have reported 0...
-        if( glConfig.maxTextureSize < 0 )
-        {
-            glConfig.maxTextureSize = 0;
-        }
+		pConfig->textureEnvAddAvailable = 0; // not used
+		pConfig->textureCompression = 0; // not used
+		// These values force the UI to disable driver selection
+		pConfig->driverType = GLDRV_ICD;
+		pConfig->hardwareType = GLHW_GENERIC;
+
+		pConfig->vidWidth = ri.GetWinWidth();
+		pConfig->vidHeight = ri.GetWinHeight();
+		pConfig->isFullscreen = ri.IsWinFullscreen();
+		pConfig->windowAspect = (float) pConfig->vidWidth / (float) pConfig->vidHeight;
+
+		if ( !GLimp_GetProcAddresses() )
+		{
+			ri.Error(ERR_FATAL, "GLimp_GetProcAddresses() failed\n" );
+			GLimp_ClearProcAddresses();
+		}
+
+		qglClearColor( 1, 0, 0, 1 );
+		qglClear( GL_COLOR_BUFFER_BIT );
+        
+		ri.WinSysEndFrame();
+        
+		// OpenGL driver constants
+		qglGetIntegerv( GL_MAX_TEXTURE_SIZE, &glConfig.maxTextureSize );
+
+		// stubbed or broken drivers may have reported 0...
+		if( glConfig.maxTextureSize < 0 )
+		{
+			glConfig.maxTextureSize = 0;
+		}
 	}
-
 
 	// set default state
 	GL_SetDefaultState();
 
-    // print info
+	// print info
 	//GfxInfo_f();
 }
 
