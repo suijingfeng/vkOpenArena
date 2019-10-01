@@ -67,8 +67,6 @@ cvar_t * vid_xpos;
 cvar_t * vid_ypos;
 
 
-
-
 extern void XSys_LoadOpenGL(void);
 extern void XSys_UnloadOpenGL(void);
 extern XVisualInfo * GetXVisualPtrWrapper(void);
@@ -94,9 +92,6 @@ int WinSys_IsWinFullscreen(void)
 {
     return glw_state.isFullScreen;
 }
-
-
-// extern cvar_t *in_dgamouse; // user pref for dga mouse
 
 
 // 
