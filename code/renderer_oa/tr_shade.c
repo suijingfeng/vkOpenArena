@@ -32,9 +32,9 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
 extern shaderCommands_t tess;
 static qboolean	setArraysOnce;
-extern void (APIENTRYP qglLockArraysEXT) (GLint first, GLsizei count);
-extern void (APIENTRYP qglUnlockArraysEXT) (void);
-extern void (APIENTRYP qglMultiTexCoord2fARB) (GLenum target, GLfloat s, GLfloat t);
+extern void (APIENTRY * qglLockArraysEXT) (GLint first, GLsizei count);
+extern void (APIENTRY * qglUnlockArraysEXT) (void);
+extern void (APIENTRY * qglMultiTexCoord2fARB) (GLenum target, GLfloat s, GLfloat t);
 
 /*
 ================
@@ -249,7 +249,7 @@ DrawTris
 Draws triangle outlines for debugging
 ================
 */
-static void DrawTris (shaderCommands_t *input)
+static void DrawTris (shaderCommands_t * const input)
 {
 	GL_Bind( tr.whiteImage );
 	qglColor3f (1,1,1);

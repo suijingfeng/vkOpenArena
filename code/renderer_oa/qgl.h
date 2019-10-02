@@ -28,11 +28,58 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
 #ifdef _WIN32
 	#include <windows.h>
-	#include <gl/gl.h>
-#else
 	#include <GL/gl.h>
+
+/*
+** multitexture extension definitions
+*/
+
+
+#define GL_TEXTURE0_ARB                     0x84C0
+#define GL_TEXTURE1_ARB                     0x84C1
+#define GL_TEXTURE2_ARB                     0x84C2
+#define GL_TEXTURE3_ARB                     0x84C3
+
+// define for skyboxes without black seams
+#if !defined(GL_VERSION_1_2) && !defined(GL_CLAMP_TO_EDGE)
+   #define GL_CLAMP_TO_EDGE                  0x812F
 #endif
 
+/*
+** extension constants
+*/
+// S3TC compression constants
+#define GL_RGB_S3TC							0x83A0
+#define GL_RGB4_S3TC						0x83A1
+
+#define GL_COMPRESSED_RGB_S3TC_DXT1_EXT   0x83F0
+#define GL_COMPRESSED_RGBA_S3TC_DXT1_EXT  0x83F1
+#define GL_COMPRESSED_RGBA_S3TC_DXT3_EXT  0x83F2
+#define GL_COMPRESSED_RGBA_S3TC_DXT5_EXT  0x83F3
+
+#ifndef GL_EXT_texture_sRGB
+#define GL_EXT_texture_sRGB
+#define GL_SRGB_EXT                                       0x8C40
+#define GL_SRGB8_EXT                                      0x8C41
+#define GL_SRGB_ALPHA_EXT                                 0x8C42
+#define GL_SRGB8_ALPHA8_EXT                               0x8C43
+#define GL_SLUMINANCE_ALPHA_EXT                           0x8C44
+#define GL_SLUMINANCE8_ALPHA8_EXT                         0x8C45
+#define GL_SLUMINANCE_EXT                                 0x8C46
+#define GL_SLUMINANCE8_EXT                                0x8C47
+#define GL_COMPRESSED_SRGB_EXT                            0x8C48
+#define GL_COMPRESSED_SRGB_ALPHA_EXT                      0x8C49
+#define GL_COMPRESSED_SLUMINANCE_EXT                      0x8C4A
+#define GL_COMPRESSED_SLUMINANCE_ALPHA_EXT                0x8C4B
+#define GL_COMPRESSED_SRGB_S3TC_DXT1_EXT                  0x8C4C
+#define GL_COMPRESSED_SRGB_ALPHA_S3TC_DXT1_EXT            0x8C4D
+#define GL_COMPRESSED_SRGB_ALPHA_S3TC_DXT3_EXT            0x8C4E
+#define GL_COMPRESSED_SRGB_ALPHA_S3TC_DXT5_EXT            0x8C4F
+#endif
+
+#elif defined( __linux__ ) || defined(__FreeBSD__) 
+	#include <GL/gl.h>
+#endif
 
 //===========================================================================
 

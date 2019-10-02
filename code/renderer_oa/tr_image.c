@@ -1162,14 +1162,7 @@ void R_ImageList_f( void )
 				format = "sDXT5";
 				// 128 bits per 16 pixels, so 1 byte per pixel
 				break;
-			case GL_COMPRESSED_SRGB_ALPHA_BPTC_UNORM_ARB:
-				format = "sBPTC";
-				// 128 bits per 16 pixels, so 1 byte per pixel
-				break;
-			case GL_COMPRESSED_LUMINANCE_ALPHA_LATC2_EXT:
-				format = "LATC ";
-				// 128 bits per 16 pixels, so 1 byte per pixel
-				break;
+
 			case GL_COMPRESSED_RGBA_S3TC_DXT1_EXT:
 				format = "DXT1 ";
 				// 64 bits per 16 pixels, so 4 bits per pixel
@@ -1177,10 +1170,6 @@ void R_ImageList_f( void )
 				break;
 			case GL_COMPRESSED_RGBA_S3TC_DXT5_EXT:
 				format = "DXT5 ";
-				// 128 bits per 16 pixels, so 1 byte per pixel
-				break;
-			case GL_COMPRESSED_RGBA_BPTC_UNORM_ARB:
-				format = "BPTC ";
 				// 128 bits per 16 pixels, so 1 byte per pixel
 				break;
 			case GL_RGB4_S3TC:

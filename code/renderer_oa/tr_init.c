@@ -150,7 +150,6 @@ cvar_t	*r_ntsc;		// Leilei - ntsc / composite signals
 // dynamic lights enabled/disabled
 static cvar_t* r_dynamiclight;
 static cvar_t* r_textureMode;
-static cvar_t* r_ext_texture_filter_anisotropic;
 static cvar_t* r_ext_max_anisotropy;
 
 // not used.
@@ -164,14 +163,43 @@ QGL_1_3_PROCS;
 #undef GLE
 
 
-void (APIENTRYP qglActiveTextureARB) (GLenum texture);
-void (APIENTRYP qglClientActiveTextureARB) (GLenum texture);
-void (APIENTRYP qglMultiTexCoord2fARB) (GLenum target, GLfloat s, GLfloat t);
+void (APIENTRY * qglActiveTextureARB) (GLenum texture);
+void (APIENTRY * qglClientActiveTextureARB) (GLenum texture);
+void (APIENTRY * qglMultiTexCoord2fARB) (GLenum target, GLfloat s, GLfloat t);
 
-void (APIENTRYP qglLockArraysEXT) (GLint first, GLsizei count);
-void (APIENTRYP qglUnlockArraysEXT) (void);
+void (APIENTRY * qglLockArraysEXT) (GLint first, GLsizei count);
+void (APIENTRY * qglUnlockArraysEXT) (void);
 
 static void * hinstOpenGL;
+
+static void qglInit( void )
+{
+#if defined(_WIN32)
+#define OPENGL_DLL_NAME	"opengl32.dll"
+#elif defined(MACOS_X)
+#define OPENGL_DLL_NAME	"/System/Library/Frameworks/OpenGL.framework/Libraries/libGL.dylib"
+#else
+#define OPENGL_DLL_NAME	"libGL.so.1"
+#endif
+
+	ri.Printf( PRINT_ALL, "...initializing QGL\n" );
+	const char *dllname = OPENGL_DLL_NAME;
+	if ( hinstOpenGL == NULL )
+	{
+		hinstOpenGL = ri.LoadDLL( dllname, 1 );
+
+		if ( hinstOpenGL == NULL )
+		{
+			ri.Error(ERR_FATAL, "LoadOpenGLDll: failed to load %s from  %s\n", dllname, Sys_LibraryError());
+        	}
+        	else
+        	{
+			ri.Printf(PRINT_ALL, "L oading %s successful. \n", dllname);
+		}
+	}
+
+# undef OPENGL_DLL_NAME
+}
 
 static qboolean GLimp_HaveExtension(const char *ext)
 {
@@ -198,14 +226,10 @@ static qboolean GLimp_GetProcAddresses( void )
 {
     int qglMajorVersion, qglMinorVersion;
 
-#ifdef __SDL_NOGETPROCADDR__
-#define GLE( ret, name, ... ) qgl##name = gl#name;
-#else
 #define GLE( ret, name, ... ) qgl##name = (name##proc *) GL_GetProcAddressImpl("gl" #name); \
 	if ( qgl##name == NULL ) { \
 		ri.Error(ERR_FATAL, "Missing OpenGL function %s\n", "gl" #name ); \
 	}
-#endif
 
 	// OpenGL 1.0 and OpenGL ES 1.0
 	GLE(const GLubyte *, GetString, GLenum name)
@@ -227,7 +251,7 @@ static qboolean GLimp_GetProcAddresses( void )
 	{
 		QGL_1_1_PROCS;
 		QGL_DESKTOP_1_1_PROCS;
-        	QGL_1_3_PROCS;
+        QGL_1_3_PROCS;
 	} else {
 		ri.Error( ERR_FATAL, "Unsupported OpenGL Version: %s\n", pStr);
 	}
@@ -296,11 +320,11 @@ static qboolean GLimp_GetProcAddresses( void )
 		qglMultiTexCoord2fARB = GL_GetProcAddressImpl( "glMultiTexCoord2fARB" );
 		qglActiveTextureARB = GL_GetProcAddressImpl( "glActiveTextureARB" );
 		qglClientActiveTextureARB = GL_GetProcAddressImpl( "glClientActiveTextureARB" );
-
+/*
 		if ( qglActiveTextureARB )
 		{
 			GLint glint = 0;
-			qglGetIntegerv( GL_MAX_TEXTURE_UNITS_ARB, &glint );
+			qglGetIntegerv( GL_MAX_ACTIVE_TEXTURES_ARB, &glint );
 			glConfig.numTextureUnits = (int) glint;
 			if ( glConfig.numTextureUnits > 1 )
 			{
@@ -314,6 +338,7 @@ static qboolean GLimp_GetProcAddresses( void )
 				ri.Printf( PRINT_ALL, "...not using GL_ARB_multitexture, < 2 texture units\n" );
 			}
 		}
+*/        
 	}
 	else
 	{
@@ -335,35 +360,6 @@ static qboolean GLimp_GetProcAddresses( void )
 	{
 		ri.Printf( PRINT_ALL, "...GL_EXT_compiled_vertex_array not found\n" );
 	}
-
-	if ( GLimp_HaveExtension( "GL_EXT_texture_filter_anisotropic" ) )
-	{
-		if ( r_ext_texture_filter_anisotropic->integer )
-        {
-            int maxAnisotropy = 0;
-            char target_string[4] = {0};
-			qglGetIntegerv( GL_MAX_TEXTURE_MAX_ANISOTROPY_EXT, (GLint *)&maxAnisotropy );
-			if ( maxAnisotropy <= 0 ) {
-				ri.Printf( PRINT_ALL, "...GL_EXT_texture_filter_anisotropic not properly supported!\n" );
-				maxAnisotropy = 0;
-			}
-			else
-			{
-                sprintf(target_string, "%d", maxAnisotropy);
-				ri.Printf( PRINT_ALL,  "...using GL_EXT_texture_filter_anisotropic (max: %i)\n", maxAnisotropy );
-                ri.Cvar_Set( "r_ext_max_anisotropy", target_string);
-			}
-		}
-		else
-		{
-			ri.Printf( PRINT_ALL,  "...ignoring GL_EXT_texture_filter_anisotropic\n" );
-		}
-	}
-	else
-	{
-		ri.Printf( PRINT_ALL, "...GL_EXT_texture_filter_anisotropic not found\n" );
-	}
-
 
 	return qtrue;
 }
@@ -534,7 +530,7 @@ static void InitOpenGL(void)
 	//		- r_mode
 	//		- r_(color|depth|stencil)bits
 	//		- r_gamma
-
+	qglInit();
 	if ( glConfig.vidWidth == 0 )
 	{
 		void * pCfg = NULL;
@@ -1408,7 +1404,6 @@ void R_Init(void)
 
 	ri.Printf( PRINT_ALL, "-------- RendererOA Init --------\n" );
 
-    r_ext_texture_filter_anisotropic = ri.Cvar_Get( "r_ext_texture_filter_anisotropic", "0", CVAR_ARCHIVE | CVAR_LATCH );
 	r_ext_max_anisotropy = ri.Cvar_Get( "r_ext_max_anisotropy", "2", CVAR_ARCHIVE | CVAR_LATCH );
 
     r_ext_compressed_textures = ri.Cvar_Get( "r_ext_compressed_textures", "0", CVAR_ARCHIVE | CVAR_LATCH );
