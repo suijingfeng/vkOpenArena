@@ -354,7 +354,7 @@ static void qglInit( void )
         	}
         	else
         	{
-			ri.Printf(PRINT_ALL, "L oading %s successful. \n", dllname);
+			ri.Printf(PRINT_ALL, "Loading %s successful. \n", dllname);
 		}
 	}
 

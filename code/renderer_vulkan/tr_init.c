@@ -32,25 +32,24 @@ static glconfig_t glConfig;
 
 void glConfig_Init(void)
 {
-    ri.Printf(PRINT_ALL,  "--- R_glConfigInit() ---\n");
+	ri.Printf(PRINT_ALL,  "--- R_glConfigInit() ---\n");
 
-    // These values force the UI to disable driver selection
+	// These values force the UI to disable driver selection
 	glConfig.driverType = GLDRV_ICD;
 	glConfig.hardwareType = GLHW_GENERIC;
 
-    // Only using SDL_SetWindowBrightness to determine if hardware gamma is supported
-    glConfig.deviceSupportsGamma = qtrue;
-
-    glConfig.textureEnvAddAvailable = 0; // not used
-    glConfig.textureCompression = TC_NONE; // not used
+	// Only using SDL_SetWindowBrightness to determine if hardware gamma is supported
+	glConfig.deviceSupportsGamma = qtrue;
+	glConfig.textureEnvAddAvailable = 0; // not used
+	glConfig.textureCompression = TC_NONE; // not used
 	// init command buffers and SMP
 	glConfig.stereoEnabled = 0;
 	glConfig.smpActive = qfalse; // not used
 
-    // hardcode it
-    glConfig.colorBits = 32;
-    glConfig.depthBits = 24;
-    glConfig.stencilBits = 8;
+	// hardcode it
+	glConfig.colorBits = 32;
+	glConfig.depthBits = 24;
+	glConfig.stencilBits = 8;
 }
 
 
@@ -222,8 +221,6 @@ void R_Init( void )
     // VULKAN
     if ( !isVKinitialied() )
     {
-        ri.Printf(PRINT_ALL, " Create window fot vulkan . \n");
-
         // This function set the render window's height and width.
         void * pWinContext;
 
@@ -252,9 +249,9 @@ void R_Init( void )
 
 	R_InitFreeType();
 
-    R_Set2dProjectMatrix(vk.renderArea.extent.width, vk.renderArea.extent.height);
+	R_Set2dProjectMatrix(vk.renderArea.extent.width, vk.renderArea.extent.height);
 
-    ri.Printf( PRINT_ALL, "----- R_Init finished -----\n" );
+	ri.Printf( PRINT_ALL, "----- R_Init finished -----\n" );
 }
 
 

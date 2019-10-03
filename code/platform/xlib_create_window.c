@@ -26,20 +26,11 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 **
 */
 
-#include <termios.h>
-
-#include <stdarg.h>
 #include <stdio.h>
-#include <signal.h>
 
 #include <sys/time.h>
 #include <sys/types.h>
 #include <unistd.h>
-
-#include <X11/keysym.h>
-#include <X11/cursorfont.h>
-#include <X11/Xatom.h>
-#include <X11/XKBlib.h>
 
 #include "../client/client.h"
 #include "sys_public.h"
@@ -60,17 +51,12 @@ extern void XSys_ClearCurrentContextForGL(void);
 ///////////////////////////
 static cvar_t* r_mode;
 static cvar_t* r_fullscreen;
-
-cvar_t* r_swapInterval;
 static cvar_t* r_allowResize; // make window resizable
 
 cvar_t * r_stencilbits;
 cvar_t * r_depthbits;
 cvar_t * r_colorbits;
-
-cvar_t * vid_xpos;
-cvar_t * vid_ypos;
-
+cvar_t * r_swapInterval;
 
 
 WinVars_t glw_state;
@@ -78,20 +64,33 @@ WinVars_t glw_state;
 
 int WinSys_GetWinWidth(void)
 {
-    return glw_state.winWidth;
+        return glw_state.winWidth;
 }
 
 int WinSys_GetWinHeight(void)
 {
-    return glw_state.winHeight;
+        return glw_state.winHeight;
 }
 
 int WinSys_IsWinFullscreen(void)
 {
-    return glw_state.isFullScreen;
+        return glw_state.isFullScreen;
 }
 
+int WinSys_IsWinMinimized(void)
+{
+        return glw_state.isMinimized;
+}
 
+int WinSys_IsWinLostFocused(void)
+{
+        return glw_state.isLostFocused;
+}
+
+void WinSys_UpdateFocusedStatus(int lost)
+{
+        glw_state.isLostFocused = lost;
+}
 // 
 //   Properties and Atoms
 // A property is a collection of named, typed data. The window system has a set of predefined properties 
@@ -130,31 +129,29 @@ static int CreateWindowForRenderer(int mode, qboolean fullscreen, int type )
 
 	int actualWidth, actualHeight, actualRate;
 
-
 	glw_state.screenIdx = DefaultScreen( glw_state.pDisplay );
 	glw_state.root = RootWindow( glw_state.pDisplay, glw_state.screenIdx );
 
 	// Init xrandr and get desktop resolution if available
-	RandR_Init( vid_xpos->integer, vid_ypos->integer, 640, 480 );
+	RandR_Init( 0, 0, 640, 480, fullscreen);
 
-
-	Com_Printf( " Setting display mode %d:", mode );
 
 	if ( !CL_GetModeInfo( &actualWidth, &actualHeight, mode, glw_state.desktopWidth, glw_state.desktopHeight, fullscreen ) )
 	{
 		Com_Error( ERR_FATAL, " invalid mode\n" );
 	}
 
-
-	if ( actualRate )
-		Com_Printf( " %d %d @%iHz\n", actualWidth, actualHeight, actualRate );
-	else
-		Com_Printf( " %d %d\n", actualWidth, actualHeight );
-
 	if ( fullscreen ) // try randr first
 	{
 		RandR_SetMode( &actualWidth, &actualHeight, &actualRate );
 	}
+        
+	if ( actualRate )
+		Com_Printf( " Setting display mode %d: %dx%d @%iHz\n", mode, actualWidth, actualHeight, actualRate );
+	else
+		Com_Printf( " Setting display mode %d: %dx%d\n", mode, actualWidth, actualHeight );
+
+
 
 	glw_state.winWidth = actualWidth;
 	glw_state.winHeight = actualHeight;
@@ -182,7 +179,9 @@ static int CreateWindowForRenderer(int mode, qboolean fullscreen, int type )
 		vInfoTemplate.depth = 24; 
 		// vulkan case
 		//
-		// XVisualInfo * XGetVisualInfo(Display * display, long vinfo_mask, XVisualInfo * vinfo_template, int * nitems_return)
+		// XVisualInfo * XGetVisualInfo(Display * display, long vinfo_mask, 
+                //                              XVisualInfo * vinfo_template, int * nitems_return)
+                //                              
 		//  display: Specifies the connection to the X server;
 		//  vinfo_mask: Specifies the visual mask value;
 		//  vinfo_template: Specifies the visual attributes that are to be used in matching the visual structures. 
@@ -213,7 +212,7 @@ static int CreateWindowForRenderer(int mode, qboolean fullscreen, int type )
 	XSetWindowAttributes win_attr;
 
 	win_attr.background_pixel = BlackPixel( glw_state.pDisplay, glw_state.screenIdx );
-	win_attr.border_pixel = 10;
+	win_attr.border_pixel = 5;
 	
 	// The XCreateColormap() function creates a colormap of the specified visual type for the screen
 	// on which the specified window resides and returns the colormap ID associated with it. Note that
@@ -231,8 +230,8 @@ static int CreateWindowForRenderer(int mode, qboolean fullscreen, int type )
 	// GLX is both an API and an X extension protocol for supporting OpenGL. 
 	// GLX routines provide basic interaction between X and OpenGL. 
 	// Use them, for example, to create a rendering context and bind it to a window. 
-	// A standard X visual specifies how the server should map a given pixel value to a color to be displayed on the screen. 
-	// Different windows on the screen can have different visuals.
+	// A standard X visual specifies how the server should map a given pixel value to
+        // a color to be displayed on the screen. Different windows on the screen can have different visuals.
 	// GLX overloads X visuals to include both the standard X definition of a visual and 
 	// OpenGL specific information about the configuration of the framebuffer and ancillary
 	// buffers that might be associated with a drawable. Only those overloaded visuals support 
@@ -249,19 +248,23 @@ static int CreateWindowForRenderer(int mode, qboolean fullscreen, int type )
 	// A GLX drawable is something both OpenGL can draw into, either an OpenGL capable window or a GLX pixmap.
 	//  (A GLX pixmap is a handle to an X pixmap that is allocated in a special way;
 	//
-	//  Another kind of GLX drawable is the pixel buffer (or pbuffer), which permits hardware-accelerated off-screen rendering.
+	//  Another kind of GLX drawable is the pixel buffer (or pbuffer), 
+        //  which permits hardware-accelerated off-screen rendering.
 	//
 	//  Resources As Server Data
 	//
 	//  Resources, in X, are data structures maintained by the server rather than by client programs. 
 	//  Colormaps (as well as windows, pixmaps, and fonts) are implemented as resources.
 	//
-	//  Rather than keeping information about a window in the client program and sending an entire window data structure from client to server, 
-	//  for instance, window data is stored in the server and given a unique integer ID called an XID. To manipulate or query the window data, 
-	//  the client sends the window's ID number; the server can then perform any requested operation on that window. This reduces network traffic.
+	// Rather than keeping information about a window in the client program 
+        // and sending an entire window data structure from client to server, 
+	// for instance, window data is stored in the server and given a unique integer ID called an XID.
+        // To manipulate or query the window data,  the client sends the window's ID number; 
+        // the server can then perform any requested operation on that window. This reduces network traffic.
 	// 
-	// Because pixmaps and windows are resources, they are part of the X server and can be shared by different processes (or threads). 
-	// OpenGL contexts are also resources. In standard OpenGL, they can be shared by threads in the same process but not by separate processes
+	// Because pixmaps and windows are resources, they are part of the X server and can be shared by
+        // different processes (or threads). OpenGL contexts are also resources. In standard OpenGL, 
+        // they can be shared by threads in the same process but not by separate processes
 	//
 	// X Window Colormaps
 	//
@@ -274,20 +277,22 @@ static int CreateWindowForRenderer(int mode, qboolean fullscreen, int type )
 	// colormap installation and tries to make sure that the X client with input focus has its colormaps installed. 
 	// On all systems, the colormap is a limited resource.
 	//
-	// Every X window needs a colormap. If you are using the OpenGL drawing area-widget to render in RGB mode into a TrueColor visual, 
-	// you may not need to worry about the colormap. In other cases, you may need to assign one. For additional information, 
+	// Every X window needs a colormap. If you are using the OpenGL drawing area-widget to
+        // render in RGB mode into a TrueColor visual, you may not need to worry about the colormap. 
+        // In other cases, you may need to assign one. For additional information, 
 	// see “Using Colormaps”. Colormaps are also discussed in detail in O'Reilly, Volume One. 
-
-
+        //
 	// OpenGL supports two rendering modes: RGBA mode and color index mode.
 	//
 	// In RGBA mode, color buffers store red, green, blue, and alpha components directly.
 	//
-	// In color-index mode, color buffers store indexes (names) of colors that are dereferenced by the display hardware. 
-	// A color index represents a color by name rather than value. A colormap is a table of index-to-RGB mappings.
-	
-	// OpenGL 1.0 and 1.1 and GLX 1.0, 1.1, and 1.2 require an RGBA mode program to use a TrueColor or DirectColor visual, 
-	// and require a color index mode program to use a PseudoColor or StaticColor visual. 
+	// In color-index mode, color buffers store indexes (names) of colors that are dereferenced
+        // by the display hardware.  A color index represents a color by name rather than value. 
+        // A colormap is a table of index-to-RGB mappings.
+        //
+	// OpenGL 1.0 and 1.1 and GLX 1.0, 1.1, and 1.2 require an RGBA mode program to use 
+        // a TrueColor or DirectColor visual, and require a color index mode program to use 
+        // a PseudoColor or StaticColor visual. 
 	win_attr.colormap = XCreateColormap( glw_state.pDisplay, glw_state.root, visinfo->visual, AllocNone );
 	
 	win_attr.event_mask = ( 
@@ -295,6 +300,7 @@ static int CreateWindowForRenderer(int mode, qboolean fullscreen, int type )
             ButtonPressMask | ButtonReleaseMask | PointerMotionMask | ButtonMotionMask |
             VisibilityChangeMask | StructureNotifyMask | FocusChangeMask );
 
+	// To receive ConfigureNotify events, set the StructureNotifyMask bit in the event-mask attribute of the window
 
 	if ( fullscreen )
 	{
@@ -400,7 +406,11 @@ static int CreateWindowForRenderer(int mode, qboolean fullscreen, int type )
 	}
 	else
 	{
-		XMoveWindow( glw_state.pDisplay, glw_state.hWnd, vid_xpos->integer, vid_ypos->integer );
+		// int XMoveWindow(Display *display, Window w, int x, y); 
+		// x, y : Specify the x and y coordinates, which define the new location
+		// of the top-left pixel of the window's border or the window itself.
+		// if it has no border or define the new position of the window relative to its parent.
+		XMoveWindow( glw_state.pDisplay, glw_state.hWnd, 32, 64 );
 	}
 
 	XFlush( glw_state.pDisplay );
@@ -442,86 +452,6 @@ static int qXErrorHandler( Display *dpy, XErrorEvent *ev )
 
 
 /*
-=================
-Sys_GetClipboardData
-=================
-*/
-char *Sys_GetClipboardData( void )
-{
-	const Atom xtarget = XInternAtom( glw_state.pDisplay, "UTF8_STRING", 0 );
-	unsigned long nitems, rem;
-	unsigned char *data;
-	Atom type;
-	XEvent ev;
-	char *buf;
-	int format;
-
-	XConvertSelection( glw_state.pDisplay, XA_PRIMARY, xtarget, XA_PRIMARY, glw_state.hWnd, CurrentTime );
-	XSync( glw_state.pDisplay, False );
-	XNextEvent( glw_state.pDisplay, &ev );
-	if ( !XFilterEvent( &ev, None ) && ev.type == SelectionNotify ) {
-		if ( XGetWindowProperty( glw_state.pDisplay, glw_state.hWnd, XA_PRIMARY, 0, 8, False, AnyPropertyType,
-			&type, &format, &nitems, &rem, &data ) == 0 ) {
-			if ( format == 8 ) {
-				if ( nitems > 0 ) {
-					buf = Z_Malloc( nitems + 1 );
-					Q_strncpyz( buf, (char*)data, nitems + 1 );
-					strtok( buf, "\n\r\b" );
-					return buf;
-				}
-			} else {
-				fprintf( stderr, "Bad clipboard format %i\n", format );
-			}
-		} else {
-			fprintf( stderr, "Clipboard allocation failed\n" );
-		}
-	}
-	return NULL;
-}
-
-
-
-static qboolean WindowMinimized( void )
-{
-	unsigned long i, num_items, bytes_after;
-	Atom actual_type, *atoms, nws, nwsh;
-	int actual_format;
-
-	nws = XInternAtom( glw_state.pDisplay, "_NET_WM_STATE", True );
-	if ( nws == BadValue || nws == None )
-		return qfalse;
-
-	nwsh = XInternAtom( glw_state.pDisplay, "_NET_WM_STATE_HIDDEN", True );
-	if ( nwsh == BadValue || nwsh == None )
-		return qfalse;
-
-	atoms = NULL;
-
-	XGetWindowProperty( glw_state.pDisplay, glw_state.hWnd, nws, 0, 0x7FFFFFFF, False, XA_ATOM,
-		&actual_type, &actual_format, &num_items,
-		&bytes_after, (unsigned char**)&atoms );
-
-	for ( i = 0; i < num_items; i++ )
-	{
-		if ( atoms[i] == nwsh )
-		{
-			XFree( atoms );
-			return qtrue;
-		}
-	}
-
-	XFree( atoms );
-	return qfalse;
-}
-
-//////////////////
-void WinMinimize_f(void)
-{
-    glw_state.isMinimized = WindowMinimized( );
-    Com_Printf( " gw_minimized: %i\n", glw_state.isMinimized );
-}
-
-/*
 type 0: OpenGL
 type 1: Vulkan
 type 2: directx
@@ -543,8 +473,6 @@ void WinSys_Init(void ** pCfg, int type)
 
 	r_allowResize = Cvar_Get( "r_allowResize", "0", CVAR_ARCHIVE | CVAR_LATCH );
 	
-	vid_xpos = Cvar_Get( "vid_xpos", "3", CVAR_ARCHIVE );
-	vid_ypos = Cvar_Get( "vid_ypos", "22", CVAR_ARCHIVE );
 
 	if ( r_swapInterval->integer )
 		setenv( "vblank_mode", "2", 1 );
@@ -588,6 +516,11 @@ void WinSys_Init(void ** pCfg, int type)
 	{
 		Com_Printf( " Couldn't open the X display. \n" );
 	}
+        else
+        {
+                Com_Printf( " Server Vendor: %s, release: %d \n ", 
+                        XServerVendor(glw_state.pDisplay), XVendorRelease(glw_state.pDisplay) );
+        }
 
 	if(type == 0)
 	{
@@ -630,9 +563,8 @@ void WinSys_Shutdown(void)
 	Cmd_RemoveCommand( "minimize" );
 	
 	WinSys_DestructDislayModes( );
+        IN_Shutdown( );
 	
-	IN_DeactivateMouse();
-
 	if ( glw_state.pDisplay )
 	{
 		if ( glw_state.randr_gamma && glw_state.gammaSet )

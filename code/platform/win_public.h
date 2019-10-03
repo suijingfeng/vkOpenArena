@@ -74,6 +74,7 @@ typedef struct WinData_s {
 	int	desktopHeight;
 	int	isFullScreen;
 	int	isMinimized;
+        int     isLostFocused;
 	int	winStyle;
 	int	activeApp;
 	int	gammaSet;
@@ -106,6 +107,9 @@ void WinSys_SetGamma(unsigned char red[256], unsigned char green[256], unsigned 
 int WinSys_GetWinWidth(void);
 int WinSys_GetWinHeight(void);
 int WinSys_IsWinFullscreen(void);
+int WinSys_IsWinMinimized(void);
+int WinSys_IsWinLostFocused(void);
+void WinSys_UpdateFocusedStatus(int lost);
 
 
 void WinMinimize_f(void);

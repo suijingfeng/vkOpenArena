@@ -47,40 +47,22 @@ static qboolean BackupMonitorGamma( void );
 
 static void *r_lib = NULL;
 
-Bool (*_XRRQueryExtension)( Display *dpy, int *event_base_return, int *error_base_return );
-Status (*_XRRQueryVersion)( Display *dpy, int *major_version_return, int *minor_version_return );
-XRRScreenResources* (*_XRRGetScreenResources)( Display *dpy, Window window );
-void (*_XRRFreeScreenResources)( XRRScreenResources *resources );
-XRROutputInfo *(*_XRRGetOutputInfo)( Display *dpy, XRRScreenResources *resources, RROutput output );
+Bool ( * _XRRQueryExtension)( Display *dpy, int *event_base_return, int *error_base_return );
+Status ( * _XRRQueryVersion)( Display *dpy, int *major_version_return, int *minor_version_return );
+XRRScreenResources * ( * _XRRGetScreenResources)( Display *dpy, Window window );
+void (* _XRRFreeScreenResources)( XRRScreenResources *resources );
+XRROutputInfo * ( * _XRRGetOutputInfo)( Display *dpy, XRRScreenResources *resources, RROutput output );
 void (*_XRRFreeOutputInfo)( XRROutputInfo *outputInfo );
-XRRCrtcInfo *(*_XRRGetCrtcInfo)( Display *dpy, XRRScreenResources *resources, RRCrtc crtc );
-void (*_XRRFreeCrtcInfo)( XRRCrtcInfo *crtcInfo );
-Status (*_XRRSetCrtcConfig)( Display *dpy, XRRScreenResources *resources, RRCrtc crtc,
+XRRCrtcInfo * ( * _XRRGetCrtcInfo)( Display *dpy, XRRScreenResources *resources, RRCrtc crtc );
+void ( * _XRRFreeCrtcInfo)( XRRCrtcInfo *crtcInfo );
+Status ( * _XRRSetCrtcConfig)( Display *dpy, XRRScreenResources *resources, RRCrtc crtc,
 		Time timestamp, int x, int y, RRMode mode, Rotation rotation,
 		RROutput *outputs, int noutputs );
-int (*_XRRGetCrtcGammaSize)( Display *dpy, RRCrtc crtc );
-XRRCrtcGamma *(*_XRRGetCrtcGamma)( Display *dpy, RRCrtc crtc );
-XRRCrtcGamma *(*_XRRAllocGamma)( int size );
-void (*_XRRSetCrtcGamma)( Display *dpy, RRCrtc crtc, XRRCrtcGamma *gamma );
-void (*_XRRFreeGamma)( XRRCrtcGamma *gamma );
-
-static sym_t r_list[] =
-{
-	{ (void**)&_XRRQueryExtension, "XRRQueryExtension" },
-	{ (void**)&_XRRQueryVersion, "XRRQueryVersion" },
-	{ (void**)&_XRRGetScreenResources, "XRRGetScreenResources" },
-	{ (void**)&_XRRFreeScreenResources, "XRRFreeScreenResources" },
-	{ (void**)&_XRRGetOutputInfo, "XRRGetOutputInfo" },
-	{ (void**)&_XRRFreeOutputInfo, "XRRFreeOutputInfo" },
-	{ (void**)&_XRRGetCrtcInfo, "XRRGetCrtcInfo" },
-	{ (void**)&_XRRFreeCrtcInfo, "XRRFreeCrtcInfo" },
-	{ (void**)&_XRRSetCrtcConfig, "XRRSetCrtcConfig" },
-	{ (void**)&_XRRGetCrtcGammaSize, "XRRGetCrtcGammaSize" },
-	{ (void**)&_XRRGetCrtcGamma, "XRRGetCrtcGamma" },
-	{ (void**)&_XRRAllocGamma, "XRRAllocGamma" },
-	{ (void**)&_XRRSetCrtcGamma, "XRRSetCrtcGamma" },
-	{ (void**)&_XRRFreeGamma, "XRRFreeGamma" },
-};
+int ( * _XRRGetCrtcGammaSize)( Display *dpy, RRCrtc crtc );
+XRRCrtcGamma * ( * _XRRGetCrtcGamma)( Display *dpy, RRCrtc crtc );
+XRRCrtcGamma * ( * _XRRAllocGamma)( int size );
+void ( * _XRRSetCrtcGamma)( Display *dpy, RRCrtc crtc, XRRCrtcGamma *gamma );
+void ( * _XRRFreeGamma)( XRRCrtcGamma *gamma );
 
 
 static qboolean monitor_in_list( int x, int y, int w, int h, RROutput outputn, RRCrtc crtcn )
@@ -421,7 +403,7 @@ void RandR_UpdateMonitor( int x, int y, int w, int h )
 	monitor_t *cm;
 //	int i;
 	
-	if ( !glw_state.monitorCount || glw_state.isFullScreen )
+	if ( !glw_state.monitorCount )
 		return;
 
 	// try to find monitor to which input coordinates belongs to
@@ -564,11 +546,73 @@ void RandR_Done( void )
 }
 
 
-qboolean RandR_Init( int x, int y, int w, int h )
+static void* LoadingLibXrandr(void)
+{
+    void * handle = dlopen("libXrandr.so.2", RTLD_NOW );
+
+    if ( handle == NULL )
+    {
+        handle = dlopen( "libXrandr.so", RTLD_NOW );
+
+        if ( handle == NULL )
+        {
+            Com_Printf( "... error loading libXrandr\n" );
+            return NULL;
+        }
+        else
+        {
+            Com_Printf( " libXrandr.so loaded. \n" );
+            return handle;
+        }
+
+    }
+    else
+    {
+        Com_Printf( " libXrandr.so.2 loaded. \n" );
+        return handle;
+    }
+
+    return handle;
+}
+
+static int GetRandrProcAddr( void * const hRandrLib)
+{
+    static sym_t r_list[] =
+    {
+        { (void**)&_XRRQueryExtension, "XRRQueryExtension" },
+        { (void**)&_XRRQueryVersion, "XRRQueryVersion" },
+        { (void**)&_XRRGetScreenResources, "XRRGetScreenResources" },
+        { (void**)&_XRRFreeScreenResources, "XRRFreeScreenResources" },
+        { (void**)&_XRRGetOutputInfo, "XRRGetOutputInfo" },
+        { (void**)&_XRRFreeOutputInfo, "XRRFreeOutputInfo" },
+        { (void**)&_XRRGetCrtcInfo, "XRRGetCrtcInfo" },
+        { (void**)&_XRRFreeCrtcInfo, "XRRFreeCrtcInfo" },
+        { (void**)&_XRRSetCrtcConfig, "XRRSetCrtcConfig" },
+        { (void**)&_XRRGetCrtcGammaSize, "XRRGetCrtcGammaSize" },
+        { (void**)&_XRRGetCrtcGamma, "XRRGetCrtcGamma" },
+        { (void**)&_XRRAllocGamma, "XRRAllocGamma" },
+        { (void**)&_XRRSetCrtcGamma, "XRRSetCrtcGamma" },
+        { (void**)&_XRRFreeGamma, "XRRFreeGamma" },
+    };
+
+    int i;
+    for ( i = 0 ; i < ARRAY_LEN( r_list ); ++i )
+    {
+        *r_list[ i ].symbol = dlsym( hRandrLib, r_list[ i ].name );
+        if ( *r_list[ i ].symbol == NULL )
+        {
+            Com_Printf( "...couldn't find '%s' in libXrandr\n", r_list[ i ].name );
+            return 0;
+        }
+    }
+    return 1;
+}
+
+
+qboolean RandR_Init( int x, int y, int w, int h, int isFullScreen )
 {
 	int event_base, error_base;
 	int ver_major = 1, ver_minor = 2;
-	int i;
 
 	glw_state.randr_ext = qfalse;
 	glw_state.randr_active = qfalse;
@@ -579,29 +623,11 @@ qboolean RandR_Init( int x, int y, int w, int h )
 	memset( monitors, 0, sizeof( monitors ) );
 	memset( &desktop_monitor, 0, sizeof( desktop_monitor ) );
 
-	if ( r_lib == NULL )
-	{
-		r_lib = Sys_LoadLibrary( "libXrandr.so.2" );
-		if ( r_lib == NULL )
-		{
-			r_lib = Sys_LoadLibrary( "libXrandr.so" );
-		}
-		if ( r_lib == NULL )
-		{
-			Com_Printf( "...error loading libXrandr\n" );
-			goto __fail;
-		}
-	}
+	r_lib = LoadingLibXrandr();
+        if(r_lib == NULL )
+            goto __fail;
 
-	for ( i = 0 ; i < ARRAY_LEN( r_list ); ++i )
-	{
-		*r_list[ i ].symbol = Sys_LoadFunction( r_lib, r_list[ i ].name );
-		if ( *r_list[ i ].symbol == NULL )
-		{
-			Com_Printf( "...couldn't find '%s' in libXrandr\n", r_list[ i ].name );
-			goto __fail;
-		}
-	}
+        GetRandrProcAddr(r_lib);
 
 	if ( !_XRRQueryExtension( glw_state.pDisplay, &event_base, &error_base ) || !_XRRQueryVersion( glw_state.pDisplay, &ver_major, &ver_minor ) )
 	{
@@ -617,7 +643,8 @@ qboolean RandR_Init( int x, int y, int w, int h )
 
 	BuildMonitorList();
 
-	RandR_UpdateMonitor( x, y, w, h );
+	// if(isFullScreen == 0)
+		RandR_UpdateMonitor( x, y, w, h );
 
 	return qtrue;
 
@@ -625,6 +652,3 @@ __fail:
 	RandR_Done();
 	return qfalse;
 }
-
-
-

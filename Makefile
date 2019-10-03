@@ -283,7 +283,6 @@ Q3LCCETCDIR=$(MOUNT_DIR)/tools/lcc/etc
 Q3LCCSRCDIR=$(MOUNT_DIR)/tools/lcc/src
 LOKISETUPDIR=misc/setup
 NSISDIR=misc/nsis
-SDLHDIR=$(MOUNT_DIR)/SDL2
 LIBSDIR=$(MOUNT_DIR)/libs
 
 bin_path=$(shell which $(1) 2> /dev/null)
@@ -366,7 +365,6 @@ endif
   THREAD_LIBS=-lpthread
   LIBS=-ldl -lm
 
-#TODO:remove SDL2
   CLIENT_LIBS = -lX11
 
 #  RENDERER_LIBS = -lGL
@@ -494,8 +492,6 @@ ifeq ($(PLATFORM),darwin)
 
     # We copy sdlmain before ranlib'ing it so that subversion doesn't think
     #  the file has been modified by each build.
-    LIBSDLMAIN=$(B)/libSDL2main.a
-    LIBSDLMAINSRC=$(LIBSDIR)/macosx/libSDL2main.a
     CLIENT_LIBS += $(LIBSDIR)/macosx/libSDL2-2.0.0.dylib
     RENDERER_LIBS += $(LIBSDIR)/macosx/libSDL2-2.0.0.dylib
     CLIENT_EXTRA_FILES += $(LIBSDIR)/macosx/libSDL2-2.0.0.dylib
@@ -1993,8 +1989,8 @@ endif
 
 Q3OBJ += \
 	$(B)/client/sys_signals.o \
-	$(B)/client/sys_loadlib.o
-
+	$(B)/client/sys_loadlib.o \
+	$(B)/client/sys_cpu.o
 ifdef MINGW
 
   Q3OBJ += \
@@ -2030,6 +2026,8 @@ else
     $(B)/client/xlib_input.o \
     $(B)/client/xlib_create_window.o \
     $(B)/client/xlib_glx.o \
+	$(B)/client/xlib_clipboard.o \
+	$(B)/client/xlib_win_maxmin.o \
     $(B)/client/x11_randr.o 
   else
   Q3OBJ += \
@@ -2055,30 +2053,29 @@ ifeq ($(USE_MUMBLE),1)
 endif
 
 ifneq ($(USE_RENDERER_DLOPEN),0)
-$(B)/$(CLIENTBIN)$(FULLBINEXT): $(Q3OBJ) $(JPGOBJ) $(LIBSDLMAIN)
+$(B)/$(CLIENTBIN)$(FULLBINEXT): $(Q3OBJ) $(JPGOBJ)
 	$(echo_cmd) "LD $@"
 	$(Q)$(CC) $(CLIENT_CFLAGS) $(CFLAGS) $(CLIENT_LDFLAGS) $(LDFLAGS) $(NOTSHLIBLDFLAGS)\
-		-o $@ $(Q3OBJ) $(JPGOBJ) $(LIBSDLMAIN) $(CLIENT_LIBS) $(LIBS)
+		-o $@ $(Q3OBJ) $(JPGOBJ) $(CLIENT_LIBS) $(LIBS)
 
 $(B)/renderer_opengl2_$(SHLIBNAME): $(Q3R2OBJ) $(Q3R2STRINGOBJ) $(JPGOBJ)
 	$(echo_cmd) "LD $@"
 	$(Q)$(CC) $(CFLAGS) $(SHLIBLDFLAGS) -o $@ $(Q3R2OBJ) $(Q3R2STRINGOBJ) $(JPGOBJ) \
-		$(THREAD_LIBS) $(RENDERER_LIBS) $(SDL_LIBS) $(LIBS)
+		$(THREAD_LIBS) $(RENDERER_LIBS)  $(LIBS)
 
 $(B)/renderer_openarena_$(SHLIBNAME): $(Q3ROAOBJ) $(JPGOBJ)
 	$(echo_cmd) "LD $@"
 	$(Q)$(CC) $(CFLAGS) $(SHLIBLDFLAGS) -o $@ $(Q3ROAOBJ) $(JPGOBJ) \
-		$(THREAD_LIBS) $(RENDERER_LIBS) $(SDL_LIBS) $(LIBS)
+		$(THREAD_LIBS) $(RENDERER_LIBS)  $(LIBS)
 
 $(B)/renderer_opengl1_$(SHLIBNAME): $(Q3ROBJ) $(JPGOBJ)
 	$(echo_cmd) "LD $@"
 	$(Q)$(CC) $(CFLAGS) $(SHLIBLDFLAGS) -o $@ $(Q3ROBJ) $(JPGOBJ) \
-		$(THREAD_LIBS) $(RENDERER_LIBS) $(SDL_LIBS) $(LIBS)
+		$(THREAD_LIBS) $(RENDERER_LIBS)  $(LIBS)
 
 
 ######################## MYDEV ##############################
 
-# remember to remove SDL lib dependence
 # this mean to use glx/glw
 
 $(B)/renderer_mydev_$(SHLIBNAME): $(Q3MYDEVOBJ) $(JPGOBJ)
@@ -2939,7 +2936,6 @@ distclean: clean toolsclean
 installer: release
 ifdef MINGW
 	@$(MAKE) VERSION=$(VERSION) -C $(NSISDIR) V=$(V) \
-		SDLDLL=$(SDLDLL) \
 		USE_RENDERER_DLOPEN=$(USE_RENDERER_DLOPEN) \
 		USE_OPENAL_DLOPEN=$(USE_OPENAL_DLOPEN) \
 		USE_CURL_DLOPEN=$(USE_CURL_DLOPEN) \

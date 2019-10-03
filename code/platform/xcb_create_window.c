@@ -4,8 +4,6 @@
 
 #include <xcb/xcb.h>
 
-#include <dlfcn.h>
-
 #include "../qcommon/q_shared.h"
 #include "../qcommon/qcommon.h"
 #include "win_public.h"
