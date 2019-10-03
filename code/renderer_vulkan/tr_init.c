@@ -351,7 +351,6 @@ void RE_BeginRegistration(glconfig_t * const pConfig)
     
 	// *pGlCfg = glConfig;
 
-    pConfig->isFullscreen =  qfalse;
 	pConfig->stereoEnabled = qfalse;
 	pConfig->smpActive = qfalse;
 	pConfig->displayFrequency = 60;
@@ -361,21 +360,18 @@ void RE_BeginRegistration(glconfig_t * const pConfig)
 	pConfig->colorBits = 32;
 	pConfig->deviceSupportsGamma = qfalse;
 
-    pConfig->textureEnvAddAvailable = 0; // not used
-    pConfig->textureCompression = 0; // not used
+	pConfig->textureEnvAddAvailable = 0; // not used
+	pConfig->textureCompression = 0; // not used
 
-    // These values force the UI to disable driver selection
+	// These values force the UI to disable driver selection
 	pConfig->driverType = GLDRV_ICD;
 	pConfig->hardwareType = GLHW_GENERIC;
-
-    // pConfig->vidWidth = vk_getWinWidth();
-    // pConfig->vidHeight = vk_getWinHeight();
-
-    pConfig->vidWidth = ri.GetWinWidth();
-    pConfig->vidHeight = ri.GetWinHeight();
+	pConfig->vidWidth = ri.GetWinWidth();
+	pConfig->vidHeight = ri.GetWinHeight();
+	pConfig->isFullscreen = ri.IsWinFullscreen();
 
 
-    glConfig_FillString();
+	glConfig_FillString();
 
 	tr.viewCluster = -1; // force markleafs to regenerate
 
