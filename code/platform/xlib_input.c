@@ -704,13 +704,20 @@ static void IN_DeactivateMouse( void )
 
 void IN_Init( void )
 {
-	Com_Printf( "...Input Initialization...\n" );
+	Com_Printf( "...Input Initialization ( with xlib) ...\n" );
 
 	in_shiftedKeys = Cvar_Get( "in_shiftedKeys", "0", CVAR_ARCHIVE );
 
 	in_forceCharset = Cvar_Get( "in_forceCharset", "1", CVAR_ARCHIVE );
 	
 	Cmd_AddCommand( "in_restart", IN_Restart );
+
+	if( glw_state.pDisplay == NULL )
+	{
+		Com_Printf( "WARNNING: IN_Init called before xcb_create_window. \n" );
+		return;
+	}
+
 }
 
 
@@ -726,7 +733,7 @@ void IN_Restart( void )
 	IN_Init(); 
 }
 
-void IN_Frame(void)
+void IN_Frame( void )
 {
 	// If not DISCONNECTED (main menu) or ACTIVE (in game), we're loading
         // never Deactivate Mouse In fullscreen.
@@ -739,7 +746,7 @@ void IN_Frame(void)
         else if ( clc.state != CA_DISCONNECTED && clc.state != CA_ACTIVE )
         {
                 // Loading in windowed mode
-                if( WinSys_IsWinFullscreen() == 0)
+                if( WinSys_IsWinFullscreen() == 0 )
                         IN_DeactivateMouse( );
         }
         else if( WinSys_IsWinMinimized() )
@@ -755,8 +762,4 @@ void IN_Frame(void)
         
 
         Sys_SendKeyEvents();
-
 }
-
-
-

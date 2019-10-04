@@ -18,13 +18,7 @@
 #include "../client/client.h"
 
 
-static int vidRestartTime = 0;
-static int in_eventTime = 0;
-static qboolean mouseActive = qfalse;
-static qboolean mouseAvailable = qfalse;
-
-static cvar_t *in_mouse;
-static cvar_t *in_nograb;
+static qboolean isMouseActive = qfalse;
 
 extern struct WinData_s s_xcb_win;
 
@@ -37,15 +31,9 @@ extern xcb_intern_atom_reply_t *atom_wm_delete_window;
 static int win_center_x, win_center_y;
 
 
-static int mouseResetTime = 0;
 
 static void IN_ActivateMouse( void )
 {
-	if ( mouseAvailable == 0 || s_xcb_win.connection == NULL )
-	{
-		return;
-	}
-
 /*
       Grab the pointer.
 
@@ -85,164 +73,162 @@ Actively grabs control of the pointer. Further pointer events are reported only 
 References XCB_GRAB_POINTER.
 */
 
-
-	if( mouseActive == qfalse )
+	if ( isMouseActive )
 	{
-
-        // Grabs the pointer actively
-        // Pointer Grabbing  
-        //
-        // Xlib provides functions that you can use to control input from the pointer,
-        // which usually is a mouse. Usually, as soon as keyboard and mouse events occur, 
-        // the X server delivers them to the appropriate client, which is determined by
-        // the window and input focus. The X server provides sufficient control over event
-        // delivery to allow window managers to support mouse ahead and various other styles
-        // of user interface. Many of these user interfaces depend upon synchronous delivery
-        // of events. The delivery of pointer and keyboard events can be controlled independently.
-        //
-        // When mouse buttons or keyboard keys are grabbed, events will be sent to the grabbing
-        // client rather than the normal client who would have received the event. If the keyboard
-        // or pointer is in asynchronous mode, further mouse and keyboard events will continue to
-        // be processed. If the keyboard or pointer is in synchronous mode, no further events
-        // are processed until the grabbing client allows them (see XAllowEvents()). 
-        //
-        // The keyboard or pointer is considered frozen during this interval. The event that 
-        // triggered the grab can also be replayed.
-        //
-        // Note that the logical state of a device (as seen by client applications) may lag
-        // the physical state if device event processing is frozen.
-        //
-        // There are two kinds of grabs: active and passive. 
-        // An active grab occurs when a single client grabs the keyboard and/or pointer explicitly
-        // (see XGrabPointer() and XGrabKeyboard()). A passive grab occurs when clients grab a
-        // particular keyboard key or pointer button in a window, and the grab will activate when
-        // the key or button is actually pressed. Passive grabs are convenient for implementing 
-        // reliable pop-up menus. For example, you can guarantee that the pop-up is mapped before
-        // the up pointer button event occurs by grabbing a button requesting synchronous behavior.
-        //
-        // The down event will trigger the grab and freeze further processing of pointer events
-        // until you have the chance to map the pop-up window. You can then allow further event
-        // processing. The up event will then be correctly processed relative to the pop-up window.
-        //
-        // For many operations, there are functions that take a time argument. The X server
-        // includes a timestamp in various events. One special time, called CurrentTime, 
-        // represents the current server time. The X server maintains the time when 
-        // the input focus was last changed, when the keyboard was last grabbed, when the
-        // pointer was last grabbed, or when a selection was last changed. Your application
-        // may be slow reacting to an event. 
+		return;
+	}
+	else
+	{
+		// Grabs the pointer actively
+		// Pointer Grabbing  
+		//
+		// Xlib provides functions that you can use to control input from the pointer,
+		// which usually is a mouse. Usually, as soon as keyboard and mouse events occur, 
+		// the X server delivers them to the appropriate client, which is determined by
+		// the window and input focus. The X server provides sufficient control over event
+		// delivery to allow window managers to support mouse ahead and various other styles
+		// of user interface. Many of these user interfaces depend upon synchronous delivery
+		// of events. The delivery of pointer and keyboard events can be controlled independently.
+		//
+		// When mouse buttons or keyboard keys are grabbed, events will be sent to the grabbing
+		// client rather than the normal client who would have received the event. If the keyboard
+		// or pointer is in asynchronous mode, further mouse and keyboard events will continue to
+		// be processed. If the keyboard or pointer is in synchronous mode, no further events
+		// are processed until the grabbing client allows them (see XAllowEvents()). 
+		//
+		// The keyboard or pointer is considered frozen during this interval. The event that 
+		// triggered the grab can also be replayed.
+		//
+		// Note that the logical state of a device (as seen by client applications) may lag
+		// the physical state if device event processing is frozen.
+		//
+		// There are two kinds of grabs: active and passive. 
+		// An active grab occurs when a single client grabs the keyboard and/or pointer explicitly
+		// (see XGrabPointer() and XGrabKeyboard()). A passive grab occurs when clients grab a
+		// particular keyboard key or pointer button in a window, and the grab will activate when
+		// the key or button is actually pressed. Passive grabs are convenient for implementing 
+		// reliable pop-up menus. For example, you can guarantee that the pop-up is mapped before
+		// the up pointer button event occurs by grabbing a button requesting synchronous behavior.
+		//
+		// The down event will trigger the grab and freeze further processing of pointer events
+		// until you have the chance to map the pop-up window. You can then allow further event
+		// processing. The up event will then be correctly processed relative to the pop-up window.
+		//
+		// For many operations, there are functions that take a time argument. The X server
+		// includes a timestamp in various events. One special time, called CurrentTime, 
+		// represents the current server time. The X server maintains the time when 
+		// the input focus was last changed, when the keyboard was last grabbed, when the
+		// pointer was last grabbed, or when a selection was last changed. Your application
+		// may be slow reacting to an event. 
 		//
 		// You often need some way to specify that yourb request should not occur 
 		// if another application has in the meanwhile taken control of the keyboard,
 		// pointer, or selection. By providing the timestamp from the event in the request, 
 		// you can arrange that the operation not take effect if someone else has performed
 		// an operation in the meanwhile.
-        //
-        // A timestamp is a time value, expressed in milliseconds. It typically is the time
-        // since the last server reset. Timestamp values wrap around (after about 49.7 days).
-        // The server, given its current time is represented by timestamp T, always interprets
-        // timestamps from clients by treating half of the timestamp space as being later 
-        // in time than T. One timestamp value, named CurrentTime, is never generated by the
-        // server. This value is reserved for use in requests to represent the current server time.
-        // 
-        uint32_t MASK =
-			XCB_EVENT_MASK_BUTTON_PRESS | 
-			XCB_EVENT_MASK_BUTTON_RELEASE |
-			XCB_EVENT_MASK_POINTER_MOTION ;
-/*
-XCB_EVENT_MASK_KEY_PRESS | XCB_EVENT_MASK_KEY_RELEASE | XCB_EVENT_MASK_BUTTON_PRESS |
-                        XCB_EVENT_MASK_BUTTON_RELEASE | XCB_EVENT_MASK_ENTER_WINDOW | XCB_EVENT_MASK_LEAVE_WINDOW |
-                        XCB_EVENT_MASK_POINTER_MOTION | XCB_EVENT_MASK_KEYMAP_STATE | XCB_EVENT_MASK_EXPOSURE |
-                        XCB_EVENT_MASK_VISIBILITY_CHANGE | XCB_EVENT_MASK_FOCUS_CHANGE |
-                        XCB_EVENT_MASK_PROPERTY_CHANGE | XCB_EVENT_MASK_STRUCTURE_NOTIFY
-*/
-        xcb_grab_pointer_cookie_t cookie_mouse = xcb_grab_pointer(
-                s_xcb_win.connection,
-                1,						// get all pointer events specified by the following mask
-                s_xcb_win.hWnd,			// grab the main game window
-                MASK,					// which events to let through
-                XCB_GRAB_MODE_ASYNC,	// pointer events should continue as normal
-                XCB_GRAB_MODE_ASYNC,	// keyboard mode
-                s_xcb_win.hWnd,			// confine_to = in which window should the cursor stay
-                XCB_NONE,              // we change the cursor to whatever the user wanted
-                XCB_CURRENT_TIME
-                );
+		//
+		// A timestamp is a time value, expressed in milliseconds. It typically is the time
+		// since the last server reset. Timestamp values wrap around (after about 49.7 days).
+		// The server, given its current time is represented by timestamp T, always interprets
+		// timestamps from clients by treating half of the timestamp space as being later 
+		// in time than T. One timestamp value, named CurrentTime, is never generated by the
+		// server. This value is reserved for use in requests to represent the current server time.
+		//
+		xcb_warp_pointer( s_xcb_win.connection, XCB_NONE, s_xcb_win.hWnd,  
+				0, 0, 0, 0, s_xcb_win.winWidth/2, s_xcb_win.winHeight/2);
 
-    	xcb_grab_keyboard_cookie_t  cookie_keyboard = 
-            xcb_grab_keyboard( s_xcb_win.connection, 1, s_xcb_win.hWnd, 
-                    XCB_CURRENT_TIME, XCB_GRAB_MODE_ASYNC, XCB_GRAB_MODE_ASYNC);	
+		// xcb_flush (s_xcb_win.connection);
 
+		uint32_t MASK =	XCB_EVENT_MASK_BUTTON_PRESS | 
+				XCB_EVENT_MASK_BUTTON_RELEASE |
+				XCB_EVENT_MASK_POINTER_MOTION;
+		/*
+		   XCB_EVENT_MASK_KEY_PRESS | XCB_EVENT_MASK_KEY_RELEASE | XCB_EVENT_MASK_BUTTON_PRESS |
+		   XCB_EVENT_MASK_BUTTON_RELEASE | XCB_EVENT_MASK_ENTER_WINDOW | XCB_EVENT_MASK_LEAVE_WINDOW |
+		   XCB_EVENT_MASK_POINTER_MOTION | XCB_EVENT_MASK_KEYMAP_STATE | XCB_EVENT_MASK_EXPOSURE |
+		   XCB_EVENT_MASK_VISIBILITY_CHANGE | XCB_EVENT_MASK_FOCUS_CHANGE |
+		   XCB_EVENT_MASK_PROPERTY_CHANGE | XCB_EVENT_MASK_STRUCTURE_NOTIFY
+		*/
 
-        
-        xcb_grab_pointer_reply_t* pReply_mouse = 
-            xcb_grab_pointer_reply(s_xcb_win.connection, cookie_mouse, NULL);
-        if (pReply_mouse)
-        {
-            if (pReply_mouse->status == XCB_GRAB_STATUS_SUCCESS)
+		// move pointer to destination window area
+
+		xcb_grab_pointer_cookie_t cookie_mouse = xcb_grab_pointer( 
+				s_xcb_win.connection,
+				1,			// get all pointer events specified by the following mask
+				s_xcb_win.hWnd,		// grab the main game window
+				MASK,			// which events to let through
+				XCB_GRAB_MODE_ASYNC,	// pointer events should continue as normal
+				XCB_GRAB_MODE_ASYNC,	// keyboard mode
+				s_xcb_win.hWnd,		// confine_to = in which window should the cursor stay
+				XCB_NONE,              // we change the cursor to whatever the user wanted
+				XCB_CURRENT_TIME );
+		xcb_flush (s_xcb_win.connection);
+
+		
+		xcb_grab_pointer_reply_t* pReply_mouse = 
+			xcb_grab_pointer_reply(s_xcb_win.connection, cookie_mouse, NULL);
+		
+		if (pReply_mouse)
+		{
+			if (pReply_mouse->status == XCB_GRAB_STATUS_SUCCESS)
 			{	
-                Com_Printf( " Grab the pointer successfully! \n");
-	
-/*
-xcb_void_cookie_t xcb_change_pointer_control(
-		xcb_connection_t *  	c,
-		int16_t  	acceleration_numerator,
-		int16_t  	acceleration_denominator,
-		int16_t  	threshold,
-		uint8_t  	do_acceleration,
-		uint8_t  	do_threshold )
-*/
-				xcb_change_pointer_control(s_xcb_win.connection, 1, 4, 1, 1, 1);
+				Com_Printf( " Grab the pointer successfully! \n");
+
+				/*
+				   xcb_void_cookie_t xcb_change_pointer_control(
+				   xcb_connection_t *  	c,
+				   int16_t  	acceleration_numerator,
+				   int16_t  	acceleration_denominator,
+				   int16_t  	threshold,
+				   uint8_t  	do_acceleration,
+				   uint8_t  	do_threshold )
+				   */
+				// xcb_change_pointer_control(s_xcb_win.connection, 1, 4, 1, 1, 1);
 			}
-            else
+			else
 			{
-                Com_Printf(" Grab the pointer failed.\n");
+				Com_Printf(" Grab the pointer failed.\n");
 			}
-        }
-
-
-        xcb_grab_keyboard_reply_t* pReply_keyboard = 
-            xcb_grab_keyboard_reply(s_xcb_win.connection, cookie_keyboard, NULL);	
-        
-        if (pReply_keyboard )
-        {
-            if (pReply_keyboard->status == XCB_GRAB_STATUS_SUCCESS)
-                Com_Printf(" Grab the keyboard successfully. \n");
-            else
-                Com_Printf(" Grab the keyboard failed .\n");
-        }
-
-        free( pReply_mouse );
-        free( pReply_keyboard );
-
-        mouseResetTime = Sys_Milliseconds();
-
+		}
+		else
+		{
+			Com_Printf(" Grab the pointer failed.\n");
+		}
 
 		/*
-		
-        // move pointer to destination window area
+		   xcb_grab_keyboard_cookie_t  cookie_keyboard = xcb_grab_keyboard( 
+		   s_xcb_win.connection, 1, s_xcb_win.hWnd, 
+		   XCB_CURRENT_TIME, XCB_GRAB_MODE_ASYNC, XCB_GRAB_MODE_ASYNC);	
 
-		src_window:	
-			If src_window is not XCB_NONE (TODO), the move will only take place if the pointer is
-            inside src_window and within the rectangle specified by (src_x, src_y, src_width, src_height).
-            The rectangle coordinates are relative to src_window.
-            
-		dst_window:	
-			
-			If dst_window is not XCB_NONE (TODO), the pointer will be moved to the offsets (dst_x, dst_y)
-            relative to dst_window. 
-			
-			If dst_window is XCB_NONE (TODO), the pointer will be moved by the
-            offsets (dst_x, dst_y) relative to the current position of the pointer.
-		*/
-	    xcb_warp_pointer( s_xcb_win.connection, s_xcb_win.hWnd, s_xcb_win.hWnd,  
-                0, 0, s_xcb_win.winWidth, s_xcb_win.winHeight, s_xcb_win.winWidth/2, s_xcb_win.winHeight/2);
+		   xcb_grab_keyboard_reply_t* pReply_keyboard = 
+		   xcb_grab_keyboard_reply(s_xcb_win.connection, cookie_keyboard, NULL);	
 
-    	mouseActive = qtrue;
-    }
+		   if (pReply_keyboard )
+		   {
+		   if (pReply_keyboard->status == XCB_GRAB_STATUS_SUCCESS)
+		   Com_Printf(" Grab the keyboard successfully. \n");
+		   else
+		   Com_Printf(" Grab the keyboard failed .\n");
+		   }
+		   free( pReply_keyboard );
+
+*/
+
+		free( pReply_mouse );
+
+
+
+
+		isMouseActive = qtrue;
+	}
+	
+	win_center_x = s_xcb_win.winWidth/2;
+	win_center_y = s_xcb_win.winHeight/2;
 
 }
 
 
-void IN_DeactivateMouse(void)
+static void IN_DeactivateMouse(void)
 {
 
     // xcb_void_cookie_t xcb_ungrab_pointer( xcb_connection_t * c, xcb_timestamp_t time );	
@@ -259,15 +245,50 @@ void IN_DeactivateMouse(void)
 
 	// Always show the cursor when the mouse is disabled,
 	// but not when fullscreen
-	if( mouseActive )
+	if ( isMouseActive == 0 )
+        {
+                //return if already deactive;
+                return;
+        }
+	else
 	{
-        xcb_ungrab_pointer( s_xcb_win.connection, XCB_TIME_CURRENT_TIME);
+		xcb_ungrab_pointer( s_xcb_win.connection, XCB_TIME_CURRENT_TIME);
 		
-        xcb_ungrab_keyboard( s_xcb_win.connection, XCB_TIME_CURRENT_TIME);
-        
-        xcb_flush (s_xcb_win.connection);
+		xcb_ungrab_keyboard( s_xcb_win.connection, XCB_TIME_CURRENT_TIME);	 	
 		
-        mouseActive = qfalse;
+		Com_Printf(" Ungrab the pointer.\n");		
+
+		// xcb_void_cookie_t xcb_warp_pointer( xcb_connection_t *conn, 
+		// xcb_window_t src_window, xcb_window_t dst_window, 
+		// int16_t src_x, int16_t src_y, uint16_t src_width, uint16_t src_height, 
+		// int16_t dst_x, int16_t dst_y);
+
+		xcb_warp_pointer( s_xcb_win.connection, XCB_NONE, s_xcb_win.hWnd,
+					0, 0, 0, 0, win_center_x, win_center_y); 
+		xcb_flush (s_xcb_win.connection);
+	/*
+		xcb_grab_pointer_reply_t* pReply_mouse = 
+			xcb_grab_pointer_reply(s_xcb_win.connection, cookie_mouse, NULL);
+		
+		if (pReply_mouse)
+		{
+			if (pReply_mouse->status == XCB_GRAB_STATUS_SUCCESS)
+			{	
+				Com_Printf( " Grab the pointer successfully! \n");
+
+				xcb_change_pointer_control(s_xcb_win.connection, 1, 4, 1, 1, 1);
+			}
+			else
+			{
+				Com_Printf(" Grab the pointer failed.\n");
+			}
+		}
+		else
+		{
+			Com_Printf(" Grab the pointer failed.\n");
+		}
+	*/
+		isMouseActive = 0;
 	}
 }
 
@@ -288,12 +309,6 @@ static const char s_keytochar[ 128 ] =
 };
 
 
-
-
-static qboolean isMouseActive( void )
-{
-	return mouseActive;
-}
 
 /*
 typedef struct {
@@ -548,90 +563,85 @@ static int XLateKey( xcb_key_press_event_t * ev, uint32_t *key )
   return 0;
 }
 
-// extern int Sys_XTimeToSysTime (unsigned long xtime);
 
-static void IN_ProcessEvents( void )
+static void Sys_SendKeyEvents( void )
 {
-
-/*
-uint8_t 	response_type
-uint8_t 	pad0
-uint16_t 	sequence
-uint32_t 	pad[7]
-uint32_t 	full_sequence
-*/
+	/*
+	   uint8_t 	response_type
+	   uint8_t 	pad0
+	   uint16_t 	sequence
+	   uint32_t 	pad[7]
+	   uint32_t 	full_sequence
+	*/
 	xcb_generic_event_t *e;
-
-    //xcb_generic_event_t *e = xcb_poll_for_event(s_xcb_win.connection);
 
 	while( (e = xcb_poll_for_event(s_xcb_win.connection)) )
 	{
 		switch( e->response_type & ~0x80 )
 		{
-            case XCB_KEY_PRESS:
-            {
-                xcb_key_press_event_t *ev = (xcb_key_press_event_t *)e;
-                //int t = Sys_XTimeToSysTime( ev->time );
-				
+			case XCB_KEY_PRESS:
+			{
+				xcb_key_press_event_t *ev = (xcb_key_press_event_t *)e;
+				//int t = Sys_XTimeToSysTime( ev->time );
 
-                if ( ev->detail == 0x31 )
-                {
-                    // open pull down console
-                    Com_QueueEvent( Sys_Milliseconds( ), SE_KEY, K_CONSOLE, qtrue, 0, NULL );
-                }
+				if ( ev->detail == 0x31 )
+				{
+					// open pull down console
+					Com_QueueEvent( Sys_Milliseconds( ), SE_KEY, K_CONSOLE, qtrue, 0, NULL );
+				}
 				else if ( ev->detail == 0x09 )
-                {
-                    // menu
-                    Com_QueueEvent( Sys_Milliseconds( ), SE_KEY, K_ESCAPE, qtrue, 0, NULL );
-                }
-                else
-                {
-                    uint32_t key_value = 0;
-                    
-				    XLateKey( ev, &key_value );
-				    
-                    if( key_value == K_BACKSPACE ) {
-                        Com_QueueEvent(Sys_Milliseconds( ), SE_CHAR, ('h'-'a'+1), 0, 0, NULL );
-                    }
+				{
+					// menu
+					Com_QueueEvent( Sys_Milliseconds( ), SE_KEY, K_ESCAPE, qtrue, 0, NULL );
+				}
+				else
+				{
+					uint32_t key_value = 0;
 
-                    // !directMap() && 
-                    if ( (ev->detail < 0x3F) )
-                    {
- 
-                        char ch = s_keytochar[ ev->detail ];
+					XLateKey( ev, &key_value );
 
-                        if ( ch >= 'a' && ch <= 'z' )
-                        {
-                            int isShift = ev->state & XCB_MOD_MASK_SHIFT;
-                            int isCapLock = ev->state & XCB_MOD_MASK_LOCK;
+					if( key_value == K_BACKSPACE ) {
+						Com_QueueEvent(Sys_Milliseconds( ), SE_CHAR, ('h'-'a'+1), 0, 0, NULL );
+					}
 
-                            if ( isShift ^ isCapLock )
-                            {
-                                ch = ch - 'a' + 'A';
-                            }                            
-                        }
-                        else
-                        {
-                            ch = s_keytochar[ ev->detail | ((!!(ev->state & XCB_MOD_MASK_SHIFT))<<6) ];
-                        }
+					// !directMap() && 
+					if ( (ev->detail < 0x3F) )
+					{
 
-				        Com_QueueEvent( Sys_Milliseconds( ), SE_KEY, ch, qtrue, 0, NULL );
+						char ch = s_keytochar[ ev->detail ];
 
-                        Com_QueueEvent( Sys_Milliseconds( ), SE_CHAR, ch, 0, 0, NULL );
+						if ( ch >= 'a' && ch <= 'z' )
+						{
+							int isShift = ev->state & XCB_MOD_MASK_SHIFT;
+							int isCapLock = ev->state & XCB_MOD_MASK_LOCK;
 
-                    }
+							if ( isShift ^ isCapLock )
+							{
+								ch = ch - 'a' + 'A';
+							}                            
+						}
+						else
+						{
+							ch = s_keytochar[ ev->detail | ((!!(ev->state & XCB_MOD_MASK_SHIFT))<<6) ];
+						}
+
+						Com_QueueEvent( Sys_Milliseconds( ), SE_KEY, ch, qtrue, 0, NULL );
+
+						Com_QueueEvent( Sys_Milliseconds( ), SE_CHAR, ch, 0, 0, NULL );
+
+					}
 
 
 
-                    /*
-                    else if( keys[K_CTRL].down && key_value >= 'a' && key_value <= 'z' )
-                    {
-                        Com_QueueEvent(Sys_Milliseconds( ), SE_CHAR, (key_value-'a'+1), 0, 0, NULL );
-                    }
-*/
-                }
-                
-            } break;
+					/*
+					   else if( keys[K_CTRL].down && key_value >= 'a' && key_value <= 'z' )
+					   {
+					   Com_QueueEvent(Sys_Milliseconds( ), SE_CHAR, (key_value-'a'+1), 0, 0, NULL );
+					   }
+					   */
+				}
+
+			} break;
 
             case XCB_KEY_RELEASE:
             {
@@ -675,7 +685,7 @@ uint32_t 	full_sequence
 
             case XCB_EXPOSE:
             {
-                printf ("XCB_EXPOSE:\n");
+                Com_Printf ("XCB_EXPOSE:\n");
 
             } break;
    
@@ -813,84 +823,78 @@ uint8_t 	pad1
                 }
 
 			}break;
+		
+	case XCB_MOTION_NOTIFY:
+	{
+		if ( isMouseActive )
+		{
+			//  Mouse movement events
+			//  
+			//  Similar to mouse button press and release events, 
+			//  we also can be notified of various mouse movement events. 
+			//  These can be split into two families. 
+			//  One is of mouse pointer movement while no buttons are pressed, 
+			//  and the second is a mouse pointer motion while one (or more) 
+			//  of the buttons are pressed (this is sometimes called "a mouse
+			//  drag operation", or just "dragging"). 
+			//
+			//  The following event masks may be added during the creation of
+			//  our window to register for these events:
+			//
+			//  XCB_EVENT_MASK_POINTER_MOTION   // motion with no mouse button held
+			//  XCB_EVENT_MASK_BUTTON_MOTION    // motion with one or more mouse buttons held
+			//  XCB_EVENT_MASK_BUTTON_1_MOTION  // motion while only 1st mouse button is held
+			//  XCB_EVENT_MASK_BUTTON_2_MOTION  // and so on...
+			//  XCB_EVENT_MASK_BUTTON_3_MOTION
+			//  XCB_EVENT_MASK_BUTTON_4_MOTION
+			//  XCB_EVENT_MASK_BUTTON_5_MOTION
+			//int t = Sys_Milliseconds();
+			xcb_motion_notify_event_t *ev = (xcb_motion_notify_event_t *)e;
 
-            case XCB_MOTION_NOTIFY:
-            {
-                
-                if ( !isMouseActive() ) {
-				    break;
-                }
+			/*
+			   uint8_t 	response_type
+			   uint8_t 	detail
+			   uint16_t 	sequence
+			   xcb_timestamp_t 	time
+			   xcb_window_t 	root
+			   xcb_window_t 	event
+			   xcb_window_t 	child
+			   int16_t 	root_x
+			   int16_t 	root_y
+			   int16_t 	event_x
+			   int16_t 	event_y
+			   uint16_t 	state
+			   uint8_t 	same_screen
+			   uint8_t 	pad0
+			   */
+			// root_x, root_y: coordinate in destop coordinate system
+			// event_x, event_y: coordinate in renderer arena .
 
-                //  Mouse movement events
-                //  
-                //  Similar to mouse button press and release events, 
-                //  we also can be notified of various mouse movement events. 
-                //  These can be split into two families. 
-                //  One is of mouse pointer movement while no buttons are pressed, 
-                //  and the second is a mouse pointer motion while one (or more) 
-                //  of the buttons are pressed (this is sometimes called "a mouse
-                //  drag operation", or just "dragging"). 
-                //
-                //  The following event masks may be added during the creation of
-                //  our window to register for these events:
-                //
-                //  XCB_EVENT_MASK_POINTER_MOTION   // motion with no mouse button held
-                //  XCB_EVENT_MASK_BUTTON_MOTION    // motion with one or more mouse buttons held
-                //  XCB_EVENT_MASK_BUTTON_1_MOTION  // motion while only 1st mouse button is held
-                //  XCB_EVENT_MASK_BUTTON_2_MOTION  // and so on...
-                //  XCB_EVENT_MASK_BUTTON_3_MOTION
-                //  XCB_EVENT_MASK_BUTTON_4_MOTION
-                //  XCB_EVENT_MASK_BUTTON_5_MOTION
-                //int t = Sys_Milliseconds();
-                xcb_motion_notify_event_t *ev = (xcb_motion_notify_event_t *)e;
-				
-				/*
-				   uint8_t 	response_type
-				   uint8_t 	detail
-				   uint16_t 	sequence
-				   xcb_timestamp_t 	time
-				   xcb_window_t 	root
-				   xcb_window_t 	event
-				   xcb_window_t 	child
-				   int16_t 	root_x
-				   int16_t 	root_y
-				   int16_t 	event_x
-				   int16_t 	event_y
-				   uint16_t 	state
-				   uint8_t 	same_screen
-				   uint8_t 	pad0
-				   */
-                // root_x, root_y: coordinate in destop coordinate system
-                // event_x, event_y: coordinate in renderer arena .
+			int dx = ev->event_x - win_center_x;
+			int dy = ev->event_y - win_center_y;
 
-                int dx = ev->event_x - win_center_x;
-                int dy = ev->event_y - win_center_y;
+			// accurate the delta
+			if ( (dx != 0) || (dy != 0 ) )
+			{
+				Com_QueueEvent( 0, SE_MOUSE, dx, dy, 0, NULL );
 
-                // accurate the delta
+				xcb_warp_pointer( s_xcb_win.connection, XCB_NONE, s_xcb_win.hWnd,
+						0, 0, 0, 0, win_center_x, win_center_y);
 
-      			if ( (dx != 0) || (dy != 0 ) )
-                {
-                    // if (t - mouseResetTime > 10 )
-                    
-                    Com_QueueEvent( Sys_Milliseconds(), SE_MOUSE, dx, dy, 0, NULL );
-
-                    
-					xcb_warp_pointer( s_xcb_win.connection, s_xcb_win.hWnd, s_xcb_win.hWnd,
-					0, 0, s_xcb_win.winWidth, s_xcb_win.winHeight, win_center_x, win_center_y);
-
-					// Com_Printf ("MOUSE_MOTION: (%d, %d, %d, %d), win center,(%d, %d)\n",
-					//	ev->root_x, ev->root_y, ev->event_x, ev->event_y, win_center_x, win_center_y);
-                }
-                
-            } break;
+				// Com_Printf ("MOUSE_MOTION: (%d, %d, %d, %d), win center,(%d, %d)\n",
+				//	ev->root_x, ev->root_y, ev->event_x, ev->event_y, win_center_x, win_center_y);
+			}
+		}
+	} break;
 
             case XCB_CLIENT_MESSAGE:
             {
                 if ((*(xcb_client_message_event_t *)e).data.data32[0] ==
                         (*atom_wm_delete_window).atom)
                 {
-                	 Cbuf_ExecuteText(EXEC_NOW, "quit Closed window\n");
-				
+                	 // Cbuf_ExecuteText(EXEC_NOW, "quit Closed window\n");
+			 Cmd_Clear();
+                         Com_Quit_f();
                 }
             } break;
 
@@ -915,8 +919,14 @@ uint8_t 	pad1
                         uint8_t 	pad1
                 }
 */
-                printf ("CONFIGURE_NOTIFY: (%d, %d, %d, %d)\n", ev->x, ev->y, ev->width, ev->height);
-                
+                Com_Printf ("CONFIGURE_NOTIFY: (%d, %d, %d, %d)\n", ev->x, ev->y, ev->width, ev->height);
+
+		if( !WinSys_IsWinFullscreen() && !WinSys_IsWinMinimized() )
+		{
+
+		}                
+ 
+		Key_ClearStates();
                 win_center_x =  ev->width / 2;
                 win_center_y =  ev->height / 2;
             } break;
@@ -964,8 +974,7 @@ uint8_t 	pad1 [3]
             {
                 Key_ClearStates();
                 xcb_focus_in_event_t * ev = (xcb_focus_in_event_t *) e;
-
-                printf ("FOCUS_IN: detal: %d, event:%d, mode:%d, sequence: %d. \n",
+                Com_Printf ("FOCUS_IN: detal: %d, event:%d, mode:%d, sequence: %d. \n",
                         ev->detail, ev->event, ev->mode, ev->sequence);
 
             } break;
@@ -975,8 +984,7 @@ uint8_t 	pad1 [3]
                 Key_ClearStates();
 
                 xcb_focus_out_event_t * ev = (xcb_focus_out_event_t *) e;
-
-                printf ("FOCUS_OUT: detal: %d, event:%d, mode:%d, sequence: %d. \n",
+                Com_Printf ("FOCUS_OUT: detal: %d, event:%d, mode:%d, sequence: %d. \n",
                         ev->detail, ev->event, ev->mode, ev->sequence);
             } break;
 
@@ -1076,81 +1084,57 @@ uint8_t 	pad1 [3]
 }
 
 
-void IN_Frame(void)
+void IN_Frame( void )
 {
-
 	// If not DISCONNECTED (main menu) or ACTIVE (in game), we're loading
-	qboolean loading = ( clc.state != CA_DISCONNECTED && clc.state != CA_ACTIVE );
 
-	if( !cls.glconfig.isFullscreen && ( Key_GetCatcher( ) & KEYCATCH_CONSOLE ) )
+	if( Key_GetCatcher( ) & KEYCATCH_CONSOLE)
 	{
 		// Console is down in windowed mode
-		IN_DeactivateMouse( );
+                 if( WinSys_IsWinFullscreen() == 0)
+                        IN_DeactivateMouse( );
 	}
-	else if( !cls.glconfig.isFullscreen && loading )
+	else if( clc.state != CA_DISCONNECTED && clc.state != CA_ACTIVE )
 	{
 		// Loading in windowed mode
-		IN_DeactivateMouse( );
+		if( WinSys_IsWinFullscreen() == 0 )
+			IN_DeactivateMouse( );
 	}
-    else if( in_nograb->integer)
+	else if( WinSys_IsWinMinimized() || WinSys_IsWinLostFocused() )
 	{
-		// Window not got focus
 		IN_DeactivateMouse( );
 	}
-	else
+	else{
 		IN_ActivateMouse( );
-
-
-	IN_ProcessEvents( );
-    
-	// Set event time for next frame to earliest possible time an event could happen
-	in_eventTime = Sys_Milliseconds( );
-
-	// In case we had to delay actual restart of video system
-    if( ( vidRestartTime != 0 ) && ( vidRestartTime < Sys_Milliseconds( ) ) )
-	{
-		vidRestartTime = 0;
-		Cbuf_AddText( "vid_restart\n" );
 	}
+
+	Sys_SendKeyEvents( );
 }
 
 
-void IN_Init()
+void IN_Init( void )
 {
-    Com_Printf(" ...IN_Init... \n");
+	Com_Printf(" ...Input Initialization ( with xcb) ...\n");
 
 	if( s_xcb_win.connection == NULL )
 	{
-		Com_Printf( "IN_Init called before xcb_create_window. \n" );
+		Com_Printf( "WARNNING: IN_Init called before xcb_create_window. \n" );
 		return;
 	}
 
-
-	in_nograb = Cvar_Get( "in_nograb", "0", CVAR_ARCHIVE );
-	// mouse variables
-	in_mouse = Cvar_Get( "in_mouse", "1", CVAR_ARCHIVE );
-
 	Cmd_AddCommand("in_restart", IN_Restart);
 
-    keysyms_ = xcb_key_symbols_alloc(s_xcb_win.connection);
-	
-	mouseAvailable = (in_mouse->integer != 0) ;
-
-	if(mouseAvailable)
-		IN_ActivateMouse( );
-
-
+	keysyms_ = xcb_key_symbols_alloc(s_xcb_win.connection);
 }
 
 
 void IN_Shutdown(void)
 {
-	IN_DeactivateMouse();
-    mouseAvailable = qfalse;
+	isMouseActive = qfalse;
 
 	Cmd_RemoveCommand("in_restart");
 
-    xcb_key_symbols_free(keysyms_);
+    	xcb_key_symbols_free(keysyms_);
 }
 
 

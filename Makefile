@@ -369,15 +369,15 @@ endif
 
 #  RENDERER_LIBS = -lGL
 
-
+  ifeq ($(USING_XCB), 1)
 #  XCB_CFLAGS = $(shell PKG_CONFIG --silence-errors --cflags xcb)
   XCB_LIBS = $(shell pkg-config --libs xcb)
+  CLIENT_LIBS += $(XCB_LIBS)
+  endif
 
   CLIENT_CFLAGS += $(CURL_CFLAGS)
   CLIENT_LIBS += $(CURL_LIBS)
 
-  CLIENT_LIBS += $(XCB_LIBS)
-  
   ifeq ($(USE_OPENAL),1)
     ifneq ($(USE_OPENAL_DLOPEN),1)
       CLIENT_LIBS += $(THREAD_LIBS) $(OPENAL_LIBS)

@@ -14,17 +14,27 @@ struct WinData_s s_xcb_win;
 
 int WinSys_GetWinWidth(void)
 {
-    return s_xcb_win.winWidth;
+	return s_xcb_win.winWidth;
 }
 
 int WinSys_GetWinHeight(void)
 {
-    return s_xcb_win.winHeight;
+	return s_xcb_win.winHeight;
 }
 
 int WinSys_IsWinFullscreen(void)
 {
-    return s_xcb_win.isFullScreen;
+	return s_xcb_win.isFullScreen;
+}
+
+int WinSys_IsWinMinimized(void)
+{
+	return s_xcb_win.isMinimized;
+}
+
+int WinSys_IsWinLostFocused(void)
+{
+	return s_xcb_win.isLostFocused;
 }
 
 
