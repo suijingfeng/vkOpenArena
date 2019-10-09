@@ -227,7 +227,7 @@
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <SDLCheck>true</SDLCheck>
       <ConformanceMode>true</ConformanceMode>
-      <PreprocessorDefinitions>NDEBUG;NO_VM_COMPILED;NO_GZIP;STANDALONE;USE_RENDERER_DLOPEN;USE_CURL_DLOPEN;_MSC_VER;_MBCS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>NDEBUG;NO_VM_COMPILED;NO_GZIP;STANDALONE;USE_RENDERER_DLOPEN;USE_CURL_DLOPEN;_MBCS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
     <Link>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>

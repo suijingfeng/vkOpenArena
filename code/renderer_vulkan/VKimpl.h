@@ -50,6 +50,6 @@ void VK_FillRequiredInstanceExtention(
 	const VkExtensionProperties * const pInsExt,
 	const uint32_t nInsExt,
 	const char* ppInsExt[16],
-    uint32_t * nExt );
+    uint32_t * const nExt );
 
 #endif

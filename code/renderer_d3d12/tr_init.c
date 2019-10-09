@@ -123,9 +123,7 @@ cvar_t	*r_debugSort;
 cvar_t	*r_printShaders;
 cvar_t	*r_saveFontData;
 
-cvar_t	*r_maxpolys;
 int		max_polys;
-cvar_t	*r_maxpolyverts;
 int		max_polyverts;
 
 
@@ -285,10 +283,8 @@ void R_Register( void )
 
 	r_gpuIndex = ri.Cvar_Get("r_gpuIndex", "0", CVAR_ARCHIVE);
 
-	//r_maxpolys = ri.Cvar_Get( "r_maxpolys", va("%d", MAX_POLYS), 0);
-	//r_maxpolyverts = ri.Cvar_Get( "r_maxpolyverts", va("%d", MAX_POLYVERTS), 0);
-	r_maxpolys = ri.Cvar_Get("r_maxpolys", "600", 0);
-	r_maxpolyverts = ri.Cvar_Get("r_maxpolyverts", "3000", 0);
+	// r_maxpolys = ri.Cvar_Get( "r_maxpolys", va("%d", MAX_POLYS), 0);
+	// r_maxpolyverts = ri.Cvar_Get( "r_maxpolyverts", va("%d", MAX_POLYVERTS), 0);
 	// make sure all the commands added here are also
 	// removed in R_Shutdown
 	ri.Cmd_AddCommand( "imagelist", R_ImageList_f );
@@ -369,13 +365,10 @@ void R_Init( void )
 	R_NoiseInit();
 
 
-	max_polys = r_maxpolys->integer;
-	if (max_polys < MAX_POLYS)
-		max_polys = MAX_POLYS;
 
-	max_polyverts = r_maxpolyverts->integer;
-	if (max_polyverts < MAX_POLYVERTS)
-		max_polyverts = MAX_POLYVERTS;
+	max_polys = MAX_POLYS;
+
+	max_polyverts = MAX_POLYVERTS;
 
 	byte * ptr = (byte*) ri.Hunk_Alloc( 
 		sizeof( *backEndData[0] ) + 
