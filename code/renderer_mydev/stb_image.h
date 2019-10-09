@@ -611,8 +611,6 @@ typedef unsigned char validate_uint32[sizeof(stbi__uint32)==4 ? 1 : -1];
 #define STBI_SSE2
 #include <emmintrin.h>
 
-#ifdef _MSC_VER
-
 #if _MSC_VER >= 1400  // not VC6
 #include <intrin.h> // __cpuid
 static int stbi__cpuid3(void)
@@ -634,6 +632,8 @@ static int stbi__cpuid3(void)
 }
 #endif
 
+
+#ifdef _MSC_VER
 #define STBI_SIMD_ALIGN(type, name) __declspec(align(16)) type name
 
 static int stbi__sse2_available(void)

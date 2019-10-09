@@ -3179,7 +3179,6 @@ void CL_InitRef(void)
 
 #ifdef USE_RENDERER_DLOPEN
 
-	GetRefAPI_t	GetRefAPI;
 	char dllName[MAX_OSPATH];
     
     Com_Printf("\n-------- USE_RENDERER_DLOPEN --------\n");
@@ -3220,7 +3219,7 @@ void CL_InitRef(void)
     }
 
 
-	GetRefAPI = Sys_LoadFunction(rendererLib, "GetRefAPI");
+	GetRefAPI_t GetRefAPI = Sys_LoadFunction(rendererLib, "GetRefAPI");
 	if(!GetRefAPI)
 	{
 		Com_Error(ERR_FATAL, "Can't load symbol GetRefAPI: '%s'",  Sys_LibraryError());
@@ -3287,7 +3286,7 @@ void CL_InitRef(void)
 	ri.IsWinFullscreen = WinSys_IsWinFullscreen;
 	
 	ri.LoadDLL = Sys_LoadDll;
-	
+	ri.UnloadDLL = Sys_UnloadDll;
 	// ri.Sys_SetEnv = Sys_SetEnv;
 	ri.Sys_LowPhysicalMemory = Sys_LowPhysicalMemory;
 

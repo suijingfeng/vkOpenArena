@@ -74,27 +74,6 @@ $ cd vkOpenArena
 $ make -j$(nproc)
 ```
 
-Please note that vulkan renderer requires at least SDL 2.0.6. 
-The precompiled versions in some of the distribute repositories 
-do not ship with Vulkan support, you therefore may come cross the
-following problem when you launch OA:
-
-```
-Vulkan support is either not configured in SDL or not available in video driver.
-```
-This problem can be solved easily by compiling the SDL 2.0.9 from source:
-
-Get a copy of the source code from https://www.libsdl.org/, then extract it.
-
-```
-cd SDL
-mkdir build
-cd build
-../configure
-make -j4
-sudo make install
-```
-
 ## Building on fedora 30 ##
 
 ```
@@ -103,7 +82,7 @@ $ yum install openal-soft-devel.x86_64
 $ yum install alsa-lib-devel.x86_64
 $ yum install mesa-libGL-devel.x86_64
 $ yum install libcurl-devel.x86_64
-$ yum install mesa-vulkan-drivers
+$ yum install mesa-vulkan-drivers.x86_64
 $ yum install mesa-vulkan-devel.x86_64
 
 # if build on master branch

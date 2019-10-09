@@ -74,7 +74,7 @@ typedef struct WinData_s {
 	int	desktopHeight;
 	int	isFullScreen;
 	int	isMinimized;
-        int     isLostFocused;
+    int isLostFocused;
 	int	winStyle;
 	int	activeApp;
 	int	gammaSet;
