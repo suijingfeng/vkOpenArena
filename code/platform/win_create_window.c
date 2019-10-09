@@ -351,8 +351,10 @@ static void win_destroyWindowImpl(void)
 
 void WinSys_Init(void **pContext, int type)
 {
-
-	win_createWindowImpl();
+    
+    Com_Printf( " WinSys_Init: type= %d. \n", type);
+	
+    win_createWindowImpl();
 	
 	win_InitDisplayModel();
 

@@ -235,7 +235,7 @@ static void qglInit( void )
 #define OPENGL_DLL_NAME	"libGL.so.1"
 #endif
 
-	ri.Printf( PRINT_ALL, "...initializing QGL\n" );
+	ri.Printf( PRINT_ALL, "...initializing QGL. \n" );
 	const char *dllname = OPENGL_DLL_NAME;
 	if ( hinstOpenGL == NULL )
 	{
@@ -247,7 +247,7 @@ static void qglInit( void )
         	}
         	else
         	{
-			ri.Printf(PRINT_ALL, "L oading %s successful. \n", dllname);
+			ri.Printf(PRINT_ALL, "Loading %s successful. \n", dllname);
 		}
 	}
 
@@ -779,6 +779,7 @@ static void InitOpenGL( void )
 		// GLimp_Init(&glConfig, qtrue);
 		
 		void * pContex = NULL;
+        // 0 : OpenGL
 		ri.WinSysInit(&pContex, 0);
 
         pConfig->stereoEnabled = qfalse;
