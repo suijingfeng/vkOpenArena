@@ -1079,22 +1079,31 @@ qboolean ConstOptimize(vm_t *vm, int callProcOfsSyscall)
 	return qfalse;
 }
 
+
+
 #if idx64
-  #define EAX "%%rax"
-  #define EBX "%%rbx"
-  #define ESP "%%rsp"
-  #define EDI "%%rdi"
-#else
-  #define EAX "%%eax"
-  #define EBX "%%ebx"
-  #define ESP "%%esp"
-  #define EDI "%%edi"
+uint8_t qvmcall64(int *programStack, int *opStack, intptr_t *instructionPointers, unsigned char *dataBase);
+int qvmftolsse(void);
 #endif
+
 
 #if !defined(_MSC_VER)
 
-//work around with MSVC compiler, suijingfeng
+#if idx64
+#define EAX "%%rax"
+#define EBX "%%rbx"
+#define ESP "%%rsp"
+#define EDI "%%rdi"
+#else
+#define EAX "%%eax"
+#define EBX "%%ebx"
+#define ESP "%%esp"
+#define EDI "%%edi"
+#endif
 
+
+//work around with MSVC compiler, suijingfeng
+// GCC
 static inline int Q_VMftol(void)
 {
 	int retval;
@@ -1110,6 +1119,7 @@ static inline int Q_VMftol(void)
 
 	return retval;
 }
+
 
 #endif
 
@@ -1426,7 +1436,7 @@ void VM_Compile(vm_t *vm, vmHeader_t *header)
 		case OP_STORE4:
 			EmitMovEAXStack(vm, 0);	
 			EmitString("8B 54 9F FC");			// mov edx, dword ptr -4[edi + ebx * 4]
-			MASK_REG("E2", vm->dataMask & ~3);		// and edx, 0x12345678
+			MASK_REG("E2", vm->dataMask);		// and edx, 0x12345678
 #if idx64
 			EmitRexString(0x41, "89 04 11");		// mov dword ptr [r9 + edx], eax
 #else
@@ -1438,7 +1448,7 @@ void VM_Compile(vm_t *vm, vmHeader_t *header)
 		case OP_STORE2:
 			EmitMovEAXStack(vm, 0);	
 			EmitString("8B 54 9F FC");			// mov edx, dword ptr -4[edi + ebx * 4]
-			MASK_REG("E2", vm->dataMask & ~1);		// and edx, 0x12345678
+			MASK_REG("E2", vm->dataMask);		// and edx, 0x12345678
 #if idx64
 			Emit1(0x66);					// mov word ptr [r9 + edx], eax
 			EmitRexString(0x41, "89 04 11");
@@ -1644,20 +1654,17 @@ void VM_Compile(vm_t *vm, vmHeader_t *header)
 			EmitString("DB 1C 9F");				// fistp dword ptr [edi + ebx * 4]
 #else // FTOL_PTR
 
-#if defined(_MSC_VER)
-		
-			EmitString("F3 0F 10 07"); // movss xmm0, dword ptr [edi]
-			EmitString("F3 0F 2C C0"); // cvttss2si eax, xmm0
-			EmitCommand(LAST_COMMAND_MOV_STACK_EAX);// mov dword ptr [edi], eax
-
-#else
-// GCC
 // call the library conversion function
+
+#if defined(_MSC_VER)
+			EmitRexString(0x48, "BA");			// mov edx, Q_VMftol
+			EmitPtr(qvmftolsse);
+#else
 			EmitRexString(0x48, "BA");			// mov edx, Q_VMftol
 			EmitPtr(Q_VMftol);
+#endif
 			EmitRexString(0x48, "FF D2");			// call edx
 			EmitCommand(LAST_COMMAND_MOV_STACK_EAX);	// mov dword ptr [edi + ebx * 4], eax
-#endif
 
 #endif
 			break;
@@ -1771,8 +1778,6 @@ This function is called directly by the generated code
 intptr_t VM_CallCompiled(vm_t *vm, int *args)
 {
 	unsigned char stack[OPSTACK_SIZE + 15];
-	unsigned char* image;
-    int	arg;
 
 	currentVM = vm;
 
@@ -1783,11 +1788,11 @@ intptr_t VM_CallCompiled(vm_t *vm, int *args)
 	int programStack = vm->programStack;
     int stackOnEntry = vm->programStack;
 	// set up the stack frame 
-	image = vm->dataBase;
+	unsigned char* image = vm->dataBase;
 
 	programStack -= ( 8 + 4 * MAX_VMMAIN_ARGS );
 
-	for ( arg = 0; arg < MAX_VMMAIN_ARGS; arg++ )
+	for (int arg = 0; arg < MAX_VMMAIN_ARGS; ++arg )
 		*(int *)&image[ programStack + 8 + arg * 4 ] = args[ arg ];
 
 	*(int *)&image[ programStack + 4 ] = 0;	// return stack
@@ -1802,10 +1807,7 @@ intptr_t VM_CallCompiled(vm_t *vm, int *args)
 
 #ifdef _MSC_VER
   #if idx64
-	extern uint8_t qvmcall64(int *programStack, int *opStack, intptr_t *instructionPointers, unsigned char *dataBase);
-	typedef uint8_t (* qvmcall64_t)(int *programStack, int *opStack, intptr_t *instructionPointers, unsigned char *dataBase);
-	qvmcall64_t fnQvmcall64 = qvmcall64;
-	opStackOfs = fnQvmcall64(&programStack, opStack, vm->instructionPointers, vm->dataBase);
+	opStackOfs = qvmcall64(&programStack, opStack, vm->instructionPointers, vm->dataBase);
   #else
 	__asm
 	{
@@ -1823,7 +1825,8 @@ intptr_t VM_CallCompiled(vm_t *vm, int *args)
 		
 		popad
 	}
-  #endif		
+  #endif
+
 #elif idx64
 	__asm__ volatile(
 		"movq %5, %%rax\n"
@@ -1855,6 +1858,7 @@ intptr_t VM_CallCompiled(vm_t *vm, int *args)
 	{
 		Com_Error(ERR_DROP, "opStack corrupted in compiled code");
 	}
+
 	if(programStack != stackOnEntry - (8 + 4 * MAX_VMMAIN_ARGS))
 		Com_Error(ERR_DROP, "programStack corrupted in compiled code");
 

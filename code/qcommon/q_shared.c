@@ -85,8 +85,8 @@ string compare the end of the strings and return qtrue if strings match
 */
 qboolean COM_CompareExtension(const char *in, const char *ext)
 {
-	int inlen = strlen(in);
-	int extlen = strlen(ext);
+	int inlen = (int)strlen(in);
+	int extlen = (int)strlen(ext);
 	
 	if(extlen <= inlen)
 	{
@@ -921,7 +921,7 @@ Assumes buffer is atleast TRUNCATE_LENGTH big
 */
 void Com_TruncateLongString( char *buffer, const char *s )
 {
-	int length = strlen( s );
+	int length = (int)strlen( s );
 
 	if( length <= TRUNCATE_LENGTH )
 		Q_strncpyz( buffer, s, TRUNCATE_LENGTH );

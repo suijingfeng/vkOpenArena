@@ -490,14 +490,14 @@ void CL_ParseGamestate( msg_t *msg )
 		}
 		
 		if ( cmd == svc_configstring ) {
-			int		len;
+
 
 			i = MSG_ReadShort( msg );
 			if ( i < 0 || i >= MAX_CONFIGSTRINGS ) {
 				Com_Error( ERR_DROP, "configstring > MAX_CONFIGSTRINGS" );
 			}
 			s = MSG_ReadBigString( msg );
-			len = strlen( s );
+			int len = (int) strlen( s );
 
 			if ( len + 1 + cl.gameState.dataCount > MAX_GAMESTATE_CHARS ) {
 				Com_Error( ERR_DROP, "MAX_GAMESTATE_CHARS exceeded" );

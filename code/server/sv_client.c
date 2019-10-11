@@ -1473,7 +1473,7 @@ void SV_UserinfoChanged( client_t *cl ) {
 
 	val = Info_ValueForKey( cl->userinfo, "ip" );
 	if( val[0] )
-		len = strlen( ip ) - strlen( val ) + strlen( cl->userinfo );
+		len = (int)(strlen( ip ) - strlen( val ) + strlen( cl->userinfo ));
 	else
 		len = strlen( ip ) + 4 + strlen( cl->userinfo );
 

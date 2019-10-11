@@ -213,9 +213,6 @@ int WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int n
 {
 	//char sys_cmdline[MAX_STRING_CHARS];
 
-	int	totalMsec = 0;
-	int countMsec = 0;
-
 	// should never get a previous instance in Win32
 	if (hPrevInstance) {
 		return 0;

@@ -77,6 +77,7 @@
     <ClCompile Include="..\..\..\code\qcommon\unzip.c" />
     <ClCompile Include="..\..\..\code\qcommon\vm.c" />
     <ClCompile Include="..\..\..\code\qcommon\vm_interpreted.c" />
+    <ClCompile Include="..\..\..\code\qcommon\vm_x86.c" />
     <ClCompile Include="..\..\..\code\server\sv_bot.c" />
     <ClCompile Include="..\..\..\code\server\sv_ccmds.c" />
     <ClCompile Include="..\..\..\code\server\sv_client.c" />
@@ -99,11 +100,6 @@
     </ProjectReference>
   </ItemGroup>
   <ItemGroup>
-    <None Include="..\..\..\code\asm\ftola.asm" />
-    <None Include="..\..\..\code\asm\snapvector.asm" />
-    <None Include="..\..\..\code\asm\vm_x86_64.asm" />
-  </ItemGroup>
-  <ItemGroup>
     <ClInclude Include="..\..\..\code\sdl\resource.h" />
     <ClInclude Include="..\..\..\code\sdl\win_gamma.h" />
     <ClInclude Include="..\..\..\code\sdl\win_log.h" />
@@ -115,6 +111,10 @@
   </ItemGroup>
   <ItemGroup>
     <Image Include="..\..\..\code\platform\oa3.ico" />
+  </ItemGroup>
+  <ItemGroup>
+    <MASM Include="..\..\..\code\qcommon\qvmftolsse.asm" />
+    <MASM Include="..\..\..\code\qcommon\vm_x86_64.asm" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <VCProjectVersion>15.0</VCProjectVersion>
@@ -151,6 +151,7 @@
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
   <ImportGroup Label="ExtensionSettings">
+    <Import Project="$(VCTargetsPath)\BuildCustomizations\masm.props" />
   </ImportGroup>
   <ImportGroup Label="Shared">
   </ImportGroup>
@@ -227,12 +228,16 @@
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <SDLCheck>true</SDLCheck>
       <ConformanceMode>true</ConformanceMode>
-      <PreprocessorDefinitions>NDEBUG;NO_VM_COMPILED;NO_GZIP;STANDALONE;USE_RENDERER_DLOPEN;USE_CURL_DLOPEN;_MBCS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>_WIN64;NDEBUG;NO_GZIP;STANDALONE;USE_RENDERER_DLOPEN;USE_CURL_DLOPEN;_MBCS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <ProgramDataBaseFileName>$(IntDir)</ProgramDataBaseFileName>
     </ClCompile>
     <Link>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
       <AdditionalDependencies>ws2_32.lib;winmm.lib;psapi.lib;kernel32.lib;user32.lib;gdi32.lib;winspool.lib;comdlg32.lib;advapi32.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;odbc32.lib;odbccp32.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <GenerateDebugInformation>false</GenerateDebugInformation>
+      <GenerateMapFile>false</GenerateMapFile>
+      <MapFileName>$(IntDir)$(TargetName)$(TargetExt)</MapFileName>
     </Link>
     <CustomBuildStep>
       <Command>
@@ -243,5 +248,6 @@
   </ItemDefinitionGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
+    <Import Project="$(VCTargetsPath)\BuildCustomizations\masm.targets" />
   </ImportGroup>
 </Project>

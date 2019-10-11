@@ -372,7 +372,7 @@ void Field_Paste( field_t *edit )
 	}
 
 	// send as if typed, so insert / overstrike works properly
-	int pasteLen = strlen( cbd );
+	int pasteLen = (int) strlen( cbd );
 	for (int i = 0 ; i < pasteLen ; i++ ) {
 		Field_CharEvent( edit, cbd[i] );
 	}

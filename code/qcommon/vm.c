@@ -173,7 +173,6 @@ void VM_LoadSymbols( vm_t *vm )
 	vmSymbol_t	**prev, *sym;
 	int		count;
 	int		value;
-	int		chars;
 	int		segment;
 	int		numInstructions;
 
@@ -222,7 +221,7 @@ void VM_LoadSymbols( vm_t *vm )
 			Com_Printf( "WARNING: incomplete line at end of file\n" );
 			break;
 		}
-		chars = strlen( token );
+		int chars = (int)strlen( token );
 		sym = Hunk_Alloc( sizeof( *sym ) + chars, h_high );
 		*prev = sym;
 		prev = &sym->next;

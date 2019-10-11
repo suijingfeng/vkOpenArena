@@ -615,7 +615,7 @@ Draws the console with the solid background
 ================
 */
 void Con_DrawSolidConsole( float frac ) {
-	int				i, x, y;
+	int				x, y;
 	int				rows;
 	short			*text;
 	int				row;
@@ -667,10 +667,11 @@ void Con_DrawSolidConsole( float frac ) {
 
 	re.SetColor( g_color_table[ColorIndex(COLOR_RED)] );
 
-	i = strlen( Q3_VERSION );
+	const int clen = (int)strlen( Q3_VERSION );
 
-	for (x=0 ; x<i ; x++) {
-		SCR_DrawSmallChar( cls.glconfig.vidWidth - ( i - x + 1 ) * SMALLCHAR_WIDTH,
+	for (x=0 ; x< clen ; ++x)
+	{
+		SCR_DrawSmallChar( cls.glconfig.vidWidth - (clen - x + 1 ) * SMALLCHAR_WIDTH,
 			lines - SMALLCHAR_HEIGHT, Q3_VERSION[x] );
 	}
 
@@ -701,7 +702,7 @@ void Con_DrawSolidConsole( float frac ) {
 	currentColor = 7;
 	re.SetColor( g_color_table[currentColor] );
 
-	for (i=0 ; i<rows ; i++, y -= SMALLCHAR_HEIGHT, row--)
+	for (int i=0 ; i<rows ; i++, y -= SMALLCHAR_HEIGHT, row--)
 	{
 		if (row < 0)
 			break;
