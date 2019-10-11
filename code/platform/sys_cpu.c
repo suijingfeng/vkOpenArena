@@ -22,6 +22,7 @@ static void CPUID( int func, unsigned int *regs )
 #if _MSC_VER >= 1400
 	__cpuid( regs, func );
 #else
+
 	__asm {
 		mov edi,regs
 		mov eax,[edi]
@@ -31,18 +32,31 @@ static void CPUID( int func, unsigned int *regs )
 		mov [edi+8], ecx
 		mov [edi+12], edx
 	}
+
 #endif
 }
+
 #else
+// linux 
 static void CPUID( int func, unsigned int *regs )
 {
+#if (idx64 || idx32)
 	__asm__ __volatile__( "cpuid" :
 		"=a"(regs[0]),
 		"=b"(regs[1]),
 		"=c"(regs[2]),
 		"=d"(regs[3]) :
 		"a"(func) );
+#else
+
+// mips
+
+
+#endif
+
+
 }
+
 #endif
 
 

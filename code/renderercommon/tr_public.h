@@ -172,7 +172,7 @@ typedef struct {
 	int (* IsWinFullscreen)(void);
 
 	void * (* LoadDLL)( const char * name, int isSysLib );
-	void (* UnloadDLL)(const char * name );
+	void (* UnloadDLL)(void * handle );
 
 	// system stuff
 	// void (* Sys_SetEnv)( const char *name, const char *value );

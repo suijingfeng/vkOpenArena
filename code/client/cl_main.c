@@ -3272,7 +3272,6 @@ void CL_InitRef(void)
 	// ri.IN_Init = IN_Init;
 	// ri.IN_Shutdown = IN_Shutdown;
 	// ri.IN_Restart = IN_Restart;
-
 	// ri.ftol = Q_ftol;
 
 	ri.WinSysInit = WinSys_Init;

@@ -14,6 +14,16 @@ ifeq ($(COMPILE_PLATFORM),mingw32)
   endif
 endif
 
+#############################################################################
+#
+# If you require a different configuration from the defaults below, create a
+# new file named "Makefile.local" in the same directory as this file and define
+# your parameters there. This allows you to change configuration without
+# causing problems with keeping up to date with the repository.
+#
+#############################################################################
+-include Makefile.local
+
 ifndef BUILD_STANDALONE
   BUILD_STANDALONE = 1
 endif
@@ -40,19 +50,10 @@ ifndef BUILD_VULKAN
   BUILD_VULKAN = 1
 endif
 
-
 BASEGAME=baseoa
 VERSION=3.0.0a
 
-#############################################################################
-#
-# If you require a different configuration from the defaults below, create a
-# new file named "Makefile.local" in the same directory as this file and define
-# your parameters there. This allows you to change configuration without
-# causing problems with keeping up to date with the repository.
-#
-#############################################################################
--include Makefile.local
+
 
 ifndef USE_RENDERER_DLOPEN
 USE_RENDERER_DLOPEN=1
@@ -92,6 +93,11 @@ ifeq ($(COMPILE_ARCH),powerpc)
 endif
 ifeq ($(COMPILE_ARCH),powerpc64)
   COMPILE_ARCH=ppc64
+endif
+
+ifeq ($(COMPILE_ARCH),mips64)
+# current no vulkan support on this platform ...
+  BUILD_VULKAN = 0
 endif
 
 

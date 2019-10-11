@@ -145,6 +145,7 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #include <endian.h>
 
 #if defined(__linux__)
+
 #define OS_STRING "linux"
 #elif defined(__FreeBSD_kernel__)
 #define OS_STRING "kFreeBSD"
@@ -173,7 +174,7 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
 #define DLL_EXT ".so"
 
-#endif
+#endif // end __linux__
 
 //=================================================================== BSD ===
 
