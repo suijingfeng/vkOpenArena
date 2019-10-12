@@ -466,7 +466,6 @@ void CL_ParseGamestate( msg_t *msg )
 	entityState_t	*es;
 	int				newnum;
 	entityState_t	nullstate;
-	int				cmd;
 	char			*s;
 	char oldGame[MAX_QPATH];
 
@@ -482,8 +481,9 @@ void CL_ParseGamestate( msg_t *msg )
 
 	// parse all the configstrings and baselines
 	cl.gameState.dataCount = 1;	// leave a 0 at the beginning for uninitialized configstrings
-	while ( 1 ) {
-		cmd = MSG_ReadByte( msg );
+	while ( 1 )
+	{
+		int cmd = MSG_ReadByte( msg );
 
 		if ( cmd == svc_EOF ) {
 			break;

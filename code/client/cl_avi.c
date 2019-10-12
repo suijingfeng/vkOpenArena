@@ -85,8 +85,9 @@ static ID_INLINE void SafeFS_Write( const void *buffer, int len, fileHandle_t f 
 
 static ID_INLINE void WRITE_STRING( const char *s )
 {
-    memcpy( &buffer[ bufIndex ], s, strlen( s ) );
-    bufIndex += strlen( s );
+	int slen = (unsigned int)strlen(s);
+    memcpy( &buffer[ bufIndex ], s, slen);
+    bufIndex += slen;
 }
 
 

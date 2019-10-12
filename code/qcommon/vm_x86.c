@@ -43,6 +43,52 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #endif
 
 
+#if defined(_MSC_VER)
+
+#if (idx64) 
+extern uint8_t qvmcall64(int *programStack, int *opStack, intptr_t *instructionPointers, unsigned char *dataBase);
+#endif
+// work around with MSVC compiler, suijingfeng
+
+extern int qvmftolsse( void );
+
+int(*Q_VMftol)(void) = qvmftolsse;
+
+#else
+// GCC
+#if idx64
+#define EAX "%%rax"
+#define EBX "%%rbx"
+#define ESP "%%rsp"
+#define EDI "%%rdi"
+#else
+#define EAX "%%eax"
+#define EBX "%%ebx"
+#define ESP "%%esp"
+#define EDI "%%edi"
+#endif
+
+static int qftolsse_linux(void)
+{
+	int retval;
+
+	__asm__ volatile
+		(
+			"movss (" EDI ", " EBX ", 4), %%xmm0\n"
+			"cvttss2si %%xmm0, %0\n"
+			: "=r" (retval)
+			:
+			: "%xmm0"
+			);
+
+	return retval;
+}
+
+int( * Q_VMftol )(void) = qftolsse_linux;
+
+#endif
+
+
 static void VM_Destroy_Compiled(vm_t* self);
 
 /*
@@ -148,7 +194,6 @@ inline static void EmitPtr(void *ptr)
 
 inline static int ch2Hex( unsigned char c )
 {
-
 	if( (c >= '0') && (c <= '9') )
     {
 		return c - '0';
@@ -1081,52 +1126,10 @@ qboolean ConstOptimize(vm_t *vm, int callProcOfsSyscall)
 
 
 
-#if idx64
-uint8_t qvmcall64(int *programStack, int *opStack, intptr_t *instructionPointers, unsigned char *dataBase);
-int qvmftolsse(void);
-#endif
 
-
-#if !defined(_MSC_VER)
-
-#if idx64
-#define EAX "%%rax"
-#define EBX "%%rbx"
-#define ESP "%%rsp"
-#define EDI "%%rdi"
-#else
-#define EAX "%%eax"
-#define EBX "%%ebx"
-#define ESP "%%esp"
-#define EDI "%%edi"
-#endif
-
-
-//work around with MSVC compiler, suijingfeng
-// GCC
-static inline int Q_VMftol(void)
+void VM_Compile(vm_t * const vm, vmHeader_t *header)
 {
-	int retval;
-
-	__asm__ volatile
-		(
-			"movss (" EDI ", " EBX ", 4), %%xmm0\n"
-			"cvttss2si %%xmm0, %0\n"
-			: "=r" (retval)
-			:
-			: "%xmm0"
-			);
-
-	return retval;
-}
-
-
-#endif
-
-
-void VM_Compile(vm_t *vm, vmHeader_t *header)
-{
-	int	op, maxLength, v, i;
+	int	op, maxLength, v;
     int	callProcOfsSyscall, callProcOfs, callDoSyscallOfs;
 
 	jusedSize = header->instructionCount + 2;
@@ -1143,7 +1146,7 @@ void VM_Compile(vm_t *vm, vmHeader_t *header)
 	code = Z_Malloc(header->codeLength+32);
 	memset(code, 0, header->codeLength+32);
 	
-
+	Com_Printf(" Starting VM_Compile ... \n");
 
 	// copy code in larger buffer and put some zeros at the end
 	// so we can safely look ahead for a few instructions in it
@@ -1153,7 +1156,8 @@ void VM_Compile(vm_t *vm, vmHeader_t *header)
 	// ensure that the optimisation pass knows about all the jump
 	// table targets
 	pc = -1; // a bogus value to be printed in out-of-bounds error messages
-	for( i = 0; i < vm->numJumpTableTargets; i++ ) {
+	for(int i = 0; i < vm->numJumpTableTargets; ++i )
+	{
 		JUSED( *(int *)(vm->jumpTableTargets + ( i * sizeof( int ) ) ) );
 	}
 
@@ -1656,13 +1660,8 @@ void VM_Compile(vm_t *vm, vmHeader_t *header)
 
 // call the library conversion function
 
-#if defined(_MSC_VER)
-			EmitRexString(0x48, "BA");			// mov edx, Q_VMftol
-			EmitPtr(qvmftolsse);
-#else
 			EmitRexString(0x48, "BA");			// mov edx, Q_VMftol
 			EmitPtr(Q_VMftol);
-#endif
 			EmitRexString(0x48, "FF D2");			// call edx
 			EmitCommand(LAST_COMMAND_MOV_STACK_EAX);	// mov dword ptr [edi + ebx * 4], eax
 
@@ -1747,12 +1746,13 @@ void VM_Compile(vm_t *vm, vmHeader_t *header)
 	Z_Free( code );
 	Z_Free( buf );
 	Z_Free( jused );
-	Com_Printf( "VM file %s compiled to %i bytes of code\n", vm->name, compiledOfs );
+	Com_Printf( "VM file %s compiled to %i bytes of code\n", 
+		vm->name, compiledOfs );
 
 	vm->destroy = VM_Destroy_Compiled;
 
 	// offset all the instruction pointers for the new location
-	for ( i = 0 ; i < header->instructionCount ; i++ ) {
+	for (int i = 0 ; i < header->instructionCount ; ++i ) {
 		vm->instructionPointers[i] += (intptr_t) vm->codeBase;
 	}
 }
@@ -1775,7 +1775,7 @@ VM_CallCompiled
 This function is called directly by the generated code
 ==============
 */
-intptr_t VM_CallCompiled(vm_t *vm, int *args)
+intptr_t VM_CallCompiled(vm_t * const vm, int *args)
 {
 	unsigned char stack[OPSTACK_SIZE + 15];
 
@@ -1792,7 +1792,7 @@ intptr_t VM_CallCompiled(vm_t *vm, int *args)
 
 	programStack -= ( 8 + 4 * MAX_VMMAIN_ARGS );
 
-	for (int arg = 0; arg < MAX_VMMAIN_ARGS; ++arg )
+	for (unsigned int arg = 0; arg < MAX_VMMAIN_ARGS; ++arg )
 		*(int *)&image[ programStack + 8 + arg * 4 ] = args[ arg ];
 
 	*(int *)&image[ programStack + 4 ] = 0;	// return stack
@@ -1859,8 +1859,11 @@ intptr_t VM_CallCompiled(vm_t *vm, int *args)
 		Com_Error(ERR_DROP, "opStack corrupted in compiled code");
 	}
 
-	if(programStack != stackOnEntry - (8 + 4 * MAX_VMMAIN_ARGS))
-		Com_Error(ERR_DROP, "programStack corrupted in compiled code");
+	if (programStack != stackOnEntry - (8 + 4 * MAX_VMMAIN_ARGS))
+	{
+		Com_Error(ERR_DROP, "programStack(%d != %d) corrupted in compiled code",
+			programStack, stackOnEntry - (8 + 4 * MAX_VMMAIN_ARGS));
+	}
 
 	vm->programStack = stackOnEntry;
 

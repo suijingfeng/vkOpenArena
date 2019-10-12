@@ -528,8 +528,6 @@ vec_t VectorNormalize2( const vec3_t v, vec3_t out );
 void Vector4Scale( const vec4_t in, vec_t scale, vec4_t out );
 int Q_log2(int val);
 
-float Q_acos(float c);
-
 float	Q_random( int *seed );
 float	Q_crandom( int *seed );
 

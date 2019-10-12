@@ -735,7 +735,6 @@ which will subtract space for locals from sp
 intptr_t QDECL VM_Call(struct vm_s *vm, int callnum, ... )
 {
 	intptr_t r = 0;
-	int i;
 
 	if(!vm || !vm->name[0])
 		Com_Error(ERR_FATAL, "VM_Call with NULL vm");
@@ -756,7 +755,7 @@ intptr_t QDECL VM_Call(struct vm_s *vm, int callnum, ... )
 		int args[MAX_VMMAIN_ARGS-1];
 		va_list ap;
 		va_start(ap, callnum);
-		for (i = 0; i < ARRAY_LEN(args); i++)
+		for (unsigned int i = 0; i < ARRAY_LEN(args); ++i)
         {
 			args[i] = va_arg(ap, int);
 		}
@@ -777,7 +776,7 @@ intptr_t QDECL VM_Call(struct vm_s *vm, int callnum, ... )
 		a.callnum = callnum;
 		va_start(ap, callnum);
 		
-        for(i = 0; i < MAX_VMMAIN_ARGS-1; i++)
+        for(unsigned int i = 0; i < MAX_VMMAIN_ARGS-1; ++i)
         {
 			a.args[i] = va_arg(ap, int);
 		}
