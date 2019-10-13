@@ -36,7 +36,6 @@ and one exported function: Perform
 vm_t* currentVM = NULL;
 
 
-
 ////////// static ///////////////
 static vm_t	*lastVM = NULL;
 
@@ -303,19 +302,20 @@ vmHeader_t *VM_LoadQVM( vm_t *vm, qboolean alloc, qboolean unpure)
 {
 	int	dataLength;
 	int	i;
-	char filename[MAX_QPATH];
+
 	union {
 		vmHeader_t *h;
 		void *v;
 	} header;
 
 	// load the image
-	Com_sprintf( filename, sizeof(filename), "vm/%s.qvm", vm->name );
-	Com_Printf( "Loading vm file %s...\n", filename );
+	char filename[MAX_QPATH] = {0};
+	snprintf( filename, sizeof(filename), "vm/%s.qvm", vm->name );
+	Com_Printf( " Loading vm file %s...\n", filename );
 
 	FS_ReadFileDir(filename, vm->searchPath, unpure, &header.v);
 
-	if ( !header.h )
+	if ( header.h == NULL )
     {
 		Com_Printf( "Failed.\n" );
 		VM_Free( vm );
@@ -365,7 +365,9 @@ vmHeader_t *VM_LoadQVM( vm_t *vm, qboolean alloc, qboolean unpure)
 			Com_Printf(S_COLOR_YELLOW "Warning: %s has bad header\n", filename);
 			return NULL;
 		}
-	} else {
+	}
+	else
+	{
 		VM_Free( vm );
 		FS_FreeFile(header.v);
 
@@ -600,7 +602,7 @@ vm_t* VM_Create(const char *module, intptr_t (*systemCalls)(intptr_t *), vmInter
   
    
 	// VM_Compile may have reset vm->compiled if compilation failed
-	if (!vm->compiled)
+	if (vm->compiled == qfalse)
 	{
 		VM_PrepareInterpreter( vm, header );
 	}

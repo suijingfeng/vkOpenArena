@@ -230,6 +230,7 @@
       <ConformanceMode>true</ConformanceMode>
       <PreprocessorDefinitions>_WIN64;NDEBUG;NO_GZIP;STANDALONE;USE_RENDERER_DLOPEN;USE_CURL_DLOPEN;_MBCS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ProgramDataBaseFileName>$(IntDir)</ProgramDataBaseFileName>
+      <CallingConvention>Cdecl</CallingConvention>
     </ClCompile>
     <Link>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>

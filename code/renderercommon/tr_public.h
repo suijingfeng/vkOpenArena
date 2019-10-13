@@ -155,7 +155,7 @@ typedef struct {
 	int	(*CIN_PlayCinematic)( const char *arg0, int xpos, int ypos, int width, int height, int bits);
 	e_status (*CIN_RunCinematic) (int handle);
 
-	void	(*CL_WriteAVIVideoFrame)( const unsigned char *buffer, int size );
+	void (* CL_WriteAVIVideoFrame)( const unsigned char * buffer, int size );
 
 
 	// window systems impl

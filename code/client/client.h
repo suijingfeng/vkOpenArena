@@ -589,7 +589,7 @@ qboolean CL_GameCommand(void);
 void CL_CGameRendering(void);
 void CL_SetCGameTime(void);
 void CL_FirstSnapshot(void);
-void CL_ShaderStateChanged(void);
+
 
 //
 // cl_ui.c
@@ -613,8 +613,8 @@ qboolean CL_Netchan_Process(netchan_t *chan, msg_t *msg);
 //
 qboolean CL_OpenAVIForWriting(const char *filename);
 void CL_TakeVideoFrame(void);
-void CL_WriteAVIVideoFrame(const unsigned char *imageBuffer, int size);
-void CL_WriteAVIAudioFrame(const unsigned char *pcmBuffer, int size);
+void CL_WriteAVIVideoFrame(const unsigned char * imageBuffer, int size);
+void CL_WriteAVIAudioFrame(const unsigned char * pcmBuffer, int size);
 qboolean CL_CloseAVI(void);
 qboolean CL_VideoRecording(void);
 
