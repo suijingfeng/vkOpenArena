@@ -1,1 +1,0 @@
-extern const vec4_t	g_color_table[NUMBER_OF_COLORS];

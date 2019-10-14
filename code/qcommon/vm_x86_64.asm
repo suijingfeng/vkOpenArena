@@ -29,6 +29,7 @@
 ; prototype:
 ; uint8_t qvmcall64(int *programStack, int *opStack, intptr_t *instructionPointers, byte *dataBase);
 
+
 qvmcall64 PROC
   push rsi							; push non-volatile registers to stack
   push rdi

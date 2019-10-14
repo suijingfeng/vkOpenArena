@@ -186,7 +186,7 @@ void CL_ConfigstringModified( void ) {
 	int			i, index;
 	char		*dup;
 	gameState_t	oldGs;
-	int			len;
+
 
 	index = atoi( Cmd_Argv(1) );
 	if ( index < 0 || index >= MAX_CONFIGSTRINGS ) {
@@ -218,7 +218,7 @@ void CL_ConfigstringModified( void ) {
 			continue;		// leave with the default empty string
 		}
 
-		len = strlen( dup );
+		int len = (int) strlen( dup );
 
 		if ( len + 1 + cl.gameState.dataCount > MAX_GAMESTATE_CHARS ) {
 			Com_Error( ERR_DROP, "MAX_GAMESTATE_CHARS exceeded" );
@@ -418,7 +418,7 @@ static void VertmToHorpFov( float *fov_x, float *fov_y, float aspect ) {
 	// In Vert- FOV the horizontal FOV is unchanged, so we use it to
 	// calculate the vertical FOV that would be used if playing on
 	// 4:3 to get the Hor+ vertical FOV
-	*fov_y = HfovToVfov( *fov_x, 4.0 / 3.0 );
+	*fov_y = HfovToVfov( *fov_x, 1.3333333f );
 
 	// Then we use the Hor+ vertical FOV to calculate our new
 	// expanded horizontal FOV

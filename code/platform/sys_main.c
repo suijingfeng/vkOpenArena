@@ -78,13 +78,13 @@ qboolean Sys_WritePIDFile( void )
 	if( ( f = fopen( pidFile, "r" ) ) != NULL )
 	{
 		char  pidBuffer[ 64 ] = { 0 };
-		int pid = fread( pidBuffer, sizeof( char ), sizeof( pidBuffer ) - 1, f );
+		size_t pid = fread( pidBuffer, sizeof( char ), sizeof( pidBuffer ) - 1, f );
 		fclose( f );
 
 		if(pid > 0)
 		{
-			pid = atoi( pidBuffer );
-			if( !Sys_PIDIsRunning( pid ) )
+			int res = atoi( pidBuffer );
+			if( !Sys_PIDIsRunning( res ) )
 				stale = qtrue;
 		}
 		else

@@ -637,12 +637,14 @@ void Info_Print( const char *s ) {
 Com_StringContains
 ============
 */
-char *Com_StringContains(char *str1, char *str2, int casesensitive) {
-	int len, i, j;
-
-	len = strlen(str1) - strlen(str2);
-	for (i = 0; i <= len; i++, str1++) {
-		for (j = 0; str2[j]; j++) {
+char *Com_StringContains(char *str1, char *str2, int casesensitive)
+{
+	int len = (int)(strlen(str1) - strlen(str2));
+	for (int i = 0; i <= len; ++i, str1++)
+	{
+		int j;
+		for (j = 0; str2[j]; j++)
+		{
 			if (casesensitive) {
 				if (str1[j] != str2[j]) {
 					break;
@@ -2067,7 +2069,7 @@ sysEvent_t Com_GetSystemEvent( void )
 	s = CON_Input();
 	if ( s )
 	{
-		int len = strlen( s ) + 1;
+		int len = (int)strlen( s ) + 1;
 		char* b = Z_Malloc( len );
 		strcpy( b, s );
 		Com_QueueEvent( 0, SE_CONSOLE, 0, 0, len, b );
@@ -3325,17 +3327,15 @@ Field_Complete
 */
 static qboolean Field_Complete( void )
 {
-	int completionOffset;
-
 	if( matchCount == 0 )
 		return qtrue;
 
-	completionOffset = strlen( completionField->buffer ) - strlen( completionString );
+	int completionOffset = (int)(strlen( completionField->buffer ) - strlen( completionString ));
 
 	Q_strncpyz( &completionField->buffer[ completionOffset ], shortestMatch,
 		sizeof( completionField->buffer ) - completionOffset );
 
-	completionField->cursor = strlen( completionField->buffer );
+	completionField->cursor = (int)strlen( completionField->buffer );
 
 	if( matchCount == 1 )
 	{
@@ -3548,12 +3548,12 @@ static qboolean Field_CompletePlayerNameFinal( qboolean whitespace )
 	if( matchCount == 0 )
 		return qtrue;
 
-	int completionOffset = strlen( completionField->buffer ) - strlen( completionString );
+	int completionOffset = (int)(strlen( completionField->buffer ) - strlen( completionString ));
 
 	Q_strncpyz( &completionField->buffer[ completionOffset ], shortestMatch,
 		sizeof( completionField->buffer ) - completionOffset );
 
-	completionField->cursor = strlen( completionField->buffer );
+	completionField->cursor = (int)strlen( completionField->buffer );
 
 	if( matchCount == 1 && whitespace )
 	{

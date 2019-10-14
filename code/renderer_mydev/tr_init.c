@@ -1003,7 +1003,7 @@ GetRefAPI
 Q_EXPORT void QDECL GetRefAPI ( int apiVersion, const refimport_t * const rimp, refexport_t * const rexp )
 {
 #else
-void GetRefAPI ( int apiVersion, const refimport_t * const rimp, rexp * const rexp )
+void GetRefAPI ( int apiVersion, const refimport_t * const rimp, refexport_t * const rexp )
 {
 #endif
 

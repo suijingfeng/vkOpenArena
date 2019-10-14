@@ -779,7 +779,7 @@ char *Q_strupr( char *s1 ) {
 // never goes past bounds or leaves without a terminating 0
 void Q_strcat( char *dest, int size, const char *src )
 {
-	int	l1 = strlen( dest );
+	int	l1 = (int)strlen( dest );
 	if( l1 >= size )
 		Com_Error( ERR_FATAL, "Q_strcat: already overflowed" );
 

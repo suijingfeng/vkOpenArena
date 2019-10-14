@@ -24,34 +24,37 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #include "../qcommon/qcommon.h"
 
 #ifdef _WIN32
-#	include <winsock2.h>
-#	include <ws2tcpip.h>
-#	if WINVER < 0x501
-#		ifdef __MINGW32__
-			// wspiapi.h isn't available on MinGW, so if it's
-			// present it's because the end user has added it
-			// and we should look for it in our tree
-#			include "wspiapi.h"
-#		else
-#			include <wspiapi.h>
-#		endif
-#	else
-#		include <ws2spi.h>
-#	endif
+	
+#include <winsock2.h>
+#include <ws2tcpip.h>
+	
+#if WINVER < 0x501
+	#ifdef __MINGW32__
+		// wspiapi.h isn't available on MinGW, so if it's
+		// present it's because the end user has added it
+		// and we should look for it in our tree
+		#include "wspiapi.h"
+	#else
+		#include <wspiapi.h>
+	#endif
+#else
+	#include <ws2spi.h>
+#endif
 
 typedef int socklen_t;
-#	ifdef ADDRESS_FAMILY
-#		define sa_family_t	ADDRESS_FAMILY
-#	else
-typedef unsigned short sa_family_t;
-#	endif
 
-#	define EAGAIN					WSAEWOULDBLOCK
-#	define EADDRNOTAVAIL	WSAEADDRNOTAVAIL
-#	define EAFNOSUPPORT		WSAEAFNOSUPPORT
-#	define ECONNRESET			WSAECONNRESET
+#ifdef ADDRESS_FAMILY
+	#define sa_family_t	ADDRESS_FAMILY
+#else
+	typedef unsigned short sa_family_t;
+#endif
+
+#define EAGAIN			WSAEWOULDBLOCK
+#define EADDRNOTAVAIL	WSAEADDRNOTAVAIL
+#define EAFNOSUPPORT		WSAEAFNOSUPPORT
+#define ECONNRESET		WSAECONNRESET
 typedef u_long	ioctlarg_t;
-#	define socketError		WSAGetLastError( )
+#define socketError		WSAGetLastError( )
 
 static WSADATA	winsockdata;
 static qboolean	winsockInitialized = qfalse;
@@ -1149,13 +1152,12 @@ void NET_OpenSocks( int port ) {
 	}
 
 	// do username/password authentication if needed
-	if ( buf[1] == 2 ) {
-		int		ulen;
-		int		plen;
+	if ( buf[1] == 2 )
+	{
 
 		// build the request
-		ulen = strlen( net_socksUsername->string );
-		plen = strlen( net_socksPassword->string );
+		int ulen = (int)strlen( net_socksUsername->string );
+		int plen = (int)strlen( net_socksPassword->string );
 
 		buf[0] = 1;		// username/password authentication version
 		buf[1] = ulen;

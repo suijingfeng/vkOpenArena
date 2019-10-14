@@ -157,8 +157,6 @@ struct vm_s {
 	intptr_t (QDECL *entryPoint)( int callNum, ... );
 	void (*destroy)(vm_t* self);
 
-	// for interpreted modules
-	qboolean currentlyInterpreting;
 
 	qboolean compiled;
 	unsigned char *codeBase;
@@ -187,8 +185,8 @@ struct vm_s {
 extern vm_t *currentVM;
 
 
-void VM_Compile( vm_t *vm, vmHeader_t *header );
-intptr_t VM_CallCompiled( vm_t *vm, int *args );
+void VM_Compile( vm_t * const vm, vmHeader_t *header );
+intptr_t VM_CallCompiled( vm_t * const vm, int *args );
 
 void VM_PrepareInterpreter( vm_t *vm, vmHeader_t *header );
 int	VM_CallInterpreted( vm_t *vm, int *args );
