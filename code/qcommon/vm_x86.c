@@ -1870,8 +1870,6 @@ intptr_t VM_CallCompiled(vm_t * const vm, int *args)
 	image[ 1 ] = 0;	// return stack
 	image[ 0 ] = -1;	// will terminate the loop on return
 
-
-
 	// off we go into generated code...
 	void* entryPoint = vm->codeBase + vm->entryOfs;
 	int* opStack = PADP(stack, 16);

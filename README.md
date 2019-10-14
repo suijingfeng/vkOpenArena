@@ -2,9 +2,6 @@
 
 * checkout the SDL2 branch for stable build and playing, the following description works for SDL2 branch,
 * the master branch is under developing now, I'm get stucked on q3 xcb /xlib keyboard, mouse input event handle things as lack of documention ...
-* build with MSVC2017: developing vm_x86.c now with no experience, 
-  it translate interpreted code to native x86,x86_64 or other cpu platform code,
-  set vm_ui 1 vm_cgame 1 vm_game 1 to playing in interpret mode.
 
 
 This project is a fork of OpenArena with specific changes to its renderer module.
