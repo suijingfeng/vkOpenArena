@@ -507,7 +507,7 @@ If image ends in .qvm it will be interpreted, otherwise it will attempt to load 
 vm_t* VM_Create(const char *module, intptr_t (*systemCalls)(intptr_t *), vmInterpret_t interpret )
 {
 	struct vm_s *vm;
-	vmHeader_t *header;
+	vmHeader_t *header = NULL;
 	int	i, remaining, retval;
 	char filename[MAX_OSPATH];
 	void *startSearch = NULL;
@@ -617,7 +617,8 @@ vm_t* VM_Create(const char *module, intptr_t (*systemCalls)(intptr_t *), vmInter
 	vm->programStack = vm->dataMask + 1;
 	vm->stackBottom = vm->programStack - PROGRAM_STACK_SIZE;
 
-	Com_Printf("%s loaded in %d bytes on the hunk\n", module, remaining - Hunk_MemoryRemaining());
+	Com_Printf("%s loaded in %d bytes on the hunk\n", 
+		module, remaining - Hunk_MemoryRemaining());
 
 	return vm;
 }

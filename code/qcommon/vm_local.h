@@ -157,8 +157,6 @@ struct vm_s {
 	intptr_t (QDECL *entryPoint)( int callNum, ... );
 	void (*destroy)(vm_t* self);
 
-	// for interpreted modules
-	qboolean currentlyInterpreting;
 
 	qboolean compiled;
 	unsigned char *codeBase;

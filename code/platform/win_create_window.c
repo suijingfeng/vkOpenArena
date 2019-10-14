@@ -22,9 +22,6 @@
 extern WinVars_t g_wv;
 
 
-// int (* GetWinWidth)(void);
-// int (* GetWinHeight)(void);
-
 int WinSys_IsWinFullscreen(void)
 {
 	return g_wv.isFullScreen;
@@ -115,15 +112,7 @@ int R_GetModeInfo(int * const width, int * const height, int mode, const int des
 
 
 	const vidmode_t * pVm = &r_vidModes[mode];
-	if (pVm->width == desktopWidth && pVm->height == desktopHeight)
-	{
-		// equal the destop resolution, but we are not in fullscreen mode ...
-		// we just give a minial default ...
-		*width = 640;
-		*height = 480;
-		return 3;
-	}
-	else if (pVm->width > desktopWidth || pVm->height > desktopHeight)
+	if (pVm->width > desktopWidth || pVm->height > desktopHeight)
 	{
 		// even large than the destop resolution, but we are not in fullscreen mode ...
 		// we just give a minial default ...
@@ -216,7 +205,6 @@ static void win_createWindowImpl( void )
 		g_wv.winHeight = g_wv.desktopHeight;
 		g_wv.isFullScreen = 1;
         
-
         x = 0;
 		y = 0;
 		w = g_wv.desktopWidth;

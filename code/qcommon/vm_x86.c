@@ -37,10 +37,11 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
   #define VM_X86_MMAP
   
   // workaround for systems that use the old MAP_ANON macro
-  #ifndef MAP_ANONYMOUS
-    #define MAP_ANONYMOUS MAP_ANON
-  #endif
+	#ifndef MAP_ANONYMOUS
+		#define MAP_ANONYMOUS MAP_ANON
+	#endif
 #endif
+
 
 
 #if defined(_MSC_VER)
@@ -103,17 +104,14 @@ x86_64:
   r9		vm->dataBase
 */
 
-#define VMFREE_BUFFERS() do {Z_Free(buf); Z_Free(jused);} while(0)
 
-static unsigned char* jused = NULL;
-static unsigned char* code = NULL;
+
 static int pc = 0;
-static int jusedSize = 0;
 static int compiledOfs = 0;
 
 #define FTOL_PTR
 
-static	int	instruction, pass;
+static	int	instruction;
 static	int	lastConst = 0;
 static	int	oc0, oc1, pop0, pop1;
 static	int jlabel;
@@ -132,7 +130,7 @@ typedef enum
 	VM_BLOCK_COPY = 1
 } ESysCallType;
 
-static	ELastCommand	LastCommand;
+static ELastCommand	LastCommand;
 
 static int iss8(int32_t v)
 {
@@ -140,7 +138,7 @@ static int iss8(int32_t v)
 }
 
 
-inline static int Constant4( void )
+inline static int Constant4( unsigned char * code)
 {
 	int	v = (code[pc] | (code[pc+1]<<8) | (code[pc+2]<<16) | (code[pc+3]<<24));
 	pc += 4;
@@ -448,15 +446,17 @@ void EmitMovEDXStack(unsigned char* buf, vm_t *vm, int andit)
 		EmitMaskReg(buf, "E2", andit);		// and edx, 0x12345678
 }
 
-#define JUSED(x) \
-	do { \
-		if (x < 0 || x >= vm->instructionCount) { \
-			VMFREE_BUFFERS(); \
-			Com_Error( ERR_DROP, \
-					"VM_CompileX86: jump target out of range at offset %d", pc ); \
-		} \
-		jused[x] = 1; \
-	} while(0)
+static void Set_JUsed(unsigned char * buf, int x, unsigned char * jused, vm_t * vm)
+{
+	if (x < 0 || x >= vm->instructionCount)
+	{
+		Z_Free(buf); 
+		Z_Free(jused);
+		Com_Error( ERR_DROP,
+				"VM_CompileX86: jump target out of range at offset %d", pc ); \
+	} 
+	jused[x] = 1;
+}
 
 static void SET_JMPOFS(unsigned char *buf, int x)
 {
@@ -559,7 +559,6 @@ static void EmitCallRel(unsigned char * buf, vm_t *vm, int callOfs)
 
 /*
 =================
-EmitCallDoSyscall
 Call to DoSyscall()
 =================
 */
@@ -708,9 +707,9 @@ EmitJumpIns
 Jump to constant instruction number
 =================
 */
-void EmitJumpIns(unsigned char * buf, vm_t *vm, const char *jmpop, int cdest)
+static void EmitJumpIns(unsigned char * buf, vm_t *vm, const char *jmpop, int cdest, int pass, unsigned char * jused)
 {
-	JUSED(cdest);
+	Set_JUsed(buf, cdest, jused, vm);
 
 	EmitString(buf, jmpop);	// j??? 0x12345678
 
@@ -728,9 +727,9 @@ Call to constant instruction number
 =================
 */
 
-void EmitCallIns(unsigned char * buf, vm_t *vm, int cdest)
+static void EmitCallIns(unsigned char * buf, vm_t *vm, int cdest, int pass, unsigned char *jused)
 {
-	JUSED(cdest);
+	Set_JUsed(buf, cdest, jused, vm);
 
 	EmitString(buf, "E8");	// call 0x12345678
 
@@ -748,7 +747,7 @@ Call to constant instruction number or syscall
 =================
 */
 
-void EmitCallConst(unsigned char * buf, vm_t *vm, int cdest, int callProcOfsSyscall)
+static void EmitCallConst(unsigned char * buf, vm_t *vm, int cdest, int callProcOfsSyscall, int pass, unsigned char * jused)
 {
 	if(cdest < 0)
 	{
@@ -758,7 +757,7 @@ void EmitCallConst(unsigned char * buf, vm_t *vm, int cdest, int callProcOfsSysc
 		EmitCallRel(buf, vm, callProcOfsSyscall);
 	}
 	else
-		EmitCallIns(buf, vm, cdest);
+		EmitCallIns(buf, vm, cdest, pass, jused);
 }
 
 /*
@@ -767,39 +766,39 @@ EmitBranchConditions
 Emits x86 branch condition as given in op
 =================
 */
-void EmitBranchConditions(unsigned char * buf, vm_t *vm, int op)
+static void EmitBranchConditions(unsigned char * buf, vm_t *vm, int op, int pass, unsigned char * jused, unsigned char * code)
 {
 	switch(op)
 	{
 	case OP_EQ:
-		EmitJumpIns(buf, vm, "0F 84", Constant4());	// je 0x12345678
+		EmitJumpIns(buf, vm, "0F 84", Constant4(code), pass, jused);	// je 0x12345678
 	break;
 	case OP_NE:
-		EmitJumpIns(buf, vm, "0F 85", Constant4());	// jne 0x12345678
+		EmitJumpIns(buf, vm, "0F 85", Constant4(code), pass, jused);	// jne 0x12345678
 	break;
 	case OP_LTI:
-		EmitJumpIns(buf, vm, "0F 8C", Constant4());	// jl 0x12345678
+		EmitJumpIns(buf, vm, "0F 8C", Constant4(code), pass, jused);	// jl 0x12345678
 	break;
 	case OP_LEI:
-		EmitJumpIns(buf, vm, "0F 8E", Constant4());	// jle 0x12345678
+		EmitJumpIns(buf, vm, "0F 8E", Constant4(code), pass, jused);	// jle 0x12345678
 	break;
 	case OP_GTI:
-		EmitJumpIns(buf, vm, "0F 8F", Constant4());	// jg 0x12345678
+		EmitJumpIns(buf, vm, "0F 8F", Constant4(code), pass, jused);	// jg 0x12345678
 	break;
 	case OP_GEI:
-		EmitJumpIns(buf, vm, "0F 8D", Constant4());	// jge 0x12345678
+		EmitJumpIns(buf, vm, "0F 8D", Constant4(code), pass, jused);	// jge 0x12345678
 	break;
 	case OP_LTU:
-		EmitJumpIns(buf, vm, "0F 82", Constant4());	// jb 0x12345678
+		EmitJumpIns(buf, vm, "0F 82", Constant4(code), pass, jused);	// jb 0x12345678
 	break;
 	case OP_LEU:
-		EmitJumpIns(buf, vm, "0F 86", Constant4());	// jbe 0x12345678
+		EmitJumpIns(buf, vm, "0F 86", Constant4(code), pass, jused);	// jbe 0x12345678
 	break;
 	case OP_GTU:
-		EmitJumpIns(buf, vm, "0F 87", Constant4());	// ja 0x12345678
+		EmitJumpIns(buf, vm, "0F 87", Constant4(code), pass, jused);	// ja 0x12345678
 	break;
 	case OP_GEU:
-		EmitJumpIns(buf, vm, "0F 83", Constant4());	// jae 0x12345678
+		EmitJumpIns(buf, vm, "0F 83", Constant4(code), pass, jused);	// jae 0x12345678
 	break;
 	}
 }
@@ -813,7 +812,7 @@ instead of opStack operations, which will save expensive operations on memory
 =================
 */
 
-qboolean ConstOptimize(unsigned char * buf, vm_t *vm, int callProcOfsSyscall)
+static qboolean ConstOptimize(unsigned char * buf, vm_t *vm, int callProcOfsSyscall, int pass, unsigned char * jused, unsigned char * code)
 {
 	int v;
 	int op1;
@@ -831,26 +830,26 @@ qboolean ConstOptimize(unsigned char * buf, vm_t *vm, int callProcOfsSyscall)
 		EmitPushStack(buf, vm);
 #if idx64
 		EmitRexString(buf, 0x41, "8B 81");			// mov eax, dword ptr [r9 + 0x12345678]
-		Emit4(buf, Constant4() & vm->dataMask);
+		Emit4(buf, Constant4(code) & vm->dataMask);
 #else
 		EmitString(buf, "B8");				// mov eax, 0x12345678
-		EmitPtr(buf, vm->dataBase + (Constant4() & vm->dataMask));
+		EmitPtr(buf, vm->dataBase + (Constant4(code) & vm->dataMask));
 		EmitString(buf, "8B 00");				// mov eax, dword ptr [eax]
 #endif
 		EmitCommand(buf, LAST_COMMAND_MOV_STACK_EAX);	// mov dword ptr [edi + ebx * 4], eax
 
-		pc++;						// OP_LOAD4
-		instruction += 1;
+		++pc;						// OP_LOAD4
+		++instruction;
 		return qtrue;
 
 	case OP_LOAD2:
 		EmitPushStack(buf, vm);
 #if idx64
 		EmitRexString(buf, 0x41, "0F B7 81");		// movzx eax, word ptr [r9 + 0x12345678]
-		Emit4(buf, Constant4() & vm->dataMask);
+		Emit4(buf, Constant4(code) & vm->dataMask);
 #else
 		EmitString(buf, "B8");				// mov eax, 0x12345678
-		EmitPtr(buf, vm->dataBase + (Constant4() & vm->dataMask));
+		EmitPtr(buf, vm->dataBase + (Constant4(code) & vm->dataMask));
 		EmitString(buf, "0F B7 00");				// movzx eax, word ptr [eax]
 #endif
 		EmitCommand(buf, LAST_COMMAND_MOV_STACK_EAX);	// mov dword ptr [edi + ebx * 4], eax
@@ -863,10 +862,10 @@ qboolean ConstOptimize(unsigned char * buf, vm_t *vm, int callProcOfsSyscall)
 		EmitPushStack(buf, vm);
 #if idx64
 		EmitRexString(buf, 0x41, "0F B6 81");		// movzx eax, byte ptr [r9 + 0x12345678]
-		Emit4(buf, Constant4() & vm->dataMask);
+		Emit4(buf, Constant4(code) & vm->dataMask);
 #else
 		EmitString(buf, "B8");				// mov eax, 0x12345678
-		EmitPtr(buf, vm->dataBase + (Constant4() & vm->dataMask));
+		EmitPtr(buf, vm->dataBase + (Constant4(code) & vm->dataMask));
 		EmitString(buf, "0F B6 00");				// movzx eax, byte ptr [eax]
 #endif
 		EmitCommand(buf, LAST_COMMAND_MOV_STACK_EAX);	// mov dword ptr [edi + ebx * 4], eax
@@ -879,11 +878,11 @@ qboolean ConstOptimize(unsigned char * buf, vm_t *vm, int callProcOfsSyscall)
 		EmitMovEAXStack(buf, vm, (vm->dataMask & ~3));
 #if idx64
 		EmitRexString(buf, 0x41, "C7 04 01");		// mov dword ptr [r9 + eax], 0x12345678
-		Emit4(buf, Constant4());
+		Emit4(buf, Constant4(code));
 #else
 		EmitString(buf, "C7 80");				// mov dword ptr [eax + 0x12345678], 0x12345678
 		Emit4(buf, (intptr_t) vm->dataBase);
-		Emit4(buf, Constant4());
+		Emit4(buf, Constant4(code));
 #endif
 		EmitCommand(buf, LAST_COMMAND_SUB_BL_1);		// sub bl, 1
 		pc++;						// OP_STORE4
@@ -895,11 +894,11 @@ qboolean ConstOptimize(unsigned char * buf, vm_t *vm, int callProcOfsSyscall)
 #if idx64
 		Emit1(buf, 0x66);					// mov word ptr [r9 + eax], 0x1234
 		EmitRexString(buf, 0x41, "C7 04 01");
-		Emit2(buf, Constant4());
+		Emit2(buf, Constant4(code));
 #else
 		EmitString(buf, "66 C7 80");				// mov word ptr [eax + 0x12345678], 0x1234
 		Emit4(buf, (intptr_t) vm->dataBase);
-		Emit2(buf, Constant4());
+		Emit2(buf, Constant4(code));
 #endif
 		EmitCommand(buf, LAST_COMMAND_SUB_BL_1);		// sub bl, 1
 
@@ -911,11 +910,11 @@ qboolean ConstOptimize(unsigned char * buf, vm_t *vm, int callProcOfsSyscall)
 		EmitMovEAXStack(buf, vm, vm->dataMask);
 #if idx64
 		EmitRexString(buf, 0x41, "C6 04 01");		// mov byte [r9 + eax], 0x12
-		Emit1(buf, Constant4());
+		Emit1(buf, Constant4(code));
 #else
 		EmitString(buf, "C6 80");				// mov byte ptr [eax + 0x12345678], 0x12
 		Emit4(buf, (intptr_t) vm->dataBase);
-		Emit1(buf, Constant4());
+		Emit1(buf, Constant4(code));
 #endif
 		EmitCommand(buf, LAST_COMMAND_SUB_BL_1);		// sub bl, 1
 
@@ -924,7 +923,7 @@ qboolean ConstOptimize(unsigned char * buf, vm_t *vm, int callProcOfsSyscall)
 		return qtrue;
 
 	case OP_ADD:
-		v = Constant4();
+		v = Constant4(code);
 
 		EmitMovEAXStack(buf, vm, 0);
 		if(iss8(v))
@@ -944,7 +943,7 @@ qboolean ConstOptimize(unsigned char * buf, vm_t *vm, int callProcOfsSyscall)
 		return qtrue;
 
 	case OP_SUB:
-		v = Constant4();
+		v = Constant4(code);
 
 		EmitMovEAXStack(buf, vm, 0);
 		if(iss8(v))
@@ -964,7 +963,7 @@ qboolean ConstOptimize(unsigned char * buf, vm_t *vm, int callProcOfsSyscall)
 		return qtrue;
 
 	case OP_MULI:
-		v = Constant4();
+		v = Constant4(code);
 
 		EmitMovEAXStack(buf, vm, 0);
 		if(iss8(v))
@@ -1026,7 +1025,7 @@ qboolean ConstOptimize(unsigned char * buf, vm_t *vm, int callProcOfsSyscall)
 		return qtrue;
 	
 	case OP_BAND:
-		v = Constant4();
+		v = Constant4(code);
 
 		EmitMovEAXStack(buf, vm, 0);
 		if(iss8(v))
@@ -1046,7 +1045,7 @@ qboolean ConstOptimize(unsigned char * buf, vm_t *vm, int callProcOfsSyscall)
 		return qtrue;
 
 	case OP_BOR:
-		v = Constant4();
+		v = Constant4(code);
 
 		EmitMovEAXStack(buf, vm, 0);
 		if(iss8(v))
@@ -1066,7 +1065,7 @@ qboolean ConstOptimize(unsigned char * buf, vm_t *vm, int callProcOfsSyscall)
 		return qtrue;
 
 	case OP_BXOR:
-		v = Constant4();
+		v = Constant4(code);
 		
 		EmitMovEAXStack(buf, vm, 0);
 		if(iss8(v))
@@ -1098,10 +1097,10 @@ qboolean ConstOptimize(unsigned char * buf, vm_t *vm, int callProcOfsSyscall)
 		EmitMovEAXStack(buf, vm, 0);
 		EmitCommand(buf, LAST_COMMAND_SUB_BL_1);
 		EmitString(buf, "3D");				// cmp eax, 0x12345678
-		Emit4(buf, Constant4());
+		Emit4(buf, Constant4(code));
 
 		pc++;						// OP_*
-		EmitBranchConditions(buf, vm, op1);
+		EmitBranchConditions(buf, vm, op1, pass, jused, code);
 		instruction++;
 
 		return qtrue;
@@ -1118,24 +1117,24 @@ qboolean ConstOptimize(unsigned char * buf, vm_t *vm, int callProcOfsSyscall)
 		EmitString(buf, "25");				// and eax, 0x7FFFFFFF
 		Emit4(buf, 0x7FFFFFFF);
 		if(op1 == OP_EQF)
-			EmitJumpIns(buf, vm, "0F 84", Constant4());	// jz 0x12345678
+			EmitJumpIns(buf, vm, "0F 84", Constant4(code), pass, jused);	// jz 0x12345678
 		else
-			EmitJumpIns(buf, vm, "0F 85", Constant4());	// jnz 0x12345678
+			EmitJumpIns(buf, vm, "0F 85", Constant4(code), pass, jused);	// jnz 0x12345678
 		
 		instruction += 1;
 		return qtrue;
 
 
 	case OP_JUMP:
-		EmitJumpIns(buf, vm, "E9", Constant4());		// jmp 0x12345678
+		EmitJumpIns(buf, vm, "E9", Constant4(code), pass, jused);		// jmp 0x12345678
 
 		pc += 1;                  // OP_JUMP
 		instruction += 1;
 		return qtrue;
 
 	case OP_CALL:
-		v = Constant4();
-		EmitCallConst(buf, vm, v, callProcOfsSyscall);
+		v = Constant4(code);
+		EmitCallConst(buf, vm, v, callProcOfsSyscall, pass, jused);
 
 		pc += 1;                  // OP_CALL
 		instruction += 1;
@@ -1153,20 +1152,27 @@ qboolean ConstOptimize(unsigned char * buf, vm_t *vm, int callProcOfsSyscall)
 
 void FileSys_PrintfHexToFile(const char * name, unsigned char * pBuf, unsigned int len)
 {
-	unsigned char * pOpcode = (unsigned char *) malloc ( len * 3 + len / 20 + 1);
+	char local_name[128] = { 0 };
+#ifndef NDEBUG
+	snprintf(local_name, 127, "compiled_%s_debug.txt", name);
+#else
+	snprintf(local_name, 127, "compiled_%s_release.txt", name);
+#endif
+
+	unsigned char * pOpcode = (unsigned char *) malloc ( len * 3 + len / 20 + 10);
 	unsigned int j = 0;
 	for (unsigned int i = 0; i < len; ++i)
 	{
 		Hes2char(pBuf[i], pOpcode+j);
 		j += 2;
 		pOpcode[j++] = ' ';
-		if ((i % 20) == 0)
+		if ( (i != 0 ) && (i % 20) == 0)
 			pOpcode[j++] = '\n';
 	}
 
 	pOpcode[j] = '\0';
 
-	FILE* log_fp = fopen(name, "wt");
+	FILE* log_fp = fopen(local_name, "wt");
 
 	if (log_fp)
 	{
@@ -1187,21 +1193,19 @@ void FileSys_PrintfHexToFile(const char * name, unsigned char * pBuf, unsigned i
 
 void VM_Compile(vm_t * const vm, vmHeader_t *header)
 {
-	int	op, maxLength, v;
+	int	op, v;
     int	callProcOfsSyscall, callProcOfs, callDoSyscallOfs;
 
-	jusedSize = header->instructionCount + 2;
-
 	// allocate a very large temp buffer, we will shrink it later
-	maxLength = header->codeLength * 8 + 64;
-	
+	int maxLength = header->codeLength * 8 + 64;
 	unsigned char* buf = Z_Malloc(maxLength);
     memset(buf, 0, maxLength);
 
-	jused = Z_Malloc(jusedSize);
+	int jusedSize = header->instructionCount + 2;
+	unsigned char* jused = Z_Malloc(jusedSize);
 	memset(jused, 0, jusedSize);
 
-	code = Z_Malloc(header->codeLength+32);
+	unsigned char* code = Z_Malloc(header->codeLength+32);
 	memset(code, 0, header->codeLength+32);
 	
 	Com_Printf(" Starting VM_Compile ... \n");
@@ -1216,7 +1220,7 @@ void VM_Compile(vm_t * const vm, vmHeader_t *header)
 	pc = -1; // a bogus value to be printed in out-of-bounds error messages
 	for(int i = 0; i < vm->numJumpTableTargets; ++i )
 	{
-		JUSED( *(int *)(vm->jumpTableTargets + ( i * sizeof( int ) ) ) );
+		Set_JUsed(buf, *(int *)(vm->jumpTableTargets + ( i * sizeof( int ) ) ), jused, vm);
 	}
 
 	// Start buffer with x86-VM specific procedures
@@ -1227,7 +1231,7 @@ void VM_Compile(vm_t * const vm, vmHeader_t *header)
 	callProcOfsSyscall = EmitCallProcedure(buf, vm, callDoSyscallOfs);
 	vm->entryOfs = compiledOfs;
 
-	for(pass=0; pass < 3; pass++)
+	for(unsigned int pass=0; pass < 3; ++pass)
 	{
 	oc0 = -23423;
 	oc1 = -234354;
@@ -1246,7 +1250,8 @@ void VM_Compile(vm_t * const vm, vmHeader_t *header)
 	{
 		if(compiledOfs > maxLength - 16)
 		{
-	        VMFREE_BUFFERS();
+			Z_Free(buf);
+			Z_Free(jused);
 			Com_Error(ERR_DROP, "VM_CompileX86: maxLength exceeded");
 		}
 
@@ -1261,7 +1266,8 @@ void VM_Compile(vm_t * const vm, vmHeader_t *header)
 
 		if(pc > header->codeLength)
 		{
-			VMFREE_BUFFERS();
+			Z_Free(buf);
+			Z_Free(jused);
 			Com_Error(ERR_DROP, "VM_CompileX86: pc > header->codeLength");
 		}
 
@@ -1276,26 +1282,26 @@ void VM_Compile(vm_t * const vm, vmHeader_t *header)
 			break;
 		case OP_ENTER:
 			EmitString(buf, "81 EE");				// sub esi, 0x12345678
-			Emit4(buf, Constant4());
+			Emit4(buf, Constant4(code));
 			break;
 		case OP_CONST:
-			if(ConstOptimize(buf, vm, callProcOfsSyscall))
+			if( ConstOptimize(buf, vm, callProcOfsSyscall, pass, jused, code) )
 				break;
 
 			EmitPushStack(buf, vm);
 			EmitString(buf, "C7 04 9F");				// mov dword ptr [edi + ebx * 4], 0x12345678
-			lastConst = Constant4();
+			lastConst = Constant4(code);
 
 			Emit4(buf, lastConst);
 			if(code[pc] == OP_JUMP)
-				JUSED(lastConst);
+				Set_JUsed(buf, lastConst, jused, vm);
 
 			break;
 		case OP_LOCAL:
 			EmitPushStack(buf, vm);
 			EmitString(buf, "8D 86");				// lea eax, [0x12345678 + esi]
 			oc0 = oc1;
-			oc1 = Constant4();
+			oc1 = Constant4(code);
 			Emit4(buf, oc1);
 			EmitCommand(buf, LAST_COMMAND_MOV_STACK_EAX);	// mov dword ptr [edi + ebx * 4], eax
 			break;
@@ -1323,7 +1329,7 @@ void VM_Compile(vm_t * const vm, vmHeader_t *header)
 			EmitCommand(buf, LAST_COMMAND_SUB_BL_1);		// sub bl, 1
 			break;
 		case OP_LEAVE:
-			v = Constant4();
+			v = Constant4(code);
 			EmitString(buf, "81 C6");				// add	esi, 0x12345678
 			Emit4(buf, v);
 			EmitString(buf, "C3");				// ret
@@ -1338,7 +1344,7 @@ void VM_Compile(vm_t * const vm, vmHeader_t *header)
 				}
 
 				pc++;				// OP_CONST
-				v = Constant4();
+				v = Constant4(code);
 
 				EmitMovEDXStack(buf, vm, vm->dataMask);
 				if(v == 1 && oc0 == oc1 && pop0 == OP_LOCAL && pop1 == OP_LOCAL)
@@ -1400,7 +1406,7 @@ void VM_Compile(vm_t * const vm, vmHeader_t *header)
 				}
 				
 				pc++;					// OP_CONST
-				v = Constant4();
+				v = Constant4(code);
 
 				EmitMovEDXStack(buf, vm, vm->dataMask);
 				if(v == 1 && oc0 == oc1 && pop0 == OP_LOCAL && pop1 == OP_LOCAL)
@@ -1548,7 +1554,7 @@ void VM_Compile(vm_t * const vm, vmHeader_t *header)
 			EmitCommand(buf, LAST_COMMAND_SUB_BL_2);		// sub bl, 2
 			EmitString(buf, "39 44 9F 04");			// cmp	eax, dword ptr 4[edi + ebx * 4]
 
-			EmitBranchConditions(buf, vm, op);
+			EmitBranchConditions(buf, vm, op, pass, jused, code);
 		break;
 		case OP_EQF:
 		case OP_NEF:
@@ -1565,27 +1571,27 @@ void VM_Compile(vm_t * const vm, vmHeader_t *header)
 			{
 			case OP_EQF:
 				EmitString(buf, "F6 C4 40");			// test	ah,0x40
-				EmitJumpIns(buf, vm, "0F 85", Constant4());	// jne 0x12345678
+				EmitJumpIns(buf, vm, "0F 85", Constant4(code), pass, jused);	// jne 0x12345678
 			break;
 			case OP_NEF:
 				EmitString(buf, "F6 C4 40");			// test	ah,0x40
-				EmitJumpIns(buf, vm, "0F 84", Constant4());	// je 0x12345678
+				EmitJumpIns(buf, vm, "0F 84", Constant4(code), pass, jused);	// je 0x12345678
 			break;
 			case OP_LTF:
 				EmitString(buf, "F6 C4 01");			// test	ah,0x01
-				EmitJumpIns(buf, vm, "0F 85", Constant4());	// jne 0x12345678
+				EmitJumpIns(buf, vm, "0F 85", Constant4(code), pass, jused);	// jne 0x12345678
 			break;
 			case OP_LEF:
 				EmitString(buf, "F6 C4 41");			// test	ah,0x41
-				EmitJumpIns(buf, vm, "0F 85", Constant4());	// jne 0x12345678
+				EmitJumpIns(buf, vm, "0F 85", Constant4(code), pass, jused);	// jne 0x12345678
 			break;
 			case OP_GTF:
 				EmitString(buf, "F6 C4 41");			// test	ah,0x41
-				EmitJumpIns(buf, vm, "0F 84", Constant4());	// je 0x12345678
+				EmitJumpIns(buf, vm, "0F 84", Constant4(code), pass, jused);	// je 0x12345678
 			break;
 			case OP_GEF:
 				EmitString(buf, "F6 C4 01");			// test	ah,0x01
-				EmitJumpIns(buf, vm, "0F 84", Constant4());	// je 0x12345678
+				EmitJumpIns(buf, vm, "0F 84", Constant4(code), pass, jused);	// je 0x12345678
 			break;
 			}
 		break;			
@@ -1723,7 +1729,6 @@ void VM_Compile(vm_t * const vm, vmHeader_t *header)
 			EmitPtr(buf, Q_VMftol);
 			EmitRexString(buf, 0x48, "FF D2");			// call edx
 			EmitCommand(buf, LAST_COMMAND_MOV_STACK_EAX);	// mov dword ptr [edi + ebx * 4], eax
-
 #endif
 			break;
 		case OP_SEX8:
@@ -1739,7 +1744,7 @@ void VM_Compile(vm_t * const vm, vmHeader_t *header)
 			EmitString(buf, "B8");				// mov eax, 0x12345678
 			Emit4(buf, VM_BLOCK_COPY);
 			EmitString(buf, "B9");				// mov ecx, 0x12345678
-			Emit4(buf, Constant4());
+			Emit4(buf, Constant4(code));
 
 			EmitCallRel(buf, vm, callDoSyscallOfs);
 
@@ -1762,7 +1767,8 @@ void VM_Compile(vm_t * const vm, vmHeader_t *header)
 			EmitCallErrJump(buf, vm, callDoSyscallOfs);
 			break;
 		default:
-		    VMFREE_BUFFERS();
+			Z_Free(buf);
+			Z_Free(jused);
 			Com_Error(ERR_DROP, "VM_CompileX86: bad opcode %i at offset %i", op, pc);
 		}
 		pop0 = pop1;
@@ -1794,7 +1800,7 @@ void VM_Compile(vm_t * const vm, vmHeader_t *header)
 	memcpy( vm->codeBase, buf, compiledOfs );
 	
 	// if debug
-	FileSys_PrintfHexToFile("vm_codeBase.txt", buf, compiledOfs);
+	FileSys_PrintfHexToFile(vm->name, buf, compiledOfs);
 
 #ifdef VM_X86_MMAP
 	if(mprotect(vm->codeBase, compiledOfs, PROT_READ|PROT_EXEC))
@@ -1847,24 +1853,24 @@ intptr_t VM_CallCompiled(vm_t * const vm, int *args)
 {
 	unsigned char stack[OPSTACK_SIZE + 15];
 
+	const unsigned int szStack = 8 + 4 * MAX_VMMAIN_ARGS;
 	currentVM = vm;
 
-	// interpret the code
-	vm->currentlyInterpreting = qtrue;
-
 	// we might be called recursively, so this might not be the very top
-	int programStack = vm->programStack;
-    int stackOnEntry = vm->programStack;
+	const int stackOnEntry = vm->programStack;
+	int programStack = vm->programStack - szStack;
+    
 	// set up the stack frame 
-	unsigned char* image = vm->dataBase;
+	int * image = (int *)( vm->dataBase + programStack);
 
-	programStack -= ( 8 + 4 * MAX_VMMAIN_ARGS );
 
 	for (unsigned int arg = 0; arg < MAX_VMMAIN_ARGS; ++arg )
-		*(int *)&image[ programStack + 8 + arg * 4 ] = args[ arg ];
+		image[ 2 + arg  ] = args[ arg ];
 
-	*(int *)&image[ programStack + 4 ] = 0;	// return stack
-	*(int *)&image[ programStack ] = -1;	// will terminate the loop on return
+	image[ 1 ] = 0;	// return stack
+	image[ 0 ] = -1;	// will terminate the loop on return
+
+
 
 	// off we go into generated code...
 	void* entryPoint = vm->codeBase + vm->entryOfs;
@@ -1927,10 +1933,10 @@ intptr_t VM_CallCompiled(vm_t * const vm, int *args)
 		Com_Error(ERR_DROP, "opStack corrupted in compiled code");
 	}
 
-	if (programStack != stackOnEntry - (8 + 4 * MAX_VMMAIN_ARGS))
+	if (programStack != stackOnEntry - szStack)
 	{
 		Com_Error(ERR_DROP, "programStack(%d != %d) corrupted in compiled code",
-			programStack, stackOnEntry - (8 + 4 * MAX_VMMAIN_ARGS));
+			programStack, stackOnEntry - szStack);
 	}
 
 	vm->programStack = stackOnEntry;
