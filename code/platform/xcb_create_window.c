@@ -50,7 +50,7 @@ xcb_intern_atom_reply_t *atom_wm_delete_window;
 
 void WinSys_Init(void ** pContext, int type)
 {
-	Com_Printf( " Initializing window subsystem. \n" );
+    Com_Printf( " Initializing window subsystem. \n" );
    
     // despect its name prefixed with r_
     // but they have nothing to do with the renderer. 
@@ -59,11 +59,10 @@ void WinSys_Init(void ** pContext, int type)
     
     WinSys_ConstructDislayModes();
 
-    //
-	*pContext = &s_xcb_win;
+    *pContext = &s_xcb_win;
 
 
-	Com_Printf( " Setting up XCB connection... \n" );
+    Com_Printf( " Setting up XCB connection... \n" );
 
     const char * const pDisplay_envar = getenv("DISPLAY");
     
@@ -151,7 +150,7 @@ void WinSys_Init(void ** pContext, int type)
     // -------------------------------------------------
     // developing now, its prefix started with r_
     // but it have nothing to do with the renderer ...
-    r_fullscreen->integer = 0;
+    // r_fullscreen->integer = 0;
     // r_mode->integer = 3;
     // -------------------------------------------------
     if(r_fullscreen->integer)
@@ -207,7 +206,24 @@ void WinSys_Init(void ** pContext, int type)
     // screen->root: The parent window of the new window.
     // 10: Width of the window's border (in pixels) 
     // XCB_WINDOW_CLASS_INPUT_OUTPUT: without documention ???
-    // 
+    //
+
+
+    if(r_fullscreen->integer)
+    {
+    xcb_create_window( s_xcb_win.connection, 
+            XCB_COPY_FROM_PARENT, 
+            s_xcb_win.hWnd, 
+            pScreen->root,
+            0, 0, width, height, 0, 
+            XCB_WINDOW_CLASS_INPUT_OUTPUT,
+            pScreen->root_visual,
+            value_mask, value_list);
+        
+
+    }
+    else
+    {
     xcb_create_window( s_xcb_win.connection, 
             XCB_COPY_FROM_PARENT, 
             s_xcb_win.hWnd, 
@@ -216,7 +232,8 @@ void WinSys_Init(void ** pContext, int type)
             XCB_WINDOW_CLASS_INPUT_OUTPUT,
             pScreen->root_visual,
             value_mask, value_list);
-    
+    }
+
     s_xcb_win.winWidth = width;
     s_xcb_win.winHeight = height;
 
