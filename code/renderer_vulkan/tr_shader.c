@@ -2158,7 +2158,6 @@ void R_CreateDefaultShadingCmds(const char* name, image_t* image)
 
 
 
-
 /*
 ====================
 R_GetShaderByHandle
@@ -2229,7 +2228,6 @@ static void CreateInternalShaders( void )
 
 void R_InitShaders( void )
 {
-
     ri.Printf( PRINT_ALL, " Initializing Shaders \n" );
 
 	memset( &stages, 0, sizeof( stages ) );

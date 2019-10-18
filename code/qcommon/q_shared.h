@@ -93,7 +93,7 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #pragma warning(disable : 4115)
 #pragma warning(disable : 4125)		// decimal digit terminates octal escape sequence
 #pragma warning(disable : 4127)		// conditional expression is constant
-#pragma warning(disable : 4136)
+//#pragma warning(disable : 4136)
 #pragma warning(disable : 4152)		// nonstandard extension, function/data pointer conversion in expression
 //#pragma warning(disable : 4201)
 //#pragma warning(disable : 4214)
@@ -108,8 +108,7 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #pragma warning(disable : 4220)		// varargs matches remaining parameters
 //#pragma intrinsic( memset, memcpy )
 
-
-#pragma warning(disable : 4703)	// potentially uninitialized local pointer variable
+// #pragma warning(disable : 4703)	// potentially uninitialized local pointer variable
 #pragma warning(disable : 4996) // the function or variable may be unsafe
 
 #endif
@@ -177,23 +176,8 @@ typedef int intptr_t;
 #include <time.h>
 #include <ctype.h>
 #include <limits.h>
+#include <stdint.h>
 
-#ifdef _MSC_VER
-  #include <io.h>
-
-  typedef __int64 int64_t;
-  typedef __int32 int32_t;
-  typedef __int16 int16_t;
-  typedef __int8 int8_t;
-  typedef unsigned __int64 uint64_t;
-  typedef unsigned __int32 uint32_t;
-  typedef unsigned __int16 uint16_t;
-  typedef unsigned __int8 uint8_t;
-  // vsnprintf is ISO/IEC 9899:1999, abstracting this to make it portable
-  //int Q_vsnprintf(char *str, size_t size, const char *format, va_list ap);
-#else
-  #include <stdint.h>
-#endif
 
 #if defined( _WIN32 ) || defined( _WIN64 )
   // vsnprintf is ISO/IEC 9899:1999
@@ -233,7 +217,6 @@ typedef int		clipHandle_t;
 #define PAD(base, alignment)	(((base)+(alignment)-1) & ~((alignment)-1))
 #define PADLEN(base, alignment)	(PAD((base), (alignment)) - (base))
 #define PADP(base, alignment)	((void *) PAD((intptr_t) (base), (alignment)))
-
 
 
 #define STRING(s)			#s
@@ -527,8 +510,6 @@ vec_t VectorNormalize (vec3_t v);		// returns vector length
 vec_t VectorNormalize2( const vec3_t v, vec3_t out );
 void Vector4Scale( const vec4_t in, vec_t scale, vec4_t out );
 int Q_log2(int val);
-
-float Q_acos(float c);
 
 float	Q_random( int *seed );
 float	Q_crandom( int *seed );

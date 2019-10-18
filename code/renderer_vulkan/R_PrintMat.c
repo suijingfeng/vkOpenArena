@@ -43,14 +43,9 @@ void printMat4x4f(const char* name, const float src[16])
 }
 
 
-static FILE* log_fp = NULL;
-
-
 void FunLogging(const char * name, char * pBuf )
 {
-
-    log_fp = fopen( name, "wt" );
-
+	FILE* log_fp = fopen( name, "wt" );
 
 	if ( log_fp )
 	{
@@ -68,8 +63,7 @@ void FunLogging(const char * name, char * pBuf )
 
 void Fun_ppCharLogging(const char * const name, char (*pp)[64], uint32_t size )
 {
-
-    log_fp = fopen( name, "wt" );
+	FILE* log_fp = fopen( name, "wt" );
 
 
 	if ( log_fp )

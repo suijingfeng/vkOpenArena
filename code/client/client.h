@@ -85,7 +85,6 @@ typedef struct {
 // it can be un-deltad from the original 
 #define	MAX_PARSE_ENTITIES	( PACKET_BACKUP * MAX_SNAPSHOT_ENTITIES )
 
-extern int g_console_field_width;
 
 typedef struct {
 	int			timeoutcount;		// it requres several frames in a timeout condition
@@ -541,6 +540,8 @@ void Con_SetFrac( const float conFrac );
 void CL_LoadConsoleHistory( void );
 void CL_SaveConsoleHistory( void );
 
+unsigned int CL_GetConsoleWidthInChar(void);
+void CL_SetConsoleWidthInChar(unsigned int width);
 //
 // cl_scrn.c
 //
@@ -588,7 +589,7 @@ qboolean CL_GameCommand(void);
 void CL_CGameRendering(void);
 void CL_SetCGameTime(void);
 void CL_FirstSnapshot(void);
-void CL_ShaderStateChanged(void);
+
 
 //
 // cl_ui.c
@@ -612,8 +613,8 @@ qboolean CL_Netchan_Process(netchan_t *chan, msg_t *msg);
 //
 qboolean CL_OpenAVIForWriting(const char *filename);
 void CL_TakeVideoFrame(void);
-void CL_WriteAVIVideoFrame(const unsigned char *imageBuffer, int size);
-void CL_WriteAVIAudioFrame(const unsigned char *pcmBuffer, int size);
+void CL_WriteAVIVideoFrame(const unsigned char * imageBuffer, int size);
+void CL_WriteAVIAudioFrame(const unsigned char * pcmBuffer, int size);
 qboolean CL_CloseAVI(void);
 qboolean CL_VideoRecording(void);
 

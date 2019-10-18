@@ -201,7 +201,9 @@ static	void R_LoadLightmaps( lump_t *l ) {
 				image[j*4+3] = 255;
 			}
 		}
-		tr.lightmaps[i] = R_CreateImage( va("*lightmap%d",i), image, 
+		char lmName[32] = { 0 };
+		snprintf(lmName, 32, "*lightmap%d", i);
+		tr.lightmaps[i] = R_CreateImage( lmName, image,
 			LIGHTMAP_SIZE, LIGHTMAP_SIZE, qfalse, qfalse, GL_CLAMP);
 	}
 

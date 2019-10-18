@@ -312,7 +312,7 @@ Sys_Basename
 const char *Sys_Basename( char *path )
 {
 	static char base[ MAX_OSPATH ] = { 0 };
-	int length = strlen( path ) - 1;
+	int length = (int)strlen( path ) - 1;
 
 	// Skip trailing slashes
 	while( length > 0 && path[ length ] == '\\' )
@@ -342,7 +342,7 @@ const char *Sys_Dirname( char *path )
 	static char dir[ MAX_OSPATH ] = { 0 };
 
 	Q_strncpyz( dir, path, sizeof( dir ) );
-	int length = strlen( dir ) - 1;
+	int length = (int)strlen( dir ) - 1;
 
 	while( length > 0 && dir[ length ] != '\\' )
 		length--;

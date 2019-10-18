@@ -116,36 +116,8 @@ cvar_t	*r_printShaders;
 cvar_t	*r_saveFontData;
 
 
-cvar_t	*r_maxpolys;
 int max_polys;
-cvar_t	*r_maxpolyverts;
 int max_polyverts;
-
-
-static void AssertCvarRange( cvar_t *cv, float minVal, float maxVal, qboolean shouldBeIntegral )
-{
-	if ( shouldBeIntegral )
-	{
-		if ( ( int ) cv->value != cv->integer )
-		{
-			ri.Printf( PRINT_WARNING, "WARNING: cvar '%s' must be integral (%f)\n", cv->name, cv->value );
-			ri.Cvar_Set( cv->name, va( "%d", cv->integer ) );
-		}
-	}
-
-	if ( cv->value < minVal )
-	{
-		ri.Printf( PRINT_WARNING, "WARNING: cvar '%s' out of range (%f < %f)\n", cv->name, cv->value, minVal );
-		ri.Cvar_Set( cv->name, va( "%f", minVal ) );
-	}
-	else if ( cv->value > maxVal )
-	{
-		ri.Printf( PRINT_WARNING, "WARNING: cvar '%s' out of range (%f > %f)\n", cv->name, cv->value, maxVal );
-		ri.Cvar_Set( cv->name, va( "%f", maxVal ) );
-	}
-}
-
-
 
 
 /*
@@ -761,7 +733,7 @@ void R_Register( void )
 	r_picmip = ri.Cvar_Get ("r_picmip", "1", CVAR_ARCHIVE | CVAR_LATCH );
 	r_roundImagesDown = ri.Cvar_Get ("r_roundImagesDown", "1", CVAR_ARCHIVE | CVAR_LATCH );
 	r_colorMipLevels = ri.Cvar_Get ("r_colorMipLevels", "0", CVAR_LATCH );
-	AssertCvarRange( r_picmip, 0, 16, qtrue );
+	ri.Cvar_CheckRange( r_picmip, 0, 16, qtrue );
 	r_texturebits = ri.Cvar_Get( "r_texturebits", "0", CVAR_ARCHIVE | CVAR_LATCH );
 	r_stencilbits = ri.Cvar_Get( "r_stencilbits", "8", CVAR_ARCHIVE | CVAR_LATCH );
 	r_depthbits = ri.Cvar_Get( "r_depthbits", "0", CVAR_ARCHIVE | CVAR_LATCH );
@@ -789,7 +761,7 @@ void R_Register( void )
 	r_lodCurveError = ri.Cvar_Get( "r_lodCurveError", "250", CVAR_ARCHIVE|CVAR_CHEAT );
 	r_lodbias = ri.Cvar_Get( "r_lodbias", "0", CVAR_ARCHIVE );
 	r_znear = ri.Cvar_Get( "r_znear", "4", CVAR_CHEAT );
-	AssertCvarRange( r_znear, 0.001f, 200, qtrue );
+	ri.Cvar_CheckRange( r_znear, 0.001f, 200, qtrue );
 	r_ignoreGLErrors = ri.Cvar_Get( "r_ignoreGLErrors", "1", CVAR_ARCHIVE );
 	r_fastsky = ri.Cvar_Get( "r_fastsky", "0", CVAR_ARCHIVE );
 	r_inGameVideo = ri.Cvar_Get( "r_inGameVideo", "1", CVAR_ARCHIVE );
@@ -845,8 +817,6 @@ void R_Register( void )
 	r_noportals = ri.Cvar_Get ("r_noportals", "0", CVAR_CHEAT);
 	r_shadows = ri.Cvar_Get( "cg_shadows", "1", 0 );
 
-	r_maxpolys = ri.Cvar_Get( "r_maxpolys", va("%d", MAX_POLYS), 0);
-	r_maxpolyverts = ri.Cvar_Get( "r_maxpolyverts", va("%d", MAX_POLYVERTS), 0);
 
 	// make sure all the commands added here are also
 	// removed in R_Shutdown
@@ -940,13 +910,10 @@ void R_Init( void )
 
 	R_Register();
 
-	max_polys = r_maxpolys->integer;
-	if (max_polys < MAX_POLYS)
-		max_polys = MAX_POLYS;
 
-	max_polyverts = r_maxpolyverts->integer;
-	if (max_polyverts < MAX_POLYVERTS)
-		max_polyverts = MAX_POLYVERTS;
+	max_polys = MAX_POLYS;
+
+	max_polyverts = MAX_POLYVERTS;
 
 	ptr = (byte*) ri.Hunk_Alloc( sizeof( *backEndData ) + sizeof(srfPoly_t) * max_polys + sizeof(polyVert_t) * max_polyverts, h_low);
 	backEndData = (backEndData_t *) ptr;
@@ -1036,7 +1003,7 @@ GetRefAPI
 Q_EXPORT void QDECL GetRefAPI ( int apiVersion, const refimport_t * const rimp, refexport_t * const rexp )
 {
 #else
-void GetRefAPI ( int apiVersion, const refimport_t * const rimp, rexp * const rexp )
+void GetRefAPI ( int apiVersion, const refimport_t * const rimp, refexport_t * const rexp )
 {
 #endif
 

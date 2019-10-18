@@ -36,7 +36,6 @@ and one exported function: Perform
 vm_t* currentVM = NULL;
 
 
-
 ////////// static ///////////////
 static vm_t	*lastVM = NULL;
 
@@ -173,7 +172,6 @@ void VM_LoadSymbols( vm_t *vm )
 	vmSymbol_t	**prev, *sym;
 	int		count;
 	int		value;
-	int		chars;
 	int		segment;
 	int		numInstructions;
 
@@ -222,7 +220,7 @@ void VM_LoadSymbols( vm_t *vm )
 			Com_Printf( "WARNING: incomplete line at end of file\n" );
 			break;
 		}
-		chars = strlen( token );
+		int chars = (int)strlen( token );
 		sym = Hunk_Alloc( sizeof( *sym ) + chars, h_high );
 		*prev = sym;
 		prev = &sym->next;
@@ -304,19 +302,20 @@ vmHeader_t *VM_LoadQVM( vm_t *vm, qboolean alloc, qboolean unpure)
 {
 	int	dataLength;
 	int	i;
-	char filename[MAX_QPATH];
+
 	union {
 		vmHeader_t *h;
 		void *v;
 	} header;
 
 	// load the image
-	Com_sprintf( filename, sizeof(filename), "vm/%s.qvm", vm->name );
-	Com_Printf( "Loading vm file %s...\n", filename );
+	char filename[MAX_QPATH] = {0};
+	snprintf( filename, sizeof(filename), "vm/%s.qvm", vm->name );
+	Com_Printf( " Loading vm file %s...\n", filename );
 
 	FS_ReadFileDir(filename, vm->searchPath, unpure, &header.v);
 
-	if ( !header.h )
+	if ( header.h == NULL )
     {
 		Com_Printf( "Failed.\n" );
 		VM_Free( vm );
@@ -366,7 +365,9 @@ vmHeader_t *VM_LoadQVM( vm_t *vm, qboolean alloc, qboolean unpure)
 			Com_Printf(S_COLOR_YELLOW "Warning: %s has bad header\n", filename);
 			return NULL;
 		}
-	} else {
+	}
+	else
+	{
 		VM_Free( vm );
 		FS_FreeFile(header.v);
 
@@ -506,7 +507,7 @@ If image ends in .qvm it will be interpreted, otherwise it will attempt to load 
 vm_t* VM_Create(const char *module, intptr_t (*systemCalls)(intptr_t *), vmInterpret_t interpret )
 {
 	struct vm_s *vm;
-	vmHeader_t *header;
+	vmHeader_t *header = NULL;
 	int	i, remaining, retval;
 	char filename[MAX_OSPATH];
 	void *startSearch = NULL;
@@ -601,7 +602,7 @@ vm_t* VM_Create(const char *module, intptr_t (*systemCalls)(intptr_t *), vmInter
   
    
 	// VM_Compile may have reset vm->compiled if compilation failed
-	if (!vm->compiled)
+	if (vm->compiled == qfalse)
 	{
 		VM_PrepareInterpreter( vm, header );
 	}
@@ -616,7 +617,8 @@ vm_t* VM_Create(const char *module, intptr_t (*systemCalls)(intptr_t *), vmInter
 	vm->programStack = vm->dataMask + 1;
 	vm->stackBottom = vm->programStack - PROGRAM_STACK_SIZE;
 
-	Com_Printf("%s loaded in %d bytes on the hunk\n", module, remaining - Hunk_MemoryRemaining());
+	Com_Printf("%s loaded in %d bytes on the hunk\n", 
+		module, remaining - Hunk_MemoryRemaining());
 
 	return vm;
 }
@@ -736,7 +738,6 @@ which will subtract space for locals from sp
 intptr_t QDECL VM_Call(struct vm_s *vm, int callnum, ... )
 {
 	intptr_t r = 0;
-	int i;
 
 	if(!vm || !vm->name[0])
 		Com_Error(ERR_FATAL, "VM_Call with NULL vm");
@@ -757,7 +758,7 @@ intptr_t QDECL VM_Call(struct vm_s *vm, int callnum, ... )
 		int args[MAX_VMMAIN_ARGS-1];
 		va_list ap;
 		va_start(ap, callnum);
-		for (i = 0; i < ARRAY_LEN(args); i++)
+		for (unsigned int i = 0; i < ARRAY_LEN(args); ++i)
         {
 			args[i] = va_arg(ap, int);
 		}
@@ -778,7 +779,7 @@ intptr_t QDECL VM_Call(struct vm_s *vm, int callnum, ... )
 		a.callnum = callnum;
 		va_start(ap, callnum);
 		
-        for(i = 0; i < MAX_VMMAIN_ARGS-1; i++)
+        for(unsigned int i = 0; i < MAX_VMMAIN_ARGS-1; ++i)
         {
 			a.args[i] = va_arg(ap, int);
 		}

@@ -28,9 +28,6 @@
     <Filter Include="Source Files\zlib">
       <UniqueIdentifier>{6d93fa93-e07b-47b7-bb67-dc6e4ee33ada}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Source Files\asm">
-      <UniqueIdentifier>{adf3c249-ebaf-42bf-ba8e-9142c7a05862}</UniqueIdentifier>
-    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\..\..\code\client\cl_avi.c">
@@ -252,17 +249,9 @@
     <ClCompile Include="..\..\..\code\platform\con_passive.c">
       <Filter>Source Files\platform</Filter>
     </ClCompile>
-  </ItemGroup>
-  <ItemGroup>
-    <None Include="..\..\..\code\asm\ftola.asm">
-      <Filter>Source Files\asm</Filter>
-    </None>
-    <None Include="..\..\..\code\asm\snapvector.asm">
-      <Filter>Source Files\asm</Filter>
-    </None>
-    <None Include="..\..\..\code\asm\vm_x86_64.asm">
-      <Filter>Source Files\asm</Filter>
-    </None>
+    <ClCompile Include="..\..\..\code\qcommon\vm_x86.c">
+      <Filter>Source Files\qcommon</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\..\code\sdl\resource.h">
@@ -290,5 +279,13 @@
     <Image Include="..\..\..\code\platform\oa3.ico">
       <Filter>Resource Files</Filter>
     </Image>
+  </ItemGroup>
+  <ItemGroup>
+    <MASM Include="..\..\..\code\qcommon\vm_x86_64.asm">
+      <Filter>Source Files\qcommon</Filter>
+    </MASM>
+    <MASM Include="..\..\..\code\qcommon\qvmftolsse.asm">
+      <Filter>Source Files\qcommon</Filter>
+    </MASM>
   </ItemGroup>
 </Project>

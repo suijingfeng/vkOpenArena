@@ -33,7 +33,7 @@ void* VK_GetInstanceProcAddrImpl(void)
     
 #if defined(_WIN32) || defined(_WIN64)
 
-	vk_library_handle = LoadLibrary("vulkan-1.dll");
+	vk_library_handle = ri.LoadDLL( "vulkan-1.dll", 1);
 
 	if (vk_library_handle == NULL)
 	{
@@ -71,7 +71,7 @@ void* VK_GetInstanceProcAddrImpl(void)
 void VK_CleanInstanceProcAddrImpl(void)
 {
 #if defined(_WIN32) || defined(_WIN64)
-	FreeLibrary(vk_library_handle);
+	ri.UnloadDLL(vk_library_handle);
 #elif defined(__unix__) || defined(__linux) || defined(__linux__)
 	dlclose(vk_library_handle);
 #else

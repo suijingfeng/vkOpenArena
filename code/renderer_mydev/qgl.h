@@ -27,8 +27,11 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #define __QGL_H__
 
 #if defined( _WIN32 )
+
+#include <windows.h>
 #define NOMINMAX
 #include <gl/gl.h>
+#include "glext.h"
 #else
 #include <GL/gl.h>
 #endif

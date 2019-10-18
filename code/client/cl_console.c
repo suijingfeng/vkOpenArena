@@ -25,7 +25,8 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #include "../platform/sys_public.h"
 #include "../qcommon/q_math.h"
 
-int g_console_field_width = 78;
+
+
 #define	NUM_CON_TIMES   4
 #define	CON_TEXTSIZE    32768
 
@@ -59,6 +60,17 @@ cvar_t		*con_notifytime;
 
 #define	DEFAULT_CONSOLE_WIDTH	78
 
+unsigned int s_console_field_width = DEFAULT_CONSOLE_WIDTH;
+
+unsigned int CL_GetConsoleWidthInChar(void)
+{
+	return s_console_field_width;
+}
+
+void CL_SetConsoleWidthInChar(unsigned int width)
+{
+	s_console_field_width = width;
+}
 
 void Con_ToggleConsole_f(void)
 {
@@ -72,7 +84,7 @@ void Con_ToggleConsole_f(void)
 	memset(g_consoleField.buffer, 0, MAX_EDIT_LINE);
 	g_consoleField.cursor = 0;
 	g_consoleField.scroll = 0;
-    g_consoleField.widthInChars = g_console_field_width;
+    g_consoleField.widthInChars = CL_GetConsoleWidthInChar();
 
 	//Con_ClearNotify ();
 	for ( i = 0 ; i < NUM_CON_TIMES ; ++i )
@@ -336,7 +348,6 @@ void Cmd_CompleteTxtName( char *args, int argNum ) {
 
 void Con_Init(void)
 {
-	int	i;
 
 	con_notifytime = Cvar_Get ("con_notifytime", "3", 0);
 	con_conspeed = Cvar_Get ("scr_conspeed", "3", 0);
@@ -345,12 +356,15 @@ void Con_Init(void)
     memset(g_consoleField.buffer, 0, MAX_EDIT_LINE);
 	g_consoleField.cursor = 0;
 	g_consoleField.scroll = 0;
-	g_consoleField.widthInChars = g_console_field_width;
+	g_consoleField.widthInChars = CL_GetConsoleWidthInChar();
 	
-    for(i = 0 ; i < COMMAND_HISTORY ; i++ )
+	Com_Printf(" Set g_consoleField.widthInChars = %d.\n",
+		g_consoleField.widthInChars);
+
+    for(unsigned int i = 0 ; i < COMMAND_HISTORY ; ++i )
     {
 		Field_Clear( &historyEditLines[i] );
-		historyEditLines[i].widthInChars = g_console_field_width;
+		historyEditLines[i].widthInChars = CL_GetConsoleWidthInChar();
 	}
 	CL_LoadConsoleHistory( );
 
@@ -362,6 +376,7 @@ void Con_Init(void)
 	Cmd_AddCommand ("messagemode4", Con_MessageMode4_f);
 	Cmd_AddCommand ("clear", Con_Clear_f);
 	Cmd_AddCommand ("condump", Con_Dump_f);
+
 	Cmd_SetCommandCompletionFunc( "condump", Cmd_CompleteTxtName );
 }
 
@@ -615,7 +630,7 @@ Draws the console with the solid background
 ================
 */
 void Con_DrawSolidConsole( float frac ) {
-	int				i, x, y;
+	int				x, y;
 	int				rows;
 	short			*text;
 	int				row;
@@ -667,10 +682,11 @@ void Con_DrawSolidConsole( float frac ) {
 
 	re.SetColor( g_color_table[ColorIndex(COLOR_RED)] );
 
-	i = strlen( Q3_VERSION );
+	const int clen = (int)strlen( Q3_VERSION );
 
-	for (x=0 ; x<i ; x++) {
-		SCR_DrawSmallChar( cls.glconfig.vidWidth - ( i - x + 1 ) * SMALLCHAR_WIDTH,
+	for (x=0 ; x< clen ; ++x)
+	{
+		SCR_DrawSmallChar( cls.glconfig.vidWidth - (clen - x + 1 ) * SMALLCHAR_WIDTH,
 			lines - SMALLCHAR_HEIGHT, Q3_VERSION[x] );
 	}
 
@@ -701,7 +717,7 @@ void Con_DrawSolidConsole( float frac ) {
 	currentColor = 7;
 	re.SetColor( g_color_table[currentColor] );
 
-	for (i=0 ; i<rows ; i++, y -= SMALLCHAR_HEIGHT, row--)
+	for (int i=0 ; i<rows ; i++, y -= SMALLCHAR_HEIGHT, row--)
 	{
 		if (row < 0)
 			break;

@@ -34,11 +34,8 @@ extern refimport_t ri;
  * You may also wish to include "jerror.h".
  */
 
-#ifdef USE_INTERNAL_JPEG
-#  define JPEG_INTERNALS
-#endif
 
-#include <jpeglib.h>
+#include "../jpeg-8c/jpeglib.h"
 
 #ifndef USE_INTERNAL_JPEG
 #  if JPEG_LIB_VERSION < 80 && !defined(MEM_SRCDST_SUPPORTED)

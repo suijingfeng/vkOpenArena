@@ -85,8 +85,9 @@ static ID_INLINE void SafeFS_Write( const void *buffer, int len, fileHandle_t f 
 
 static ID_INLINE void WRITE_STRING( const char *s )
 {
-    memcpy( &buffer[ bufIndex ], s, strlen( s ) );
-    bufIndex += strlen( s );
+	int slen = (unsigned int)strlen(s);
+    memcpy( &buffer[ bufIndex ], s, slen);
+    bufIndex += slen;
 }
 
 
@@ -446,7 +447,7 @@ static qboolean CL_CheckFileSize( int bytesToAdd )
 CL_WriteAVIVideoFrame
 ===============
 */
-void CL_WriteAVIVideoFrame( const byte *imageBuffer, int size )
+void CL_WriteAVIVideoFrame( const unsigned char * imageBuffer, int size )
 {
   int   chunkOffset = afd.fileSize - afd.moviOffset - 8;
   int   chunkSize = 8 + size;
@@ -493,7 +494,7 @@ void CL_WriteAVIVideoFrame( const byte *imageBuffer, int size )
 CL_WriteAVIAudioFrame
 ===============
 */
-void CL_WriteAVIAudioFrame( const byte *pcmBuffer, int size )
+void CL_WriteAVIAudioFrame( const unsigned char * pcmBuffer, int size )
 {
   static byte pcmCaptureBuffer[ PCM_BUFFER_SIZE ] = { 0 };
   static int  bytesInBuffer = 0;

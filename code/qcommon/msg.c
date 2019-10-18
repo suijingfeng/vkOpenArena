@@ -312,15 +312,18 @@ void MSG_WriteFloat( msg_t *sb, float f ) {
 	MSG_WriteBits( sb, dat.i, 32 );
 }
 
-void MSG_WriteString( msg_t *sb, const char *s ) {
+void MSG_WriteString( msg_t *sb, const char *s )
+{
 	if ( !s ) {
 		MSG_WriteData (sb, "", 1);
-	} else {
-		int		l,i;
-		char	string[MAX_STRING_CHARS];
+	}
+	else
+	{
 
-		l = strlen( s );
-		if ( l >= MAX_STRING_CHARS ) {
+		char string[MAX_STRING_CHARS];
+
+		unsigned int len = (unsigned int) strlen( s );
+		if ( len >= MAX_STRING_CHARS ) {
 			Com_Printf( "MSG_WriteString: MAX_STRING_CHARS" );
 			MSG_WriteData (sb, "", 1);
 			return;
@@ -328,24 +331,25 @@ void MSG_WriteString( msg_t *sb, const char *s ) {
 		Q_strncpyz( string, s, sizeof( string ) );
 
 		// get rid of 0x80+ and '%' chars, because old clients don't like them
-		for ( i = 0 ; i < l ; i++ ) {
+		for (unsigned int i = 0 ; i < len ; i++ ) {
 			if ( ((byte *)string)[i] > 127 || string[i] == '%' ) {
 				string[i] = '.';
 			}
 		}
 
-		MSG_WriteData (sb, string, l+1);
+		MSG_WriteData (sb, string, len+1);
 	}
 }
 
 void MSG_WriteBigString( msg_t *sb, const char *s ) {
 	if ( !s ) {
 		MSG_WriteData (sb, "", 1);
-	} else {
-		int		l,i;
+	}
+	else {
+
 		char	string[BIG_INFO_STRING];
 
-		l = strlen( s );
+		unsigned int l = (unsigned int) strlen( s );
 		if ( l >= BIG_INFO_STRING ) {
 			Com_Printf( "MSG_WriteString: BIG_INFO_STRING" );
 			MSG_WriteData (sb, "", 1);
@@ -354,7 +358,8 @@ void MSG_WriteBigString( msg_t *sb, const char *s ) {
 		Q_strncpyz( string, s, sizeof( string ) );
 
 		// get rid of 0x80+ and '%' chars, because old clients don't like them
-		for ( i = 0 ; i < l ; i++ ) {
+		for (unsigned int  i = 0 ; i < l ; ++i )
+		{
 			if ( ((byte *)string)[i] > 127 || string[i] == '%' ) {
 				string[i] = '.';
 			}
@@ -1447,7 +1452,7 @@ void MSG_ReadDeltaPlayerstate (msg_t *msg, playerState_t *from, playerState_t *t
 	}
 }
 
-int msg_hData[256] = {
+const unsigned int msg_hData[256] = {
 250315,			// 0
 41193,			// 1
 6292,			// 2
@@ -1706,13 +1711,14 @@ int msg_hData[256] = {
 13504,			// 255
 };
 
-void MSG_initHuffman( void ) {
-	int i,j;
-
+void MSG_initHuffman( void )
+{
 	msgInit = qtrue;
 	Huff_Init(&msgHuff);
-	for(i=0;i<256;i++) {
-		for (j=0;j<msg_hData[i];j++) {
+	for(unsigned int i=0;i<256; ++i)
+	{
+		for (unsigned int j=0; j<msg_hData[i]; ++j)
+		{
 			Huff_addRef(&msgHuff.compressor,	(byte)i);			// Do update
 			Huff_addRef(&msgHuff.decompressor,	(byte)i);			// Do update
 		}

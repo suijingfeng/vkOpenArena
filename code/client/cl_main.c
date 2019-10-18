@@ -1737,7 +1737,7 @@ void CL_Connect_f( void )
 	Com_Printf( "%s resolved to %s\n", clc.servername, serverString);
 
 	if( cl_guidServerUniq->integer )
-		CL_UpdateGUID( serverString, strlen( serverString ) );
+		CL_UpdateGUID( serverString, (unsigned int)strlen( serverString ) );
 	else
 		CL_UpdateGUID( NULL, 0 );
 
@@ -1828,8 +1828,7 @@ static void CL_CompletePlayerName( char *args, int argNum )
 =====================
 CL_Rcon_f
 
-  Send the rest of the command line over as
-  an unconnected command.
+  Send the rest of the command line over as an unconnected command.
 =====================
 */
 void CL_Rcon_f( void ) {
@@ -1872,7 +1871,7 @@ void CL_Rcon_f( void ) {
 		}
 	}
 	
-	NET_SendPacket (NS_CLIENT, strlen(message)+1, message, to);
+	NET_SendPacket (NS_CLIENT, (unsigned int)strlen(message)+1, message, to);
 }
 
 /*
@@ -3123,8 +3122,10 @@ void CL_StartHunkUsers( qboolean rendererOnly )
         cls.whiteShader = re.RegisterShader( "white" );
         cls.consoleShader = re.RegisterShader( "console" ); 
         
-        g_console_field_width = cls.glconfig.vidWidth / SMALLCHAR_WIDTH - 2;
-        g_consoleField.widthInChars = g_console_field_width;
+        unsigned int console_width = cls.glconfig.vidWidth / SMALLCHAR_WIDTH - 2;
+		CL_SetConsoleWidthInChar(console_width);
+
+		g_consoleField.widthInChars = console_width;
 	}
 
 	if( rendererOnly ){
@@ -3179,7 +3180,6 @@ void CL_InitRef(void)
 
 #ifdef USE_RENDERER_DLOPEN
 
-	GetRefAPI_t	GetRefAPI;
 	char dllName[MAX_OSPATH];
     
     Com_Printf("\n-------- USE_RENDERER_DLOPEN --------\n");
@@ -3220,7 +3220,7 @@ void CL_InitRef(void)
     }
 
 
-	GetRefAPI = Sys_LoadFunction(rendererLib, "GetRefAPI");
+	GetRefAPI_t GetRefAPI = Sys_LoadFunction(rendererLib, "GetRefAPI");
 	if(!GetRefAPI)
 	{
 		Com_Error(ERR_FATAL, "Can't load symbol GetRefAPI: '%s'",  Sys_LibraryError());
@@ -3273,7 +3273,6 @@ void CL_InitRef(void)
 	// ri.IN_Init = IN_Init;
 	// ri.IN_Shutdown = IN_Shutdown;
 	// ri.IN_Restart = IN_Restart;
-
 	// ri.ftol = Q_ftol;
 
 	ri.WinSysInit = WinSys_Init;
@@ -3287,7 +3286,7 @@ void CL_InitRef(void)
 	ri.IsWinFullscreen = WinSys_IsWinFullscreen;
 	
 	ri.LoadDLL = Sys_LoadDll;
-	
+	ri.UnloadDLL = Sys_UnloadDll;
 	// ri.Sys_SetEnv = Sys_SetEnv;
 	ri.Sys_LowPhysicalMemory = Sys_LowPhysicalMemory;
 
@@ -3998,15 +3997,13 @@ int CL_ServerStatus( char *serverAddress, char *serverStatusString, int maxLen )
 CL_ServerStatusResponse
 ===================
 */
-void CL_ServerStatusResponse( netadr_t from, msg_t *msg ) {
-	char	*s;
+void CL_ServerStatusResponse( netadr_t from, msg_t *msg )
+{
 	char	info[MAX_INFO_STRING];
 	int		i, l, score, ping;
-	int		len;
-	serverStatus_t *serverStatus;
-
-	serverStatus = NULL;
-	for (i = 0; i < MAX_SERVERSTATUSREQUESTS; i++) {
+	serverStatus_t *serverStatus = NULL;
+	for (i = 0; i < MAX_SERVERSTATUSREQUESTS; i++)
+	{
 		if ( NET_CompareAdr( from, cl_serverStatusList[i].address ) ) {
 			serverStatus = &cl_serverStatusList[i];
 			break;
@@ -4017,10 +4014,9 @@ void CL_ServerStatusResponse( netadr_t from, msg_t *msg ) {
 		return;
 	}
 
-	s = MSG_ReadStringLine( msg );
+	char * s = MSG_ReadStringLine( msg );
 
-	len = 0;
-	Com_sprintf(&serverStatus->string[len], sizeof(serverStatus->string)-len, "%s", s);
+	Com_sprintf(&serverStatus->string[0], sizeof(serverStatus->string), "%s", s);
 
 	if (serverStatus->print) {
 		Com_Printf("Server settings:\n");
@@ -4050,17 +4046,19 @@ void CL_ServerStatusResponse( netadr_t from, msg_t *msg ) {
 		}
 	}
 
-	len = strlen(serverStatus->string);
+	unsigned int len = (unsigned int) strlen(serverStatus->string);
 	Com_sprintf(&serverStatus->string[len], sizeof(serverStatus->string)-len, "\\");
 
 	if (serverStatus->print) {
 		Com_Printf("\nPlayers:\n");
 		Com_Printf("score: ping: name:\n");
 	}
-	for (i = 0, s = MSG_ReadStringLine( msg ); *s; s = MSG_ReadStringLine( msg ), i++) {
 
-		len = strlen(serverStatus->string);
-		Com_sprintf(&serverStatus->string[len], sizeof(serverStatus->string)-len, "\\%s", s);
+	for (i = 0, s = MSG_ReadStringLine( msg ); *s; s = MSG_ReadStringLine( msg ), ++i)
+	{
+
+		unsigned int len2 = (unsigned int) strlen(serverStatus->string);
+		Com_sprintf(&serverStatus->string[len2], sizeof(serverStatus->string)-len2, "\\%s", s);
 
 		if (serverStatus->print) {
 			score = ping = 0;
@@ -4075,8 +4073,9 @@ void CL_ServerStatusResponse( netadr_t from, msg_t *msg ) {
 			Com_Printf("%-2d %-3d    %-3d   %s\n", i, score, ping, s );
 		}
 	}
-	len = strlen(serverStatus->string);
-	Com_sprintf(&serverStatus->string[len], sizeof(serverStatus->string)-len, "\\");
+
+	unsigned int len3 = (unsigned int)strlen(serverStatus->string);
+	Com_sprintf(&serverStatus->string[len3], sizeof(serverStatus->string)-len3, "\\");
 
 	serverStatus->time = Com_Milliseconds();
 	serverStatus->address = from;

@@ -60,7 +60,7 @@ void R_LoadImage(const char *name, unsigned char **pic, int *width, int *height 
 	if( *ext )
 	{
 		// Look for the correct loader and use it
-		for( i = 0; i < numImageLoaders; i++ )
+		for( i = 0; i < numImageLoaders; ++i )
 		{
 			if( !Q_stricmp( ext, imageLoaders[ i ].ext ) )
 			{
@@ -96,7 +96,9 @@ void R_LoadImage(const char *name, unsigned char **pic, int *width, int *height 
 		if (i == orgLoader)
 			continue;
 
-		char *altName = va( "%s.%s", localName, imageLoaders[ i ].ext );
+		char altName[128] = { 0 };
+		
+		snprintf(altName, 127, "%s.%s", localName, imageLoaders[i].ext);
 
 		// Load
 		imageLoaders[ i ].ImageLoader( altName, pic, width, height );

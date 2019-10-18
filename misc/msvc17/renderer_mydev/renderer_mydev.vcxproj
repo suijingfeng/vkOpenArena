@@ -116,7 +116,7 @@
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <SDLCheck>true</SDLCheck>
       <ConformanceMode>true</ConformanceMode>
-      <PreprocessorDefinitions>STANDALONE;USE_RENDERER_DLOPEN;USE_INTERNAL_JPEG;_MSC_VER;WIN64;NDEBUG;_MBCS;_WINDLL;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>STANDALONE;USE_RENDERER_DLOPEN;USE_INTERNAL_JPEG;_WIN64;NDEBUG;_MBCS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <EnableParallelCodeGeneration>true</EnableParallelCodeGeneration>
       <FloatingPointModel>Fast</FloatingPointModel>
       <CompileAs>CompileAsC</CompileAs>
@@ -159,6 +159,11 @@
     <ClCompile Include="..\..\..\code\renderer_mydev\tr_sky.c" />
     <ClCompile Include="..\..\..\code\renderer_mydev\tr_surface.c" />
     <ClCompile Include="..\..\..\code\renderer_mydev\tr_world.c" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\libjpeg\libjpeg.vcxproj">
+      <Project>{1db8884c-1494-4bdc-993c-b46ef1e91791}</Project>
+    </ProjectReference>
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

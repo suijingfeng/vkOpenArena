@@ -29,6 +29,7 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #ifdef _WIN32
 	#include <windows.h>
 	#include <gl/gl.h>
+    #include "glext.h"
 #else
 	#include <GL/gl.h>
 #endif

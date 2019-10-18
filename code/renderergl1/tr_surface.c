@@ -523,20 +523,19 @@ static void RB_SurfaceRailCore( void )
 	DoRailCore( start, end, right, len, r_railCoreWidth->integer );
 }
 
-/*
-** RB_SurfaceLightningBolt
-*/
+
+
 static void DoLightningCore( const vec3_t start, const vec3_t end, const vec3_t up, float len)
 {
 	float t = len / 256.0f;
 
 	RB_CHECKOVERFLOW( 4, 6 );
 
-    int nVert = tess.numVertexes;
-    tess.numVertexes += 4; 
+	int nVert = tess.numVertexes;
+	int nIdx = tess.numIndexes;
 
-    int nIdx = tess.numIndexes;
-    tess.numIndexes += 6;
+	tess.numVertexes += 4; 
+	tess.numIndexes += 6;
 
 	tess.indexes[nIdx++] = nVert;
 	tess.indexes[nIdx++] = nVert + 1;
@@ -546,10 +545,10 @@ static void DoLightningCore( const vec3_t start, const vec3_t end, const vec3_t 
 	tess.indexes[nIdx++] = nVert + 1;
 	tess.indexes[nIdx++] = nVert + 3;
 
-    const int spanWidth = 16;
+	const int spanWidth = 16;
 
-    float temp[3];
-    VectorScale(up, spanWidth, temp);
+	float temp[3];
+	VectorScale(up, spanWidth, temp);
 
 	// FIXME: use quad stamp?
 	VectorAdd( start, temp, tess.xyz[nVert] );
@@ -560,7 +559,7 @@ static void DoLightningCore( const vec3_t start, const vec3_t end, const vec3_t 
 	tess.vertexColors[nVert][2] = backEnd.currentEntity->e.shaderRGBA[2] * 0.25;
 	
 
-    nVert++;
+	++nVert;
 	VectorSubtract( start, temp, tess.xyz[nVert] );
 	tess.texCoords[nVert][0][0] = 0;
 	tess.texCoords[nVert][0][1] = 1;
@@ -568,7 +567,7 @@ static void DoLightningCore( const vec3_t start, const vec3_t end, const vec3_t 
 	tess.vertexColors[nVert][1] = backEnd.currentEntity->e.shaderRGBA[1];
 	tess.vertexColors[nVert][2] = backEnd.currentEntity->e.shaderRGBA[2];
 
-    nVert++;
+	++nVert;
 	VectorAdd( end, temp, tess.xyz[nVert] );
 	tess.texCoords[nVert][0][0] = t;
 	tess.texCoords[nVert][0][1] = 0;
@@ -576,7 +575,7 @@ static void DoLightningCore( const vec3_t start, const vec3_t end, const vec3_t 
 	tess.vertexColors[nVert][1] = backEnd.currentEntity->e.shaderRGBA[1];
 	tess.vertexColors[nVert][2] = backEnd.currentEntity->e.shaderRGBA[2];
 
-    nVert++;
+	++nVert;
 	VectorSubtract( end, temp, tess.xyz[nVert] );
 	tess.texCoords[nVert][0][0] = t;
 	tess.texCoords[nVert][0][1] = 1;
@@ -592,15 +591,13 @@ static void RB_SurfaceLightningBolt( void )
 	vec3_t		vec;
 	vec3_t		start, end;
 	vec3_t		v1, v2;
-	int			i;
-    float       len;
 
 	VectorCopy( backEnd.currentEntity->e.oldorigin, end );
 	VectorCopy( backEnd.currentEntity->e.origin, start );
 
 	// compute variables
 	VectorSubtract( end, start, vec );
-    len = sqrtf(vec[0]*vec[0] + vec[1]*vec[1] + vec[2]*vec[2]);
+	float len = sqrtf(vec[0]*vec[0] + vec[1]*vec[1] + vec[2]*vec[2]);
 
 	// compute side vector
 	VectorSubtract( start, backEnd.viewParms.or.origin, v1 );
@@ -608,8 +605,8 @@ static void RB_SurfaceLightningBolt( void )
 	CrossProduct( v1, v2, right );
 	FastNormalize1f( right );
     
-	for ( i = 0 ; i < 4 ; i++ )
-    {
+	for (unsigned int  i = 0 ; i < 4 ; i++ )
+	{
 		vec3_t	temp;
 
 		DoLightningCore( start, end, right, len );
@@ -769,7 +766,9 @@ static void LerpMeshVertexes (md3Surface_t *surf, float backlerp)
 			outNormal[2] = uncompressedOldNormal[2] * oldNormalScale + uncompressedNewNormal[2] * newNormalScale;
 
 		}
-    	VectorArrayNormalize((vec4_t *)tess.normal[tess.numVertexes], numVerts);
+    		
+		if(numVerts)
+			VectorArrayNormalize((vec4_t *)tess.normal[tess.numVertexes], numVerts);
    	}
 }
 
@@ -783,9 +782,9 @@ static void RB_SurfaceMesh(md3Surface_t *surface) {
 	float			backlerp;
 	int				*triangles;
 	float			*texCoords;
-	int				indexes;
-	int				Bob, Doug;
-	int				numVerts;
+	int indexes;
+	int Bob, Doug;
+	int numVerts;
 
 	if (  backEnd.currentEntity->e.oldframe == backEnd.currentEntity->e.frame ) {
 		backlerp = 0;

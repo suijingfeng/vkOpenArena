@@ -141,7 +141,7 @@ static void RB_BeginDrawingView(void)
 	if ( backEnd.viewParms.isPortal )
 	{
 		float	plane[4];
-		GLdouble	plane2[4];
+		GLdouble plane2[4];
 
 		plane[0] = backEnd.viewParms.portalPlane.normal[0];
 		plane[1] = backEnd.viewParms.portalPlane.normal[1];
@@ -157,8 +157,8 @@ static void RB_BeginDrawingView(void)
 		qglClipPlane (GL_CLIP_PLANE0, plane2);
 		qglEnable (GL_CLIP_PLANE0);
 	}
-    else
-    {
+	else
+	{
 		qglDisable (GL_CLIP_PLANE0);
 	}
 }
@@ -184,11 +184,11 @@ static void RB_RenderDrawSurfList( drawSurf_t *drawSurfs, int numDrawSurfs )
 
 	// draw everything
 	int oldEntityNum = -1;
-    int oldFogNum = -1;
+	int oldFogNum = -1;
 	int oldSort = -1;
     
 	qboolean depthRange = qfalse;
-    qboolean oldDepthRange = qfalse;
+	qboolean oldDepthRange = qfalse;
 	qboolean wasCrosshair = qfalse;
 	qboolean oldDlighted = qfalse;
 
@@ -196,10 +196,10 @@ static void RB_RenderDrawSurfList( drawSurf_t *drawSurfs, int numDrawSurfs )
 
 	backEnd.pc.c_surfaces += numDrawSurfs;
 
-	for (i = 0, drawSurf = drawSurfs; i < numDrawSurfs ; i++, drawSurf++)
-    {
+	for (i = 0, drawSurf = drawSurfs; i < numDrawSurfs ; ++i, ++drawSurf)
+ 	{
 		if ( drawSurf->sort == oldSort )
-        {
+		{
 			// fast path, same as previous sort
 			rb_surfaceTable[ *drawSurf->surface ]( drawSurf->surface );
 			continue;
@@ -213,7 +213,7 @@ static void RB_RenderDrawSurfList( drawSurf_t *drawSurfs, int numDrawSurfs )
 		// entities merged into a single batch, like smoke and blood puff sprites
 		if ( shader != NULL && ( shader != oldShader || fogNum != oldFogNum || dlighted != oldDlighted 
 			|| ( entityNum != oldEntityNum && !shader->entityMergable ) ) )
-        {
+		{
 			if (oldShader != NULL) {
 				RB_EndSurface();
 			}
@@ -227,11 +227,11 @@ static void RB_RenderDrawSurfList( drawSurf_t *drawSurfs, int numDrawSurfs )
 		// change the modelview matrix if needed
 		//
 		if( entityNum != oldEntityNum )
-        {
+		{
 			depthRange = isCrosshair = qfalse;
 
 			if ( entityNum != REFENTITYNUM_WORLD )
-            {
+			{
 				backEnd.currentEntity = &backEnd.refdef.entities[entityNum];
 
 				// FIXME: e.shaderTime must be passed as int to avoid fp-precision loss issues
@@ -246,7 +246,7 @@ static void RB_RenderDrawSurfList( drawSurf_t *drawSurfs, int numDrawSurfs )
 
 				// set up the dynamic lighting if needed
 				if ( backEnd.currentEntity->needDlights )
-                {
+				{
 					R_TransformDlights( backEnd.refdef.num_dlights, backEnd.refdef.dlights, &backEnd.or );
 				}
 
@@ -302,14 +302,14 @@ static void RB_RenderDrawSurfList( drawSurf_t *drawSurfs, int numDrawSurfs )
 
 	// draw the contents of the last shader batch
 	if (oldShader != NULL)
-    {
+	{
 		RB_EndSurface();
 	}
 
 	// go back to the world modelview matrix
 	qglLoadMatrixf( backEnd.viewParms.world.modelMatrix );
 	if ( depthRange )
-    {
+	{
 		qglDepthRange (0, 1);
 	}
 
@@ -345,10 +345,10 @@ static void RB_SetGL2D (void)
 	qglViewport( 0, 0, glConfig.vidWidth, glConfig.vidHeight );
 	qglScissor( 0, 0, glConfig.vidWidth, glConfig.vidHeight );
 	qglMatrixMode(GL_PROJECTION);
-    qglLoadIdentity ();
+	qglLoadIdentity ();
 	qglOrtho (0, glConfig.vidWidth, glConfig.vidHeight, 0, 0, 1);
 	qglMatrixMode(GL_MODELVIEW);
-    qglLoadIdentity ();
+	qglLoadIdentity ();
 
 	GL_State( GLS_DEPTHTEST_DISABLE |
 				GLS_SRCBLEND_SRC_ALPHA |
@@ -377,7 +377,7 @@ static const void* RB_SetColor( const void *data )
 static const void *RB_StretchPic( const void *data )
 {
 	const stretchPicCommand_t* cmd = (const stretchPicCommand_t *)data;
-	int		numVerts, numIndexes;
+	int numVerts, numIndexes;
 
 	if ( !backEnd.projection2D ) {
 		RB_SetGL2D();
@@ -507,16 +507,16 @@ static const void* RB_DrawBuffer(const void *data)
 
 static const void *RB_ColorMask(const void *data)
 {
-    typedef struct
-    {
-        int commandId;
-        GLboolean rgba[4];
-    } colorMaskCommand_t;
-    
+	typedef struct
+	{
+		int commandId;
+		GLboolean rgba[4];
+	} colorMaskCommand_t;
+
 	const colorMaskCommand_t *cmd = data;
-	
+
 	qglColorMask(cmd->rgba[0], cmd->rgba[1], cmd->rgba[2], cmd->rgba[3]);
-	
+
 	return (const void *)(cmd + 1);
 }
 
@@ -542,13 +542,13 @@ static const void* RB_SwapBuffers( const void *data )
 {
 	// finish any 2D drawing if needed
 	if ( tess.numIndexes )
-    {
+	{
 		RB_EndSurface();
 	}
 
 	// texture swapping test
 	if ( r_showImages->integer )
-    {
+	{
 		RB_ShowImages();
 	}
 
@@ -558,15 +558,13 @@ static const void* RB_SwapBuffers( const void *data )
 	// we measure overdraw by reading back the stencil buffer and
 	// counting up the number of increments that have happened
 	if ( r_measureOverdraw->integer )
-    {
-		int i;
+	{
 		long sum = 0;
-		unsigned char *stencilReadback;
-
-		stencilReadback = ri.Hunk_AllocateTempMemory( glConfig.vidWidth * glConfig.vidHeight );
+		unsigned char *stencilReadback = ri.Hunk_AllocateTempMemory( glConfig.vidWidth * glConfig.vidHeight );
 		qglReadPixels( 0, 0, glConfig.vidWidth, glConfig.vidHeight, GL_STENCIL_INDEX, GL_UNSIGNED_BYTE, stencilReadback );
 
-		for ( i = 0; i < glConfig.vidWidth * glConfig.vidHeight; i++ ) {
+		for (int i = 0; i < glConfig.vidWidth * glConfig.vidHeight; ++i )
+		{
 			sum += stencilReadback[i];
 		}
 
@@ -596,22 +594,23 @@ void GL_Bind(image_t *image)
 	int texnum;
 
 	if ( !image )
-    {
+	{
 		ri.Printf( PRINT_WARNING, "GL_Bind: NULL image\n" );
 		texnum = tr.defaultImage->texnum;
 	}
-    else
-    {
+	else
+	{
 		texnum = image->texnum;
 	}
 
 	if ( r_nobind->integer && tr.dlightImage )
-    {		// performance evaluation option
+	{	
+		// performance evaluation option
 		texnum = tr.dlightImage->texnum;
 	}
 
 	if ( glState.currenttextures[glState.currenttmu] != texnum )
-    {
+	{
 		if ( image )
 			image->frameUsed = tr.frameCount;
 	
@@ -1041,9 +1040,6 @@ Also called by RE_EndRegistration
 
 void RB_ShowImages(void)
 {
-	int	i;
-
-
 	if ( !backEnd.projection2D )
 	{
 		RB_SetGL2D();
@@ -1055,8 +1051,8 @@ void RB_ShowImages(void)
 
 	int start = ri.Milliseconds();
 
-	for( i=0 ; i<tr.numImages ; i++ )
-    {
+	for(int i=0 ; i<tr.numImages ; i++ )
+	{
 		image_t	* image = tr.images[i];
 
 		float w = glConfig.vidWidth / 20;
@@ -1093,9 +1089,9 @@ void RB_ShowImages(void)
 
 void RB_ExecuteRenderCommands(const void *data)
 {
-	int	t1 = ri.Milliseconds();
+	int t1 = ri.Milliseconds();
 	while( 1 )
-    {
+	{
 		data = PADP(data, sizeof(void *));
 
 		switch( *(const int *)data )

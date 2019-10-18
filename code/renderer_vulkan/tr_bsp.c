@@ -47,10 +47,8 @@ void RE_LoadWorldMap( const char *name );
 */
 
 
-
 static	world_t		s_worldData ;
 static	unsigned char* fileBase = NULL;
-
 
 //===============================================================================
 
@@ -284,7 +282,6 @@ static void R_LoadLightmaps(const lump_t * const l )
 		ri.Printf( PRINT_ALL, "Brightest lightmap value: %d\n", ( int ) ( maxIntensity * 255 ) );
 	}
 }
-
 
 
 static void R_LoadVisibility( const lump_t * const l, world_t* const pW )

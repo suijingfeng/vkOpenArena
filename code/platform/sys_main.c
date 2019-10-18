@@ -78,13 +78,13 @@ qboolean Sys_WritePIDFile( void )
 	if( ( f = fopen( pidFile, "r" ) ) != NULL )
 	{
 		char  pidBuffer[ 64 ] = { 0 };
-		int pid = fread( pidBuffer, sizeof( char ), sizeof( pidBuffer ) - 1, f );
+		size_t pid = fread( pidBuffer, sizeof( char ), sizeof( pidBuffer ) - 1, f );
 		fclose( f );
 
 		if(pid > 0)
 		{
-			pid = atoi( pidBuffer );
-			if( !Sys_PIDIsRunning( pid ) )
+			int res = atoi( pidBuffer );
+			if( !Sys_PIDIsRunning( res ) )
 				stale = qtrue;
 		}
 		else
@@ -212,9 +212,6 @@ extern WinVars_t g_wv;
 int WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nCmdShow)
 {
 	//char sys_cmdline[MAX_STRING_CHARS];
-
-	int	totalMsec = 0;
-	int countMsec = 0;
 
 	// should never get a previous instance in Win32
 	if (hPrevInstance) {

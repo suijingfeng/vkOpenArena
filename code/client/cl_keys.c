@@ -372,7 +372,7 @@ void Field_Paste( field_t *edit )
 	}
 
 	// send as if typed, so insert / overstrike works properly
-	int pasteLen = strlen( cbd );
+	int pasteLen = (int) strlen( cbd );
 	for (int i = 0 ; i < pasteLen ; i++ ) {
 		Field_CharEvent( edit, cbd[i] );
 	}
@@ -585,7 +585,7 @@ void Console_Key (int key) {
 
 		Field_Clear( &g_consoleField );
 
-		g_consoleField.widthInChars = g_console_field_width;
+		g_consoleField.widthInChars = CL_GetConsoleWidthInChar();
 
 		CL_SaveConsoleHistory( );
 
@@ -620,7 +620,7 @@ void Console_Key (int key) {
 		if (historyLine >= nextHistoryLine) {
 			historyLine = nextHistoryLine;
 			Field_Clear( &g_consoleField );
-			g_consoleField.widthInChars = g_console_field_width;
+			g_consoleField.widthInChars = CL_GetConsoleWidthInChar();
 			return;
 		}
 		g_consoleField = historyEditLines[ historyLine % COMMAND_HISTORY ];

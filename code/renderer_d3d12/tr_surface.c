@@ -551,12 +551,12 @@ void RB_SurfaceLightningBolt( void ) {
 *
 * The inputs to this routing seem to always be close to length = 1.0 (about 0.6 to 2.0)
 * This means that we don't have to worry about zero length or enormously long vectors.
-*/
+
 static void VectorArrayNormalize(vec4_t *normals, unsigned int count)
 {
-    assert(count);
+//    assert(count);
      
-// No assembly version for this architecture, or C_ONLY defined
+	// No assembly version for this architecture, or C_ONLY defined
 	// given the input, it's safe to call VectorNormalizeFast
     while (count--) {
         VectorNormalizeFast(normals[0]);
@@ -565,7 +565,7 @@ static void VectorArrayNormalize(vec4_t *normals, unsigned int count)
 
 }
 
-
+*/
 
 /*
 ** LerpMeshVertexes
@@ -578,7 +578,6 @@ static void LerpMeshVertexes (md3Surface_t *surf, float backlerp)
 	float	oldNormalScale, newNormalScale;
 	int		vertNum;
 	unsigned lat, lng;
-	int		numVerts;
 
 	outXyz = tess.xyz[tess.numVertexes];
 	outNormal = tess.normal[tess.numVertexes];
@@ -590,7 +589,7 @@ static void LerpMeshVertexes (md3Surface_t *surf, float backlerp)
 	newXyzScale = MD3_XYZ_SCALE * (1.0 - backlerp);
 	newNormalScale = 1.0 - backlerp;
 
-	numVerts = surf->numVerts;
+	int numVerts = surf->numVerts;
 
 	if ( backlerp == 0 )
 	{
@@ -667,7 +666,17 @@ static void LerpMeshVertexes (md3Surface_t *surf, float backlerp)
 
 //			VectorNormalize (outNormal);
 		}
-    	VectorArrayNormalize((vec4_t *)tess.normal[tess.numVertexes], numVerts);
+
+		if (numVerts)
+		{
+			int count = numVerts;
+			vec4_t *normals = (vec4_t *)tess.normal[tess.numVertexes];
+			while (count--)
+			{
+				VectorNormalizeFast(normals[0]);
+				normals++;
+			}
+		}
    	}
 }
 
