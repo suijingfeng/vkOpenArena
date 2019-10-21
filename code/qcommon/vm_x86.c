@@ -231,7 +231,7 @@ static void Hes2char(unsigned char hex, unsigned char code[2])
 	}
 }
 
-inline static void EmitString(unsigned char* buf, const char *string)
+inline static void EmitString(unsigned char* const buf, const char *string)
 {
 
 	while ( 1 )
@@ -270,7 +270,7 @@ inline static void EmitRexString(unsigned char* buf, unsigned char rex, const ch
 }
 
 
-static void EmitMaskReg( unsigned char * buf, unsigned char * modrm, int mask)
+inline static void EmitMaskReg( unsigned char * buf, char * modrm, int mask)
 { 
 	EmitString( buf, "81" );
 	EmitString( buf, modrm );
