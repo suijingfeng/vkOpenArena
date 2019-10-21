@@ -252,6 +252,9 @@
     <ClCompile Include="..\..\..\code\qcommon\vm_x86.c">
       <Filter>Source Files\qcommon</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\..\code\platform\sys_cpu.c">
+      <Filter>Source Files\platform</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\..\code\sdl\resource.h">

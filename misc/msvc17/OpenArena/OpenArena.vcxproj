@@ -45,6 +45,7 @@
     <ClCompile Include="..\..\..\code\client\snd_openal.c" />
     <ClCompile Include="..\..\..\code\client\snd_wavelet.c" />
     <ClCompile Include="..\..\..\code\platform\con_passive.c" />
+    <ClCompile Include="..\..\..\code\platform\sys_cpu.c" />
     <ClCompile Include="..\..\..\code\platform\sys_loadlib.c" />
     <ClCompile Include="..\..\..\code\platform\sys_main.c" />
     <ClCompile Include="..\..\..\code\platform\sys_win32.c" />

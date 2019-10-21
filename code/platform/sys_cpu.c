@@ -16,9 +16,12 @@ static int CPU_Flags;
 **
 ** --------------------------------------------------------------------------------
 */
-#if defined _MSC_VER
-static void CPUID( int func, unsigned int *regs )
+
+static void CPUID(int func, unsigned int *regs)
 {
+
+#if defined _MSC_VER
+
 #if _MSC_VER >= 1400
 	__cpuid( regs, func );
 #else
@@ -34,12 +37,11 @@ static void CPUID( int func, unsigned int *regs )
 	}
 
 #endif
-}
+
 
 #else
 // linux 
-static void CPUID( int func, unsigned int *regs )
-{
+
 #if (idx64 || idx32)
 	__asm__ __volatile__( "cpuid" :
 		"=a"(regs[0]),
@@ -51,13 +53,11 @@ static void CPUID( int func, unsigned int *regs )
 
 // mips
 
-
 #endif
 
+#endif
 
 }
-
-#endif
 
 
 int Sys_GetProcessorId( char *vendor )
