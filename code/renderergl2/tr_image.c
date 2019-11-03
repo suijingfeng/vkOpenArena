@@ -1787,52 +1787,6 @@ static GLenum RawImage_GetFormat(const byte *data, int numPixels, GLenum picForm
 	return internalFormat;
 }
 
-static void CompressMonoBlock(byte outdata[8], const byte indata[16])
-{
-	int hi, lo, diff, bias, outbyte, shift, i;
-	byte *p = outdata;
-
-	hi = lo = indata[0];
-	for (i = 1; i < 16; i++)
-	{
-		hi = MAX(indata[i], hi);
-		lo = MIN(indata[i], lo);
-	}
-
-	*p++ = hi;
-	*p++ = lo;
-
-	diff = hi - lo;
-
-	if (diff == 0)
-	{
-		outbyte = (hi == 255) ? 255 : 0;
-
-		for (i = 0; i < 6; i++)
-			*p++ = outbyte;
-
-		return;
-	}
-
-	bias = diff / 2 - lo * 7;
-	outbyte = shift = 0;
-	for (i = 0; i < 16; i++)
-	{
-		const byte fixIndex[8] = { 1, 7, 6, 5, 4, 3, 2, 0 };
-		byte index = fixIndex[(indata[i] * 7 + bias) / diff];
-
-		outbyte |= index << shift;
-		shift += 3;
-		if (shift >= 8)
-		{
-			*p++ = outbyte & 0xff;
-			shift -= 8;
-			outbyte >>= 8;
-		}
-	}
-}
-
-
 
 static int CalculateMipSize(int width, int height, GLenum picFormat)
 {
@@ -1896,7 +1850,6 @@ static void RawImage_UploadTexture(GLuint texture, byte *data, int x, int y, int
 {
 	GLenum dataFormat, dataType;
 	qboolean rgba8 = picFormat == GL_RGBA8 || picFormat == GL_SRGB8_ALPHA8_EXT;
-	qboolean rgba = rgba8 || picFormat == GL_RGBA16;
 	qboolean mipmap = !!(flags & IMGFLAG_MIPMAP);
 	int size, miplevel;
 	qboolean lastMip = qfalse;
@@ -1910,13 +1863,10 @@ static void RawImage_UploadTexture(GLuint texture, byte *data, int x, int y, int
 		lastMip = (width == 1 && height == 1) || !mipmap;
 		size = CalculateMipSize(width, height, picFormat);
 
+        if (rgba8 && miplevel != 0 && r_colorMipLevels->integer)
+            R_BlendOverTexture((byte *)data, width * height, mipBlendColors[miplevel]);
 
-		{
-			if (rgba8 && miplevel != 0 && r_colorMipLevels->integer)
-				R_BlendOverTexture((byte *)data, width * height, mipBlendColors[miplevel]);
-
-			qglTextureSubImage2DEXT(texture, target, miplevel, x, y, width, height, dataFormat, dataType, data);
-		}
+        qglTextureSubImage2DEXT(texture, target, miplevel, x, y, width, height, dataFormat, dataType, data);
 
 		if (!lastMip && numMips < 2)
 		{

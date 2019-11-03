@@ -48,6 +48,13 @@ extern void XSys_CreateContextForGL(XVisualInfo * pVisinfo);
 extern void XSys_SetCurrentContextForGL(void);
 extern void XSys_ClearCurrentContextForGL(void);
 
+extern void GLX_AscertainExtension( Display * pDpy );
+extern void GLX_QueryVersion( Display * pDpy );
+extern const char * GLX_QueryExtensionsString( Display * pDpy, int screen);
+extern const char * GLX_GetVendorString(Display * pDpy);
+extern const char * GLX_GetVersionString(Display * pDpy);
+extern const char * GLX_QueryServerString( Display * pDpy, int screen);
+
 ///////////////////////////
 static cvar_t* r_mode;
 static cvar_t* r_fullscreen;
@@ -128,9 +135,6 @@ static int CreateWindowForRenderer(int mode, qboolean fullscreen, int type )
 {
 
 	int actualWidth, actualHeight, actualRate;
-
-	glw_state.screenIdx = DefaultScreen( glw_state.pDisplay );
-	glw_state.root = RootWindow( glw_state.pDisplay, glw_state.screenIdx );
 
 	// Init xrandr and get desktop resolution if available
 	RandR_Init( 0, 0, 640, 480, fullscreen);
@@ -514,18 +518,37 @@ void WinSys_Init(void ** pCfg, int type)
 
 	if ( glw_state.pDisplay == NULL )
 	{
-		Com_Printf( " Couldn't open the X display. \n" );
+		Com_Error(ERR_FATAL, " Couldn't open the X display. \n" );
 	}
-        else
-        {
-                Com_Printf( " Server Vendor: %s, release: %d \n ", 
-                        XServerVendor(glw_state.pDisplay), XVendorRelease(glw_state.pDisplay) );
-        }
+
+	glw_state.screenIdx = DefaultScreen( glw_state.pDisplay );
+	glw_state.root = RootWindow( glw_state.pDisplay, glw_state.screenIdx );
+
+    Com_Printf( " Server Vendor: %s, release: %d \n ", 
+            XServerVendor(glw_state.pDisplay), XVendorRelease(glw_state.pDisplay) );
+
+
 
 	if(type == 0)
 	{
-		// load and initialize the specific OpenGL driver
+		// load libGL.so and initialize the function pointer.
 		XSys_LoadOpenGL( );
+
+        // To ascertain if the GLX extension is defined for an X server
+        GLX_AscertainExtension( glw_state.pDisplay );
+
+        // The GLX definition exists in multiple versions,
+        // to discover which version of GLX is available.
+        GLX_QueryVersion( glw_state.pDisplay );
+
+        GLX_QueryExtensionsString( glw_state.pDisplay, glw_state.screenIdx );
+
+        GLX_GetVendorString( glw_state.pDisplay );
+
+        GLX_GetVersionString(  glw_state.pDisplay );
+
+        GLX_QueryServerString(  glw_state.pDisplay, glw_state.screenIdx  );
+
 	}
 	// create the window and set up the context
 

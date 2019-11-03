@@ -112,7 +112,7 @@ void VK_DestroyDebugReportHandle(VkInstance hInstance)
 #endif
 }
 
-
+#ifndef NDEBUG
 static const char * cvtResToStr(VkResult result)
 {
     switch(result)
@@ -185,8 +185,7 @@ static const char * cvtResToStr(VkResult result)
 
     return "UNKNOWN_ERROR";
 }
-
-
+#endif
 
 void debug_vkapi_call(VkResult result, const char * const proc_str)
 {

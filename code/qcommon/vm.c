@@ -309,7 +309,7 @@ vmHeader_t *VM_LoadQVM( vm_t *vm, qboolean alloc, qboolean unpure)
 	} header;
 
 	// load the image
-	char filename[MAX_QPATH] = {0};
+	char filename[128] = {0};
 	snprintf( filename, sizeof(filename), "vm/%s.qvm", vm->name );
 	Com_Printf( " Loading vm file %s...\n", filename );
 
