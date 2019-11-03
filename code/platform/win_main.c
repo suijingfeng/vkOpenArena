@@ -52,7 +52,7 @@ void QDECL Sys_Error( const char * error, ... )
 {
 	va_list		argptr;
 	char		text[4096];
-    MSG        msg;
+        MSG        msg;
 
 	va_start (argptr, error);
 	vsprintf (text, error, argptr);
@@ -168,7 +168,7 @@ int WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int n
 		Sys_ShowConsole( 0, qfalse );
 	}
 
-    // main game loop
+        // main game loop
 	while( 1 )
 	{
 		// if not running as a game client, sleep a bit

@@ -21,11 +21,6 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 */
 // common.c -- misc functions used in client and server
 
-#include "q_shared.h"
-#include "qcommon.h"
-
-#include "../platform/sys_public.h"
-
 
 #include <setjmp.h>
 #ifndef _WIN32
@@ -34,6 +29,10 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #else
 #include <winsock.h>
 #endif
+
+#include "q_shared.h"
+#include "qcommon.h"
+#include "../platform/sys_public.h"
 
 
 #define MAX_NUM_ARGVS	50
@@ -2046,6 +2045,10 @@ sysEvent_t Com_GetSystemEvent( void )
         ++eventTail;
 		return eventQueue[ event_index ];
 	}
+    
+#ifndef DEDICATED
+    Sys_HandleUserInputEvents();
+#endif
 /*
 	MSG	msg;
 	// pump the message loop
@@ -3155,7 +3158,7 @@ void Com_Frame(void)
     {
         Com_EventLoop();
         Cbuf_Execute();
-	    CL_Frame( msec );
+	CL_Frame( msec );
     }
 
 #else
@@ -3189,11 +3192,12 @@ void Com_Frame(void)
 	// trace optimization tracking
 	//
 	if ( com_showtrace->integer )
-    {
+        {
 		extern	int c_traces, c_brush_traces, c_patch_traces;
-		extern	int	c_pointcontents;
+		extern	int c_pointcontents;
 
-		Com_Printf ("%4i traces (%ib %ip) %4i points\n", c_traces,	c_brush_traces, c_patch_traces, c_pointcontents);
+		Com_Printf ("%4i traces (%ib %ip) %4i points\n", 
+                        c_traces, c_brush_traces, c_patch_traces, c_pointcontents);
 		c_traces = 0;
 		c_brush_traces = 0;
 		c_patch_traces = 0;

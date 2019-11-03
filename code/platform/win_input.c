@@ -317,3 +317,11 @@ void IN_MouseEvent(int mstate)
 
 	s_wmv.oldButtonState = mstate;
 }
+
+
+void Sys_HandleUserInputEvents(void)
+{
+    ;
+}
+
+
