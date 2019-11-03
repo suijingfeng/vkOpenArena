@@ -86,7 +86,7 @@ char	*Sys_Cwd(void);
 // Console
 void CON_Shutdown(void);
 void CON_Init(void);
-char *CON_Input(void);
+char * Sys_ConsoleInput(void);
 unsigned int CON_LogSize(void);
 
 unsigned int CON_LogRead(char *out, unsigned int outSize);

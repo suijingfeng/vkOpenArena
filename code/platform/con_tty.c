@@ -320,12 +320,10 @@ void CON_Init( void )
     Com_Printf("CON_Init() finished. \n\n");
 }
 
-/*
-==================
-CON_Input
-==================
-*/
-char *CON_Input(void)
+
+
+
+char * Sys_ConsoleInput(void)
 {
 	// we use this when sending back commands
 	static char text[MAX_EDIT_LINE];

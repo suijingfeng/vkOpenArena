@@ -2038,13 +2038,13 @@ Com_GetSystemEvent
 sysEvent_t Com_GetSystemEvent( void )
 {
 	sysEvent_t  ev;
-	char        *s;
 
 	// return if we have data
 	if ( eventHead > eventTail )
 	{
-		eventTail++;
-		return eventQueue[ ( eventTail - 1 ) & MASK_QUEUED_EVENTS ];
+	    int event_index = eventTail & MASK_QUEUED_EVENTS;	
+        ++eventTail;
+		return eventQueue[ event_index ];
 	}
 /*
 	MSG	msg;
@@ -2066,7 +2066,7 @@ sysEvent_t Com_GetSystemEvent( void )
 */
     // Handle new console input
 	// check for console commands
-	s = CON_Input();
+	char* s = Sys_ConsoleInput();
 	if ( s )
 	{
 		int len = (int)strlen( s ) + 1;
@@ -2078,8 +2078,9 @@ sysEvent_t Com_GetSystemEvent( void )
 	// return if we have data
 	if ( eventHead > eventTail )
 	{
-		eventTail++;
-		return eventQueue[ ( eventTail - 1 ) & MASK_QUEUED_EVENTS ];
+	    int event_index = eventTail & MASK_QUEUED_EVENTS;	
+        ++eventTail;
+		return eventQueue[ event_index ];
 	}
 
 	// create an empty event to return

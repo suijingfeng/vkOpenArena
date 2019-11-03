@@ -44,12 +44,9 @@ void CON_Init( void )
 {
 }
 
-/*
-==================
-CON_Input
-==================
-*/
-char *CON_Input( void )
+
+
+char *Sys_ConsoleInput( void )
 {
 	return NULL;
 }

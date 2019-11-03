@@ -321,12 +321,9 @@ void CON_Init( void )
 	SetConsoleTextAttribute( qconsole_hout, CON_ColorCharToAttrib( COLOR_WHITE ) );
 }
 
-/*
-==================
-CON_Input
-==================
-*/
-char *CON_Input( void )
+
+
+char * Sys_ConsoleInput( void )
 {
 	INPUT_RECORD buff[ MAX_EDIT_LINE ];
 	DWORD count = 0, events = 0;
