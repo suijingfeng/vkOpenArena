@@ -1,7 +1,8 @@
 ﻿# OpenArena Engine 
 
-* checkout the SDL2 branch for stable build and playing, the following description works for SDL2 branch,
-* the master branch is under developing now, I'm get stucked on q3 xcb /xlib keyboard, mouse input event handle things as lack of documention ...
+* checkout the SDL2 branch for stable build and playing, the following description works for SDL2 branch.
+* the master branch is under developing now,  mouse input event process are not as good as sdl2 branch, have influence on rocket jump, it seems that the mouse acceration too big, i dont know what is the reason.
+* on loongnix, edit the Makefile.local, and replace the `BUILD_VULAN=1` with `BUILD_VULKAN=0`
 
 
 This project is a fork of OpenArena with specific changes to its renderer module.
@@ -57,9 +58,6 @@ Install the build dependencies.
 $ sudo apt-get install libcurl4-openssl-dev libopenal-dev libgl1-mesa-dev
 $ sudo apt-get install clang gcc make git
 
-# SDL2 may required to compile from the source.
-sudo apt-get install libsdl2-dev
-
 # libvulkan-dev is optional, it provide validation layer for debug bulid, 
 # release build dont need it.
 sudo apt-get install libvulkan-dev
@@ -94,6 +92,14 @@ $ yum install SDL2-devel.x86_64
 
 $ make -j$(nproc)
 ```
+
+## Build the master branch on Loongnix
+
+```
+# yum install gcc make git
+# yum install alsa-lib-devel.mips64el libXrandr-devel.mips64el libcurl-devel.mips64el openal-soft-devel.mips64el
+```
+
 
 ## Building on Windows 7 or 10 ##
 
