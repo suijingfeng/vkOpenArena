@@ -776,12 +776,12 @@ static void R_BindAnimatedImage( textureBundle_t *bundle, int tmu, float time)
 void RB_StageIteratorGeneric(struct shaderCommands_s * const pTess, VkBool32 isPortal, VkBool32 is2D)
 {
 
-	RB_DeformTessGeometry(pTess);
+    RB_DeformTessGeometry(pTess);
 
-	// call shader function
-	//
+    // call shader function
+    //
 
-	vk_UploadXYZI(pTess->xyz, pTess->numVertexes, pTess->indexes, pTess->numIndexes);
+    vk_UploadXYZI(pTess->xyz, pTess->numVertexes, pTess->indexes, pTess->numIndexes);
     
     updateMVP(isPortal, is2D, getptr_modelview_matrix() );
 
