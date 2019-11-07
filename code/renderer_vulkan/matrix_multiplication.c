@@ -147,6 +147,7 @@ void Mat4x1Transform_SSE( const float A[16], const float x[4], float out[4] )
 }
 
 
+/*
 #define SHUFFLE_PARAM(x, y, z, w)   ( x | y<<2 | z<<4 | w<<6 )
 #define _mm_replicate_x_ps(v)       _mm_shuffle_ps(v, v, SHUFFLE_PARAM(0, 0, 0, 0))
 #define _mm_replicate_y_ps(v)       _mm_shuffle_ps(v, v, SHUFFLE_PARAM(1, 1, 1, 1))
@@ -176,7 +177,7 @@ void Vec4Transform_SSE( const float A[16], float v[4], float out[4] )
     Mat4Transform(A, v, out);
 #endif
 }
-
+*/
 
 void Mat3x3Identity( float pMat[3][3] )
 {
@@ -184,8 +185,7 @@ void Mat3x3Identity( float pMat[3][3] )
 }
 
 
-void TransformModelToClip( const float src[3], const float* pMatModel, const float* pMatProj, 
-				float eye[4], float dst[4])
+void TransformModelToClip( const float src[3], const float* pMatModel, const float* pMatProj, float eye[4], float dst[4])
 {
 
 
