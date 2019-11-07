@@ -327,9 +327,8 @@ int main( int argc, char **argv )
 
 	char commandLine[ MAX_STRING_CHARS ] = { 0 };
 
-
 	Sys_PlatformInit();
-    Sys_InitSignal();
+        Sys_InitSignal();
 	// Set the initial time base
 	Sys_Milliseconds();
 

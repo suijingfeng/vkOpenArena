@@ -38,8 +38,6 @@ static const char s_keytochar[ 128 ] =
 
 
 
-
-
 static int isMouseActive = 0;
 
 static int mouse_accel_numerator;
@@ -48,6 +46,36 @@ static int mouse_threshold;
 
 static int mwx, mwy;
 
+extern unsigned long int Sys_GetTimeBase(void);
+
+
+int Sys_XTimeToSysTime( Time xtime )
+{
+	int ret, t, test;
+
+/*
+	if ( !in_subframe->integer )
+	{
+		// if you don't want to do any event times corrections
+		return Sys_Milliseconds();
+	}
+*/
+
+	// some X servers (like suse 8.1's) report weird event times
+	// if the game is loading, resolving DNS, etc. we are also getting old events
+	// so we only deal with subframe corrections that look 'normal'
+	ret = xtime - (Sys_GetTimeBase() * 1000);
+	t = Sys_Milliseconds();
+	test = t - ret;
+
+	//printf("delta: %d\n", test);
+	if (test < 0 || test > 30) // in normal conditions I've never seen this go above
+	{
+		return t;
+	}
+
+	return ret;
+}
 
 static char *XLateKey( XKeyEvent *ev, int *key )
 {
@@ -285,7 +313,8 @@ static void install_mouse_grab( void )
 	int res;
 
 	// move pointer to destination window area
-	XWarpPointer( glw_state.pDisplay, None, glw_state.hWnd, 0, 0, 0, 0, glw_state.winWidth/2, glw_state.winHeight/2 );
+	XWarpPointer( glw_state.pDisplay, None, glw_state.hWnd, 0, 0, 0, 0, 
+                glw_state.winWidth/2, glw_state.winHeight/2 );
 
 	XSync( glw_state.pDisplay, False );
 
@@ -339,7 +368,8 @@ static void uninstall_mouse_grab( void )
 	XChangePointerControl( glw_state.pDisplay, qtrue, qtrue, mouse_accel_numerator, 
 		mouse_accel_denominator, mouse_threshold );
 
-	XWarpPointer( glw_state.pDisplay, None, glw_state.hWnd, 0, 0, 0, 0, glw_state.winWidth/2, glw_state.winHeight/2 );
+	XWarpPointer( glw_state.pDisplay, None, glw_state.hWnd, 0, 0, 0, 0, 
+                glw_state.winWidth/2, glw_state.winHeight/2 );
 
 	XUngrabPointer( glw_state.pDisplay, CurrentTime );
 	XUngrabKeyboard( glw_state.pDisplay, CurrentTime );
@@ -426,9 +456,6 @@ static qboolean repeated_press( XEvent *event )
 }
 
 
-
-
-
 static qboolean directMap( const byte chr )
 {
 	if ( !in_forceCharset->integer )
@@ -451,244 +478,28 @@ static qboolean directMap( const byte chr )
 }
 
 
-static void Sys_SendKeyEvents( void )
-{
-	XEvent event;
-
-	while( XEventsQueued( glw_state.pDisplay, QueuedAfterFlush ) )
-	{
-		XNextEvent( glw_state.pDisplay, &event );
-
-		switch( event.type )
-		{
-			// mouse event 
-			case MotionNotify:
-			{
-				// we only send motion event when the is Mouse is active
-				// that is only when we is playing the game . 
-				if( isMouseActive )
-				{
-					int dx = (event.xmotion.x - mwx);
-					int dy = (event.xmotion.y - mwy);
-					if(dx || dy)
-					{
-						Com_QueueEvent( 0, SE_MOUSE, dx, dy, 0, NULL );
-						// 
-						XWarpPointer( glw_state.pDisplay, None, glw_state.hWnd,
-								0, 0, 0, 0,
-								mwx, mwy );
-					}
-				}
-			} break;
-
-			// mouse event 
-			case ButtonPress:
-			{	// NOTE TTimo there seems to be a weird mapping for K_MOUSE1 K_MOUSE2 K_MOUSE3 ..
-				switch ( event.xbutton.button )
-				{
-					case 4: Com_QueueEvent( 0, SE_KEY, K_MWHEELUP, qtrue, 0, NULL );break;
-					case 5: Com_QueueEvent( 0, SE_KEY, K_MWHEELDOWN, qtrue, 0, NULL ); break;
-
-					case 1: Com_QueueEvent( 0, SE_KEY, K_MOUSE1, qtrue, 0, NULL );break;
-					case 2: Com_QueueEvent( 0, SE_KEY, K_MOUSE3, qtrue, 0, NULL );break;
-					case 3: Com_QueueEvent( 0, SE_KEY, K_MOUSE2, qtrue, 0, NULL );break;
-					case 6: Com_QueueEvent( 0, SE_KEY, K_MOUSE4, qtrue, 0, NULL );break;
-					case 7: Com_QueueEvent( 0, SE_KEY, K_MOUSE5, qtrue, 0, NULL );break; 
-
-					default:
-						// K_AUX1..K_AUX8
-						Com_QueueEvent( 0, SE_KEY, event.xbutton.button - 8 + K_AUX1, qtrue, 0, NULL );
-						break;
-				}
-			} break; // case ButtonPress
-
-			// mouse event 
-			case ButtonRelease:
-			{
-				// NOTE TTimo there seems to be a weird mapping for K_MOUSE1 K_MOUSE2 K_MOUSE3 ..
-				switch ( event.xbutton.button )
-				{
-					case 4: Com_QueueEvent( 0, SE_KEY, K_MWHEELUP, qfalse, 0, NULL );break;
-					case 5: Com_QueueEvent( 0, SE_KEY, K_MWHEELDOWN, qfalse, 0, NULL ); break;
-
-					case 1: Com_QueueEvent( 0, SE_KEY, K_MOUSE1, qfalse, 0, NULL );break;
-					case 2: Com_QueueEvent( 0, SE_KEY, K_MOUSE3, qfalse, 0, NULL );break;
-					case 3: Com_QueueEvent( 0, SE_KEY, K_MOUSE2, qfalse, 0, NULL );break;
-					case 6: Com_QueueEvent( 0, SE_KEY, K_MOUSE4, qfalse, 0, NULL );break;
-					case 7: Com_QueueEvent( 0, SE_KEY, K_MOUSE5, qfalse, 0, NULL );break; 
-
-					default:
-						// K_AUX1..K_AUX8
-						Com_QueueEvent( 0, SE_KEY, event.xbutton.button - 8 + K_AUX1, qfalse, 0, NULL );
-						break;
-				} 
-			} break; // case ButtonPress
-
-			// keyboard
-                        case KeyPress:
-			{
-
-                                // Com_Printf("^2K+^7 %08X\n", event.xkey.keycode );
-                                // t = Sys_XTimeToSysTime( event.xkey.time );
-                                // t = Sys_Milliseconds();
-                                if ( event.xkey.keycode == 0x31 )
-                                {
-                                        // key = K_CONSOLE;
-                                        // p = "";
-                                        Com_QueueEvent( 0, SE_KEY, K_CONSOLE, qtrue, 0, NULL );
-                                }
-                                else
-                                {
-                                        int key_val;
-
-                                        int shift = (event.xkey.state & 1);
-                                        char * p = XLateKey( &event.xkey, &key_val );
-					char buf[2];
-
-                                        if ( *p && event.xkey.keycode == 0x5B )
-                                        {
-                                                p = ".";
-                                        }
-                                        else if ( !directMap( *p ) && event.xkey.keycode < 0x3F )
-                                        {
-                                                char ch = s_keytochar[ event.xkey.keycode ];
-                                                if ( ch >= 'a' && ch <= 'z' )
-                                                {
-                                                        unsigned int capital;
-                                                        XkbGetIndicatorState( glw_state.pDisplay, XkbUseCoreKbd, &capital );
-                                                        capital &= 1;
-                                                        if ( capital ^ shift )
-                                                        {
-                                                                ch = ch - 'a' + 'A';
-                                                        }
-                                                }
-                                                else
-                                                {
-                                                        ch = s_keytochar[ event.xkey.keycode | (shift<<6) ];
-                                                }
-                                                buf[0] = ch;
-                                                buf[1] = '\0';
-                                                p = buf;
-                                        }
-
-                                        if (key_val)
-                                        {
-                                                Com_QueueEvent( 0, SE_KEY, key_val, qtrue, 0, NULL );
-                                        }
-
-                                        // *p can not be instead with buf
-                                        while (*p)
-                                        {
-                                                Com_QueueEvent( 0, SE_CHAR, *p++, 0, 0, NULL );
-                                        }
-
-                                }
-
-                        } break; // case KeyPress
-
-                        case KeyRelease:
-                        {
-				int key;
-
-				if ( repeated_press( &event ) )
-					break; // XNextEvent( glw_state.pDisplay, &event )
-
-				//t = Sys_XTimeToSysTime( event.xkey.time );
-				// t = Sys_Milliseconds();
-#if 0
-				Com_Printf("^5K-^7 %08X %s\n",
-						event.xkey.keycode,
-						X11_PendingInput()?"pending":"");
-#endif
-				XLateKey( &event.xkey, &key );
-				Com_QueueEvent( 0, SE_KEY, key, qfalse, 0, NULL );
-                        } break; // case KeyRelease
-
-
-			case ConfigureNotify:
-			{	
-				// The X server can report ConfigureNotify events to clients wanting information
-				// about actual changes to a window's state, such as size, position, border, and 
-				// stacking order. The X server generates this event type whenever one of the 
-				// following configure window requests made by a client application actually completes:
-				//
-				// A window's size, position, border, and/or stacking order is reconfigured
-				// by calling XConfigureWindow(). 
-				//
-				// The window's position in the stacking order is changed 
-				// by calling XLowerWindow(), XRaiseWindow(), or XRestackWindows(). 
-				//
-				// A window is moved by calling XMoveWindow().
-				// A window's size is changed by calling XResizeWindow(). 
-				// A window's size and location is changed by calling XMoveResizeWindow(). 
-				// A window is mapped and its position in the stacking order is changed 
-				// by calling XMapRaised().
-				// A window's border width is changed by calling XSetWindowBorderWidth(). 
-
-				if ( !WinSys_IsWinFullscreen() && !WinSys_IsWinMinimized() )
-				{
-					// if not in fullscreen or minized mode ... 
-					RandR_UpdateMonitor( event.xconfigure.x, event.xconfigure.y,
-							event.xconfigure.width,	event.xconfigure.height );
-
-					Com_Printf( "mode window to (%d, %d) \n", event.xconfigure.x, event.xconfigure.y);
-
-				}
-				Key_ClearStates();
-			}break;
-
-			// quit
-                        case ClientMessage:
-			{
-                                if ( event.xclient.data.l[0] == wmDeleteEvent )
-                                {
-                                        Cmd_Clear();
-                                        Com_Quit_f();
-                                }
-                        } break;
-
-			// renderer window get focus or not ?
-			case FocusIn:
-			{
-				WinSys_UpdateFocusedStatus(0);
-				Key_ClearStates();
-				Com_Printf( "FocusIn. \n" );
-			} break;
-
-			case FocusOut:
-			{
-				WinSys_UpdateFocusedStatus(1);
-				Key_ClearStates();
-				Com_Printf( "FocusOut. \n" );
-			} break;
-
-		} // END event.type
-	} // END while
-}
-
-
 static void IN_ActivateMouse( void )
 {
-	if ( isMouseActive )
-        {
-                // if already active;
-                return;
-        }
-        else
-        {
-                install_mouse_grab();
-                install_kb_grab();
-                isMouseActive = 1;
-                Com_Printf( " Mouse actived. \n" );
-        }
+    if ( isMouseActive )
+    {
+        // if already active;
+        return;
+    }
+    else
+    {
+        install_mouse_grab();
+        install_kb_grab();
+        isMouseActive = 1;
+        Com_Printf( " Mouse actived. \n" );
+    }
 }
 
 
 static void IN_DeactivateMouse( void )
 {
-	if ( isMouseActive == 0 )
+        if ( isMouseActive == 0 )
         {
-                // if already deactive;
+        // if already deactive;
                 return;
         }
 	else
@@ -717,14 +528,13 @@ void IN_Init( void )
 		Com_Printf( "WARNNING: IN_Init called before xcb_create_window. \n" );
 		return;
 	}
-
 }
 
 
 void IN_Shutdown( void )
 {
         isMouseActive = 0;
-	Cmd_RemoveCommand( "in_restart" );
+        Cmd_RemoveCommand( "in_restart" );
 }
 
 void IN_Restart( void )
@@ -735,31 +545,256 @@ void IN_Restart( void )
 
 void IN_Frame( void )
 {
-	// If not DISCONNECTED (main menu) or ACTIVE (in game), we're loading
-        // never Deactivate Mouse In fullscreen.
-        if ( Key_GetCatcher( ) & KEYCATCH_CONSOLE )
-        {
-                // Console is down in windowed mode
-                if( WinSys_IsWinFullscreen() == 0)
-                        IN_DeactivateMouse( );
-        }
-        else if ( clc.state != CA_DISCONNECTED && clc.state != CA_ACTIVE )
-        {
-                // Loading in windowed mode
-                if( WinSys_IsWinFullscreen() == 0 )
-                        IN_DeactivateMouse( );
-        }
-        else if( WinSys_IsWinMinimized() )
-        {
+    // If not DISCONNECTED (main menu) or ACTIVE (in game), we're loading
+    // never Deactivate Mouse In fullscreen.
+    if ( Key_GetCatcher( ) & KEYCATCH_CONSOLE )
+    {
+            // Console is down in windowed mode
+            if( WinSys_IsWinFullscreen() == 0)
                 IN_DeactivateMouse( );
-        }
-        else if( WinSys_IsWinLostFocused() )
-        {
-                IN_DeactivateMouse( );
-        }
+    }
+    else if ( clc.state != CA_DISCONNECTED && clc.state != CA_ACTIVE )
+    {
+            // Loading in windowed mode
+            if( WinSys_IsWinFullscreen() == 0 )
+                        IN_DeactivateMouse( );
+    }
+    else if( WinSys_IsWinMinimized() )
+    {
+        IN_DeactivateMouse( );
+    }
+    else if( WinSys_IsWinLostFocused() )
+    {
+        IN_DeactivateMouse( );
+    }
 	else
 		IN_ActivateMouse( );
-        
+}
 
-        Sys_SendKeyEvents();
+
+void Sys_HandleUserInputEvents(void)
+{
+    if ( glw_state.pDisplay == NULL )
+        return;
+
+    XEvent event;
+
+    while( XEventsQueued( glw_state.pDisplay, QueuedAfterFlush ) )
+    {
+        XNextEvent( glw_state.pDisplay, &event );
+
+        switch( event.type )
+        {
+            // mouse event 
+            case MotionNotify:
+                {
+                    // we only send motion event when the is Mouse is active
+                    // that is only when we is playing the game . 
+                    if( isMouseActive )
+                    {
+                        int t = Sys_XTimeToSysTime( event.xkey.time );
+                        int dx = (event.xmotion.x - mwx);
+                        int dy = (event.xmotion.y - mwy);
+                        if(dx || dy)
+                        {
+                            Com_QueueEvent( t, SE_MOUSE, dx, dy, 0, NULL );
+                            // 
+                            XWarpPointer( glw_state.pDisplay, None, glw_state.hWnd,
+                                    0, 0, 0, 0,
+                                    mwx, mwy );
+                        }
+                    }
+                } break;
+
+                // mouse event 
+            case ButtonPress:
+                {	
+                    // NOTE TTimo there seems to be a weird mapping for K_MOUSE1 K_MOUSE2 K_MOUSE3 ..
+                    int t = Sys_XTimeToSysTime( event.xkey.time );
+
+                    switch ( event.xbutton.button )
+                    {
+                        case 4: Com_QueueEvent( t, SE_KEY, K_MWHEELUP, qtrue, 0, NULL );break;
+                        case 5: Com_QueueEvent( t, SE_KEY, K_MWHEELDOWN, qtrue, 0, NULL ); break;
+
+                        case 1: Com_QueueEvent( t, SE_KEY, K_MOUSE1, qtrue, 0, NULL );break;
+                        case 2: Com_QueueEvent( t, SE_KEY, K_MOUSE3, qtrue, 0, NULL );break;
+                        case 3: Com_QueueEvent( t, SE_KEY, K_MOUSE2, qtrue, 0, NULL );break;
+                        case 6: Com_QueueEvent( t, SE_KEY, K_MOUSE4, qtrue, 0, NULL );break;
+                        case 7: Com_QueueEvent( t, SE_KEY, K_MOUSE5, qtrue, 0, NULL );break; 
+
+                        default:
+                                // K_AUX1..K_AUX8
+                                Com_QueueEvent( t, SE_KEY, event.xbutton.button - 8 + K_AUX1, qtrue, 0, NULL );
+                                break;
+                    }
+                } break; // case ButtonPress
+
+                // mouse event 
+            case ButtonRelease:
+                {
+                    int t = Sys_XTimeToSysTime( event.xkey.time );
+
+                    // NOTE TTimo there seems to be a weird mapping for K_MOUSE1 K_MOUSE2 K_MOUSE3 ..
+                    switch ( event.xbutton.button )
+                    {
+                        case 4: Com_QueueEvent( t, SE_KEY, K_MWHEELUP, qfalse, 0, NULL );break;
+                        case 5: Com_QueueEvent( t, SE_KEY, K_MWHEELDOWN, qfalse, 0, NULL ); break;
+
+                        case 1: Com_QueueEvent( t, SE_KEY, K_MOUSE1, qfalse, 0, NULL );break;
+                        case 2: Com_QueueEvent( t, SE_KEY, K_MOUSE3, qfalse, 0, NULL );break;
+                        case 3: Com_QueueEvent( t, SE_KEY, K_MOUSE2, qfalse, 0, NULL );break;
+                        case 6: Com_QueueEvent( t, SE_KEY, K_MOUSE4, qfalse, 0, NULL );break;
+                        case 7: Com_QueueEvent( t, SE_KEY, K_MOUSE5, qfalse, 0, NULL );break; 
+
+                        default:
+                                // K_AUX1..K_AUX8
+                                Com_QueueEvent( t, SE_KEY, event.xbutton.button - 8 + K_AUX1, qfalse, 0, NULL );
+                                break;
+                    } 
+                } break; // case ButtonPress
+
+                // keyboard
+            case KeyPress:
+                {
+                    int t = Sys_XTimeToSysTime( event.xkey.time );
+
+                    // Com_Printf("^2K+^7 %08X\n", event.xkey.keycode );
+                    // t = Sys_XTimeToSysTime( event.xkey.time );
+                    // t = Sys_Milliseconds();
+                    if ( event.xkey.keycode == 0x31 )
+                    {
+                        // key = K_CONSOLE;
+                        // p = "";
+                        Com_QueueEvent( t, SE_KEY, K_CONSOLE, qtrue, 0, NULL );
+                    }
+                    else
+                    {
+                        int key_val;
+
+                        int shift = (event.xkey.state & 1);
+                        char * p = XLateKey( &event.xkey, &key_val );
+                        char buf[2];
+
+                        if ( *p && event.xkey.keycode == 0x5B )
+                        {
+                            p = ".";
+                        }
+                        else if ( !directMap( *p ) && event.xkey.keycode < 0x3F )
+                        {
+                            char ch = s_keytochar[ event.xkey.keycode ];
+                            if ( ch >= 'a' && ch <= 'z' )
+                            {
+                                unsigned int capital;
+                                XkbGetIndicatorState( glw_state.pDisplay, XkbUseCoreKbd, &capital );
+                                capital &= 1;
+                                if ( capital ^ shift )
+                                {
+                                    ch = ch - 'a' + 'A';
+                                }
+                            }
+                            else
+                            {
+                                ch = s_keytochar[ event.xkey.keycode | (shift<<6) ];
+                            }
+                            buf[0] = ch;
+                            buf[1] = '\0';
+                            p = buf;
+                        }
+
+                        if (key_val)
+                        {
+                            Com_QueueEvent( t, SE_KEY, key_val, qtrue, 0, NULL );
+                        }
+
+                        // *p can not be instead with buf
+                        while (*p)
+                        {
+                            Com_QueueEvent( t, SE_CHAR, *p++, 0, 0, NULL );
+                        }
+
+                    }
+
+                } break; // case KeyPress
+
+            case KeyRelease:
+                {
+                    int key;
+                    int t = Sys_XTimeToSysTime( event.xkey.time );
+
+                    if ( repeated_press( &event ) )
+                        break; // XNextEvent( glw_state.pDisplay, &event )
+
+                    //t = Sys_XTimeToSysTime( event.xkey.time );
+                    // t = Sys_Milliseconds();
+#if 0
+                    Com_Printf("^5K-^7 %08X %s\n",
+                            event.xkey.keycode,
+                            X11_PendingInput()?"pending":"");
+#endif
+                    XLateKey( &event.xkey, &key );
+                    Com_QueueEvent( t, SE_KEY, key, qfalse, 0, NULL );
+                } break; // case KeyRelease
+
+
+            case ConfigureNotify:
+                {	
+                    // The X server can report ConfigureNotify events to clients wanting information
+                    // about actual changes to a window's state, such as size, position, border, and 
+                    // stacking order. The X server generates this event type whenever one of the 
+                    // following configure window requests made by a client application actually completes:
+                    //
+                    // A window's size, position, border, and/or stacking order is reconfigured
+                    // by calling XConfigureWindow(). 
+                    //
+                    // The window's position in the stacking order is changed 
+                    // by calling XLowerWindow(), XRaiseWindow(), or XRestackWindows(). 
+                    //
+                    // A window is moved by calling XMoveWindow().
+                    // A window's size is changed by calling XResizeWindow(). 
+                    // A window's size and location is changed by calling XMoveResizeWindow(). 
+                    // A window is mapped and its position in the stacking order is changed 
+                    // by calling XMapRaised().
+                    // A window's border width is changed by calling XSetWindowBorderWidth(). 
+
+                    if ( !WinSys_IsWinFullscreen() && !WinSys_IsWinMinimized() )
+                    {
+                        // if not in fullscreen or minized mode ... 
+                        RandR_UpdateMonitor( event.xconfigure.x, event.xconfigure.y,
+                                event.xconfigure.width,	event.xconfigure.height );
+
+                        Com_Printf( "mode window to (%d, %d) \n", event.xconfigure.x, event.xconfigure.y);
+
+                    }
+                    Key_ClearStates();
+                }break;
+
+                // quit
+            case ClientMessage:
+                {
+                    if ( event.xclient.data.l[0] == wmDeleteEvent )
+                    {
+                        Cmd_Clear();
+                        Com_Quit_f();
+                    }
+                } break;
+
+                // renderer window get focus or not ?
+            case FocusIn:
+                {
+                    WinSys_UpdateFocusedStatus(0);
+                    Key_ClearStates();
+                    Com_Printf( "FocusIn. \n" );
+                } break;
+
+            case FocusOut:
+                {
+                    WinSys_UpdateFocusedStatus(1);
+                    Key_ClearStates();
+                    Com_Printf( "FocusOut. \n" );
+                } break;
+
+        } // END event.type
+    } // END while
+
 }

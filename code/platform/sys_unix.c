@@ -20,10 +20,6 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 ===========================================================================
 */
 
-#include "../qcommon/q_shared.h"
-#include "../qcommon/qcommon.h"
-#include "sys_public.h"
-
 #include <signal.h>
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -38,6 +34,10 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #include <fcntl.h>
 #include <fenv.h>
 #include <sys/wait.h>
+
+#include "../qcommon/q_shared.h"
+#include "../qcommon/qcommon.h"
+#include "sys_public.h"
 
 static qboolean stdinIsATTY;
 
@@ -241,11 +241,17 @@ Sys_Milliseconds
    although timeval:tv_usec is an int, I'm not sure wether it is actually used as an unsigned int
      (which would affect the wrap period) */
 
+static unsigned long int sys_timeBase = 0;
 
+
+unsigned long int Sys_GetTimeBase(void)
+{
+    return sys_timeBase;
+}
 
 int Sys_Milliseconds (void)
 {
-    static unsigned long int sys_timeBase = 0;
+
 	struct timeval tp;
 
 	gettimeofday(&tp, NULL);

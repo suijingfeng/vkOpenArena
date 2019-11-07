@@ -97,7 +97,7 @@ endif
 
 ifeq ($(COMPILE_ARCH),mips64)
 # current no vulkan support on this platform ...
-  BUILD_VULKAN = 0
+  BUILD_VULKAN = 1
 endif
 
 

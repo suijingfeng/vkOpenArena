@@ -1112,6 +1112,12 @@ void IN_Frame( void )
 }
 
 
+void Sys_HandleUserInputEvents(void)
+{
+    ;
+}
+
+
 void IN_Init( void )
 {
 	Com_Printf(" ...Input Initialization ( with xcb) ...\n");

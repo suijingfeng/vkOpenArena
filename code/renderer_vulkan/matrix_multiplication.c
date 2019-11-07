@@ -5,7 +5,10 @@
  * ==========================================================================
  */
 
+#if defined __x86_64__
 #include <xmmintrin.h>
+#endif
+
 #include <stdio.h>
 
 #include "matrix_multiplication.h"
@@ -72,6 +75,7 @@ void MatrixMultiply4x4(const float A[16], const float B[16], float out[16])
 
 void MatrixMultiply4x4_SSE(const float A[16], const float B[16], float out[16])
 {
+#if defined __x86_64__
     __m128 row1 = _mm_load_ps(&B[0]);
     __m128 row2 = _mm_load_ps(&B[4]);
     __m128 row3 = _mm_load_ps(&B[8]);
@@ -92,6 +96,9 @@ void MatrixMultiply4x4_SSE(const float A[16], const float B[16], float out[16])
 
         _mm_store_ps(&out[4*i], row);
     }
+#else
+    MatrixMultiply4x4( A, B, out);
+#endif
 }
 
 
@@ -104,10 +111,10 @@ void Mat4Transform( const float in1[16], const float in2[4], float out[4] )
     float c = in2[2];
     float d = in2[3];
 
-	out[0] = in1[0] * a + in1[4] * b + in1[ 8] * c + in1[12] * d;
-	out[1] = in1[1] * a + in1[5] * b + in1[ 9] * c + in1[13] * d;
-	out[2] = in1[2] * a + in1[6] * b + in1[10] * c + in1[14] * d;
-	out[3] = in1[3] * a + in1[7] * b + in1[11] * c + in1[15] * d;
+    out[0] = in1[0] * a + in1[4] * b + in1[ 8] * c + in1[12] * d;
+    out[1] = in1[1] * a + in1[5] * b + in1[ 9] * c + in1[13] * d;
+    out[2] = in1[2] * a + in1[6] * b + in1[10] * c + in1[14] * d;
+    out[3] = in1[3] * a + in1[7] * b + in1[11] * c + in1[15] * d;
 }
 
 
@@ -117,9 +124,9 @@ void Vec3Transform(const float Mat[16], const float v[3], float out[3])
     float y = v[1];
     float z = v[2];
     
-	out[0] = Mat[0] * x + Mat[4] * y + Mat[ 8] * z + Mat[12];
-	out[1] = Mat[1] * x + Mat[5] * y + Mat[ 9] * z + Mat[13];
-	out[2] = Mat[2] * x + Mat[6] * y + Mat[10] * z + Mat[14];
+    out[0] = Mat[0] * x + Mat[4] * y + Mat[ 8] * z + Mat[12];
+    out[1] = Mat[1] * x + Mat[5] * y + Mat[ 9] * z + Mat[13];
+    out[2] = Mat[2] * x + Mat[6] * y + Mat[10] * z + Mat[14];
 }
 
 
@@ -127,12 +134,16 @@ void Vec3Transform(const float Mat[16], const float v[3], float out[3])
 // unlucky, not faseter than Mat4Transform
 void Mat4x1Transform_SSE( const float A[16], const float x[4], float out[4] )
 {
+#if defined __x86_64__
     __m128 r1 = _mm_mul_ps( _mm_set1_ps(x[0]), _mm_load_ps(A   ) );
     __m128 r2 = _mm_mul_ps( _mm_set1_ps(x[1]), _mm_load_ps(A+4 ) );
     __m128 r3 = _mm_mul_ps( _mm_set1_ps(x[2]), _mm_load_ps(A+8 ) );
     __m128 r4 = _mm_mul_ps( _mm_set1_ps(x[3]), _mm_load_ps(A+12) );
 
     _mm_store_ps(out, _mm_add_ps( _mm_add_ps(r1, r2), _mm_add_ps(r3, r4) ) );
+#else
+    Mat4Transform(A, x, out);
+#endif
 }
 
 
@@ -145,8 +156,7 @@ void Mat4x1Transform_SSE( const float A[16], const float x[4], float out[4] )
 
 void Vec4Transform_SSE( const float A[16], float v[4], float out[4] )
 {
-
-
+#if defined __x86_64__
     __m128 x = _mm_load_ps(v);
     //   16 mult, 12 plus
 	//out[0] = A[0] * x[0] + A[4] * x[1] + A[ 8] * x[2] + A[12] * x[3];
@@ -162,6 +172,9 @@ void Vec4Transform_SSE( const float A[16], float v[4], float out[4] )
     __m128 r4 = _mm_mul_ps( _mm_replicate_w_ps( x ), _mm_load_ps(A+12) );
 
     _mm_store_ps(out, _mm_add_ps( _mm_add_ps( r1, r2 ), _mm_add_ps( r3, r4 ) ));
+#else
+    Mat4Transform(A, v, out);
+#endif
 }
 
 
@@ -171,11 +184,41 @@ void Mat3x3Identity( float pMat[3][3] )
 }
 
 
-
-void TransformModelToClip_SSE( const float src[3], const float pMatModel[16], const float pMatProj[16], float dst[4] )
+void TransformModelToClip( const float src[3], const float* pMatModel, const float* pMatProj, 
+				float eye[4], float dst[4])
 {
-	float AugSrc[4]	= {src[0], src[1], src[2], 1.0f};
 
+
+    // 4 * ( 4 float mul + 3 float add )
+    for (unsigned int i = 0 ; i < 4 ; ++i )
+    {
+		eye[i] = 
+			src[0] * pMatModel[ i + 0 * 4 ] +
+			src[1] * pMatModel[ i + 1 * 4 ] +
+			src[2] * pMatModel[ i + 2 * 4 ] +
+                 1 * pMatModel[ i + 3 * 4 ];
+    }
+
+    // 4 * ( 4 float mul + 3 float add )
+    for (unsigned int i = 0 ; i < 4 ; ++i )
+    {
+		dst[i] = 
+			eye[0] * pMatProj[ i + 0 * 4 ] +
+			eye[1] * pMatProj[ i + 1 * 4 ] +
+			eye[2] * pMatProj[ i + 2 * 4 ] +
+			eye[3] * pMatProj[ i + 3 * 4 ];
+    }
+
+    // total 32 float mul + 24 float add 
+}
+
+
+
+void TransformModelToClip_SSE( const float src[3], const float pMatModel[16], const float pMatProj[16], 
+				float dst[4] )
+{
+#if defined __x86_64__
+    float AugSrc[4] = {src[0], src[1], src[2], 1.0f};
 
     __m128 row1 = _mm_load_ps(&pMatProj[0]);
     __m128 row2 = _mm_load_ps(&pMatProj[4]);
@@ -201,6 +244,11 @@ void TransformModelToClip_SSE( const float src[3], const float pMatModel[16], co
 
 
     _mm_store_ps(dst, _mm_add_ps( _mm_add_ps(res[0], res[1]),  _mm_add_ps(res[2], res[3]) ) );
+#else
+    float eye[4];	
+    TransformModelToClip(src, pMatModel, pMatProj, eye, dst );
+#endif
+
 
 //    print4f("AugSrc", AugSrc);
 //    printMat4x4f("MatModel", pMatModel);
@@ -240,35 +288,6 @@ void TransformModelToClip_SSE2( const float x[3], const float pMatModel[16], con
 }
 
 */
-
-
-void TransformModelToClip( const float src[3], const float* pMatModel, const float* pMatProj, float eye[4], float dst[4])
-{
-
-    // 4 * ( 4 float mul + 3 float add )
-	for (unsigned int i = 0 ; i < 4 ; ++i )
-    {
-		eye[i] = 
-			src[0] * pMatModel[ i + 0 * 4 ] +
-			src[1] * pMatModel[ i + 1 * 4 ] +
-			src[2] * pMatModel[ i + 2 * 4 ] +
-                 1 * pMatModel[ i + 3 * 4 ];
-	}
-
-    // 4 * ( 4 float mul + 3 float add )
-	for (unsigned int i = 0 ; i < 4 ; ++i )
-    {
-		dst[i] = 
-			eye[0] * pMatProj[ i + 0 * 4 ] +
-			eye[1] * pMatProj[ i + 1 * 4 ] +
-			eye[2] * pMatProj[ i + 2 * 4 ] +
-			eye[3] * pMatProj[ i + 3 * 4 ];
-	}
-
-    // total 32 float mul + 24 float add 
-}
-
-
 
 // ===============================================
 // not used now
