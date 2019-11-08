@@ -18,9 +18,9 @@ inline static float DotProduct( const float v1[3], const float v2[3] )
 }
 */
 
-void R_SetupPortalPlane(const float axis[3][3], const float origin[3])
+void R_SetupPortalPlane(float axis[3][3], const float origin[3])
 {
-	// VectorSubtract( ORIGIN, pCamera->axis[0], g_portalPlane.normal );
+    // VectorSubtract( ORIGIN, pCamera->axis[0], g_portalPlane.normal );
     // g_portalPlane.dist = DotProduct( pCamera->origin, g_portalPlane.normal );
 
     g_portalPlane.normal[0] = - axis[0][0];
@@ -32,7 +32,7 @@ void R_SetupPortalPlane(const float axis[3][3], const float origin[3])
 }
 
 
-void R_TransformPlane(const float R[3][3], const float T[3], struct rplane_s* pDstPlane)
+static void R_TransformPlane(float R[3][3], const float T[3], struct rplane_s* pDstPlane)
 {
     pDstPlane->normal[0] = DotProduct (R[0], g_portalPlane.normal);
     pDstPlane->normal[1] = DotProduct (R[1], g_portalPlane.normal);

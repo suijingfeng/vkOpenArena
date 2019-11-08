@@ -400,7 +400,7 @@ Returns qtrue if another view has been rendered
 */
 qboolean R_MirrorViewBySurface (drawSurf_t * const drawSurf, const int entityNum)
 {
-	vec4_t			clipDest[128];
+	vec4_t	clipDest[128];
 	orientation_t	surface, camera;
 
 	// don't recursively mirror
@@ -415,10 +415,10 @@ qboolean R_MirrorViewBySurface (drawSurf_t * const drawSurf, const int entityNum
 
 	// trivially reject portal/mirror
 	if ( SurfIsOffscreen( drawSurf, clipDest ) )
-    {
+        {
         //ri.Printf(PRINT_ALL, "isSurfOffscreen: 1\n");
-		return qfalse;
-	}
+	    return qfalse;
+        }
 
 	// save old viewParms so we can return to it after the mirror view
 	viewParms_t oldParms = tr.viewParms;

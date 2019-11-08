@@ -17,14 +17,14 @@ BRUSH MODELS
 #define	CONTENTS_NODE		-1
 typedef struct mnode_s {
 	// common with leaf and node
-	int			contents;		// -1 for nodes, to differentiate from leafs
-	int			visframe;		// node needs to be traversed if current
-	vec3_t		mins, maxs;		// for bounding box culling
-	struct mnode_s	*parent;
+	int contents;		// -1 for nodes, to differentiate from leafs
+	int visframe;		// node needs to be traversed if current
+	vec3_t mins, maxs;		// for bounding box culling
+	struct mnode_s * parent;
 
 	// node specific
-	cplane_t	*plane;
-	struct mnode_s	*children[2];	
+	cplane_t * plane;
+	struct mnode_s * children[2];	
 
 	// leaf specific
 	int			cluster;
@@ -40,27 +40,27 @@ typedef struct world_s {
 	char		name[MAX_QPATH];		// ie: maps/tim_dm2.bsp
 	char		baseName[MAX_QPATH];	// ie: tim_dm2
 
-	int			dataSize;
+	int		dataSize;
 
-	int			numShaders;
+	int		numShaders;
 	dshader_t	*shaders;
 
 	struct bmodel_s * bmodels;
 
-	int			numplanes;
+	int		numplanes;
 	cplane_t	*planes;
 
-	int			numnodes;		// includes leafs
-	int			numDecisionNodes;
+	int		numnodes;		// includes leafs
+	int		numDecisionNodes;
 	mnode_t		*nodes;
 
-	int			numsurfaces;
+	int		numsurfaces;
 	struct msurface_s* surfaces;
 
-	int			nummarksurfaces;
+	int		nummarksurfaces;
 	struct msurface_s** marksurfaces;
 
-	int			numfogs;
+	int		numfogs;
 	struct fog_s * fogs;
 
 	vec3_t		lightGridOrigin;

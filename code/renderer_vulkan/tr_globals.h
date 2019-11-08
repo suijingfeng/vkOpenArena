@@ -47,16 +47,16 @@ typedef struct {
 
 typedef struct trGlobals_s
 {
-	qboolean				registered;		// cleared at shutdown, set at beginRegistration
+	qboolean registered;     // cleared at shutdown, set at beginRegistration
 
-	int						visCount;		// incremented every time a new vis cluster is entered
-	int						viewCount;		// incremented every view (twice a scene if portaled)
-											// and every R_MarkFragments call
+	unsigned int visCount;	 // incremented every time a new vis cluster is entered
+	unsigned int viewCount;	 // incremented every view (twice a scene if portaled)
+				 // and every R_MarkFragments call
 
-	qboolean				worldMapLoaded;
-	struct world_s *        world;
+	qboolean worldMapLoaded;
+	struct world_s * world;
 
-	const unsigned char		*externalVisData;	// from RE_SetWorldVisData, shared with CM_Load
+	const unsigned char * externalVisData;	// from RE_SetWorldVisData, shared with CM_Load
 
 	struct image_s * defaultImage;
 
@@ -65,9 +65,9 @@ typedef struct trGlobals_s
 	struct image_s * whiteImage;			// full of 0xff
 //	struct image_s * identityLightImage;	// full of tr.identityLightByte
 	struct image_s * images[MAX_DRAWIMAGES];
-    struct image_s * lightmaps[MAX_LIGHTMAPS];
-	int				 numImages;
-	int				 numLightmaps;
+	struct image_s * lightmaps[MAX_LIGHTMAPS];
+	unsigned int numImages;
+	unsigned int numLightmaps;
 
 	struct shader_s	* defaultShader;
 //	struct shader_s	* shadowShader;
@@ -76,56 +76,55 @@ typedef struct trGlobals_s
 
 
 
-	trRefEntity_t			*currentEntity;
-	trRefEntity_t			worldEntity;		// point currentEntity at this when rendering world
-	int						currentEntityNum;
-	int						shiftedEntityNum;	// currentEntityNum << QSORT_ENTITYNUM_SHIFT
-	struct model_s *        currentModel;
+	trRefEntity_t * currentEntity;
+	trRefEntity_t worldEntity;		// point currentEntity at this when rendering world
+	int	currentEntityNum;
+	int	shiftedEntityNum;	// currentEntityNum << QSORT_ENTITYNUM_SHIFT
+	struct model_s * currentModel;
 
-	viewParms_t				viewParms;
+	viewParms_t viewParms;
 
-	float					identityLight;		// 1.0 / ( 1 << overbrightBits )
-	int						identityLightByte;	// identityLight * 255
-//	int						overbrightBits;		// r_overbrightBits->integer, but set to 0 if no hw gamma
-	orientationr_t			or;					// for current entity
+	float identityLight;		// 1.0 / ( 1 << overbrightBits )
+	int identityLightByte;	// identityLight * 255
+	orientationr_t	or;					// for current entity
 
-	trRefdef_t				refdef;
+	trRefdef_t refdef;
 
-	int						viewCluster;
+	int viewCluster;
 
-	vec3_t					sunLight;			// from the sky shader for this level
-	vec3_t					sunDirection;
+	vec3_t	sunLight;			// from the sky shader for this level
+	vec3_t	sunDirection;
 
-	frontEndCounters_t		pc;
-	int						frontEndMsec;		// not in pc due to clearing issue
+	frontEndCounters_t pc;
+	int frontEndMsec;		// not in pc due to clearing issue
 
 	//
 	// put large tables at the end, so most elements will be
 	// within the +/32K indexed range on risc processors
 	//
-	struct model_s *        models[MAX_MOD_KNOWN];
-	int						numModels;
+	struct model_s * models[MAX_MOD_KNOWN];
+	unsigned int numModels;
 
 
 	// shader indexes from other modules will be looked up in tr.shaders[]
 	// shader indexes from drawsurfs will be looked up in sortedShaders[]
 	// lower indexed sortedShaders must be rendered first (opaque surfaces before translucent)
-	int						numShaders;
+	unsigned int numShaders;
 
 //	struct shader_s				*sortedShaders[MAX_SHADERS];
 
-	int						numSkins;
-	struct skin_s *         skins[MAX_SKINS];
+	unsigned int numSkins;
+	struct skin_s * skins[MAX_SKINS];
 
-	float					sinTable[FUNCTABLE_SIZE];
-	float					squareTable[FUNCTABLE_SIZE];
-	float					triangleTable[FUNCTABLE_SIZE];
-	float					sawToothTable[FUNCTABLE_SIZE];
-	float					inverseSawToothTable[FUNCTABLE_SIZE];
+	float	sinTable[FUNCTABLE_SIZE];
+	float	squareTable[FUNCTABLE_SIZE];
+	float	triangleTable[FUNCTABLE_SIZE];
+	float	sawToothTable[FUNCTABLE_SIZE];
+	float	inverseSawToothTable[FUNCTABLE_SIZE];
 } trGlobals_t;
 
 
 
-extern trGlobals_t	tr;
+extern trGlobals_t tr;
 
 #endif
