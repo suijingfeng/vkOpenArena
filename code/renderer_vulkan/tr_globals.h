@@ -88,7 +88,7 @@ typedef struct trGlobals_s
 	int identityLightByte;	// identityLight * 255
 	orientationr_t	or;					// for current entity
 
-	trRefdef_t refdef;
+	struct trRefdef_s refdef;
 
 	int viewCluster;
 

@@ -157,15 +157,16 @@ static int R_SpriteFogNum(const trRefEntity_t * const ent, unsigned int nFogs, c
 
 //==========================================================================================
 
-void R_AddDrawSurf( surfaceType_t *surface, shader_t *shader, int fogIndex, int dlightMap )
+void R_AddDrawSurf( surfaceType_t *surface, shader_t *shader, int fogIndex, int dlightMap, 
+	struct trRefdef_s * const pRefdef)
 {
-	// instead of checking for overflow, we just mask the index so it wraps around
-	int index = tr.refdef.numDrawSurfs & DRAWSURF_MASK;
-	// the sort data is packed into a single 32 bit value so it can be
-	// compared quickly during the qsorting process
-	tr.refdef.drawSurfs[index].sort = (shader->sortedIndex << QSORT_SHADERNUM_SHIFT) 
-		| tr.shiftedEntityNum | ( fogIndex << QSORT_FOGNUM_SHIFT ) | dlightMap;
-	tr.refdef.drawSurfs[index].surType = surface;
+    // instead of checking for overflow, we just mask the index so it wraps around
+    unsigned int index = tr.refdef.numDrawSurfs & DRAWSURF_MASK;
+    // the sort data is packed into a single 32 bit value so it can be
+    // compared quickly during the qsorting process
+    tr.refdef.drawSurfs[index].sort = (shader->sortedIndex << QSORT_SHADERNUM_SHIFT) 
+	| tr.shiftedEntityNum | ( fogIndex << QSORT_FOGNUM_SHIFT ) | dlightMap;
+    tr.refdef.drawSurfs[index].surType = surface;
     ++tr.refdef.numDrawSurfs;
 }
 
@@ -218,7 +219,7 @@ static void R_AddEntitySurfaces(viewParms_t * const pViewParam, const uint32_t n
                 shader = R_GetShaderByHandle( ent->e.customShader );
                 R_AddDrawSurf( &entitySurface, shader, 
                    (( tr.refdef.rdflags & RDF_NOWORLDMODEL ) ? 0 : 
-			R_SpriteFogNum( ent, tr.world->numfogs, tr.world->fogs ) ), 0 );
+			R_SpriteFogNum( ent, tr.world->numfogs, tr.world->fogs ) ), 0, &tr.refdef );
                 break;
             case RT_MODEL:
 		// we must set up parts of tr.or for model culling
@@ -226,7 +227,7 @@ static void R_AddEntitySurfaces(viewParms_t * const pViewParam, const uint32_t n
 
 		tr.currentModel = R_GetModelByHandle( ent->e.hModel );
 		if (!tr.currentModel) {
-			R_AddDrawSurf( &entitySurface, tr.defaultShader, 0, 0 );
+			R_AddDrawSurf( &entitySurface, tr.defaultShader, 0, 0, &tr.refdef );
 		}
 		else
 		{
@@ -248,7 +249,7 @@ static void R_AddEntitySurfaces(viewParms_t * const pViewParam, const uint32_t n
 						break;
 					}
 					shader = R_GetShaderByHandle( ent->e.customShader );
-					R_AddDrawSurf( &entitySurface, tr.defaultShader, 0, 0 );
+					R_AddDrawSurf( &entitySurface, tr.defaultShader, 0, 0, &tr.refdef );
 					break;
 			}
 		}
@@ -344,19 +345,18 @@ static void R_SetupProjection( viewParms_t * const pViewParams, VkBool32 noWorld
 Adds all the scene's polys into this view's drawsurf list
 =====================
 */
-static void R_AddPolygonSurfaces(const srfPoly_t* pPoly, const uint32_t numPolys )
+static void R_AddPolygonSurfaces(const srfPoly_t* const pPoly, const uint32_t numPolys )
 {
-	tr.currentEntityNum = REFENTITYNUM_WORLD;
-	tr.shiftedEntityNum = tr.currentEntityNum << QSORT_REFENTITYNUM_SHIFT;
+    tr.currentEntityNum = REFENTITYNUM_WORLD;
+    tr.shiftedEntityNum = tr.currentEntityNum << QSORT_REFENTITYNUM_SHIFT;
 
     uint32_t i;
 
-	for(i = 0; i < numPolys; ++i)
+    for(i = 0; i < numPolys; ++i)
     {
-		shader_t* sh = R_GetShaderByHandle( pPoly->hShader );
-		R_AddDrawSurf( (surfaceType_t*) pPoly, sh, pPoly->fogIndex, qfalse );
-        ++pPoly;
-	}
+        shader_t* sh = R_GetShaderByHandle( pPoly[i].hShader );
+        R_AddDrawSurf( (surfaceType_t*) (pPoly+i), sh, pPoly[i].fogIndex, qfalse, &tr.refdef );
+    }
 }
 
 /*

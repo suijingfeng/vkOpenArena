@@ -47,7 +47,7 @@ typedef struct {
 
 typedef struct {
 	int		commandId;
-	trRefdef_t	refdef;
+	struct trRefdef_s refdef;
 	viewParms_t	viewParms;
 	struct drawSurf_s * drawSurfs;
 	int		numDrawSurfs;

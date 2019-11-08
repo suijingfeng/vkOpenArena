@@ -125,8 +125,8 @@ static void RB_CalcDeformVertexes( deformStage_t *ds, const uint32_t nVert,
 
 
 static void RB_CalcBulgeVertexes( deformStage_t * const ds, const uint32_t nVert, 
-        float (* const pXYZ)[4], const float (* const pNorm)[4],
-        const float (* const pTexCoords)[2][2])
+        float (* pXYZ)[4], float (* pNorm)[4],
+        float (* pTexCoords)[2][2])
 {
 	// ri.Printf(PRINT_WARNING, "%d vert\n", nVert);
     uint32_t i;

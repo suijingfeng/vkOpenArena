@@ -246,7 +246,7 @@ int R_ComputeFogNum( md3Header_t *header, trRefEntity_t *ent ) {
 
 void R_AddMD3Surfaces( trRefEntity_t *ent )
 {
-	int				i;
+	unsigned int i;
 	md3Header_t		*header = NULL;
 	md3Surface_t	*surface = NULL;
 	md3Shader_t		*md3Shader = NULL;
@@ -311,7 +311,7 @@ void R_AddMD3Surfaces( trRefEntity_t *ent )
 	// draw all surfaces
 	//
 	surface = (md3Surface_t *)( (byte *)header + header->ofsSurfaces );
-	for ( i = 0 ; i < header->numSurfaces ; i++ )
+	for ( i = 0 ; i < header->numSurfaces ; ++i )
     {
 		if ( ent->e.customShader )
         {
@@ -324,7 +324,7 @@ void R_AddMD3Surfaces( trRefEntity_t *ent )
 			// match the surface name to something in the skin file
 			shader = tr.defaultShader;
             
-            int		j;
+            unsigned int j;
 
 			for ( j = 0 ; j < skin->numSurfaces ; j++ )
             {
@@ -356,7 +356,7 @@ void R_AddMD3Surfaces( trRefEntity_t *ent )
         {
 	        // see if we are in a fog volume
 	        fogNum = R_ComputeFogNum( header, ent );
-			R_AddDrawSurf( (void *)surface, shader, fogNum, qfalse );
+			R_AddDrawSurf( (void *)surface, shader, fogNum, qfalse, &tr.refdef );
 		}
 
 		surface = (md3Surface_t *)( (byte *)surface + surface->ofsEnd );

@@ -22,7 +22,7 @@ void R_Set2dProjectMatrix(float width, float height);
 void vk_shade(VkPipeline pipeline, struct shaderCommands_s * const pTess,
         VkDescriptorSet* const pDesSet, VkBool32 multitexture, VkBool32 indexed);
 
-void vk_UploadXYZI(const float (* const pXYZ)[4], uint32_t nVertex, 
+void vk_UploadXYZI(float (* const pXYZ)[4], uint32_t nVertex, 
         const uint32_t* const pIdx, uint32_t nIndex);
 
 void updateMVP(VkBool32 isPortal, VkBool32 is2D, const float mvMat4x4[16]);

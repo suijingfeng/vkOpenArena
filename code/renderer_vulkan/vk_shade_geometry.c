@@ -307,7 +307,7 @@ static void vk_cmdInsertLoadingIndexBarrier(VkCommandBuffer HCmdBuffer)
 */
 
 
-void vk_UploadXYZI(const float (* const pXYZ)[4], uint32_t nVertex, 
+void vk_UploadXYZI(float (* const pXYZ)[4], uint32_t nVertex, 
         const uint32_t * const pIdx, uint32_t nIndex)
 {
 	// xyz stream

@@ -32,36 +32,37 @@ typedef struct {
 
 // trRefdef_t holds everything that comes in refdef_t,
 // as well as the locally generated scene information
-typedef struct {
+typedef struct trRefdef_s {
 
-    int			x, y, width, height;
-	float		fov_x, fov_y;
-	vec3_t		vieworg;
-	float		viewaxis[3][3];		// transformation matrix
+	int x, y, width, height;
+	float fov_x, fov_y;
+	vec3_t vieworg;
+	float viewaxis[3][3];		// transformation matrix
 
-	int			time;				// time in milliseconds for shader effects and other time dependent rendering issues
-	int			rdflags;			// RDF_NOWORLDMODEL, etc
+	int time;
+	// time in milliseconds for shader effects and other time dependent rendering issues
+	int rdflags;			// RDF_NOWORLDMODEL, etc
 
 	// 1 bits will prevent the associated area from rendering at all
-	byte		areamask[MAX_MAP_AREA_BYTES];
+	byte areamask[MAX_MAP_AREA_BYTES];
     
-    qboolean	AreamaskModified;	// qtrue if areamask changed since last scene
-	float		floatTime;			// tr.refdef.time / 1000.0
+	qboolean AreamaskModified;	// qtrue if areamask changed since last scene
+	float floatTime;			// tr.refdef.time / 1000.0
 
 	// text messages for deform text shaders
-	char		text[MAX_RENDER_STRINGS][MAX_RENDER_STRING_LENGTH];
+	char text[MAX_RENDER_STRINGS][MAX_RENDER_STRING_LENGTH];
 
 
-	int			num_entities;
-	trRefEntity_t	*entities;
+	unsigned int num_entities;
+	trRefEntity_t * entities;
 
-	int			num_dlights;
-	struct dlight_s	*dlights;
+	unsigned int num_dlights;
+	struct dlight_s	* dlights;
 
-	int			numPolys;
-	struct srfPoly_s* polys;
+	unsigned int numPolys;
+	struct srfPoly_s * polys;
 
-	int			numDrawSurfs;
+	unsigned int numDrawSurfs;
 	struct drawSurf_s * drawSurfs;
 } trRefdef_t;
 

@@ -4,6 +4,7 @@
 #include "../renderercommon/tr_types.h"
 #include "surface_type.h"
 #include "tr_shader.h"
+#include "trRefDef.h"
 
 #define	MAX_GRID_SIZE		65			// max dimensions of a grid mesh in memory
 
@@ -56,7 +57,8 @@ void RB_CheckOverflow( uint32_t verts, uint32_t indexes, struct shaderCommands_s
 void RB_AddQuadStampExt(const float origin[3], vec3_t left, vec3_t up, const uint8_t * const color,
         float s1, float t1, float s2, float t2 );
 
-void R_AddDrawSurf( surfaceType_t *surface, struct shader_s *shader, int fogIndex, int dlightMap );
+void R_AddDrawSurf( surfaceType_t *surface, struct shader_s *shader, int fogIndex, int dlightMap, 
+	struct trRefdef_s * const pRefdef );
 
 
 #endif
