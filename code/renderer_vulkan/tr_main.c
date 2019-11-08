@@ -44,9 +44,9 @@ Setup that culling frustum planes for the current view
 */
 static void SetPlaneSignbits (cplane_t * const out)
 {
-	int	bits = 0;
+    int bits = 0;
 
-	// for fast box on planeside test
+    // for fast box on planeside test
 
     if (out->normal[0] < 0)
     {
@@ -61,7 +61,7 @@ static void SetPlaneSignbits (cplane_t * const out)
         bits |= 4;
     }
 
-	out->signbits = bits;
+    out->signbits = bits;
 }
 
 
@@ -80,11 +80,11 @@ static void R_SetupFrustum (viewParms_t * const pViewParams)
         VectorScale( pViewParams->or.axis[1], xc, temp2);
 
         VectorAdd(temp1, temp2, pViewParams->frustum[0].normal);
-		pViewParams->frustum[0].dist = DotProduct (pViewParams->or.origin, pViewParams->frustum[0].normal);
+        pViewParams->frustum[0].dist = DotProduct (pViewParams->or.origin, pViewParams->frustum[0].normal);
         pViewParams->frustum[0].type = PLANE_NON_AXIAL;
 
         VectorSubtract(temp1, temp2, pViewParams->frustum[1].normal);
-		pViewParams->frustum[1].dist = DotProduct (pViewParams->or.origin, pViewParams->frustum[1].normal);
+        pViewParams->frustum[1].dist = DotProduct (pViewParams->or.origin, pViewParams->frustum[1].normal);
         pViewParams->frustum[1].type = PLANE_NON_AXIAL;
     }
 
@@ -100,57 +100,57 @@ static void R_SetupFrustum (viewParms_t * const pViewParams)
         VectorScale( pViewParams->or.axis[2], xc, temp2);
 
         VectorAdd(temp1, temp2, pViewParams->frustum[2].normal);
-		pViewParams->frustum[2].dist = DotProduct (pViewParams->or.origin, pViewParams->frustum[2].normal);
+        pViewParams->frustum[2].dist = DotProduct (pViewParams->or.origin, pViewParams->frustum[2].normal);
         pViewParams->frustum[2].type = PLANE_NON_AXIAL;
 
         VectorSubtract(temp1, temp2, pViewParams->frustum[3].normal);
-		pViewParams->frustum[3].dist = DotProduct (pViewParams->or.origin, pViewParams->frustum[3].normal);
-		pViewParams->frustum[3].type = PLANE_NON_AXIAL;
+        pViewParams->frustum[3].dist = DotProduct (pViewParams->or.origin, pViewParams->frustum[3].normal);
+        pViewParams->frustum[3].type = PLANE_NON_AXIAL;
     }
 
 
     uint32_t i = 0;
-	for (i=0; i < 4; ++i)
+    for (i=0; i < 4; ++i)
     {
-		// pViewParams->frustum[i].type = PLANE_NON_AXIAL;
-		// pViewParams->frustum[i].dist = DotProduct (pViewParams->or.origin, pViewParams->frustum[i].normal);
-		SetPlaneSignbits( &pViewParams->frustum[i] );
-	}
+        // pViewParams->frustum[i].type = PLANE_NON_AXIAL;
+        // pViewParams->frustum[i].dist = DotProduct (pViewParams->or.origin, pViewParams->frustum[i].normal);
+        SetPlaneSignbits( &pViewParams->frustum[i] );
+    }
 }
 
 
 /*
 =================
-R_SpriteFogNum
-
 See if a sprite is inside a fog volume
 =================
 */
-int R_SpriteFogNum( trRefEntity_t *ent )
+static int R_SpriteFogNum( trRefEntity_t *ent )
 {
-	int	i, j;
-	fog_t* fog;
+    int i;
 
-	if ( tr.refdef.rdflags & RDF_NOWORLDMODEL ) {
-		return 0;
-	}
+    for ( i = 1 ; i < tr.world->numfogs ; ++i )
+    {
+        fog_t* fog = &tr.world->fogs[i];
+        unsigned int j;
+        for ( j = 0 ; j < 3 ; ++j )
+        {
+            if ( ent->e.origin[j] - ent->e.radius >= fog->bounds[1][j] )
+            {
+                break;
+            }
+            
+            if ( ent->e.origin[j] + ent->e.radius <= fog->bounds[0][j] )
+            {
+                break;
+            }
+        }
+		
+        if ( j == 3 ) {
+             return i;
+        }
+    }
 
-	for ( i = 1 ; i < tr.world->numfogs ; i++ ) {
-		fog = &tr.world->fogs[i];
-		for ( j = 0 ; j < 3 ; j++ ) {
-			if ( ent->e.origin[j] - ent->e.radius >= fog->bounds[1][j] ) {
-				break;
-			}
-			if ( ent->e.origin[j] + ent->e.radius <= fog->bounds[0][j] ) {
-				break;
-			}
-		}
-		if ( j == 3 ) {
-			return i;
-		}
-	}
-
-	return 0;
+    return 0;
 }
 
 
@@ -221,7 +221,8 @@ static void R_AddEntitySurfaces(viewParms_t * const pViewParam, const uint32_t n
 				continue;
 			}
 			shader = R_GetShaderByHandle( ent->e.customShader );
-			R_AddDrawSurf( &entitySurface, shader, R_SpriteFogNum( ent ), 0 );
+			R_AddDrawSurf( &entitySurface, shader, 
+				(( tr.refdef.rdflags & RDF_NOWORLDMODEL ) ? 0 : R_SpriteFogNum( ent ) ), 0 );
 			break;
 
 		case RT_MODEL:

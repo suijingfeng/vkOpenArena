@@ -13,8 +13,6 @@
 #include "vk_utils.h"
 
 
-
-
 //
 // Just list a few feature the color surface format supported
 //
@@ -32,9 +30,9 @@ static void VK_CheckSurfaceCapabilities(VkPhysicalDevice hGPU, const VkSurfaceFo
 
 	// Check if the device supports blitting to linear images 
 	if (props.linearTilingFeatures & VK_FORMAT_FEATURE_SAMPLED_IMAGE_BIT)
-    {
+	{
 		ri.Printf(PRINT_ALL, " Linear Tiling Features supported. \n");
-    }
+	}
     
 	if (props.linearTilingFeatures & VK_FORMAT_FEATURE_BLIT_DST_BIT)
 	{
@@ -57,7 +55,9 @@ static void VK_SelectColorSurfaceFormat(VkPhysicalDevice hGPU, VkSurfaceKHR hSur
 	// "vk.surface" must be a valid VkSurfaceKHR handle
 	VK_CHECK( qvkGetPhysicalDeviceSurfaceFormatsKHR(hGPU, hSurface, &nSurfmt, NULL));
 	
-    assert(nSurfmt > 0);
+	if(nSurfmt <= 0)
+		ri.Error(ERR_FATAL, " numbers of VkFormat's that are supported is %d", nSurfmt);
+		
 
 	VkSurfaceFormatKHR * pSurfFmts =
 		(VkSurfaceFormatKHR *) malloc(nSurfmt * sizeof(VkSurfaceFormatKHR));
@@ -86,7 +86,7 @@ static void VK_SelectColorSurfaceFormat(VkPhysicalDevice hGPU, VkSurfaceKHR hSur
 	}
 	else
 	{
-        uint32_t i;
+		uint32_t i;
 
 		ri.Printf(PRINT_ALL, " we choose: \n");
 
@@ -105,10 +105,11 @@ static void VK_SelectColorSurfaceFormat(VkPhysicalDevice hGPU, VkSurfaceKHR hSur
 			}
 		}
 
-        // if get here, just grab the first ... 
-		if (i == nSurfmt) {
+		if (i == nSurfmt)
+		{
+		        // if get here, just grab the first ... 
 			*pSurfmt = pSurfFmts[0];
-        }
+		}
 	}
 
 	ri.Printf(PRINT_ALL, " --- ----------------------------------- --- \n");
@@ -122,12 +123,12 @@ static void VK_SelectColorSurfaceFormat(VkPhysicalDevice hGPU, VkSurfaceKHR hSur
 // Set the depth format ...
 static void VK_SelectDepthSurfaceFormat(VkPhysicalDevice hGPU, VkFormat* const pDepthStencilFmt)
 {
-    VkFormatProperties props;
+	VkFormatProperties props;
 
 	//=========================== depth =====================================
 	NO_CHECK( qvkGetPhysicalDeviceFormatProperties(hGPU, VK_FORMAT_D24_UNORM_S8_UINT, &props) );
 	
-    if (props.optimalTilingFeatures & VK_FORMAT_FEATURE_DEPTH_STENCIL_ATTACHMENT_BIT)
+	if (props.optimalTilingFeatures & VK_FORMAT_FEATURE_DEPTH_STENCIL_ATTACHMENT_BIT)
 	{
 		ri.Printf(PRINT_ALL, " VK_FORMAT_D24_UNORM_S8_UINT optimal Tiling feature supported.\n");
 		*pDepthStencilFmt = VK_FORMAT_D24_UNORM_S8_UINT;
