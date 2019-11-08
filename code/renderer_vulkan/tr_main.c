@@ -161,13 +161,13 @@ void R_AddDrawSurf( surfaceType_t *surface, shader_t *shader, int fogIndex, int 
 	struct trRefdef_s * const pRefdef)
 {
     // instead of checking for overflow, we just mask the index so it wraps around
-    unsigned int index = tr.refdef.numDrawSurfs & DRAWSURF_MASK;
+    unsigned int index = pRefdef->numDrawSurfs & DRAWSURF_MASK;
     // the sort data is packed into a single 32 bit value so it can be
     // compared quickly during the qsorting process
-    tr.refdef.drawSurfs[index].sort = (shader->sortedIndex << QSORT_SHADERNUM_SHIFT) 
+    pRefdef->drawSurfs[index].sort = (shader->sortedIndex << QSORT_SHADERNUM_SHIFT) 
 	| tr.shiftedEntityNum | ( fogIndex << QSORT_FOGNUM_SHIFT ) | dlightMap;
-    tr.refdef.drawSurfs[index].surType = surface;
-    ++tr.refdef.numDrawSurfs;
+    pRefdef->drawSurfs[index].surType = surface;
+    ++pRefdef->numDrawSurfs;
 }
 
 
@@ -216,8 +216,8 @@ static void R_AddEntitySurfaces(viewParms_t * const pViewParam, const uint32_t n
                 {
                      continue;
                 }
-                shader = R_GetShaderByHandle( ent->e.customShader );
-                R_AddDrawSurf( &entitySurface, shader, 
+
+                R_AddDrawSurf( &entitySurface, R_GetShaderByHandle( ent->e.customShader ), 
                    (( tr.refdef.rdflags & RDF_NOWORLDMODEL ) ? 0 : 
 			R_SpriteFogNum( ent, tr.world->numfogs, tr.world->fogs ) ), 0, &tr.refdef );
                 break;
@@ -242,7 +242,7 @@ static void R_AddEntitySurfaces(viewParms_t * const pViewParam, const uint32_t n
 				case MOD_IQM:
 					R_AddIQMSurfaces( ent );
 				case MOD_BRUSH:
-					R_AddBrushModelSurfaces( ent );
+					R_AddBrushModelSurfaces( R_GetModelByHandle( ent->e.hModel ) );
 					break;
 				case MOD_BAD:		// null model axis
 					if ( (ent->e.renderfx & RF_THIRD_PERSON) && !pViewParam->isPortal) {
@@ -369,7 +369,7 @@ or a mirror / remote location
 */
 void R_RenderView (viewParms_t *parms)
 {
-	int	firstDrawSurf = tr.refdef.numDrawSurfs;
+	int firstDrawSurf = tr.refdef.numDrawSurfs;
 
 	++tr.viewCount;
 
@@ -379,10 +379,12 @@ void R_RenderView (viewParms_t *parms)
 
 	// set viewParms.world
 	R_RotateForViewer (&tr.viewParms, &tr.or);
-    // Setup that culling frustum planes for the current view
+	// Setup that culling frustum planes for the current view
 	R_SetupFrustum (&tr.viewParms);
 
-	R_AddWorldSurfaces (&tr.viewParms);
+        if( r_drawworld->integer && ( (tr.refdef.rdflags & RDF_NOWORLDMODEL) == 0 ) ) {
+	    R_AddWorldSurfaces (&tr.viewParms);
+	}
 
 	R_AddPolygonSurfaces(tr.refdef.polys, tr.refdef.numPolys);
 

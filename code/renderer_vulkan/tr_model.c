@@ -29,13 +29,13 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
 model_t* R_GetModelByHandle( qhandle_t index )
 {
-	if ( (index < 0) || (index >= tr.numModels) )
+    if ( (index < 0) || (index >= tr.numModels) )
     {
         ri.Printf(PRINT_WARNING, "index = %d, out of range gets the defualt model.\n", index);
 		return tr.models[0];
-	}
+    }
 
-	return tr.models[index];
+    return tr.models[index];
 }
 
 

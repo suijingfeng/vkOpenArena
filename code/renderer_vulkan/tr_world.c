@@ -288,27 +288,27 @@ static int R_DlightSurface( msurface_t *surf, int dlightBits ) {
 R_AddWorldSurface
 ======================
 */
-static void R_AddWorldSurface( msurface_t *surf, int dlightBits )
+static void R_Add_World_Surface( msurface_t * const pSurf, int dlightBits )
 {
-	if ( surf->viewCount == tr.viewCount ) {
+	if ( pSurf->viewCount == tr.viewCount ) {
 		return;		// already in this view
 	}
 
-	surf->viewCount = tr.viewCount;
+	pSurf->viewCount = tr.viewCount;
 	// FIXME: bmodel fog?
 
 	// try to cull before dlighting or adding
-	if ( R_CullSurface( surf->data, surf->shader ) ) {
+	if ( R_CullSurface( pSurf->data, pSurf->shader ) ) {
 		return;
 	}
 
 	// check for dlighting
 	if ( dlightBits ) {
-		dlightBits = R_DlightSurface( surf, dlightBits );
+		dlightBits = R_DlightSurface( pSurf, dlightBits );
 		dlightBits = ( dlightBits != 0 );
 	}
 
-	R_AddDrawSurf( surf->data, surf->shader, surf->fogIndex, dlightBits, &tr.refdef );
+	R_AddDrawSurf( pSurf->data, pSurf->shader, pSurf->fogIndex, dlightBits, &tr.refdef );
 }
 
 /*
@@ -321,28 +321,21 @@ static void R_AddWorldSurface( msurface_t *surf, int dlightBits )
 
 /*
 =================
-R_AddBrushModelSurfaces
 =================
 */
-void R_AddBrushModelSurfaces ( trRefEntity_t *ent ) {
-	bmodel_t	*bmodel;
-	int			clip;
-	model_t		*pModel;
-	int			i;
-
-	pModel = R_GetModelByHandle( ent->e.hModel );
-
-	bmodel = pModel->bmodel;
-
-	clip = R_CullLocalBox( bmodel->bounds );
+void R_AddBrushModelSurfaces ( model_t * const pModel )
+{
+	int clip = R_CullLocalBox( pModel->bmodel->bounds );
 	if ( clip == CULL_OUT ) {
 		return;
 	}
 	
-	R_DlightBmodel( bmodel );
+	R_DlightBmodel( pModel->bmodel );
 
-	for ( i = 0 ; i < bmodel->numSurfaces ; i++ ) {
-		R_AddWorldSurface( bmodel->firstSurface + i, tr.currentEntity->needDlights );
+	unsigned int i;
+	unsigned int nMSurf = pModel->bmodel->numSurfaces;
+	for ( i = 0 ; i < nMSurf ; ++i ) {
+		R_Add_World_Surface( pModel->bmodel->firstSurface + i, tr.currentEntity->needDlights );
 	}
 }
 
@@ -365,7 +358,7 @@ static void R_RecursiveWorldNode( mnode_t *node, int planeBits, int dlightBits )
 {
 
 	do {
-		int	newDlights[2];
+		int newDlights[2];
 
 		// if the node wasn't marked as potentially visible, exit
 		if (node->visframe != tr.visCount) {
@@ -376,7 +369,7 @@ static void R_RecursiveWorldNode( mnode_t *node, int planeBits, int dlightBits )
 		// inside can be visible OPTIMIZE: don't do this all the way to leafs?
 
 		if ( !r_nocull->integer ) {
-			int		r;
+			int r;
 
 			if ( planeBits & 1 ) {
 				r = BoxOnPlaneSide(node->mins, node->maxs, &tr.viewParms.frustum[0]);
@@ -431,15 +424,16 @@ static void R_RecursiveWorldNode( mnode_t *node, int planeBits, int dlightBits )
 		newDlights[0] = 0;
 		newDlights[1] = 0;
 		if ( dlightBits ) {
-			int	i;
+			
+			unsigned int nDlight = tr.refdef.num_dlights;
+			unsigned int i;
 
-			for ( i = 0 ; i < tr.refdef.num_dlights ; i++ ) {
-				dlight_t	*dl;
-				float		dist;
-
-				if ( dlightBits & ( 1 << i ) ) {
-					dl = &tr.refdef.dlights[i];
-					dist = DotProduct( dl->origin, node->plane->normal ) - node->plane->dist;
+			for ( i = 0 ; i < nDlight ; ++i )
+			{
+				if ( dlightBits & ( 1 << i ) )
+				{
+					dlight_t * dl = &tr.refdef.dlights[i];
+					float dist = DotProduct( dl->origin, node->plane->normal ) - node->plane->dist;
 					
 					if ( dist > -dl->radius ) {
 						newDlights[0] |= ( 1 << i );
@@ -459,71 +453,57 @@ static void R_RecursiveWorldNode( mnode_t *node, int planeBits, int dlightBits )
 		dlightBits = newDlights[1];
 	} while ( 1 );
 
-	{
-		// leaf node, so add mark surfaces
-		int			c;
-		msurface_t	*surf, **mark;
+	
+	// leaf node, so add mark surfaces
 
-		tr.pc.c_leafs++;
+	++tr.pc.c_leafs;
 
-		// add to z buffer bounds
-		if ( node->mins[0] < tr.viewParms.visBounds[0][0] ) {
-			tr.viewParms.visBounds[0][0] = node->mins[0];
-		}
-		if ( node->mins[1] < tr.viewParms.visBounds[0][1] ) {
-			tr.viewParms.visBounds[0][1] = node->mins[1];
-		}
-		if ( node->mins[2] < tr.viewParms.visBounds[0][2] ) {
-			tr.viewParms.visBounds[0][2] = node->mins[2];
-		}
-
-		if ( node->maxs[0] > tr.viewParms.visBounds[1][0] ) {
-			tr.viewParms.visBounds[1][0] = node->maxs[0];
-		}
-		if ( node->maxs[1] > tr.viewParms.visBounds[1][1] ) {
-			tr.viewParms.visBounds[1][1] = node->maxs[1];
-		}
-		if ( node->maxs[2] > tr.viewParms.visBounds[1][2] ) {
-			tr.viewParms.visBounds[1][2] = node->maxs[2];
-		}
-
-		// add the individual surfaces
-		mark = node->firstmarksurface;
-		c = node->nummarksurfaces;
-		while (c--) {
-			// the surface may have already been added if it
-			// spans multiple leafs
-			surf = *mark;
-			R_AddWorldSurface( surf, dlightBits );
-			mark++;
-		}
+	// add to z buffer bounds
+	if ( node->mins[0] < tr.viewParms.visBounds[0][0] ) {
+		tr.viewParms.visBounds[0][0] = node->mins[0];
+	}
+	if ( node->mins[1] < tr.viewParms.visBounds[0][1] ) {
+		tr.viewParms.visBounds[0][1] = node->mins[1];
+	}
+	if ( node->mins[2] < tr.viewParms.visBounds[0][2] ) {
+		tr.viewParms.visBounds[0][2] = node->mins[2];
 	}
 
+	if ( node->maxs[0] > tr.viewParms.visBounds[1][0] ) {
+		tr.viewParms.visBounds[1][0] = node->maxs[0];
+	}
+	if ( node->maxs[1] > tr.viewParms.visBounds[1][1] ) {
+		tr.viewParms.visBounds[1][1] = node->maxs[1];
+	}
+	if ( node->maxs[2] > tr.viewParms.visBounds[1][2] ) {
+		tr.viewParms.visBounds[1][2] = node->maxs[2];
+	}
+
+	// add the individual surfaces
+	// msurface_t ** mark = node->firstmarksurface;
+	unsigned int C = node->nummarksurfaces;
+	for( unsigned int k = 0 ; k < C ; ++k)
+	{
+		// the surface may have already been added if it
+		// spans multiple leafs
+		R_Add_World_Surface(node->firstmarksurface[k] , dlightBits );
+	}
 }
 
 
 /*
 ===============
-R_PointInLeaf
 ===============
 */
-static mnode_t *R_PointInLeaf( const vec3_t p ) {
-	mnode_t		*node;
-	float		d;
-	cplane_t	*plane;
-	
-	if ( !tr.world ) {
-		ri.Error (ERR_DROP, "R_PointInLeaf: bad model");
-	}
-
-	node = tr.world->nodes;
+static mnode_t *R_PointInLeaf( const vec3_t p, mnode_t	* node )
+{
 	while( 1 ) {
 		if (node->contents != -1) {
 			break;
 		}
-		plane = node->plane;
-		d = DotProduct (p,plane->normal) - plane->dist;
-		if (d > 0) {
+
+		float d = DotProduct (p, node->plane->normal) - node->plane->dist;
+		if (d > 0.0f) {
 			node = node->children[0];
 		} else {
 			node = node->children[1];
@@ -547,15 +527,13 @@ static const byte *R_ClusterPVS (int cluster) {
 }
 
 
-qboolean RE_inPVS( const vec3_t p1, const vec3_t p2 ) {
-	mnode_t *leaf;
-	byte	*vis;
+qboolean RE_inPVS( const vec3_t p1, const vec3_t p2 )
+{
+	mnode_t * leaf1 = R_PointInLeaf( p1, tr.world->nodes );
+	mnode_t * leaf2 = R_PointInLeaf( p2, tr.world->nodes );
+	unsigned char * vis = ri.CM_ClusterPVS( leaf1->cluster );
 
-	leaf = R_PointInLeaf( p1 );
-	vis = ri.CM_ClusterPVS( leaf->cluster );
-	leaf = R_PointInLeaf( p2 );
-
-	if ( !(vis[leaf->cluster>>3] & (1<<(leaf->cluster&7))) ) {
+	if ( !(vis[leaf2->cluster>>3] & (1<<(leaf2->cluster&7))) ) {
 		return qfalse;
 	}
 	return qtrue;
@@ -583,7 +561,7 @@ static void R_MarkLeaves (void)
 	}
 
 	// current viewcluster
-	leaf = R_PointInLeaf( tr.viewParms.pvsOrigin );
+	leaf = R_PointInLeaf( tr.viewParms.pvsOrigin, tr.world->nodes );
 	cluster = leaf->cluster;
 
 	// if the cluster is the same and the area visibility matrix
@@ -591,9 +569,9 @@ static void R_MarkLeaves (void)
 
 	// if r_showcluster was just turned on, remark everything 
 	if ( tr.viewCluster == cluster && !tr.refdef.AreamaskModified && !r_showcluster->modified )
-    {
+        {
 		return;
-	}
+        }
 
 	if ( r_showcluster->modified || r_showcluster->integer ) {
 		r_showcluster->modified = qfalse;
@@ -645,19 +623,10 @@ static void R_MarkLeaves (void)
 
 /*
 =============
-R_AddWorldSurfaces
 =============
 */
 void R_AddWorldSurfaces (viewParms_t * const pViewParams)
 {
-	if ( !r_drawworld->integer ) {
-		return;
-	}
-
-	if ( tr.refdef.rdflags & RDF_NOWORLDMODEL ) {
-		return;
-	}
-
 	tr.currentEntityNum = REFENTITYNUM_WORLD;
 	tr.shiftedEntityNum = tr.currentEntityNum << QSORT_REFENTITYNUM_SHIFT;
 

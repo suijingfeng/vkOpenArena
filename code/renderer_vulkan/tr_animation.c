@@ -267,7 +267,7 @@ void R_MDRAddAnimSurfaces( trRefEntity_t *ent )
 
 
 		if (!personalModel)
-			R_AddDrawSurf( (void *)surface, shader, fogNum, qfalse, &tr.refdef );
+			R_AddDrawSurf( (void *)surface, shader, fogNum, 0, &tr.refdef );
 
 		surface = (mdrSurface_t *)( (byte *)surface + surface->ofsEnd );
 	}

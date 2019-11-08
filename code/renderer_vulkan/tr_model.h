@@ -16,9 +16,9 @@ typedef struct msurface_s {
 } msurface_t;
 
 typedef struct bmodel_s{
-	float		bounds[2][3];		// for culling
-	msurface_t	*firstSurface;
-	int			numSurfaces;
+	float bounds[2][3];		// for culling
+	msurface_t * firstSurface;
+	unsigned int numSurfaces;
 } bmodel_t;
 
 typedef enum {

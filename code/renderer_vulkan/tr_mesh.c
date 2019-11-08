@@ -356,7 +356,7 @@ void R_AddMD3Surfaces( trRefEntity_t *ent )
         {
 	        // see if we are in a fog volume
 	        fogNum = R_ComputeFogNum( header, ent );
-			R_AddDrawSurf( (void *)surface, shader, fogNum, qfalse, &tr.refdef );
+			R_AddDrawSurf( (void *)surface, shader, fogNum, 0, &tr.refdef );
 		}
 
 		surface = (md3Surface_t *)( (byte *)surface + surface->ofsEnd );

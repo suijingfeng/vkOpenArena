@@ -4,7 +4,7 @@
 #include  <stdint.h>
 #include "viewParms.h"
 #include "trRefDef.h"
-
+#include "tr_model.h"
 /*
 ==============================================================================
 
@@ -90,7 +90,7 @@ WORLD MAP
 ============================================================
 */
 
-void R_AddBrushModelSurfaces( trRefEntity_t *e );
+void R_AddBrushModelSurfaces( model_t * const pModel );
 void R_AddWorldSurfaces(viewParms_t * const pViewParams);
 void R_GetWorldBaseName(char* checkname);
 void R_GetFogArray(struct fog_s ** const ppFogs, uint32_t* const pNum);
