@@ -48,7 +48,7 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 Sys_PIDFileName
 =================
 */
-static char *Sys_PIDFileName(void)
+static char * Sys_PIDFileName(void)
 {
 	const char *homePath = Cvar_VariableString("fs_homepath");
 
@@ -261,7 +261,6 @@ int WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int n
 	IN_Init();		// FIXME: not in dedicated?
 #endif
 
-	
 	// hide the early console since we've reached the point where we
 	// have a working graphics subsystems
 	// if (!com_dedicated->integer && !com_viewlog->integer) {
@@ -275,46 +274,10 @@ int WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int n
 	// main game loop
 	while (1)
 	{
-		/*
-				// if not running as a game client, sleep a bit
-				if (g_wv.isMinimized || (com_dedicated && com_dedicated->integer)) {
-					Sleep(5);
-				}
-
-				// set low precision every frame, because some system calls
-				// reset it arbitrarily
-				// _controlfp( _PC_24, _MCW_PC );
-				//_controlfp( -1, _MCW_EM  ); // no exceptions, even if some crappy
-										// syscall turns them back on!
-
-				int startTime = Sys_Milliseconds();
-		*/
-		// make sure mouse and joystick are only called once a frame
-		// IN_Frame();
-		MSG	msg;
-		while (PeekMessage(&msg, NULL, 0, 0, PM_NOREMOVE))
-		{
-			if (!GetMessage(&msg, NULL, 0, 0)) {
-				Com_Quit_f();
-			}
-
-			// save the msg time, because wndprocs don't have access to the timestamp
-			g_wv.sysMsgTime = msg.time;
-
-			TranslateMessage(&msg);
-			DispatchMessage(&msg);
-		}
-		
-		
-		IN_Frame(); // youurayy input lag fix
-			// run the game
-		Com_Frame();
-		
-/*
-		int endTime = Sys_Milliseconds();
-		totalMsec += endTime - startTime;
-		++countMsec;
-*/
+		// youurayy input lag fix
+		IN_Frame();
+		// run the game
+		Com_Frame();		
 	}
 	// never gets here
 	return 0;
@@ -324,7 +287,6 @@ int WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int n
 
 int main( int argc, char **argv )
 {
-
 	char commandLine[ MAX_STRING_CHARS ] = { 0 };
 
 	Sys_PlatformInit();
@@ -367,7 +329,7 @@ int main( int argc, char **argv )
 		IN_Frame();
 		Com_Frame();
 	}
-
+	// never gets here
 	return 0;
 }
 

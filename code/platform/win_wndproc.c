@@ -299,7 +299,7 @@ LRESULT WINAPI MainWndProc( HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam )
 
 	case WM_MOVE:
 	{
-		if (!g_wv.isFullScreen)
+		if ( WinSys_IsWinFullscreen() == 0)
 		{
 			// int xPos = (short) LOWORD(lParam);    // horizontal position 
 			// int yPos = (short) HIWORD(lParam);    // vertical position 

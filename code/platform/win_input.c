@@ -242,7 +242,7 @@ void IN_Frame (void)
 		// temporarily deactivate if not in the game and
 		// running on the desktop
 		// voodoo always counts as full screen
-		if (g_wv.isFullScreen == 0 )
+		if ( WinSys_IsWinFullscreen() == 0 )
 		{
 			IN_DeactivateMouse ();
 			return;
@@ -321,7 +321,21 @@ void IN_MouseEvent(int mstate)
 
 void Sys_HandleUserInputEvents(void)
 {
-    ;
+	// pump the message loop
+	// Dispatches incoming sent messages, checks the thread message queue
+	// for a posted message, and retrieves the message (if any exist).
+
+	MSG	msg;
+	while (PeekMessage(&msg, NULL, 0, 0, PM_NOREMOVE))
+	{
+		if (!GetMessage(&msg, NULL, 0, 0)) {
+			Com_Quit_f();
+		}
+
+		// save the msg time, because wndprocs don't have access to the timestamp
+		g_wv.sysMsgTime = msg.time;
+
+		TranslateMessage(&msg);
+		DispatchMessage(&msg);
+	}
 }
-
-

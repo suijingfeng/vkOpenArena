@@ -2,7 +2,6 @@
 
 * checkout the SDL2 branch for stable build and playing, the following description works for SDL2 branch.
 * the master branch is under developing now,  mouse input event process are not as good as sdl2 branch, have influence on rocket jump, it seems that the mouse acceration too big, i dont know what is the reason.
-* on loongnix, edit the Makefile.local, and replace the `BUILD_VULAN=1` with `BUILD_VULKAN=0`
 
 
 This project is a fork of OpenArena with specific changes to its renderer module.
@@ -98,6 +97,7 @@ $ make -j$(nproc)
 ```
 # yum install gcc make git
 # yum install alsa-lib-devel.mips64el libXrandr-devel.mips64el libcurl-devel.mips64el openal-soft-devel.mips64el
+$ make -j$(nproc)
 ```
 
 
@@ -114,9 +114,9 @@ pacman -S mingw-w64-x86_64-gcc make git
 4. Grab latest openarena source code from github and compile. Note that in msys2, your drives are linked as folders in the root directory: C:\ is /c/, D:\ is /d/, and so on.
 
 ```sh
-git clone https://github.com/suijingfeng/vkOpenArena.git
-cd vkOpenArena
-make -j4
+$ git clone https://github.com/suijingfeng/vkOpenArena.git
+$ cd vkOpenArena
+$ make -j4
 ```
 5. Find the executables and dlls in build/release-mingw64-x86\_64 . 
 

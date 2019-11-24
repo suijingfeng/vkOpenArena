@@ -2036,7 +2036,7 @@ Com_GetSystemEvent
 */
 sysEvent_t Com_GetSystemEvent( void )
 {
-	sysEvent_t  ev;
+	sysEvent_t ev;
 
 	// return if we have data
 	if ( eventHead > eventTail )
@@ -2046,27 +2046,10 @@ sysEvent_t Com_GetSystemEvent( void )
 		return eventQueue[ event_index ];
 	}
     
-#ifndef DEDICATED
+#if	!defined(DEDICATED)
     Sys_HandleUserInputEvents();
 #endif
-/*
-	MSG	msg;
-	// pump the message loop
-	// Dispatches incoming sent messages, checks the thread message queue 
-	// for a posted message, and retrieves the message (if any exist).
-	while (PeekMessage(&msg, NULL, 0, 0, PM_NOREMOVE))
-	{
-		if (!GetMessage(&msg, NULL, 0, 0)) {
-			Com_Quit_f();
-		}
 
-		// save the msg time, because wndprocs don't have access to the timestamp
-		// g_wv.sysMsgTime = msg.time;
-
-		TranslateMessage(&msg);
-		DispatchMessage(&msg);
-	}
-*/
     // Handle new console input
 	// check for console commands
 	char* s = Sys_ConsoleInput();
@@ -2100,12 +2083,11 @@ Com_GetRealEvent
 */
 sysEvent_t Com_GetRealEvent( void )
 {
-	int			r;
 	sysEvent_t	ev;
 
 	// either get an event from the system or the journal file
 	if ( com_journal->integer == 2 ) {
-		r = FS_Read( &ev, sizeof(ev), com_journalFile );
+		int r = FS_Read( &ev, sizeof(ev), com_journalFile );
 		if ( r != sizeof(ev) ) {
 			Com_Error( ERR_FATAL, "Error reading from journal file" );
 		}
@@ -2123,7 +2105,7 @@ sysEvent_t Com_GetRealEvent( void )
 
 		// write the journal value out if needed
 		if ( com_journal->integer == 1 ) {
-			r = FS_Write( &ev, sizeof(ev), com_journalFile );
+			int r = FS_Write( &ev, sizeof(ev), com_journalFile );
 			if ( r != sizeof(ev) ) {
 				Com_Error( ERR_FATAL, "Error writing to journal file" );
 			}
