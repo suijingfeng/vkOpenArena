@@ -123,14 +123,14 @@ Sets shader->sortedIndex
 */
 void R_SortNewShader( shader_t* pShader )
 {
-	int	i;
+	int i;
 	float sort = pShader->sort;
 
 	for ( i = tr.numShaders - 2 ; i >= 0 ; --i )
-    {
-        // trival case
-		if ( L_SortedShaders[ i ]->sort <= sort )
         {
+                // trival case
+		if ( L_SortedShaders[ i ]->sort <= sort )
+                {
 			break;
 		}
 
@@ -140,7 +140,7 @@ void R_SortNewShader( shader_t* pShader )
 		L_SortedShaders[i+1]->sortedIndex++;
 	}
 
-    // find the position, i
+        // find the position, i
 
 	// Arnout: fix rendercommandlist
 	// https://zerowing.idsoftware.com/bugzilla/show_bug.cgi?id=493
@@ -169,26 +169,26 @@ typedef struct shader_s
 shader_t* R_GeneratePermanentShader(shaderStage_t* pStgTab, shader_t* pSdr)
 {
 	
-	int	i;
+	int i;
 
 	if ( tr.numShaders == MAX_SHADERS )
-    {
+        {
 		ri.Printf( PRINT_WARNING, "WARNING: GeneratePermanentShader - MAX_SHADERS hit\n");
 		return tr.defaultShader;
 	}
 
 	shader_t* newShader = (shader_t*) ri.Hunk_Alloc( sizeof( shader_t ), h_low );
-    // value-like copy, copy assign construstor, 
-    // both pointers point to the same memory location
-    *newShader = *pSdr;
+        // value-like copy, copy assign construstor, 
+        // both pointers point to the same memory location
+        *newShader = *pSdr;
 
 	if ( newShader->sort <= SS_OPAQUE )
 		newShader->fogPass = FP_EQUAL;
 	else if ( newShader->contentFlags & CONTENTS_FOG )
 		newShader->fogPass = FP_LE;
 	
-    // update index 
-    newShader->index = tr.numShaders;
+        // update index 
+        newShader->index = tr.numShaders;
 	newShader->sortedIndex = tr.numShaders;
 
 	tr.shaders[ tr.numShaders ] = newShader;
@@ -197,7 +197,7 @@ shader_t* R_GeneratePermanentShader(shaderStage_t* pStgTab, shader_t* pSdr)
 	++tr.numShaders;
 
 	for ( i = 0 ; i < newShader->numUnfoggedPasses ; ++i )
-    {
+        {
 		if ( !pStgTab[i].active ) {
 			break;
 		}
@@ -228,15 +228,15 @@ shader_t* R_GeneratePermanentShader(shaderStage_t* pStgTab, shader_t* pSdr)
 */
 	}
 
-    // data already, sort it
+        // data already, sort it
 	R_SortNewShader(tr.shaders[ tr.numShaders - 1 ]);
     
-    R_UpdateShaderHashTable(newShader);
+        R_UpdateShaderHashTable(newShader);
 
-//    ri.Printf( PRINT_WARNING, "index:%d, newindex:%d, %s\n",
-//            newShader->index, newShader->sortedIndex, newShader->name);
+        //  ri.Printf( PRINT_WARNING, "index:%d, newindex:%d, %s\n",
+        //     newShader->index, newShader->sortedIndex, newShader->name);
 	
-    return newShader;
+        return newShader;
 }
 
 
@@ -248,13 +248,13 @@ A second parameter will cause it to print in sorted order
 */
 void listSortedShader_f (void)
 {
-	int	i;
-	int	count = tr.numShaders;
+	int i;
+	int count = tr.numShaders;
 
-    ri.Printf (PRINT_ALL, " -------- %d shaders --------\n\n", count);
+        ri.Printf (PRINT_ALL, " -------- %d shaders --------\n\n", count);
 
 	for ( i = 0 ; i < count ; i++ )
-    {
+        {
 		ri.Printf( PRINT_ALL, "%i ", L_SortedShaders[i]->numUnfoggedPasses );
 
 		if (L_SortedShaders[i]->lightmapIndex >= 0 )

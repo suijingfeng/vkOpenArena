@@ -21,12 +21,12 @@ PFN_vkEnumerateInstanceLayerProperties          qvkEnumerateInstanceLayerPropert
 
 
 // Instance Level
-PFN_vkCreateDevice								qvkCreateDevice;
-PFN_vkDestroyInstance							qvkDestroyInstance;
-PFN_vkEnumerateDeviceExtensionProperties		qvkEnumerateDeviceExtensionProperties;
-PFN_vkEnumeratePhysicalDevices					qvkEnumeratePhysicalDevices;
-PFN_vkGetDeviceProcAddr							qvkGetDeviceProcAddr;
-PFN_vkGetPhysicalDeviceFeatures					qvkGetPhysicalDeviceFeatures;
+PFN_vkCreateDevice                              qvkCreateDevice;
+PFN_vkDestroyInstance                           qvkDestroyInstance;
+PFN_vkEnumerateDeviceExtensionProperties        qvkEnumerateDeviceExtensionProperties;
+PFN_vkEnumeratePhysicalDevices                  qvkEnumeratePhysicalDevices;
+PFN_vkGetDeviceProcAddr                         qvkGetDeviceProcAddr;
+PFN_vkGetPhysicalDeviceFeatures                 qvkGetPhysicalDeviceFeatures;
 PFN_vkGetPhysicalDeviceFormatProperties			qvkGetPhysicalDeviceFormatProperties;
 PFN_vkGetPhysicalDeviceMemoryProperties			qvkGetPhysicalDeviceMemoryProperties;
 PFN_vkGetPhysicalDeviceProperties				qvkGetPhysicalDeviceProperties;
