@@ -117,8 +117,4 @@ void WinMinimize_f(void);
 
 void FileSys_Logging(const char * const pComment);
 
-// NOTE TTimo linux works with float gamma value, not the gamma table
-// the params won't be used, getting the r_gamma cvar directly
-
-
 #endif

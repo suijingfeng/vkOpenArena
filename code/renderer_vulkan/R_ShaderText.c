@@ -220,7 +220,7 @@ static void FillHashTableWithTokens(char (*ppTok)[64], uint32_t size,
 
 void SetShaderTextHashTableSizes(char * const pText)
 {
-    ri.Printf( PRINT_ALL, "SetShaderTextHashTableSizes \n");
+    ri.Printf( PRINT_ALL, " Set ShaderText HashTable Size \n");
 
     memset(s_ShaderNameTab, 0, sizeof(s_ShaderNameTab));
     // look for shader names

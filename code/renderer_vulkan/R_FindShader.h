@@ -6,6 +6,7 @@
 qhandle_t RE_RegisterShader( const char *name );
 qhandle_t RE_RegisterShaderNoMip( const char *name );
 
-shader_t* R_FindShader( const char *name, int lightmapIndex, qboolean mipRawImage );
+struct shader_s * R_FindShader( const char *name, int lightmapIndex, qboolean mipRawImage );
+void R_UpdateShaderHashTable(struct shader_s * newShader);
 void ScanAndLoadShaderFiles( void );
 #endif

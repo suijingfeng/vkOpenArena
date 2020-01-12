@@ -141,7 +141,7 @@ typedef struct shader_s
 	int			numDeforms;
 	deformStage_t	deforms[MAX_SHADER_DEFORMS];
 
-	int			numUnfoggedPasses;
+	unsigned int	numUnfoggedPasses;
 	shaderStage_t* stages[MAX_SHADER_STAGES];
 
     float clampTime;                                  // time this shader is clamped to
@@ -162,7 +162,7 @@ void R_InitShaders( void );
 void R_ShaderList_f( void );
 void R_ClearShaderHashTable(void);
 void R_SetTheShader( const char *name, int lightmapIndex );
-void R_UpdateShaderHashTable(shader_t* newShader);
+
 
 void R_SetDefaultShader( void );
 shader_t *FinishShader( void );

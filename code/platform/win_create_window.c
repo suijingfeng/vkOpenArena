@@ -37,6 +37,11 @@ int WinSys_GetWinHeight(void)
 	return g_wv.winHeight;
 }
 
+int WinSys_IsWinMinimized(void)
+{
+	return g_wv.isMinimized;
+}
+
 extern LRESULT WINAPI MainWndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
 
 

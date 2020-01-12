@@ -223,13 +223,13 @@ int WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int n
 
 	g_wv.osversion.dwOSVersionInfoSize = sizeof(g_wv.osversion);
 
-	if (!GetVersionEx(&g_wv.osversion))
-		Sys_Error("Couldn't get OS info");
+	if ( !GetVersionEx(&g_wv.osversion) )
+		Sys_Error( "Couldn't get OS info" );
 
-	if (g_wv.osversion.dwMajorVersion < 4)
-		Sys_Error("Quake3 requires Windows version 4 or greater");
-	if (g_wv.osversion.dwPlatformId == VER_PLATFORM_WIN32s)
-		Sys_Error("Quake3 doesn't run on Win32s");
+	if ( g_wv.osversion.dwMajorVersion < 4 )
+		Sys_Error( "Quake3 requires Windows version 4 or greater" );
+	if ( g_wv.osversion.dwPlatformId == VER_PLATFORM_WIN32s )
+		Sys_Error( "Quake3 doesn't run on Win32s" );
 
 	Sys_PlatformInit();
 	// Sys_InitSignal();

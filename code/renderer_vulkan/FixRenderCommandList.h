@@ -3,8 +3,8 @@
 
 //void FixRenderCommandList( int newShader );
 //void SortNewShader( shader_t* pShader );
-shader_t* R_GeneratePermanentShader(shaderStage_t* pStgTab, shader_t* pShader );
-void R_DecomposeSort( unsigned sort, int *entityNum, shader_t **shader, 
+struct shader_s * R_GeneratePermanentShader(struct shaderStage_s * pStgTab, struct shader_s * pShader );
+void R_DecomposeSort( unsigned sort, int *entityNum, struct shader_s **shader,
 					 int *fogNum, int *dlightMap );
 
 void R_ClearSortedShaders(void);

@@ -12,9 +12,8 @@ extern struct shader_s * R_GetDefaultShaderPtr(void);
 extern uint32_t R_GetNumOfLightmaps(void);
 
 
-
 #define FILE_HASH_SIZE		1024
-static struct shader_s* hashTable[FILE_HASH_SIZE] = {0};
+static struct shader_s* s_hashTable[FILE_HASH_SIZE] = {0};
 
 static char * s_pShaderText = NULL;
 
@@ -49,8 +48,13 @@ static uint32_t generateHashValue( const char *fname, const uint32_t size )
 
 void R_ClearShaderHashTable()
 {
-	memset(hashTable, 0, sizeof(hashTable));
-    s_pShaderText = NULL;
+	memset( s_hashTable, 0, sizeof(s_hashTable) );
+	if ( s_pShaderText != NULL )
+	{
+		// why can't i do this ?
+		// free( s_pShaderText );
+		s_pShaderText = NULL;
+	}
 }
 
 /*
@@ -81,9 +85,8 @@ most world construction surfaces.
 
 ===============
 */
-struct shader_s* R_FindShader( const char *name, int lightmapIndex, qboolean mipRawImage )
+struct shader_s * R_FindShader( const char *name, int lightmapIndex, qboolean mipRawImage )
 {
-
 	if ( name == NULL )
     {
         ri.Printf( PRINT_WARNING, "Find Shader: name = NULL\n");
@@ -116,13 +119,13 @@ struct shader_s* R_FindShader( const char *name, int lightmapIndex, qboolean mip
 	R_StripExtension(name, strippedName, sizeof(strippedName));
 
 
-    uint32_t hash = generateHashValue(strippedName, FILE_HASH_SIZE);
+    uint32_t hashVal = generateHashValue(strippedName, FILE_HASH_SIZE);
 
 	//
 	// see if the shader is already loaded
     //
 
-    struct shader_s* sh = hashTable[hash];
+    struct shader_s* sh = s_hashTable[hashVal];
     while ( sh )
     {
         // NOTE: if there was no shader or image available with the name strippedName
@@ -205,11 +208,8 @@ struct shader_s* R_FindShader( const char *name, int lightmapIndex, qboolean mip
 	    R_SetDefaultShader();
 	}
 
-
     return FinishShader();
 }
-
-
 
 
 
@@ -223,15 +223,14 @@ This should really only be used for explicit shaders, because there is no
 way to ask for different implicit lighting modes (vertex, lightmap, etc)
 ====================
 */
-qhandle_t RE_RegisterShader( const char *name )
+qhandle_t RE_RegisterShader( const char * pName )
 {
-
-	if ( strlen( name ) >= MAX_QPATH ) {
+	if ( strlen( pName ) >= MAX_QPATH ) {
 		ri.Printf(PRINT_ALL, "Shader name exceeds MAX_QPATH\n" );
 		return 0;
 	}
 
-    struct shader_s * sh = R_FindShader( name, LIGHTMAP_2D, qtrue );
+    struct shader_s * sh = R_FindShader( pName, LIGHTMAP_2D, qtrue );
 
 	// we want to return 0 if the shader failed to
 	// load for some reason, but R_FindShader should
@@ -252,23 +251,22 @@ RE_RegisterShaderNoMip
 For menu graphics that should never be picmiped
 ====================
 */
-qhandle_t RE_RegisterShaderNoMip( const char *name )
+qhandle_t RE_RegisterShaderNoMip( const char * pName )
 {
 
-	if ( strlen( name ) >= MAX_QPATH ) {
+	if ( strlen( pName ) >= MAX_QPATH ) {
 		ri.Printf(PRINT_ALL, "Shader name exceeds MAX_QPATH\n" );
 		return 0;
 	}
 
     // ri.Printf(PRINT_ALL, " ShaderNoMip: %s \n", name );
 
-	struct shader_s * sh = R_FindShader( name, LIGHTMAP_2D, qfalse );
+	struct shader_s * sh = R_FindShader( pName, LIGHTMAP_2D, qfalse );
 
-	// we want to return 0 if the shader failed to
-	// load for some reason, but R_FindShader should
-	// still keep a name allocated for it, so if
-	// something calls RE_RegisterShader again with
-	// the same name, we don't try looking for it again
+	// we want to return 0 if the shader failed to load for some reason,
+	// but R_FindShader should still keep a name allocated for it, so if
+	// something calls RE_RegisterShader again with the same name, 
+	// we don't try looking for it again
 	if ( sh->defaultShader ) {
 		return 0;
 	}
@@ -279,13 +277,12 @@ qhandle_t RE_RegisterShaderNoMip( const char *name )
 
 qhandle_t RE_RegisterShaderFromImage(const char *name, int lightmapIndex, image_t *image, qboolean mipRawImage)
 {
-
-	int hash = generateHashValue(name, FILE_HASH_SIZE);
+	uint32_t hashVal = generateHashValue(name, FILE_HASH_SIZE);
 
 	//
 	// see if the shader is already loaded
 	//
-    struct shader_s * sh = hashTable[hash];
+    struct shader_s * sh = s_hashTable[hashVal];
 	while(sh)
     {
 		// NOTE: if there was no shader or image available with the name strippedName
@@ -315,30 +312,29 @@ qhandle_t RE_RegisterShaderFromImage(const char *name, int lightmapIndex, image_
 
 
 
-static void BuildSingleLargeBuffer(char* buffers[], const int nShaderFiles, const int sum)
+static void BuildSingleLargeBuffer(char* ppBuffers[], const int nShaderFiles, const int sum)
 {
     ri.Printf( PRINT_ALL, " Concatenate %d shader files into a single large buffer. \n", nShaderFiles);
     
     // nShaderFiles*2
     // one for "\n", another for what ?
-    s_pShaderText = ri.Hunk_Alloc( sum + nShaderFiles*2, h_low );
+	char* pTextEnd = s_pShaderText = (char *) ri.Hunk_Alloc( sum + nShaderFiles*2, h_low );
 
-	memset( s_pShaderText, 0, sum + nShaderFiles*2 );
+	memset( pTextEnd, 0, sum + nShaderFiles*2 );
 
-    char* pTextEnd = s_pShaderText;
     
     int n;
     // free in reverse order, so the temp files are all dumped
     for ( n = nShaderFiles - 1; n >= 0 ; --n )
     {
-        if ( buffers[n] )
+        if ( ppBuffers[n] != NULL )
         {
-            strcat( pTextEnd, buffers[n] );
+            strcat( pTextEnd, ppBuffers[n] );
             strcat( pTextEnd, "\n" );
 
-            pTextEnd += strlen(buffers[n]) + 1;
+            pTextEnd += strlen( ppBuffers[n] ) + 1;
 
-            ri.FS_FreeFile( buffers[n] );
+            ri.FS_FreeFile( ppBuffers[n] );
         }
     }
 }
@@ -400,11 +396,12 @@ a single large text block that can be scanned for shader names
 =====================
 */
 
-#define	MAX_SHADER_FILES	4096
+
 void ScanAndLoadShaderFiles( void )
 {
+    #define	MAX_SHADER_FILES	4096
 
-	int32_t numShaderFiles = 0;
+	uint32_t numShaderFiles = 0;
 
 	// scan for shader files
 	char** ppShaderFiles = ri.FS_ListFiles( "scripts", ".shader", &numShaderFiles );
@@ -429,7 +426,7 @@ void ScanAndLoadShaderFiles( void )
     char * pBuffers[MAX_SHADER_FILES] = {0};
 
 
-	for (int i = 0; i < numShaderFiles; ++i )
+	for (uint32_t i = 0; i < numShaderFiles; ++i )
 	{
 		char filename[MAX_QPATH] = {0};
 
@@ -471,6 +468,7 @@ void ScanAndLoadShaderFiles( void )
 
     SetShaderTextHashTableSizes( s_pShaderText );
 
+    #undef	MAX_SHADER_FILES
 	return;
 }
 
@@ -500,7 +498,7 @@ void RE_RemapShader(const char *shaderName, const char *newShaderName, const cha
 	    int hash2 = generateHashValue(strippedName2, FILE_HASH_SIZE);
 
         // see if the shader is already loaded
-        struct shader_s* pSh = hashTable[hash2];
+        struct shader_s* pSh = s_hashTable[hash2];
 
         while ( pSh )
         {
@@ -545,7 +543,7 @@ void RE_RemapShader(const char *shaderName, const char *newShaderName, const cha
     char strippedName[MAX_QPATH];
 	R_StripExtension(shaderName, strippedName, sizeof(strippedName));
 	int hash = generateHashValue(strippedName, FILE_HASH_SIZE);
-    struct shader_s* sh = hashTable[hash];
+    struct shader_s* sh = s_hashTable[hash];
 	// remap all the shaders with the given name
 	// even tho they might have different lightmaps
 	
@@ -573,10 +571,9 @@ void RE_RemapShader(const char *shaderName, const char *newShaderName, const cha
 
 
 
-
-void R_UpdateShaderHashTable(struct shader_s* pNewShader)
+void R_UpdateShaderHashTable(struct shader_s * pNewShader)
 {
-	uint32_t hash = generateHashValue(pNewShader->name, FILE_HASH_SIZE);
-	pNewShader->next = hashTable[hash];
-	hashTable[hash] = pNewShader;
+	uint32_t hashVal = generateHashValue(pNewShader->name, FILE_HASH_SIZE);
+	pNewShader->next = s_hashTable[hashVal];
+	s_hashTable[hashVal] = pNewShader;
 }

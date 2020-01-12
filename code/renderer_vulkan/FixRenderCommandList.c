@@ -2,6 +2,7 @@
 #include "tr_shader.h"
 #include "tr_cmds.h"
 #include "R_SortDrawSurfs.h"
+#include "R_FindShader.h"
 #include "ref_import.h"
 
 
@@ -14,7 +15,7 @@ void R_ClearSortedShaders(void)
 }
 
 
-void R_DecomposeSort( unsigned sort, int *entityNum, shader_t **shader, 
+void R_DecomposeSort( unsigned sort, int *entityNum, struct shader_s **shader, 
 					 int *fogNum, int *dlightMap )
 {
 	*fogNum = ( sort >> QSORT_FOGNUM_SHIFT ) & 31;
@@ -166,21 +167,21 @@ typedef struct shader_s
 */
 
 
-shader_t* R_GeneratePermanentShader(shaderStage_t* pStgTab, shader_t* pSdr)
+struct shader_s * R_GeneratePermanentShader(struct shaderStage_s * pStgTab, struct shader_s * const pSdr)
 {
 	
-	int i;
+	unsigned int i;
 
 	if ( tr.numShaders == MAX_SHADERS )
-        {
+    {
 		ri.Printf( PRINT_WARNING, "WARNING: GeneratePermanentShader - MAX_SHADERS hit\n");
 		return tr.defaultShader;
 	}
 
-	shader_t* newShader = (shader_t*) ri.Hunk_Alloc( sizeof( shader_t ), h_low );
+	shader_t * newShader = (shader_t *) ri.Hunk_Alloc( sizeof( shader_t ), h_low );
         // value-like copy, copy assign construstor, 
         // both pointers point to the same memory location
-        *newShader = *pSdr;
+    *newShader = *pSdr;
 
 	if ( newShader->sort <= SS_OPAQUE )
 		newShader->fogPass = FP_EQUAL;
@@ -188,7 +189,7 @@ shader_t* R_GeneratePermanentShader(shaderStage_t* pStgTab, shader_t* pSdr)
 		newShader->fogPass = FP_LE;
 	
         // update index 
-        newShader->index = tr.numShaders;
+    newShader->index = tr.numShaders;
 	newShader->sortedIndex = tr.numShaders;
 
 	tr.shaders[ tr.numShaders ] = newShader;
@@ -228,15 +229,15 @@ shader_t* R_GeneratePermanentShader(shaderStage_t* pStgTab, shader_t* pSdr)
 */
 	}
 
-        // data already, sort it
-	R_SortNewShader(tr.shaders[ tr.numShaders - 1 ]);
+    // data already, sort it
+    R_SortNewShader(tr.shaders[ tr.numShaders - 1 ]);
     
-        R_UpdateShaderHashTable(newShader);
+    R_UpdateShaderHashTable(newShader);
 
-        //  ri.Printf( PRINT_WARNING, "index:%d, newindex:%d, %s\n",
-        //     newShader->index, newShader->sortedIndex, newShader->name);
+    //  ri.Printf( PRINT_WARNING, "index:%d, newindex:%d, %s\n",
+    //     newShader->index, newShader->sortedIndex, newShader->name);
 	
-        return newShader;
+    return newShader;
 }
 
 

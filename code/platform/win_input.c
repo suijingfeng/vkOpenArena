@@ -34,14 +34,14 @@ typedef struct {
 	int	window_center_x;
 	int	window_center_y;
 
-	qboolean	mouseActive;
-	qboolean	mouseInitialized;
-	qboolean	isAppActive;
+	qboolean mouseActive;
+	qboolean mouseInitialized;
+	qboolean isAppActive;
 } WinMouseVars_t;
 
 static WinMouseVars_t s_wmv;
 
-static cvar_t	*in_mouse;
+static cvar_t * in_mouse;
 
 
 /*
@@ -213,14 +213,13 @@ The window may have been destroyed and recreated
 between a deactivate and an activate.
 ===========
 */
-void IN_Activate (qboolean active)
+void IN_Activate ( qboolean active )
 {
-	s_wmv.isAppActive = active;
-
-	if ( !active )
+	if ( active == 0 )
 	{
 		IN_DeactivateMouse();
 	}
+	s_wmv.isAppActive = active;
 }
 
 

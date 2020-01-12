@@ -14,28 +14,32 @@
 #include "matrix_multiplication.h"
 
 
-static const float s_Identity3x3[3][3] = {
+static const float sc_Identity3x3[3][3] = {
     { 1.0f, 0.0f, 0.0f },
     { 0.0f, 1.0f, 0.0f },
     { 0.0f, 0.0f, 1.0f }
 };
 
-static const float s_Identity4x4[16] = {
+static const float sc_Identity4x4[16] = {
     1.0f, 0.0f, 0.0f, 0.0f,
     0.0f, 1.0f, 0.0f, 0.0f,
     0.0f, 0.0f, 1.0f, 0.0f,
     0.0f, 0.0f, 0.0f, 1.0f
 };
 
+void Mat3x3Identity(float pMat[3][3])
+{
+	memcpy(pMat, sc_Identity3x3, 36);
+}
 
 void Mat4Identity( float out[16] )
 {
-    memcpy(out, s_Identity4x4, 64);
+    memcpy(out, sc_Identity4x4, 64);
 }
 
 void Mat4Translation( float vec[3], float out[16] )
 {
-    memcpy(out, s_Identity4x4, 64);
+    memcpy(out, sc_Identity4x4, 64);
 
     out[12] = vec[0];
     out[13] = vec[1];
@@ -104,13 +108,11 @@ void MatrixMultiply4x4_SSE(const float A[16], const float B[16], float out[16])
 
 void Mat4Transform( const float in1[16], const float in2[4], float out[4] )
 {
-    // 16 mult, 12 plus
-
     float a = in2[0];
     float b = in2[1];
     float c = in2[2];
     float d = in2[3];
-
+	// 16 mult, 12 plus
     out[0] = in1[0] * a + in1[4] * b + in1[ 8] * c + in1[12] * d;
     out[1] = in1[1] * a + in1[5] * b + in1[ 9] * c + in1[13] * d;
     out[2] = in1[2] * a + in1[6] * b + in1[10] * c + in1[14] * d;
@@ -118,7 +120,7 @@ void Mat4Transform( const float in1[16], const float in2[4], float out[4] )
 }
 
 
-void Vec3Transform(const float Mat[16], const float v[3], float out[3])
+void Vec3Transform( const float Mat[16], const float v[3], float out[3] )
 {
     float x = v[0];
     float y = v[1];
@@ -179,16 +181,10 @@ void Vec4Transform_SSE( const float A[16], float v[4], float out[4] )
 }
 */
 
-void Mat3x3Identity( float pMat[3][3] )
-{
-    memcpy(pMat, s_Identity3x3, 36);
-}
 
 
 void TransformModelToClip( const float src[3], const float* pMatModel, const float* pMatProj, float eye[4], float dst[4])
 {
-
-
     // 4 * ( 4 float mul + 3 float add )
     for (unsigned int i = 0 ; i < 4 ; ++i )
     {
