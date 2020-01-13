@@ -288,14 +288,12 @@ LRESULT WINAPI MainWndProc( HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam )
 		break;
 
 	case WM_ACTIVATE:
-		{
-			int fActive = LOWORD(wParam);
-			int fMinimized = (BOOL) HIWORD(wParam);
+	{
+		int fActive = LOWORD(wParam);
+		int fMinimized = (BOOL) HIWORD(wParam);
 
-			VID_AppActivate( fActive != WA_INACTIVE, fMinimized);
-
-		}
-		break;
+		VID_AppActivate( fActive != WA_INACTIVE, fMinimized);
+	}break;
 
 	case WM_MOVE:
 	{
@@ -319,8 +317,8 @@ LRESULT WINAPI MainWndProc( HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam )
 		}
 	} break;
 
-// this is complicated because Win32 seems to pack multiple mouse events into
-// one update sometimes, so we always check all states and look for events
+	// this is complicated because Win32 seems to pack multiple mouse events into
+	// one update sometimes, so we always check all states and look for events
 	case WM_LBUTTONDOWN:
 	case WM_LBUTTONUP:
 	case WM_RBUTTONDOWN:

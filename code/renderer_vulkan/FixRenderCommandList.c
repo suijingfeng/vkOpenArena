@@ -188,7 +188,7 @@ struct shader_s * R_GeneratePermanentShader(struct shaderStage_s * pStgTab, stru
 	else if ( newShader->contentFlags & CONTENTS_FOG )
 		newShader->fogPass = FP_LE;
 	
-        // update index 
+    // update index 
     newShader->index = tr.numShaders;
 	newShader->sortedIndex = tr.numShaders;
 
@@ -198,14 +198,14 @@ struct shader_s * R_GeneratePermanentShader(struct shaderStage_s * pStgTab, stru
 	++tr.numShaders;
 
 	for ( i = 0 ; i < newShader->numUnfoggedPasses ; ++i )
-        {
+    {
 		if ( !pStgTab[i].active ) {
 			break;
 		}
         
         // update pointer, to point to a new memory location
         newShader->stages[i] = 
-            (shaderStage_t *) ri.Hunk_Alloc( sizeof(shaderStage_t), h_low );
+            (struct shaderStage_s *) ri.Hunk_Alloc( sizeof( struct shaderStage_s ), h_low );
         
         // struct assign, give it a new value
         // *(newShader->stages[i]) = pStgTab[i];
@@ -249,13 +249,13 @@ A second parameter will cause it to print in sorted order
 */
 void listSortedShader_f (void)
 {
-	int i;
-	int count = tr.numShaders;
+	unsigned int i;
+	unsigned int count = tr.numShaders;
 
-        ri.Printf (PRINT_ALL, " -------- %d shaders --------\n\n", count);
+    ri.Printf (PRINT_ALL, " -------- %d shaders --------\n\n", count);
 
-	for ( i = 0 ; i < count ; i++ )
-        {
+	for ( i = 0 ; i < count ; ++i )
+    {
 		ri.Printf( PRINT_ALL, "%i ", L_SortedShaders[i]->numUnfoggedPasses );
 
 		if (L_SortedShaders[i]->lightmapIndex >= 0 )

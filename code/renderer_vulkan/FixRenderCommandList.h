@@ -9,7 +9,6 @@ void R_DecomposeSort( unsigned sort, int *entityNum, struct shader_s **shader,
 
 void R_ClearSortedShaders(void);
 
-
 void listSortedShader_f (void);
 
 #endif
