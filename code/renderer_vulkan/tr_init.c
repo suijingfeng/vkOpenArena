@@ -134,10 +134,10 @@ static void glConfig_FillString( void )
 void R_Init( void )
 {	
 
-	ri.Printf( PRINT_ALL, "----- R_Init -----\n" );
+    ri.Printf( PRINT_ALL, "----- R_Init -----\n" );
 
-	// clear all our internal state
-	memset( &tr, 0, sizeof( tr ) );
+    // clear all our internal state
+    memset( &tr, 0, sizeof( tr ) );
 
     R_ClearSortedShaders();
 

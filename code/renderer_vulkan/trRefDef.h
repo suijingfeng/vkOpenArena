@@ -5,7 +5,6 @@
 
 #include "../renderercommon/tr_types.h"
 
-
 #include "surface_type.h"
 
 
@@ -13,16 +12,16 @@
 // see QSORT_SHADERNUM_SHIFT
 
 typedef struct {
-	refEntity_t	e;
-
-	float		axisLength;		// compensate for non-normalized axis
-
-	qboolean	needDlights;	// true for bmodels that touch a dlight
-	qboolean	lightingCalculated;
-	vec3_t		lightDir;		// normalized direction towards light
-	vec3_t		ambientLight;	// color normalized to 0-255
-	unsigned char ambientLightRGBA[4]; // 32 bit rgba packed
-    vec3_t		directedLight;
+        refEntity_t e;
+        // compensate for non-normalized axis
+        float axisLength;	
+        // true for bmodels that touch a dlight
+        qboolean needDlights;
+        qboolean lightingCalculated;
+        float lightDir[3]; // normalized direction towards light
+        float ambientLight[3];	// color normalized to 0-255
+        unsigned char ambientLightRGBA[4]; // 32 bit rgba packed
+        float directedLight[3];
 } trRefEntity_t;
 
 
@@ -36,7 +35,7 @@ typedef struct trRefdef_s {
 
 	int x, y, width, height;
 	float fov_x, fov_y;
-	vec3_t vieworg;
+	float vieworg[3];
 	float viewaxis[3][3];		// transformation matrix
 
 	int time;

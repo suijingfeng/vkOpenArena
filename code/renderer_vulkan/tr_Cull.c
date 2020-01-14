@@ -89,7 +89,7 @@ int R_CullLocalPointAndRadius( vec3_t pt, float radius )
 */
 int R_CullPointAndRadius( vec3_t pt, float radius )
 {
-	int		i;
+	int i;
 	float	dist;
 	cplane_t	*frust;
 	qboolean mightBeClipped = qfalse;

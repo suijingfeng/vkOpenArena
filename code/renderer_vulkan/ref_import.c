@@ -3,7 +3,7 @@
 #include "render_export.h"
 
 
-refimport_t	ri;
+refimport_t ri;
 
 
 /*

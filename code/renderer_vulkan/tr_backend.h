@@ -6,14 +6,15 @@
 #include <stdint.h>
 
 typedef struct {
-	int	c_surfaces;
+    int c_surfaces;
     int c_shaders;
     int c_vertexes;
     int c_indexes;
     int c_totalIndexes;
-	int	c_dlightVertexes;
-	int	c_dlightIndexes;
-	int	msec;			// total msec for backend run
+    int c_dlightVertexes;
+    int c_dlightIndexes;
+    // total msec for backend run
+    int msec;
 } backEndCounters_t;
 
 
