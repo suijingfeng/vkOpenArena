@@ -316,22 +316,22 @@ static void R_RotateForViewer(void)
 R_MirrorPoint
 =================
 */
-static void R_MirrorPoint(vec3_t in, orientation_t *surface, orientation_t *camera, vec3_t out)
+static void R_MirrorPoint(float in[3], orientation_t *surface, orientation_t *camera, vec3_t out)
 {
-	int		i;
-	vec3_t	local;
-	vec3_t	transformed;
+    unsigned int i;
+    float local[3];
+    float transformed[3];
 
-	VectorSubtract( in, surface->origin, local );
+    VectorSubtract( in, surface->origin, local );
 
-	VectorClear( transformed );
-	for( i = 0 ; i < 3 ; i++ )
+    VectorClear( transformed );
+    for( i = 0 ; i < 3 ; ++i )
     {
-		float d = DotProduct(local, surface->axis[i]);
-		VectorMA( transformed, d, camera->axis[i], transformed );
-	}
+        float d = DotProduct(local, surface->axis[i]);
+        VectorMA( transformed, d, camera->axis[i], transformed );
+    }
 
-	VectorAdd( transformed, camera->origin, out );
+    VectorAdd( transformed, camera->origin, out );
 }
 
 
