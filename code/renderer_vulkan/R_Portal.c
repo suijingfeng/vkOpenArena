@@ -169,13 +169,14 @@ be moving and rotating.
 Returns qtrue if it should be mirrored
 =================
 */
-static qboolean R_GetPortalOrientations( drawSurf_t *drawSurf, int entityNum, 
-							 orientation_t *surface, orientation_t *camera,
-							 vec3_t pvsOrigin, qboolean *mirror )
+static qboolean R_GetPortalOrientations( 
+        drawSurf_t *drawSurf, int entityNum, 
+        orientation_t *surface, orientation_t *camera,
+        vec3_t pvsOrigin, qboolean *mirror )
 {
-	int			i;
-	cplane_t	originalPlane, plane;
-	vec3_t		transformed;
+    int i;
+	cplane_t originalPlane, plane;
+	vec3_t transformed;
 
 	// create plane axis for the portal we are seeing
 	R_PlaneForSurface( drawSurf->surType, &originalPlane );
@@ -285,7 +286,7 @@ static qboolean R_GetPortalOrientations( drawSurf_t *drawSurf, int entityNum,
 
 	//ri.Printf( PRINT_ALL, "Portal surface without a portal entity\n" );
 
-	return qfalse;
+    return qfalse;
 }
 
 /*

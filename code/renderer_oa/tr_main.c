@@ -318,33 +318,34 @@ R_MirrorPoint
 */
 static void R_MirrorPoint(float in[3], orientation_t *surface, orientation_t *camera, vec3_t out)
 {
-    unsigned int i;
     float local[3];
-    float transformed[3];
+    float transformed[3] = { 0 };
 
     VectorSubtract( in, surface->origin, local );
 
-    VectorClear( transformed );
-    for( i = 0 ; i < 3 ; ++i )
-    {
-        float d = DotProduct(local, surface->axis[i]);
-        VectorMA( transformed, d, camera->axis[i], transformed );
-    }
+    float d0 = DotProduct(local, surface->axis[0]);
+    float d1 = DotProduct(local, surface->axis[1]);
+    float d2 = DotProduct(local, surface->axis[2]);
+    
+    VectorMA( transformed, d0, camera->axis[0], transformed );
+    VectorMA( transformed, d1, camera->axis[1], transformed );
+    VectorMA( transformed, d2, camera->axis[2], transformed );
+    
 
     VectorAdd( transformed, camera->origin, out );
 }
 
 
-static void R_MirrorVector(vec3_t in, orientation_t *surface, orientation_t *camera, vec3_t out)
+static void R_MirrorVector(float in[3], orientation_t *surface, orientation_t *camera, vec3_t out)
 {
-	int	i;
+    unsigned int i;
 
     VectorClear( out );
-	for ( i = 0 ; i < 3 ; i++ )
+    for ( i = 0 ; i < 3 ; ++i )
     {
-		float d = DotProduct(in, surface->axis[i]);
-		VectorMA( out, d, camera->axis[i], out );
-	}
+        float d = DotProduct(in, surface->axis[i]);
+        VectorMA( out, d, camera->axis[i], out );
+    }
 }
 
 
@@ -766,8 +767,8 @@ R_MirrorViewBySurface: Returns qtrue if another view has been rendered
 
 static qboolean R_MirrorViewBySurface (drawSurf_t *drawSurf, int entityNum)
 {
-	vec4_t			clipDest[128];
-	orientation_t	surface, camera;
+    float clipDest[128][4];
+    orientation_t surface, camera;
 
 	// don't recursively mirror
 	if (tr.viewParms.isPortal) {
@@ -788,13 +789,14 @@ static qboolean R_MirrorViewBySurface (drawSurf_t *drawSurf, int entityNum)
 	viewParms_t oldParms = tr.viewParms;
 	viewParms_t newParms = tr.viewParms;
     
-	newParms.isPortal = qtrue;
-	if ( !R_GetPortalOrientations( drawSurf, entityNum, &surface, &camera, newParms.pvsOrigin, &newParms.isMirror ) )
+    newParms.isPortal = qtrue;
+    if ( !R_GetPortalOrientations( drawSurf, entityNum, &surface, &camera, newParms.pvsOrigin, &newParms.isMirror ) )
     {
-		return qfalse;		// bad portal, no portalentity
-	}
+        return qfalse;
+        // bad portal, no portalentity
+    }
 
-	R_MirrorPoint(oldParms.or.origin, &surface, &camera, newParms.or.origin );
+    R_MirrorPoint(oldParms.or.origin, &surface, &camera, newParms.or.origin );
 
 	VectorSubtract( ORIGIN, camera.axis[0], newParms.portalPlane.normal );
 	newParms.portalPlane.dist = DotProduct( camera.origin, newParms.portalPlane.normal );
