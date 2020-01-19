@@ -39,9 +39,9 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #include "RB_RenderDrawSurfList.h"
 // #include "vk_screenshot.h"
 
-static renderCommandList_t	BE_Commands;
+static renderCommandList_t BE_Commands;
 
-extern shaderCommands_t	tess;
+extern shaderCommands_t tess;
 /*
 ============
 R_GetCommandBuffer

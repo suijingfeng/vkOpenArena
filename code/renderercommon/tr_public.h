@@ -24,7 +24,7 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
 #include "tr_types.h"
 
-#define	REF_API_VERSION		8
+#define REF_API_VERSION         8
 
 //
 // these are the functions exported by the refresh module
@@ -191,4 +191,4 @@ typedef void (QDECL *GetRefAPI_t) (int apiVersion, const refimport_t * const rim
 void GetRefAPI(int apiVersion, const refimport_t * const rimp, refexport_t* const rexp);
 #endif
 
-#endif	// __TR_PUBLIC_H
+#endif
