@@ -71,33 +71,39 @@ WinVars_t glw_state;
 
 int WinSys_GetWinWidth(void)
 {
-        return glw_state.winWidth;
+    return glw_state.winWidth;
 }
 
 int WinSys_GetWinHeight(void)
 {
-        return glw_state.winHeight;
+    return glw_state.winHeight;
 }
 
 int WinSys_IsWinFullscreen(void)
 {
-        return glw_state.isFullScreen;
+    return glw_state.isFullScreen;
 }
 
 int WinSys_IsWinMinimized(void)
 {
-        return glw_state.isMinimized;
+    return glw_state.isMinimized;
 }
 
 int WinSys_IsWinLostFocused(void)
 {
-        return glw_state.isLostFocused;
+    return glw_state.isLostFocused;
 }
 
 void WinSys_UpdateFocusedStatus(int lost)
 {
-        glw_state.isLostFocused = lost;
+    glw_state.isLostFocused = lost;
 }
+
+unsigned int WinSys_GetNumberOfMonitor( void )
+{
+    return glw_state.monitorCount;
+}
+
 // 
 //   Properties and Atoms
 // A property is a collection of named, typed data. The window system has a set of predefined properties 

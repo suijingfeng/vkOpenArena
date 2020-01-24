@@ -40,49 +40,49 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
 typedef struct WinData_s {
 #if defined(_WIN32) || defined(_WIN64)
-	HWND		hWnd; // main window
-	HINSTANCE	hInstance;
-	OSVERSIONINFO	osversion;
+    HWND hWnd; // main window
+    HINSTANCE hInstance;
+    OSVERSIONINFO osversion;
 #elif defined(USDING_WAYLAND)
-	
-	struct wl_display * pDisplay;
-	struct wl_surface * hWnd;
-    
-	struct wl_registry *registry;
-	struct wl_compositor *compositor;
+
+    struct wl_display * pDisplay;
+    struct wl_surface * hWnd;
+
+    struct wl_registry *registry;
+    struct wl_compositor *compositor;
 
 #elif defined(USING_XCB)
-	xcb_connection_t *connection;
-	xcb_window_t hWnd;
-	xcb_window_t root;
+    xcb_connection_t *connection;
+    xcb_window_t hWnd;
+    xcb_window_t root;
 #elif defined(USING_XLIB)
-	Display* pDisplay;
-	Window  hWnd;
-	Window root;
+    Display* pDisplay;
+    Window  hWnd;
+    Window root;
 
-	int	randr_ext;
-	int	randr_active;
-	int	randr_gamma;
+    int randr_ext;
+    int randr_active;
+    int randr_gamma;
 #endif
-	int	monitorCount;
-	int	screenIdx;
-	int	desktop_x;
-	int	desktop_y;
-	int	winWidth;
-	int	winHeight;
-	int	desktopWidth;
-	int	desktopHeight;
-	int	isFullScreen;
-	int	isMinimized;
+    unsigned int monitorCount;
+    int	screenIdx;
+    int	desktop_x;
+    int	desktop_y;
+    int	winWidth;
+    int	winHeight;
+    int	desktopWidth;
+    int	desktopHeight;
+    int	isFullScreen;
+    int	isMinimized;
     int isLostFocused;
-	int	winStyle;
-	int	activeApp;
-	int	gammaSet;
+    int	winStyle;
+    int	activeApp;
+    int	gammaSet;
 
-	// when we get a windows message, we store the time off so keyboard processing
-	// can know the exact time of an event
+    // when we get a windows message, we store the time off so keyboard processing
+    // can know the exact time of an event
 
-	unsigned int sysMsgTime;
+    unsigned int sysMsgTime;
 } WinVars_t;
 
 
@@ -110,7 +110,7 @@ int WinSys_IsWinFullscreen(void);
 int WinSys_IsWinMinimized(void);
 int WinSys_IsWinLostFocused(void);
 void WinSys_UpdateFocusedStatus(int lost);
-
+unsigned int WinSys_GetNumberOfMonitor(void);
 
 void WinMinimize_f(void);
 

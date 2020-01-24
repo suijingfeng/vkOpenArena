@@ -65,39 +65,42 @@ void ( * _XRRSetCrtcGamma)( Display *dpy, RRCrtc crtc, XRRCrtcGamma *gamma );
 void ( * _XRRFreeGamma)( XRRCrtcGamma *gamma );
 
 
-static qboolean monitor_in_list( int x, int y, int w, int h, RROutput outputn, RRCrtc crtcn )
+static qboolean isMonitorInList( int x, int y, int w, int h, RROutput outputn, RRCrtc crtcn )
 {
-	int i;
+    unsigned int i;
 
-	for ( i = 0; i < glw_state.monitorCount; i++ )
-	{
-		if ( (monitors[i].x != x) || (monitors[i].y != y) )
-			continue;
-		if ( (monitors[i].w != w) || (monitors[i].h != h) )
-			continue;
-		if ( monitors[i].outputn != outputn )
-			continue;
-		if ( monitors[i].crtcn != crtcn )
-			continue;
+    unsigned int cntMonitor = WinSys_GetNumberOfMonitor();
 
-		return qtrue;
-	}
+    for ( i = 0; i < cntMonitor; ++i )
+    {
+        if ( (monitors[i].x != x) || (monitors[i].y != y) )
+            continue;
+        if ( (monitors[i].w != w) || (monitors[i].h != h) )
+            continue;
+        if ( monitors[i].outputn != outputn )
+            continue;
+        if ( monitors[i].crtcn != crtcn )
+            continue;
 
-	return qfalse;
+        return qtrue;
+    }
+
+    return qfalse;
 }
 
 
 void monitor_add( int x, int y, int w, int h, const char *name, RROutput outputn, RRCrtc crtcn, RRMode mode )
 {
-	monitor_t *m;
-	
-	if ( glw_state.monitorCount >= MAX_MONITORS )
-		return;
+    monitor_t * m;
+    unsigned int cntMonitor = WinSys_GetNumberOfMonitor();
 
-	if ( monitor_in_list( x, y, w, h, outputn, crtcn ) )
-		return;
+    if ( cntMonitor >= MAX_MONITORS )
+        return;
 
-	m = monitors + glw_state.monitorCount;
+    if ( isMonitorInList( x, y, w, h, outputn, crtcn ) )
+        return;
+
+    m = monitors + cntMonitor;
 
 	m->x = x; m->y = y;
 	m->w = w; m->h = h;
