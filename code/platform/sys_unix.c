@@ -58,7 +58,7 @@ qboolean IsStdinATTY(void)
 
 static const char* getHome(void)
 {
-	return getenv("HOME");
+    return getenv("HOME");
 }
 
 /**
@@ -84,16 +84,16 @@ static void Sys_ConcatXdgHomepathName(char* dest, size_t n)
  */
 static void Sys_SetXdgDataHomePath(char* dest, size_t n)
 {
-	const char* xdgDataPath = getenv("XDG_DATA_HOME");
-	dest[0] = '\0';
-    
-	if (xdgDataPath != NULL)
+    const char* xdgDataPath = getenv("XDG_DATA_HOME");
+    dest[0] = '\0';
+
+    if (xdgDataPath != NULL)
     {
-		Com_sprintf(dest, n, "%s/", xdgDataPath);
-		FS_CreatePath(dest);
-		Sys_ConcatXdgHomepathName(dest, n);
-		return;
-	}
+        Com_sprintf(dest, n, "%s/", xdgDataPath);
+        FS_CreatePath(dest);
+        Sys_ConcatXdgHomepathName(dest, n);
+        return;
+    }
     else
     {
         const char* homeFolder = getHome();
@@ -397,15 +397,15 @@ FILE *Sys_Mkfifo(const char *ospath)
 char *Sys_Cwd( void )
 {
     Com_Printf(" Sys_Cwd()\n");
-	static char cwd[MAX_OSPATH];
+    static char cwd[MAX_OSPATH];
 
-	char *result = getcwd( cwd, sizeof( cwd ) - 1 );
-	if( result != cwd )
-		return NULL;
+    char *result = getcwd( cwd, sizeof( cwd ) - 1 );
+    if( result != cwd )
+        return NULL;
 
-	cwd[MAX_OSPATH-1] = 0;
+    cwd[MAX_OSPATH-1] = 0;
 
-	return cwd;
+    return cwd;
 }
 
 /*
@@ -582,18 +582,18 @@ Sys_FreeFileList
 */
 void Sys_FreeFileList( char **list )
 {
-	int i;
+    int i;
 
-	if ( !list )
-		return;
+    if ( !list )
+        return;
 
-    
-	for ( i = 0 ; list[i] != NULL ; i++ )
+
+    for ( i = 0 ; list[i] != NULL ; i++ )
     {
-		Z_Free( (void *)list[i] ); //
-	}
+        Z_Free( (void *)list[i] ); //
+    }
 
-	Z_Free( (void *)list );
+    Z_Free( (void *)list );
 }
 
 /*

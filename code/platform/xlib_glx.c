@@ -325,8 +325,8 @@ void GLX_AscertainExtension( Display * pDpy )
 
 void GLX_QueryVersion( Display * pDpy )
 {
-// Upon success, major and minor are filled in with 
-// the major and minor versions of the extension implementation.
+    // Upon success, major and minor are filled in with 
+    // the major and minor versions of the extension implementation.
     int major;
     int minor;
 
