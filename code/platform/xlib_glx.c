@@ -239,11 +239,11 @@ to support indirect rendering.
 
 
 #define QGL_X11_PROCS \
-	GLE( XVisualInfo*, glXChooseVisual, Display *dpy, int screen, int *attribList ) \
-	GLE( GLXContext, glXCreateContext, Display *dpy, XVisualInfo *vis, GLXContext shareList, Bool direct ) \
-	GLE( void, glXDestroyContext, Display *dpy, GLXContext ctx ) \
-	GLE( Bool, glXMakeCurrent, Display *dpy, GLXDrawable drawable, GLXContext ctx) \
-	GLE( void, glXSwapBuffers, Display *dpy, GLXDrawable drawable ) \
+    GLE( XVisualInfo*, glXChooseVisual, Display *dpy, int screen, int *attribList ) \
+    GLE( GLXContext, glXCreateContext, Display *dpy, XVisualInfo *vis, GLXContext shareList, Bool direct ) \
+    GLE( void, glXDestroyContext, Display *dpy, GLXContext ctx ) \
+    GLE( Bool, glXMakeCurrent, Display *dpy, GLXDrawable drawable, GLXContext ctx) \
+    GLE( void, glXSwapBuffers, Display *dpy, GLXDrawable drawable ) \
     GLE( Bool, glXQueryExtension, Display * dpy, int * error_base, int * event_base) \
     GLE( Bool, glXQueryVersion, Display * dpy, int * major, int * minor) \
     GLE( const char *, glXQueryExtensionsString, Display * dpy, int screen) \
@@ -266,38 +266,40 @@ static GLXContext ctx_gl;
 
 void XSys_LoadOpenGL( void )
 {
-	if ( hGraphicLib == NULL )
-	{
-		hGraphicLib = dlopen( OPENGL_DRIVER_NAME, RTLD_NOW);
-		if(hGraphicLib) {
-			Com_Printf( " %s loaded. \n", OPENGL_DRIVER_NAME);
-		}
-		else
-		{
-			cvar_t* r_glDriver = Cvar_Get( "r_glDriver", "libGL.so", CVAR_ARCHIVE | CVAR_LATCH );
-			
-			dlopen( r_glDriver->string, RTLD_NOW);
+    if ( hGraphicLib == NULL )
+    {
+        hGraphicLib = dlopen( OPENGL_DRIVER_NAME, RTLD_NOW );
+        if (hGraphicLib)
+        {
+            Com_Printf( " %s loaded. \n", OPENGL_DRIVER_NAME);
+        }
+        else
+        {
+            cvar_t* r_glDriver = Cvar_Get( "r_glDriver", "libGL.so", CVAR_ARCHIVE | CVAR_LATCH );
 
-			if ( hGraphicLib == NULL ) {
-				Com_Error(ERR_FATAL, "Failed to load %s from /etc/ld.so.conf: %s\n",
-					r_glDriver->string, dlerror());
-			}
-			else
-			{
-				Com_Printf( " %s loaded. \n", r_glDriver->string);
-			}
-		}
-	}
+            hGraphicLib = dlopen( r_glDriver->string, RTLD_NOW);
 
-	// expand constants before stringifying them
-	// load the GLX funs
+            if ( hGraphicLib == NULL )
+            {
+                Com_Error(ERR_FATAL, "Failed to load %s from /etc/ld.so.conf: %s\n",
+                        r_glDriver->string, dlerror());
+            }
+            else
+            {
+                Com_Printf( " %s loaded. \n", r_glDriver->string);
+            }
+        }
+    }
+
+    // expand constants before stringifying them
+    // load the GLX funs
 #define GLE( ret, name, ... ) \
-	q##name = dlsym(hGraphicLib, #name ); \
-	if ( !q##name ) { \
-		Com_Error(ERR_FATAL, "Error resolving glx core functions\n"); \
-	}
-	
-	QGL_X11_PROCS;
+    q##name = dlsym(hGraphicLib, #name ); \
+    if ( !q##name ) { \
+        Com_Error(ERR_FATAL, "Error resolving glx core functions\n"); \
+    }
+
+    QGL_X11_PROCS;
 #undef GLE
 }
 
@@ -374,8 +376,8 @@ const char * GLX_QueryServerString( Display * pDpy, int screen)
 
     return ret1;
 }
-/*
 
+/*
 		{
 			if ( Q_stricmp( r_glDriver->string, OPENGL_DRIVER_NAME ) != 0 )
 			{
@@ -423,8 +425,8 @@ void XSys_UnloadOpenGL(void)
 	}
 
     #define GLE( ret, name, ... ) \
-	q##name = NULL; \
-	
+	q##name = NULL;
+
 	QGL_X11_PROCS;
     #undef GLE
 
@@ -493,7 +495,6 @@ XVisualInfo * GetXVisualPtrWrapper(void)
 				attrib[2], attrib[4], attrib[6], attrib[10], attrib[12]);
 		// then, Create a colormap that can be used with the selected visual. 
 		return pRet;
-
 	}
 	else
 	{
@@ -526,7 +527,8 @@ void XSys_CreateContextForGL( XVisualInfo * pVisinfo )
         //            to the graphics system if possible (True) or through the X server (False).
                 
 	ctx_gl = qglXCreateContext( glw_state.pDisplay, pVisinfo, NULL, True );
-	if( ctx_gl ) {
+	if( ctx_gl )
+	{
 		Com_Printf( " Context Created for GL. \n");
 	}
 }
@@ -554,11 +556,10 @@ void XSys_ClearCurrentContextForGL(void)
 */
 void WinSys_EndFrame( void )
 {
-	// don't flip if drawing to front buffer
-	// dont compare every frame, just draw to back buffer
-	// what's the bad doing this ?
-	// if ( Q_stricmp( r_drawBuffer->string, "GL_FRONT" ) != 0 )
-
+    // don't flip if drawing to front buffer
+    // dont compare every frame, just draw to back buffer
+    // what's the bad doing this ?
+    // if ( Q_stricmp( r_drawBuffer->string, "GL_FRONT" ) != 0 )
 
     // For drawables that are double buffered, the contents of the back buffer 
     // can be made potentially visible ( become the contents of the front buffer) 
@@ -569,8 +570,7 @@ void WinSys_EndFrame( void )
     // swapping has completed, typically during vertical retrace of the display 
     // monitor.
     //
-	qglXSwapBuffers( glw_state.pDisplay, glw_state.hWnd );
-
+    qglXSwapBuffers( glw_state.pDisplay, glw_state.hWnd );
 }
 
 //////////////////////////////////////////////////////////////////////////////////////////////////

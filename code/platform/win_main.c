@@ -50,9 +50,9 @@ Show the early console as an error dialog
 */
 void QDECL Sys_Error( const char * error, ... )
 {
-	va_list		argptr;
-	char		text[4096];
-        MSG        msg;
+	va_list argptr;
+	char text[4096];
+        MSG msg;
 
 	va_start (argptr, error);
 	vsprintf (text, error, argptr);

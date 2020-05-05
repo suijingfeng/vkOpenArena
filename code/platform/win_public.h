@@ -19,7 +19,8 @@ along with Foobar; if not, write to the Free Software
 Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 ===========================================================================
 */
-// win_public.h: OS-specific Quake3 header file
+
+// win_public.h: OS/window system dependent header file
 
 #ifndef WIN_PUBLIC_H_
 #define WIN_PUBLIC_H_
@@ -65,19 +66,19 @@ typedef struct WinData_s {
     int randr_gamma;
 #endif
     unsigned int monitorCount;
-    int	screenIdx;
-    int	desktop_x;
-    int	desktop_y;
-    int	winWidth;
-    int	winHeight;
-    int	desktopWidth;
-    int	desktopHeight;
-    int	isFullScreen;
-    int	isMinimized;
+    int screenIdx;
+    int desktop_x;
+    int desktop_y;
+    int winWidth;
+    int winHeight;
+    int desktopWidth;
+    int desktopHeight;
+    int isFullScreen;
+    int isMinimized;
     int isLostFocused;
-    int	winStyle;
-    int	activeApp;
-    int	gammaSet;
+    int winStyle;
+    int activeApp;
+    int gammaSet;
 
     // when we get a windows message, we store the time off so keyboard processing
     // can know the exact time of an event
