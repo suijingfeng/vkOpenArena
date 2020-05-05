@@ -468,77 +468,77 @@ type 2: directx
 */
 void WinSys_Init(void ** pCfg, int type)
 {
-	Com_Printf( "... Window System Specific Init ...\n" );
+    Com_Printf( "... Window System Specific Init ...\n" );
 
-	r_fullscreen = Cvar_Get( "r_fullscreen", "0", CVAR_ARCHIVE | CVAR_LATCH);
-	r_mode = Cvar_Get( "r_mode", "-2", CVAR_ARCHIVE | CVAR_LATCH );
+    r_fullscreen = Cvar_Get( "r_fullscreen", "0", CVAR_ARCHIVE | CVAR_LATCH);
+    r_mode = Cvar_Get( "r_mode", "-2", CVAR_ARCHIVE | CVAR_LATCH );
 
-	r_colorbits = Cvar_Get( "r_colorbits", "32", CVAR_ARCHIVE | CVAR_LATCH );
-	r_stencilbits = Cvar_Get( "r_stencilbits", "8", CVAR_ARCHIVE | CVAR_LATCH );
-	r_depthbits = Cvar_Get( "r_depthbits", "24", CVAR_ARCHIVE | CVAR_LATCH );
+    r_colorbits = Cvar_Get( "r_colorbits", "32", CVAR_ARCHIVE | CVAR_LATCH );
+    r_stencilbits = Cvar_Get( "r_stencilbits", "8", CVAR_ARCHIVE | CVAR_LATCH );
+    r_depthbits = Cvar_Get( "r_depthbits", "24", CVAR_ARCHIVE | CVAR_LATCH );
 
-   	r_swapInterval = Cvar_Get( "r_swapInterval", "0", CVAR_ARCHIVE );
+    r_swapInterval = Cvar_Get( "r_swapInterval", "0", CVAR_ARCHIVE );
 
-	// r_glDriver = Cvar_Get( "r_glDriver", "libGL.so.1", CVAR_ARCHIVE | CVAR_LATCH );
+    // r_glDriver = Cvar_Get( "r_glDriver", "libGL.so.1", CVAR_ARCHIVE | CVAR_LATCH );
 
-	r_allowResize = Cvar_Get( "r_allowResize", "0", CVAR_ARCHIVE | CVAR_LATCH );
-	
+    r_allowResize = Cvar_Get( "r_allowResize", "0", CVAR_ARCHIVE | CVAR_LATCH );
 
-	if ( r_swapInterval->integer )
-		setenv( "vblank_mode", "2", 1 );
-	else
-		setenv( "vblank_mode", "1", 1 );
 
-	WinSys_ConstructDislayModes();
-	
-	Cmd_AddCommand( "minimize", WinMinimize_f );
-	
-	*pCfg = &glw_state;
+    if ( r_swapInterval->integer )
+        setenv( "vblank_mode", "2", 1 );
+    else
+        setenv( "vblank_mode", "1", 1 );
 
-	glw_state.randr_ext = qfalse;
+    WinSys_ConstructDislayModes();
 
-	// set up our custom error handler for X failures
-	XSetErrorHandler( &qXErrorHandler );
+    Cmd_AddCommand( "minimize", WinMinimize_f );
 
-	// To open a connection to the X server that controls a display
-	// char *display_name: Specifies the hardware display name, 
-	// which determines the display and communications domain to be used. 
-	// On a POSIX-conformant system, if the display_name is NULL, 
-	// it defaults to the value of the DISPLAY environment variable.
-	//
-	// The encoding and interpretation of the display name is implementation dependent.
-	// Strings in the Host Portable Character Encoding are supported; support for other
-	// characters is implementation dependent. On POSIX-conformant systems, the display
-	// name or DISPLAY environment variable can be a string in the format:
-	//
-	// hostname:number.screen_number
-	//
-	// hostname: Specifies the name of the host machine on which the display is physically attached.
-	// You follow the hostname with either a single colon (:) or a double colon (::). 
-	//
-	// number : Specifies the number of the display server on that host machine. You may optionally 
-	// follow this display number with a period (.). A single CPU can have more than one display. 
-	// Multiple displays are usually numbered starting with zero. 
-	
-	glw_state.pDisplay = XOpenDisplay( NULL );
+    *pCfg = &glw_state;
 
-	if ( glw_state.pDisplay == NULL )
-	{
-		Com_Error(ERR_FATAL, " Couldn't open the X display. \n" );
-	}
+    glw_state.randr_ext = qfalse;
 
-	glw_state.screenIdx = DefaultScreen( glw_state.pDisplay );
-	glw_state.root = RootWindow( glw_state.pDisplay, glw_state.screenIdx );
+    // set up our custom error handler for X failures
+    XSetErrorHandler( &qXErrorHandler );
+
+    // To open a connection to the X server that controls a display
+    // char *display_name: Specifies the hardware display name, 
+    // which determines the display and communications domain to be used. 
+    // On a POSIX-conformant system, if the display_name is NULL, 
+    // it defaults to the value of the DISPLAY environment variable.
+    //
+    // The encoding and interpretation of the display name is implementation dependent.
+    // Strings in the Host Portable Character Encoding are supported; support for other
+    // characters is implementation dependent. On POSIX-conformant systems, the display
+    // name or DISPLAY environment variable can be a string in the format:
+    //
+    // hostname:number.screen_number
+    //
+    // hostname: Specifies the name of the host machine on which the display is physically attached.
+    // You follow the hostname with either a single colon (:) or a double colon (::). 
+    //
+    // number : Specifies the number of the display server on that host machine. You may optionally 
+    // follow this display number with a period (.). A single CPU can have more than one display. 
+    // Multiple displays are usually numbered starting with zero. 
+
+    glw_state.pDisplay = XOpenDisplay( NULL );
+
+    if ( glw_state.pDisplay == NULL )
+    {
+        Com_Error(ERR_FATAL, " Couldn't open the X display. \n" );
+    }
+
+    glw_state.screenIdx = DefaultScreen( glw_state.pDisplay );
+    glw_state.root = RootWindow( glw_state.pDisplay, glw_state.screenIdx );
 
     Com_Printf( " Server Vendor: %s, release: %d \n ", 
             XServerVendor(glw_state.pDisplay), XVendorRelease(glw_state.pDisplay) );
 
 
 
-	if(type == 0)
-	{
-		// load libGL.so and initialize the function pointer.
-		XSys_LoadOpenGL( );
+    if(type == 0)
+    {
+        // load libGL.so and initialize the function pointer.
+        XSys_LoadOpenGL( );
 
         // To ascertain if the GLX extension is defined for an X server
         GLX_AscertainExtension( glw_state.pDisplay );
@@ -555,29 +555,29 @@ void WinSys_Init(void ** pCfg, int type)
 
         GLX_QueryServerString(  glw_state.pDisplay, glw_state.screenIdx  );
 
-	}
-	// create the window and set up the context
+    }
+    // create the window and set up the context
 
-	if( 0 != CreateWindowForRenderer( r_mode->integer, (r_fullscreen->integer != 0), type ))
-	{
-		Com_Error(ERR_FATAL, "Error setting given display modes\n" );
-	}
+    if( 0 != CreateWindowForRenderer( r_mode->integer, (r_fullscreen->integer != 0), type ))
+    {
+        Com_Error(ERR_FATAL, "Error setting given display modes\n" );
+    }
 
-	if(type == 0)
-	{
-		// load and initialize the specific OpenGL driver
-		XSys_SetCurrentContextForGL();
-	}
-	else if(type == 1)
-	{
-		// vulkan part
-	}
+    if(type == 0)
+    {
+        // load and initialize the specific OpenGL driver
+        XSys_SetCurrentContextForGL();
+    }
+    else if(type == 1)
+    {
+        // vulkan part
+    }
 
-	Key_ClearStates();
+    Key_ClearStates();
 
-	XSetInputFocus( glw_state.pDisplay, glw_state.hWnd, RevertToParent, CurrentTime );
+    XSetInputFocus( glw_state.pDisplay, glw_state.hWnd, RevertToParent, CurrentTime );
 
-	IN_Init();   // rcg08312005 moved into glimp.
+    IN_Init();   // rcg08312005 moved into glimp.
 }
 
 
@@ -589,47 +589,47 @@ void WinSys_Init(void ** pCfg, int type)
 */
 void WinSys_Shutdown(void)
 {
-	Cmd_RemoveCommand( "minimize" );
-	
-	WinSys_DestructDislayModes( );
-        IN_Shutdown( );
-	
-	if ( glw_state.pDisplay )
-	{
-		if ( glw_state.randr_gamma && glw_state.gammaSet )
-		{
-			RandR_RestoreGamma();
-			glw_state.gammaSet = qfalse;
-		}
+    Cmd_RemoveCommand( "minimize" );
 
-		RandR_RestoreMode();
+    WinSys_DestructDislayModes( );
+
+    IN_Shutdown( );
+
+    if ( glw_state.pDisplay )
+    {
+        if ( glw_state.randr_gamma && glw_state.gammaSet )
+        {
+            RandR_RestoreGamma();
+            glw_state.gammaSet = qfalse;
+        }
+
+        RandR_RestoreMode();
 
 
-		
-		XSys_ClearCurrentContextForGL();
+        XSys_ClearCurrentContextForGL();
 
-		if ( glw_state.hWnd )
-		{
-			XDestroyWindow( glw_state.pDisplay, glw_state.hWnd );
-			glw_state.hWnd = 0;
-		}
+        if ( glw_state.hWnd )
+        {
+            XDestroyWindow( glw_state.pDisplay, glw_state.hWnd );
+            glw_state.hWnd = 0;
+        }
 
-		// NOTE TTimo opening/closing the display should be necessary only once per run
-		// but it seems GL_Shutdown gets called in a lot of occasion
-		// in some cases, this XCloseDisplay is known to raise some X errors
-		// ( https://zerowing.idsoftware.com/bugzilla/show_bug.cgi?id=33 )
-		XCloseDisplay( glw_state.pDisplay );
-		glw_state.pDisplay = NULL;
-	}
+        // NOTE TTimo opening/closing the display should be necessary only once per run
+        // but it seems GL_Shutdown gets called in a lot of occasion
+        // in some cases, this XCloseDisplay is known to raise some X errors
+        // ( https://zerowing.idsoftware.com/bugzilla/show_bug.cgi?id=33 )
+        XCloseDisplay( glw_state.pDisplay );
+        glw_state.pDisplay = NULL;
+    }
 
-	RandR_Done();
+    RandR_Done();
 
-	unsetenv( "vblank_mode" );
-	
-	if ( glw_state.isFullScreen )
-	{
-		glw_state.isFullScreen = qfalse;
-	}
+    unsetenv( "vblank_mode" );
 
-	XSys_UnloadOpenGL();
+    if ( glw_state.isFullScreen )
+    {
+        glw_state.isFullScreen = qfalse;
+    }
+
+    XSys_UnloadOpenGL();
 }

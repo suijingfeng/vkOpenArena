@@ -102,18 +102,18 @@ void monitor_add( int x, int y, int w, int h, const char *name, RROutput outputn
 
     m = monitors + cntMonitor;
 
-	m->x = x; m->y = y;
-	m->w = w; m->h = h;
+    m->x = x; m->y = y;
+    m->w = w; m->h = h;
 
-	Q_strncpyz( m->name, name, sizeof( m->name ) );
+    Q_strncpyz( m->name, name, sizeof( m->name ) );
 
-	m->outputn = outputn;
-	m->crtcn = crtcn;
+    m->outputn = outputn;
+    m->crtcn = crtcn;
 
-	m->curMode = mode;
-	m->oldMode = mode;
+    m->curMode = mode;
+    m->oldMode = mode;
 
-	glw_state.monitorCount++;
+    glw_state.monitorCount++;
 }
 
 

@@ -167,14 +167,12 @@ void WinSys_Init(void ** pContext, int type)
     }
     else
     {
-
-
-		R_GetDisplayMode(r_mode->integer, &width, &height);
+        R_GetDisplayMode(r_mode->integer, &width, &height);
 
        	// r_mode->integer = R_GetModeInfo(&width, &height,
         //        r_mode->integer, s_xcb_win.desktopWidth, s_xcb_win.desktopHeight);
         // width = 1280;
-	    // height = 720;
+        // height = 720;
     }
     
     // R_SetWinMode(r_mode->integer, 640, 480, 60);
@@ -211,7 +209,7 @@ void WinSys_Init(void ** pContext, int type)
 
     if(r_fullscreen->integer)
     {
-    xcb_create_window( s_xcb_win.connection, 
+        xcb_create_window( s_xcb_win.connection, 
             XCB_COPY_FROM_PARENT, 
             s_xcb_win.hWnd, 
             pScreen->root,
@@ -219,12 +217,10 @@ void WinSys_Init(void ** pContext, int type)
             XCB_WINDOW_CLASS_INPUT_OUTPUT,
             pScreen->root_visual,
             value_mask, value_list);
-        
-
     }
     else
     {
-    xcb_create_window( s_xcb_win.connection, 
+        xcb_create_window( s_xcb_win.connection, 
             XCB_COPY_FROM_PARENT, 
             s_xcb_win.hWnd, 
             pScreen->root,
@@ -299,7 +295,6 @@ void WinSys_Shutdown(void)
 
     WinSys_DestructDislayModes( );
 
-
     Com_Printf(" Window subsystem destroyed. \n");
 }
 
@@ -314,8 +309,6 @@ void WinSys_SetGamma(unsigned char red[256], unsigned char green[256], unsigned 
 {
     Com_Printf(" WinSys_SetGamma: Not Implemented Now. \n");
 }
-
-
 
 
 
