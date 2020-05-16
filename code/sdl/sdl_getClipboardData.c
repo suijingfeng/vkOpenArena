@@ -1,9 +1,5 @@
 
-#ifdef _WIN32
-	#include "../SDL2/include/SDL.h"
-#else
-	#include <SDL2/SDL.h>
-#endif
+#include "../SDL2/include/SDL.h"
 #include "../qcommon/q_shared.h"
 #include "../qcommon/qcommon.h"
 
