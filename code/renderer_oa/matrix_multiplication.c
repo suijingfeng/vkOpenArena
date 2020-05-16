@@ -13,11 +13,13 @@
 #include <xmmintrin.h>
 #endif
 
+
 static const float s_Identity3x3[3][3] = {
     { 1.0f, 0.0f, 0.0f },
     { 0.0f, 1.0f, 0.0f },
     { 0.0f, 0.0f, 1.0f }
 };
+
 
 static const float s_Identity4x4[16] = {
     1.0f, 0.0f, 0.0f, 0.0f,
@@ -32,6 +34,7 @@ void Mat4Identity( float out[16] )
     memcpy(out, s_Identity4x4, 64);
 }
 
+
 void Mat4Translation( float vec[3], float out[16] )
 {
     memcpy(out, s_Identity4x4, 64);
@@ -40,7 +43,6 @@ void Mat4Translation( float vec[3], float out[16] )
     out[13] = vec[1];
     out[14] = vec[2];
 }
-
 
 
 void MatrixMultiply4x4(const float A[16], const float B[16], float out[16])
@@ -81,8 +83,8 @@ void MatrixMultiply4x4_SSE(const float A[16], const float B[16], float out[16])
     __m128 row3 = _mm_load_ps(&B[8]);
     __m128 row4 = _mm_load_ps(&B[12]);
     
-    int i;
-    for(i=0; i<4; i++)
+    unsigned int i;
+    for(i=0; i<4; ++i)
     {
         __m128 brod1 = _mm_set1_ps(A[4*i    ]);
         __m128 brod2 = _mm_set1_ps(A[4*i + 1]);
@@ -123,10 +125,10 @@ void Vec4Transform_SSE( const float A[16], float v[4], float out[4] )
 
     __m128 x = _mm_load_ps(v);
     //   16 mult, 12 plus
-	//out[0] = A[0] * x[0] + A[4] * x[1] + A[ 8] * x[2] + A[12] * x[3];
-	//out[1] = A[1] * x[0] + A[5] * x[1] + A[ 9] * x[2] + A[13] * x[3];
-	//out[2] = A[2] * x[0] + A[6] * x[1] + A[10] * x[2] + A[14] * x[3];
-	//out[3] = A[3] * x[0] + A[7] * x[1] + A[11] * x[2] + A[15] * x[3];
+    //out[0] = A[0] * x[0] + A[4] * x[1] + A[ 8] * x[2] + A[12] * x[3];
+    //out[1] = A[1] * x[0] + A[5] * x[1] + A[ 9] * x[2] + A[13] * x[3];
+    //out[2] = A[2] * x[0] + A[6] * x[1] + A[10] * x[2] + A[14] * x[3];
+    //out[3] = A[3] * x[0] + A[7] * x[1] + A[11] * x[2] + A[15] * x[3];
     
     // 4 mult + 3 plus + 4 broadcast + 8 load (4 _mm_set1_ps + 4 _mm_set1_ps)
     // + 1 store
@@ -138,9 +140,10 @@ void Vec4Transform_SSE( const float A[16], float v[4], float out[4] )
     _mm_store_ps(out, _mm_add_ps( _mm_add_ps( r1, r2 ), _mm_add_ps( r3, r4 ) ));
 }
 
-void TransformModelToClip_SSE( const float src[3], const float pMatModel[16], const float pMatProj[16], float dst[4] )
+void TransformModelToClip_SSE( const float src[3], const float pMatModel[16], 
+		const float pMatProj[16], float dst[4] )
 {
-	float AugSrc[4]	= {src[0], src[1], src[2], 1.0f};
+    float AugSrc[4] = {src[0], src[1], src[2], 1.0f};
 
 
     __m128 row1 = _mm_load_ps(&pMatProj[0]);
@@ -218,10 +221,10 @@ void Mat4Transform( const float in1[16], const float in2[4], float out[4] )
     float c = in2[2];
     float d = in2[3];
 
-	out[0] = in1[0] * a + in1[4] * b + in1[ 8] * c + in1[12] * d;
-	out[1] = in1[1] * a + in1[5] * b + in1[ 9] * c + in1[13] * d;
-	out[2] = in1[2] * a + in1[6] * b + in1[10] * c + in1[14] * d;
-	out[3] = in1[3] * a + in1[7] * b + in1[11] * c + in1[15] * d;
+    out[0] = in1[0] * a + in1[4] * b + in1[ 8] * c + in1[12] * d;
+    out[1] = in1[1] * a + in1[5] * b + in1[ 9] * c + in1[13] * d;
+    out[2] = in1[2] * a + in1[6] * b + in1[10] * c + in1[14] * d;
+    out[3] = in1[3] * a + in1[7] * b + in1[11] * c + in1[15] * d;
 }
 
 
@@ -231,9 +234,9 @@ void Vec3Transform(const float Mat[16], const float v[3], float out[3])
     float y = v[1];
     float z = v[2];
     
-	out[0] = Mat[0] * x + Mat[4] * y + Mat[ 8] * z + Mat[12];
-	out[1] = Mat[1] * x + Mat[5] * y + Mat[ 9] * z + Mat[13];
-	out[2] = Mat[2] * x + Mat[6] * y + Mat[10] * z + Mat[14];
+    out[0] = Mat[0] * x + Mat[4] * y + Mat[ 8] * z + Mat[12];
+    out[1] = Mat[1] * x + Mat[5] * y + Mat[ 9] * z + Mat[13];
+    out[2] = Mat[2] * x + Mat[6] * y + Mat[10] * z + Mat[14];
 }
 
 
@@ -244,27 +247,29 @@ void Mat3x3Identity( float pMat[3][3] )
 }
 
 
-void TransformModelToClip( const float src[3], const float* pMatModel, const float* pMatProj, float eye[4], float dst[4])
+void TransformModelToClip( const float src[3], const float* pMatModel, 
+                           const float* pMatProj, float eye[4], float dst[4])
 {
-	int i;
+    unsigned int i;
 
-	for ( i = 0 ; i < 4 ; i++ )
+    for ( i = 0 ; i < 4 ; ++i )
     {
-		eye[i] = 
-			src[0] * pMatModel[ i + 0 * 4 ] +
-			src[1] * pMatModel[ i + 1 * 4 ] +
-			src[2] * pMatModel[ i + 2 * 4 ] +
-                 1 * pMatModel[ i + 3 * 4 ];
-	}
+        eye[i] = 
+                src[0] * pMatModel[ i + 0 * 4 ] +
+                src[1] * pMatModel[ i + 1 * 4 ] +
+                src[2] * pMatModel[ i + 2 * 4 ] +
+                1 * pMatModel[ i + 3 * 4 ];
+    }
 
-	for ( i = 0 ; i < 4 ; i++ )
+
+    for ( i = 0 ; i < 4 ; ++i )
     {
-		dst[i] = 
-			eye[0] * pMatProj[ i + 0 * 4 ] +
-			eye[1] * pMatProj[ i + 1 * 4 ] +
-			eye[2] * pMatProj[ i + 2 * 4 ] +
-			eye[3] * pMatProj[ i + 3 * 4 ];
-	}
+        dst[i] = 
+                eye[0] * pMatProj[ i + 0 * 4 ] +
+                eye[1] * pMatProj[ i + 1 * 4 ] +
+                eye[2] * pMatProj[ i + 2 * 4 ] +
+                eye[3] * pMatProj[ i + 3 * 4 ];
+    }
 }
 
 
@@ -274,16 +279,18 @@ void Mat4Copy( const float in[64], float out[16] )
     memcpy(out, in, 64);
 }
 
+
 void Mat3x3Copy( float dst[3][3], const float src[3][3] )
 {
     memcpy(dst, src, 36);
 }
 
+
 void VectorLerp( float a[3], float b[3], float lerp, float out[3])
 {
-	out[0] = a[0] + (b[0] - a[0]) * lerp;
-	out[1] = a[1] + (b[1] - a[1]) * lerp;
-	out[2] = a[2] + (b[2] - a[2]) * lerp;
+     out[0] = a[0] + (b[0] - a[0]) * lerp;
+     out[1] = a[1] + (b[1] - a[1]) * lerp;
+     out[2] = a[2] + (b[2] - a[2]) * lerp;
 }
 
 
