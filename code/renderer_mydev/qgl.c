@@ -195,70 +195,70 @@ void qglShutdown( qboolean unloadDLL )
 {
     ri.Printf( PRINT_ALL, "...shutting down QGL\n" );
 
-	qglAlphaFunc                 = NULL;
-	qglBegin                     = NULL;
-	qglBindTexture               = NULL;
-	qglBlendFunc                 = NULL;
-	qglClear                     = NULL;
-	qglClearColor                = NULL;
-	qglClipPlane                 = NULL;
-	qglColor3f                   = NULL;
-	qglColorMask                 = NULL;
-	qglColorPointer              = NULL;
-	qglCullFace                  = NULL;
-	qglDeleteTextures            = NULL;
-	qglDepthFunc                 = NULL;
-	qglDepthMask                 = NULL;
-	qglDepthRange                = NULL;
-	qglDisable                   = NULL;
-	qglDisableClientState        = NULL;
-	qglDrawBuffer                = NULL;
-	qglDrawElements              = NULL;
-	qglEnable                    = NULL;
-	qglEnableClientState         = NULL;
-	qglEnd                       = NULL;
-	qglFinish                    = NULL;
-	qglGetError                  = NULL;
-	qglGetIntegerv               = NULL;
-	qglGetString                 = NULL;
-	qglLineWidth                 = NULL;
-	qglLoadIdentity              = NULL;
-	qglLoadMatrixf               = NULL;
-	qglMatrixMode                = NULL;
-	qglOrtho                     = NULL;
-	qglPolygonMode               = NULL;
-	qglPolygonOffset             = NULL;
-	qglPopMatrix                 = NULL;
-	qglPushMatrix                = NULL;
-	qglReadPixels                = NULL;
-	qglScissor                   = NULL;
-	qglStencilFunc               = NULL;
-	qglStencilOp                 = NULL;
-	qglTexCoord2f                = NULL;
-	qglTexCoord2fv               = NULL;
-	qglTexCoordPointer           = NULL;
-	qglTexEnvf                   = NULL;
-	qglTexImage2D                = NULL;
-	qglTexParameterf             = NULL;
-	qglTexParameterfv            = NULL;
-	qglTexSubImage2D             = NULL;
-	qglVertex2f                  = NULL;
-	qglVertex3f                  = NULL;
-	qglVertex3fv                 = NULL;
-	qglVertexPointer             = NULL;
-	qglViewport                  = NULL;
-	qglTranslatef                = NULL;
+    qglAlphaFunc                 = NULL;
+    qglBegin                     = NULL;
+    qglBindTexture               = NULL;
+    qglBlendFunc                 = NULL;
+    qglClear                     = NULL;
+    qglClearColor                = NULL;
+    qglClipPlane                 = NULL;
+    qglColor3f                   = NULL;
+    qglColorMask                 = NULL;
+    qglColorPointer              = NULL;
+    qglCullFace                  = NULL;
+    qglDeleteTextures            = NULL;
+    qglDepthFunc                 = NULL;
+    qglDepthMask                 = NULL;
+    qglDepthRange                = NULL;
+    qglDisable                   = NULL;
+    qglDisableClientState        = NULL;
+    qglDrawBuffer                = NULL;
+    qglDrawElements              = NULL;
+    qglEnable                    = NULL;
+    qglEnableClientState         = NULL;
+    qglEnd                       = NULL;
+    qglFinish                    = NULL;
+    qglGetError                  = NULL;
+    qglGetIntegerv               = NULL;
+    qglGetString                 = NULL;
+    qglLineWidth                 = NULL;
+    qglLoadIdentity              = NULL;
+    qglLoadMatrixf               = NULL;
+    qglMatrixMode                = NULL;
+    qglOrtho                     = NULL;
+    qglPolygonMode               = NULL;
+    qglPolygonOffset             = NULL;
+    qglPopMatrix                 = NULL;
+    qglPushMatrix                = NULL;
+    qglReadPixels                = NULL;
+    qglScissor                   = NULL;
+    qglStencilFunc               = NULL;
+    qglStencilOp                 = NULL;
+    qglTexCoord2f                = NULL;
+    qglTexCoord2fv               = NULL;
+    qglTexCoordPointer           = NULL;
+    qglTexEnvf                   = NULL;
+    qglTexImage2D                = NULL;
+    qglTexParameterf             = NULL;
+    qglTexParameterfv            = NULL;
+    qglTexSubImage2D             = NULL;
+    qglVertex2f                  = NULL;
+    qglVertex3f                  = NULL;
+    qglVertex3fv                 = NULL;
+    qglVertexPointer             = NULL;
+    qglViewport                  = NULL;
+    qglTranslatef                = NULL;
 }
 
 
 
 static qboolean GLimp_HaveExtension(const char *ext)
 {
-	const char *ptr = Q_stristr( glConfig.extensions_string, ext );
-	if (ptr == NULL)
-		return qfalse;
-	ptr += strlen(ext);
-	return ((*ptr == ' ') || (*ptr == '\0'));  // verify it's complete string.
+    const char *ptr = Q_stristr( glConfig.extensions_string, ext );
+    if (ptr == NULL)
+        return qfalse;
+    ptr += strlen(ext);
+    return ((*ptr == ' ') || (*ptr == '\0'));  // verify it's complete string.
 }
 
 
@@ -277,204 +277,205 @@ static void* GL_GetProcAddressImpl( const char *symbol )
 */
 int qglInit( void )
 {
-	ri.Printf( PRINT_ALL, "...initializing QGL\n" );
-	const char *dllname = OPENGL_DLL_NAME;
-	if ( hinstOpenGL == NULL )
-	{
-		hinstOpenGL = Sys_LoadLibrary( dllname );
+    ri.Printf( PRINT_ALL, "...initializing QGL\n" );
+    const char *dllname = OPENGL_DLL_NAME;
+    if ( hinstOpenGL == NULL )
+    {
+        hinstOpenGL = Sys_LoadLibrary( dllname );
 
-		if ( hinstOpenGL == NULL )
-		{
-			ri.Error(ERR_FATAL, "LoadOpenGLDll: failed to load %s from  %s\n", dllname, Sys_LibraryError());
-			return qfalse;
-		}
-		else
-		{
-			ri.Printf(PRINT_ALL, "L oading %s successful. \n", dllname);
-		}
-	}
+        if ( hinstOpenGL == NULL )
+        {
+            ri.Error(ERR_FATAL, "LoadOpenGLDll: failed to load %s from  %s\n", dllname, Sys_LibraryError());
+            return qfalse;
+        }
+        else
+        {
+            ri.Printf(PRINT_ALL, "L oading %s successful. \n", dllname);
+        }
+    }
 
-	qglGetString            = GL_GetProcAddressImpl("glGetString");
+    qglGetString            = GL_GetProcAddressImpl("glGetString");
 
-	qglAlphaFunc		= GL_GetProcAddressImpl("glAlphaFunc");
-	qglBegin		= GL_GetProcAddressImpl("glBegin");
-	qglBindTexture          = GL_GetProcAddressImpl("glBindTexture");
-	qglBlendFunc            = GL_GetProcAddressImpl("glBlendFunc");
-	qglClear                = GL_GetProcAddressImpl("glClear");
-	qglClearColor           = GL_GetProcAddressImpl("glClearColor");
-	qglClipPlane            = GL_GetProcAddressImpl("glClipPlane");
-	qglColor3f              = GL_GetProcAddressImpl("glColor3f");
-	qglColorMask            = GL_GetProcAddressImpl("glColorMask");
-	qglColorPointer         = GL_GetProcAddressImpl("glColorPointer");
-	qglCullFace             = GL_GetProcAddressImpl("glCullFace");
-	qglDeleteTextures       = GL_GetProcAddressImpl("glDeleteTextures");
-	qglDepthFunc            = GL_GetProcAddressImpl("glDepthFunc");
-	qglDepthMask            = GL_GetProcAddressImpl("glDepthMask");
-	qglDepthRange           = GL_GetProcAddressImpl("glDepthRange");
-	qglDisable              = GL_GetProcAddressImpl("glDisable");
-	qglDisableClientState   = GL_GetProcAddressImpl("glDisableClientState");
-	qglDrawBuffer           = GL_GetProcAddressImpl("glDrawBuffer");
-	qglDrawElements         = GL_GetProcAddressImpl("glDrawElements");
-	qglEnable               = GL_GetProcAddressImpl("glEnable");
-	qglEnableClientState    = GL_GetProcAddressImpl("glEnableClientState");
-	qglEnd                  = GL_GetProcAddressImpl("glEnd");
-	qglFinish               = GL_GetProcAddressImpl("glFinish");
-	qglGetError             = GL_GetProcAddressImpl("glGetError");
-	qglGetIntegerv          = GL_GetProcAddressImpl("glGetIntegerv");
+    qglAlphaFunc            = GL_GetProcAddressImpl("glAlphaFunc");
+    qglBegin                = GL_GetProcAddressImpl("glBegin");
+    qglBindTexture          = GL_GetProcAddressImpl("glBindTexture");
+    qglBlendFunc            = GL_GetProcAddressImpl("glBlendFunc");
+    qglClear                = GL_GetProcAddressImpl("glClear");
+    qglClearColor           = GL_GetProcAddressImpl("glClearColor");
+    qglClipPlane            = GL_GetProcAddressImpl("glClipPlane");
+    qglColor3f              = GL_GetProcAddressImpl("glColor3f");
+    qglColorMask            = GL_GetProcAddressImpl("glColorMask");
+    qglColorPointer         = GL_GetProcAddressImpl("glColorPointer");
+    qglCullFace             = GL_GetProcAddressImpl("glCullFace");
+    qglDeleteTextures       = GL_GetProcAddressImpl("glDeleteTextures");
+    qglDepthFunc            = GL_GetProcAddressImpl("glDepthFunc");
+    qglDepthMask            = GL_GetProcAddressImpl("glDepthMask");
+    qglDepthRange           = GL_GetProcAddressImpl("glDepthRange");
+    qglDisable              = GL_GetProcAddressImpl("glDisable");
+    qglDisableClientState   = GL_GetProcAddressImpl("glDisableClientState");
+    qglDrawBuffer           = GL_GetProcAddressImpl("glDrawBuffer");
+    qglDrawElements         = GL_GetProcAddressImpl("glDrawElements");
+    qglEnable               = GL_GetProcAddressImpl("glEnable");
+    qglEnableClientState    = GL_GetProcAddressImpl("glEnableClientState");
+    qglEnd                  = GL_GetProcAddressImpl("glEnd");
+    qglFinish               = GL_GetProcAddressImpl("glFinish");
+    qglGetError             = GL_GetProcAddressImpl("glGetError");
+    qglGetIntegerv          = GL_GetProcAddressImpl("glGetIntegerv");
 
-	qglLineWidth            = GL_GetProcAddressImpl("glLineWidth");
-	qglLoadIdentity         = GL_GetProcAddressImpl("glLoadIdentity");
-	qglLoadMatrixf          = GL_GetProcAddressImpl("glLoadMatrixf");
-	qglMatrixMode           = GL_GetProcAddressImpl("glMatrixMode");
-	qglOrtho                = GL_GetProcAddressImpl("glOrtho");
-	qglPolygonMode          = GL_GetProcAddressImpl("glPolygonMode");
-	qglPolygonOffset        = GL_GetProcAddressImpl("glPolygonOffset");
-	qglPopMatrix            = GL_GetProcAddressImpl("glPopMatrix");
-	qglPushMatrix           = GL_GetProcAddressImpl("glPushMatrix");
-	qglReadPixels           = GL_GetProcAddressImpl("glReadPixels");
-	qglScissor              = GL_GetProcAddressImpl("glScissor");
-	qglStencilFunc          = GL_GetProcAddressImpl("glStencilFunc");
-	qglStencilOp            = GL_GetProcAddressImpl("glStencilOp");
-	qglTexCoord2f           = GL_GetProcAddressImpl("glTexCoord2f");
-	qglTexCoord2fv          = GL_GetProcAddressImpl("glTexCoord2fv");
-	qglTexCoordPointer      = GL_GetProcAddressImpl("glTexCoordPointer");
-	qglTexEnvf              = GL_GetProcAddressImpl("glTexEnvf");
-	qglTexImage2D           = GL_GetProcAddressImpl("glTexImage2D");
-	qglTexParameterf        = GL_GetProcAddressImpl("glTexParameterf");
-	qglTexParameterfv       = GL_GetProcAddressImpl("glTexParameterfv");
-	qglTexSubImage2D        = GL_GetProcAddressImpl("glTexSubImage2D");
-	qglVertex2f             = GL_GetProcAddressImpl("glVertex2f");
-	qglVertex3f             = GL_GetProcAddressImpl("glVertex3f");
-	qglVertex3fv            = GL_GetProcAddressImpl("glVertex3fv");
-	qglVertexPointer        = GL_GetProcAddressImpl("glVertexPointer");
-	qglViewport             = GL_GetProcAddressImpl("glViewport");
-	qglTranslatef           = GL_GetProcAddressImpl("glTranslatef");
+    qglLineWidth            = GL_GetProcAddressImpl("glLineWidth");
+    qglLoadIdentity         = GL_GetProcAddressImpl("glLoadIdentity");
+    qglLoadMatrixf          = GL_GetProcAddressImpl("glLoadMatrixf");
+    qglMatrixMode           = GL_GetProcAddressImpl("glMatrixMode");
+    qglOrtho                = GL_GetProcAddressImpl("glOrtho");
+    qglPolygonMode          = GL_GetProcAddressImpl("glPolygonMode");
+    qglPolygonOffset        = GL_GetProcAddressImpl("glPolygonOffset");
+    qglPopMatrix            = GL_GetProcAddressImpl("glPopMatrix");
+    qglPushMatrix           = GL_GetProcAddressImpl("glPushMatrix");
+    qglReadPixels           = GL_GetProcAddressImpl("glReadPixels");
+    qglScissor              = GL_GetProcAddressImpl("glScissor");
+    qglStencilFunc          = GL_GetProcAddressImpl("glStencilFunc");
+    qglStencilOp            = GL_GetProcAddressImpl("glStencilOp");
+    qglTexCoord2f           = GL_GetProcAddressImpl("glTexCoord2f");
+    qglTexCoord2fv          = GL_GetProcAddressImpl("glTexCoord2fv");
+    qglTexCoordPointer      = GL_GetProcAddressImpl("glTexCoordPointer");
+    qglTexEnvf              = GL_GetProcAddressImpl("glTexEnvf");
+    qglTexImage2D           = GL_GetProcAddressImpl("glTexImage2D");
+    qglTexParameterf        = GL_GetProcAddressImpl("glTexParameterf");
+    qglTexParameterfv       = GL_GetProcAddressImpl("glTexParameterfv");
+    qglTexSubImage2D        = GL_GetProcAddressImpl("glTexSubImage2D");
+    qglVertex2f             = GL_GetProcAddressImpl("glVertex2f");
+    qglVertex3f             = GL_GetProcAddressImpl("glVertex3f");
+    qglVertex3fv            = GL_GetProcAddressImpl("glVertex3fv");
+    qglVertexPointer        = GL_GetProcAddressImpl("glVertexPointer");
+    qglViewport             = GL_GetProcAddressImpl("glViewport");
+    qglTranslatef           = GL_GetProcAddressImpl("glTranslatef");
 
 
-	qglActiveTextureARB = NULL;
-	qglClientActiveTextureARB = NULL;
-	qglMultiTexCoord2fARB = NULL;
-	qglLockArraysEXT = NULL;
-	qglUnlockArraysEXT = NULL;
+    qglActiveTextureARB = NULL;
+    qglClientActiveTextureARB = NULL;
+    qglMultiTexCoord2fARB = NULL;
+    qglLockArraysEXT = NULL;
+    qglUnlockArraysEXT = NULL;
 
-	ri.Printf( PRINT_ALL,  "\n...Initializing OpenGL extensions\n" );
+    ri.Printf( PRINT_ALL,  "\n...Initializing OpenGL extensions\n" );
 
-	Q_strncpyz( glConfig.vendor_string, (char *) qglGetString (GL_VENDOR), sizeof( glConfig.vendor_string ) );
-	Q_strncpyz( glConfig.renderer_string, (char *) qglGetString (GL_RENDERER), sizeof( glConfig.renderer_string ) );
-	if (*glConfig.renderer_string && glConfig.renderer_string[strlen(glConfig.renderer_string) - 1] == '\n')
-		glConfig.renderer_string[strlen(glConfig.renderer_string) - 1] = 0;
-	Q_strncpyz( glConfig.version_string, (char *) qglGetString (GL_VERSION), sizeof( glConfig.version_string ) );
-	Q_strncpyz( glConfig.extensions_string, (char *)qglGetString(GL_EXTENSIONS), sizeof( glConfig.extensions_string ) );
+    Q_strncpyz( glConfig.vendor_string, (char *) qglGetString (GL_VENDOR), sizeof( glConfig.vendor_string ) );
+    Q_strncpyz( glConfig.renderer_string, (char *) qglGetString (GL_RENDERER), sizeof( glConfig.renderer_string ) );
+    if (*glConfig.renderer_string && glConfig.renderer_string[strlen(glConfig.renderer_string) - 1] == '\n')
+        glConfig.renderer_string[strlen(glConfig.renderer_string) - 1] = 0;
+    Q_strncpyz( glConfig.version_string, (char *) qglGetString (GL_VERSION), sizeof( glConfig.version_string ) );
+    Q_strncpyz( glConfig.extensions_string, (char *)qglGetString(GL_EXTENSIONS), sizeof( glConfig.extensions_string ) );
 
-	r_ext_max_anisotropy = ri.Cvar_Get( "r_ext_max_anisotropy", "2", CVAR_ARCHIVE | CVAR_LATCH );
-	r_ext_texture_filter_anisotropic = ri.Cvar_Get( "r_ext_texture_filter_anisotropic", "0", CVAR_ARCHIVE | CVAR_LATCH );
+    r_ext_max_anisotropy = ri.Cvar_Get( "r_ext_max_anisotropy", "2", CVAR_ARCHIVE | CVAR_LATCH );
+    r_ext_texture_filter_anisotropic = ri.Cvar_Get( "r_ext_texture_filter_anisotropic", "0", CVAR_ARCHIVE | CVAR_LATCH );
 
-	// GL_EXT_texture_env_add
-	glConfig.textureEnvAddAvailable = qfalse;
-	if ( GLimp_HaveExtension( "EXT_texture_env_add" ) )
-	{
-		if ( GLimp_HaveExtension( "GL_EXT_texture_env_add" ) )
-		{
-			glConfig.textureEnvAddAvailable = qtrue;
-			ri.Printf( PRINT_ALL, "...using GL_EXT_texture_env_add\n" );
-		}
-		else
-		{
-			glConfig.textureEnvAddAvailable = qfalse;
-			ri.Printf( PRINT_ALL, "...ignoring GL_EXT_texture_env_add\n" );
-		}
-	}
-	else
-	{
-		ri.Printf( PRINT_ALL, "...GL_EXT_texture_env_add not found\n" );
-	}
+    // GL_EXT_texture_env_add
+    glConfig.textureEnvAddAvailable = qfalse;
+    if ( GLimp_HaveExtension( "EXT_texture_env_add" ) )
+    {
+        if ( GLimp_HaveExtension( "GL_EXT_texture_env_add" ) )
+        {
+            glConfig.textureEnvAddAvailable = qtrue;
+            ri.Printf( PRINT_ALL, "...using GL_EXT_texture_env_add\n" );
+        }
+        else
+        {
+            glConfig.textureEnvAddAvailable = qfalse;
+            ri.Printf( PRINT_ALL, "...ignoring GL_EXT_texture_env_add\n" );
+        }
+    }
+    else
+    {
+        ri.Printf( PRINT_ALL, "...GL_EXT_texture_env_add not found\n" );
+    }
 
-	// GL_ARB_multitexture
-	qglMultiTexCoord2fARB = NULL;
-	qglActiveTextureARB = NULL;
-	qglClientActiveTextureARB = NULL;
-	if ( GLimp_HaveExtension( "GL_ARB_multitexture" ) )
-	{
-		qglMultiTexCoord2fARB = (void ( APIENTRYP ) (GLenum, GLfloat, GLfloat)) GL_GetProcAddressImpl( "glMultiTexCoord2fARB" );
-		qglActiveTextureARB = (void ( APIENTRYP ) (GLenum )) GL_GetProcAddressImpl( "glActiveTextureARB" );
-		qglClientActiveTextureARB = (void ( APIENTRYP ) (GLenum )) GL_GetProcAddressImpl( "glClientActiveTextureARB" );
+    // GL_ARB_multitexture
+    qglMultiTexCoord2fARB = NULL;
+    qglActiveTextureARB = NULL;
+    qglClientActiveTextureARB = NULL;
+    if ( GLimp_HaveExtension( "GL_ARB_multitexture" ) )
+    {
+        qglMultiTexCoord2fARB = (void ( APIENTRYP ) (GLenum, GLfloat, GLfloat)) GL_GetProcAddressImpl( "glMultiTexCoord2fARB" );
+        qglActiveTextureARB = (void ( APIENTRYP ) (GLenum )) GL_GetProcAddressImpl( "glActiveTextureARB" );
+        qglClientActiveTextureARB = (void ( APIENTRYP ) (GLenum )) GL_GetProcAddressImpl( "glClientActiveTextureARB" );
 
-		if ( qglActiveTextureARB )
-		{
-			GLint glint = 0;
-			qglGetIntegerv( GL_MAX_TEXTURE_SIZE, &glint );
-			glConfig.numTextureUnits = (int) glint;
-			if ( glConfig.numTextureUnits > 1 )
-			{
-				ri.Printf( PRINT_ALL, "...using GL_ARB_multitexture\n" );
-			}
-			else
-			{
-				qglMultiTexCoord2fARB = NULL;
-				qglActiveTextureARB = NULL;
-				qglClientActiveTextureARB = NULL;
-				ri.Printf( PRINT_ALL, "...not using GL_ARB_multitexture, < 2 texture units\n" );
-			}
-		}
-	}
-	else
-	{
-		ri.Printf( PRINT_ALL,  "...GL_ARB_multitexture not found\n" );
-	}
+        if ( qglActiveTextureARB )
+        {
+            GLint glint = 0;
+            qglGetIntegerv( GL_MAX_TEXTURE_SIZE, &glint );
+            glConfig.numTextureUnits = (int) glint;
+            if ( glConfig.numTextureUnits > 1 )
+            {
+                ri.Printf( PRINT_ALL, "...using GL_ARB_multitexture\n" );
+            }
+            else
+            {
+                qglMultiTexCoord2fARB = NULL;
+                qglActiveTextureARB = NULL;
+                qglClientActiveTextureARB = NULL;
+                ri.Printf( PRINT_ALL, "...not using GL_ARB_multitexture, < 2 texture units\n" );
+            }
+        }
+    }
+    else
+    {
+        ri.Printf( PRINT_ALL,  "...GL_ARB_multitexture not found\n" );
+    }
 
-	// GL_EXT_compiled_vertex_array
-	if ( GLimp_HaveExtension( "GL_EXT_compiled_vertex_array" ) )
-	{
-		ri.Printf( PRINT_ALL,  "...using GL_EXT_compiled_vertex_array\n" );
-		qglLockArraysEXT = ( void ( APIENTRYP )( GLint, GLint ) ) GL_GetProcAddressImpl( "glLockArraysEXT" );
-		qglUnlockArraysEXT = ( void ( APIENTRYP )( void ) ) GL_GetProcAddressImpl( "glUnlockArraysEXT" );
-		if (!qglLockArraysEXT || !qglUnlockArraysEXT)
-		{
-			ri.Error(ERR_FATAL, "bad getprocaddress");
-		}
-	}
-	else
-	{
-		ri.Printf( PRINT_ALL, "...GL_EXT_compiled_vertex_array not found\n" );
-	}
+    // GL_EXT_compiled_vertex_array
+    if ( GLimp_HaveExtension( "GL_EXT_compiled_vertex_array" ) )
+    {
+        ri.Printf( PRINT_ALL,  "...using GL_EXT_compiled_vertex_array\n" );
+        qglLockArraysEXT = ( void ( APIENTRYP )( GLint, GLint ) ) GL_GetProcAddressImpl( "glLockArraysEXT" );
+        qglUnlockArraysEXT = ( void ( APIENTRYP )( void ) ) GL_GetProcAddressImpl( "glUnlockArraysEXT" );
+        if (!qglLockArraysEXT || !qglUnlockArraysEXT)
+        {
+            ri.Error(ERR_FATAL, "bad getprocaddress");
+        }
+    }
+    else
+    {
+        ri.Printf( PRINT_ALL, "...GL_EXT_compiled_vertex_array not found\n" );
+    }
 
-	if ( GLimp_HaveExtension( "GL_EXT_texture_filter_anisotropic" ) )
-	{
-		if ( r_ext_texture_filter_anisotropic->integer )
-		{
-			int maxAnisotropy = 0;
+    if ( GLimp_HaveExtension( "GL_EXT_texture_filter_anisotropic" ) )
+    {
+        if ( r_ext_texture_filter_anisotropic->integer )
+        {
+            int maxAnisotropy = 0;
 
 #ifndef GL_MAX_TEXTURE_MAX_ANISOTROPY_EXT
 #define GL_MAX_TEXTURE_MAX_ANISOTROPY_EXT 0x84FF
 #endif
 
-			qglGetIntegerv( GL_MAX_TEXTURE_MAX_ANISOTROPY_EXT, (GLint *)&maxAnisotropy );
-			if ( maxAnisotropy <= 0 ) {
-				ri.Printf( PRINT_ALL, "...GL_EXT_texture_filter_anisotropic not properly supported!\n" );
-				maxAnisotropy = 0;
-			}
-			else
-			{
-				char target_string[11] = {0};
-				sprintf(target_string, "%d", maxAnisotropy);
-				ri.Printf( PRINT_ALL,  "...using GL_EXT_texture_filter_anisotropic (max: %i)\n", maxAnisotropy );
-				ri.Cvar_Set( "r_ext_max_anisotropy", target_string);
+            qglGetIntegerv( GL_MAX_TEXTURE_MAX_ANISOTROPY_EXT, (GLint *)&maxAnisotropy );
+            if ( maxAnisotropy <= 0 )
+            {
+                ri.Printf( PRINT_ALL, "...GL_EXT_texture_filter_anisotropic not properly supported!\n" );
+                maxAnisotropy = 0;
+            }
+            else
+            {
+                char target_string[11] = {0};
+                sprintf(target_string, "%d", maxAnisotropy);
+                ri.Printf( PRINT_ALL,  "...using GL_EXT_texture_filter_anisotropic (max: %i)\n", maxAnisotropy );
+                ri.Cvar_Set( "r_ext_max_anisotropy", target_string);
 
-			}
-		}
-	}
-	else
-	{
-		ri.Printf( PRINT_ALL, "...GL_EXT_texture_filter_anisotropic not found\n" );
-	}
+            }
+        }
+    }
+    else
+    {
+        ri.Printf( PRINT_ALL, "...GL_EXT_texture_filter_anisotropic not found\n" );
+    }
 
-	return qtrue;
+    return qtrue;
 }
 
 
 void qglDumb(void)
 {
-	ri.Printf( PRINT_ALL, "...qglDumb()... \n" );
+    ri.Printf( PRINT_ALL, "...qglDumb()... \n" );
 
 
 #define QGL_DUMB( a )       (void*)(&no ## a)

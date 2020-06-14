@@ -16,18 +16,20 @@ void R_ClearSortedShaders(void)
 
 
 void R_DecomposeSort( unsigned sort, int *entityNum, struct shader_s **shader, 
-					 int *fogNum, int *dlightMap )
+        int *fogNum, int *dlightMap )
 {
-	*fogNum = ( sort >> QSORT_FOGNUM_SHIFT ) & 31;
-	*shader = L_SortedShaders[ ( sort >> QSORT_SHADERNUM_SHIFT ) & (MAX_SHADERS-1) ];
-	*entityNum = ( sort >> QSORT_REFENTITYNUM_SHIFT ) & (MAX_MOD_KNOWN - 1);
-	*dlightMap = sort & 0x03;
+    *fogNum = ( sort >> QSORT_FOGNUM_SHIFT ) & 31;
+    *shader = L_SortedShaders[ ( sort >> QSORT_SHADERNUM_SHIFT ) & (MAX_SHADERS-1) ];
+    *entityNum = ( sort >> QSORT_REFENTITYNUM_SHIFT ) & (MAX_MOD_KNOWN - 1);
+    *dlightMap = sort & 0x03;
 }
 
 static unsigned int R_ComposeSort(int sortedIndex, int entityNum, int fogNum, int dlightMap )
 {
-    return ((sortedIndex << QSORT_SHADERNUM_SHIFT) | (entityNum << QSORT_REFENTITYNUM_SHIFT) | 
-                            ( fogNum << QSORT_FOGNUM_SHIFT ) | dlightMap);
+    return ( (sortedIndex << QSORT_SHADERNUM_SHIFT) | 
+             (entityNum << QSORT_REFENTITYNUM_SHIFT) | 
+             ( fogNum << QSORT_FOGNUM_SHIFT ) | 
+             dlightMap);
 }
 
 /*
@@ -66,7 +68,7 @@ static void FixRenderCommandList( int nShader )
 
             case RC_DRAW_SURFS:
             {
-                int i;
+                uint32_t i;
 
                 const drawSurfsCommand_t *ds_cmd = (const drawSurfsCommand_t *)pCmdTable;
                 const uint32_t nSurf = ds_cmd->numDrawSurfs;
@@ -124,31 +126,31 @@ Sets shader->sortedIndex
 */
 void R_SortNewShader( shader_t* pShader )
 {
-	int i;
-	float sort = pShader->sort;
+    int i;
+    float sort = pShader->sort;
 
-	for ( i = tr.numShaders - 2 ; i >= 0 ; --i )
+    for ( i = tr.numShaders - 2 ; i >= 0 ; --i )
+    {
+        // trival case
+        if ( L_SortedShaders[ i ]->sort <= sort )
         {
-                // trival case
-		if ( L_SortedShaders[ i ]->sort <= sort )
-                {
-			break;
-		}
+            break;
+        }
 
         // here is L_SortedShaders[ i ]->sort > sort
         // then all points one step back 
-		L_SortedShaders[i+1] = L_SortedShaders[i];
-		L_SortedShaders[i+1]->sortedIndex++;
-	}
+        L_SortedShaders[i+1] = L_SortedShaders[i];
+        L_SortedShaders[i+1]->sortedIndex++;
+    }
 
-        // find the position, i
+    // find the position, i
 
-	// Arnout: fix rendercommandlist
-	// https://zerowing.idsoftware.com/bugzilla/show_bug.cgi?id=493
-	FixRenderCommandList( i+1 );
+    // Arnout: fix rendercommandlist
+    // https://zerowing.idsoftware.com/bugzilla/show_bug.cgi?id=493
+    FixRenderCommandList( i+1 );
 
-	pShader->sortedIndex = i+1;
-	L_SortedShaders[i+1] = pShader;
+    pShader->sortedIndex = i+1;
+    L_SortedShaders[i+1] = pShader;
 }
 
 
@@ -169,40 +171,41 @@ typedef struct shader_s
 
 struct shader_s * R_GeneratePermanentShader(struct shaderStage_s * pStgTab, struct shader_s * const pSdr)
 {
-	
-	unsigned int i;
 
-	if ( tr.numShaders == MAX_SHADERS )
+    unsigned int i;
+
+    if ( tr.numShaders == MAX_SHADERS )
     {
-		ri.Printf( PRINT_WARNING, "WARNING: GeneratePermanentShader - MAX_SHADERS hit\n");
-		return tr.defaultShader;
-	}
+        ri.Printf( PRINT_WARNING, "WARNING: GeneratePermanentShader - MAX_SHADERS hit\n");
+        return tr.defaultShader;
+    }
 
-	shader_t * newShader = (shader_t *) ri.Hunk_Alloc( sizeof( shader_t ), h_low );
+    shader_t * newShader = (shader_t *) ri.Hunk_Alloc( sizeof( shader_t ), h_low );
         // value-like copy, copy assign construstor, 
         // both pointers point to the same memory location
     *newShader = *pSdr;
 
-	if ( newShader->sort <= SS_OPAQUE )
-		newShader->fogPass = FP_EQUAL;
-	else if ( newShader->contentFlags & CONTENTS_FOG )
-		newShader->fogPass = FP_LE;
-	
+    if ( newShader->sort <= SS_OPAQUE )
+        newShader->fogPass = FP_EQUAL;
+    else if ( newShader->contentFlags & CONTENTS_FOG )
+        newShader->fogPass = FP_LE;
+
     // update index 
     newShader->index = tr.numShaders;
-	newShader->sortedIndex = tr.numShaders;
+    newShader->sortedIndex = tr.numShaders;
 
-	tr.shaders[ tr.numShaders ] = newShader;
-	L_SortedShaders[ tr.numShaders ] = newShader;
+    tr.shaders[ tr.numShaders ] = newShader;
+    L_SortedShaders[ tr.numShaders ] = newShader;
 
-	++tr.numShaders;
+    ++tr.numShaders;
 
-	for ( i = 0 ; i < newShader->numUnfoggedPasses ; ++i )
+    for ( i = 0 ; i < newShader->numUnfoggedPasses ; ++i )
     {
-		if ( !pStgTab[i].active ) {
-			break;
-		}
-        
+        if ( !pStgTab[i].active )
+        {
+            break;
+        }
+
         // update pointer, to point to a new memory location
         newShader->stages[i] = 
             (struct shaderStage_s *) ri.Hunk_Alloc( sizeof( struct shaderStage_s ), h_low );
@@ -214,20 +217,19 @@ struct shader_s * R_GeneratePermanentShader(struct shaderStage_s * pStgTab, stru
 /*
         shaderStage_t* pSS = newShader->stages[i]
         uint32_t b;
-		for ( b = 0; b < NUM_TEXTURE_BUNDLES; ++b )
+        for ( b = 0; b < NUM_TEXTURE_BUNDLES; ++b )
         {
             textureBundle_t* pTM = &pSS->bundle[b];
 
-           
-			uint32_t size = pTM->numTexMods * sizeof( texModInfo_t );
+            uint32_t size = pTM->numTexMods * sizeof( texModInfo_t );
 
             // again, change the pointer to point another location
-			pTM->texMods = (texModInfo_t*) ri.Hunk_Alloc( size, h_low );
-			// copy old content to there
+            pTM->texMods = (texModInfo_t*) ri.Hunk_Alloc( size, h_low );
+            // copy old content to there
             memcpy( pTM->texMods, pStgTab[i].bundle[b].texMods, size );
-		}
+        }
 */
-	}
+    }
 
     // data already, sort it
     R_SortNewShader(tr.shaders[ tr.numShaders - 1 ]);
@@ -236,7 +238,7 @@ struct shader_s * R_GeneratePermanentShader(struct shaderStage_s * pStgTab, stru
 
     //  ri.Printf( PRINT_WARNING, "index:%d, newindex:%d, %s\n",
     //     newShader->index, newShader->sortedIndex, newShader->name);
-	
+
     return newShader;
 }
 
@@ -247,47 +249,47 @@ Dump information on all valid shaders to the console
 A second parameter will cause it to print in sorted order
 ===============
 */
-void listSortedShader_f (void)
+void listSortedShader_f(void)
 {
-	unsigned int i;
-	unsigned int count = tr.numShaders;
+    unsigned int i;
+    unsigned int count = tr.numShaders;
 
     ri.Printf (PRINT_ALL, " -------- %d shaders --------\n\n", count);
 
-	for ( i = 0 ; i < count ; ++i )
+    for ( i = 0 ; i < count ; ++i )
     {
-		ri.Printf( PRINT_ALL, "%i ", L_SortedShaders[i]->numUnfoggedPasses );
+        ri.Printf( PRINT_ALL, "%i ", L_SortedShaders[i]->numUnfoggedPasses );
 
-		if (L_SortedShaders[i]->lightmapIndex >= 0 )
-			ri.Printf (PRINT_ALL, "L ");
-		else
-			ri.Printf (PRINT_ALL, "  ");
-
-
-		if ( L_SortedShaders[i]->multitextureEnv == GL_ADD )
-			ri.Printf( PRINT_ALL, "MT(a) " );
-		else if ( L_SortedShaders[i]->multitextureEnv == GL_MODULATE )
-			ri.Printf( PRINT_ALL, "MT(m) " );
-		else
-			ri.Printf( PRINT_ALL, "      " );
-	
-
-		if ( L_SortedShaders[i]->explicitlyDefined )
-			ri.Printf( PRINT_ALL, "E " );
-		else
-			ri.Printf( PRINT_ALL, "  " );
+        if (L_SortedShaders[i]->lightmapIndex >= 0 )
+            ri.Printf (PRINT_ALL, "L ");
+        else
+            ri.Printf (PRINT_ALL, "  ");
 
 
-		if ( L_SortedShaders[i]->isSky )
-			ri.Printf( PRINT_ALL, "sky " );
-		else
-			ri.Printf( PRINT_ALL, "gen " );
+        if ( L_SortedShaders[i]->multitextureEnv == GL_ADD )
+            ri.Printf( PRINT_ALL, "MT(a) " );
+        else if ( L_SortedShaders[i]->multitextureEnv == GL_MODULATE )
+            ri.Printf( PRINT_ALL, "MT(m) " );
+        else
+            ri.Printf( PRINT_ALL, "      " );
 
 
-		if ( L_SortedShaders[i]->defaultShader )
-			ri.Printf (PRINT_ALL,  ": %s (DEFAULTED)\n", L_SortedShaders[i]->name);
-		else
-			ri.Printf (PRINT_ALL,  ": %s\n", L_SortedShaders[i]->name);
-	}
-	ri.Printf (PRINT_ALL, "-------------------\n");
+        if ( L_SortedShaders[i]->explicitlyDefined )
+            ri.Printf( PRINT_ALL, "E " );
+        else
+            ri.Printf( PRINT_ALL, "  " );
+
+
+        if ( L_SortedShaders[i]->isSky )
+            ri.Printf( PRINT_ALL, "sky " );
+        else
+            ri.Printf( PRINT_ALL, "gen " );
+
+
+        if ( L_SortedShaders[i]->defaultShader )
+            ri.Printf (PRINT_ALL,  ": %s (DEFAULTED)\n", L_SortedShaders[i]->name);
+        else
+            ri.Printf (PRINT_ALL,  ": %s\n", L_SortedShaders[i]->name);
+    }
+    ri.Printf (PRINT_ALL, "-------------------\n");
 }
