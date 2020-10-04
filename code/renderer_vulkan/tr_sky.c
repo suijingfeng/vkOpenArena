@@ -626,25 +626,26 @@ static void FillCloudBox2(shader_t * pSha, uint32_t x)
 
 void R_BuildCloudData( struct shaderCommands_s * const pTess )
 {
-//	assert( shader->isSky );
-	sky_min = 1.0f / 256.0f;		// FIXME: not correct?
-	sky_max = 255.0f / 256.0f;
+    //	assert( shader->isSky );
+    sky_min = 1.0f / 256.0f;		// FIXME: not correct?
+    sky_max = 255.0f / 256.0f;
 
-	// set up for drawing
-	pTess->numIndexes = 0;
-	pTess->numVertexes = 0;
+    // set up for drawing
+    pTess->numIndexes = 0;
+    pTess->numVertexes = 0;
 
-	if ( pTess->shader->sky.cloudHeight && pTess->xstages[0] )
-	{
+    if ( pTess->shader->sky.cloudHeight && pTess->xstages[0] )
+    {
         // FillCloudBox();
         uint32_t i = 0;
-        for ( i = 0; i < MAX_SHADER_STAGES; ++i )
-		{
-			if ( pTess->xstages[i] ) {
-				FillCloudBox( pTess->shader, i );
-			}
-		}
-	}
+        for (i = 0; i < MAX_SHADER_STAGES; ++i)
+        {
+            if ( pTess->xstages[i] )
+            {
+                FillCloudBox( pTess->shader, i );
+            }
+        }
+    }
 }
 
 /*
@@ -709,75 +710,75 @@ void R_InitSkyTexCoords( float heightCloud )
 
 static void RB_DrawSkyBox( shader_t * const shader, float matMV[16] )
 {
-	sky_min = 0;
-	sky_max = 1;
+    sky_min = 0;
+    sky_max = 1;
 
-	memset( s_skyTexCoords, 0, sizeof( s_skyTexCoords ) );
-    
+    memset( s_skyTexCoords, 0, sizeof( s_skyTexCoords ) );
+
     uint32_t i;
-	for (i=0; i<6; ++i)
-	{
-		int sky_mins_subd[2], sky_maxs_subd[2];
-		int s, t;
+    for (i=0; i<6; ++i)
+    {
+        int sky_mins_subd[2], sky_maxs_subd[2];
+        int s, t;
 
-		sky_mins[0][i] = floor( sky_mins[0][i] * HALF_SKY_SUBDIVISIONS ) / HALF_SKY_SUBDIVISIONS;
-		sky_mins[1][i] = floor( sky_mins[1][i] * HALF_SKY_SUBDIVISIONS ) / HALF_SKY_SUBDIVISIONS;
-		sky_maxs[0][i] = ceil( sky_maxs[0][i] * HALF_SKY_SUBDIVISIONS ) / HALF_SKY_SUBDIVISIONS;
-		sky_maxs[1][i] = ceil( sky_maxs[1][i] * HALF_SKY_SUBDIVISIONS ) / HALF_SKY_SUBDIVISIONS;
+        sky_mins[0][i] = floor( sky_mins[0][i] * HALF_SKY_SUBDIVISIONS ) / HALF_SKY_SUBDIVISIONS;
+        sky_mins[1][i] = floor( sky_mins[1][i] * HALF_SKY_SUBDIVISIONS ) / HALF_SKY_SUBDIVISIONS;
+        sky_maxs[0][i] = ceil( sky_maxs[0][i] * HALF_SKY_SUBDIVISIONS ) / HALF_SKY_SUBDIVISIONS;
+        sky_maxs[1][i] = ceil( sky_maxs[1][i] * HALF_SKY_SUBDIVISIONS ) / HALF_SKY_SUBDIVISIONS;
 
-		if ( ( sky_mins[0][i] >= sky_maxs[0][i] ) ||
-			 ( sky_mins[1][i] >= sky_maxs[1][i] ) )
-		{
-			continue;
-		}
+        if ( ( sky_mins[0][i] >= sky_maxs[0][i] ) ||
+             ( sky_mins[1][i] >= sky_maxs[1][i] ) )
+        {
+            continue;
+        }
 
-		sky_mins_subd[0] = sky_mins[0][i] * HALF_SKY_SUBDIVISIONS;
-		sky_mins_subd[1] = sky_mins[1][i] * HALF_SKY_SUBDIVISIONS;
-		sky_maxs_subd[0] = sky_maxs[0][i] * HALF_SKY_SUBDIVISIONS;
-		sky_maxs_subd[1] = sky_maxs[1][i] * HALF_SKY_SUBDIVISIONS;
+        sky_mins_subd[0] = sky_mins[0][i] * HALF_SKY_SUBDIVISIONS;
+        sky_mins_subd[1] = sky_mins[1][i] * HALF_SKY_SUBDIVISIONS;
+        sky_maxs_subd[0] = sky_maxs[0][i] * HALF_SKY_SUBDIVISIONS;
+        sky_maxs_subd[1] = sky_maxs[1][i] * HALF_SKY_SUBDIVISIONS;
 
-		if ( sky_mins_subd[0] < -HALF_SKY_SUBDIVISIONS ) 
-			sky_mins_subd[0] = -HALF_SKY_SUBDIVISIONS;
-		else if ( sky_mins_subd[0] > HALF_SKY_SUBDIVISIONS ) 
-			sky_mins_subd[0] = HALF_SKY_SUBDIVISIONS;
-		if ( sky_mins_subd[1] < -HALF_SKY_SUBDIVISIONS )
-			sky_mins_subd[1] = -HALF_SKY_SUBDIVISIONS;
-		else if ( sky_mins_subd[1] > HALF_SKY_SUBDIVISIONS ) 
-			sky_mins_subd[1] = HALF_SKY_SUBDIVISIONS;
+        if ( sky_mins_subd[0] < -HALF_SKY_SUBDIVISIONS ) 
+            sky_mins_subd[0] = -HALF_SKY_SUBDIVISIONS;
+        else if ( sky_mins_subd[0] > HALF_SKY_SUBDIVISIONS ) 
+            sky_mins_subd[0] = HALF_SKY_SUBDIVISIONS;
+        if ( sky_mins_subd[1] < -HALF_SKY_SUBDIVISIONS )
+            sky_mins_subd[1] = -HALF_SKY_SUBDIVISIONS;
+        else if ( sky_mins_subd[1] > HALF_SKY_SUBDIVISIONS ) 
+            sky_mins_subd[1] = HALF_SKY_SUBDIVISIONS;
 
-		if ( sky_maxs_subd[0] < -HALF_SKY_SUBDIVISIONS ) 
-			sky_maxs_subd[0] = -HALF_SKY_SUBDIVISIONS;
-		else if ( sky_maxs_subd[0] > HALF_SKY_SUBDIVISIONS ) 
-			sky_maxs_subd[0] = HALF_SKY_SUBDIVISIONS;
-		if ( sky_maxs_subd[1] < -HALF_SKY_SUBDIVISIONS ) 
-			sky_maxs_subd[1] = -HALF_SKY_SUBDIVISIONS;
-		else if ( sky_maxs_subd[1] > HALF_SKY_SUBDIVISIONS ) 
-			sky_maxs_subd[1] = HALF_SKY_SUBDIVISIONS;
+        if ( sky_maxs_subd[0] < -HALF_SKY_SUBDIVISIONS ) 
+            sky_maxs_subd[0] = -HALF_SKY_SUBDIVISIONS;
+        else if ( sky_maxs_subd[0] > HALF_SKY_SUBDIVISIONS ) 
+            sky_maxs_subd[0] = HALF_SKY_SUBDIVISIONS;
+        if ( sky_maxs_subd[1] < -HALF_SKY_SUBDIVISIONS ) 
+            sky_maxs_subd[1] = -HALF_SKY_SUBDIVISIONS;
+        else if ( sky_maxs_subd[1] > HALF_SKY_SUBDIVISIONS ) 
+            sky_maxs_subd[1] = HALF_SKY_SUBDIVISIONS;
 
 
         // VULKAN: draw skybox side
 
 
-        const uint32_t T_UpLimit = sky_maxs_subd[1]+HALF_SKY_SUBDIVISIONS;
-        const uint32_t S_UpLimit = sky_maxs_subd[0]+HALF_SKY_SUBDIVISIONS;
+        const uint32_t T_UpLimit = sky_maxs_subd[1] + HALF_SKY_SUBDIVISIONS;
+        const uint32_t S_UpLimit = sky_maxs_subd[0] + HALF_SKY_SUBDIVISIONS;
 
-        const uint32_t T_LowLimit = sky_mins_subd[1]+HALF_SKY_SUBDIVISIONS;
-        const uint32_t S_LowLimit = sky_mins_subd[0]+HALF_SKY_SUBDIVISIONS;
+        const uint32_t T_LowLimit = sky_mins_subd[1] + HALF_SKY_SUBDIVISIONS;
+        const uint32_t S_LowLimit = sky_mins_subd[0] + HALF_SKY_SUBDIVISIONS;
 
-		//
-		// iterate through the subdivisions
-		//
-		for ( t = T_LowLimit; t <= T_UpLimit; ++t )
-		{
-			for ( s = S_LowLimit; s <= S_UpLimit; ++s )
-			{
-				MakeSkyVec( ( s - HALF_SKY_SUBDIVISIONS ) / ( float ) HALF_SKY_SUBDIVISIONS, 
-							( t - HALF_SKY_SUBDIVISIONS ) / ( float ) HALF_SKY_SUBDIVISIONS, 
-							i, 
-							s_skyTexCoords[t][s], 
-							s_skyPoints[t][s] );
-			}
-		}
+        //
+        // iterate through the subdivisions
+        //
+        for ( t = T_LowLimit; t <= T_UpLimit; ++t )
+        {
+            for ( s = S_LowLimit; s <= S_UpLimit; ++s )
+            {
+                MakeSkyVec( ( s - HALF_SKY_SUBDIVISIONS ) / ( float ) HALF_SKY_SUBDIVISIONS, 
+                        ( t - HALF_SKY_SUBDIVISIONS ) / ( float ) HALF_SKY_SUBDIVISIONS, 
+                        i, 
+                        s_skyTexCoords[t][s], 
+                        s_skyPoints[t][s] );
+            }
+        }
 
         tess.numVertexes = 0;
         tess.numIndexes = 0;
@@ -818,18 +819,18 @@ static void RB_DrawSkyBox( shader_t * const shader, float matMV[16] )
         }
 
         memset( tess.svars.colors, tr.identityLightByte, tess.numVertexes * 4 );
-        
-        // GL_Bind(shader->sky.outerbox[sky_texorder[i]]);
-        updateMVP(backEnd.viewParms.isPortal, backEnd.projection2D, matMV);	
 
-		// ri.Printf(PRINT_ALL, "nvert: %d\n", tess.numIndexes);
+        // GL_Bind(shader->sky.outerbox[sky_texorder[i]]);
+        updateMVP(backEnd.viewParms.isPortal, backEnd.projection2D, matMV);
+
+        // ri.Printf(PRINT_ALL, "nvert: %d\n", tess.numIndexes);
 
         vk_UploadXYZI(tess.xyz, tess.numVertexes, tess.indexes, tess.numIndexes);
-        
+
         vk_shade(g_globalPipelines.skybox_pipeline, &tess, 
                 &tess.shader->sky.outerbox[sky_texorder[i]]->descriptor_set,
                 VK_FALSE, VK_TRUE);
-	}
+    }
 }
 
 /*
@@ -842,15 +843,14 @@ Other things could be stuck in here, like birds in the sky, etc
 */
 void RB_StageIteratorSky( struct shaderCommands_s * const pTess )
 {
+    // go through all the polygons and project them onto
+    // the sky box to see which blocks on each side need
+    // to be drawn
+    RB_ClipSkyPolygons( pTess );
 
-	// go through all the polygons and project them onto
-	// the sky box to see which blocks on each side need
-	// to be drawn
-	RB_ClipSkyPolygons( pTess );
-
-	// r_showsky will let all the sky blocks be drawn in
-	// front of everything to allow developers to see how
-	// much sky is getting sucked in draw the outer skybox
+    // r_showsky will let all the sky blocks be drawn in
+    // front of everything to allow developers to see how
+    // much sky is getting sucked in draw the outer skybox
     if (r_showsky->integer)
     {
         vk_rcdUpdateViewport(backEnd.projection2D, DEPTH_RANGE_ZERO);
@@ -861,12 +861,12 @@ void RB_StageIteratorSky( struct shaderCommands_s * const pTess )
     }
 
 
-	// draw the outer skybox
+    // draw the outer skybox
     // why != tr.defaultImage ?
-	if ( pTess->shader->sky.outerbox[0] && pTess->shader->sky.outerbox[0] != tr.defaultImage  )
+    if ( pTess->shader->sky.outerbox[0] && pTess->shader->sky.outerbox[0] != tr.defaultImage )
     {
-		QALIGN(16) float modelview_transform[16] ;
-		QALIGN(16) float skybox_translate[16]  = {
+        QALIGN(16) float modelview_transform[16] ;
+        QALIGN(16) float skybox_translate[16]  = {
             1, 0, 0, 0,
             0, 1, 0, 0,
             0, 0, 1, 0,
@@ -874,15 +874,14 @@ void RB_StageIteratorSky( struct shaderCommands_s * const pTess )
         };
         
         MatrixMultiply4x4_SSE(skybox_translate, getptr_modelview_matrix(), modelview_transform);
-	
-		RB_DrawSkyBox( pTess->shader, modelview_transform);
+    
+        RB_DrawSkyBox( pTess->shader, modelview_transform);
     }
 
-	// generate the vertexes for all the clouds, which will be drawn
-	// by the generic shader routine
-	R_BuildCloudData( pTess );
+    // generate the vertexes for all the clouds, which will be drawn
+    // by the generic shader routine
+    R_BuildCloudData( pTess );
 
     // ri.Printf(PRINT_ALL, "isSky?\n");
-	
     // draw the inner skybox
 }
