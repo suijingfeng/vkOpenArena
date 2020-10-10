@@ -539,76 +539,80 @@ void WinSys_SetGamma( unsigned char red[256], unsigned char green[256], unsigned
 
 void RandR_Done( void )
 {
-	if ( r_lib )
+	if (r_lib != NULL)
 	{
 		Sys_UnloadLibrary( r_lib );
+		Com_Printf("libXrandr.so unloaded.\n");
 		r_lib = NULL;
 	}
 	glw_state.randr_ext = qfalse;
 	glw_state.randr_gamma = qfalse;
+
 }
 
 
-static void* LoadingLibXrandr(void)
+static void* LoadLibXrandr(void)
 {
-    void * handle = dlopen("libXrandr.so.2", RTLD_NOW );
+	void * handle = dlopen("libXrandr.so.2", RTLD_NOW);
 
-    if ( handle == NULL )
-    {
-        handle = dlopen( "libXrandr.so", RTLD_NOW );
+	if (handle == NULL)
+	{
+		handle = dlopen("libXrandr.so", RTLD_NOW);
 
-        if ( handle == NULL )
-        {
-            Com_Printf( "... error loading libXrandr\n" );
-            return NULL;
-        }
-        else
-        {
-            Com_Printf( " libXrandr.so loaded. \n" );
-            return handle;
-        }
+		if (handle == NULL)
+		{
+			Com_Printf("Loading libXrandr failed.\n");
+			return NULL;
+		}
+		else
+		{
+			Com_Printf("libXrandr.so loaded.\n");
+			return handle;
+		}
+	}
+	else
+	{
+		Com_Printf("libXrandr.so.2 loaded.\n");
+		return handle;
+	}
 
-    }
-    else
-    {
-        Com_Printf( " libXrandr.so.2 loaded. \n" );
-        return handle;
-    }
-
-    return handle;
+	return handle;
 }
 
-static int GetRandrProcAddr( void * const hRandrLib)
-{
-    static sym_t r_list[] =
-    {
-        { (void**)&_XRRQueryExtension, "XRRQueryExtension" },
-        { (void**)&_XRRQueryVersion, "XRRQueryVersion" },
-        { (void**)&_XRRGetScreenResources, "XRRGetScreenResources" },
-        { (void**)&_XRRFreeScreenResources, "XRRFreeScreenResources" },
-        { (void**)&_XRRGetOutputInfo, "XRRGetOutputInfo" },
-        { (void**)&_XRRFreeOutputInfo, "XRRFreeOutputInfo" },
-        { (void**)&_XRRGetCrtcInfo, "XRRGetCrtcInfo" },
-        { (void**)&_XRRFreeCrtcInfo, "XRRFreeCrtcInfo" },
-        { (void**)&_XRRSetCrtcConfig, "XRRSetCrtcConfig" },
-        { (void**)&_XRRGetCrtcGammaSize, "XRRGetCrtcGammaSize" },
-        { (void**)&_XRRGetCrtcGamma, "XRRGetCrtcGamma" },
-        { (void**)&_XRRAllocGamma, "XRRAllocGamma" },
-        { (void**)&_XRRSetCrtcGamma, "XRRSetCrtcGamma" },
-        { (void**)&_XRRFreeGamma, "XRRFreeGamma" },
-    };
 
-    int i;
-    for ( i = 0 ; i < ARRAY_LEN( r_list ); ++i )
-    {
-        *r_list[ i ].symbol = dlsym( hRandrLib, r_list[ i ].name );
-        if ( *r_list[ i ].symbol == NULL )
-        {
-            Com_Printf( "...couldn't find '%s' in libXrandr\n", r_list[ i ].name );
-            return 0;
-        }
-    }
-    return 1;
+static int GetRandrProcAddr(void * const hRandrLib)
+{
+	static sym_t r_list[] =
+	{
+		{ (void**)&_XRRQueryExtension, "XRRQueryExtension" },
+		{ (void**)&_XRRQueryVersion, "XRRQueryVersion" },
+		{ (void**)&_XRRGetScreenResources, "XRRGetScreenResources" },
+		{ (void**)&_XRRFreeScreenResources, "XRRFreeScreenResources" },
+		{ (void**)&_XRRGetOutputInfo, "XRRGetOutputInfo" },
+		{ (void**)&_XRRFreeOutputInfo, "XRRFreeOutputInfo" },
+		{ (void**)&_XRRGetCrtcInfo, "XRRGetCrtcInfo" },
+		{ (void**)&_XRRFreeCrtcInfo, "XRRFreeCrtcInfo" },
+		{ (void**)&_XRRSetCrtcConfig, "XRRSetCrtcConfig" },
+		{ (void**)&_XRRGetCrtcGammaSize, "XRRGetCrtcGammaSize" },
+		{ (void**)&_XRRGetCrtcGamma, "XRRGetCrtcGamma" },
+		{ (void**)&_XRRAllocGamma, "XRRAllocGamma" },
+		{ (void**)&_XRRSetCrtcGamma, "XRRSetCrtcGamma" },
+		{ (void**)&_XRRFreeGamma, "XRRFreeGamma" },
+	};
+
+	unsigned int i;
+	for (i = 0; i < ARRAY_LEN(r_list); ++i)
+	{
+		*r_list[i].symbol = dlsym(hRandrLib, r_list[i].name);
+		if ( *r_list[i].symbol == NULL )
+		{
+			Com_Printf("...couldn't find '%s' in libXrandr\n",
+					r_list[i].name);
+			return 0;
+		}
+	}
+
+	return 1;
 }
 
 
@@ -626,11 +630,11 @@ qboolean RandR_Init( int x, int y, int w, int h, int isFullScreen )
 	memset( monitors, 0, sizeof( monitors ) );
 	memset( &desktop_monitor, 0, sizeof( desktop_monitor ) );
 
-	r_lib = LoadingLibXrandr();
-        if(r_lib == NULL )
-            goto __fail;
+	r_lib = LoadLibXrandr();
+	if (r_lib == NULL)
+		goto __fail;
 
-        GetRandrProcAddr(r_lib);
+	GetRandrProcAddr(r_lib);
 
 	if ( !_XRRQueryExtension( glw_state.pDisplay, &event_base, &error_base ) || !_XRRQueryVersion( glw_state.pDisplay, &ver_major, &ver_minor ) )
 	{
@@ -638,7 +642,8 @@ qboolean RandR_Init( int x, int y, int w, int h, int isFullScreen )
 		goto __fail;
 	}
 
-	Com_Printf( "...RandR extension version %i.%i detected.\n", ver_major, ver_minor );
+	Com_Printf( "libXrandr extension version %i.%i detected.\n",
+		ver_major, ver_minor);
 
 	glw_state.randr_ext = qtrue;
 
@@ -647,7 +652,7 @@ qboolean RandR_Init( int x, int y, int w, int h, int isFullScreen )
 	BuildMonitorList();
 
 	// if(isFullScreen == 0)
-		RandR_UpdateMonitor( x, y, w, h );
+	RandR_UpdateMonitor( x, y, w, h );
 
 	return qtrue;
 

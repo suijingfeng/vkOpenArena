@@ -67,7 +67,6 @@ static void SetPlaneSignbits (cplane_t * const out)
 
 static void R_SetupFrustum (viewParms_t * const pViewParams)
 {
-	
     {
         float ang = pViewParams->fovX * (float)(M_PI / 360.0f);
         float xs = sin( ang );
@@ -88,7 +87,7 @@ static void R_SetupFrustum (viewParms_t * const pViewParams)
         pViewParams->frustum[1].type = PLANE_NON_AXIAL;
     }
 
-   
+
     {
         float ang = pViewParams->fovY * (float)(M_PI / 360.0f);
         float xs = sin( ang );
@@ -127,7 +126,7 @@ See if a sprite is inside a fog volume
 static int R_SpriteFogNum(const trRefEntity_t * const ent, unsigned int nFogs, const struct fog_s * const pFog)
 {
     unsigned int i;
- 
+
     for ( i = 1 ; i < nFogs ; ++i )
     {
         // fog_t* fog = &tr.world->fogs[i];
@@ -138,13 +137,13 @@ static int R_SpriteFogNum(const trRefEntity_t * const ent, unsigned int nFogs, c
             {
                 break;
             }
-            
+
             if ( ent->e.origin[j] + ent->e.radius <= pFog[i].bounds[0][j] )
             {
                 break;
             }
         }
-		
+
         if ( j == 3 ) {
              return i;
         }
@@ -157,31 +156,30 @@ static int R_SpriteFogNum(const trRefEntity_t * const ent, unsigned int nFogs, c
 
 //==========================================================================================
 
-void R_AddDrawSurf( surfaceType_t *surface, shader_t *shader, int fogIndex, int dlightMap, 
+void R_AddDrawSurf( surfaceType_t *surface, shader_t *shader, int fogIndex, int dlightMap,
 	struct trRefdef_s * const pRefdef)
 {
     // instead of checking for overflow, we just mask the index so it wraps around
     unsigned int index = pRefdef->numDrawSurfs & DRAWSURF_MASK;
     // the sort data is packed into a single 32 bit value so it can be
     // compared quickly during the qsorting process
-    pRefdef->drawSurfs[index].sort = (shader->sortedIndex << QSORT_SHADERNUM_SHIFT) 
+    pRefdef->drawSurfs[index].sort = (shader->sortedIndex << QSORT_SHADERNUM_SHIFT)
 	| tr.shiftedEntityNum | ( fogIndex << QSORT_FOGNUM_SHIFT ) | dlightMap;
     pRefdef->drawSurfs[index].surType = surface;
     ++pRefdef->numDrawSurfs;
 }
 
 
-static void R_AddEntitySurfaces(viewParms_t * const pViewParam, const uint32_t numEntity, 
+static void R_AddEntitySurfaces(viewParms_t * const pViewParam, const uint32_t numEntity,
         trRefEntity_t * const pEntity)
 {
     // entities that will have procedurally generated surfaces will just
     // point at this for their sorting surface
     static surfaceType_t entitySurface = SF_ENTITY;
 
-    // //tr.refdef.num_entities; 
-    for ( tr.currentEntityNum = 0; tr.currentEntityNum < numEntity; ++tr.currentEntityNum)
+    // tr.refdef.num_entities;
+    for (tr.currentEntityNum = 0; tr.currentEntityNum < numEntity; ++tr.currentEntityNum)
     {
-        shader_t* shader;
 
         trRefEntity_t* ent = tr.currentEntity = &pEntity[tr.currentEntityNum];
         ent->needDlights = qfalse;
@@ -190,9 +188,9 @@ static void R_AddEntitySurfaces(viewParms_t * const pViewParam, const uint32_t n
         tr.shiftedEntityNum = tr.currentEntityNum << QSORT_REFENTITYNUM_SHIFT;
 
         // the weapon model must be handled special --
-        // we don't want the hacked weapon position showing in 
+        // we don't want the hacked weapon position showing in
         // mirrors, because the true body position will already be drawn
-	
+
         if ( (ent->e.renderfx & RF_FIRST_PERSON) && pViewParam->isPortal)
         {
             continue;
@@ -211,13 +209,13 @@ static void R_AddEntitySurfaces(viewParms_t * const pViewParam, const uint32_t n
             // self blood sprites, talk balloons, etc should not be drawn in the primary
             // view.  We can't just do this check for all entities, because md3
             // entities may still want to cast shadows from them
-            
+
                 if ( (ent->e.renderfx & RF_THIRD_PERSON) && !pViewParam->isPortal)
                 {
                      continue;
                 }
 
-                R_AddDrawSurf( &entitySurface, R_GetShaderByHandle( ent->e.customShader ), 
+                R_AddDrawSurf( &entitySurface, R_GetShaderByHandle( ent->e.customShader ),
                    (( tr.refdef.rdflags & RDF_NOWORLDMODEL ) ? 0 : 
 			R_SpriteFogNum( ent, tr.world->numfogs, tr.world->fogs ) ), 0, &tr.refdef );
                 break;
@@ -248,7 +246,8 @@ static void R_AddEntitySurfaces(viewParms_t * const pViewParam, const uint32_t n
 					if ( (ent->e.renderfx & RF_THIRD_PERSON) && !pViewParam->isPortal) {
 						break;
 					}
-					shader = R_GetShaderByHandle( ent->e.customShader );
+
+					// R_GetShaderByHandle( ent->e.customShader );
 					R_AddDrawSurf( &entitySurface, tr.defaultShader, 0, 0, &tr.refdef );
 					break;
 			}
@@ -263,20 +262,20 @@ static void R_AddEntitySurfaces(viewParms_t * const pViewParam, const uint32_t n
 
 static void R_SetupProjection( viewParms_t * const pViewParams, VkBool32 noWorld)
 {
-	float zFar;
+    float zFar;
 
-	// set the projection matrix with the minimum zfar
-	// now that we have the world bounded
-	// this needs to be done before entities are added, 
+    // set the projection matrix with the minimum zfar
+    // now that we have the world bounded
+    // this needs to be done before entities are added, 
     // because they use the projection matrix for lod calculation
 
-	// dynamically compute far clip plane distance
-	// if not rendering the world (icons, menus, etc), set a 2k far clip plane
+    // dynamically compute far clip plane distance
+    // if not rendering the world (icons, menus, etc), set a 2k far clip plane
 
-	if ( noWorld )
+    if ( noWorld )
     {
-		pViewParams->zFar = zFar = 2048.0f;
-	}
+        pViewParams->zFar = zFar = 2048.0f;
+    }
     else
     {
         float o[3];
@@ -292,51 +291,53 @@ static void R_SetupProjection( viewParms_t * const pViewParams, VkBool32 noWorld
         for ( i = 0; i < 8; ++i )
         {
             float v[3];
-     
+
             v[0] = ((i & 1) ? pViewParams->visBounds[0][0] : pViewParams->visBounds[1][0]) - o[0];
             v[1] = ((i & 2) ? pViewParams->visBounds[0][1] : pViewParams->visBounds[1][1]) - o[1];
             v[2] = ((i & 4) ? pViewParams->visBounds[0][2] : pViewParams->visBounds[1][2]) - o[0];
 
             float distance = v[0]*v[0] + v[1]*v[1] + v[2]*v[2];
-            
+
             if( distance > farthestCornerDistance )
             {
                 farthestCornerDistance = distance;
             }
         }
-        
+
         pViewParams->zFar = zFar = sqrtf(farthestCornerDistance);
     }
-	
-	// set up projection matrix
-	// update q3's proj matrix (opengl) to vulkan conventions: z - [0, 1] instead of [-1, 1] and invert y direction
-    
-    // Vulkan clip space has inverted Y and half Z.	
+
+
+    // set up projection matrix
+    // update q3's proj matrix (opengl) to vulkan conventions:
+    // z - [0, 1] instead of [-1, 1] and invert y direction
+
+    // Vulkan clip space has inverted Y and half Z.
     float zNear	= r_znear->value;
-	float p10 = -zFar / (zFar - zNear);
+    float p10 = -zFar / (zFar - zNear);
 
     float py = tan(pViewParams->fovY * (M_PI / 360.0f));
     float px = tan(pViewParams->fovX * (M_PI / 360.0f));
 
-	pViewParams->projectionMatrix[0] = 1.0f / px;
-	pViewParams->projectionMatrix[1] = 0.0f;
-	pViewParams->projectionMatrix[2] = 0.0f;
-	pViewParams->projectionMatrix[3] = 0.0f;
-    
+    pViewParams->projectionMatrix[0] = 1.0f / px;
+    pViewParams->projectionMatrix[1] = 0.0f;
+    pViewParams->projectionMatrix[2] = 0.0f;
+    pViewParams->projectionMatrix[3] = 0.0f;
+
     pViewParams->projectionMatrix[4] = 0.0f;
-	pViewParams->projectionMatrix[5] = -1.0f / py;
-	pViewParams->projectionMatrix[6] = 0.0f;
-	pViewParams->projectionMatrix[7] = 0.0f;
+    pViewParams->projectionMatrix[5] = -1.0f / py;
+    pViewParams->projectionMatrix[6] = 0.0f;
+    pViewParams->projectionMatrix[7] = 0.0f;
 
     pViewParams->projectionMatrix[8] = 0.0f;	// normally 0
-	pViewParams->projectionMatrix[9] =  0.0f;
-	pViewParams->projectionMatrix[10] = p10;
-	pViewParams->projectionMatrix[11] = -1.0f;
+    pViewParams->projectionMatrix[9] =  0.0f;
+    pViewParams->projectionMatrix[10] = p10;
+    pViewParams->projectionMatrix[11] = -1.0f;
 
     pViewParams->projectionMatrix[12] = 0.0f;
-	pViewParams->projectionMatrix[13] = 0.0f;
-	pViewParams->projectionMatrix[14] = zNear * p10;
-	pViewParams->projectionMatrix[15] = 0.0f;
+    pViewParams->projectionMatrix[13] = 0.0f;
+    pViewParams->projectionMatrix[14] = zNear * p10;
+    pViewParams->projectionMatrix[15] = 0.0f;
 }
 
 

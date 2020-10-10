@@ -180,36 +180,36 @@ independent of which extension initiates a buffer swap.
 ========================= Direct Rendering and Address Spaces ===============
 
 One of the basic assumptions of the X protocol is that if a client can name
-an object, then it can manipulate that object. GLX introduces the notion of 
-an Address Space. A GLX object cannot be used outside of the address space 
+an object, then it can manipulate that object. GLX introduces the notion of
+an Address Space. A GLX object cannot be used outside of the address space
 in which it exists.
 
-In a classic UNIX environment, each process is in its own address space. 
-In a multi-threaded environment, each of the threads will share a virtual 
+In a classic UNIX environment, each process is in its own address space.
+In a multi-threaded environment, each of the threads will share a virtual
 address space which references a common data region.
 
 An OpenGL client that is rendering to a graphics engine directly connected
-to the executing CPU may avoid passing the tokens through the X server. 
-This generalization is made for performance reasons. The model described 
-here specifically allows for such optimizations, but does not mandate that 
+to the executing CPU may avoid passing the tokens through the X server.
+This generalization is made for performance reasons. The model described
+here specifically allows for such optimizations, but does not mandate that
 any implementation support it.
 
-When direct rendering is occurring, the address space of the OpenGL 
-implementation is that of the direct process; when direct rendering 
-is not being used (i.e., when indirect rendering is occurring), the 
-address space of the OpenGL implementation is that of the X server. 
+When direct rendering is occurring, the address space of the OpenGL
+implementation is that of the direct process; when direct rendering
+is not being used (i.e., when indirect rendering is occurring), the
+address space of the OpenGL implementation is that of the X server.
 
-The client has the ability to reject the use of direct rendering, 
+The client has the ability to reject the use of direct rendering,
 but there may be a performance penalty in doing so.
 
 In order to use direct rendering, a client must create a direct rendering context.
-Both the client context state and the server context state of a direct rendering 
-context exist in the client¡¯s address space; this state cannot be shared by a client 
-in another process. 
+Both the client context state and the server context state of a direct rendering
+context exist in the client¡¯s address space; this state cannot be shared by a client
+in another process.
 
-With indirect rendering contexts, the client context state is kept in the client¡¯s 
-address space and the server context state is kept in the address space of the X server. 
-In this case the server context state is stored in an X resource; it has an associated 
+With indirect rendering contexts, the client context state is kept in the client's
+address space and the server context state is kept in the address space of the X server.
+In this case the server context state is stored in an X resource; it has an associated
 XID and may potentially be used by another client process.
 
 Although direct rendering support is optional, all implementations are required
@@ -232,7 +232,6 @@ to support indirect rendering.
 #include "x11_randr.h"
 
 #include "WinSys_Common.h"
-
 
 
 #define OPENGL_DRIVER_NAME	"libGL.so.1"
@@ -318,7 +317,7 @@ void GLX_AscertainExtension( Display * pDpy )
     }
     else
     {
-        Com_Printf( " GLX extension defined. \n");
+        Com_Printf(" GLX extension defined. \n");
     }
 }
 
@@ -332,7 +331,7 @@ void GLX_QueryVersion( Display * pDpy )
 
     qglXQueryVersion(pDpy, &major, &minor);
 
-    Com_Printf( " GLX Version: %d.%d. \n", major, minor);
+    Com_Printf(" GLX Version: %d.%d. \n", major, minor);
 }
 
 
@@ -424,11 +423,11 @@ void XSys_UnloadOpenGL(void)
 		hGraphicLib = NULL;
 	}
 
-    #define GLE( ret, name, ... ) \
+#define GLE( ret, name, ... ) \
 	q##name = NULL;
 
 	QGL_X11_PROCS;
-    #undef GLE
+#undef GLE
 
 }
 
@@ -504,32 +503,36 @@ XVisualInfo * GetXVisualPtrWrapper(void)
 }
 
 
-void XSys_CreateContextForGL( XVisualInfo * pVisinfo )
+void XSys_CreateContextForGL(XVisualInfo * pVisinfo)
 {
-	// glXCreateContext fails to create a rendering context, NULL is returned. 
-	// A thread is one of a set of subprocesses that share a single address space, 
-	// but maintain separate program counters, stack spaces, and other related global data. 
-	// A thread that is the only member of its subprocess group is equivalent to a process. 
+	// glXCreateContext fails to create a rendering context, NULL is
+	// returned. A thread is one of a set of subprocesses that share
+	// a single address space, but maintain separate program counters,
+	// stack spaces, and other related global data. A thread that is
+	// the only member of its subprocess group is equivalent to a process.
 	//
-	// GLXContext glXCreateContext(Display * dpy,  XVisualInfo * vis,  GLXContext shareList,  Bool direct);
-	// 
-	// dpy : 
+	// GLXContext glXCreateContext(Display * dpy,
+	//                             XVisualInfo * vis,
+	//                             GLXContext shareList,
+	//                             Bool direct);
+	//
+	// dpy :
 	//       Specifies the connection to the X server.
-	// vis : 
-	//       Specifies the visual that defines the frame buffer resources available to the rendering context.
-	//       It is a pointer to an XVisualInfo structure, not a visual ID or a pointer to a Visual.
-        // shareList : 
-	//             Specifies the context with which to share display lists.
-	//             NULL indicates that no sharing is to take place.
-        //        
-	// direct : 
-        //            Specifies whether rendering is to be done with a direct connection
-        //            to the graphics system if possible (True) or through the X server (False).
-                
-	ctx_gl = qglXCreateContext( glw_state.pDisplay, pVisinfo, NULL, True );
+	// vis :
+	//       Specifies the visual that defines the frame buffer resources
+	//       available to the rendering context. It is a pointer to an
+	//       XVisualInfo structure, not a visual ID or a pointer to a Visual.
+        // shareList :
+	//       Specifies the context with which to share display lists.
+	//       NULL indicates that no sharing is to take place.
+	// direct :
+	//       Specifies whether rendering is to be done with a direct connection
+	//       to the graphics system if possible (True) or through the X server (False).
+
+	ctx_gl = qglXCreateContext(glw_state.pDisplay, pVisinfo, NULL, True);
 	if( ctx_gl )
 	{
-		Com_Printf( " Context Created for GL. \n");
+		Com_Printf("Context Created for GL.\n");
 	}
 }
 

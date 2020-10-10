@@ -2638,8 +2638,9 @@ RE_RegisterShaderNoMip
 For menu graphics that should never be picmiped
 ====================
 */
-qhandle_t RE_RegisterShaderNoMip( const char *name ) {
-	shader_t	*sh;
+qhandle_t RE_RegisterShaderNoMip( const char *name )
+{
+	shader_t *sh;
 
 	if ( (int)strlen( name ) >= MAX_QPATH ) {
 		ri.Printf(PRINT_ALL, "Shader name exceeds MAX_QPATH\n" );
@@ -2669,15 +2670,18 @@ When a handle is passed in by another module, this range checks
 it and returns a valid (possibly default) shader_t to be used internally.
 ====================
 */
-shader_t *R_GetShaderByHandle( qhandle_t hShader ) {
+shader_t *R_GetShaderByHandle(qhandle_t hShader)
+{
 	if ( hShader < 0 ) {
-	  ri.Printf( PRINT_WARNING, "R_GetShaderByHandle: out of range hShader '%d'\n", hShader ); // bk: FIXME name
+		ri.Printf( PRINT_WARNING, "R_GetShaderByHandle: out of range hShader '%d'\n", hShader ); // bk: FIXME name
 		return tr.defaultShader;
 	}
+
 	if ( hShader >= tr.numShaders ) {
 		ri.Printf( PRINT_WARNING, "R_GetShaderByHandle: out of range hShader '%d'\n", hShader );
 		return tr.defaultShader;
 	}
+
 	return tr.shaders[hShader];
 }
 

@@ -99,7 +99,7 @@ unsigned int WinSys_GetNumberOfMonitor( void )
     return glw_state.monitorCount;
 }
 
-// 
+//
 //   Properties and Atoms
 // A property is a collection of named, typed data. The window system has a set of predefined properties 
 // (for example, the name of a window, size hints, and so on), and users can define any other arbitrary 
@@ -132,12 +132,12 @@ Atom wmDeleteEvent = None;
 
 ////////////////////////////////////////////////////////////////////////////////
 //about glw
-static int CreateWindowForRenderer(int mode, qboolean fullscreen, int type )
+static int CreateWindowForRenderer(int mode, qboolean fullscreen, int type)
 {
     int actualWidth, actualHeight, actualRate;
 
     // Init xrandr and get desktop resolution if available
-    RandR_Init( 0, 0, 640, 480, fullscreen);
+    RandR_Init(0, 0, 640, 480, fullscreen);
 
     if ( !CL_GetModeInfo( &actualWidth, &actualHeight, mode, glw_state.desktopWidth, glw_state.desktopHeight, fullscreen ) )
     {
@@ -158,7 +158,7 @@ static int CreateWindowForRenderer(int mode, qboolean fullscreen, int type )
 
     glw_state.winWidth = actualWidth;
     glw_state.winHeight = actualHeight;
-    glw_state.isFullScreen = fullscreen; 
+    glw_state.isFullScreen = fullscreen;
 
 
     XVisualInfo * visinfo = NULL;
@@ -179,20 +179,20 @@ static int CreateWindowForRenderer(int mode, qboolean fullscreen, int type )
         vInfoTemplate.red_mask = 8;
         vInfoTemplate.green_mask = 8;
         vInfoTemplate.blue_mask = 8;
-        vInfoTemplate.depth = 24; 
+        vInfoTemplate.depth = 24;
         // vulkan case
         //
-        // XVisualInfo * XGetVisualInfo(Display * display, long vinfo_mask, 
+        // XVisualInfo * XGetVisualInfo(Display * display, long vinfo_mask,
         //                              XVisualInfo * vinfo_template, int * nitems_return)
-        //                              
+        //
         //  display: Specifies the connection to the X server;
         //  vinfo_mask: Specifies the visual mask value;
-        //  vinfo_template: Specifies the visual attributes that are to be used in matching the visual structures. 
+        //  vinfo_template: Specifies the visual attributes that are to be used in matching the visual structures.
         //  nitems_return: returns the number of matching visual structures
         //
         // The XGetVisualInfo() function returns a list of visual structures that have attributes equal to the attributes
         //  specified by vinfo_template. 
-        visinfo = XGetVisualInfo(glw_state.pDisplay, VisualScreenMask | VisualClassMask, 
+        visinfo = XGetVisualInfo(glw_state.pDisplay, VisualScreenMask | VisualClassMask,
                 &vInfoTemplate, &numberOfVisuals);
 
         if(visinfo == NULL)
@@ -205,11 +205,11 @@ static int CreateWindowForRenderer(int mode, qboolean fullscreen, int type )
 
 
     /* window attributes */
-    unsigned long win_mask = fullscreen ? 
-        ( CWBackPixel | CWColormap | CWEventMask | CWSaveUnder | CWBackingStore | CWOverrideRedirect ) : 
+    unsigned long win_mask = fullscreen ?
+        ( CWBackPixel | CWColormap | CWEventMask | CWSaveUnder | CWBackingStore | CWOverrideRedirect ) :
         ( CWBackPixel | CWColormap | CWEventMask | CWBorderPixel );
 
-    // Window attribute value mask bits 
+    // Window attribute value mask bits
 
 
     XSetWindowAttributes win_attr;
@@ -221,37 +221,37 @@ static int CreateWindowForRenderer(int mode, qboolean fullscreen, int type )
     // on which the specified window resides and returns the colormap ID associated with it. Note that
     // the specified window is only used to determine the screen. 
     //
-    // The initial values of the colormap entries are undefined for the visual classes GrayScale, 
-    // PseudoColor, and DirectColor. For StaticGray, StaticColor, and TrueColor, the entries have defined values, 
-    // but those values are specific to the visual and are not defined by X. 
-    // For StaticGray, StaticColor, and TrueColor, alloc must be AllocNone, or a BadMatch error results. 
-    // For the other visual classes, if alloc is AllocNone, the colormap initially has no allocated entries, 
-    // and clients can allocate them. For information about the visual types. 
+    // The initial values of the colormap entries are undefined for the visual classes GrayScale,
+    // PseudoColor, and DirectColor. For StaticGray, StaticColor, and TrueColor, the entries have defined values,
+    // but those values are specific to the visual and are not defined by X.
+    // For StaticGray, StaticColor, and TrueColor, alloc must be AllocNone, or a BadMatch error results.
+    // For the other visual classes, if alloc is AllocNone, the colormap initially has no allocated entries,
+    // and clients can allocate them. For information about the visual types.
     //
     // Xlib requires specification of a colormap when creating a window.
     // The GLX extension, which integrates OpenGL and X, is used by X servers that support OpenGL.
-    // GLX is both an API and an X extension protocol for supporting OpenGL. 
-    // GLX routines provide basic interaction between X and OpenGL. 
-    // Use them, for example, to create a rendering context and bind it to a window. 
+    // GLX is both an API and an X extension protocol for supporting OpenGL.
+    // GLX routines provide basic interaction between X and OpenGL.
+    // Use them, for example, to create a rendering context and bind it to a window.
     // A standard X visual specifies how the server should map a given pixel value to
     // a color to be displayed on the screen. Different windows on the screen can have different visuals.
-    // GLX overloads X visuals to include both the standard X definition of a visual and 
+    // GLX overloads X visuals to include both the standard X definition of a visual and
     // OpenGL specific information about the configuration of the framebuffer and ancillary
-    // buffers that might be associated with a drawable. Only those overloaded visuals support 
-    // both OpenGL and X rendering—GLX therefore requires that an X server support a 
+    // buffers that might be associated with a drawable. Only those overloaded visuals support
+    // both OpenGL and X rendering—GLX therefore requires that an X server support a
     // high minimum baseline of OpenGL functionality.
     // 
-    // Not all X visuals support OpenGL rendering, but all X servers capable of 
+    // Not all X visuals support OpenGL rendering, but all X servers capable of
     // OpenGL rendering have at least two OpenGL capable visuals.
     // An RGBA visual is required for any hardware system that supports OpenGL
     //
-    // As a rule, a drawable is something X can draw into, either a window or a pixmap 
+    // As a rule, a drawable is something X can draw into, either a window or a pixmap
     // (an exception is pbuffers, which are GLX drawables but cannot be used for X rendering).
     //
     // A GLX drawable is something both OpenGL can draw into, either an OpenGL capable window or a GLX pixmap.
     //  (A GLX pixmap is a handle to an X pixmap that is allocated in a special way;
     //
-    //  Another kind of GLX drawable is the pixel buffer (or pbuffer), 
+    //  Another kind of GLX drawable is the pixel buffer (or pbuffer),
     //  which permits hardware-accelerated off-screen rendering.
     //
     //  Resources As Server Data
@@ -264,7 +264,7 @@ static int CreateWindowForRenderer(int mode, qboolean fullscreen, int type )
     // for instance, window data is stored in the server and given a unique integer ID called an XID.
     // To manipulate or query the window data,  the client sends the window's ID number; 
     // the server can then perform any requested operation on that window. This reduces network traffic.
-    // 
+    //
     // Because pixmaps and windows are resources, they are part of the X server and can be shared by
     // different processes (or threads). OpenGL contexts are also resources. In standard OpenGL, 
     // they can be shared by threads in the same process but not by separate processes
@@ -295,13 +295,14 @@ static int CreateWindowForRenderer(int mode, qboolean fullscreen, int type )
     //
     // OpenGL 1.0 and 1.1 and GLX 1.0, 1.1, and 1.2 require an RGBA mode program to use 
     // a TrueColor or DirectColor visual, and require a color index mode program to use 
-    // a PseudoColor or StaticColor visual. 
+    // a PseudoColor or StaticColor visual.
     win_attr.colormap = XCreateColormap( glw_state.pDisplay, glw_state.root, visinfo->visual, AllocNone );
 
-    win_attr.event_mask = ( 
-            KeyPressMask | KeyReleaseMask | 
-            ButtonPressMask | ButtonReleaseMask | PointerMotionMask | ButtonMotionMask |
-            VisibilityChangeMask | StructureNotifyMask | FocusChangeMask );
+    win_attr.event_mask = ( KeyPressMask | KeyReleaseMask |
+                            ButtonPressMask | ButtonReleaseMask |
+                            PointerMotionMask | ButtonMotionMask |
+                            VisibilityChangeMask | StructureNotifyMask |
+                            FocusChangeMask );
 
     // To receive ConfigureNotify events, set the StructureNotifyMask bit in the event-mask attribute of the window
 
@@ -353,20 +354,20 @@ static int CreateWindowForRenderer(int mode, qboolean fullscreen, int type )
     // visual:  Specifies the visual type. A visual of CopyFromParent means the visual type is taken from the parent.
     //
     // width, height: Specify the width and height, which are the created window's inside dimensions and
-    //  do not include the created window's borders. 
-    glw_state.hWnd = XCreateWindow( glw_state.pDisplay, glw_state.root, 
+    //  do not include the created window's borders.
+    glw_state.hWnd = XCreateWindow( glw_state.pDisplay, glw_state.root,
             0, 0, actualWidth, actualHeight,
             0, visinfo->depth, InputOutput,
             visinfo->visual, win_mask, &win_attr );
 
-    // All InputOutput windows have a border width of zero or more pixels, an optional background, 
-    // an event suppression mask (which suppresses propagation of events from children), and a property list (see "Properties and Atoms"). 
-    // The window border and background can be a solid color or a pattern, called a tile. 
-    // All windows except the root have a parent and are clipped by their parent. 
-    // If a window is stacked on top of another window, it obscures that other window for the purpose of input. 
-    // If a window has a background (almost all do), it obscures the other window for purposes of output. 
-    // Attempts to output to the obscured area do nothing, 
-    // and no input events (for example, pointer motion) are generated for the obscured area. 
+    // All InputOutput windows have a border width of zero or more pixels, an optional background,
+    // an event suppression mask (which suppresses propagation of events from children), and a property list (see "Properties and Atoms").
+    // The window border and background can be a solid color or a pattern, called a tile.
+    // All windows except the root have a parent and are clipped by their parent.
+    // If a window is stacked on top of another window, it obscures that other window for the purpose of input.
+    // If a window has a background (almost all do), it obscures the other window for purposes of output.
+    // Attempts to output to the obscured area do nothing,
+    // and no input events (for example, pointer motion) are generated for the obscured area.
 
 
     Com_Printf( " X Window created. \n");
@@ -386,10 +387,10 @@ static int CreateWindowForRenderer(int mode, qboolean fullscreen, int type )
     }
 
     // The created window is not yet displayed (mapped) on the user's display.
-    // To display the window, call XMapWindow. 
-    // The new window initially uses the same cursor as its parent. 
+    // To display the window, call XMapWindow.
+    // The new window initially uses the same cursor as its parent.
     // A new cursor can be defined for the new window by calling XDefineCursor.
-    // The window will not be visible on the screen unless it and all of 
+    // The window will not be visible on the screen unless it and all of
     // its ancestors are mapped and it is not obscured by any of its ancestors.
 
 
@@ -409,7 +410,7 @@ static int CreateWindowForRenderer(int mode, qboolean fullscreen, int type )
     }
     else
     {
-        // int XMoveWindow(Display *display, Window w, int x, y); 
+        // int XMoveWindow(Display *display, Window w, int x, y);
         // x, y : Specify the x and y coordinates, which define the new location
         // of the top-left pixel of the window's border or the window itself.
         // if it has no border or define the new position of the window relative to its parent.
@@ -461,7 +462,7 @@ type 2: directx
 */
 void WinSys_Init(void ** pCfg, int type)
 {
-    Com_Printf( "... Window System Specific Init ...\n" );
+    Com_Printf("\n-------- X Window System Specific Init --------\n");
 
     r_fullscreen = Cvar_Get( "r_fullscreen", "0", CVAR_ARCHIVE | CVAR_LATCH);
     r_mode = Cvar_Get( "r_mode", "-2", CVAR_ARCHIVE | CVAR_LATCH );
@@ -484,7 +485,6 @@ void WinSys_Init(void ** pCfg, int type)
 
     WinSys_ConstructDislayModes();
 
-    Cmd_AddCommand( "minimize", WinMinimize_f );
 
     *pCfg = &glw_state;
 
@@ -494,9 +494,9 @@ void WinSys_Init(void ** pCfg, int type)
     XSetErrorHandler( &qXErrorHandler );
 
     // To open a connection to the X server that controls a display
-    // char *display_name: Specifies the hardware display name, 
-    // which determines the display and communications domain to be used. 
-    // On a POSIX-conformant system, if the display_name is NULL, 
+    // char *display_name: Specifies the hardware display name,
+    // which determines the display and communications domain to be used.
+    // On a POSIX-conformant system, if the display_name is NULL,
     // it defaults to the value of the DISPLAY environment variable.
     //
     // The encoding and interpretation of the display name is implementation dependent.
@@ -507,28 +507,28 @@ void WinSys_Init(void ** pCfg, int type)
     // hostname:number.screen_number
     //
     // hostname: Specifies the name of the host machine on which the display is physically attached.
-    // You follow the hostname with either a single colon (:) or a double colon (::). 
+    // You follow the hostname with either a single colon (:) or a double colon (::).
     //
-    // number : Specifies the number of the display server on that host machine. You may optionally 
-    // follow this display number with a period (.). A single CPU can have more than one display. 
-    // Multiple displays are usually numbered starting with zero. 
+    // number : Specifies the number of the display server on that host machine. You may optionally
+    // follow this display number with a period (.). A single CPU can have more than one display.
+    // Multiple displays are usually numbered starting with zero.
 
     glw_state.pDisplay = XOpenDisplay( NULL );
 
     if ( glw_state.pDisplay == NULL )
     {
-        Com_Error(ERR_FATAL, " Couldn't open the X display. \n" );
+        Com_Error(ERR_FATAL, "Couldn't open the X display. \n" );
     }
 
     glw_state.screenIdx = DefaultScreen( glw_state.pDisplay );
     glw_state.root = RootWindow( glw_state.pDisplay, glw_state.screenIdx );
 
-    Com_Printf( " Server Vendor: %s, release: %d \n ", 
+    Com_Printf(" Server Vendor: %s, release: %d \n ",
             XServerVendor(glw_state.pDisplay), XVendorRelease(glw_state.pDisplay) );
 
 
 
-    if(type == 0)
+    if (type == 0)
     {
         // load libGL.so and initialize the function pointer.
         XSys_LoadOpenGL( );
@@ -551,12 +551,12 @@ void WinSys_Init(void ** pCfg, int type)
     }
     // create the window and set up the context
 
-    if( 0 != CreateWindowForRenderer( r_mode->integer, (r_fullscreen->integer != 0), type ))
+    if ( 0 != CreateWindowForRenderer( r_mode->integer, (r_fullscreen->integer != 0), type ))
     {
         Com_Error(ERR_FATAL, "Error setting given display modes\n" );
     }
 
-    if(type == 0)
+    if (type == 0)
     {
         // load and initialize the specific OpenGL driver
         XSys_SetCurrentContextForGL();
