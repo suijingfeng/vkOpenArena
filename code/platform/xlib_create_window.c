@@ -36,8 +36,9 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
 
 /////////////////////////////
-extern void XSys_LoadOpenGL(void);
-extern void XSys_UnloadOpenGL(void);
+extern void XSys_LoadOpenGL(struct WinData_s * const pWinSys);
+extern void XSys_UnloadOpenGL(struct WinData_s * const pWinSys);
+
 extern XVisualInfo * GetXVisualPtrWrapper(void);
 extern void XSys_CreateContextForGL(XVisualInfo * pVisinfo);
 extern void XSys_SetCurrentContextForGL(void);
@@ -499,42 +500,47 @@ void WinSys_Init(void ** pCfg, int type)
     // On a POSIX-conformant system, if the display_name is NULL,
     // it defaults to the value of the DISPLAY environment variable.
     //
-    // The encoding and interpretation of the display name is implementation dependent.
-    // Strings in the Host Portable Character Encoding are supported; support for other
-    // characters is implementation dependent. On POSIX-conformant systems, the display
-    // name or DISPLAY environment variable can be a string in the format:
+    // The encoding and interpretation of the display name is implementation
+    // dependent.
+    // Strings in the Host Portable Character Encoding are supported;
+    // support for other characters is implementation dependent.
+    // On POSIX-conformant systems, the display name or DISPLAY environment
+    // variable can be a string in the format:
     //
-    // hostname:number.screen_number
+    // protocol/hostname:number.screen_number
     //
-    // hostname: Specifies the name of the host machine on which the display is physically attached.
-    // You follow the hostname with either a single colon (:) or a double colon (::).
+    // hostname: Specifies the name of the host machine on which the display
+    // is physically attached. You follow the hostname with either a single
+    // colon (:) or a double colon (::).
     //
-    // number : Specifies the number of the display server on that host machine. You may optionally
-    // follow this display number with a period (.). A single CPU can have more than one display.
-    // Multiple displays are usually numbered starting with zero.
+    // number: Specifies the number of the display server on that host machine.
+    // You may optionally follow this display number with a period (.).
+    // A single CPU can have more than one display. Multiple displays are
+    // usually numbered starting with zero.
 
-    glw_state.pDisplay = XOpenDisplay( NULL );
+    glw_state.pDisplay = XOpenDisplay(NULL);
 
     if ( glw_state.pDisplay == NULL )
     {
         Com_Error(ERR_FATAL, "Couldn't open the X display. \n" );
     }
 
-    glw_state.screenIdx = DefaultScreen( glw_state.pDisplay );
-    glw_state.root = RootWindow( glw_state.pDisplay, glw_state.screenIdx );
+    glw_state.screenIdx = DefaultScreen(glw_state.pDisplay);
+    glw_state.root = RootWindow(glw_state.pDisplay, glw_state.screenIdx);
 
-    Com_Printf(" Server Vendor: %s, release: %d \n ",
-            XServerVendor(glw_state.pDisplay), XVendorRelease(glw_state.pDisplay) );
-
+    Com_Printf("Screen Index: %d, Server Vendor: %s, release: %d\n",
+            glw_state.screenIdx,
+            XServerVendor(glw_state.pDisplay),
+            XVendorRelease(glw_state.pDisplay));
 
 
     if (type == 0)
     {
         // load libGL.so and initialize the function pointer.
-        XSys_LoadOpenGL( );
+        XSys_LoadOpenGL(&glw_state);
 
         // To ascertain if the GLX extension is defined for an X server
-        GLX_AscertainExtension( glw_state.pDisplay );
+        GLX_AscertainExtension(glw_state.pDisplay);
 
         // The GLX definition exists in multiple versions,
         // to discover which version of GLX is available.
@@ -624,5 +630,5 @@ void WinSys_Shutdown(void)
         glw_state.isFullScreen = qfalse;
     }
 
-    XSys_UnloadOpenGL();
+    XSys_UnloadOpenGL(&glw_state);
 }

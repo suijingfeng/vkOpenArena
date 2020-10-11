@@ -60,7 +60,8 @@ typedef struct WinData_s {
     Display* pDisplay;
     Window  hWnd;
     Window root;
-
+    // handle of OpenGL library
+    void * hLibGL;
     int randr_ext;
     int randr_active;
     int randr_gamma;

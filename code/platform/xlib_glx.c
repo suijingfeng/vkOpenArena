@@ -258,50 +258,71 @@ to support indirect rendering.
 extern WinVars_t glw_state;
 extern cvar_t* r_swapInterval;
 
-
-static void * hGraphicLib; // instance of OpenGL library
 static GLXContext ctx_gl;
 
 
-void XSys_LoadOpenGL( void )
+void XSys_LoadOpenGL(struct WinData_s * const pWinSys)
 {
-    if ( hGraphicLib == NULL )
+    void *pGLib; // instance of OpenGL library
+
+    pGLib = dlopen(OPENGL_DRIVER_NAME, RTLD_NOW);
+    if (pGLib)
     {
-        hGraphicLib = dlopen( OPENGL_DRIVER_NAME, RTLD_NOW );
-        if (hGraphicLib)
+        Com_Printf("%s loaded.\n", OPENGL_DRIVER_NAME);
+    }
+    else
+    {
+        cvar_t* r_glDriver = Cvar_Get("r_glDriver", "libGL.so", CVAR_ARCHIVE | CVAR_LATCH);
+
+        pGLib = dlopen(r_glDriver->string, RTLD_NOW);
+
+        if (pGLib == NULL)
         {
-            Com_Printf( " %s loaded. \n", OPENGL_DRIVER_NAME);
+            Com_Error(ERR_FATAL, "Failed to load %s from /etc/ld.so.conf: %s\n",
+                                 r_glDriver->string, dlerror());
         }
         else
         {
-            cvar_t* r_glDriver = Cvar_Get( "r_glDriver", "libGL.so", CVAR_ARCHIVE | CVAR_LATCH );
-
-            hGraphicLib = dlopen( r_glDriver->string, RTLD_NOW);
-
-            if ( hGraphicLib == NULL )
-            {
-                Com_Error(ERR_FATAL, "Failed to load %s from /etc/ld.so.conf: %s\n",
-                        r_glDriver->string, dlerror());
-            }
-            else
-            {
-                Com_Printf( " %s loaded. \n", r_glDriver->string);
-            }
+            Com_Printf("%s loaded.\n", r_glDriver->string);
         }
     }
+
+    // Save a copy of that handle for free
+    pWinSys->hLibGL = pGLib;
 
     // expand constants before stringifying them
     // load the GLX funs
 #define GLE( ret, name, ... ) \
-    q##name = dlsym(hGraphicLib, #name ); \
-    if ( !q##name ) { \
-        Com_Error(ERR_FATAL, "Error resolving glx core functions\n"); \
+        q##name = dlsym(pGLib, #name ); \
+        if ( !q##name ) { \
+            Com_Error(ERR_FATAL, "Error resolving glx core functions\n"); \
+        }
+
+        QGL_X11_PROCS;
+#undef GLE
+}
+
+
+void XSys_UnloadOpenGL(struct WinData_s * const pWinSys)
+{
+    if (pWinSys->hLibGL)
+    {
+        Com_Printf( "Unloading libgl.so ...\n" );
+
+        dlclose( pWinSys->hLibGL );
+
+        pWinSys->hLibGL = NULL;
     }
+
+#define GLE( ret, name, ... ) \
+    q##name = NULL;
 
     QGL_X11_PROCS;
 #undef GLE
 }
 
+
+///////////////////////////////////////////////////////////////////////////////
 
 void GLX_AscertainExtension( Display * pDpy )
 {
@@ -312,7 +333,7 @@ void GLX_AscertainExtension( Display * pDpy )
     Bool ret = qglXQueryExtension(pDpy, &error_base, &event_base);
     if( ret == False )
     {
-        Com_Error(ERR_FATAL, " GLX extension is not is defined for this X server: %d, %d \n", 
+        Com_Error(ERR_FATAL, " GLX extension is not is defined for this X server: %d, %d \n",
             error_base, event_base);
     }
     else
@@ -394,42 +415,7 @@ const char * GLX_QueryServerString( Display * pDpy, int screen)
 */
 
 
-void XSys_UnloadOpenGL(void)
-{
-	if ( hGraphicLib )
-	{
-		Com_Printf( "...unloading OpenGL DLL\n" );
-		// 25/09/05 Tim Angus <tim@ngus.net>
-		// Certain combinations of hardware and software, specifically
-		// Linux/SMP/Nvidia/agpgart (OK, OK. MY combination of hardware and
-		// software), seem to cause a catastrophic (hard reboot required) crash
-		// when libGL is dynamically unloaded. I'm unsure of the precise cause,
-		// suffice to say I don't see anything in the Q3 code that could cause it.
-		// I suspect it's an Nvidia driver bug, but without the source or means to
-		// debug I obviously can't prove (or disprove) this. Interestingly (though
-		// perhaps not suprisingly), Enemy Territory and Doom 3 both exhibit the
-		// same problem.
-		//
-		// After many, many reboots and prodding here and there, it seems that a
-		// placing a short delay before libGL is unloaded works around the problem.
-		// This delay is changable via the r_GLlibCoolDownMsec cvar (nice name
-		// huh?), and it defaults to 0. For me, 500 seems to work.
-		//if( r_GLlibCoolDownMsec->integer )
-		//	usleep( r_GLlibCoolDownMsec->integer * 1000 );
-		usleep( 250 * 1000 );
 
-		dlclose( hGraphicLib );
-
-		hGraphicLib = NULL;
-	}
-
-#define GLE( ret, name, ... ) \
-	q##name = NULL;
-
-	QGL_X11_PROCS;
-#undef GLE
-
-}
 
 
 XVisualInfo * GetXVisualPtrWrapper(void)
