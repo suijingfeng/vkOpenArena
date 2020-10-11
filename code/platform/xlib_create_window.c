@@ -156,7 +156,6 @@ static int CreateWindowForRenderer(int mode, qboolean fullscreen, int type)
         Com_Printf( " Setting display mode %d: %dx%d\n", mode, actualWidth, actualHeight );
 
 
-
     glw_state.winWidth = actualWidth;
     glw_state.winHeight = actualHeight;
     glw_state.isFullScreen = fullscreen;
@@ -272,32 +271,47 @@ static int CreateWindowForRenderer(int mode, qboolean fullscreen, int type)
     //
     // X Window Colormaps
     //
-    // A colormap maps pixel values from the framebuffer to intensities on screen.  
-    // Each pixel value indexes into the colormap to produce intensities of red, green, and blue for display. 
-    // Depending on hardware limitations, one or more colormaps may be installed at one time, 
-    // such that windows associated with those maps display with the correct colors. 
-    // If there is only one colormap, two windows that load colormaps with different values look correct 
-    // only when they have their particular colormap is installed. The X window manager takes care of 
-    // colormap installation and tries to make sure that the X client with input focus has its colormaps installed. 
-    // On all systems, the colormap is a limited resource.
+    // A colormap maps pixel values from the framebuffer to intensities
+    // on screen. Each pixel value indexes into the colormap to produce
+    // intensities of red, green, and blue for display.
     //
-    // Every X window needs a colormap. If you are using the OpenGL drawing area-widget to
-    // render in RGB mode into a TrueColor visual, you may not need to worry about the colormap. 
-    // In other cases, you may need to assign one. For additional information, 
-    // see “Using Colormaps”. Colormaps are also discussed in detail in O'Reilly, Volume One. 
+    // Depending on hardware limitations, one or more colormaps may be
+    // installed at one time, such that windows associated with those
+    // maps display with the correct colors.
+    //
+    // If there is only one colormap, two windows that load colormaps
+    // with different values look correct only when they have their
+    // particular colormap is installed.
+    //
+    // The X window manager takes care of colormap installation and
+    // tries to make sure that the X client with input focus has its
+    // colormaps installed. On all systems, the colormap is a limited
+    // resource.
+    //
+    // Every X window needs a colormap. If you are using the OpenGL
+    // drawing area-widget to render in RGB mode into a TrueColor visual,
+    // you may not need to worry about the colormap. In other cases,
+    // you may need to assign one. For additional information,
+    // see “Using Colormaps”.
     //
     // OpenGL supports two rendering modes: RGBA mode and color index mode.
     //
-    // In RGBA mode, color buffers store red, green, blue, and alpha components directly.
+    // In RGBA mode, color buffers store red, green, blue, and alpha
+    // components directly.
     //
-    // In color-index mode, color buffers store indexes (names) of colors that are dereferenced
-    // by the display hardware.  A color index represents a color by name rather than value. 
-    // A colormap is a table of index-to-RGB mappings.
+    // In color-index mode, color buffers store indexes (names) of colors
+    // that are dereferenced by the display hardware.  A color index
+    // represents a color by name rather than value. A colormap is a table
+    // of index-to-RGB mappings.
     //
-    // OpenGL 1.0 and 1.1 and GLX 1.0, 1.1, and 1.2 require an RGBA mode program to use 
-    // a TrueColor or DirectColor visual, and require a color index mode program to use 
-    // a PseudoColor or StaticColor visual.
-    win_attr.colormap = XCreateColormap( glw_state.pDisplay, glw_state.root, visinfo->visual, AllocNone );
+    // OpenGL 1.0 and 1.1 and GLX 1.0, 1.1, and 1.2 require an RGBA mode
+    // program to use a TrueColor or DirectColor visual, and require a
+    // color index mode program to use a PseudoColor or StaticColor visual.
+
+    win_attr.colormap = XCreateColormap(glw_state.pDisplay,
+                                        glw_state.root,
+                                        visinfo->visual,
+                                        AllocNone);
 
     win_attr.event_mask = ( KeyPressMask | KeyReleaseMask |
                             ButtonPressMask | ButtonReleaseMask |
@@ -553,11 +567,12 @@ void WinSys_Init(void ** pCfg, int type)
         GLX_GetVersionString(  glw_state.pDisplay );
 
         GLX_QueryServerString(  glw_state.pDisplay, glw_state.screenIdx  );
-
     }
+
+
     // create the window and set up the context
 
-    if ( 0 != CreateWindowForRenderer( r_mode->integer, (r_fullscreen->integer != 0), type ))
+    if ( 0 != CreateWindowForRenderer(r_mode->integer, (r_fullscreen->integer != 0), type))
     {
         Com_Error(ERR_FATAL, "Error setting given display modes\n" );
     }

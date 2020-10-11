@@ -256,8 +256,6 @@ to support indirect rendering.
 
 
 extern WinVars_t glw_state;
-extern cvar_t* r_swapInterval;
-
 static GLXContext ctx_gl;
 
 
@@ -497,22 +495,22 @@ void XSys_CreateContextForGL(XVisualInfo * pVisinfo)
 	//       to the graphics system if possible (True) or through the X server (False).
 
 	ctx_gl = qglXCreateContext(glw_state.pDisplay, pVisinfo, NULL, True);
-	if( ctx_gl )
+	if (ctx_gl)
 	{
-		Com_Printf("Context Created for GL.\n");
+		Com_Printf("GL Context Created.\n");
 	}
 }
 
 void XSys_SetCurrentContextForGL(void)
 {
-	qglXMakeCurrent( glw_state.pDisplay, glw_state.hWnd, ctx_gl );
+	qglXMakeCurrent(glw_state.pDisplay, glw_state.hWnd, ctx_gl);
 }
 
 void XSys_ClearCurrentContextForGL(void)
 {
-	if( ctx_gl != NULL )
+	if (ctx_gl != NULL)
 	{
-		qglXDestroyContext( glw_state.pDisplay, ctx_gl );
+		qglXDestroyContext(glw_state.pDisplay, ctx_gl);
 		ctx_gl = 0;
 	}
 }

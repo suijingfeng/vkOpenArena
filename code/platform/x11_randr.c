@@ -617,46 +617,47 @@ static int GetRandrProcAddr(void * const hRandrLib)
 
 qboolean RandR_Init( int x, int y, int w, int h, int isFullScreen )
 {
-	int event_base, error_base;
-	int ver_major = 1, ver_minor = 2;
+    int event_base, error_base;
+    int ver_major = 1;
+    int ver_minor = 2;
 
-	glw_state.randr_ext = qfalse;
-	glw_state.randr_active = qfalse;
-	glw_state.randr_gamma = qfalse;
+    glw_state.randr_ext = qfalse;
+    glw_state.randr_active = qfalse;
+    glw_state.randr_gamma = qfalse;
 
-	glw_state.monitorCount = 0;
-	current_monitor = NULL;
-	memset( monitors, 0, sizeof( monitors ) );
-	memset( &desktop_monitor, 0, sizeof( desktop_monitor ) );
+    glw_state.monitorCount = 0;
+    current_monitor = NULL;
+    memset( monitors, 0, sizeof( monitors ) );
+    memset( &desktop_monitor, 0, sizeof( desktop_monitor ) );
 
-	r_lib = LoadLibXrandr();
-	if (r_lib == NULL)
-		goto __fail;
+    r_lib = LoadLibXrandr();
+    if (r_lib == NULL)
+        goto __fail;
 
-	GetRandrProcAddr(r_lib);
+    GetRandrProcAddr(r_lib);
 
-	if ( !_XRRQueryExtension(glw_state.pDisplay, &event_base, &error_base) ||
+    if ( !_XRRQueryExtension(glw_state.pDisplay, &event_base, &error_base) ||
              !_XRRQueryVersion(glw_state.pDisplay, &ver_major, &ver_minor) )
-	{
-		Com_Printf("...RandR extension is not available.\n");
-		goto __fail;
-	}
+    {
+        Com_Printf("...RandR extension is not available.\n");
+        goto __fail;
+    }
 
-	Com_Printf( "libXrandr extension version %i.%i detected.\n",
-		ver_major, ver_minor);
+    Com_Printf("libXrandr extension version %i.%i detected.\n",
+        ver_major, ver_minor);
 
-	glw_state.randr_ext = qtrue;
+    // this will be reset by BackupMonitorGamma() if gamma is not available
+    glw_state.randr_ext = qtrue;
+    glw_state.randr_gamma = qtrue;
 
-	glw_state.randr_gamma = qtrue; // this will be reset by BackupMonitorGamma() if gamma is not available
+    BuildMonitorList();
 
-	BuildMonitorList();
+    // if(isFullScreen == 0)
+    RandR_UpdateMonitor(x, y, w, h);
 
-	// if(isFullScreen == 0)
-	RandR_UpdateMonitor( x, y, w, h );
-
-	return qtrue;
+    return qtrue;
 
 __fail:
-	RandR_Done();
-	return qfalse;
+    RandR_Done();
+    return qfalse;
 }

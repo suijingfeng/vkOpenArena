@@ -50,22 +50,22 @@ xcb_intern_atom_reply_t *atom_wm_delete_window;
 
 void WinSys_Init(void ** pContext, int type)
 {
-    Com_Printf( " Initializing window subsystem. \n" );
-   
+    Com_Printf( "Initializing window subsystem. \n" );
+
     // despect its name prefixed with r_
     // but they have nothing to do with the renderer. 
     r_mode = Cvar_Get( "r_mode", "3", CVAR_ARCHIVE | CVAR_LATCH );
     r_fullscreen = Cvar_Get( "r_fullscreen", "0", CVAR_ARCHIVE | CVAR_LATCH );
-    
+
     WinSys_ConstructDislayModes();
 
     *pContext = &s_xcb_win;
 
 
-    Com_Printf( " Setting up XCB connection... \n" );
+    Com_Printf( "Setting up XCB connection... \n" );
 
     const char * const pDisplay_envar = getenv("DISPLAY");
-    
+
     if (pDisplay_envar == NULL || pDisplay_envar[0] == '\0')
     {
         Com_Printf(" Environment variable DISPLAY requires a valid value.");
@@ -81,7 +81,7 @@ void WinSys_Init(void ** pContext, int type)
     // can provide NULL if you don't care.
 
     s_xcb_win.connection = xcb_connect(NULL, &s_xcb_win.screenIdx);
-    
+
     if (xcb_connection_has_error(s_xcb_win.connection) > 0)
     {
         Com_Error(ERR_FATAL, "Cannot set up connection using XCB... ");
@@ -96,9 +96,9 @@ void WinSys_Init(void ** pContext, int type)
 
     // Get the screen whose number is screenNum
     const xcb_setup_t * const pXcbSetup = xcb_get_setup(s_xcb_win.connection);
-    
+
     xcb_screen_iterator_t iter = xcb_setup_roots_iterator(pXcbSetup);
-    
+
     // we want the screen at index screenNum of the iterator
     for (int i = 0; i < s_xcb_win.screenIdx; ++i) 
     {
@@ -106,11 +106,11 @@ void WinSys_Init(void ** pContext, int type)
     }
 
     xcb_screen_t * pScreen = iter.data;
-    
+
     s_xcb_win.desktopWidth = pScreen->width_in_pixels;
     s_xcb_win.desktopHeight = pScreen->height_in_pixels;
     s_xcb_win.root = pScreen->root;
-    // report 
+    // report
 
     Com_Printf("\nInformations of screen: %d\n", pScreen->root);
     Com_Printf("  width.................: %d\n", pScreen->width_in_pixels);
@@ -142,11 +142,11 @@ void WinSys_Init(void ** pContext, int type)
     uint16_t border_width, uint16_t _class, xcb_visualid_t visual,
     uint32_t value_mask, const uint32_t* value_list );
     */
-	uint32_t x = 0;
-	uint32_t y = 0;
-	uint32_t width = s_xcb_win.desktopWidth;
-	uint32_t height = s_xcb_win.desktopHeight;
-    
+    uint32_t x = 0;
+    uint32_t y = 0;
+    uint32_t width = s_xcb_win.desktopWidth;
+    uint32_t height = s_xcb_win.desktopHeight;
+
     // -------------------------------------------------
     // developing now, its prefix started with r_
     // but it have nothing to do with the renderer ...
@@ -158,10 +158,10 @@ void WinSys_Init(void ** pContext, int type)
         // if fullscreen is true, then we use desktop video resolution
         r_mode->integer = -2;
 
-		x = 0;
-		y = 0;
-		width = s_xcb_win.desktopWidth;
-		height = s_xcb_win.desktopHeight;
+        x = 0;
+        y = 0;
+        width = s_xcb_win.desktopWidth;
+        height = s_xcb_win.desktopHeight;
 
         Com_Printf( " Setting fullscreen mode. \n" );
     }
@@ -169,12 +169,12 @@ void WinSys_Init(void ** pContext, int type)
     {
         R_GetDisplayMode(r_mode->integer, &width, &height);
 
-       	// r_mode->integer = R_GetModeInfo(&width, &height,
+        // r_mode->integer = R_GetModeInfo(&width, &height,
         //        r_mode->integer, s_xcb_win.desktopWidth, s_xcb_win.desktopHeight);
         // width = 1280;
         // height = 720;
     }
-    
+
     // R_SetWinMode(r_mode->integer, 640, 480, 60);
 
     // During the creation of a window, you should give it what kind of events it wishes to receive. 
