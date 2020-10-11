@@ -13,7 +13,6 @@
 #define MAX_MONITORS 16
 
 extern WinVars_t glw_state;
-extern int scrnum;
 
 
 typedef struct
@@ -523,7 +522,7 @@ qboolean BuildGammaRampTable( unsigned char *red, unsigned char *green, unsigned
 }
 
 
-void WinSys_SetGamma( unsigned char red[256], unsigned char green[256], unsigned char blue[256] )
+void WinSys_SetGamma(unsigned char red[256], unsigned char green[256], unsigned char blue[256])
 {
 	unsigned short table[3][4096];
 	
@@ -636,9 +635,10 @@ qboolean RandR_Init( int x, int y, int w, int h, int isFullScreen )
 
 	GetRandrProcAddr(r_lib);
 
-	if ( !_XRRQueryExtension( glw_state.pDisplay, &event_base, &error_base ) || !_XRRQueryVersion( glw_state.pDisplay, &ver_major, &ver_minor ) )
+	if ( !_XRRQueryExtension(glw_state.pDisplay, &event_base, &error_base) ||
+             !_XRRQueryVersion(glw_state.pDisplay, &ver_major, &ver_minor) )
 	{
-		Com_Printf( "...RandR extension is not available.\n" );
+		Com_Printf("...RandR extension is not available.\n");
 		goto __fail;
 	}
 

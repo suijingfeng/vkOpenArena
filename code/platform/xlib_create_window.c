@@ -142,7 +142,7 @@ static int CreateWindowForRenderer(int mode, qboolean fullscreen, int type)
 
     if ( !CL_GetModeInfo( &actualWidth, &actualHeight, mode, glw_state.desktopWidth, glw_state.desktopHeight, fullscreen ) )
     {
-        Com_Error( ERR_FATAL, " invalid mode\n" );
+        Com_Error( ERR_FATAL, "invalid mode\n" );
     }
 
     if ( fullscreen ) // try randr first
@@ -520,7 +520,7 @@ void WinSys_Init(void ** pCfg, int type)
 
     glw_state.pDisplay = XOpenDisplay(NULL);
 
-    if ( glw_state.pDisplay == NULL )
+    if (glw_state.pDisplay == NULL)
     {
         Com_Error(ERR_FATAL, "Couldn't open the X display. \n" );
     }

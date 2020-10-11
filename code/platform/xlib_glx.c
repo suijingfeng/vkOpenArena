@@ -397,25 +397,6 @@ const char * GLX_QueryServerString( Display * pDpy, int screen)
     return ret1;
 }
 
-/*
-		{
-			if ( Q_stricmp( r_glDriver->string, OPENGL_DRIVER_NAME ) != 0 )
-			{
-				// try default driver
-				if ( GLW_LoadOpenGL( OPENGL_DRIVER_NAME ) )
-				{
-					Cvar_Set( "r_glDriver", OPENGL_DRIVER_NAME );
-					r_glDriver->modified = qfalse;
-					return;
-				}
-			}
-
-			Com_Error( ERR_FATAL, "GLW_StartOpenGL() - could not load OpenGL subsystem\n" );
-		}
-*/
-
-
-
 
 
 XVisualInfo * GetXVisualPtrWrapper(void)
