@@ -161,6 +161,11 @@ void VK_CreateSurfaceImpl(VkInstance hInstance, void * pCtx, VkSurfaceKHR* const
     PFN_vkCreateXlibSurfaceKHR qvkCreateXlibSurfaceKHR = (PFN_vkCreateXlibSurfaceKHR)
         qvkGetInstanceProcAddr(hInstance, "vkCreateXlibSurfaceKHR");
 
+    if (qvkCreateXlibSurfaceKHR == NULL)
+    {
+        ri.Error(ERR_FATAL, "Failed to find entrypoint vkCreateXlibSurfaceKHR\n");
+    }
+
     VkXlibSurfaceCreateInfoKHR createInfo;
     createInfo.sType = VK_STRUCTURE_TYPE_XLIB_SURFACE_CREATE_INFO_KHR;
     createInfo.pNext = NULL;
