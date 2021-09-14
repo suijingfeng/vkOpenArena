@@ -146,17 +146,18 @@ const static vec3_t bytedirs[NUMVERTEXNORMALS] =
 // this isn't a real cheap function to call!
 int DirToByte( vec3_t dir )
 {
-	int	best = 0;
+	int best = 0;
 	float bestd = 0;
-    int i;
+	int i;
 
-	if ( !dir ) {
+	if ( !dir )
+	{
 		return 0;
 	}
 
 	for (i=0 ; i<NUMVERTEXNORMALS ; i++)
 	{
-	    float d = DotProduct (dir, bytedirs[i]);
+		float d = DotProduct (dir, bytedirs[i]);
 		if (d > bestd)
 		{
 			bestd = d;
@@ -170,7 +171,7 @@ int DirToByte( vec3_t dir )
 void ByteToDir( int b, vec3_t dir )
 {
 	if ( b < 0 || b >= NUMVERTEXNORMALS )
-    {
+	{
 		VectorCopy( vec3_origin, dir );
 		return;
 	}
@@ -205,7 +206,7 @@ This is not implemented very well...
 ===============
 */
 
-void RotatePointAroundVector( vec3_t dst, const vec3_t dir, const vec3_t point,	float degrees )
+void RotatePointAroundVector( vec3_t dst, const vec3_t dir, const vec3_t point, float degrees )
 {
     float d;
     float k[3];
@@ -219,7 +220,7 @@ void RotatePointAroundVector( vec3_t dst, const vec3_t dir, const vec3_t point,	
 
     d = (1 - cos_th) * (point[0] * k[0] + point[1] * k[1] + point[2] * k[2]);
 
-	CrossProduct(k, point, dst);
+    CrossProduct(k, point, dst);
 
     dst[0] *= sin_th;
     dst[1] *= sin_th;
@@ -239,8 +240,8 @@ void RotateAroundDirection( vec3_t axis[3], float yaw )
 
 	// rotate it around axis[0] by yaw
 	if ( yaw )
-    {
-		vec3_t	temp;
+	{
+		vec3_t temp;
 
 		VectorCopy( axis[1], temp );
 		RotatePointAroundVector( axis[1], axis[0], temp, yaw );
