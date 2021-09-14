@@ -41,7 +41,7 @@ void RE_EndFrame( int *frontEndMsec, int *backEndMsec );
 int RE_MarkFragments( int numPoints, const vec3_t *points, const vec3_t projection,
 				   int maxPoints, vec3_t pointBuffer, int maxFragments, markFragment_t *fragmentBuffer );
 
-int	RE_LerpTag( orientation_t *tag, qhandle_t handle, int startFrame, int endFrame, 
+int RE_LerpTag( orientation_t *tag, qhandle_t handle, int startFrame, int endFrame,
 					 float frac, const char *tagName );
 
 void RE_ModelBounds( qhandle_t handle, vec3_t mins, vec3_t maxs );

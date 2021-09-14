@@ -5,7 +5,7 @@
 // Description:  Loads any of the supported image types into
 // a cannonical 32 bit format.
 
-enum IMAGE_EXT_TYPE_t { 
+enum IMAGE_EXT_TYPE_t {
     IMG_EXT_TGA = 0,
     IMG_EXT_JPG = 1,
     IMG_EXT_BMP = 2,
@@ -62,7 +62,7 @@ static void R_LoadNSE(const char * const pName, unsigned char **pic, unsigned in
         }
     }
 
-    if(pPt != NULL)
+    if (pPt != NULL)
     {
         *pPt = 0;
     }
@@ -75,7 +75,7 @@ static void R_LoadNSE(const char * const pName, unsigned char **pic, unsigned in
 
     for(unsigned int i = 0; i < IMG_EXT_CNT; ++i)
     {
-        // strncpy(pPt, ExTable[i], 5); 
+        // strncpy(pPt, ExTable[i], 5);
         pPt[0] = ExTable[i][0];
         pPt[1] = ExTable[i][1];
         pPt[2] = ExTable[i][2];
@@ -83,8 +83,8 @@ static void R_LoadNSE(const char * const pName, unsigned char **pic, unsigned in
         pPt[4] = ExTable[i][4];
 
         // ri.Printf( PRINT_WARNING, " Loading %s \n", localName);
-        
-        fnImgLdrs[i](localName, pic, width, height );
+
+        fnImgLdrs[i](localName, pic, width, height);
 
         if(*pic != NULL)
             return;
@@ -131,21 +131,21 @@ void R_LoadImage(const char * pName, unsigned char **pic, uint32_t *width, uint3
         }
         else if( ( (pExt[0] == 'b') && (pExt[1] == 'm') && (pExt[2] == 'p') ) ||
                 ( (pExt[0] == 'B') && (pExt[1] == 'M') && (pExt[2] == 'P') ) )
-        {   
+        {
             R_LoadBMP( pName, pic, width, height );
             if(*pic != NULL )
                 return;
         }
         else if( ( (pExt[0] == 'p') && (pExt[1] == 'n') && (pExt[2] == 'g') ) ||
                 ( (pExt[0] == 'P') && (pExt[1] == 'N') && (pExt[2] == 'G') ) )
-        {   
+        {
             R_LoadPNG( pName, pic, width, height );
             if(*pic != NULL )
                 return;
         }
         else if( ( (pExt[0] == 'p') && (pExt[1] == 'c') && (pExt[2] == 'x') ) ||
                 ( (pExt[0] == 'P') && (pExt[1] == 'C') && (pExt[2] == 'X') ) )
-        {   
+        {
             R_LoadPCX( pName, pic, width, height );
             if(*pic != NULL )
                 return;
@@ -179,7 +179,7 @@ static void* q3_stbi_realloc(void* p_old, size_t old_size, size_t new_size)
         return ri.Malloc((int)new_size);
 
     void* p_new;
-    
+
     if (old_size < new_size)
     {
         p_new = q3_stbi_malloc(new_size);
@@ -221,7 +221,7 @@ void STB_LoadJPG( const char* name, unsigned char** pic, uint32_t* width, uint32
     if (!fbuffer) {
         return;
     }
-  
+
     int components;
     *pic = stbi_load_from_memory((unsigned char*)fbuffer, len, (int*)width, (int*)height, &components, STBI_rgb_alpha);
     if (*pic == NULL) {

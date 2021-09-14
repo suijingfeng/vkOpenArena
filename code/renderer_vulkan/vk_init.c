@@ -156,7 +156,7 @@ static void VK_SelectDepthSurfaceFormat(VkPhysicalDevice hGPU, VkFormat* const p
 
 static VkPresentModeKHR VK_SelectPresentationMode(VkPhysicalDevice hGPU, VkSurfaceKHR HSurface)
 {
-        // The presentation is arguably the most impottant setting for the swap chain
+        // The presentation is arguably the most important setting for the swap chain
         // because it represents the actual conditions for showing images to the screen
         // There four possible modes available in Vulkan:
 
@@ -181,8 +181,8 @@ static VkPresentModeKHR VK_SelectPresentationMode(VkPhysicalDevice hGPU, VkSurfa
         VkBool32 immediate_supported = VK_FALSE;
 
         // Look for the best mode available.
-        // suijingfeng: we dont gave the user a choice, because its seems 
-        // that no big difference between mailbox and immediate mode ...
+        // suijingfeng: we don't give the user a choice, because its seems
+        // that no big difference between mailbox and immediate mode
         VK_CHECK( qvkGetPhysicalDeviceSurfacePresentModesKHR(hGPU, HSurface, &nPM, NULL) );
 
         assert(nPM > 0);
@@ -234,7 +234,7 @@ static VkPresentModeKHR VK_SelectPresentationMode(VkPhysicalDevice hGPU, VkSurfa
         }
 
         // FIFO_KHR mode is guaranteed to be available according to the spec.
-        // this is worsest, lag... 
+        // this is worsest, lag...
         ri.Printf(PRINT_ALL, " Presentation with VK_PRESENT_MODE_FIFO_KHR mode. \n");
         ri.Printf(PRINT_ALL, "-------- ----------------------------- --------\n");
         return VK_PRESENT_MODE_FIFO_KHR;
@@ -283,7 +283,7 @@ static void VK_SelectPhysicalDevice(VkInstance hInstance, VkPhysicalDevice* cons
                 *pGPU = pPhyDevArray[r_gpuIndex->integer];
         }
 
-        // free the memory allocated from the heap 
+        // free the memory allocated from the heap
         free(pPhyDevArray);
 
         ri.Printf(PRINT_ALL, " Total %d graphics card, selected card index: [%d]. \n",
@@ -294,19 +294,19 @@ static void VK_SelectPhysicalDevice(VkInstance hInstance, VkPhysicalDevice* cons
 
 // Vulkan device execute work that is submitted to queues.
 // each device will have one or more queues, and each of those queues
-// will belong to one of the device's queue families. A queue family
-// is a group of queues that have identical capabilities but are 
-// able to run in parallel. The number of queue families, 
-// the capabilities of each family, and the number of queues 
+// will belong to one of the device's queue families.
+// A queue family is a group of queues that have identical capabilities
+// but are able to run in parallel. The number of queue families,
+// the capabilities of each family, and the number of queues
 // belonging to each family are all properties of the physical device.
 static uint32_t VK_SelectQueueFamilyForPresentation(VkPhysicalDevice hGPU, VkSurfaceKHR HSurface)
 {
         // Almosty every operation in Vulkan, anything from drawing textures,
         // requires commands to be submitted to a queue. There are different
         // types of queues that originate from differnet queue families and
-        // each family of queues allows only a subset of commands. 
-        // For example, there could be a queue family allows processing of 
-        // compute commands or one that only allows memory thansfer related commands. 
+        // each family of queues allows only a subset of commands.
+        // For example, there could be a queue family allows processing of
+        // compute commands or one that only allows memory thansfer related commands.
         //
         // We need to check which queue families are supported by the device
         // and which one of these supports the commands that we use.
@@ -325,10 +325,10 @@ static uint32_t VK_SelectQueueFamilyForPresentation(VkPhysicalDevice hGPU, VkSur
 
         ri.Printf(PRINT_ALL, "\n -------- Total %d Queue families -------- \n", cntQueueFamily);
 
-        // Queues within a family are essentially identical. 
+        // Queues within a family are essentially identical.
         // Queues in different families may have different internal capabilities
         // that can't be expressed easily in the Vulkan API. For this reason,
-        // an implementation might choose to report similar queues as members 
+        // an implementation might choose to report similar queues as members
         // of different families.
         //
         // All commands that are allowed on a queue that supports transfer operations are
@@ -336,7 +336,7 @@ static uint32_t VK_SelectQueueFamilyForPresentation(VkPhysicalDevice hGPU, VkSur
         // Thus, if the capabilities of a queue family include VK_QUEUE_GRAPHICS_BIT or
         // VK_QUEUE_COMPUTE_BIT, then reporting the VK_QUEUE_TRANSFER_BIT capability
         // separately for that queue family is OPTIONAL.
-        // 
+        //
         for (uint32_t i = 0; i < cntQueueFamily; ++i)
         {
                 // print every queue family's capability
@@ -399,8 +399,6 @@ static uint32_t VK_SelectQueueFamilyForPresentation(VkPhysicalDevice hGPU, VkSur
         if (idx == cntQueueFamily)
         {
                 // Intel interated GPU will crash on linux vulkan driver ...
-                // maybe have something to do with system lib stuff ...
-                //
                 ri.Error(ERR_FATAL, " Failed to find a queue family for presentation. ");
         }
 
@@ -411,7 +409,7 @@ static uint32_t VK_SelectQueueFamilyForPresentation(VkPhysicalDevice hGPU, VkSur
 
 
 
-static void VK_CheckSwapChainExtention(	VkPhysicalDevice hGPU, const char * const pName)
+static void VK_CheckSwapChainExtention(VkPhysicalDevice hGPU, const char * const pName)
 {
         // Look for device extensions
         //
@@ -423,7 +421,7 @@ static void VK_CheckSwapChainExtention(	VkPhysicalDevice hGPU, const char * cons
         // and the surfaces associated with windows, it is not actually part of the
         // vulkan core. You have to enable the VK_KHR_swapchain device extension
         // after querying for its support.
-        // 
+        //
         uint32_t cntDevExts = 0;
 
         VkBool32 swapchainExtFound = 0;
@@ -462,26 +460,28 @@ static void VK_CheckSwapChainExtention(	VkPhysicalDevice hGPU, const char * cons
 
         free(pDeviceExt);
 
-        if (VK_FALSE == swapchainExtFound) {
+        if (VK_FALSE == swapchainExtFound)
+        {
                 ri.Error(ERR_FATAL, "VK_KHR_SWAPCHAIN_EXTENSION_NAME is not available on you GPU driver.");
         }
 }
 
 
 
-static void VK_CreateLogicalDevice( VkPhysicalDevice hGPU, 
-                const char* const* ppExtNamesEnabled, 
-                const uint32_t nExtEnabled, 
-                const uint32_t idxQueueFamily, 
-                VkDevice * const pLogicalDev )
+static void VK_CreateLogicalDevice( VkPhysicalDevice hGPU,
+                                    const char* const* ppExtNamesEnabled,
+                                    const uint32_t nExtEnabled,
+                                    const uint32_t idxQueueFamily,
+                                    VkDevice * const pLogicalDev )
 {
+        uint32_t j;
+        const float priority = 1.0;
 
-        for(uint32_t j = 0; j < nExtEnabled; ++j)
-        {    
+        for(j = 0; j < nExtEnabled; ++j)
+        {
                 VK_CheckSwapChainExtention(hGPU, ppExtNamesEnabled[j]);
         }
 
-        const float priority = 1.0;
         VkDeviceQueueCreateInfo queue_desc;
         queue_desc.sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO;
         queue_desc.pNext = NULL;
@@ -525,19 +525,20 @@ static void VK_CreateLogicalDevice( VkPhysicalDevice hGPU,
         device_desc.pEnabledFeatures = &features;
 
 
-        // After selecting a physical device to use we need to set up a
-        // logical device to interface with it. The logical device 
-        // creation process id similar to the instance creation process
-        // and describes the features we want to use. we also need to 
+        // After selecting a physical device to use we need to set up
+        // a logical device to interface with it. The logical device
+        // creation process is similar to the instance creation process
+        // and describes the features we want to use. We also need to
         // specify which queues to create now that we've queried which
         // queue families are available. You can create multiple logical
-        // devices from the same physical device if you have varying requirements.
+        // devices from the same physical device if you have varying
+        // requirements.
         ri.Printf(PRINT_ALL, " Create logical device: vk.device \n");
         VK_CHECK( qvkCreateDevice(hGPU, &device_desc, NULL, pLogicalDev) );
 }
 
 
-static void VK_LoadDeviceFunctions(VkDevice	hLogicalDevice)
+static void VK_LoadDeviceFunctions(VkDevice hLogicalDevice)
 {
         ri.Printf(PRINT_ALL, " Loading device level function. \n");
 
@@ -636,7 +637,7 @@ static void VK_LoadDeviceFunctions(VkDevice	hLogicalDevice)
 // This function is responsible for initializing a valid Vulkan subsystem.
 void vk_initialize(void * pWinContext)
 {
-        VK_CreateInstance(&vk.instance); 
+        VK_CreateInstance(&vk.instance);
 
         // Create debug callback.
         VK_SettingDebugCallback(vk.instance);
@@ -660,7 +661,8 @@ void vk_initialize(void * pWinContext)
 
 
         //////////
-        const char* enable_features_array[1] = {
+        const char* enable_features_array[1] =
+        {
                 VK_KHR_SWAPCHAIN_EXTENSION_NAME
         };
 
@@ -673,39 +675,42 @@ void vk_initialize(void * pWinContext)
 
 
         // a call to retrieve queue handle
-        // The queues are constructed when the device is created, For this reason, 
-        // we don't create queues, but obtain them from the device.
-        // maybe the queue is abstraction of specific hardware ...
+        // The queues are constructed when the device is created,
+        // For this reason, we don't create queues, but obtain them
+        // from the device. Maybe the queue is abstraction of
+        // specific hardware ...
         NO_CHECK( qvkGetDeviceQueue(vk.device, vk.queue_family_index, 0, &vk.queue) );
         //
         //     Queue Family Index
         //
-        // The queue family index is used in multiple places in Vulkan in order to
-        // tie operations to a specific family of queues. When retrieving a handle 
-        // to the queue via vkGetDeviceQueue, the queue family index is used to
-        // select which queue family to retrieve the VkQueue handle from.
-        // 
-        // When creating a VkCommandPool object, a queue family index is specified
-        // in the VkCommandPoolCreateInfo structure. Command buffers from this pool
-        // can only be submitted on queues corresponding to this queue family.
+        // The queue family index is used in multiple places in Vulkan
+        // in order to tie operations to a specific family of queues.
+        // When retrieving a handle to the queue via vkGetDeviceQueue,
+        // the queue family index is used to select which queue family
+        // to retrieve the VkQueue handle from.
         //
-        // When creating VkImage (see Images) and VkBuffer (see Buffers) resources,
-        // a set of queue families is included in the VkImageCreateInfo and 
-        // VkBufferCreateInfo structures to specify the queue families that can 
-        // access the resource.
+        // When creating a VkCommandPool object, a queue family index
+        // is specified in the VkCommandPoolCreateInfo structure.
+        // Command buffers from this pool can only be submitted on queues
+        // corresponding to this queue family.
+        //
+        // When creating VkImage (see Images) and VkBuffer (see Buffers)
+        // resources, a set of queue families is included in the
+        // VkImageCreateInfo and VkBufferCreateInfo structures to specify
+        // the queue families that can access the resource.
         //
         // When inserting a VkBufferMemoryBarrier or VkImageMemoryBarrier
-        // a source and destination queue family index is specified to allow the 
-        // ownership of a buffer or image to be transferred from one queue family
-        // to another.; 
+        // a source and destination queue family index is specified to allow
+        // the ownership of a buffer or image to be transferred from one
+        // queue family to another.
 
-        // Swapchain. vk.physical_device required to be init. 
-        vk_createSwapChain( vk.device, vk.surface, vk.surface_format, vk.present_mode,
-                        &vk.swapchain );
+        // Swapchain. vk.physical_device required to be init.
+        vk_createSwapChain(vk.device, vk.surface, vk.surface_format, vk.present_mode,
+                        &vk.swapchain);
 
 
         vk_createColorAttachment(vk.device, vk.swapchain, vk.surface_format.format,
-                        &vk.swapchain_image_count, vk.color_image_views );
+                        &vk.swapchain_image_count, vk.color_image_views);
 
 
         // Sync primitives.
@@ -763,7 +768,7 @@ void vk_initialize(void * pWinContext)
         vk_createStandardPipelines();
         //
         // debug pipelines
-        // 
+        //
         vk_createDebugPipelines();
 
         vk.isInitialized = VK_TRUE;
@@ -808,9 +813,9 @@ void vk_shutdown( void )
 
         vk_destroy_descriptor_pool();
 
-        ri.Printf( PRINT_ALL, " Free command buffers: vk.command_buffer. \n" );  
+        ri.Printf( PRINT_ALL, " Free command buffers: vk.command_buffer. \n" );
         vk_freeCmdBufs(&vk.command_buffer);
-        ri.Printf( PRINT_ALL, " Free command buffers: vk.tmpRecordBuffer. \n" );  
+        ri.Printf( PRINT_ALL, " Free command buffers: vk.tmpRecordBuffer. \n" );
         vk_freeCmdBufs(&vk.tmpRecordBuffer);
 
         vk_destroy_command_pool();
